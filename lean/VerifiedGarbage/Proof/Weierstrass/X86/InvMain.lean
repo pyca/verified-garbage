@@ -5,11 +5,11 @@ import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Algebra.Group.Nat.Defs
-public import VerifiedGarbage.Proof.Divstep.Word32Def
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.Unch
@@ -47,7 +47,6 @@ import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Divstep.Mred32
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Tactic.Positivity.Core

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
@@ -20,22 +20,18 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
-import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
 public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady

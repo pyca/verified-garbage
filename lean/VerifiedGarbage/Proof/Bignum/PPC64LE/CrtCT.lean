@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
-import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsB
-meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCTBase
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT

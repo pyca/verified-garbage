@@ -1,34 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2From
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
-import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
-import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptanceCT
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
-import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -39,33 +34,28 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2From
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
-meta import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
-meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 meta import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptanceCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 meta import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
 meta import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 meta import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
-meta import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT

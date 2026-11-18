@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.RsaPss.X86.Params
 public import VerifiedGarbage.Proof.RsaPss.X86.Hash
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.Params
@@ -23,9 +22,8 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
+import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3
-import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 import VerifiedGarbage.Proof.RsaPss.X86.CtXor
 
 /-! ### `RsaPss.X86.VfScan`, which only this module used -/
@@ -51,7 +49,7 @@ section
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: where everything is
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfBase.lean`): `EP`, what two runs share
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, `salt_len`,
 `any_salt_len`, the public key's bytes and precomputed words, and the
 tables, as for signing (`SgBase.lean`): the hash function's of `MdHash` at
@@ -403,7 +401,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the checks
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfChk.lean`): `scratch` into `ebp`,
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): `scratch` into `ebp`,
 `[any_salt_len ≠ 0]` to its slot and the expected salt length `sLen`
 (`salt_len`, or 0 if any) for `params`, then the encoding's parameters and
 whether everything fits (`chk_vp`): the modulus' first byte not zero, and
@@ -645,7 +643,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the call
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfCall.lean`): the ten arguments of
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): the ten arguments of
 `vg_rsa_public_precomputed_checked`, one word of the frame at a time
 (`pa_vp`): `EM`'s place (`oEm`), `pre`, `e`, the signature, and the rest of
 `scratch` from `oRsa` on; and the call (`call_vp`, correct and constant
@@ -1037,7 +1035,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: after the call
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfAcc.lean`): the pieces after the call are
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): the pieces after the call are
 proven over the state `τ` the call leaves (`VQ.reidx`), so that `EM`'s bytes
 are those of `τ` (`emv`). `acc` (`accW`): `EM`'s last byte `⊕ 0xbc`, its first
 if `lo = 1`, and the top bits of `maskedDB`'s first byte (`acc_vp`); then
@@ -1413,7 +1411,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the scan
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfScan.lean`): the scan of `DB` finds the
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): the scan of `DB` finds the
 index (`pzJ`) and the value (`vzJ`) of its first byte that is not zero, if
 any (`nfJ`), without a branch (`scan_vp`). On x86 the index and the value
 are kept in their slots, through `ebp`, which `posChk` loads with `scratch`
@@ -1698,7 +1696,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: the scan's result
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfPos.lean`): `scratch` into `ebp` again;
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): `scratch` into `ebp` again;
 `acc` takes in that `DB`'s first nonzero byte is `0x01` and, if a salt length
 is expected, that the salt after it has that length (`acc2`); then the flags
 of `any_salt_len = 0` (`pos_vp`).

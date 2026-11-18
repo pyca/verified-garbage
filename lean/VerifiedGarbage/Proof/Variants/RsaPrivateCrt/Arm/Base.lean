@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
-import VerifiedGarbage.Proof.Bignum.Arm.R2Public
 import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 
 /-! ### `Bignum.Arm.PublicPrecomputeNormalized`, which only this module used -/

@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.Arm.Round
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
@@ -21,7 +22,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.Mac
 import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
-import VerifiedGarbage.Proof.Bignum.Arm.RoundFinish
 import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
 
 /-! ### `Bignum.Arm.FusedReductionStage`, which only this module used -/

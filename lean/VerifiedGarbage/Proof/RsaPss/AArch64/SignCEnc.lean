@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCArgs
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
-public import VerifiedGarbage.Proof.MdHashTable.AArch64
+public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
@@ -11,10 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.HashTable.AArch64
-public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCTBase
-public import VerifiedGarbage.Proof.RsaPss.AArch64.EncTop
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCT
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-import VerifiedGarbage.Proof.RsaPss.AArch64.EncCT
 
 /-! ### `RsaPss.AArch64.EncVerified`, which this module and modules that import it used -/
 

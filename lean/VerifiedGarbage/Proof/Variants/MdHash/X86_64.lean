@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1AvxBmi
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha1ShaNi
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256Avx2
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256ShaNi

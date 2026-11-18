@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
-public import VerifiedGarbage.Proof.Divstep.Word32Def
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Rsa.Arm.Inv.Ops
@@ -10,9 +10,9 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
-import VerifiedGarbage.Proof.Divstep.Word32Bits
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Divstep.Red30
+
 -- separate module: the divsteps' word kernel, which edits of the batches' and the end's proofs in `InvLoop` do not rebuild
 
 /-! # The divsteps of a batch of `inverse` on ARMv7

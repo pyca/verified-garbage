@@ -1,8 +1,7 @@
 module
--- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+-- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreA
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreR2
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite

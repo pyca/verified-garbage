@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Checks
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.ExpWeak
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Semantics

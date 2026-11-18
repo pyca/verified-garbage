@@ -5,8 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSave
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets

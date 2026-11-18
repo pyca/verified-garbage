@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp

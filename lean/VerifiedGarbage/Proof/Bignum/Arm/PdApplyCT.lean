@@ -1,8 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
-
 import VerifiedGarbage.Proof.Bignum.Arm.PdInputImportCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdAcceptCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdControlsCT
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PdInputImport
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 
 /-! # The complete public RSA arithmetic path is constant-time with respect to the input -/
 

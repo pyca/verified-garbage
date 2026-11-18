@@ -22,8 +22,7 @@ meta import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 meta import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 meta import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-import VerifiedGarbage.Proof.Mont.X86.CombStart
-meta import VerifiedGarbage.Proof.Mont.X86.CombStart
+meta import VerifiedGarbage.Proof.Mont.X86.CombBuild
 
 /-! ### `Dsa.X86.Comb.PublicSubsetLoopTiming`, which only this module used -/
 

@@ -7,13 +7,11 @@ public import VerifiedGarbage.Proof.RsaPss.X86.VfPass
 import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPos
 import VerifiedGarbage.Proof.RsaPss.X86.SgEnc3
-import VerifiedGarbage.Proof.RsaPss.X86.CtHash
-import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -27,10 +25,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Md5
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha224
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha256
-public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
+public import VerifiedGarbage.Proof.MdHashTable.X86.Tables
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPss.X86.YDig
 public import VerifiedGarbage.Proof.RsaPss.X86.CtTab
@@ -224,7 +219,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: a salt of the expected length
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfY.lean`, `VfFixed.lean`): `Y` cleared and
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`, `VfFixed.lean`): `Y` cleared and
 `mHash` after its 8 zero bytes (`yDig_vf`); the last `sLen` bytes of `DB`
 after it (`fxSalt_vp`), `M'`'s length and blocks (`lenF_vp`), and the end of
 the paths (`fixed_vp`).
@@ -802,7 +797,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: a salt of any length
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfAny.lean`): `DB` after `mHash` in `Y`
+As on ARMv7 (`Proof/RsaPss/Arm/VfFixed.lean`): `DB` after `mHash` in `Y`
 (`cpDb_vp`), shifted left by `pos + 1` bytes, so that `M'` is in `Y`
 (`Ma`); its length and the blocks of the longest salt (`anyLen_vp`); and the
 end of the paths (`any_vp`).
@@ -1341,7 +1336,7 @@ end
 /-!
 # RSASSA-PSS verification with a precomputed public key on x86: verified
 
-As on ARMv7 (`Proof/RsaPss/Arm/VfVerified.lean`), with the hash functions as
+As on ARMv7 (`Proof/RsaPss/Arm/Inst.lean`), with the hash functions as
 tables, as for signing (`SgVerified.lean`): the index of the hash function
 of the table of `MdHash` at the argument 14 (`idx_vp`) chooses the tail for
 it among those of `idxs` (`byLen_vq`, `body_vq'`), whose code for the index

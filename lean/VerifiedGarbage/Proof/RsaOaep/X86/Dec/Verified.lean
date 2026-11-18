@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.Scan
 public import VerifiedGarbage.Proof.RsaPss.X86.VfPass
 import VerifiedGarbage.Proof.RsaOaep.X86.Certs
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
@@ -15,7 +14,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86.Instr
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.RsaOaep.Decode
-import VerifiedGarbage.Proof.RsaPss.X86.CtHash
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
@@ -42,7 +40,7 @@ section
 /-!
 # RSAES-OAEP decryption on x86: `T` shifted to the start of the buffer
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecShift.lean`): the buffer of 2048 bytes
+As on ARMv7 (`Proof/RsaOaep/Arm/DecOut.lean`): the buffer of 2048 bytes
 at `oBuf` cleared and `T` copied to its start (`buf_vp`); then shifted left
 by `idx + 1` bytes in ten passes (`shift_vp`, with the passes of RSASSA-PSS,
 `Proof/RsaPss/X86/VfPass.lean`), pass `p` by `2^p` bytes if bit `p` of the
@@ -712,7 +710,7 @@ section
 /-!
 # RSAES-OAEP decryption on x86: what the decoding returns
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecSpec.lean`): `decOut_eq`: when
+As on ARMv7 (`Proof/RsaOaep/Arm/DecOut.lean`): `decOut_eq`: when
 `k ≥ 2 hLen + 2`, decryption returns the message after `T`'s padding if
 every check passes (`allOk`), the error otherwise, or the private-key
 operation's own error, all in the terms the code computes (`EM`'s bytes `V`,

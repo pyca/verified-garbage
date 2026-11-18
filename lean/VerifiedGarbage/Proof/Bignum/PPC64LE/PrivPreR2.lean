@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.Double64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.PrimeR2
 import VerifiedGarbage.Proof.Bignum.CrtGPow

@@ -20,15 +20,13 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoop
 import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
 /-! # A factor's `R² mod p` from `R² mod n`: correctness
 

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Framework.ICall
 public import VerifiedGarbage.Impl.RsaOaep.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
-public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
-import VerifiedGarbage.Proof.RsaPss.Arm.CtMgf
 import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import all Init.Data.Nat.Bitwise.Basic

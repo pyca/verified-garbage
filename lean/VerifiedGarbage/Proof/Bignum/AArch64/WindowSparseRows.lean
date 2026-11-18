@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightOffDiagonal
-import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightHead
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Framework.Offset

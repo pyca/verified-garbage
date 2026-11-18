@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
 public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec

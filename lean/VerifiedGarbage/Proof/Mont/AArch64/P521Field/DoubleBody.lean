@@ -1,7 +1,6 @@
 module
 
 -- separate module: The consolidated sixteen-step doubling/context induction costs about one second versus 0.39s of imports; DoubleOutput changes reuse this checked body.
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointResult
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointRebase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
 import VerifiedGarbage.Proof.Framework.Block

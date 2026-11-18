@@ -1,11 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
-
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
-import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 
 @[expose] public section

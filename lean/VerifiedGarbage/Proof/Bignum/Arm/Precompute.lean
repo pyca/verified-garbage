@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Rsa.MontContract
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus

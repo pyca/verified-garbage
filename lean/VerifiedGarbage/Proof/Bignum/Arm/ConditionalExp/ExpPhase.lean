@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
 import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpStep
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 
 /-! # The ARMv7 RSA arithmetic phase implements the shared modular-exponentiation specification -/
 

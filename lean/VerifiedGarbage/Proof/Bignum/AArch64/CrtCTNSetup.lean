@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-import VerifiedGarbage.Proof.Bignum.AArch64.R2dNormCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!

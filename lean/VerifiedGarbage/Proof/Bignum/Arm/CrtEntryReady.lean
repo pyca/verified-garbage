@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtFailCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
 import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
@@ -46,7 +46,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopyCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.R2
@@ -59,20 +58,17 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
-import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideCT
 import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
 import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMaskedCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtFailCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
@@ -80,7 +76,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
-import VerifiedGarbage.Proof.Bignum.Arm.CrtFail
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
@@ -89,14 +84,12 @@ import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
-import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
 import VerifiedGarbage.Proof.Bignum.CrtResult

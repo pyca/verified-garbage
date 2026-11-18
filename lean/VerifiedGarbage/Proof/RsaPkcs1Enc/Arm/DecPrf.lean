@@ -28,7 +28,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Decrypt
 import VerifiedGarbage.Proof.Sha256.Arm.Shared

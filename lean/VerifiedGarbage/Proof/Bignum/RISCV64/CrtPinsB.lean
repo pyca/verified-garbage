@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtPinsA
-public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid2
+public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtCorrect
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Flat

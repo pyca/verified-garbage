@@ -36,7 +36,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: constant time
 
-As for `iterate` (`Proof/Pbkdf2/Md/X86/IterateCT.lean`): the pieces of code
+As for `iterate` (`Proof/Pbkdf2/Md/X86/HmacFinCT.lean`): the pieces of code
 between the calls are checked by the taint analysis (`Checks`, which the
 kernel evaluates for each hash function), with the arguments, `esp`, `ebp`
 and, in the loop over the blocks, `ebx` public (`piece`); the calls are

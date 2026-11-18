@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
-import VerifiedGarbage.Proof.RsaPss.AArch64.Select
-import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
@@ -20,8 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.Select
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract

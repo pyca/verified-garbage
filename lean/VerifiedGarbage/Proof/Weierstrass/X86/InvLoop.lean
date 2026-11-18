@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Divstep.Word32Bits
-public import VerifiedGarbage.Proof.Divstep.Word32Def
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words

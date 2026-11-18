@@ -3,16 +3,16 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
-
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.NormalizedPrecompute
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.NormalizedR2
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+
 /-! # FFDH preparation for a modulus with a nonzero highest word -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/NormalizedPrecompute.lean`, which only this module imported.

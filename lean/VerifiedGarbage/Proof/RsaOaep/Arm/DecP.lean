@@ -2,7 +2,6 @@ module
 
 -- separate module: its proofs cost more than its imports, and the satisfiability witness's
 -- changes (`DecSat`) need not re-check them
-
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.HashTable.Arm
@@ -10,7 +9,6 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.DecCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

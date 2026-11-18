@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -15,7 +14,6 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Md5.X86.Lit

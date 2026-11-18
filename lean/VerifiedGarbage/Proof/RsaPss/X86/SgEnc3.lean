@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.RsaPss.X86.Params
 public import VerifiedGarbage.Proof.RsaPss.X86.Hash
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.Params
@@ -25,10 +24,9 @@ import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.CtLen
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.CtPad
-import VerifiedGarbage.Proof.RsaPss.X86.CtHash
+import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-- `pomega` (`CtBase.lean`), with `omega_arith` for its `omega`: the frame's offsets as facts, and of
@@ -54,7 +52,7 @@ section
 /-!
 # RSASSA-PSS signing on x86: where everything is
 
-As on ARMv7 (`Proof/RsaPss/Arm/SgBase.lean`): `EP`, what two runs share
+As on ARMv7 (`Proof/RsaPss/Arm/SgEnc1.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, the public key's bytes
 `nB` and `eB`, and the tables: the hash function's of `MdHash` at `tabH`,
 whose functions are at `hai`, `hac` and `had`, and MGF1's of `MdHash` at

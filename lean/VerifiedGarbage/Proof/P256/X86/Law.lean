@@ -42,7 +42,7 @@ import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.Divstep.Incl
-import VerifiedGarbage.Proof.Divstep.Mred32
+import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Divstep.Word32Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop

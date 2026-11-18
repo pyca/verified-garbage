@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.PrivCall
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
+import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.RsaPss.X86.CmpLoop
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
 
 /-! ### `RsaOaep.X86.Dec.Acc`, which only this module used -/
 
@@ -664,7 +663,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: `EM` unmasked
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecUnmask.lean`): the label's hash to
+As on ARMv7 (`Proof/RsaOaep/Arm/DecScan.lean`): the label's hash to
 `scratch + oLh` (`labT_vp`, with the label's hash function that of its
 table, our argument 23), then the seed unmasked with MGF1 of
 `maskedDB` and `DB` with MGF1 of the seed, in place (`mgf_vp`, with the
@@ -1051,7 +1050,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: `EM`'s first byte and `lHash`
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecAcc.lean`): `lHash'` compared with
+As on ARMv7 (`Proof/RsaOaep/Arm/DecScan.lean`): `lHash'` compared with
 `lHash` (`cmpLoop_vp`, of RSASSA-PSS), then the accumulator `acc` (in its
 slot) zero exactly when `EM`'s first byte is zero and `lHash' = lHash`
 (`acc_vp`).

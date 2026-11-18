@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms

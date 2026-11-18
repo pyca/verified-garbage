@@ -1,14 +1,13 @@
 module
+
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTail
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightHead
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightOffDiagonal
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section

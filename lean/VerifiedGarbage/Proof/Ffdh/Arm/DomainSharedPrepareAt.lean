@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.SharedPrecompute
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse

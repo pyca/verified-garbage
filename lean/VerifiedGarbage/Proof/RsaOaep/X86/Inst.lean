@@ -6,13 +6,12 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.PVerified
 public import VerifiedGarbage.Proof.RsaOaep.X86.Enc.Base
 public import VerifiedGarbage.Proof.RsaOaep.X86.Base
 import VerifiedGarbage.Proof.RsaOaep.X86.Certs
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
+public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import VerifiedGarbage.Proof.RsaPss.X86.CtBase
-import VerifiedGarbage.Proof.RsaPss.X86.CtHash
+import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-public import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
 import VerifiedGarbage.Proof.RsaPss.X86.Base
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
-import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.PubCall
@@ -58,7 +56,7 @@ section
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: the checks
 
-As on ARMv7 (`Proof/RsaOaep/Arm/EncChk.lean`): `chk_vp`: `scratch` into
+As on ARMv7 (`Proof/RsaOaep/Arm/EncEm.lean`): `chk_vp`: `scratch` into
 `ebp`, and the flags of whether the message fits (`fits`), from the lengths
 alone. `fail_vp`: when it does not, zeros to `out` and 0 returned, as
 `encrypt` (`Proof.RsaOaep.encrypt_none`) says.
@@ -1350,7 +1348,7 @@ end
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: verified
 
-As on ARMv7 (`Proof/RsaOaep/Arm/EncBody.lean`, `EncVerified.lean`): the
+As on ARMv7 (`Proof/RsaOaep/Arm/Inst.lean`, `EncVerified.lean`): the
 checks, then zeros to `out` if the message does not fit (`fail_vp`), or
 `EM` (`em_vp`), its masks (`mask_vp`) and the call (`pa_vp`, `call_vp`):
 `body_vp`. The body writes `esp` only through the frames of its calls

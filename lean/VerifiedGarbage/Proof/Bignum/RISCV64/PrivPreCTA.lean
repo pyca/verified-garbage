@@ -1,6 +1,6 @@
 module
--- separate module: the precomputation's constant-time proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+-- separate module: the precomputation's constant-time proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreE
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPrePQ
+import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreA
 
 /-!
 # An RSA private key's precomputed values on RISC-V: the registers at the cuts of the checks

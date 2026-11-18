@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaPss.X86.CtInit
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.HashTable.X86
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
 import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
-import VerifiedGarbage.Proof.RsaOaep.X86.Taint
+import VerifiedGarbage.Proof.RsaOaep.X86.Mgf
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Syms
@@ -432,7 +432,7 @@ end
 /-!
 # RSASSA-PSS signing on x86: verified
 
-As on ARMv7 (`Proof/RsaPss/Arm/SgVerified.lean`), with the hash functions as
+As on ARMv7 (`Proof/RsaPss/Arm/Inst.lean`), with the hash functions as
 tables: the checks, then zeros or the encoding and the private-key
 operation (`tail_vp`), for the hash function `h` of the table of `MdHash` at
 the argument 22 and MGF1's `g` of the table of `MdHash` at 23; the index of

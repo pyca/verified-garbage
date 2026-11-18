@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # `vg_rsa_pkcs1_decrypt_precomputed` on ARMv7

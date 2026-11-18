@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86.CtHash
-import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
+public import VerifiedGarbage.Proof.RsaPss.X86.CtMgf
 import VerifiedGarbage.Proof.RsaPss.X86.CtXor
-import VerifiedGarbage.Proof.RsaPss.X86.Taint
+import VerifiedGarbage.Proof.RsaPss.X86.CtBase
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 

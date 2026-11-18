@@ -33,10 +33,9 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 public meta import VerifiedGarbage.Proof.Framework.Lit
@@ -70,10 +69,9 @@ public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public meta import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public meta import VerifiedGarbage.Proof.Sha256.StateMem
-public meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Schedule
+public meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Rounds
 public meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
-public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 
 /-!
 # SHA-256 on x86-64 with AVX2 and BMI: the variant's code and proofs

@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -65,7 +64,6 @@ public meta import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public meta import VerifiedGarbage.Proof.Sha256.StateMem
 public meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
-public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 
 /-!
 # SHA-256 on x86-64 with the SHA extensions: the variant's code and proofs

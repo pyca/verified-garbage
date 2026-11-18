@@ -1,15 +1,13 @@
 module
+
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 import VerifiedGarbage.Proof.MillerRabin.X86_64.FramedBody
 import VerifiedGarbage.Proof.MillerRabin.X86_64.EntrySaved
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
 import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified

@@ -2,20 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset

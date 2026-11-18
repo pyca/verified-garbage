@@ -11,16 +11,14 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfPost
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.RcTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfTaint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
@@ -29,6 +27,36 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Precomputed
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `RsaPkcs1Sig.Arm.RcTaint`, which only this module used -/
+
+section
+
+/-! # RSASSA-PKCS1-v1_5 recovery with a precomputed public key on ARMv7: the pieces the taint analysis checks -/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPkcs1Sig.Arm.Rc
+
+open VG VG.Arm
+
+theorem fin_taint :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.mov .r0 (.reg .r3)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+end VG.Proof.RsaPkcs1Sig.Arm.Rc
+
+end
+
+end
 
 /-! ### `RsaPkcs1Sig.Arm.RcBase`, which only this module used -/
 
@@ -579,7 +607,7 @@ end
 The status to its word and the encoding of the last `out_len` bytes of
 `EM₁` to `EM₂` (`encArgs_wp`, `encode_wp`), the comparison of `EM₁` and
 `EM₂` (`cmpArgs_wp`, `compare_wp`) and the result (`result_wp`, from
-`recover_result`), as in verification (`Proof/RsaPkcs1Sig/Arm/VfPost.lean`).
+`recover_result`), as in verification (`Proof/RsaPkcs1Sig/Arm/EncodeTaint.lean`).
 -/
 
 @[expose] public section

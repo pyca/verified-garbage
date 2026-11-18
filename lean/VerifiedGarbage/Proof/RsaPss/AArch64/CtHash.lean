@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
-public import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.AArch64.TabCall
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.Offset

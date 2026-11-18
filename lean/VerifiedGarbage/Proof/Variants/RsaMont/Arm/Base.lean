@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallFn
 
 /-! # The baseline callable Montgomery product and square -/
 

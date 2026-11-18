@@ -1,17 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusArgs
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtPadModulus
 public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
@@ -24,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
 import VerifiedGarbage.Impl.Bignum.Arm.Zero
 import VerifiedGarbage.Impl.Bignum.Arm.HeaderControl
-import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.Arm.RoundState
@@ -34,6 +30,348 @@ import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+
+/-! ### `Bignum.Arm.ControlBuffers`, which this module and modules that import it used -/
+
+section
+
+/-! # Preserve the public layout across writes to control slots and external buffers -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Proof.Rsa.Mont (Layout wordAt wOf)
+
+theorem outs_readW {m m' : Mem} {base : Addr} {ranges : List (Nat × Nat)}
+    {d bits : Nat} (h : Outs base ranges m m')
+    (sep : ∀ r ∈ ranges, d + bits / 8 ≤ r.1 ∨ r.1 + r.2 ≤ d)
+    (fit : d + bits / 8 ≤ 2 ^ 64) : m'.readW (off base d) bits = m.readW (off base d) bits := by
+  apply Mem.readW_congr
+  intro i hi
+  apply h
+  intro r hr
+  rw [ofs_off base (by omega_using [fit, hi])]
+  have := sep r hr
+  omega_using [hi, this]
+
+theorem CrtLayoutState.of_header_eq {base : BitVec 32} {len w : Nat} {m m' : Mem}
+    (h : CrtLayoutState base len w m) (eq : WorkspaceEq (State.addr base) 128 m m') :
+    CrtLayoutState base len w m' := by
+  have width := eq.width (by decide)
+  refine ⟨?_, width.trans h.width⟩
+  unfold Layout
+  rw [width]
+  refine ⟨h.layout.1, h.layout.2.1, h.layout.2.2.1, ?_⟩
+  intro j hj
+  unfold wordAt
+  rw [eq.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega_using [hj])]
+  exact h.layout.2.2.2 j hj
+
+theorem control_buffers_header {base : Addr} {m m' : Mem} {ranges : List (Nat × Nat)}
+    (h : Outs base ranges m m') (lower : ∀ r ∈ ranges, 128 ≤ r.1) : WorkspaceEq base 128 m m' := by
+  refine ⟨fun d k hk => Mem.read_congr ?_⟩
+  intro i hi
+  apply h
+  intro r hr
+  rw [ofs_off base (by omega_using [hk, hi])]
+  have := lower r hr
+  omega_using [hk, hi, this]
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! ### `Bignum.Arm.CrtProductGeometry`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.Arm.CrtProductState`, which this module and modules that import it used -/
+
+section
+
+/-! # Inputs for exact CRT factor-product validation -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+structure CrtProductInput (base : BitVec 32) (size o a b cp cq w : Nat) (s : State) (coefficient : Bool := false) : Prop
+    extends WideProductCtx s base size o a b (2 * w) (2 * w) where
+  parentFit : 236 ≤ size
+  pHeader : 256 ≤ cp
+  qHeader : 256 ≤ cq
+  pBeforeOut : cp + productOperandSlot coefficient + 4 ≤ o
+  qBeforeOut : cq + 68 ≤ o
+  ptr : s.gpr .r0 = base
+  pLink : s.mem.readW (off (State.addr base) 224) 32 = base + BitVec.ofNat 32 cp
+  qLink : s.mem.readW (off (State.addr base) 228) 32 = base + BitVec.ofNat 32 cq
+  pArray : s.mem.readW (off (State.addr base) (cp + productOperandSlot coefficient)) 32 = base + BitVec.ofNat 32 a
+  qArray : s.mem.readW (off (State.addr base) (cq + 64)) 32 = base + BitVec.ofNat 32 b
+  product : s.mem.readW (off (State.addr base) 232) 32 = base + BitVec.ofNat 32 o
+  count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w
+
+theorem WideProductCtx.after_frame {s t : State} {base : BitVec 32} {size o a b m n : Nat}
+    (h : WideProductCtx s base size o a b m n) {rs : List Reg}
+    (rest : Rest rs s t) (frame : Frame [⟨State.addr base, size⟩] s.mem t.mem) :
+    WideProductCtx t base size o a b m n := by
+  refine ⟨h.workspace.congr rest.wr, h.positiveA, h.positiveB, h.headerFit, h.aHeader, h.bHeader, h.oHeader,
+    h.aFits, h.bFits, h.outFits, h.separateA, h.separateB, ?_, ?_, ?_⟩
+  · rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead
+  · rw [rest.sp]; exact h.stackSep
+  · exact saved_base_kept frame h.stackSep h.saved rest.sp
+
+theorem crt_productClear_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient) :
+    WP isa (clearWide 232) s fun t => CrtProductInput base size o a b cp cq w t coefficient ∧
+      val32 t.mem (State.addr base) o (2 * w + 2 * w + 2) = 0 ∧
+      Outside (State.addr base) o (4 * (2 * w + 2 * w + 2)) s.mem t.mem ∧
+      Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have headerFit := h.parentFit
+  have outFit := h.outFits
+  have head := h.oHeader
+  have beforeP := h.pBeforeOut
+  have beforeQ := h.qBeforeOut
+  have nowrap := h.workspace.nowrap
+  refine WP.mono (crt_clearWide_ok s h.workspace (by omega_using [headerFit]) (by omega_using [headerFit] : 232 + 4 ≤ size) (by decide)
+    (by omega_using [outFit]) h.ptr h.count h.product h.stackRead h.stackSep h.saved) ?_
+  rintro t ⟨zero, outside, frame, ptr, rest⟩
+  rw [show 4 * w + 2 = 2 * w + 2 * w + 2 by omega_using []] at zero outside
+  refine ⟨⟨h.toWideProductCtx.after_frame rest frame, h.parentFit, h.pHeader, h.qHeader, beforeP, beforeQ, ptr, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    zero, outside, frame, rest⟩
+  · rw [outside_read32 outside (d := 224) (by omega_using [head]) (by decide)]; exact h.pLink
+  · rw [outside_read32 outside (d := 228) (by omega_using [head]) (by decide)]; exact h.qLink
+  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega_using [beforeP]) (by omega_using [outFit, beforeP, nowrap])]; exact h.pArray
+  · rw [outside_read32 outside (d := cq + 64) (by omega_using [beforeQ]) (by omega_using [outFit, beforeQ, nowrap])]; exact h.qArray
+  · rw [outside_read32 outside (d := 232) (by omega_using [head]) (by decide)]; exact h.product
+  · rw [outside_read32 outside (d := 48) (by omega_using [head]) (by decide)]; exact h.count
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! # Derive exact wide-product inputs from the live CRT workspace layouts -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.Rsa.Mont (arrAt)
+
+def crtProductA (w : Nat) (coefficient : Bool) : Nat := pOffset w + arrAt w (if coefficient then 5 else 0)
+def crtProductB (w : Nat) : Nat := qOffset w + arrAt w 0
+
+theorem CrtShared.product_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) (coefficient : Bool) :
+    CrtProductInput g.base g.size (productOffset g.words) (crtProductA g.words coefficient) (crtProductB g.words)
+      (pOffset g.words) (qOffset g.words) g.words s coefficient := by
+  let w := g.words
+  let j : Nat := if coefficient then 5 else 0
+  have hj : j < 8 := by cases coefficient <;> decide
+  have slot : 64 + 8 * j = productOperandSlot coefficient := by cases coefficient <;> rfl
+  have size := h.buffers.storageFits
+  have width := h.buffers.context.width
+  have endA := Nat.le_trans (array_end_le (w := w) hj) h.buffers.context.arraysFit
+  have endB := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) h.buffers.context.arraysFit
+  have strideEq : 8 * workspaceWords w = stride w := rfl
+  rw [strideEq] at endA endB
+  have linear : 3 * stride w + 3 * (16 * w + 8) ≤ g.size := by
+    have size0 : 3 * stride w + 4 * (4 * w + 2) + 4 * (4 * w + 2) + 4 * (4 * w + 2) + stride w ≤ g.size := size
+    omega_using [size0]
+  have stridePos : 384 ≤ stride w := by simp only [VG.Impl.Bignum.Arm.Crt.stride, workspaceWords]; omega_using []
+  have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+  have bHeader : 256 ≤ arrAt w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+  have wide : WideProductCtx s g.base g.size (productOffset w) (crtProductA w coefficient) (crtProductB w) (2 * w) (2 * w) := by
+    refine ⟨h.buffers.workspace, by omega, by omega, by omega_using [linear, stridePos], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+      ready.stackRead, h.stack.separate.sub_left (Region.sub_prefix (by decide)), ready.saved⟩
+    all_goals simp only [crtProductA, crtProductB, pOffset, qOffset, productOffset]
+    · change 256 ≤ stride w + arrAt w j; omega_using [stridePos]
+    · omega_using [stridePos]
+    · omega_using [stridePos]
+    · change stride w + arrAt w j + 4 * (2 * w) ≤ g.size; omega_using [endA, linear]
+    · omega_using [endB, linear]
+    · omega_using [linear]
+    · right; change stride w + arrAt w j + 4 * (2 * w) ≤ 3 * stride w; omega_using [endA]
+    · right; omega_using [endB]
+  obtain ⟨paddr, qaddr, _, _⟩ := crt_storage_addresses h.buffers.workspace h.buffers.storageFits
+  have ph := nativeHeader_of_layout s.mem (crtP g.base w) h.buffers.context.p.nowrap (Nat.le_refl _) h.p.layout
+  have qh := nativeHeader_of_layout s.mem (crtQ g.base w) h.buffers.context.q.nowrap (Nat.le_refl _) h.q.layout
+  rw [h.p.width] at ph
+  rw [h.q.width] at qh
+  have pArray := ph.array j hj
+  have qArray := qh.array 0 (by decide)
+  change s.mem.readW (off (State.addr (crtP g.base w)) (64 + 8 * j)) 32 = _ at pArray
+  rw [paddr] at pArray
+  simp only [off, Offset.add_add, slot] at pArray
+  change s.mem.readW (off (State.addr (crtQ g.base w)) 64) 32 = _ at qArray
+  rw [qaddr] at qArray
+  simp only [off, Offset.add_add] at qArray
+  refine ⟨wide, by omega_using [linear, stridePos], by change 256 ≤ stride w; omega_using [stridePos], by change 256 ≤ 2 * stride w; omega_using [stridePos],
+    ?_, by change 2 * stride w + 68 ≤ 3 * stride w; omega_using [stridePos], ready.ptr, h.main.p, h.main.q,
+    ?_, ?_, h.main.product, h.main.toCrtLayoutState.nativeCount h.buffers.context.main⟩
+  · change stride w + productOperandSlot coefficient + 4 ≤ 3 * stride w
+    cases coefficient <;> simp only [productOperandSlot, Bool.false_eq_true, ↓reduceIte] <;> omega_using [stridePos]
+  · simpa only [crtP, off, Offset.add_add, crtProductA, j] using pArray
+  · simpa only [crtQ, off, Offset.add_add, crtProductB] using qArray
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! ### `Bignum.Arm.CrtProductValues`, which the modules that import this one used -/
+
+section
+
+/-! ### `Bignum.Arm.CrtValidationPreserved`, which the modules that import this one used -/
+
+section
+
+/-! # Factor validation preserves all three RSA workspace layouts -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt arrAt)
+open VG.Proof.X25519.Arm (Rest)
+
+def crtValidationWrites (w : Nat) : List (Nat × Nat) :=
+  [(128, 20), (productOffset w, 4 * (4 * w + 2)),
+    (modulusOffset w, 4 * (4 * w + 2)), (compareOffset w, 4 * (4 * w + 2))]
+
+theorem WorkspaceEq.of_outs_offset {base child : Addr} {d n : Nat} {ranges : List (Nat × Nat)} {m m' : Mem}
+    (address : child = base + BitVec.ofNat 64 d) (fit : d + n < 2 ^ 64)
+    (sep : ∀ r ∈ ranges, d + n ≤ r.1 ∨ r.1 + r.2 ≤ d)
+    (outside : Outs base ranges m m') : WorkspaceEq child n m m' := by
+  refine ⟨fun k bytes hk => Mem.read_congr ?_⟩
+  intro i hi
+  apply outside
+  intro r hr
+  rw [address, show off (base + BitVec.ofNat 64 d) k =
+    off base (d + k) by simp only [off, Offset.add_add], ofs_off base (by omega_using [fit, hk, hi])]
+  have := sep r hr
+  omega_using [hk, hi, this]
+
+theorem CrtShared.validation_child_eq {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem) :
+    WorkspaceEq (State.addr (crtP g.base g.words)) (8 * workspaceWords g.words) s.mem t.mem ∧
+    WorkspaceEq (State.addr (crtQ g.base g.words)) (8 * workspaceWords g.words) s.mem t.mem := by
+  obtain ⟨paddr, qaddr, _, _⟩ := crt_storage_addresses h.buffers.workspace h.buffers.storageFits
+  have size := h.buffers.storageFits
+  have nowrap := h.buffers.workspace.nowrap
+  have small := h.main.toCrtLayoutState.size
+  have bounds : 3 * stride g.words ≤ g.size := by
+    simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset] at size
+    omega_using [size]
+  constructor
+  · apply WorkspaceEq.of_outs_offset paddr (by change stride g.words + stride g.words < _; omega_arith) _ outside
+    intro r hr
+    simp only [crtValidationWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;>
+      simp only [pOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega_arith
+  · apply WorkspaceEq.of_outs_offset qaddr (by change 2 * stride g.words + stride g.words < _; omega_arith) _ outside
+    intro r hr
+    simp only [crtValidationWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;>
+      simp only [qOffset, productOffset, modulusOffset, compareOffset, stride] <;> omega_arith
+
+theorem CrtShared.validation_main {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem) :
+    CrtMainState g.base (workspaceWords g.words) g.words t.mem ∧
+    numAt t.mem (State.addr g.base) g.words 0 = numAt s.mem (State.addr g.base) g.words 0 := by
+  have small := h.main.toCrtLayoutState.size
+  have lower (r : Nat × Nat) (hr : r ∈ crtValidationWrites g.words) :
+      r = (128, 20) ∨ 3 * stride g.words ≤ r.1 := by
+    simp only [crtValidationWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact Or.inl rfl
+    · right; exact Nat.le_refl _
+    · right; simp only [modulusOffset, compareOffset, productOffset]; omega_using []
+    · right; simp only [compareOffset, productOffset]; omega_using []
+  have head := control_buffers_header outside (by
+    intro r hr
+    rcases lower r hr with rfl | bound
+    · exact Nat.le_refl _
+    · change 128 ≤ r.1; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [small, bound])
+  have word (d : Nat) (hd : d = 224 ∨ d = 228 ∨ d = 232 ∨ d = 236 ∨ d = 240) :
+      t.mem.readW (off (State.addr g.base) d) 32 = s.mem.readW (off (State.addr g.base) d) 32 := by
+    apply outs_readW outside
+    · intro r hr
+      rcases lower r hr with rfl | bound
+      · simp only; omega_using [hd]
+      · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [small, hd, bound]
+    · omega_using [hd]
+  refine ⟨⟨h.main.toCrtLayoutState.of_header_eq head,
+    (word 224 (by simp)).trans h.main.p, (word 228 (by simp)).trans h.main.q,
+    (word 232 (by simp)).trans h.main.product, (word 236 (by simp)).trans h.main.compare,
+    (word 240 (by simp)).trans h.main.modulus⟩, ?_⟩
+  have end0 := Nat.le_trans (array_end_le (w := g.words) (j := 0) (by decide)) h.buffers.context.arraysFit
+  rw [numAt_native, numAt_native]
+  apply outside.val32
+  · intro r hr
+    rcases lower r hr with rfl | bound
+    · right; simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+    · left; change 3 * (8 * workspaceWords g.words) ≤ r.1 at bound; omega_using [end0, bound]
+  · have := h.buffers.context.main.nowrap; omega_using [end0, this]
+
+theorem CrtShared.after_validation {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
+    (h : CrtShared g bs s) (outside : Outs (State.addr g.base) (crtValidationWrites g.words) s.mem t.mem)
+    (frame : Frame [⟨State.addr g.base, g.size⟩] s.mem t.mem) (rest : Rest rs s t) :
+    CrtShared g bs t := by
+  obtain ⟨pEq, qEq⟩ := h.validation_child_eq outside
+  obtain ⟨main, modulus⟩ := h.validation_main outside
+  exact h.after_frame (frame.mono (by simp [crtLiveMutable])) rest main (h.p.congr pEq) (h.q.congr qEq) modulus
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! # Interpret native product operands in the shared RSA number model -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.Rsa.Mont (numAt arrAt)
+
+theorem val32_numAt_offset (m : Mem) (base child : Addr) (d w j : Nat)
+    (address : child = base + BitVec.ofNat 64 d) :
+    val32 m base (d + arrAt w j) (2 * w) = numAt m child w j := by
+  rw [← read_eq_val32, numAt, address, Offset.add_add]
+  congr 2 <;> omega_using []
+
+theorem CrtShared.product_values {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (coefficient : Bool) :
+    val32 s.mem (State.addr g.base) (crtProductA g.words coefficient) (2 * g.words) =
+      numAt s.mem (State.addr (crtP g.base g.words)) g.words (if coefficient then 5 else 0) ∧
+    val32 s.mem (State.addr g.base) (crtProductB g.words) (2 * g.words) =
+      numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 := by
+  obtain ⟨paddr, qaddr, _, _⟩ := crt_storage_addresses h.buffers.workspace h.buffers.storageFits
+  exact ⟨val32_numAt_offset _ _ _ _ _ _ paddr, val32_numAt_offset _ _ _ _ _ _ qaddr⟩
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
 
 /-! ### `Bignum.Arm.CrtPadModulus`, which this module and modules that import it used -/
 

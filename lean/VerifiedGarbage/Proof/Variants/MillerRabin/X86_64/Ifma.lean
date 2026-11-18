@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Adx
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.CT
 
 /-!

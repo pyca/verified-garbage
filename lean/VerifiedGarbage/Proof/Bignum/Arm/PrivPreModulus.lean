@@ -30,8 +30,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 public import VerifiedGarbage.Impl.Bignum.Arm.PrivPreFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
-import VerifiedGarbage.Proof.Bignum.Arm.R2Public
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse

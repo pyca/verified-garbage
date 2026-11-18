@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgBody
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 public import VerifiedGarbage.Proof.Rsa.PreKey
 import VerifiedGarbage.Proof.Framework.Contract
 

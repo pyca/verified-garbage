@@ -7,8 +7,7 @@ meta import VerifiedGarbage.Impl.Bignum.Arm.CombExp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
 meta import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpStep
-meta import VerifiedGarbage.Proof.Bignum.Arm.CombExpStep
+meta import VerifiedGarbage.Proof.Bignum.Arm.CombExpControl
 
 /-! Every comb row performs one square, one full scan, and one product. -/
 

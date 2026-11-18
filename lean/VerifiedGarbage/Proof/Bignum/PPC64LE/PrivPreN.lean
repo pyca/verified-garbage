@@ -1,13 +1,12 @@
 module
--- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+-- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
 import VerifiedGarbage.Proof.Bignum.Octets

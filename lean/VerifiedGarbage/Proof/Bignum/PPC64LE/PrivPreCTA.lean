@@ -4,12 +4,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPrePQ
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreA
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreD
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSave
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
 
 /-! ### `Bignum.PPC64LE.PrivPreE`, which this module and modules that import it used -/
 

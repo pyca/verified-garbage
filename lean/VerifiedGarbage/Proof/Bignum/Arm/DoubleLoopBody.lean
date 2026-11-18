@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
+public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout

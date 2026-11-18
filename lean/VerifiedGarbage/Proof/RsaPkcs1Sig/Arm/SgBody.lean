@@ -4,13 +4,11 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfPost
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
-import VerifiedGarbage.Proof.Rsa.Arm.PrivPrecomputed
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Sign

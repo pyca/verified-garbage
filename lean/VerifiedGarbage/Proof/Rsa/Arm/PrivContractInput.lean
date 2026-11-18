@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractGeometry
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
-import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Rsa.Contract
 

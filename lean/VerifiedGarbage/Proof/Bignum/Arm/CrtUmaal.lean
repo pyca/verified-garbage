@@ -10,13 +10,13 @@ public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
 import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.SharedWindowPhaseCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipelineOp
@@ -26,7 +26,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
 import VerifiedGarbage.Impl.Bignum.Arm.Fios
 import VerifiedGarbage.Proof.Bignum.Arm.FiosArgs
 import VerifiedGarbage.Proof.Bignum.Arm.FiosCode
-import VerifiedGarbage.Proof.Bignum.Arm.FiosRoundFinish
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp

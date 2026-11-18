@@ -4,9 +4,8 @@ public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Divstep.Word32Bits
+public import VerifiedGarbage.Proof.Divstep.Word32Bits
 import Mathlib.Data.BitVec
-public import VerifiedGarbage.Proof.Divstep.Word32Def
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

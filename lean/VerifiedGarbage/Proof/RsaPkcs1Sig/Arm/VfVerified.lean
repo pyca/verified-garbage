@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfPost
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfTaint
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.Framework.Contract

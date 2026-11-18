@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCTEnc
-import VerifiedGarbage.Proof.RsaPss.AArch64.EncTop
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RelSplit
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncCTEnc
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncTop
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
@@ -17,11 +13,736 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaPss.AArch64.Restore
+import VerifiedGarbage.Proof.RsaPss.EncodeEq
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncCorrect
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Restore
+meta import VerifiedGarbage.Proof.RsaPss.EncodeEq
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncPre
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncPre
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+meta import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `RsaPss.AArch64.EncCTEnc`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaPss.AArch64.EncCTBase`, which this module and modules that import it used -/
+
+section
+
+/-!
+# EMSA-PSS's encoding on AArch64: constant time, the public data
+
+The pointers, the lengths and the tables' addresses are public (`PubE`),
+and so are the addresses of the tables' functions; the digest and the salt
+are secret. Two runs with the same public data as an anchor `a` (`E`), whose
+tables name the same functions (`Tabs`), are related at each point of the
+code by what correctness says there.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.AArch64.Enc
+
+open VG VG.AArch64 VG.Impl.RsaPss.AArch64
+open VG.Proof.RsaPss.AArch64.Sgn (fb)
+
+/-- The working space. -/
+abbrev scr (s : State) : Addr := s.gpr .x6
+
+/-- The public data of an entry state `s` is the anchor `a`'s: the
+pointers and lengths, and the tables' addresses. -/
+structure PubE (a s : State) : Prop where
+  sp : s.sp = a.sp
+  g : ∀ r ∈ argRegs, s.gpr r = a.gpr r
+  sa : ∀ j < 2, stackArg s j = stackArg a j
+
+theorem PubE.refl (s : State) : PubE s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl⟩
+
+/-- An entry state with the anchor's public data, whose tables name `T`'s
+functions at the anchor's addresses. -/
+def E (T : Tabs) (a s : State) : Prop :=
+  PreE T.H.D T.tsH T.tsG s ∧ PubE a s ∧ T.At s ∧ ∀ n ∈ T.names, s.syms n = a.syms n
+
+namespace E
+variable {T : Tabs} {a s : State} (h : E T a s)
+include h
+
+theorem gpr {r : Reg} (hr : r ∈ argRegs) : s.gpr r = a.gpr r := h.2.1.g r hr
+
+theorem fb : fb s = fb a := by show s.sp - _ = a.sp - _; rw [h.2.1.sp]
+
+theorem scr : scr s = scr a := h.gpr (r := .x6) (by decide)
+
+theorem arg {j : Nat} (hj : j < 2) : stackArg s j = stackArg a j := h.2.1.sa j hj
+
+theorem sym {n : String} (hn : n ∈ T.names) : s.syms n = a.syms n := h.2.2.2 n hn
+
+end E
+
+end VG.Proof.RsaPss.AArch64.Enc
+
+end
+
+end
+
+/-!
+# EMSA-PSS's encoding on AArch64: the encoding is constant time
+
+`encEnc_ct`: two runs of `signEnc` in `encode` (with `k = emLen` and
+`lo = 0`), from states with the same public data, leak the same trace. Two
+runs of the encoding from states with the same public
+data leak the same trace. Between its pieces, each run is described by the
+registers and slots of the frame that the anchor's public data fix (`SR`);
+the pieces are checked by the taint analysis from those registers, the loads
+of the salt's address and length from the frame are related by correctness
+(`RelCT.seq_block_append`), the hash by `ctHash_ct` and MGF1 by `mgfXor_ct`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.AArch64.Enc
+
+open VG VG.AArch64 VG.Impl.RsaPss.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_addImm wp_add wp_sub wp_subImm wp_strb eval_zero)
+open VG.Proof.RsaPkcs1Sig.AArch64 (Two Pins two_taint two_post two_map two_ite wp_ldrSp wp_mov)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+open VG.Proof.RsaPss.AArch64.Sgn (fb)
+open VG.Proof.RsaPss.AArch64 (off two_taintE zH Lay slot_keep slotR mgfWr PssChecks HA HE MA MS
+  dbRegs_ok clearY_ok copyDigest_ok copySaltY_ok signLen_ok clearEm_ok putSalt_ok putH_ok clearTop_ok
+  ctHash_ct mgfXor_ct mgfXor_ok ctHashWith_out two_step pins_nil pad80_ok nb_keep slot_not_below wS_frame off_sub off_add ld_slot
+  DbAt)
+
+/-! ## The public values -/
+
+/-- `k`, `lo`, `dbLen`, `sLen` and the number of blocks of `M'`, from the
+anchor. -/
+abbrev kA (a : State) : Nat := (a.gpr .x1).toNat
+abbrev loA (_a : State) : Nat := 0
+abbrev dbA (D : Nat) (a : State) : Nat := kA a - loA a - D - 1
+abbrev slA (a : State) : Nat := (a.gpr .x4).toNat
+abbrev nbA (H : Hash) (a : State) : Nat := (8 + H.D + slA a + H.P.L) / H.P.B + 1
+
+/-- The encoding fits: the checks passed. -/
+structure SOk (D : Nat) (a : State) : Prop where
+  k1 : 1 ≤ kA a
+  k2 : kA a ≤ 1024
+  fit : D + slA a + 2 ≤ kA a - loA a
+
+/-- A run of the encoding, from an entry state with the anchor's public
+data: the frame and the working space, and registers (`rs`) and slots (`sl`)
+the anchor fixes. -/
+structure SR (T : Tabs) (D : Nat) (rs : List (Reg × (State → BitVec 64))) (sl : List (Nat × (State → BitVec 64)))
+    (a t : State) : Prop where
+  ex : ∃ s t₀, E T a s ∧ AtT s t₀ ∧ Frame (mgfWr (fb a) (scr a)) t₀.mem t.mem ∧ t.syms = t₀.syms ∧
+    t.rd = s.rd ∧ t.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  L : Lay t (fb a) (scr a)
+  r : ∀ q ∈ rs, t.gpr q.1 = q.2 a
+  sl : ∀ q ∈ sl, t.mem.readW (off (fb a) q.1) 64 = q.2 a
+  ok : SOk D a
+  hD : D = T.H.D
+
+theorem SR.pins {T : Tabs} {D : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))}
+    {qs : List Reg} (h : ∀ r ∈ qs, r = .x20 ∨ ∃ f, (r, f) ∈ rs) : Pins (SR T D rs sl) qs :=
+  fun a s₁ s₂ h₁ h₂ => by
+    refine ⟨by rw [h₁.L.sp, h₂.L.sp], fun r hr => ?_⟩
+    rcases h r hr with rfl | ⟨f, hf⟩
+    · rw [h₁.L.x20, h₂.L.x20]
+    · rw [h₁.r _ hf, h₂.r _ hf]
+
+theorem SR.keep {T : Tabs} {D : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))}
+    {a u u' : State} (h : SR T D rs sl a u) {ks : List Reg} (k : Keep ks u u') (hk : ∀ q ∈ rs, q.1 ∉ ks)
+    (h20 : Reg.x20 ∉ ks) {ws : List Region} (hf : Frame ws u.mem u'.mem)
+    (hs : ∀ q ∈ sl, ∀ r ∈ ws, Region.Disjoint (slotR (fb a) q.1) r) (hsy : u'.syms = u.syms)
+    (hws : ∀ r ∈ ws, r ∈ mgfWr (fb a) (scr a) := by simp [mgfWr]) : SR T D rs sl a u' where
+  ex := let ⟨s, t₀, e, h0, fm, sy, hrd, hwr⟩ := h.ex
+    ⟨s, t₀, e, h0, fm.trans (hf.mono hws), hsy.trans sy, k.rd.trans hrd, k.wr.trans hwr⟩
+  L := h.L.congr k.sp k.wr (k.gpr .x20 h20)
+  r := fun q hq => by rw [k.gpr q.1 (hk q hq)]; exact h.r q hq
+  sl := fun q hq => by rw [slot_keep hf (hs q hq)]; exact h.sl q hq
+  ok := h.ok
+  hD := h.hD
+
+/-- The registers of the encoding: `st`, the digest, `k`, `DB` and `dbLen`. -/
+def sregs (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  [(.x19, fun a => off (scr a) oSt), (.x21, fun a => off (scr a) oDig), (.x23, fun a => a.gpr .x1),
+    (.x24, fun a => off (scr a) (oEm + loA a)), (.x25, fun a => BitVec.ofNat 64 (dbA D a))]
+
+theorem sregs_fst {D : Nat} {q : Reg × (State → BitVec 64)} (hq : q ∈ sregs D) :
+    q.1 ∈ [Reg.x19, .x21, .x23, .x24, .x25] := by
+  simp only [sregs, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp
+
+/-- Registers apart from the encoding's, for `decide`. -/
+theorem nk_of {D : Nat} {ks : List Reg} (h : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∉ ks) :
+    ∀ q ∈ sregs D, q.1 ∉ ks :=
+  fun _ hq => h _ (sregs_fst hq)
+
+/-- The slots it reads: the digest's and the salt's addresses, the salt's
+length and `lo`. -/
+def sslots : List (Nat × (State → BitVec 64)) :=
+  [(sDig, fun a => a.gpr .x2), (sSalt, fun a => a.gpr .x3), (sSaltLen, fun a => a.gpr .x4),
+    (sLo, fun a => BitVec.ofNat 64 (loA a))]
+
+theorem sslots_S {F S : Addr} {t : State} (L : Lay t F S) :
+    ∀ q ∈ sslots, ∀ r ∈ [(⟨S, oRsa⟩ : Region)], Region.Disjoint (slotR F q.1) r := by
+  intro q hq r hr
+  rw [List.mem_singleton.mp hr]
+  simp only [sslots, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> exact L.dFS.sub_left (Offset.sub_base F (by decide))
+
+
+/-- `SR` at a later state of the same run, from what it says there. -/
+theorem SR.congr {T : Tabs} {D : Nat} {rs rs' : List (Reg × (State → BitVec 64))} {sl sl' : List (Nat × (State → BitVec 64))}
+    {a u u' : State} (h : SR T D rs sl a u) (sp : u'.sp = u.sp) (rd : u'.rd = u.rd) (wr : u'.wr = u.wr)
+    (h20 : u'.gpr .x20 = u.gpr .x20) (hr : ∀ q ∈ rs', u'.gpr q.1 = q.2 a)
+    (hs : ∀ q ∈ sl', u'.mem.readW (off (fb a) q.1) 64 = q.2 a) (hsy : u'.syms = u.syms)
+    (hfm : Frame (mgfWr (fb a) (scr a)) u.mem u'.mem) : SR T D rs' sl' a u' where
+  ex := let ⟨s, t₀, e, h0, fm, sy, hrd, hwr⟩ := h.ex
+    ⟨s, t₀, e, h0, fm.trans hfm, hsy.trans sy, rd.trans hrd, wr.trans hwr⟩
+  L := h.L.congr sp wr h20
+  r := hr
+  sl := hs
+  ok := h.ok
+  hD := h.hD
+
+namespace SR
+variable {T : Tabs} {D : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))}
+  {a u : State} (h : SR T D rs sl a u)
+include h
+
+/-- The digest is readable and apart from our working space. -/
+theorem dig : (∀ j < D, InRegions (u.rd ++ u.wr) (a.gpr .x2 + BitVec.ofNat 64 j) 1) ∧
+    Region.Disjoint ⟨a.gpr .x2, D⟩ ⟨scr a, oRsa⟩ := by
+  obtain ⟨s, _, e, _, _, _, hrd, hwr⟩ := h.ex
+  have hp := e.1
+  have hD := h.hD
+  subst hD
+  rw [← e.gpr (r := .x2) (by decide), ← e.scr]
+  refine ⟨fun j hj => ?_, hp.ds.sub_right (rsa_sub hp)⟩
+  rw [hrd, hp.hrd]
+  exact ⟨dgR T.H.D s, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.wd; omega_arith)⟩
+
+/-- The salt is readable and apart from what the encoding writes. -/
+theorem salt : (∀ j < slA a, InRegions (u.rd ++ u.wr) (a.gpr .x3 + BitVec.ofNat 64 j) 1) ∧
+    Region.Disjoint ⟨a.gpr .x3, slA a⟩ ⟨scr a, oRsa⟩ := by
+  obtain ⟨s, _, e, _, _, _, hrd, hwr⟩ := h.ex
+  have hp := e.1
+  rw [← e.gpr (r := .x3) (by decide), slA, ← e.gpr (r := .x4) (by decide), ← e.scr]
+  refine ⟨fun j hj => ?_, hp.sas.sub_right (rsa_sub hp)⟩
+  rw [hrd, hp.hrd]
+  exact ⟨saR s, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.wsa; omega_arith)⟩
+
+theorem sl_le : slA a ≤ 1024 := by have := h.ok.fit; have := h.ok.k2; omega_arith
+
+theorem x23 (h23 : (Reg.x23, fun a : State => a.gpr .x1) ∈ rs) : u.gpr .x23 = BitVec.ofNat 64 (kA a) := by
+  rw [h.r _ h23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+end SR
+
+theorem SR.sp {T : Tabs} {D : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))} :
+    ∀ a s₁ s₂, SR T D rs sl a s₁ → SR T D rs sl a s₂ → s₁.sp = s₂.sp :=
+  fun _ _ _ h₁ h₂ => by rw [h₁.L.sp, h₂.L.sp]
+
+/-! ## The pieces -/
+
+/-- At the start of the encoding: `emLen - hLen - 2` in `x9`. -/
+def sregs0 (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  [(.x19, fun a => off (scr a) oSt), (.x21, fun a => off (scr a) oDig), (.x23, fun a => a.gpr .x1),
+    (.x9, fun a => BitVec.ofNat 64 (kA a - loA a - (D + 2)))]
+
+theorem dbRegs_sct {T : Tabs} {D : Nat} :
+    RelCT isa (Two (SR T D (sregs0 D) sslots)) (.block dbRegs) (Two (SR T D (sregs D) sslots)) := by
+  refine two_post (two_taint [] (pins_nil SR.sp) (by taint_decide)) fun a u h => ?_
+  have hf := h.ok.fit
+  refine WP.mono_syms (dbRegs_ok h.L (x := kA a - loA a - (D + 2)) (lo := loA a)
+    (h.r (.x9, fun a => BitVec.ofNat 64 (kA a - loA a - (D + 2))) (by simp [sregs0]))
+    (h.sl (sLo, fun a => BitVec.ofNat 64 (loA a)) (by simp [sslots]))) fun u' ⟨O, x25, x24⟩ sy =>
+    h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) (fun q hq => by rw [O.mem]; exact h.sl q hq) sy (by rw [O.mem]; exact Frame.refl _ _)
+  simp only [sregs, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl
+  · rw [O.get .x19]; exact h.r (.x19, fun a => off (scr a) oSt) (by simp [sregs0])
+  · rw [O.get .x21]; exact h.r (.x21, fun a => off (scr a) oDig) (by simp [sregs0])
+  · rw [O.get .x23]; exact h.r (.x23, fun a => a.gpr .x1) (by simp [sregs0])
+  · exact x24
+  · rw [x25]; show _ = BitVec.ofNat 64 (kA a - loA a - D - 1)
+    rw [show kA a - loA a - (D + 2) + 1 = kA a - loA a - D - 1 by omega_arith]
+
+theorem clearY_sct {T : Tabs} {D : Nat} :
+    RelCT isa (Two (SR T D (sregs D) sslots)) clearY (Two (SR T D (sregs D) sslots)) :=
+  two_post (two_taint [.x20] (SR.pins fun r hr => by simp at hr; exact .inl hr) (by taint_decide))
+    fun _ _ h => WP.mono_syms (clearY_ok h.L (fun _ _ => rfl)) fun _ ⟨k, f, _⟩ sy =>
+      h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+
+section
+variable {T : Tabs} {H : Hash} (hH : HashOK H)
+
+include hH in
+theorem copyDigest_sct :
+    RelCT isa (Two (SR T H.D (sregs H.D) sslots)) (copyDigest H) (Two (SR T H.D (sregs H.D) sslots)) := by
+  refine two_post ?_ fun a u h => WP.mono_syms (copyDigest_ok hH h.L (fun _ _ => rfl) (dig := a.gpr .x2)
+    (h.sl (sDig, fun a => a.gpr .x2) (by simp [sslots])) h.dig.1 h.dig.2) fun _ ⟨k, f, _⟩ sy =>
+      h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+  unfold copyDigest
+  refine RelCT.seq_block_append (M := isa) (l₁ := [ld .x11 sDig]) ?_
+  refine two_step (Ψ := SR T H.D (sregs H.D ++ [(.x11, fun a => a.gpr .x2)]) sslots)
+    (two_taint [] (pins_nil SR.sp) (by taint_decide)) (fun a u h => ?_)
+    (two_taintE [.x11, .x20] (SR.pins fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp)
+      (c' := Code.eraseOff (.seq (.block [.addImm .x .x14 .x20 (oY + 8), movi .x12 zH.D])
+        Impl.RsaPkcs1Sig.AArch64.copyLoop)) rfl (by taint_decide))
+  obtain nk : ∀ q ∈ sregs H.D, q.1 ∉ [Reg.x11] := nk_of (by decide)
+  unfold ld
+  refine WP.of_syms ?_
+  refine wp_ldrSp (by decide) (by rw [h.L.sp]; exact h.L.fld (by decide)) fun u' o e =>
+    wp_nil fun sy => (h.congr o.sp o.rd o.wr (o.get .x20) (fun q hq => ?_) (fun q hq => by rw [o.mem]; exact h.sl q hq) sy (by rw [o.mem]; exact Frame.refl _ _))
+  rcases List.mem_append.mp hq with hq | hq
+  · rw [o.get q.1 (nk q hq)]; exact h.r q hq
+  · rw [List.mem_singleton.mp hq, e, h.L.sp]; exact h.sl (sDig, fun a => a.gpr .x2) (by simp [sslots])
+
+/-- After the salt's address, place and length are loaded. -/
+def rsY (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  sregs D ++ [(.x11, fun a => a.gpr .x3), (.x14, fun a => off (scr a) (oY + 8 + D)), (.x12, fun a => a.gpr .x4)]
+
+include hH in
+theorem copySaltY_sct :
+    RelCT isa (Two (SR T H.D (sregs H.D) sslots)) (copySaltY H) (Two (SR T H.D (sregs H.D) sslots)) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  refine two_post ?_ fun a u h => WP.mono_syms (copySaltY_ok hH h.L (fun _ _ => rfl) (q := a.gpr .x3) (sl := slA a)
+    (h.sl (sSalt, fun a => a.gpr .x3) (by simp [sslots]))
+    (by rw [h.sl (sSaltLen, fun a => a.gpr .x4) (by simp [sslots]), BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    h.sl_le h.salt.1 h.salt.2) fun _ ⟨k, f, _⟩ sy => h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+  unfold copySaltY
+  refine two_step (Ψ := SR T H.D (rsY H.D) sslots)
+    (two_taintE [] (pins_nil SR.sp) (c' := Code.eraseOff (.block [ld .x11 sSalt, .addImm .x .x14 .x20 (oY + 8 + zH.D),
+      ld .x12 sSaltLen])) rfl (by taint_decide)) (fun a u h => ?_) ?_
+  · have nk : ∀ q ∈ sregs H.D, q.1 ∉ [Reg.x11, .x14, .x12] := nk_of (by decide)
+    unfold ld
+    refine WP.of_syms ?_
+    refine wp_ldrSp (by decide) (ld_slot h.L (by decide)) fun u₁ o₁ e₁ => wp_addImm (by unfold oY; omega_arith)
+      fun u₂ o₂ e₂ => wp_ldrSp (by decide) (by rw [o₂.sp, o₂.rd, o₂.wr, o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide))
+        fun u₃ o₃ e₃ => wp_nil fun sy => ?_
+    obtain O : Only [.x11, .x14, .x12] u u₃ := (o₁.trans (o₂.trans o₃)).mono
+    refine h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) (fun q hq => by rw [O.mem]; exact h.sl q hq) sy (by rw [O.mem]; exact Frame.refl _ _)
+    rcases List.mem_append.mp hq with hq | hq
+    · rw [O.get q.1 (nk q hq)]; exact h.r q hq
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl
+      · rw [o₃.get .x11, o₂.get .x11, e₁, h.L.sp]; exact h.sl (sSalt, fun a => a.gpr .x3) (by simp [sslots])
+      · rw [o₃.get .x14, e₂, o₁.get .x20, h.L.x20]
+      · rw [e₃, o₂.mem, o₁.mem, o₂.sp, o₁.sp, h.L.sp]
+        exact h.sl (sSaltLen, fun a => a.gpr .x4) (by simp [sslots])
+  · have p12 : ∀ a s, SR T H.D (rsY H.D) sslots a s → s.gpr .x12 = a.gpr .x4 := fun a s h =>
+      h.r (.x12, fun a => a.gpr .x4) (by simp [rsY])
+    refine two_ite (fun a s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, p12 a s₁ h₁, p12 a s₂ h₂])
+      (two_taint [] (fun a s₁ s₂ h₁ h₂ => pins_nil SR.sp a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+      (two_taint [.x11, .x12, .x14] (fun a s₁ s₂ h₁ h₂ => SR.pins (rs := rsY H.D) (fun r hr => by
+        simp at hr; rcases hr with rfl | rfl | rfl <;> simp [rsY]) a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+
+/-- After `signLen`: `ℓ` and the number of blocks of `M'`. -/
+def rsL (D : Nat) : List (Reg × (State → BitVec 64)) := sregs D ++ [(.x22, fun a => BitVec.ofNat 64 (8 + D + slA a))]
+def slL (H : Hash) : List (Nat × (State → BitVec 64)) := sslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]
+
+include hH in
+theorem signLen_sct :
+    RelCT isa (Two (SR T H.D (sregs H.D) sslots)) (.block (signLen H)) (Two (SR T H.D (rsL H.D) (slL H))) := by
+  refine two_post (two_taintE [] (pins_nil SR.sp) (c' := Code.eraseOff (.block (signLen zH))) rfl (by taint_decide))
+    fun a u h => WP.mono_syms (signLen_ok hH h.L (sl := slA a)
+      (by rw [h.sl (sSaltLen, fun a => a.gpr .x4) (by simp [sslots]), BitVec.ofNat_toNat, BitVec.setWidth_eq])
+      h.sl_le) fun u' ⟨k, x22, m⟩ sy => h.congr k.sp k.rd k.wr (k.get .x20) (fun q hq => ?_) (fun q hq => ?_) sy
+        (by rw [m]; exact (frame_slot _ _ sNb _).mono (by simp [mgfWr]))
+  · have nk : ∀ q ∈ sregs H.D, q.1 ∉ [Reg.x9, .x22, .x16] := nk_of (by decide)
+    rcases List.mem_append.mp hq with hq | hq
+    · rw [k.get q.1 (nk q hq)]; exact h.r q hq
+    · rw [List.mem_singleton.mp hq]; exact x22
+  · rcases List.mem_append.mp hq with hq | hq
+    · rw [m, slot_keep (frame_slot _ _ sNb _) fun r hr => ?_]
+      · exact h.sl q hq
+      rw [List.mem_singleton.mp hr]
+      simp only [sslots, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by decide) (by decide) (by decide)
+    · rw [List.mem_singleton.mp hq, m, Mem.readW_writeW_self64]
+
+theorem sslots_fb : ∀ q ∈ sslots, q.1 + 8 ≤ frameBytes := by
+  intro q hq
+  simp only [sslots, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> decide
+
+theorem sregs_cs : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x28] := by
+  decide
+
+theorem clearEm_sct {T : Tabs} {D : Nat} :
+    RelCT isa (Two (SR T D (sregs D) sslots)) clearEm (Two (SR T D (sregs D) sslots)) :=
+  two_post (two_taint [.x20, .x23] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl <;> simp [sregs]) (by taint_decide))
+    fun a _ h => WP.mono_syms (clearEm_ok h.L (fun _ _ => rfl) (k := kA a) (h.x23 (by simp [sregs]))
+      (by have := h.ok.k1; omega_arith) h.ok.k2) fun _ ⟨k, f, _⟩ sy => h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+
+/-- In `putSalt`, after `x14 := DB + dbLen` and the salt's length, and after
+the `0x01` and the salt's address. -/
+def rsP1 (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  sregs D ++ [(.x14, fun a => off (scr a) (oEm + loA a + dbA D a)), (.x12, fun a => a.gpr .x4)]
+def rsP2 (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  sregs D ++ [(.x11, fun a => a.gpr .x3), (.x14, fun a => off (scr a) (oEm + loA a + dbA D a - slA a)),
+    (.x12, fun a => a.gpr .x4)]
+
+theorem sl_ofNat (a : State) : a.gpr .x4 = BitVec.ofNat 64 (slA a) := by
+  rw [slA, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem putSalt_sct {T : Tabs} {D : Nat} :
+    RelCT isa (Two (SR T D (sregs D) sslots)) putSalt (Two (SR T D (sregs D) sslots)) := by
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have c6 : oRsa = 8192 := rfl
+  obtain x24 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
+      u.gpr .x24 = off (scr a) (oEm + loA a) := fun h =>
+    h.r (.x24, fun a => off (scr a) (oEm + loA a)) (List.mem_append_left _ (by simp [sregs]))
+  obtain x25 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR T D (sregs D ++ rs) sslots a u →
+      u.gpr .x25 = BitVec.ofNat 64 (dbA D a) := fun h =>
+    h.r (.x25, fun a => BitVec.ofNat 64 (dbA D a)) (List.mem_append_left _ (by simp [sregs]))
+  refine two_post ?_ fun a u h => ?_
+  rotate_left
+  · have hf := h.ok.fit; have hk2 := h.ok.k2
+    have hdb : dbA D a = kA a - loA a - D - 1 := rfl
+    exact WP.mono_syms (putSalt_ok h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA D a) (q := a.gpr .x3)
+      (sl := slA a) (x24 (rs := []) (by rw [List.append_nil]; exact h)) (x25 (rs := []) (by rw [List.append_nil]; exact h))
+      (h.sl (sSalt, fun a => a.gpr .x3) (by simp [sslots]))
+      ((h.sl (sSaltLen, fun a => a.gpr .x4) (by simp [sslots])).trans (sl_ofNat a))
+      (by omega_arith) (by omega_arith) h.salt.1 h.salt.2) fun _ ⟨k, f, _⟩ sy =>
+        h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+  unfold putSalt
+  refine RelCT.seq_block_append (M := isa) (l₁ := [.add .x .x14 .x24 .x25, ld .x12 sSaltLen]) ?_
+  refine two_step (Ψ := SR T D (rsP1 D) sslots) (two_taint [] (pins_nil SR.sp) (by taint_decide))
+    (fun a u h => ?_) ?_
+  · have nk : ∀ q ∈ sregs D, q.1 ∉ [Reg.x14, .x12] := nk_of (by decide)
+    unfold ld
+    refine WP.of_syms ?_
+    refine wp_add fun u₁ o₁ e₁ => wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide))
+      fun u₂ o₂ e₂ => wp_nil fun sy => ?_
+    obtain O : Only [.x14, .x12] u u₂ := (o₁.trans o₂).mono
+    refine h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) (fun q hq => by rw [O.mem]; exact h.sl q hq) sy (by rw [O.mem]; exact Frame.refl _ _)
+    rcases List.mem_append.mp hq with hq | hq
+    · rw [O.get q.1 (nk q hq)]; exact h.r q hq
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl
+      · rw [o₂.get .x14, e₁, x24 (rs := []) (by rw [List.append_nil]; exact h),
+          x25 (rs := []) (by rw [List.append_nil]; exact h), off_add]
+      · rw [e₂, o₁.mem, o₁.sp, h.L.sp]; exact h.sl (sSaltLen, fun a => a.gpr .x4) (by simp [sslots])
+  refine two_step (Ψ := SR T D (rsP2 D) sslots) (two_taint [.x12, .x14] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl <;> simp [rsP1]) (by taint_decide)) (fun a u h => ?_) ?_
+  · have nk : ∀ q ∈ sregs D, q.1 ∉ [Reg.x14, .x9, .x11] := nk_of (by decide)
+    obtain hf := h.ok.fit; have hk2 := h.ok.k2
+    have hdb : dbA D a = kA a - loA a - D - 1 := rfl
+    obtain x14 : u.gpr .x14 = off (scr a) (oEm + loA a + dbA D a) :=
+      h.r (.x14, fun a => off (scr a) (oEm + loA a + dbA D a)) (by simp [rsP1])
+    obtain x12 : u.gpr .x12 = a.gpr .x4 := h.r (.x12, fun a => a.gpr .x4) (by simp [rsP1])
+    unfold ld
+    refine WP.of_syms ?_
+    refine wp_sub fun u₃ o₃ e₃ => wp_subImm (by decide) fun u₄ o₄ e₄ => wp_movz fun u₅ o₅ e₅ => ?_
+    obtain h14 : u₅.gpr .x14 = off (scr a) (oEm + loA a + dbA D a - slA a - 1) := by
+      rw [o₅.get .x14, e₄, e₃, x14, x12, sl_ofNat, off_sub _ (by omega_arith), off_sub _ (by omega_arith)]
+    obtain O₅ : Only [.x14, .x9] u u₅ := (o₃.trans (o₄.trans o₅)).mono
+    refine wp_strb (by decide) (by rw [h14, BitVec.add_zero]) (by rw [O₅.wr]; exact h.L.st (by omega_arith))
+      fun u₆ m₆ => wp_addImm (by decide) fun u₇ o₇ e₇ => wp_ldrSp (by decide)
+        (by rw [o₇.sp, o₇.rd, o₇.wr, m₆.sp, m₆.rd, m₆.wr, O₅.sp, O₅.rd, O₅.wr]; exact ld_slot h.L (by decide))
+        fun u₈ o₈ e₈ => wp_nil fun sy => ?_
+    obtain K : Keep [.x14, .x9, .x11] u u₈ := (O₅.keep.trans (m₆.keep.trans (o₇.keep.trans o₈.keep))).mono
+    obtain hm : u₈.mem = u.mem.writeW (off (scr a) (oEm + loA a + dbA D a - slA a - 1)) (1 : Byte) := by
+      rw [o₈.mem, o₇.mem, m₆.mem, O₅.mem, e₅]; rfl
+    obtain hfr := wS_frame u.mem (scr a) (x := oEm + loA a + dbA D a - slA a - 1) (by omega_arith) (1 : Byte)
+    refine h.congr K.sp K.rd K.wr (K.get .x20) (fun q hq => ?_) (fun q hq => ?_) sy
+      (by rw [hm]; exact hfr.mono (by simp [mgfWr]))
+    · rcases List.mem_append.mp hq with hq | hq
+      · rw [K.get q.1 (nk q hq)]; exact h.r q (List.mem_append_left _ hq)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl
+        · rw [e₈, o₇.mem, m₆.mem, O₅.mem, o₇.sp, m₆.sp, O₅.sp, h.L.sp, ← O₅.mem, ← m₆.mem, ← o₇.mem, ← o₈.mem, hm,
+            slot_keep hfr (h.L.slotSd (by decide))]
+          exact h.sl (sSalt, fun a => a.gpr .x3) (by simp [sslots])
+        · rw [o₈.get .x14, e₇, m₆.gpr, h14, off_add, show oEm + loA a + dbA D a - slA a - 1 + 1 =
+            oEm + loA a + dbA D a - slA a by omega_arith]
+        · rw [K.get .x12]; exact x12
+    · rw [hm, slot_keep hfr (sslots_S h.L q hq)]; exact h.sl q hq
+  obtain p12 : ∀ a s, SR T D (rsP2 D) sslots a s → s.gpr .x12 = a.gpr .x4 := fun a s h =>
+    h.r (.x12, fun a => a.gpr .x4) (by simp [rsP2])
+  exact two_ite (fun a s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, p12 a s₁ h₁, p12 a s₂ h₂])
+    (two_taint [] (fun a s₁ s₂ h₁ h₂ => pins_nil SR.sp a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+    (two_taint [.x11, .x12, .x14] (fun a s₁ s₂ h₁ h₂ => SR.pins (rs := rsP2 D) (fun r hr => by
+      simp at hr; rcases hr with rfl | rfl | rfl <;> simp [rsP2]) a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+
+include hH in
+theorem putH_sct :
+    RelCT isa (Two (SR T H.D (sregs H.D) sslots)) (putH H) (Two (SR T H.D (sregs H.D) sslots)) := by
+  have c1 : oEm = 2560 := rfl
+  refine two_post (two_taintE [.x20, .x21, .x23, .x24, .x25] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [sregs])
+    (c' := Code.eraseOff (putH zH)) rfl (by taint_decide)) fun a u h => ?_
+  obtain hf := h.ok.fit; have hk2 := h.ok.k2
+  have hdb : dbA H.D a = kA a - loA a - H.D - 1 := rfl
+  exact WP.mono_syms (putH_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (k := kA a)
+    (h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]))
+    (h.r (.x25, fun a => BitVec.ofNat 64 (dbA H.D a)) (by simp [sregs]))
+    (h.r (.x21, fun a => off (scr a) oDig) (by simp [sregs])) (h.x23 (by simp [sregs])) (by omega_arith) (by omega_arith) hk2)
+    fun _ ⟨k, f, _⟩ sy => h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L) sy
+
+/-- After `mgfXor`: `DB`'s place. -/
+def rsT : List (Reg × (State → BitVec 64)) := [(.x24, fun a => off (scr a) (oEm + loA a))]
+
+theorem clearTop_sct {T : Tabs} {D : Nat} : RelCT isa (Two (SR T D rsT [])) (.block clearTop) fun _ _ => True :=
+  two_taint [.x24] (SR.pins fun r hr => by simp at hr; subst hr; simp [rsT]) (by taint_decide)
+
+end
+
+namespace SR
+variable {T : Tabs} {D : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))}
+  {a u : State} (h : SR T D rs sl a u)
+include h
+
+/-- The addresses of the tables' functions are the anchor's. -/
+theorem names : ∀ n ∈ T.names, u.syms n = a.syms n := by
+  obtain ⟨s, t₀, e, h0, _, sy, _, _⟩ := h.ex
+  exact fun n hn => by rw [sy, h0.sy]; exact e.sym hn
+
+/-- The slots of the table of `MdHash`. -/
+theorem ht : HT T.H T.dn T.f (fb a) u.mem u.syms := by
+  obtain ⟨s, t₀, e, h0, fm, sy, _, _⟩ := h.ex
+  obtain L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
+  rw [e.fb, show s.gpr .x6 = scr a from e.scr] at L0
+  obtain h1 := ht_of e.2.2.1 h0
+  rw [e.fb] at h1
+  rw [sy]
+  exact h1.stepW L0 fm
+
+/-- Where MGF1 works, and the table of `MdHash`. -/
+theorem env : Env T.G T.g u (fb a) (scr a) (stackArg a 1) := by
+  obtain ⟨s, t₀, e, h0, fm, sy, hrd, hwr⟩ := h.ex
+  obtain L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr
+  obtain E0 := env_of e.1 e.2.2.1 h0
+  rw [e.fb, show s.gpr .x6 = scr a from e.scr] at L0 E0
+  rw [e.arg (j := 1) (by decide)] at E0
+  exact E0.step L0 fm (hrd.trans h0.e.rd.symm) (hwr.trans h0.e.wr.symm) sy
+
+end SR
+
+theorem ctHash_sct {T : Tabs} (hH : HashOK T.H) (hc : PssChecks T.H.P T.H.D) (hdo : DigOK T.H.P) :
+    RelCT isa (Two (SR T T.H.D (rsL T.H.D) (slL T.H))) (ctHash T.f T.H) (Two (SR T T.H.D (sregs T.H.D) sslots)) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have hL := hH.L
+  have hB0 := hH.B_pos
+  have hBl := hH.B_le
+  obtain hlg : 2 ^ lgB T.H = T.H.P.B ∧ lgB T.H < 64 := by
+    unfold lgB
+    rcases hH.sizes.B with h | h <;> rw [h]
+    · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
+    · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
+  obtain hb : ∀ a : State, slA a ≤ 1024 → 8 + T.H.D + slA a + 1 + T.H.P.L ≤ nbA T.H a * T.H.P.B ∧ nbA T.H a * T.H.P.B ≤ 2048 :=
+    fun a hs => by
+      obtain hnb1 := Nat.lt_div_mul_add (a := 8 + T.H.D + slA a + T.H.P.L) (b := T.H.P.B) hB0
+      obtain hnb2 := Nat.div_mul_le_self (8 + T.H.D + slA a + T.H.P.L) T.H.P.B
+      obtain hnbB : ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B =
+          (8 + T.H.D + slA a + T.H.P.L) / T.H.P.B * T.H.P.B + T.H.P.B := Nat.succ_mul _ _
+      show _ ≤ ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ∧ ((8 + T.H.D + slA a + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ≤ 2048
+      rw [hnbB]; omega_arith
+  obtain x19 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x19 = off (scr a) oSt := fun h =>
+    h.r (.x19, fun a => off (scr a) oSt) (by simp [rsL, sregs])
+  obtain x21 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x21 = off (scr a) oDig := fun h =>
+    h.r (.x21, fun a => off (scr a) oDig) (by simp [rsL, sregs])
+  obtain x22 : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u → u.gpr .x22 = BitVec.ofNat 64 (8 + T.H.D + slA a) :=
+    fun h => h.r (.x22, fun a => BitVec.ofNat 64 (8 + T.H.D + slA a)) (by simp [rsL])
+  obtain nb : ∀ {a u : State}, SR T T.H.D (rsL T.H.D) (slL T.H) a u →
+      u.mem.readW (off (fb a) sNb) 64 = BitVec.ofNat 64 (nbA T.H a) := fun h =>
+    h.sl (sNb, fun a => BitVec.ofNat 64 (nbA T.H a)) (by simp [slL])
+  refine two_post (two_map (fun a => (⟨fb a, scr a, nbA T.H a, none, a.syms T.H.initN, a.syms T.H.compN, a.syms T.dn⟩ : HA)) (fun a u h => {
+      L := h.L
+      x19 := x19 h
+      x21 := x21 h
+      nb := nb h
+      len := ⟨8 + T.H.D + slA a, x22 h, (hb a h.sl_le).1⟩
+      hnb := (hb a h.sl_le).2
+      fx := fun _ e => nomatch e
+      ht := h.ht
+      ai := h.names _ (by simp [Tabs.names])
+      ac := h.names _ (by simp [Tabs.names])
+      ad := h.names _ (by simp [Tabs.names]) }) (ctHash_ct hH hc hdo)) fun a u h => ?_
+  have hs := h.sl_le
+  refine WP.mono_syms (ctHashWith_out hH (pad80 T.H) h.L (fun _ _ => rfl) (x19 h) (x21 h) (x22 h) (nb h) (hb a hs).1
+    (hb a hs).2 (fun L' R' h22' hNb' => ?_) h.ht hdo) fun u' O sy => ?_
+  · exact WP.mono (pad80_ok T.H L' R' hlg.1 hlg.2 (by omega_arith) (hb a hs).2 (by have := (hb a hs).1; omega_arith) h22' hNb')
+      fun _ ⟨k, f, r⟩ => ⟨k.mono, f, r⟩
+  refine h.congr O.sp O.rd O.wr (O.cs .x20 (by decide)) (fun q hq => ?_) (fun q hq => ?_) sy (O.fr.mono (by simp [mgfWr]))
+  · rw [O.cs q.1 (sregs_cs _ (sregs_fst hq))]; exact h.r q (List.mem_append_left _ hq)
+  · rw [slot_keep O.fr fun r hr => ?_]
+    · exact h.sl q (List.mem_append_left _ hq)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.L.dFS.sub_left (Offset.sub_base _ (sslots_fb q hq))
+    · exact slot_not_below _ (sslots_fb q hq)
+
+theorem mgfXor_sct {T : Tabs} {Gs : Spec.Mgf1.Hash} (hGm : VG.Proof.Pbkdf2.Md.AArch64.Calls.StreamOK T.G)
+    (hGh : ∀ x, Gs.hash x = hGm.SH.H.hash x) (hGl : Gs.len = T.G.D) (hGv : Proof.Mgf1.Valid Gs) :
+    RelCT isa (Two (SR T T.H.D (sregs T.H.D) sslots)) (mgfXor T.H T.g) (Two (SR T T.H.D rsT [])) := by
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  obtain hd : ∀ a : State, SOk T.H.D a → DbAt T.H.D (oEm + loA a) (dbA T.H.D a) := fun a ok => by
+    obtain hf := ok.fit; have hk2 := ok.k2
+    have hdb : dbA T.H.D a = kA a - loA a - T.H.D - 1 := rfl
+    exact ⟨by omega_arith, by omega_arith, by omega_arith⟩
+  obtain g : ∀ {a u : State}, SR T T.H.D (sregs T.H.D) sslots a u → u.gpr .x24 = off (scr a) (oEm + loA a) ∧
+      u.gpr .x25 = BitVec.ofNat 64 (dbA T.H.D a) := fun h =>
+    ⟨h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]),
+      h.r (.x25, fun a => BitVec.ofNat 64 (dbA T.H.D a)) (by simp [sregs])⟩
+  refine two_post (two_map (fun a => (⟨fb a, scr a, oEm + loA a, dbA T.H.D a, stackArg a 1, a.syms T.G.initN,
+      a.syms T.G.updN, a.syms T.G.finN⟩ : MA))
+    (fun a u h => ⟨h.L, hd a h.ok, (g h).1, (g h).2, h.env, h.names _ (by simp [Tabs.names]),
+      h.names _ (by simp [Tabs.names]), h.names _ (by simp [Tabs.names])⟩) (mgfXor_ct hGm (H := T.H)))
+    fun a u h => WP.mono (mgfXor_ok hGm hGh hGl hGv h.L (fun _ _ => rfl) (hd a h.ok) (g h).1 (g h).2 h.env)
+      fun u' ⟨sp, rd, wr, cs, _, fr, sy, _⟩ => h.congr sp rd wr (cs .x20 (by decide) (by decide)) (fun q hq => ?_)
+        (fun _ h => absurd h List.not_mem_nil) sy fr
+  rw [List.mem_singleton.mp hq]
+  exact (cs .x24 (by decide) (by decide)).trans (g h).1
+
+/-- The encoding is constant time. -/
+theorem encEnc_ct {T : Tabs} {Gs : Spec.Mgf1.Hash} (hH : HashOK T.H)
+    (hGm : VG.Proof.Pbkdf2.Md.AArch64.Calls.StreamOK T.G) (hGh : ∀ x, Gs.hash x = hGm.SH.H.hash x)
+    (hGl : Gs.len = T.G.D) (hGv : Proof.Mgf1.Valid Gs) (hc : PssChecks T.H.P T.H.D) (hdo : DigOK T.H.P) :
+    RelCT isa (Two (SR T T.H.D (sregs0 T.H.D) sslots)) (signEnc T.f T.H T.g) fun _ _ => True := by
+  unfold signEnc seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
+  exact RelCT.seq dbRegs_sct (RelCT.seq clearY_sct (RelCT.seq (copyDigest_sct hH) (RelCT.seq (copySaltY_sct hH)
+    (RelCT.seq (signLen_sct hH) (RelCT.seq (ctHash_sct hH hc hdo) (RelCT.seq clearEm_sct (RelCT.seq putSalt_sct
+      (RelCT.seq (putH_sct hH) (RelCT.seq (mgfXor_sct hGm hGh hGl hGv) clearTop_sct)))))))))
+
+end VG.Proof.RsaPss.AArch64.Enc
+
+end
+
+end
+
+/-! ### `RsaPss.AArch64.EncTop`, which this module and modules that import it used -/
+
+section
+
+/-!
+# EMSA-PSS's encoding on AArch64: the whole function
+
+`code_ok`: from the precondition, `encode` keeps the calling convention and
+returns 1 with `em` holding `Spec.RsaPss.encode`'s encoding, or 0 if the
+salt does not fit (`Post`): the prologue (`prologue_ok`), the checks of the
+lengths (`body_ok`), and the restores (`restore_frame_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.AArch64.Enc
+
+open VG VG.AArch64 VG.Impl.RsaPss.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.MlKem.AArch64 (eval_nonzero)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+open VG.Proof.RsaPss.AArch64 (fitH_ok saltFits_ok restore_frame_ok)
+open VG.Proof.RsaPss.AArch64.Sgn (fb stk)
+
+/-- The result, and the calling convention. -/
+def Post (D : Nat) (Hs Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=
+  abiPreserved s s' ∧ OutOk D Hs Gs s s'.mem (s'.gpr .x0)
+
+section
+variable {H : Hash} (hH : HashOK H) {Gm : Impl.Pbkdf2.Md.AArch64.Stream}
+  (hGm : VG.Proof.Pbkdf2.Md.AArch64.Calls.StreamOK Gm) {Hs Gs : Spec.Mgf1.Hash}
+  (hHs : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D) (hHv : Proof.Mgf1.Valid Hs)
+  (hGh : ∀ x, Gs.hash x = hGm.SH.H.hash x) (hGl : Gs.len = Gm.D)
+  (hGv : Proof.Mgf1.Valid Gs) {f : MdFns} {dn : String} (hdo : DigOK H.P) {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
+
+include hH hHs hHl hHv hGh hGl hGv hdo in
+/-- After the prologue and `fitH`: the checks of the lengths, then the
+encoding or 0. -/
+theorem body_ok {tsH tsG : List FnTable} {s u : State} (hp : PreE H.D tsH tsG s)
+    (ht : TabsAt H dn f Gm g (stackArg s 0) (stackArg s 1) s) (hu : AtT s u)
+    (h9 : u.gpr .x9 = BitVec.ofNat 64 (s.gpr .x1).toNat)
+    (h10 : (u.gpr .x10 != 0) = decide ((s.gpr .x1).toNat < H.D + 2)) :
+    WP isa (.ite (.nonzero .x .x10) ret0 (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
+      .ite (.nonzero .x .x10) ret0 (encMain f H g)])) u fun t => MidE s t ∧ OutOk H.D Hs Gs s t.mem (t.gpr .x0) := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
+  have hsl : (Spec.Rsa.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat).length = (s.gpr .x4).toNat :=
+    VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _
+  have hel := hp.hel
+  refine WP.ite _ (eval_nonzero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [h10, decide_eq_true_eq] at hb
+    exact ret0_ok hu.e (RsaPss.encode_none₂ Hs Gs (by rw [hsl, ← hel, hHl]; omega_using [hb]))
+  rw [h10, decide_eq_false_iff_not] at hb
+  unfold seqs seqs
+  refine WP.seq (WP.mono_syms (saltFits_ok H hD (F := fb s) hu.e.sp
+    (by rw [hu.e.rd, hu.e.wr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide) (by decide))))
+    (a := (s.gpr .x1).toNat) (sl := (s.gpr .x4).toNat) (by omega_using [hb]) (by omega_using [hk2]) h9
+    (by rw [hu.e.fr.rs (.x4, sSaltLen) (by simp [encSlots]), BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    (s.gpr .x4).isLt) fun u₃ ⟨O₃, x9₃, x10₃⟩ sy₃ => ?_)
+  have hu₃ := hu.only O₃ sy₃
+  refine WP.ite _ (eval_nonzero _ _) (fun hb₃ => ?_) (fun hb₃ => ?_)
+  · rw [x10₃, decide_eq_true_eq] at hb₃
+    exact ret0_ok hu₃.e (RsaPss.encode_none₂ Hs Gs (by rw [hsl, ← hel, hHl]; omega_using [hb₃]))
+  rw [x10₃, decide_eq_false_iff_not] at hb₃
+  exact encMain_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht hu₃ x9₃ (by omega_using [hb, hb₃])
+
+include hH hHs hHl hHv hGh hGl hGv hdo in
+theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreE H.D tsH tsG s)
+    (ht : TabsAt H dn f Gm g (stackArg s 0) (stackArg s 1) s) : WP isa (encode f H g) s (Post H.D Hs Gs s) := by
+  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
+  have hk2 := hp.k2
+  unfold encode
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
+  unfold encBody seqs seqs seqs
+  refine WP.seq ?_
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
+    (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_
+  refine WP.mono (tabSlots_ok hp hu (by rw [sy]; simp [allocated])) fun u₀ hu₀ => ?_
+  refine WP.mono_syms (fitH_ok H hD (k := (s.gpr .x1).toNat)
+    (by rw [hu₀.e.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2])) fun u₁ ⟨O₁, x9₁, x10₁⟩ sy₁ => ?_
+  refine WP.seq (WP.mono (body_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht (hu₀.only O₁ sy₁) x9₁ x10₁)
+    fun t ⟨m, r⟩ => ?_)
+  refine WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, hmem⟩ mm uu fl =>
+    ⟨⟨habi.1, habi.2.1, habi.2.2⟩, ?_⟩
+  -- The encoded message lies apart from the frame, whose bytes the `free` loses.
+  have hb : Spec.Rsa.bytesAt mm (s.gpr .x0) (s.gpr .x1).toNat =
+      Spec.Rsa.bytesAt (freed frameBytes w).mem (s.gpr .x0) (s.gpr .x1).toNat :=
+    List.map_congr_left fun i hi => lost_byte (R := emR s) fl
+      (hp.ke.symm.sub_right (Offset.sub_below s.sp (by unfold stk; omega_arith) (by unfold stk; omega_arith)))
+      (List.mem_range.mp hi)
+  show OutOk _ Hs Gs s mm ((freed frameBytes w).gpr .x0)
+  rw [hx0]
+  unfold OutOk
+  rw [hb, hmem]; exact r
+
+end
+
+end VG.Proof.RsaPss.AArch64.Enc
+
+end
+
+end
 
 /-!
 # EMSA-PSS's encoding on AArch64: constant time

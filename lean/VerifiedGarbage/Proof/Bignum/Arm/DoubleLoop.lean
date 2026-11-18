@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
+public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
 
 /-! # Repeated doubling computes a power of two modulo the RSA modulus -/

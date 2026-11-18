@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Rsa.MontContract
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import Init.Prelude
 import VerifiedGarbage.Proof.Framework.Mem

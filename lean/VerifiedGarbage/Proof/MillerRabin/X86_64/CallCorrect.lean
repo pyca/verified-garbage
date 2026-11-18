@@ -1,4 +1,5 @@
 module
+
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -7,13 +8,10 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 import VerifiedGarbage.Proof.MillerRabin.X86_64.FramedCall
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
 import VerifiedGarbage.Proof.MillerRabin.X86_64.EntrySaved
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
-import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
 import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
