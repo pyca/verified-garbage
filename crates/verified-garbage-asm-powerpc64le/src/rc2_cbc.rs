@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -27,7 +29,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkgAiE4IACATg==""#,
+.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkgAiE4AAAAOOH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+CACITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxCSEEMQspRDENMYQxDznEMRECBHETCkRIACATg==""#,
         vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
 }
@@ -35,6 +37,8 @@ b 21f
 /// RC2-CBC decryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is RC2 decryption under the same 128-byte little-endian schedule as encryption, as written at the start of the context by `vg_rc2_cbc_init`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -56,7 +60,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkgAiE4IACATg==""#,
+.base64 "AAFe6wgBfusQAZ7rGAG+6ygB/uswAR7oIAHe66YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPngAGz56ABs+fAAbPn4AGz5AAFs+QgBbPkQAWz5GAFs+SABbPkoAWz5MAFs+TgBbPlAAWz5SAFs+VABbPlYAWz5YAFs+WgBbPlwAWz5eAFs+YABbPmIAWz5kAFs+ZgBbPmgAWz5qAFs+bABbPm4AWz5wAFs+cgBbPnQAWz52AFs+eABbPnoAWz58AFs+fgBbPkgAiE4AAAAOOH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+CACITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxCSEEMQspRDENMYQxDznEMRECBHETCkRIACATg==""#,
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )
 }
