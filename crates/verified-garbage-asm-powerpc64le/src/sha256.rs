@@ -127,75 +127,216 @@ pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "gf0h+CAA4TimAgh80f8h+CAAAfhwAEf7eABn+4AAh/uIAKf7kADH+5gA5/sAAEM7AABnOwAAhTsAAKY7PwAAOThAnnwAAD0o"
+        r#"stdu %r1, -640(%r1)
+addi %r7, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r26, 112(%r7)
+std %r27, 120(%r7)
+std %r28, 128(%r7)
+std %r29, 136(%r7)
+std %r30, 144(%r7)
+std %r31, 152(%r7)
+addi %r26, %r3, 0
+addi %r27, %r7, 0
+addi %r28, %r5, 0
+addi %r29, %r6, 0
+li %r8, 63
+and %r30, %r4, %r8
+cmpldi %cr0, %r29, 0
 beq %cr0, 20f
 22:
-.base64 "AAAgOQAAPig="
+li %r9, 0
+cmpldi %cr0, %r30, 0
 beq %cr0, 23f
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
+li %r10, 64
+subf %r10, %r30, %r10
+rldicl %r8, %r29, 58, 6
+cmpldi %cr0, %r8, 0
 beq %cr0, 25f
 b 26f
 25:
-.base64 "FPIdfYLRCHkAACgo"
+add %r8, %r29, %r30
+rldicl %r8, %r8, 58, 6
+cmpldi %cr0, %r8, 0
 beq %cr0, 27f
 b 28f
 27:
-.base64 "AABdOQ=="
+addi %r10, %r29, 0
 28:
 26:
-.base64 "UOiqfw=="
+subf %r29, %r10, %r29
 29:
-.base64 "AAAciRTyen0gAAuZAQCcOwEA3jv//0o5AAAqKA=="
+lbz %r8, 0(%r28)
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r28, %r28, 1
+addi %r30, %r30, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
 bne %cr0, 29b
-.base64 "wP8eOQAAKCg="
+addi %r8, %r30, -64
+cmpldi %cr0, %r8, 0
 beq %cr0, 210f
 b 211f
 210:
-.base64 "IACaOAAAwDsBACA5"
+addi %r4, %r26, 32
+li %r30, 0
+li %r9, 1
 211:
 b 24f
 23:
-.base64 "gtGoewAAKCg="
+rldicl %r8, %r29, 58, 6
+cmpldi %cr0, %r8, 0
 beq %cr0, 212f
-.base64 "AACcOEAAnDvA/707AQAgOQ=="
+addi %r4, %r28, 0
+addi %r28, %r28, 64
+addi %r29, %r29, -64
+li %r9, 1
 b 213f
 212:
-.base64 "QABAOVBQXn2C0ah7AAAoKA=="
+li %r10, 64
+subf %r10, %r30, %r10
+rldicl %r8, %r29, 58, 6
+cmpldi %cr0, %r8, 0
 beq %cr0, 214f
 b 215f
 214:
-.base64 "FPIdfYLRCHkAACgo"
+add %r8, %r29, %r30
+rldicl %r8, %r8, 58, 6
+cmpldi %cr0, %r8, 0
 beq %cr0, 216f
 b 217f
 216:
-.base64 "AABdOQ=="
+addi %r10, %r29, 0
 217:
 215:
-.base64 "UOiqfw=="
+subf %r29, %r10, %r29
 218:
-.base64 "AAAciRTyen0gAAuZAQCcOwEA3jv//0o5AAAqKA=="
+lbz %r8, 0(%r28)
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r28, %r28, 1
+addi %r30, %r30, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
 bne %cr0, 218b
-.base64 "wP8eOQAAKCg="
+addi %r8, %r30, -64
+cmpldi %cr0, %r8, 0
 beq %cr0, 219f
 b 220f
 219:
-.base64 "IACaOAAAwDsBACA5"
+addi %r4, %r26, 32
+li %r30, 0
+li %r9, 1
 220:
 213:
 24:
-.base64 "AAApKA=="
+cmpldi %cr0, %r9, 0
 beq %cr0, 221f
-.base64 "AAB6OAEAoDgAANs4"
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
 bl {vg_sha256_compress}
 b 222f
 221:
 222:
-.base64 "AAA9KA=="
+cmpldi %cr0, %r29, 0
 bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOAAAADhR/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiwAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+ld %r26, 112(%r27)
+ld %r28, 128(%r27)
+ld %r29, 136(%r27)
+ld %r30, 144(%r27)
+ld %r31, 152(%r27)
+ld %r27, 120(%r27)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r1, %r1, 640
+li %r0, 0
+stdu %r1, -688(%r1)
+addi %r12, %r1, 32
+addi %r11, %r12, 127
+rldicr %r11, %r11, 0, 56
+std %r0, 0(%r12)
+std %r0, 8(%r12)
+std %r0, 16(%r12)
+std %r0, 24(%r12)
+std %r0, 32(%r12)
+std %r0, 40(%r12)
+std %r0, 48(%r12)
+std %r0, 56(%r12)
+std %r0, 64(%r12)
+std %r0, 72(%r12)
+std %r0, 80(%r12)
+std %r0, 88(%r12)
+std %r0, 96(%r12)
+std %r0, 104(%r12)
+std %r0, 112(%r12)
+std %r0, 120(%r12)
+addi %r10, %r1, 688
+std %r0, -128(%r10)
+std %r0, -120(%r10)
+std %r0, -112(%r10)
+std %r0, -104(%r10)
+std %r0, -96(%r10)
+std %r0, -88(%r10)
+std %r0, -80(%r10)
+std %r0, -72(%r10)
+std %r0, -64(%r10)
+std %r0, -56(%r10)
+std %r0, -48(%r10)
+std %r0, -40(%r10)
+std %r0, -32(%r10)
+std %r0, -24(%r10)
+std %r0, -16(%r10)
+std %r0, -8(%r10)
+addi %r9, %r11, 128
+91:
+cmpld %r9, %r10
+bgt %cr0, 92f
+dcbz 0, %r11
+addi %r11, %r11, 128
+addi %r9, %r9, 128
+b 91b
+92:
+addi %r1, %r1, 688
+li %r3, 0
+li %r4, 0
+li %r5, 0
+li %r6, 0
+li %r7, 0
+li %r8, 0
+li %r9, 0
+li %r10, 0
+li %r11, 0
+li %r12, 0
+addc %r0, %r0, %r0
+vxor %v0, %v0, %v0
+vxor %v1, %v1, %v1
+vxor %v2, %v2, %v2
+vxor %v3, %v3, %v3
+vxor %v4, %v4, %v4
+vxor %v5, %v5, %v5
+vxor %v6, %v6, %v6
+vxor %v7, %v7, %v7
+vxor %v8, %v8, %v8
+vxor %v9, %v9, %v9
+vxor %v10, %v10, %v10
+vxor %v11, %v11, %v11
+vxor %v12, %v12, %v12
+vxor %v13, %v13, %v13
+vxor %v14, %v14, %v14
+vxor %v15, %v15, %v15
+vxor %v16, %v16, %v16
+vxor %v17, %v17, %v17
+vxor %v18, %v18, %v18
+vxor %v19, %v19, %v19
+blr"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
@@ -216,33 +357,184 @@ b 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "gf0h+CAAwTimAgh80f8h+CAAAfhwAEb7eABm+4AAhvuIAKb7kADG+5gA5vsAAEM7AABmOwAAhTsAAKQ7PwAAOThAvn+AAAA5FPJ6fSAAC5kBAN47BwD+O4LR/3s="
+        r#"stdu %r1, -640(%r1)
+addi %r6, %r1, 32
+mflr %r0
+stdu %r1, -48(%r1)
+std %r0, 32(%r1)
+std %r26, 112(%r6)
+std %r27, 120(%r6)
+std %r28, 128(%r6)
+std %r29, 136(%r6)
+std %r30, 144(%r6)
+std %r31, 152(%r6)
+addi %r26, %r3, 0
+addi %r27, %r6, 0
+addi %r28, %r5, 0
+addi %r29, %r4, 0
+li %r8, 63
+and %r30, %r29, %r8
+li %r8, 128
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r30, %r30, 1
+addi %r31, %r30, 7
+rldicl %r31, %r31, 58, 6
 20:
-.base64 "QABAOQAAPyg="
+li %r10, 64
+cmpldi %cr0, %r31, 0
 beq %cr0, 21f
 b 22f
 21:
-.base64 "OABAOQ=="
+li %r10, 56
 22:
-.base64 "AAAAOVBQXn0AACoo"
+li %r8, 0
+subf %r10, %r30, %r10
+cmpldi %cr0, %r10, 0
 beq %cr0, 23f
 25:
-.base64 "FPJ6fSAAC5kBAN47//9KOQAAKig="
+add %r11, %r26, %r30
+stb %r8, 32(%r11)
+addi %r30, %r30, 1
+addi %r10, %r10, -1
+cmpldi %cr0, %r10, 0
 bne %cr0, 25b
 b 24f
 23:
 24:
-.base64 "AAA/KA=="
+cmpldi %cr0, %r31, 0
 beq %cr0, 26f
 b 27f
 26:
-.base64 "FOodfRRCCH0UQgh9WABgOShdGn0="
+add %r8, %r29, %r29
+add %r8, %r8, %r8
+add %r8, %r8, %r8
+li %r11, 88
+stdbrx %r8, %r26, %r11
 27:
-.base64 "IACaOAAAejgBAKA4AADbOA=="
+addi %r4, %r26, 32
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
 bl {vg_sha256_compress}
-.base64 "AADAO////zsAAD8o"
+li %r30, 0
+addi %r31, %r31, -1
+cmpldi %cr0, %r31, 0
 beq %cr0, 20b
-.base64 "AAAagQAAYDksXRx9BAAagQQAYDksXRx9CAAagQgAYDksXRx9DAAagQwAYDksXRx9EAAagRAAYDksXRx9FAAagRQAYDksXRx9GAAagRgAYDksXRx9HAAagRwAYDksXRx9cABb64AAm+uIALvrkADb65gA++t4AHvrIAAB6DAAITimAwh8gAIhOAAAADhR/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiwAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+lwz %r8, 0(%r26)
+li %r11, 0
+stwbrx %r8, %r28, %r11
+lwz %r8, 4(%r26)
+li %r11, 4
+stwbrx %r8, %r28, %r11
+lwz %r8, 8(%r26)
+li %r11, 8
+stwbrx %r8, %r28, %r11
+lwz %r8, 12(%r26)
+li %r11, 12
+stwbrx %r8, %r28, %r11
+lwz %r8, 16(%r26)
+li %r11, 16
+stwbrx %r8, %r28, %r11
+lwz %r8, 20(%r26)
+li %r11, 20
+stwbrx %r8, %r28, %r11
+lwz %r8, 24(%r26)
+li %r11, 24
+stwbrx %r8, %r28, %r11
+lwz %r8, 28(%r26)
+li %r11, 28
+stwbrx %r8, %r28, %r11
+ld %r26, 112(%r27)
+ld %r28, 128(%r27)
+ld %r29, 136(%r27)
+ld %r30, 144(%r27)
+ld %r31, 152(%r27)
+ld %r27, 120(%r27)
+ld %r0, 32(%r1)
+addi %r1, %r1, 48
+mtlr %r0
+addi %r1, %r1, 640
+li %r0, 0
+stdu %r1, -688(%r1)
+addi %r12, %r1, 32
+addi %r11, %r12, 127
+rldicr %r11, %r11, 0, 56
+std %r0, 0(%r12)
+std %r0, 8(%r12)
+std %r0, 16(%r12)
+std %r0, 24(%r12)
+std %r0, 32(%r12)
+std %r0, 40(%r12)
+std %r0, 48(%r12)
+std %r0, 56(%r12)
+std %r0, 64(%r12)
+std %r0, 72(%r12)
+std %r0, 80(%r12)
+std %r0, 88(%r12)
+std %r0, 96(%r12)
+std %r0, 104(%r12)
+std %r0, 112(%r12)
+std %r0, 120(%r12)
+addi %r10, %r1, 688
+std %r0, -128(%r10)
+std %r0, -120(%r10)
+std %r0, -112(%r10)
+std %r0, -104(%r10)
+std %r0, -96(%r10)
+std %r0, -88(%r10)
+std %r0, -80(%r10)
+std %r0, -72(%r10)
+std %r0, -64(%r10)
+std %r0, -56(%r10)
+std %r0, -48(%r10)
+std %r0, -40(%r10)
+std %r0, -32(%r10)
+std %r0, -24(%r10)
+std %r0, -16(%r10)
+std %r0, -8(%r10)
+addi %r9, %r11, 128
+91:
+cmpld %r9, %r10
+bgt %cr0, 92f
+dcbz 0, %r11
+addi %r11, %r11, 128
+addi %r9, %r9, 128
+b 91b
+92:
+addi %r1, %r1, 688
+li %r3, 0
+li %r4, 0
+li %r5, 0
+li %r6, 0
+li %r7, 0
+li %r8, 0
+li %r9, 0
+li %r10, 0
+li %r11, 0
+li %r12, 0
+addc %r0, %r0, %r0
+vxor %v0, %v0, %v0
+vxor %v1, %v1, %v1
+vxor %v2, %v2, %v2
+vxor %v3, %v3, %v3
+vxor %v4, %v4, %v4
+vxor %v5, %v5, %v5
+vxor %v6, %v6, %v6
+vxor %v7, %v7, %v7
+vxor %v8, %v8, %v8
+vxor %v9, %v9, %v9
+vxor %v10, %v10, %v10
+vxor %v11, %v11, %v11
+vxor %v12, %v12, %v12
+vxor %v13, %v13, %v13
+vxor %v14, %v14, %v14
+vxor %v15, %v15, %v15
+vxor %v16, %v16, %v16
+vxor %v17, %v17, %v17
+vxor %v18, %v18, %v18
+vxor %v19, %v19, %v19
+blr"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
