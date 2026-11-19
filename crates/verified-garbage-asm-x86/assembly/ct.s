@@ -39,5 +39,20 @@ vg_ct_eq:
 	shr eax, 31
 21:
 	pop ebx
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-4]
+	mov DWORD PTR [esp], ecx
+	lea esp, [esp+4]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

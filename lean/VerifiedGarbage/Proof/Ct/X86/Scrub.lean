@@ -8,13 +8,14 @@ import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # Constant-time comparison on x86 (32-bit), without secret residue
 
-`vg_ct_eq`, followed by `Impl.Scrub.X86.tail` (`X86.Scrub.scrubOf`), which
-clears `eax`, `ecx` and `edx` but the result's bits, the flags and
-`xmm0`–`xmm7`. It calls nothing and has no frame, so there is no stack to
-wipe. Its postcondition reads no memory on return: it writes none
-(`X86.Scrub.PostOut`), as on the other targets (`Proof/Ct/PPC64LE/Scrub.lean`).
-`scrubOf`'s side condition (`scrubSide`) is proved at the registration, by
-the kernel's evaluation of it when this module is built.
+`vg_ct_eq`, followed by the zeroing of the 4 bytes below `esp` its frame
+(the caller's `ebx`) used and by `Impl.Scrub.X86.tail`
+(`X86.Scrub.scrubFOf`), which clears `eax`, `ecx` and `edx` but the result's
+bits, the flags and `xmm0`–`xmm7`. Its postcondition reads no memory on
+return: it writes none (`X86.Scrub.PostOut`), as on the other targets
+(`Proof/Ct/PPC64LE/Scrub.lean`). `scrubFOf`'s side condition (`scrubFSide`)
+is proved at the registration, by the kernel's evaluation of it when this
+module is built.
 -/
 
 @[expose] public section
@@ -41,8 +42,9 @@ theorem eqOut (stack : Nat) : PostOut (Spec.Ct.eqContract abi stack) (Spec.Ct.eq
 
 /-- `Spec.Ct.eqApi`. -/
 def eqReg : Registration Spec.Ct.eqApi X86.target :=
-  scrubOf {
+  scrubFOf {
       code := Impl.Ct.X86.eq
       verified := Proof.Ct.X86.verified }
+    (eqOut _)
 
 end VG.Proof.Ct.X86.Scrub
