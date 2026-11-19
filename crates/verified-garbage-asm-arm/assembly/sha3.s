@@ -78,6 +78,35 @@ vg_sha3_224_finalize:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #664
+	sub sp, sp, #664
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #664
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha3_256_update:
@@ -154,6 +183,35 @@ vg_sha3_256_finalize:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #664
+	sub sp, sp, #664
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #664
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha3_384_update:
@@ -230,6 +288,35 @@ vg_sha3_384_finalize:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #664
+	sub sp, sp, #664
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #664
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha3_512_update:
@@ -306,6 +393,35 @@ vg_sha3_512_finalize:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #664
+	sub sp, sp, #664
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #664
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_shake128_update:
@@ -370,6 +486,31 @@ vg_shake128_finalize:
 	bl {vg_keccak_pad_scratch}
 	ldr lr, [sp, #4]
 	add sp, sp, #648
+	sub sp, sp, #648
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #648
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_shake128_squeeze:
@@ -385,6 +526,32 @@ vg_shake128_squeeze:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #656
+	sub sp, sp, #656
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #656
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_shake256_finalize:
@@ -399,6 +566,31 @@ vg_shake256_finalize:
 	bl {vg_keccak_pad_scratch}
 	ldr lr, [sp, #4]
 	add sp, sp, #648
+	sub sp, sp, #648
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #648
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_shake256_squeeze:
@@ -414,4 +606,30 @@ vg_shake256_squeeze:
 	bl {vg_keccak_squeeze_scratch}
 	ldr lr, [sp, #8]
 	add sp, sp, #656
+	sub sp, sp, #656
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #20
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #656
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

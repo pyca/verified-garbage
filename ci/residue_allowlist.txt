@@ -283,14 +283,6 @@ arm vg_seed_ecb_encrypt
 arm vg_seed_expand_key
 arm vg_seed_ofb
 arm vg_seed_ofb_final
-arm vg_sha3_224_finalize
-arm vg_sha3_256_finalize
-arm vg_sha3_384_finalize
-arm vg_sha3_512_finalize
-arm vg_shake128_finalize
-arm vg_shake128_squeeze
-arm vg_shake256_finalize
-arm vg_shake256_squeeze
 arm vg_sm3_finalize
 arm vg_sm3_init
 arm vg_sm3_update
