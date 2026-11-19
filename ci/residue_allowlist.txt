@@ -74,15 +74,6 @@ aarch64 vg_aes_gcm_stream_init_neon
 aarch64 vg_aes_gcm_stream_verify
 aarch64 vg_aes_gcm_stream_verify_aes
 aarch64 vg_aes_gcm_stream_verify_neon
-aarch64 vg_aes_ocb_init
-aarch64 vg_aes_ocb_init_aes
-aarch64 vg_aes_ocb_init_neon
-aarch64 vg_aes_ocb_open
-aarch64 vg_aes_ocb_open_aes
-aarch64 vg_aes_ocb_open_neon
-aarch64 vg_aes_ocb_seal
-aarch64 vg_aes_ocb_seal_aes
-aarch64 vg_aes_ocb_seal_neon
 aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_sm4_gcm_init
 aarch64 vg_sm4_gcm_init_ctr32_sm4
