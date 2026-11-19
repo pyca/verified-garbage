@@ -42,7 +42,7 @@ theorem initWith_wp {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
     (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, Wn⟩) (wc : Ctx.toNat + 256 ≤ 2 ^ 64)
     (hL : L = 16 ∨ L = 24 ∨ L = 32) {Q : State → Prop}
     (hfin : ∀ s₅ : State, s₅.gpr .x19 = W → s₅.gpr .x21 = Ctx → s₅.sp = s.sp → s₅.rd = s.rd →
-      s₅.wr = s.wr → SavedAt s₅.mem W s → KeyRepr s₅.mem Ctx (bytesAt s.mem K L) → WP isa fin s₅ Q) :
+      s₅.wr = s.wr → SavedAt s₅.mem W s → KeyRepr s₅.mem Ctx (bytesAt s.mem K L) → WP isa fin s₅ Q) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (initWith v.callees fin) s Q := by
   obtain pW : Covers [⟨W, Wn⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
   obtain pC : Covers [⟨Ctx, 256⟩] s.wr := by

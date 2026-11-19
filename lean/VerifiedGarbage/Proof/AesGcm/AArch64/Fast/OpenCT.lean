@@ -120,7 +120,7 @@ variable {Ctx W SP Np A D Tg : Addr} {R al n tl : Nat}
 theorem openA1_ok {Wn : Nat} (hMK : MulKey) {to : Bool} {O : Addr} {s₀ t : State}
     (o : OpenInG Wn to Ctx W SP Np A D O Tg R 12 al n tl s₀ t)
     (h4 : t.gpr .x4 = A) (h5 : t.gpr .x5 = BitVec.ofNat 64 al) (h6 : t.gpr .x6 = D)
-    (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) :
+    (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))) t
       fun s₆ => ∃ s₂ : State, ∃ X : Addr,
         MidG Wn to Ctx W SP (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) R n D (BitVec.ofNat 64 tl) X t s₂ ∧
@@ -153,7 +153,7 @@ theorem openA1_ok {Wn : Nat} (hMK : MulKey) {to : Bool} {O : Addr} {s₀ t : Sta
   refine WP.mono (WP.with_rdwr (absSeg2_ok L (.inr rfl) hM)) fun s₆ ⟨h₆, rd₆, wr₆⟩ => ?_
   have F₂ : Frame [workR Wn W] t.mem s₂.mem := h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide)⟩
+    rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega)⟩
   exact ⟨s₂, s₂.gpr .x27, ⟨h₂.env, h₂.x22.trans o.x22, o.rounds, h₂.x26, rfl, h₂.x28.trans o.x28, h₂.hH,
     h₂.key, data_of_eq o.dat h₂.rd h₂.wr, frame_wD F₂, h₂.rd, h₂.wr⟩, F₂, h₆,
     by rw [rd₆, r₃.rd], by rw [wr₆, r₃.wr]⟩
@@ -202,12 +202,12 @@ theorem openRunA_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {t
   have r₂ : u₂.rd = t₂.rd := rd₂.trans M₂.rd
   have w₂ : u₂.wr = t₂.wr := wr₂.trans M₂.wr
   have sY : Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ (workR Wn W) := stW (by decide)
-  have sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by decide)
+  have sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by omega)
   have hexH : ∀ r ∈ ex, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))
   have hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
-  have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
+  have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega))
   have hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
@@ -284,9 +284,9 @@ theorem openRunWithG_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey
   subst h12
   have L := o₁.lay
   have F₁ : Frame [workR Wn W] s₀₁.mem t₁.mem :=
-    o₁.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
+    o₁.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W (hWn := hWn) r hr⟩
   have F₂ : Frame [workR Wn W] s₀₂.mem t₂.mem :=
-    o₂.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
+    o₂.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W (hWn := hWn) r hr⟩
   have g₁ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = t₁.rd → s'.wr = t₁.wr → s'.sp = SP → Frame [workR Wn W] t₁.mem s'.mem →
@@ -481,7 +481,7 @@ theorem openWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : Sta
       Frame [workR Wn (stackArg σ₁ 2), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ 2), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     ConstantTime isa pre (openAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) :=
   openWithE_ct (w := 2) v _ hMK (.inl rfl) (fun s h => openPreX_W (hpre s h))
     (fun p c y z r w _ f => hgh p c y z r w f)
@@ -489,7 +489,7 @@ theorem openWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : Sta
       hrel p₁ p₂ hq c₁ c₂ y z (sp₁.trans sp₂.symm) r₁ w₁ f₁ r₂ w₂ f₂)
 
 /-- `vg_aes_gcm_open` with the path for TLS records is constant time. -/
-theorem open_fast_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem open_fast_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     ConstantTime isa (openAArch64 Wn).pre (openAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.«open» v.callees) :=
   openWith_ct (extra := fun _ => []) v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fun _ _ _ c₁ c₂ _ _ sp _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ sp)
