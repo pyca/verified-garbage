@@ -82,6 +82,24 @@ vg_aes_cfb8_encrypt_aesni:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -163,6 +181,24 @@ vg_aes_cfb8_decrypt_aesni:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -244,6 +280,24 @@ vg_aes_cfb8_encrypt:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -325,5 +379,23 @@ vg_aes_cfb8_decrypt:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

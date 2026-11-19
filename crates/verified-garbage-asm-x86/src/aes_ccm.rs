@@ -10,6 +10,8 @@ pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -129,7 +131,7 @@ jmp 223f
 225:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 225b
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJJT1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAPMPf4QkQAoAAPMPf4QkUAoAAImMJGAKAACJjCRkCgAAiYwkaAoAAI2kJGwKAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
         vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
@@ -142,6 +144,8 @@ pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -287,7 +291,7 @@ jmp 233f
 jmp 228f
 227:
 228:
-.base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJJT1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAPMPf4QkQAoAAPMPf4QkUAoAAImMJGAKAACJjCRkCgAAiYwkaAoAAI2kJGwKAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
@@ -297,6 +301,8 @@ jmp 228f
 /// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -416,7 +422,7 @@ jmp 223f
 225:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 225b
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJJT1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAPMPf4QkQAoAAPMPf4QkUAoAAImMJGAKAACJjCRkCgAAiYwkaAoAAI2kJGwKAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
@@ -426,6 +432,8 @@ jne 225b
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -570,7 +578,7 @@ jmp 233f
 jmp 228f
 227:
 228:
-.base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i4WwAAAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJJT1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAPMPf4QkQAoAAPMPf4QkUAoAAImMJGAKAACJjCRkCgAAiYwkaAoAAI2kJGwKAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,

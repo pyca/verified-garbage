@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesEcb.X86
+public import VerifiedGarbage.Proof.AesEcb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesEcb.X86
 
-open VG.Proof.AesEcb.X86
+open VG.Proof.AesEcb.X86.Scrub
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) =>

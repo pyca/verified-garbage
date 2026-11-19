@@ -10,6 +10,8 @@ pub const VG_AES_CTR_AESNI_FEATURES: verified_garbage_cpu::Features = verified_g
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -40,7 +42,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78CNZCTg8w9/BCTzD39EJBCNZCQguAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
     )
@@ -49,6 +51,8 @@ jmp 21f
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -79,7 +83,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78CNZCTg8w9/BCTzD39EJBCNZCQguAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
     )
@@ -91,6 +95,8 @@ pub const VG_AES_CTR_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -119,7 +125,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEDD"
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEBmD+/AuQAAAACNZCSM8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGCJTCRwjWQkdLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_ctr_single_aesni = sym super::aes_ctr::vg_aes_ctr_single_aesni::vg_aes_ctr_single_aesni,
     )
@@ -128,6 +134,8 @@ jmp 21f
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesFinalContract`. Constant time: only the pointers, `rounds`, `len` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -155,7 +163,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEDD"
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPI1kJEBmD+/AuQAAAACNZCSM8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGCJTCRwjWQkdLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_ctr_single = sym super::aes_ctr::vg_aes_ctr_single::vg_aes_ctr_single,
     )
