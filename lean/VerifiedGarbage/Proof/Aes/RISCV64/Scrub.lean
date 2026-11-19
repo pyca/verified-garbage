@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.AesEcb.RISCV64
@@ -21,6 +22,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 meta import VerifiedGarbage.Proof.AesEcb.RISCV64
@@ -45,7 +47,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 `vg_aes_ctr_final`, `vg_aes_cfb128_encrypt`, `vg_aes_cfb128_decrypt`, their
 `_final` functions, `vg_aes_cfb8_encrypt`, `vg_aes_cfb8_decrypt`,
 `vg_aes_ofb` and `vg_aes_ofb_final`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
 caller-saved registers and the stack its frames used. Their postconditions
 read the memory on return only within their buffers
 (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Aes/X86_64/Scrub.lean`,
@@ -56,7 +58,7 @@ functions of their own, `vg_aes_ctr_core`, ….
 
 The key expansion and the final partial-block functions of CTR, CFB and OFB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -290,7 +292,7 @@ theorem ofbFinalOut (stack : Nat) :
 
 /-- `Spec.Aes.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Aes.expandKeyApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
       verified := Proof.Aes.RISCV64.expandKey_framed } []
     (expandKeyOut _)
@@ -300,42 +302,42 @@ def expandKeyReg : Registration Spec.Aes.expandKeyApi RISCV64.target :=
 
 /-- `Spec.AesEcb.encryptApi`. -/
 def ecbEncryptReg : Registration Spec.AesEcb.encryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Proof.AesEcb.RISCV64.encrypt
       verified := Proof.AesEcb.RISCV64.encrypt_verified }
     (Ecb.encryptOut _)
 
 /-- `Spec.AesEcb.decryptApi`. -/
 def ecbDecryptReg : Registration Spec.AesEcb.decryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Proof.AesEcb.RISCV64.decrypt
       verified := Proof.AesEcb.RISCV64.decrypt_verified }
     (Ecb.decryptOut _)
 
 /-- `Spec.Cbc.aesEncryptApi`. -/
 def cbcEncryptReg : Registration Spec.Cbc.aesEncryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Proof.AesCbc.RISCV64.Wiped.encrypt
       verified := Proof.AesCbc.RISCV64.Wiped.encrypt_verified }
     (Cbc.encryptOut _)
 
 /-- `Spec.Cbc.aesDecryptApi`. -/
 def cbcDecryptReg : Registration Spec.Cbc.aesDecryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Proof.AesCbc.RISCV64.Wiped.decrypt
       verified := Proof.AesCbc.RISCV64.Wiped.decrypt_verified }
     (Cbc.decryptOut _)
 
 /-- `Spec.Ctr.aesApi`. -/
 def ctrReg : Registration Spec.Ctr.aesApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesCtr.RISCV64.crypt
       verified := Proof.AesCtr.keyed Proof.AesCtr.RISCV64.crypt_verified }
     (ctrOut _)
 
 /-- `Spec.Ctr.aesFinalApi`. -/
 def ctrFinalReg : Registration Spec.Ctr.aesFinalApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
       verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed } []
     (ctrFinalOut _)
@@ -345,21 +347,21 @@ def ctrFinalReg : Registration Spec.Ctr.aesFinalApi RISCV64.target :=
 
 /-- `Spec.Cfb.aesEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Cfb.aesEncryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesCfb.RISCV64.encrypt
       verified := Proof.AesCfb.encrypt_keyed Proof.AesCfb.RISCV64.encrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.Cfb.aesDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Cfb.aesDecryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesCfb.RISCV64.decrypt
       verified := Proof.AesCfb.decrypt_keyed Proof.AesCfb.RISCV64.decrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.Cfb.aesEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Cfb.aesEncryptFinalApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal
       verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.RISCV64.Final.encryptFinal_framed } []
     (cfbEncryptFinalOut _)
@@ -369,7 +371,7 @@ def cfbEncryptFinalReg : Registration Spec.Cfb.aesEncryptFinalApi RISCV64.target
 
 /-- `Spec.Cfb.aesDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Cfb.aesDecryptFinalApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal
       verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.RISCV64.Final.decryptFinal_framed } []
     (cfbDecryptFinalOut _)
@@ -379,28 +381,28 @@ def cfbDecryptFinalReg : Registration Spec.Cfb.aesDecryptFinalApi RISCV64.target
 
 /-- `Spec.Cfb8.aesEncryptApi`. -/
 def cfb8EncryptReg : Registration Spec.Cfb8.aesEncryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesCfb8.RISCV64.encrypt
       verified := Proof.AesCfb8.encrypt_keyed Proof.AesCfb8.RISCV64.encrypt_verified }
     (cfb8EncryptOut _)
 
 /-- `Spec.Cfb8.aesDecryptApi`. -/
 def cfb8DecryptReg : Registration Spec.Cfb8.aesDecryptApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesCfb8.RISCV64.decrypt
       verified := Proof.AesCfb8.decrypt_keyed Proof.AesCfb8.RISCV64.decrypt_verified }
     (cfb8DecryptOut _)
 
 /-- `Spec.Ofb.aesApi`. -/
 def ofbReg : Registration Spec.Ofb.aesApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesOfb.RISCV64.crypt
       verified := Proof.AesOfb.keyed Proof.AesOfb.RISCV64.crypt_verified }
     (ofbOut _)
 
 /-- `Spec.Ofb.aesFinalApi`. -/
 def ofbFinalReg : Registration Spec.Ofb.aesFinalApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal
       verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed } []
     (ofbFinalOut _)
