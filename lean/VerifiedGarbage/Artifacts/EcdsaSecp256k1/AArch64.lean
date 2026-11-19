@@ -64,7 +64,7 @@ def artifactsFor : List Artifact :=
       verified := secp256k1T_verified hasLaw.law hasLaw.inv VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.secp256k1SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
         Spec.Ecdsa.Rfc6979.Curves.secp256k1 [] VG.Proof.Variants.MdHash.AArch64.variants)
-      Proof.Ecdsa.Rfc6979.AArch64.secp256k1SignSide)]
+      (Proof.Ecdsa.Rfc6979.AArch64.secp256k1SignSide hasLaw.law hasLaw.inv))]
   else []
 
 def artifacts : List Artifact :=

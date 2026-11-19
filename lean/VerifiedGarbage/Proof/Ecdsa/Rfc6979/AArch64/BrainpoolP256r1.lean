@@ -25,11 +25,11 @@ meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
-public import VerifiedGarbage.Proof.BrainpoolP256r1.AArch64.Law
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.AArch64.Joint
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: brainpoolP256r1
@@ -93,14 +93,14 @@ def brainpoolp256r1SignClear : Impl.Residue.AArch64.Clear :=
    .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
    .v27, .v28, .v29, .v30, .v31], []⟩
 
-theorem brainpoolp256r1SignSide :
+theorem brainpoolp256r1SignSide (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
     AArch64.ScrubAll.scrubSide
-      (signCodeT (brainpoolp256r1 Proof.BrainpoolP256r1.AArch64.hasLaw.law Proof.BrainpoolP256r1.AArch64.hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries Proof.Variants.MdHash.AArch64.variants)
+      (signCodeT (brainpoolp256r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries Proof.Variants.MdHash.AArch64.variants)
       stackT
       (Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.signSig.retBits
         ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.signSig
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      brainpoolp256r1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+      brainpoolp256r1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
 /-- The registers the tail of `vg_ecdsa_brainpoolp256r1_verify` clears: those its code may write. -/
 def brainpoolp256r1VerifyClear : Impl.Residue.AArch64.Clear :=

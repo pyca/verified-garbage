@@ -69,7 +69,7 @@ def artifactsFor : List Artifact :=
       verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p224SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
         Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.AArch64.p224.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      Proof.Ecdsa.Rfc6979.AArch64.p224SignSide)]
+      (Proof.Ecdsa.Rfc6979.AArch64.p224SignSide hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)))]
   else []
 
 def artifacts : List Artifact :=

@@ -18,11 +18,10 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
 public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Proof.P224.AArch64.Law
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.P224.Comb7
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-224
@@ -87,14 +86,14 @@ def p224SignClear : Impl.Residue.AArch64.Clear :=
    .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
    .v27, .v28, .v29, .v30, .v31], []⟩
 
-theorem p224SignSide :
+theorem p224SignSide (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     AArch64.ScrubAll.scrubSide
-      (signCodeT (p224 Proof.P224.AArch64.hasLaw.law Proof.P224.AArch64.hasLaw.inv (Proof.P224.combOk7 Proof.P224.AArch64.hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries Proof.Variants.MdHash.AArch64.variants)
+      (signCodeT (p224 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p224.tries Proof.Variants.MdHash.AArch64.variants)
       stackT
       (Spec.Ecdsa.Rfc6979.Curves.p224.signSig.retBits
         ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p224.signSig
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      p224SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+      p224SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
 /-- The registers the tail of `vg_ecdsa_p224_verify` clears: those its code may write. -/
 def p224VerifyClear : Impl.Residue.AArch64.Clear :=

@@ -131,7 +131,7 @@ def artifactsFor : List Artifact :=
       verified := p521T_verified hasLaw.law hasLaw.inv (Proof.P521.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p521SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
         Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.AArch64.p521.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      Proof.Ecdsa.Rfc6979.AArch64.p521SignSide)]
+      (Proof.Ecdsa.Rfc6979.AArch64.p521SignSide hasLaw.law hasLaw.inv (Proof.P521.combOk7 hasLaw.law)))]
   else []
 
 def artifacts : List Artifact :=

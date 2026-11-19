@@ -34,11 +34,10 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.P256.EcdhJac
-public import VerifiedGarbage.Proof.P256.AArch64.Law
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.P256.Comb7
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-256
@@ -108,14 +107,14 @@ def p256SignClear : Impl.Residue.AArch64.Clear :=
    .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
    .v27, .v28, .v29, .v30, .v31], []⟩
 
-theorem p256SignSide :
+theorem p256SignSide (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     AArch64.ScrubAll.scrubSide
-      (signCodeT (p256 Proof.P256.AArch64.hasLaw.law Proof.P256.AArch64.hasLaw.inv (Proof.P256.combOk7 Proof.P256.AArch64.hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries Proof.Variants.MdHash.AArch64.variants)
+      (signCodeT (p256 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p256.tries Proof.Variants.MdHash.AArch64.variants)
       stackT
       (Spec.Ecdsa.Rfc6979.Curves.p256.signSig.retBits
         ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p256.signSig
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      p256SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+      p256SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
 /-- The registers the tail of `vg_ecdsa_p256_verify` clears: those its code may write. -/
 def p256VerifyClear : Impl.Residue.AArch64.Clear :=

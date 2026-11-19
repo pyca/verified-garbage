@@ -23,11 +23,10 @@ public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-public import VerifiedGarbage.Proof.P521.AArch64.Law
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.P521.Comb7
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-521
@@ -93,14 +92,14 @@ def p521SignClear : Impl.Residue.AArch64.Clear :=
    .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
    .v27, .v28, .v29, .v30, .v31], []⟩
 
-theorem p521SignSide :
+theorem p521SignSide (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     AArch64.ScrubAll.scrubSide
-      (signCodeT (p521 Proof.P521.AArch64.hasLaw.law Proof.P521.AArch64.hasLaw.inv (Proof.P521.combOk7 Proof.P521.AArch64.hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p521.tries Proof.Variants.MdHash.AArch64.variants)
+      (signCodeT (p521 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p521.tries Proof.Variants.MdHash.AArch64.variants)
       stackT
       (Spec.Ecdsa.Rfc6979.Curves.p521.signSig.retBits
         ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p521.signSig
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      p521SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+      p521SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
 /-- The registers the tail of `vg_ecdsa_p521_verify` clears: those its code may write. -/
 def p521VerifyClear : Impl.Residue.AArch64.Clear :=

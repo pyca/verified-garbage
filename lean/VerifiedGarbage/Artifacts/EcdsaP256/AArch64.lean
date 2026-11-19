@@ -156,7 +156,7 @@ def artifactsFor : List Artifact :=
       code := signCodeT (p256 hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries VG.Proof.Variants.MdHash.AArch64.variants
       verified := p256T_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p256SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      Proof.Ecdsa.Rfc6979.AArch64.p256SignSide)]
+      (Proof.Ecdsa.Rfc6979.AArch64.p256SignSide hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)))]
   else []
 
 def artifacts : List Artifact :=

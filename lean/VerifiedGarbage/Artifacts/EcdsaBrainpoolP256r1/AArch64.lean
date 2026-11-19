@@ -64,7 +64,7 @@ def artifactsFor : List Artifact :=
       verified := brainpoolp256r1T_verified hasLaw.law hasLaw.inv VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.brainpoolp256r1SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
         Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      Proof.Ecdsa.Rfc6979.AArch64.brainpoolp256r1SignSide)]
+      (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp256r1SignSide hasLaw.law hasLaw.inv))]
   else []
 
 def artifacts : List Artifact :=
