@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -1005,7 +1007,7 @@ b 2239f
 2239:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOAAAADjR/iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgwASE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
@@ -1013,6 +1015,8 @@ b 2239f
 /// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1676,7 +1680,7 @@ bne %cr0, 2181b
 2162:
 .base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6w=="
 21:
-.base64 "AAEhOCAAgE4=""#,
+.base64 "AAEhOAAAADgx8SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPhwBAz4eAQM+IAEDPiIBAz4kAQM+JgEDPigBAz4qAQM+LAEDPi4BAz4wAQM+MgEDPjQBAz42AQM+OAEDPjoBAz48AQM+PgEDPgABQz4CAUM+BAFDPgYBQz4IAUM+CgFDPgwBQz4OAUM+EAFDPhIBQz4UAUM+FgFDPhgBQz4aAUM+HAFDPh4BQz4gAUM+IgFDPiQBQz4mAUM+KAFDPioBQz4sAUM+LgFDPjABQz4yAUM+NAFDPjYBQz44AUM+OgFDPjwBQz4+AUM+AAGDPgIBgz4EAYM+BgGDPggBgz4KAYM+DAGDPg4Bgz4QAYM+EgGDPhQBgz4WAYM+GAGDPhoBgz4cAYM+HgGDPiABgz4iAYM+JAGDPiYBgz4oAYM+KgGDPiwBgz4uAYM+MAGDPjIBgz40AYM+NgGDPjgBgz46AYM+PAGDPj4Bgz4AAcM+AgHDPgQBwz4GAcM+CAHDPgoBwz4MAcM+DgHDPhABwz4SAcM+FAHDPhYBwz4YAcM+GgHDPhwBwz4eAcM+IAHDPiIBwz4kAcM+JgHDPigBwz4qAcM+LAHDPi4Bwz4wAcM+MgHDPjQBwz42AcM+OAHDPjoBwz48AcM+PgHDPgACAz4CAgM+BAIDPgYCAz4IAgM+CgIDPgwCAz4OAgM+EAIDPhICAz4UAgM+FgIDPhgCAz4aAgM+HAIDPh4CAz4gAgM+IgIDPiQCAz4mAgM+KAIDPioCAz4sAgM+LgIDPjACAz4yAgM+NAIDPjYCAz44AgM+OgIDPjwCAz4+AgM+AAJDPgICQz4EAkM+BgJDPggCQz4KAkM+DAJDPg4CQz4QAkM+EgJDPhQCQz4WAkM+GAJDPhoCQz4cAkM+HgJDPiACQz4iAkM+JAJDPiYCQz4oAkM+KgJDPiwCQz4uAkM+MAJDPjICQz40AkM+NgJDPjgCQz46AkM+PAJDPj4CQz4AAoM+AgKDPgQCgz4GAoM+CAKDPgoCgz4MAoM+DgKDPhACgz4SAoM+FAKDPhYCgz4YAoM+GgKDPhwCgz4eAoM+IAKDPiICgz4kAoM+JgKDPigCgz4qAoM+LAKDPi4Cgz4wAoM+MgKDPjQCgz42AoM+OAKDPjoCgz48AoM+PgKDPgACwz4CAsM+BALDPgYCwz4IAsM+CgLDPgwCwz4OAsM+EALDPhICwz4UAsM+FgLDPhgCwz4aAsM+HALDPh4Cwz4gAsM+IgLDPiQCwz4mAsM+KALDPioCwz4sAsM+LgLDPjACwz4yAsM+NALDPjYCwz44AsM+OgLDPjwCwz4+AsM+AAMDPgIDAz4EAwM+BgMDPggDAz4KAwM+DAMDPg4DAz4QAwM+EgMDPhQDAz4WAwM+GAMDPhoDAz4cAwM+HgMDPiADAz4iAwM+JAMDPiYDAz4oAwM+KgMDPiwDAz4uAwM+MAMDPjIDAz40AwM+NgMDPjgDAz46AwM+PAMDPj4DAz4AA0M+AgNDPgQDQz4GA0M+CANDPgoDQz4MA0M+DgNDPhADQz4SA0M+FANDPhYDQz4YA0M+GgNDPhwDQz4eA0M+IANDPiIDQz4kA0M+JgNDPigDQz4qA0M+LANDPi4DQz4wA0M+MgNDPjQDQz42A0M+OANDPjoDQz48A0M+PgNDPgADgz4CA4M+BAODPgYDgz4IA4M+CgODPgwDgz4OA4M+EAODPhIDgz4UA4M+FgODPhgDgz4aA4M+HAODPh4Dgz4gA4M+IgODPiQDgz4mA4M+KAODPioDgz40A4hOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
