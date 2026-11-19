@@ -66,6 +66,59 @@ def streamVerifyBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0)
   streamVerifyBitslicedSig.contract A (pre := streamVerifyBitslicedPre A.ptrBits)
     (post := streamVerifyBitslicedRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
 
+/-! ## With the working space as an argument
+
+As `Scratch.lean`'s: the contracts with a 2560-byte `work` buffer appended,
+whatever it holds, for code proved with the working space as an argument. -/
+
+def streamCryptBitslicedScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("data", .slice true .u8 "len"), ("bk", .array false .u64 156), ("work", .array true .u64 320)]
+
+def streamEncryptBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptBitslicedScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen data len bk _work =>
+      streamTextBitslicedPre A.ptrBits ctx rounds state aadLen textLen data len bk)
+    (post := fun ctx rounds state aadLen textLen data len bk _work =>
+      streamEncryptBitslicedRoundsPost A.ptrBits ctx rounds state aadLen textLen data len bk)
+    (writeArgs := true) (stack := stack)
+
+def streamDecryptBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptBitslicedScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen data len bk _work =>
+      streamTextBitslicedPre A.ptrBits ctx rounds state aadLen textLen data len bk)
+    (post := fun ctx rounds state aadLen textLen data len bk _work =>
+      streamDecryptBitslicedRoundsPost A.ptrBits ctx rounds state aadLen textLen data len bk)
+    (writeArgs := true) (stack := stack)
+
+def streamFinishBitslicedScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("tag", .array true .u8 16), ("bk", .array false .u64 156), ("work", .array true .u64 320)]
+
+def streamFinishBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamFinishBitslicedScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen tag bk _work =>
+      streamFinishBitslicedPre A.ptrBits ctx rounds state aadLen textLen tag bk)
+    (post := fun ctx rounds state aadLen textLen tag bk _work =>
+      streamFinishBitslicedRoundsPost A.ptrBits ctx rounds state aadLen textLen tag bk)
+    (writeArgs := true) (stack := stack)
+
+def streamVerifyBitslicedScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("tag", .slice false .u8 "tag_len"), ("bk", .array false .u64 156), ("work", .array true .u64 320)]
+  ret := some .u32
+
+def streamVerifyBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamVerifyBitslicedScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen tag tagLen bk _work =>
+      streamVerifyBitslicedPre A.ptrBits ctx rounds state aadLen textLen tag tagLen bk)
+    (post := fun ctx rounds state aadLen textLen tag tagLen bk _work =>
+      streamVerifyBitslicedRoundsPost A.ptrBits ctx rounds state aadLen textLen tag tagLen bk)
+    (writeArgs := true) (stack := stack)
+
 /-! ## With the key -/
 
 theorem streamEncryptBitsliced_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
@@ -106,6 +159,34 @@ theorem ctxSlicedRepr_congr {m₁ m₂ : Mem} {bk ctx : Addr}
     exact h1 j hj t ht b hb i hi
   · rw [hw _ (by omega_using [hi, hj])]
     exact h2 i hi j hj
+
+/-- Memory that is zero on the buffer and the context holds the bitsliced
+form of the context: of a schedule of zeros and a zero hash subkey. -/
+theorem ctxSlicedRepr_of_zero {m : Mem} {bk ctx : Addr}
+    (hk : ∀ i < 1248, m (bk + BitVec.ofNat 64 i) = 0) (hc : ∀ i < 256, m (ctx + BitVec.ofNat 64 i) = 0) :
+    CtxSlicedRepr m bk ctx := by
+  refine ctxSlicedRepr_congr (m₁ := fun _ => 0) (fun i hi => hk i hi) (fun i hi => hc i hi) ?_
+  have hr0 : ∀ n (a : Addr), Mem.read (fun _ => 0) a n = 0#(8 * n) := by
+    intro n
+    induction n with
+    | zero => intro a; rfl
+    | succ n ih =>
+      intro a
+      show (Mem.read (fun _ => 0) (a + 1) n ++ (0 : BitVec 8) : BitVec (8 * n + 8)) = _
+      rw [ih]
+      exact BitVec.eq_of_getLsbD_eq fun i _ => by simp only [BitVec.getLsbD_append, BitVec.getLsbD_zero]; split <;> simp <;> exact BitVec.getLsbD_zero
+  have hr : ∀ a : Addr, Mem.readW (fun _ => 0) a 64 = 0 := fun a => by
+    rw [Mem.readW, hr0]; rfl
+  have hb : ∀ p k, (Spec.Aes.bytesAt (fun _ => 0) p k) = List.replicate k 0 := fun p k => by
+    rw [Spec.Aes.bytesAt, List.map_const', List.length_range]
+  have hH : ctxH (fun _ => 0) ctx = 0 := by
+    simp only [ctxH, blockAt]; rw [hb]; decide
+  refine ⟨fun j _ t _ b _ i hi => ?_, fun i hi j hj => ?_⟩
+  · rw [hr, hb, Spec.Aes.roundKey, List.drop_replicate, List.take_replicate]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate]
+    split <;> simp
+  · rw [hr, hH]
+    revert i j; decide
 
 variable (pb : Nat)
 

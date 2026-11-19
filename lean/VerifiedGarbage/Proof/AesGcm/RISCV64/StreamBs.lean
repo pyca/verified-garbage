@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesGcm.Bitsliced
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
+import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
@@ -16,6 +20,8 @@ import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Compare
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesGcm.Bitsliced
+meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
 meta import VerifiedGarbage.Impl.AesGcm.RISCV64
@@ -598,5 +604,257 @@ theorem streamVerifyBs_ct [VG.Proof.Gcm.RISCV64.GhashLaw] :
       exact verOkB_wp L hR t1 t16 hs.1
   obtain ⟨_, hc⟩ := restore_taint
   exact CT.taintEq _ (fun _ => stackArg σ₁ 0) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
+
+/-! ## The shared contracts -/
+
+/-- Memory holding `0x6000` at `0x9000`, the working space's address as the first stack argument. -/
+def bsSatMem : Mem := fun a => bif Nat.beq a.toNat 0x9001 then 0x60 else 0
+
+theorem bsSatMem_zero {p : Addr} {n : Nat} (h : p.toNat + n ≤ 0x9001) :
+    ∀ i < n, bsSatMem (p + BitVec.ofNat 64 i) = 0 := fun i hi => by
+  simp [bsSatMem, Nat.beq_eq]
+  omega_using [h, hi]
+
+/-- `streamCryptBsPre`, with the buffers at `0x1000` (`ctx`), `0x2000` (`bk`), `0x3000` (`state`),
+`0x4000` (no data) and `0x6000` (the working space, the stack argument). -/
+def streamCryptBsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x3000 | .a5 => 0x4000 | .a7 => 0x2000 | _ => 0
+  sp := 0x9000
+  mem := bsSatMem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 1248⟩, ⟨0x9000, 8⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x4000, 0⟩, ⟨0x6000, 2560⟩]
+
+theorem streamEncryptBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target streamEncryptBs (Proof.AesGcm.streamEncryptBitslicedScratchContract RISCV64.abi 2048) :=
+  Verified.of_correct (fun _ hs => streamEncryptBs_wp hs) streamEncryptBs_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.streamEncryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, streamEncryptBsRISCV64, streamCryptBsPre,
+          streamCryptBsPub, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      post := by
+        sig_implies_post [Proof.AesGcm.streamEncryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Proof.AesGcm.streamEncryptBitslicedRoundsPost, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptBsRISCV64,
+          streamEncryptRISCV64, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
+          List.range.loop]
+      pub := by
+        sig_implies_pub [Proof.AesGcm.streamEncryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          streamEncryptBsRISCV64, streamCryptBsPre, streamCryptBsPub, onePub, args, RISCV64.abi, RISCV64.argRegs,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      sat := ⟨streamCryptBsSat, by
+        sig_pre [Proof.AesGcm.streamEncryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, RISCV64.abi, RISCV64.argRegs, stackArg,
+          stackArgAddr, List.getD, List.range, List.range.loop, streamCryptBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))⟩ }
+
+theorem streamDecryptBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target streamDecryptBs (Proof.AesGcm.streamDecryptBitslicedScratchContract RISCV64.abi 2048) :=
+  Verified.of_correct (fun _ hs => streamDecryptBs_wp hs) streamDecryptBs_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.streamDecryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, streamDecryptBsRISCV64, streamCryptBsPre,
+          streamCryptBsPub, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      post := by
+        sig_implies_post [Proof.AesGcm.streamDecryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Proof.AesGcm.streamDecryptBitslicedRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptBsRISCV64,
+          streamDecryptRISCV64, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
+          List.range.loop]
+      pub := by
+        sig_implies_pub [Proof.AesGcm.streamDecryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          streamDecryptBsRISCV64, streamCryptBsPre, streamCryptBsPub, onePub, args, RISCV64.abi, RISCV64.argRegs,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      sat := ⟨streamCryptBsSat, by
+        sig_pre [Proof.AesGcm.streamDecryptBitslicedScratchContract, Proof.AesGcm.streamCryptBitslicedScratchSig,
+          Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, RISCV64.abi, RISCV64.argRegs, stackArg,
+          stackArgAddr, List.getD, List.range, List.range.loop, streamCryptBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))⟩ }
+
+/-- `finBsPre`, with the buffers at `0x1000` (`ctx`), `0x2000` (`bk`), `0x3000` (`state`), `0x5000`
+(`tag`) and `0x4000` (the working space). -/
+def finBsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x3000 | .a5 => 0x5000 | .a6 => 0x2000 | .a7 => 0x4000 | _ => 0
+  sp := 0x9000
+  mem := bsSatMem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 1248⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2560⟩]
+
+theorem streamFinishBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target streamFinishBs (Proof.AesGcm.streamFinishBitslicedScratchContract RISCV64.abi 2048) :=
+  Verified.of_correct (fun _ hs => streamFinishBs_wp hs) streamFinishBs_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.streamFinishBitslicedScratchContract, Proof.AesGcm.streamFinishBitslicedScratchSig,
+          Spec.Gcm.streamFinishBitslicedPre, Spec.Gcm.streamFinishPre, streamFinishBsRISCV64, finBsPre,
+          rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true]
+      post := by
+        sig_implies_post [Proof.AesGcm.streamFinishBitslicedScratchContract, Proof.AesGcm.streamFinishBitslicedScratchSig,
+          Proof.AesGcm.streamFinishBitslicedRoundsPost, Proof.AesGcm.streamFinishRoundsPost, streamFinishBsRISCV64,
+          streamFinishRISCV64, RISCV64.abi, RISCV64.argRegs]
+      pub := by
+        sig_implies_pub [Proof.AesGcm.streamFinishBitslicedScratchContract, Proof.AesGcm.streamFinishBitslicedScratchSig,
+          streamFinishBsRISCV64, streamFinishRISCV64, finBsPre, RISCV64.abi, RISCV64.argRegs]
+      sat := ⟨finBsSat, by
+        sig_pre [Proof.AesGcm.streamFinishBitslicedScratchContract, Proof.AesGcm.streamFinishBitslicedScratchSig,
+          Spec.Gcm.streamFinishBitslicedPre, Spec.Gcm.streamFinishPre, RISCV64.abi, RISCV64.argRegs, finBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))⟩ }
+
+/-- `verBsPre`, with the buffers at `0x1000` (`ctx`), `0x5000` (an empty tag), `0x2000` (`bk`),
+`0x3000` (`state`) and `0x6000` (the working space, the stack argument). -/
+def verBsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x3000 | .a5 => 0x5000 | .a7 => 0x2000 | _ => 0
+  sp := 0x9000
+  mem := bsSatMem
+  rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩, ⟨0x2000, 1248⟩, ⟨0x9000, 8⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x6000, 2560⟩]
+
+theorem streamVerifyBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target streamVerifyBs (Proof.AesGcm.streamVerifyBitslicedScratchContract RISCV64.abi 2048) :=
+  Verified.of_correct (fun _ hs => streamVerifyBs_wp hs) streamVerifyBs_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.streamVerifyBitslicedScratchContract, Proof.AesGcm.streamVerifyBitslicedScratchSig,
+          Spec.Gcm.streamVerifyBitslicedPre, Spec.Gcm.streamVerifyPre, streamVerifyBsRISCV64, verBsPre,
+          onePub, args, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      post := by
+        sig_implies_post [Proof.AesGcm.streamVerifyBitslicedScratchContract, Proof.AesGcm.streamVerifyBitslicedScratchSig,
+          Proof.AesGcm.streamVerifyBitslicedRoundsPost, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyBsRISCV64,
+          streamVerifyRISCV64, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
+          List.range.loop]
+      pub := by
+        sig_implies_pub [Proof.AesGcm.streamVerifyBitslicedScratchContract, Proof.AesGcm.streamVerifyBitslicedScratchSig,
+          streamVerifyBsRISCV64, verBsPre, onePub, args, RISCV64.abi, RISCV64.argRegs,
+          stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      sat := ⟨verBsSat, by
+        sig_pre [Proof.AesGcm.streamVerifyBitslicedScratchContract, Proof.AesGcm.streamVerifyBitslicedScratchSig,
+          Spec.Gcm.streamVerifyBitslicedPre, Spec.Gcm.streamVerifyPre, RISCV64.abi, RISCV64.argRegs, stackArg,
+          stackArgAddr, List.getD, List.range, List.range.loop, verBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))⟩ }
+
+/-! ## With the working space on the stack
+
+As the plain functions' (`Verified.lean`): `encrypt`, `decrypt` and `verify`,
+whose arguments fill `a0`–`a7`, in a frame that passes the working space's
+address as their first stack argument (`Verified.stackScratchArgs`), and
+`finish`, whose arguments leave `a7` free, in a frame that passes it in `a7`
+(`Verified.stackScratchL`). -/
+
+def streamCryptBsFrameSat : State :=
+  { streamCryptBsSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1248⟩], wr := [⟨0x3000, 80⟩, ⟨0x4000, 0⟩] }
+
+theorem streamEncryptBsFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptBitslicedRoundsContract RISCV64.abi 4624).pre s :=
+  by
+  refine ⟨streamCryptBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.streamEncryptBitslicedRoundsContract, Spec.Gcm.streamCryptBitslicedSig, Spec.Gcm.streamCryptSig, Spec.Gcm.bitslicedParam, Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptBitslicedRoundsPost, RISCV64.abi, RISCV64.argRegs, streamCryptBsFrameSat, streamCryptBsSat, finBsSat, verBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))
+
+theorem streamEncryptBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 streamEncryptBs)
+      (Proof.AesGcm.streamEncryptBitslicedRoundsContract RISCV64.abi 4624) :=
+  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.streamCryptBitslicedSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.streamEncryptBitslicedRoundsPost RISCV64.abi.ptrBits)
+    (wa := true) (stack := 2048) (bytes := 2576) (m := 0) streamEncryptBs_verified (by decide) (by decide)
+    (Proof.AesGcm.streamTextBitslicedPre_local _) (Proof.AesGcm.streamEncryptBitslicedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamEncryptBitslicedPostOut_local _ vs m m₁ m₂ r hl)
+    streamEncryptBsFrameSat_pre
+
+theorem streamDecryptBsFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptBitslicedRoundsContract RISCV64.abi 4624).pre s :=
+  by
+  refine ⟨streamCryptBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.streamDecryptBitslicedRoundsContract, Spec.Gcm.streamCryptBitslicedSig, Spec.Gcm.streamCryptSig, Spec.Gcm.bitslicedParam, Spec.Gcm.streamTextBitslicedPre, Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptBitslicedRoundsPost, RISCV64.abi, RISCV64.argRegs, streamCryptBsFrameSat, streamCryptBsSat, finBsSat, verBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))
+
+theorem streamDecryptBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 streamDecryptBs)
+      (Proof.AesGcm.streamDecryptBitslicedRoundsContract RISCV64.abi 4624) :=
+  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.streamCryptBitslicedSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamTextBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.streamDecryptBitslicedRoundsPost RISCV64.abi.ptrBits)
+    (wa := true) (stack := 2048) (bytes := 2576) (m := 0) streamDecryptBs_verified (by decide) (by decide)
+    (Proof.AesGcm.streamTextBitslicedPre_local _) (Proof.AesGcm.streamDecryptBitslicedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamDecryptBitslicedPostOut_local _ vs m m₁ m₂ r hl)
+    streamDecryptBsFrameSat_pre
+
+def finBsFrameSat : State :=
+  { finBsSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
+
+theorem finBsFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishBitslicedRoundsContract RISCV64.abi 4608).pre s :=
+  by
+  refine ⟨finBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.streamFinishBitslicedRoundsContract, Spec.Gcm.streamFinishBitslicedSig, Spec.Gcm.streamFinishSig, Spec.Gcm.bitslicedParam, Spec.Gcm.streamFinishBitslicedPre, Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishBitslicedRoundsPost, RISCV64.abi, RISCV64.argRegs, finBsFrameSat, streamCryptBsSat, finBsSat, verBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))
+
+theorem streamFinishBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 streamFinishBs)
+      (Proof.AesGcm.streamFinishBitslicedRoundsContract RISCV64.abi 4608) :=
+  RISCV64.Verified.stackScratchL (sig := Spec.Gcm.streamFinishBitslicedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamFinishBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.streamFinishBitslicedRoundsPost RISCV64.abi.ptrBits) (wa := true) (stack := 2048)
+    (bytes := 2560) streamFinishBs_verified (by decide) (by decide)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamFinishBitslicedPostOut_local _ vs m m₁ m₂ r hl)
+    finBsFrameSat_pre
+
+def verBsFrameSat : State :=
+  { verBsSat with rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩, ⟨0x2000, 1248⟩], wr := [⟨0x3000, 80⟩] }
+
+theorem verBsFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyBitslicedRoundsContract RISCV64.abi 4624).pre s :=
+  by
+  refine ⟨verBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.streamVerifyBitslicedRoundsContract, Spec.Gcm.streamVerifyBitslicedSig, Spec.Gcm.streamVerifySig, Spec.Gcm.bitslicedParam, Spec.Gcm.streamVerifyBitslicedPre, Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyBitslicedRoundsPost, RISCV64.abi, RISCV64.argRegs, verBsFrameSat, streamCryptBsSat, finBsSat, verBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (bsSatMem_zero (by decide)) (bsSatMem_zero (by decide))
+
+theorem streamVerifyBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 streamVerifyBs)
+      (Proof.AesGcm.streamVerifyBitslicedRoundsContract RISCV64.abi 4624) :=
+  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.streamVerifyBitslicedSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.streamVerifyBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.streamVerifyBitslicedRoundsPost RISCV64.abi.ptrBits)
+    (wa := true) (stack := 2048) (bytes := 2576) (m := 0) streamVerifyBs_verified (by decide) (by decide)
+    (Proof.AesGcm.streamVerifyBitslicedPre_local _) (Proof.AesGcm.streamVerifyBitslicedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamVerifyBitslicedPostOut_local _ vs m m₁ m₂ r hl)
+    verBsFrameSat_pre
 
 end VG.Proof.AesGcm.RISCV64
