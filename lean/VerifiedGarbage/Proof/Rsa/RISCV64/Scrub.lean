@@ -24,7 +24,7 @@ their outputs (`RISCV64.Scrub.PostOut`), as on x86-64
 the key check not at all, the others the octets at `out` (or the key's
 buffer, or `p` and `q`, or `dp`, `dq` and `qinv`) and the words at `pre`,
 `used` and `state`. Each implementation is followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
 caller-saved registers and the whole stack its frames use.
 -/
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.Scrub
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.SignP
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # RSASSA-PSS (RFC 8017) on RISC-V -/
 
@@ -17,13 +18,13 @@ open VG.Proof.MdHashTable.RISCV64 (vars tables fnsOf fns3)
 
 def artifacts : List Artifact :=
   if h : OK vars vars then [
-    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.verifyPrecomputed (fnsOf vars)
         (fns3 vars)
       verified := verify_ok h }
       (Proof.Rsa.RISCV64.Scrub.pssVerifyOut _ _ _)),
-    Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Sign.signP (fnsOf vars) (fns3 vars)
       verified := signP_ok h }

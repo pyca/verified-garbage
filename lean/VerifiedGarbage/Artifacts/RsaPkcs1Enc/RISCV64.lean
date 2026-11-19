@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.RndVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.RISCV64.Scrub
 public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on RISC-V -/
 
@@ -15,11 +16,11 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.RsaPkcs1Enc.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.RsaPkcs1Enc.RISCV64.Decrypt.codeP
     verified := Proof.RsaPkcs1Enc.RISCV64.Dec.codeP_verified }
     (Proof.Rsa.RISCV64.Scrub.pkcs1DecryptOut _)),
-  Spec.RsaPkcs1Enc.encryptRandomApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.RsaPkcs1Enc.encryptRandomApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.RsaPkcs1Enc.RISCV64.Random.code
     verified := Proof.RsaPkcs1Enc.RISCV64.Rnd.code_verified }
     (Proof.Rsa.RISCV64.Scrub.pkcs1EncryptRandomOut _))]
