@@ -666,6 +666,45 @@ theorem postOut_of_local {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
           hw⟩, rfl⟩
     exact (hm a ⟨b.1, hin, ha⟩).symm
 
+/-- `postOut_of_local`, for a postcondition that reads the memory on return
+only within the buffers when the precondition holds. -/
+theorem postOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+    (hl : ∀ vs m m₁ m₂ r, vs.length = (sig.words A.ptrBits).length →
+      Curry.apply (sig.words A.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words A.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words A.ptrBits) post vs m m₂ r) :
+    PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
+  intro s u u' hs hp hm hr
+  simp only [Sig.contract] at hs hp ⊢
+  revert hs hp
+  cases hargs : A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) with
+  | none => intro hs; exact hs.elim
+  | some vals =>
+    intro hs hp
+    simp only at hs hp ⊢
+    obtain ⟨-, hrd, hwr, -, -, -, hpre⟩ := hs
+    have hpre' : Curry.apply (sig.words A.ptrBits) pre (vals s) (A.mem s) := by
+      cases hal : A.alignsBufs
+      · rw [hal] at hpre; exact hpre
+      · rw [hal] at hpre; exact hpre.1
+    rw [hA.ret, hA.mem, hA.mem] at hp ⊢
+    rw [hA.mem] at hpre'
+    rw [hr]
+    refine hl (vals s) _ _ _ _ (by rw [hA.argsLen _ _ hargs s, List.length_map]) hpre' (fun b hb a ha => ?_) hp
+    have hin : b.1 ∈ s.rd ++ s.wr := by
+      cases hw : b.2
+      · apply List.mem_append_left; apply hA.rdSub; rw [hrd]
+        exact List.mem_map.mpr ⟨b, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
+          by simp [hw]⟩, rfl⟩
+      · apply List.mem_append_right; rw [← hA.wr, hwr]
+        exact List.mem_map.mpr ⟨b, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
+          hw⟩, rfl⟩
+    exact (hm a ⟨b.1, hin, ha⟩).symm
+
 /-! ## Two runs use the same unknowns
 
 A released frame's bytes are the unknowns' (`lose`), so the clearing leaves
