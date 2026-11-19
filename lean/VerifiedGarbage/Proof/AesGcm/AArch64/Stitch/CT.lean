@@ -74,7 +74,7 @@ theorem runWithSX_ok' {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem)
     (htb : TbFor Wn tb w s)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) s₁ fun s' =>
       (GprAbi s s' ∧ (sealAArch64 Wn).post s s') ∧ I s'.mem :=
   runWithSX_ok v cl hMK gh hs hexW hexD hexC hI hgh (fun u he hrd hwr hf key => htb u he hrd hwr hf key) h₁ hx
@@ -90,7 +90,7 @@ theorem sealWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (htb : TbForP Wn tb w s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (htb : TbForP Wn tb w s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) s fun s' =>
       GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
@@ -216,7 +216,7 @@ theorem Mid.cryptS {H : Block} {R n n₂ P : Nat} {D D₂ Tg X : Addr} {ρ s s' 
     (h : Mid Wn Ctx W SP H R n D Tg X ρ s) (hsub : Region.Sub ⟨D₂, n₂⟩ ⟨D, n⟩)
     (hd : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s D₂ n₂)
     (o : CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb P D₂ n₂ s.mem s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Wn Ctx W SP H R n D Tg X ρ s' := by
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : Mid Wn Ctx W SP H R n D Tg X ρ s' := by
   obtain dWK : ∀ r ∈ crFrame Wn (W + BitVec.ofNat 64 16) W D₂ n₂, (keyR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -370,7 +370,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     (x27 : s₄.gpr .x27 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x24 : s₄.gpr .x24 = BitVec.ofNat 64 (n - Stitch.pre n))
     (x25 : s₄.gpr .x25 = BitVec.ofNat 64 (Stitch.pre n % 16))
-    (r₄ : Regs [.x9, .x23, .x27, .x24, .x25] s₃ s₄) :
+    (r₄ : Regs [.x9, .x23, .x27, .x24, .x25] s₃ s₄) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     Mid Wn Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
       CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr R (Stitch.pre n) (D + BitVec.ofNat 64 (Stitch.pre n))
         (n - Stitch.pre n) s₄ := by
@@ -445,7 +445,7 @@ theorem ctAS_ok (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {k : Reg → BitVe
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg)
     (hf : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₁.mem) (hrd : s₁.rd = ρ.rd) (hwr : s₁.wr = ρ.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = ρ.rd → u.wr = ρ.wr →
-      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) :
+      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb
         Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
         ([.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr))))) s₁
@@ -499,7 +499,7 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = SP → v₂.sp = SP → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = ρ₁.rd → v₁.wr = ρ₁.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₁.mem v₁.mem →
       v₂.rd = ρ₂.rd → v₂.wr = ρ₂.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) TT := by
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
