@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Verified
+public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -10,14 +10,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesXts.Arm
 
-open VG.Proof.AesXts.Arm
-
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptUnitApi.artifact Arm.target {
-    code := Impl.AesXts.ArmUnit.encrypt
-    verified := .unscrubbed Unit.encrypt_verified },
-  Spec.Xts.aesDecryptUnitApi.artifact Arm.target {
-    code := Impl.AesXts.ArmUnit.decrypt
-    verified := .unscrubbed Unit.decrypt_verified }]
+  Spec.Xts.aesEncryptUnitApi.artifact Arm.target Proof.Aes.Arm.Scrub.xtsEncryptReg,
+  Spec.Xts.aesDecryptUnitApi.artifact Arm.target Proof.Aes.Arm.Scrub.xtsDecryptReg]
 
 end VG.Artifacts.AesXts.Arm

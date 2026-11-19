@@ -32,7 +32,10 @@ namespace VG.Impl.AesOfb.Arm
 
 open VG.Arm
 
-/-- `vg_aes_ofb_final`, calling `vg_aes_ofb`. -/
-def cryptFinal : Prog isa := Impl.AesCfb.Arm.final "vg_aes_ofb" crypt
+/-- `vg_aes_ofb_final`, calling `vg_aes_ofb`'s code as it is verified, under a
+name of its own (`vg_aes_ofb_entry`), which the emitter writes as an internal
+function, since the artifact is that code scrubbed
+(`Proof/Aes/Arm/Scrub.lean`). -/
+def cryptFinal : Prog isa := Impl.AesCfb.Arm.final "vg_aes_ofb_entry" crypt
 
 end VG.Impl.AesOfb.Arm

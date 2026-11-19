@@ -89,10 +89,14 @@ def final (name : String) (whole : Prog isa) : Prog isa :=
   .seq (.block finalSetup) (.seq (wholeFrame name whole)
     (.seq (.block [.cmp .r8 (.imm 0)]) (.seq (.ite .eq (.block []) finalTail) (.block finalEnd))))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`. -/
-def encryptFinal : Prog isa := final "vg_aes_cfb128_encrypt" encrypt
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code as it is
+verified, under a name of its own (`vg_aes_cfb128_encrypt_entry`), which the
+emitter writes as an internal function, since the artifact is that code
+scrubbed (`Proof/Aes/Arm/Scrub.lean`). -/
+def encryptFinal : Prog isa := final "vg_aes_cfb128_encrypt_entry" encrypt
 
-/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`. -/
-def decryptFinal : Prog isa := final "vg_aes_cfb128_decrypt" decrypt
+/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`'s code as
+`vg_aes_cfb128_decrypt_entry`. -/
+def decryptFinal : Prog isa := final "vg_aes_cfb128_decrypt_entry" decrypt
 
 end VG.Impl.AesCfb.Arm

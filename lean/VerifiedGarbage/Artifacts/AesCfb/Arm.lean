@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.Arm.Verified
-public import VerifiedGarbage.Proof.AesCfb.Arm.Final
+public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,20 +10,10 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesCfb.Arm
 
-open VG.Proof.AesCfb.Arm
-
 def artifacts : List Artifact := [
-  Spec.Cfb.aesEncryptApi.artifact Arm.target {
-    code := Impl.AesCfb.Arm.encrypt
-    verified := .unscrubbed (Proof.AesCfb.encrypt_keyed encrypt_verified) },
-  Spec.Cfb.aesDecryptApi.artifact Arm.target {
-    code := Impl.AesCfb.Arm.decrypt
-    verified := .unscrubbed (Proof.AesCfb.decrypt_keyed decrypt_verified) },
-  Spec.Cfb.aesEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.encryptFinal
-    verified := .unscrubbed (Proof.AesCfb.encryptFinal_keyed encryptFinal_framed) },
-  Spec.Cfb.aesDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.decryptFinal
-    verified := .unscrubbed (Proof.AesCfb.decryptFinal_keyed decryptFinal_framed) }]
+  Spec.Cfb.aesEncryptApi.artifact Arm.target Proof.Aes.Arm.Scrub.cfbEncryptReg,
+  Spec.Cfb.aesDecryptApi.artifact Arm.target Proof.Aes.Arm.Scrub.cfbDecryptReg,
+  Spec.Cfb.aesEncryptFinalApi.artifact Arm.target Proof.Aes.Arm.Scrub.cfbEncryptFinalReg,
+  Spec.Cfb.aesDecryptFinalApi.artifact Arm.target Proof.Aes.Arm.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.AesCfb.Arm

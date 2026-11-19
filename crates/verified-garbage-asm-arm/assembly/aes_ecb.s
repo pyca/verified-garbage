@@ -25,6 +25,22 @@ vg_aes_ecb_encrypt:
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #24
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #24
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_ecb_decrypt:
@@ -48,4 +64,20 @@ vg_aes_ecb_decrypt:
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #24
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #24
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

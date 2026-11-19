@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Arm.Frame
+public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,8 +11,6 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Aes.Arm
 
 def artifacts : List Artifact := [
-  Spec.Aes.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
-    verified := .unscrubbed Proof.Aes.Arm.expandKey_framed }]
+  Spec.Aes.expandKeyApi.artifact Arm.target Proof.Aes.Arm.Scrub.expandKeyReg]
 
 end VG.Artifacts.Aes.Arm

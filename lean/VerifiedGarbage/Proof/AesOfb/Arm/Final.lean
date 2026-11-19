@@ -85,7 +85,7 @@ theorem crypt_stack : VG.Arm.FrameStack.armStack crypt = 8 := by
 theorem final_correct (s : State) (hs : ofbFinalArm.pre s) :
     ∃ t s', Exec isa cryptFinal s t s' ∧ abiPreserved s s' ∧ ofbFinalArm.post s s' := by
   obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ :=
-    final_wp (M := ofbMode) (name := "vg_aes_ofb") (fun _ hs => AesCbc.Arm.wholeK_wp body_ok hs) crypt_stack
+    final_wp (M := ofbMode) (name := "vg_aes_ofb_entry") (fun _ hs => AesCbc.Arm.wholeK_wp body_ok hs) crypt_stack
       (FPre.of (enc := true) hs)
   exact ⟨t, s', he, hg, final_post h₁ hm⟩
 

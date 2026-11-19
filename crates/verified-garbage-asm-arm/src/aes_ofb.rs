@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -80,6 +82,18 @@ ldr r8, [r10, #2080]
 ldr r9, [r10, #2084]
 ldr lr, [r10, #2092]
 ldr r10, [r10, #2088]
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_aes_blocks_keys = sym super::aes::vg_aes_blocks_keys::vg_aes_blocks_keys,
         vg_aes_encrypt_blocks_keyed = sym super::aes::vg_aes_encrypt_blocks_keyed::vg_aes_encrypt_blocks_keyed,
@@ -89,6 +103,8 @@ bx lr",
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -133,7 +149,7 @@ and r8, r8, #15
 add r7, r3, r12, lsl #4
 mov lr, r10
 push {{r12, lr}}
-bl {vg_aes_ofb}
+bl {vg_aes_ofb_entry}
 ldr r12, [sp], #8
 cmp r8, #0
 beq 20f
@@ -183,8 +199,37 @@ str r2, [r12, #28]
 str r2, [r12, #32]
 str r2, [r12, #36]
 add sp, sp, #56
+sub sp, sp, #72
+add r12, sp, #0
+mov r2, #0
+mov r3, #2
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #72
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
+        vg_aes_ofb_entry = sym super::aes_ofb::vg_aes_ofb_entry::vg_aes_ofb_entry,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ofb_entry.rs"]
+pub(crate) mod vg_aes_ofb_entry;
