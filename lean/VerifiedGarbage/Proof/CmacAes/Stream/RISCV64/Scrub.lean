@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
@@ -1999,7 +2000,7 @@ end
 # Streaming AES-CMAC on RISC-V, without secret residue
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, each
-followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which
+followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which
 clears the caller-saved registers and the stack its frames used, their
 2304 bytes of working space with it. Their postconditions read the memory
 on return only within the state or the MAC (`RISCV64.Scrub.PostOut`), as on
@@ -2049,21 +2050,21 @@ theorem absorbOut (stack : Nat) :
 
 /-- `vg_cmac_aes_init`. -/
 def initReg : Registration Spec.Cmac.aesInitApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a3 Impl.CmacAes.Stream.RISCV64.init
       verified := Proof.CmacAes.Stream.RISCV64.init_framed }
     (initOut _)
 
 /-- `vg_cmac_aes_absorb`. -/
 def absorbReg : Registration Spec.Cmac.aesAbsorbApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a5 Impl.CmacAes.Stream.RISCV64.absorb
       verified := Proof.CmacAes.Stream.RISCV64.absorb_framed }
     (absorbOut _)
 
 /-- `vg_cmac_aes_finish`. -/
 def finishReg : Registration Spec.Cmac.aesFinishApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a4 Impl.CmacAes.Stream.RISCV64.finish
       verified := Proof.CmacAes.Stream.RISCV64.finish_framed }
     (finishOut _)
