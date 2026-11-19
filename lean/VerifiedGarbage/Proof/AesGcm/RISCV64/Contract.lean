@@ -95,19 +95,23 @@ def streamAadRISCV64 : Contract isa where
 
 /-- What `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` need:
 `(ctx = a0, rounds = a1, state = a2, aad_len = a3, text_len = a4, data = a5, len = a6,
-scratch = a7)`. -/
-def streamCryptPre (s : State) : Prop :=
+scratch = a7)`, the code reading the regions `ex` too (the `_bitsliced`
+functions' buffer and stack argument). -/
+def streamCryptPreX (ex : List Region) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .a0, 256⟩
   let st : Region := ⟨s.gpr .a2, 80⟩
   let data : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
   let scr : Region := ⟨s.gpr .a7, 2560⟩
-  s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
+  s.rd = ctx :: ex ∧ s.wr = [st, data, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
     st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
     (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧ (s.gpr .a7).toNat + 2560 ≤ 2 ^ 64 ∧
     rounds (s.gpr .a1) ∧ stkOk s [ctx, st, data, scr] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
     (s.gpr .a2).toNat % 8 = 0 ∧ (s.gpr .a7).toNat % 8 = 0
+
+/-- What `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` need. -/
+def streamCryptPre (s : State) : Prop := streamCryptPreX [] s
 
 def streamCryptPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧

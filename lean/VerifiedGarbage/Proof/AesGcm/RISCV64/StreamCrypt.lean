@@ -60,8 +60,61 @@ theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr) (
   refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
+/-- `cryptEntry`, then `s7 := t2`. -/
+theorem sc1B_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr) (hal : (s₀.gpr .a7).toNat % 8 = 0) :
+    WP isa (.block (cryptEntry ++ [mov .s7 .t2])) s₀ fun s₁ => SC1 s₀ s₁ ∧ s₁.gpr .s7 = s₀.gpr .t2 := by
+  simp only [cryptEntry, List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.block_append (WP.mono (save_ok (b := .a7) hW hal) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
+  obtain e3 : s₁.gpr .a0 = s₀.gpr .a0 := hg _ (by decide)
+  obtain e4 : s₁.gpr .a1 = s₀.gpr .a1 := hg _ (by decide)
+  obtain e5 : s₁.gpr .a2 = s₀.gpr .a2 := hg _ (by decide)
+  obtain e6 : s₁.gpr .a3 = s₀.gpr .a3 := hg _ (by decide)
+  obtain e7 : s₁.gpr .a4 = s₀.gpr .a4 := hg _ (by decide)
+  obtain e8 : s₁.gpr .a5 = s₀.gpr .a5 := hg _ (by decide)
+  obtain e9 : s₁.gpr .a6 = s₀.gpr .a6 := hg _ (by decide)
+  obtain e10 : s₁.gpr .t2 = s₀.gpr .t2 := hg _ (by decide)
+  crun [Int.reduceNatCast', mov, e3, e4, e5, e6, e7, e8, e9, e10, h31]
+  refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals simp [h31]
+
+/-- The entry, and with the round keys bitsliced `s7 := t2`. -/
+theorem entryB_wp {bs : Bool} {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr)
+    (hal : (s₀.gpr .a7).toNat % 8 = 0) :
+    WP isa (.block (cryptEntryB bs)) s₀ fun s₁ => SC1 s₀ s₁ ∧ (bs = true → s₁.gpr .s7 = s₀.gpr .t2) := by
+  cases bs
+  · exact WP.mono (sc1_wp hW hal) fun _ h => ⟨h, Bool.noConfusion⟩
+  · exact WP.mono (sc1B_wp hW hal) fun _ h => ⟨h.1, fun _ => h.2⟩
+
+/-- With the round keys bitsliced, `bk = t2` (after `bsPre`): the code may read
+it, it is a multiple of 8, apart from the state, `W`, the stack below `sp`
+and the data, and holds the round keys of the schedule in the context. -/
+structure BsAt (s₀ : State) : Prop where
+  rd : (⟨s₀.gpr .t2, 960⟩ : Region) ∈ s₀.rd
+  al : (s₀.gpr .t2).toNat % 8 = 0
+  st : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a2, 80⟩
+  w : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a7, 2560⟩
+  sk : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint (below s₀.sp 2048)
+  d : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩
+  keys : Proof.Aes.RISCV64.KeysAt s₀.mem (s₀.gpr .t2) (s₀.gpr .a1).toNat
+    (bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+
+theorem BsAt.saved {s₀ : State} (hb : BsAt s₀) : ∀ r ∈ [savedR (s₀.gpr .a7)], (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint r := by
+  intro r hr; simp only [List.mem_singleton] at hr; subst hr
+  exact hb.w.sub_right (Lay.wSub (by decide))
+
+theorem BsAt.taFrame {s₀ : State} (hb : BsAt s₀) :
+    ∀ r ∈ taFrame (s₀.gpr .a2) (s₀.gpr .a7) s₀.sp, (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact hb.st.sub_right (Lay.stSub (by decide))
+  · exact hb.st.sub_right (Lay.stSub (by decide))
+  · exact hb.w.sub_right (Lay.wSub (by decide))
+  · exact hb.w.sub_right (Lay.wSub (by decide))
+  · exact hb.sk
+
 section
-variable {s₀ : State} (h : streamCryptPre s₀)
+variable {ex : List Region} {s₀ : State} (h : streamCryptPreX ex s₀)
 include h
 
 theorem scLay : Lay (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a7) := by
@@ -221,13 +274,14 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
         xorKs (ctxCiph s₀.mem (s₀.gpr .a0) (scR s₀)) icb ct.length (bytesAt s₀.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat)))
   j : blockAt s.mem (s₀.gpr .a2) = blockAt s₀.mem (s₀.gpr .a2)
 
-theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem enc_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State} (h : streamCryptPreX ex s₀)
+    (hbs : bs = true → BsAt s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
+    WP isa (streamEncryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
   obtain L₀ := scLay h
   obtain hR : scR s₀ = 10 ∨ scR s₀ = 12 ∨ scR s₀ = 14 := sc_R h
   obtain hk₀ := sc_stk h
-  refine WP.seq (WP.block_append (WP.mono (sc1_wp (sc_W h) (sc_al h)) fun s₁ h1 => ?_))
+  refine WP.seq (WP.block_append (WP.mono (entryB_wp (bs := bs) (sc_W h) (sc_al h)) fun s₁ ⟨h1, h17⟩ => ?_))
   obtain he₁ := sc_env h h1
   obtain L := L₀.v h1.s2 h1.s1 h1.s0
   refine WP.mono textArgs_ok fun s₂ ⟨h24, h25, h26, hg₂, hk₂⟩ => ?_
@@ -239,9 +293,15 @@ theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
   obtain ci : CrIn false s₁.gpr s₀.sp (scR s₀) icb ct.length (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₂ :=
     ⟨he₂, h24, by rw [h25, BitVec.ofNat_toNat, BitVec.setWidth_eq], by rw [h26, h1.s11, hP],
       by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₂, hd₂.ok, rfl, Bool.noConfusion⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₃ ⟨co, rd₃, wr₃, sp₃⟩ => ?_)
-  obtain hd₃ := hd₂.ok.of_eq rd₃ wr₃ sp₃
   obtain f₂ : Frame [savedR (s₀.gpr .a7)] s₀.mem s₂.mem := by rw [hk₂.mem]; exact h1.en.frame
+  obtain hbk : bs = true → BkIn (s₁.gpr .s7) (s₁.gpr .s2) (s₁.gpr .s1) (s₁.gpr .s0) s₀.sp (scR s₀) s₂.mem
+      (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₂ := fun hb => by
+    obtain hb₀ := hbs hb
+    rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
+    exact ⟨covers_mem (List.mem_append_left _ (by rw [hk₂.rd, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al, hb₀.st, hb₀.w,
+      hb₀.sk, hb₀.d, hb₀.d, keysAt_ctx_frame hR f₂ hb₀.saved (ctx_saved L₀) hb₀.keys⟩
+  refine WP.seq (WP.mono (WP.with_rdwr (cryptB_ok L ci hbk)) fun s₃ ⟨co, rd₃, wr₃, sp₃⟩ => ?_)
+  obtain hd₃ := hd₂.ok.of_eq rd₃ wr₃ sp₃
   have cf := co.frame
   rw [h1.s1, h1.s0, h1.s9, h1.s8] at cf
   obtain hH₃ : blockAt s₃.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .a0) := by
@@ -300,13 +360,19 @@ theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
       blockAt_frame cf (by simpa using stp_crFrame L₀ hd₂₀ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₂ (by simpa using stp_saved L₀ (d := 0) (k := 16) (by decide))]
 
-theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
+    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' :=
+  enc_runB (bs := false) h Bool.noConfusion icb ha hP
+
+theorem dec_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State} (h : streamCryptPreX ex s₀)
+    (hbs : bs = true → BsAt s₀) (icb : Block) {a ct : List Byte}
+    (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
+    WP isa (streamDecryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
   obtain L₀ := scLay h
   obtain hR : scR s₀ = 10 ∨ scR s₀ = 12 ∨ scR s₀ = 14 := sc_R h
   obtain hk₀ := sc_stk h
-  refine WP.seq (WP.mono (sc1_wp (sc_W h) (sc_al h)) fun s₁ h1 => ?_)
+  refine WP.seq (WP.mono (entryB_wp (bs := bs) (sc_W h) (sc_al h)) fun s₁ ⟨h1, h17⟩ => ?_)
   obtain he₁ := sc_env h h1
   obtain L := L₀.v h1.s2 h1.s1 h1.s0
   have f₁ : Frame [savedR (s₀.gpr .a7)] s₀.mem s₁.mem := h1.en.frame
@@ -333,7 +399,16 @@ theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
     ⟨he₅, by rw [h24, e20], by rw [h25, e19, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       by rw [h26, e23, h1.s11, hP], by rw [h1.s3, scR, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, hd₅, hd₅.ok,
       rfl, Bool.noConfusion⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L ci)) fun s₆ ⟨co, rd₆, wr₆, _⟩ => ?_)
+  obtain hbk : bs = true → BkIn (s₁.gpr .s7) (s₁.gpr .s2) (s₁.gpr .s1) (s₁.gpr .s0) s₀.sp (scR s₀) s₅.mem
+      (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₅ := fun hb => by
+    obtain hb₀ := hbs hb
+    rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
+    refine ⟨covers_mem (List.mem_append_left _ (by rw [hk₅.rd, rd₄, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al, hb₀.st,
+      hb₀.w, hb₀.sk, hb₀.d, hb₀.d, ?_⟩
+    rw [hk₅.mem]
+    exact keysAt_ctx_frame hR tf hb₀.taFrame (ctx_taFrame L₀ hk₀)
+      (keysAt_ctx_frame hR f₁ hb₀.saved (ctx_saved L₀) hb₀.keys)
+  refine WP.seq (WP.mono (WP.with_rdwr (cryptB_ok L ci hbk)) fun s₆ ⟨co, rd₆, wr₆, _⟩ => ?_)
   have cf := co.frame
   rw [h1.s1, h1.s0, h1.s9, h1.s8] at cf
   obtain sv₆ : SavedAt s₆.mem (s₀.gpr .a7) s₀ :=
@@ -382,10 +457,15 @@ theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptP
   · rw [hm, blockAt_frame cf (by simpa using stp_crFrame L₀ hd₅₀ (d := 0) (k := 16) (by decide))]
     simpa using blk₅ (d := 0) (.inl (by decide))
 
-theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
-    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' := by
-  have h' : streamCryptPre s₀ := h
-  obtain h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
+theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+    (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
+    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' :=
+  dec_runB (bs := false) h Bool.noConfusion icb ha hP
+
+theorem streamEncryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
+    (h' : streamCryptPreX ex s₀) (hbs : bs = true → BsAt s₀) :
+    WP isa (streamEncryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' := by
+  obtain h₀ := enc_runB h' hbs 0 (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
     (ct := List.replicate (s₀.gpr .a4).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -393,7 +473,7 @@ theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : str
       let hh := ctxH s₀.mem (s₀.gpr .a0)
       StreamRepr s₀.mem (s₀.gpr .a2) ciph hh i.1 i.2.1 (gctr ciph (inc32 (j0 hh i.1)) i.2.2) ∧
         s₀.gpr .a3 = BitVec.ofNat 64 i.2.1.length ∧ (s₀.gpr .a4).toNat = i.2.2.length)
-    fun i hi => enc_run h' (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) i.1)) (a := i.2.1)
+    fun i hi => enc_runB h' hbs (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) i.1)) (a := i.2.1)
       (ct := gctr (ctxCiph s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat) (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) i.1)) i.2.2)
       (by rw [hi.2.1, toNat_mod16]) (by rw [Proof.Gcm.length_gctr]; exact hi.2.2))
     fun s' hh => ⟨hh.1, fun iv a p hs hl hp => ?_⟩
@@ -414,10 +494,14 @@ theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : str
     rw [Proof.Gcm.length_gctr, List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' hl']
 
-theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamDecryptRISCV64.pre s₀) :
-    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' := by
-  have h' : streamCryptPre s₀ := h
-  obtain h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
+theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
+    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' :=
+  streamEncryptB_wp (bs := false) (ex := []) h Bool.noConfusion
+
+theorem streamDecryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
+    (h' : streamCryptPreX ex s₀) (hbs : bs = true → BsAt s₀) :
+    WP isa (streamDecryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' := by
+  obtain h₀ := dec_runB h' hbs 0 (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
     (ct := List.replicate (s₀.gpr .a4).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte × List Byte =>
@@ -425,7 +509,7 @@ theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : str
       let hh := ctxH s₀.mem (s₀.gpr .a0)
       StreamRepr s₀.mem (s₀.gpr .a2) ciph hh i.1 i.2.1 i.2.2 ∧
         s₀.gpr .a3 = BitVec.ofNat 64 i.2.1.length ∧ (s₀.gpr .a4).toNat = i.2.2.length)
-    fun i hi => dec_run h' (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) i.1)) (a := i.2.1) (ct := i.2.2)
+    fun i hi => dec_runB h' hbs (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) i.1)) (a := i.2.1) (ct := i.2.2)
       (by rw [hi.2.1, toNat_mod16]) hi.2.2)
     fun s' hh => ⟨hh.1, fun iv a c hs hl hp => ?_⟩
   obtain ⟨-, eo⟩ := hh.2 ⟨iv, a, c⟩ ⟨hs, hl, hp⟩
@@ -440,5 +524,9 @@ theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : str
     refine ⟨eo.j.trans hj, eo₃, ?_⟩
     rw [List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' (Proof.Gcm.length_gctr _ _ _)]
+
+theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamDecryptRISCV64.pre s₀) :
+    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' :=
+  streamDecryptB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

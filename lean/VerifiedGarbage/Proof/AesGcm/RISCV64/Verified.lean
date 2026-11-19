@@ -1933,14 +1933,14 @@ theorem streamEncrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptRISCV64, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptRISCV64, streamCryptPre, streamCryptPreX,
       streamCryptPub, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
-      Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptRISCV64, streamCryptPre,
+      Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptRISCV64, streamCryptPre, streamCryptPreX,
       streamCryptPub, rounds, RISCV64.abi, RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :

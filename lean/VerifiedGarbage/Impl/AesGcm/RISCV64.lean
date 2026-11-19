@@ -448,6 +448,37 @@ def streamEncrypt : Prog isa :=
 def streamDecrypt : Prog isa :=
   .seq (.block cryptEntry) (.seq textAbsorb (.seq (.block textArgs) (.seq crypt (.block restore))))
 
+/-! ## Streaming, with the round keys bitsliced
+
+`vg_aes_gcm_stream_{encrypt,decrypt,finish,verify}_bitsliced` take one more
+argument, `bk`, the buffer of `vg_aes_gcm_bitslice`, which they keep in `s7`
+(no piece but `j0` uses it) and pass to `vg_aes_ctr32_bs` (`cryptB true`,
+`finTagB true`). `encrypt`, `decrypt` and `verify` then have nine arguments, so
+their scratch buffer is the first on the stack: a prelude (`bsPre`) moves `bk`
+to `t2` and loads the buffer's address into `a7`, where the entry of the
+plain functions takes it, and the entry ends with `s7 := t2`
+(`cryptEntryB`). -/
+
+/-- `t2 := bk` (`a7`), `a7 :=` the scratch buffer (`[sp]`). -/
+def bsPre : List Instr := [mov .t2 .a7, .addSp .a7 0, .load .d .a7 .a7 0]
+
+/-- `cryptEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def cryptEntryB (bs : Bool) : List Instr := if bs then cryptEntry ++ [mov .s7 .t2] else cryptEntry
+
+/-- `streamEncrypt`, with the round keys bitsliced if `bs`. -/
+def streamEncryptB (bs : Bool) : Prog isa :=
+  .seq (.block (cryptEntryB bs ++ textArgs)) (.seq (cryptB bs false) (.seq textAbsorb (.block restore)))
+
+/-- `streamDecrypt`, with the round keys bitsliced if `bs`. -/
+def streamDecryptB (bs : Bool) : Prog isa :=
+  .seq (.block (cryptEntryB bs)) (.seq textAbsorb (.seq (.block textArgs) (.seq (cryptB bs false) (.block restore))))
+
+/-- `vg_aes_gcm_stream_encrypt_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamEncryptBs : Prog isa := .seq (.block bsPre) (streamEncryptB true)
+
+/-- `vg_aes_gcm_stream_decrypt_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamDecryptBs : Prog isa := .seq (.block bsPre) (streamDecryptB true)
+
 /-- The entry of `finish`: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
 text_len = a4, tag = a5, scratch = a6)`, kept in `s2`, `s3`, `s1`, `s10`,
 `s11` and `s9`. -/
