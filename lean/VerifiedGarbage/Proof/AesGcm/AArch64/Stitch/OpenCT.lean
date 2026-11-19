@@ -324,11 +324,11 @@ theorem openRunAS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
 end
 
 section
-variable {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ C₁' C₂' : List Byte}
+variable {Wn : Nat} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ C₁' C₂' : List Byte}
 
 /-- The arguments of `failS`'s `cryptAl`, in place: the first `P` bytes, from
 the kept counter block. -/
-theorem failCr_ok {Wn : Nat} {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem failCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
@@ -346,7 +346,7 @@ theorem failCr_ok {Wn : Nat} {fr : List Region} {s s₇ : State} (hR : R = 10 �
 
 /-- The arguments of `okS`'s counter mode: the rest, from the text to the
 output past the first `P` bytes. -/
-theorem okCrG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem okCrG_ok (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++
       Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
@@ -377,7 +377,7 @@ theorem okCrG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State} (hR 
     exact x26₈
 
 /-- `omBS to` in two runs whose tags compare alike. -/
-theorem omBS_rel {Wn : Nat} (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr fr' : List Region}
+theorem omBS_rel (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr fr' : List Region}
     {s s' m₁ m₂ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s m₁)
     (mo₂ : MidSG Wn to fr' Ctx W SP D O Np A R nl al n tl P C₁' C₂' s' m₂)
