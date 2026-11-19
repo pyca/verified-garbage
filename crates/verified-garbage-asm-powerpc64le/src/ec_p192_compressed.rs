@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 25 bytes.
@@ -36,7 +38,7 @@ bl {vg_p192_add_mod_p}
 bl {vg_p192_add_mod_p}
 .base64 "GASAOLgDoDgwBMA4"
 bl {vg_p192_sub_mod_p}
-.base64 "GASj6CAEg+h4I6V8KASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/hgBEPpAAGD6HADo+h4IqV8OFClfHgqhHzQA4P4CAGD6HgDo+h4IqV8OFClfHgqhHzYA4P4EAGD6IADo+h4IqV8OFClfHgqhHzgA4P4GAGD6IgDo+h4IqV8OFClfHgqhHxIBIP4IAGD6JADo+h4IqV8OFClfHgqhHxQBIP4KAGD6JgDo+h4IqV8OFClfHgqhHxYBIP4YARD6aADg+gBAKA4OCiEfAIAhDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "GASj6CAEg+h4I6V8KASD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/hgBEPpAAGD6HADo+h4IqV8OFClfHgqhHzQA4P4CAGD6HgDo+h4IqV8OFClfHgqhHzYA4P4EAGD6IADo+h4IqV8OFClfHgqhHzgA4P4GAGD6IgDo+h4IqV8OFClfHgqhHxIBIP4IAGD6JADo+h4IqV8OFClfHgqhHxQBIP4KAGD6JgDo+h4IqV8OFClfHgqhHxYBIP4YARD6aADg+gBAKA4OCiEfAIAhDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
@@ -46,6 +48,8 @@ bl {vg_p192_sub_mod_p}
 /// Validate and decompress a P-192 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 24 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 24 bytes each and returns 1. If no such finite point exists, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -92,7 +96,7 @@ bl {vg_p192_mul_mod_p}
 bl {vg_p192_mul_mod_p}
 .base64 "0AOAOBgEoDgwBMA4"
 bl {vg_p192_sub_mod_p}
-.base64 "0AOj6NgDg+h4I6V84AOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/igA4PoQAOj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8YASD6DgohHxgBIP4YARD6QQAgDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfKADg+g4UIR8KQDAOCg1jnyoA4PoOFCEfCEAwDgoNY58sAOD6DhQhHwZAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "0AOj6NgDg+h4I6V84AOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pThgBIPoOCiEfGAEg/igA4PoQAOj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8YASD6DgohHxgBIP4YARD6QQAgDg4UIR8AACOmFgDg+g4UIR8EQDAOCg1jnxgA4PoOFCEfAkAwDgoNY58aAOD6DhQhHwBAMA4KDWOfKADg+g4UIR8KQDAOCg1jnyoA4PoOFCEfCEAwDgoNY58sAOD6DhQhHwZAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
