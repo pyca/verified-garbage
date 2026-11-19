@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Gcm.Bitsliced
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 
@@ -177,6 +178,20 @@ theorem keysIn960 (B : Addr) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
     Proof.Aes.RISCV64.KeysIn ⟨B, 960⟩ B R := fun j hj k hk => by
   rw [VG.RISCV64.Straight.wordAddr, add_ofNat_assoc]
   exact Offset.contains_base B (by omega_using [hR, hj, hk]) (by omega_using [hR, hj, hk])
+
+/-- The round keys of the bitsliced form of a key context (`Spec.Gcm.CtxSlicedRepr`), for up to 14 rounds. -/
+theorem keysAt_of_sliced {m : Mem} {bk ctx : Addr} {R : Nat} (hR : R ≤ 14) (h : Spec.Gcm.CtxSlicedRepr m bk ctx) :
+    Proof.Aes.RISCV64.KeysAt m bk R (bytesAt m ctx (16 * (R + 1))) := by
+  intro j hj b hb i hi
+  refine Proof.Aes.byte_ext fun t ht => ?_
+  have e := h.1 j (by omega_using [hR, hj]) t ht b hb i hi
+  rw [Proof.Aes.RISCV64.roundKey_getD hi] at e
+  rw [Proof.Aes.getLsbD_bsByte _ _ ht, Proof.Aes.RISCV64.roundKey_getD hi]
+  have hl₁ : 16 * j + i < 240 := by omega_using [hR, hj, hi]
+  have hl₂ : 16 * j + i < 16 * (R + 1) := by omega_using [hj, hi]
+  simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range, hl₁, hl₂,
+    Option.map_some, Option.getD_some] at e ⊢
+  exact e
 
 /-- A frame apart from the buffer and the context keeps the round keys. -/
 theorem keysAt_ctx_frame {B c : Addr} {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {rs : List Region}

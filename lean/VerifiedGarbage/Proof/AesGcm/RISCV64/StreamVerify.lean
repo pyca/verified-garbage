@@ -211,7 +211,7 @@ theorem ver_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
       (by rw [h1.s11]; exact hP) (S := s₁.gpr .s0) (D := s₁.gpr .s0) (n := 16) (fun hb => by
         obtain hb₀ := hbs hb
         rw [h17 hb, h1.s2, h1.s1, h1.s0]
-        refine ⟨covers_mem (List.mem_append_left _ (by rw [k₄.rd, k₃.rd, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al,
+        refine ⟨covers_appL (by rw [k₄.rd, k₃.rd, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al,
           hb₀.st, hb₀.w, hb₀.sk, hb₀.w.sub_right (Region.sub_prefix (by decide)),
           hb₀.w.sub_right (Region.sub_prefix (by decide)), ?_⟩
         refine keysAt_ctx_frame hR f₀₄ (fun r hr => ?_) dc₀₄ hb₀.keys

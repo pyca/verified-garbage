@@ -326,7 +326,7 @@ theorem fin1B_wp' {bs : Bool} {s₀ : State} (hW : Covers [⟨s₀.gpr .a6, 2560
 readable, a multiple of 8, apart from the state, `W` and the stack below
 `sp`, and holding the round keys of the schedule in the context. -/
 structure BsAtW (s₀ : State) (w : Reg) : Prop where
-  rd : (⟨s₀.gpr .t2, 960⟩ : Region) ∈ s₀.rd
+  rd : Covers [⟨s₀.gpr .t2, 960⟩] s₀.rd
   al : (s₀.gpr .t2).toNat % 8 = 0
   st : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a2, 80⟩
   w : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr w, 2560⟩
@@ -340,7 +340,7 @@ theorem BsAtW.bkIn {s₀ s₁ : State} {w : Reg} (hb : BsAtW s₀ w) (L₀ : Lay
     (hrd : s₁.rd = s₀.rd) (hf : Frame [savedR (s₀.gpr w)] s₀.mem s₁.mem) :
     BkIn (s₀.gpr .t2) (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr w) s₀.sp (s₀.gpr .a1).toNat s₁.mem (s₀.gpr w) (s₀.gpr w)
       16 s₁ :=
-  ⟨covers_mem (List.mem_append_left _ (by rw [hrd]; exact hb.rd)), hb.al, hb.st, hb.w, hb.sk,
+  ⟨covers_appL (by rw [hrd]; exact hb.rd), hb.al, hb.st, hb.w, hb.sk,
     hb.w.sub_right (Region.sub_prefix (by decide)), hb.w.sub_right (Region.sub_prefix (by decide)),
     keysAt_ctx_frame hR hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hb.w.sub_right (Lay.wSub (by decide)))

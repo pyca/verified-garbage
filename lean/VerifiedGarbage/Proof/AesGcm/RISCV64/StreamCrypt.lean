@@ -89,7 +89,7 @@ theorem entryB_wp {bs : Bool} {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560
 it, it is a multiple of 8, apart from the state, `W`, the stack below `sp`
 and the data, and holds the round keys of the schedule in the context. -/
 structure BsAt (s₀ : State) : Prop where
-  rd : (⟨s₀.gpr .t2, 960⟩ : Region) ∈ s₀.rd
+  rd : Covers [⟨s₀.gpr .t2, 960⟩] s₀.rd
   al : (s₀.gpr .t2).toNat % 8 = 0
   st : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a2, 80⟩
   w : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a7, 2560⟩
@@ -298,7 +298,7 @@ theorem enc_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
       (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₂ := fun hb => by
     obtain hb₀ := hbs hb
     rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
-    exact ⟨covers_mem (List.mem_append_left _ (by rw [hk₂.rd, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al, hb₀.st, hb₀.w,
+    exact ⟨covers_appL (by rw [hk₂.rd, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al, hb₀.st, hb₀.w,
       hb₀.sk, hb₀.d, hb₀.d, keysAt_ctx_frame hR f₂ hb₀.saved (ctx_saved L₀) hb₀.keys⟩
   refine WP.seq (WP.mono (WP.with_rdwr (cryptB_ok L ci hbk)) fun s₃ ⟨co, rd₃, wr₃, sp₃⟩ => ?_)
   obtain hd₃ := hd₂.ok.of_eq rd₃ wr₃ sp₃
@@ -403,7 +403,7 @@ theorem dec_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
       (s₁.gpr .s9) (s₁.gpr .s9) (s₁.gpr .s8).toNat s₅ := fun hb => by
     obtain hb₀ := hbs hb
     rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
-    refine ⟨covers_mem (List.mem_append_left _ (by rw [hk₅.rd, rd₄, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al, hb₀.st,
+    refine ⟨covers_appL (by rw [hk₅.rd, rd₄, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al, hb₀.st,
       hb₀.w, hb₀.sk, hb₀.d, hb₀.d, ?_⟩
     rw [hk₅.mem]
     exact keysAt_ctx_frame hR tf hb₀.taFrame (ctx_taFrame L₀ hk₀)

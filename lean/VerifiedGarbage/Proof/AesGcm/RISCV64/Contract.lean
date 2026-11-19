@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Bitsliced
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
@@ -280,5 +281,90 @@ def openRISCV64 : Contract isa where
     | none => (s'.gpr .a0).setWidth 32 = 0 ∧
         bytesAt s'.mem (s.gpr .a6) (s.gpr .a7).toNat = bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat
   pub s₁ s₂ := onePub 3 s₁ s₂ ∧ (rounds (s₁.gpr .a1) → (openRes s₁).isSome = (openRes s₂).isSome)
+
+/-! ### With the round keys bitsliced
+
+The `_bitsliced` streaming functions take the buffer of
+`Spec/Gcm/Bitsliced.lean` (`bk`) as their last argument, so that the working
+space comes after it: on the stack (`[sp]`) for `encrypt`, `decrypt` and
+`verify`, in `a7` for `finish`. -/
+
+/-- What `vg_aes_gcm_stream_encrypt_bitsliced` and `vg_aes_gcm_stream_decrypt_bitsliced` need:
+`(ctx = a0, rounds = a1, state = a2, aad_len = a3, text_len = a4, data = a5, len = a6, bk = a7,
+scratch = [sp])`. -/
+def streamCryptBsPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a2, 80⟩
+  let data : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
+  let bk : Region := ⟨s.gpr .a7, 1248⟩
+  let scr : Region := ⟨stackArg s 0, 2560⟩
+  s.rd = [ctx, bk, args s 1] ∧ s.wr = [st, data, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
+    st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
+    bk.Disjoint st ∧ bk.Disjoint data ∧ bk.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 2560 ≤ 2 ^ 64 ∧
+    rounds (s.gpr .a1) ∧ stkOk s [ctx, st, data, scr, bk] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
+    (s.gpr .a2).toNat % 8 = 0 ∧ (stackArg s 0).toNat % 8 = 0 ∧ (s.gpr .a7).toNat % 8 = 0 ∧
+    Spec.Gcm.CtxSlicedRepr s.mem (s.gpr .a7) (s.gpr .a0)
+
+def streamCryptBsPub (s₁ s₂ : State) : Prop := onePub 1 s₁ s₂
+
+/-- `vg_aes_gcm_stream_encrypt_bitsliced`: `vg_aes_gcm_stream_encrypt`'s postcondition. -/
+def streamEncryptBsRISCV64 : Contract isa where
+  pre := streamCryptBsPre
+  post := streamEncryptRISCV64.post
+  pub := streamCryptBsPub
+
+/-- `vg_aes_gcm_stream_decrypt_bitsliced`: `vg_aes_gcm_stream_decrypt`'s postcondition. -/
+def streamDecryptBsRISCV64 : Contract isa where
+  pre := streamCryptBsPre
+  post := streamDecryptRISCV64.post
+  pub := streamCryptBsPub
+
+/-- What `vg_aes_gcm_stream_finish_bitsliced` needs: `(ctx = a0, rounds = a1, state = a2,
+aad_len = a3, text_len = a4, tag = a5, bk = a6, scratch = a7)`. -/
+def finBsPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a2, 80⟩
+  let tag : Region := ⟨s.gpr .a5, 16⟩
+  let bk : Region := ⟨s.gpr .a6, 1248⟩
+  let scr : Region := ⟨s.gpr .a7, 2560⟩
+  s.rd = [ctx, bk] ∧ s.wr = [st, tag, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧
+    tag.Disjoint scr ∧ bk.Disjoint st ∧ bk.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .a5).toNat + 16 ≤ 2 ^ 64 ∧
+    (s.gpr .a7).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .a1) ∧ stkOk s [ctx, st, tag, scr, bk] ∧
+    (s.gpr .a0).toNat % 8 = 0 ∧ (s.gpr .a2).toNat % 8 = 0 ∧ (s.gpr .a7).toNat % 8 = 0 ∧
+    (s.gpr .a6).toNat % 8 = 0 ∧ Spec.Gcm.CtxSlicedRepr s.mem (s.gpr .a6) (s.gpr .a0)
+
+/-- `vg_aes_gcm_stream_finish_bitsliced`: `vg_aes_gcm_stream_finish`'s postcondition. -/
+def streamFinishBsRISCV64 : Contract isa where
+  pre := finBsPre
+  post := streamFinishRISCV64.post
+  pub s₁ s₂ := streamFinishRISCV64.pub s₁ s₂ ∧ s₁.gpr .a7 = s₂.gpr .a7
+
+/-- What `vg_aes_gcm_stream_verify_bitsliced` needs: `(ctx = a0, rounds = a1, state = a2,
+aad_len = a3, text_len = a4, tag = a5, tag_len = a6, bk = a7, scratch = [sp])`. -/
+def verBsPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let st : Region := ⟨s.gpr .a2, 80⟩
+  let tag : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
+  let bk : Region := ⟨s.gpr .a7, 1248⟩
+  let scr : Region := ⟨stackArg s 0, 2560⟩
+  s.rd = [ctx, tag, bk, args s 1] ∧ s.wr = [st, scr] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧ tag.Disjoint scr ∧
+    bk.Disjoint st ∧ bk.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 2560 ≤ 2 ^ 64 ∧
+    rounds (s.gpr .a1) ∧ stkOk s [ctx, tag, st, scr, bk] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
+    (s.gpr .a2).toNat % 8 = 0 ∧ (stackArg s 0).toNat % 8 = 0 ∧ (s.gpr .a7).toNat % 8 = 0 ∧
+    Spec.Gcm.CtxSlicedRepr s.mem (s.gpr .a7) (s.gpr .a0)
+
+/-- `vg_aes_gcm_stream_verify_bitsliced`: `vg_aes_gcm_stream_verify`'s postcondition. -/
+def streamVerifyBsRISCV64 : Contract isa where
+  pre := verBsPre
+  post := streamVerifyRISCV64.post
+  pub := onePub 1
 
 end VG.Proof.AesGcm.RISCV64
