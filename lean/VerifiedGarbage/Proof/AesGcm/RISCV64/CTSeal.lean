@@ -1094,6 +1094,10 @@ theorem bkLoadOff_taint (o : Bool) : ∃ h, (VG.Taint.check VG.RISCV64.taint (Ta
 theorem oneHead24_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
     (.block [.addSp .t1 0, .load .d .t1 .t1 24]) h).isSome = true := ⟨_, by taint_decide⟩
 
+/-- The head of `open_to_bitsliced`'s entry, which loads `W` from `sp + 40`. -/
+theorem oneHead40_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
+    (.block [.addSp .t1 0, .load .d .t1 .t1 40]) h).isSome = true := ⟨_, by taint_decide⟩
+
 theorem oneRest_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1]) (.block oneRest) h).isSome = true :=
   ⟨_, by taint_decide⟩
