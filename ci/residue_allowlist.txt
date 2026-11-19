@@ -92,12 +92,6 @@ aarch64 vg_aes_siv_encrypt_neon
 aarch64 vg_aes_siv_init
 aarch64 vg_aes_siv_init_aes
 aarch64 vg_aes_siv_init_neon
-aarch64 vg_cmac_aes_finish
-aarch64 vg_cmac_aes_finish_aes
-aarch64 vg_cmac_aes_finish_neon
-aarch64 vg_cmac_aes_init
-aarch64 vg_cmac_aes_init_aes
-aarch64 vg_cmac_aes_init_neon
 aarch64 vg_rsa_pkcs1_sign_precomputed
 aarch64 vg_sha3_224_finalize
 aarch64 vg_sha3_224_finalize_sha3
