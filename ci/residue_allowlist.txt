@@ -199,7 +199,6 @@ arm vg_aes_siv_encrypt
 arm vg_aes_siv_init
 arm vg_aes_xts_decrypt_unit
 arm vg_aes_xts_encrypt_unit
-arm vg_argon2
 arm vg_blake2b_finalize
 arm vg_blake2b_init
 arm vg_blake2b_update
@@ -464,7 +463,6 @@ arm vg_rsa_public_precompute
 arm vg_rsa_public_precompute_umaal
 arm vg_rsa_recover_primes_det
 arm vg_rsa_recover_primes_det_umaal
-arm vg_scrypt
 arm vg_seed_cbc_decrypt_chained
 arm vg_seed_cbc_encrypt_chained
 arm vg_seed_cfb128_decrypt
@@ -577,7 +575,6 @@ powerpc64le vg_aes_siv_encrypt
 powerpc64le vg_aes_siv_init
 powerpc64le vg_aes_xts_decrypt_unit
 powerpc64le vg_aes_xts_encrypt_unit
-powerpc64le vg_argon2
 powerpc64le vg_blake2b_finalize
 powerpc64le vg_blake2b_init
 powerpc64le vg_blake2b_update
@@ -716,7 +713,6 @@ powerpc64le vg_rsa_pss_sign_precomputed
 powerpc64le vg_rsa_pss_verify_precomputed
 powerpc64le vg_rsa_public_precompute
 powerpc64le vg_rsa_recover_primes_det
-powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
 powerpc64le vg_sm4_gcm_init
 powerpc64le vg_sm4_gcm_open
@@ -752,7 +748,6 @@ riscv64 vg_aes_ocb_seal
 riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
-riscv64 vg_argon2
 riscv64 vg_cmac_triple_des_absorb
 riscv64 vg_cmac_triple_des_finish
 riscv64 vg_cmac_triple_des_stream_init
@@ -786,7 +781,6 @@ riscv64 vg_rsa_pss_sign_precomputed
 riscv64 vg_rsa_pss_verify_precomputed
 riscv64 vg_rsa_public_precompute
 riscv64 vg_rsa_recover_primes_det
-riscv64 vg_scrypt
 riscv64 vg_sm4_gcm_init
 riscv64 vg_sm4_gcm_open
 riscv64 vg_sm4_gcm_seal
@@ -892,7 +886,6 @@ x86 vg_aes_xts_decrypt_unit
 x86 vg_aes_xts_decrypt_unit_aesni
 x86 vg_aes_xts_encrypt_unit
 x86 vg_aes_xts_encrypt_unit_aesni
-x86 vg_argon2
 x86 vg_blake2b_finalize
 x86 vg_blake2b_init
 x86 vg_blake2b_update
@@ -1153,7 +1146,6 @@ x86 vg_rsa_pss_sign_precomputed
 x86 vg_rsa_pss_verify_precomputed
 x86 vg_rsa_public_precompute
 x86 vg_rsa_recover_primes_det
-x86 vg_scrypt
 x86 vg_scrypt_shani
 x86 vg_seed_cbc_decrypt_chained
 x86 vg_seed_cbc_encrypt_chained
