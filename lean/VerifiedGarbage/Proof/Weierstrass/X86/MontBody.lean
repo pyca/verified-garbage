@@ -526,8 +526,15 @@ theorem ysOk_b (hb : Bx s base size) {pb : Nat} (hp : Ptr s .esi pb) {acc len N 
   rw [bWord, readSrc_ptr hbt hpt (by omega_arith)]
   exact congrArg some (BitVec.eq_of_toNat_eq (K.out.w32 (by omega_arith) (by omega_arith)))
 
+/-- `-p⁻¹ mod 2³² = 1` for P-521's `p`, which is `-1` modulo `2³²`. -/
+theorem p521_minv {x : Nat} (hx : (p521Prime * x + 1) % 2 ^ 32 = 0) (hx32 : x < 2 ^ 32) : x = 1 := by
+  obtain ⟨a, hm⟩ : ∃ a, p521Prime = 2 ^ 32 * a + (2 ^ 32 - 1) := ⟨2 ^ 489 - 1, by decide +kernel⟩
+  rw [hm, Nat.add_mul, Nat.mul_assoc] at hx
+  generalize a * x = y at hx
+  omega_arith
+
 /-- The window `+= q m`, `q` in `ecx`, for `q = t₀ m'` (which P-256's sparse
-reduction needs). -/
+reduction and P-521's need). -/
 theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
     (hacc : acc + 4 * (2 * k) + 8 ≤ size)
     (hq : minv32 (mod k m) = 1 → (s.gpr .ecx).toNat = w32 s.mem base acc)
@@ -535,7 +542,7 @@ theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
     WP isa (.block (redRowI (mod k m) m acc)) s fun u =>
       Outside base acc (4 * (2 * k) + 8) s.mem u.mem ∧
       val32 u.mem base acc (2 * k + 2) = val32 s.mem base acc (2 * k + 2) + (s.gpr .ecx).toNat * m ∧
-      Keeps [.eax, .ebx, .edx] s u := by
+      Keeps [.eax, .ebx, .ecx, .edx] s u := by
   have hk := hM.k0
   have hm2 : m < 2 ^ (32 * (2 * k)) := by rw [← Nat.mul_assoc]; exact hM.m_lt
   unfold redRowI
@@ -549,10 +556,23 @@ theorem redRowI_ok (hb : Bx s base size) {k m acc : Nat} (hM : MulOk k m)
     unfold p256Prime at hlt ⊢
     exact WP.mono (p256RedB_ok hb rfl hacc (hq hi) hlt) fun u ⟨O, V, K⟩ => ⟨O, V, K.mono (by decide)⟩
   next _ =>
-    rw [words_mod]
-    refine WP.mono (rowG_ok hb (by omega_arith) (ysOk_m m) hacc ?_) fun u ⟨O, V, K⟩ => ⟨O, ?_, K⟩
-    · rw [yVal_mw, Nat.mod_eq_of_lt hm2]; exact hlt
-    · rw [V, yVal_mw, Nat.mod_eq_of_lt hm2]
+    split
+    next he =>
+      simp only [p521RedEnabled, Bool.and_eq_true, beq_iff_eq] at he
+      obtain ⟨hk9, hm5⟩ := he
+      have h1 : minv32 (mod k m) = 1 :=
+        BitVec.eq_of_toNat_eq (p521_minv (by rw [← hm5]; exact minv32_mod hM) (minv32 (mod k m)).isLt)
+      have hk9' : k = 9 := hk9
+      subst hk9'
+      rw [hm5] at hlt ⊢
+      simp only [Nat.reduceMul, Nat.reduceAdd] at hlt hacc ⊢
+      unfold p521Prime at hlt ⊢
+      exact WP.mono (p521RedB_ok hb rfl hacc (hq h1) hlt) fun u ⟨O, V, K⟩ => ⟨O, V, K.mono (by decide)⟩
+    next _ =>
+      rw [words_mod]
+      refine WP.mono (rowG_ok hb (by omega_arith) (ysOk_m m) hacc ?_) fun u ⟨O, V, K⟩ => ⟨O, ?_, K.mono (by decide)⟩
+      · rw [yVal_mw, Nat.mod_eq_of_lt hm2]; exact hlt
+      · rw [V, yVal_mw, Nat.mod_eq_of_lt hm2]
 
 /-- The reduction of a row: `q = t₀ m' mod 2³²`, then the window `+= q m`,
 whose low word becomes zero. -/
