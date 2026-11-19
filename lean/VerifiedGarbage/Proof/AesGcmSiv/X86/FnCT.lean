@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
