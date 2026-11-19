@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
+public import VerifiedGarbage.Impl.Mont.X86.CombPower
 public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # Shared DSA modular exponentiation on IA-32
@@ -86,6 +87,66 @@ def core (n e : Nat) : Prog isa :=
 
 def body (n e : Nat) : Prog isa :=
   .seq (.block save) (.seq (core n e) (.block restore))
+
+/-! ## The product of two powers
+
+`core2` computes `g^u · y^v mod m` in one pass over both exponents, from
+their top bits down: each iteration squares the result and multiplies it by
+one of `1`, `g`, `y` and `g y` (in Montgomery form), the entry of the two
+bits, read by masked selections of every entry: `32 e` squarings and as
+many multiplications, where two exponentiations take `128 e`. The caller
+loads `g` into slot 5, `y` into slot 7, `u` into slot 8 and `v` after it
+(`exp2`). Slot 6 is the result and slot 7 the selected entry; the entries
+are `R` and `g y R` in slot 3, which only the setup uses (`cellR`,
+`cellGY`), `g R` in slot 5 and `y R` in slot 4, once `R²` has encoded them.
+-/
+
+/-- One in Montgomery form, entry 0: slot 3's first half. -/
+def cellR (n : Nat) : Nat := slot n 3
+
+/-- `g y R`, entry 3: slot 3's second half. -/
+def cellGY (n : Nat) : Nat := slot n 3 + 8 * n
+
+/-- The second exponent, `e` words: slot 8's second half. -/
+def exp2 (n : Nat) : Nat := slot n 8 + 8 * n
+
+/-- The entries: `R` (also the result's first value), `g R`, `y R` and
+`g y R`, from `R²` in slot 4, `g` in slot 5 and `y` in slot 7. -/
+def table2 (n : Nat) : Prog isa :=
+  .seq (mul n 5 5 4) <| .seq (mul n 7 7 4) <|
+  .seq (one n (slot n 6)) <| .seq (mul n 6 4 6) <|
+  .seq (copyWords n (slot n 6) (cellR n)) <|
+  .seq (mul n 4 5 7) <|
+  .seq (copyWords n (slot n 4) (cellGY n)) (copyWords n (slot n 7) (slot n 4))
+
+/-- The entry's index, the top bit of `u` and twice the top bit of `v`, in
+the header's window word. -/
+def digit2 (n e : Nat) : List Instr :=
+  [.mov .eax (.mem (sc (exp2 n + 4 * (e - 1)))), .shift .shr .eax 31, .alu .add .eax (.reg .eax),
+   .mov .ecx (.mem (sc (slot n 8 + 4 * (e - 1)))), .shift .shr .ecx 31, .alu .add .eax (.reg .ecx),
+   .store (sc windowOffset) .eax]
+
+/-- Slot 7 = the entry at `o` where the window is `j`. -/
+def pick (n j o : Nat) : Prog isa :=
+  .seq (.block (windowMask j)) (selectsW (2 * n) (slot n 7) o (slot n 7))
+
+/-- Slot 7 = the window's entry: entry 0, then each other entry under its
+mask. -/
+def select2 (n : Nat) : Prog isa :=
+  .seq (copyWords n (cellR n) (slot n 7)) <|
+  .seq (pick n 1 (slot n 5)) (.seq (pick n 2 (slot n 4)) (pick n 3 (cellGY n)))
+
+/-- An iteration: the result squared, times the entry of the exponents' top
+bits; the exponents shifted up, the count decremented. -/
+def step2 (n e : Nat) : Prog isa :=
+  .seq (mul n 6 6 6) <| .seq (.block (digit2 n e)) <| .seq (select2 n) <| .seq (mul n 6 6 7) <|
+  .seq (Comb.shiftOne e (slot n 8)) <| .seq (Comb.shiftOne e (exp2 n))
+    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+
+def core2 (n e : Nat) : Prog isa :=
+  .seq (setup n) <| .seq (table2 n) <|
+  .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
+  .seq (.loop (step2 n e) .ne) (finish n)
 
 def scratch (n : Nat) : List (Nat × Nat) := [(0, 64), (slot n 1, contextBytes n - slot n 1)]
 
