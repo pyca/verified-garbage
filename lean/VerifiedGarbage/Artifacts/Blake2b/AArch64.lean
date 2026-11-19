@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
-public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
-public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
+public import VerifiedGarbage.Impl.Blake2.AArch64.Stream
 public import VerifiedGarbage.Proof.Blake2.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # BLAKE2b (RFC 7693) on AArch64 -/
@@ -15,16 +14,13 @@ namespace VG.Artifacts.Blake2b.AArch64
 
 def artifacts : List Artifact := [
   Spec.Blake2.initBApi.artifact AArch64.target {
-    code := Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
-    verified := .scrubbed ⟨Proof.Blake2.AArch64.Stream.initBCleared_verified,
-      Proof.Blake2.AArch64.Stream.initBCleared_noResidue _⟩ },
-  Spec.Blake2.updateBApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.b)
-    verified := Proof.Blake2.AArch64.Stream.updateB_framed }
-    (Proof.Blake2.AArch64.Scrub.updateBOk 128)),
-  Spec.Blake2.finalizeBApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b)
-    verified := Proof.Blake2.AArch64.Stream.finalizeB_framed }
-    (Proof.Blake2.AArch64.Scrub.finalizeBOk 128))]
+    code := Impl.Blake2.AArch64.Fn.init Spec.Blake2.b
+    verified := .scrubbed Proof.Blake2.AArch64.Fn.initB },
+  Spec.Blake2.updateBApi.artifact AArch64.target {
+    code := Impl.Blake2.AArch64.Fn.update Spec.Blake2.b
+    verified := .scrubbed Proof.Blake2.AArch64.Fn.updateB },
+  Spec.Blake2.finalizeBApi.artifact AArch64.target {
+    code := Impl.Blake2.AArch64.Fn.finalize Spec.Blake2.b
+    verified := .scrubbed Proof.Blake2.AArch64.Fn.finalizeB }]
 
 end VG.Artifacts.Blake2b.AArch64
