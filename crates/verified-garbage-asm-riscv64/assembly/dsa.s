@@ -11286,6 +11286,23 @@ vg_dsa_derive_key:
 	ld s11, 208(s6)
 	ld ra, 216(s6)
 	ld s6, 224(s6)
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -22545,6 +22562,23 @@ vg_dsa_validate_private_key:
 	ld s11, 208(s6)
 	ld ra, 216(s6)
 	ld s6, 224(s6)
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -22771,6 +22805,50 @@ vg_dsa_sign_random_prevalidated:
 	ld s10, 168(t0)
 	ld s11, 176(t0)
 	addi sp, sp, 192
+	addi t0, zero, 0
+	addi sp, sp, -192
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	addi sp, sp, 192
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -23005,6 +23083,50 @@ vg_dsa_generate_key:
 	ld s10, 168(t0)
 	ld s11, 176(t0)
 	addi sp, sp, 192
+	addi t0, zero, 0
+	addi sp, sp, -192
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	addi sp, sp, 192
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -34062,6 +34184,23 @@ vg_dsa_validate_public_key:
 	ld s11, 208(s6)
 	ld ra, 216(s6)
 	ld s6, 224(s6)
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -50513,6 +50652,23 @@ vg_dsa_verify_prevalidated:
 	ld s11, 208(s6)
 	ld ra, 216(s6)
 	ld s6, 224(s6)
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -50567,6 +50723,23 @@ vg_dsa_parameter_search_init:
 	sd t2, 24(a0)
 	addi a0, zero, 1
 21:
+	addi t0, zero, 0
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop
 
@@ -76266,5 +76439,89 @@ vg_dsa_parameter_search:
 	ld s10, 256(s6)
 	ld s11, 264(s6)
 	ld s6, 272(s6)
+	addi t0, zero, 0
+	addi sp, sp, -512
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	addi sp, sp, 512
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
 	ret
 	.option pop

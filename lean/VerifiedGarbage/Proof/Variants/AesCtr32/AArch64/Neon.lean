@@ -23,6 +23,10 @@ def neon : Ctr32Impl where
   noFrames := by lit_decide
   ok := Neon.ctr32N_correct
   ct := Neon.ctr32N_ct
+  scratch := 2048
+  scratch_ok := .inr rfl
+  okW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact Neon.ctr32N_correct
+  ctW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact Neon.ctr32N_ct
   keepsV := by lit_decide
   to := ⟨"vg_aes_ctr32_to_neon", Impl.Aes.AArch64.Neon.ctr32ToN⟩
   toNoFrames := by lit_decide

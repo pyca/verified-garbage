@@ -36,6 +36,8 @@ structure UpdateImpl where
   CPU features. -/
   ctr : Proof.Aes.AArch64.Ctr32Impl
   ctrFeatures : ctr.features = features
+  /-- Its counter-mode implementation needs no more working space than it does. -/
+  ctrScratch : ctr.scratch ≤ scratch
 
 /-- The existing generic CMAC chaining loop, for any CTR implementation. -/
 def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
@@ -53,6 +55,7 @@ def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
   features := v.features
   ctr := v
   ctrFeatures := rfl
+  ctrScratch := by rcases v.scratch_ok with h | h <;> rw [h] <;> decide
 
 /-- Round keys and chaining value stay in registers across all blocks:
 `vg_cmac_aes_update_aes`, faster than the chaining by calls of
@@ -71,4 +74,5 @@ def UpdateImpl.aese : UpdateImpl where
   features := ["aes"]
   ctr := .aese
   ctrFeatures := rfl
+  ctrScratch := Nat.le_refl _
 end VG.Proof.CmacAes.AArch64
