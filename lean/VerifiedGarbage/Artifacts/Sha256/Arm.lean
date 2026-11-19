@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.Arm.Shared
+public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.MdStream.Arm.DigestInstances
 public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SHA-256 (FIPS 180-4) on ARMv7 -/
@@ -12,26 +11,12 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Sha256.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha256.init224Api.artifact Arm.target {
-    code := Impl.Sha256.Arm.Stream.init224
-    verified := .unscrubbed Proof.Sha256.Arm.Shared.init224 },
-  Spec.Sha256.finalize224Api.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224
-    verified := .unscrubbed Proof.Sha256.Arm.Shared.finalize224 },
-  Spec.Sha256.digest224Api.artifact Arm.target {
-    code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha224H
-    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha224_digest },
-  Spec.Sha256.initApi.artifact Arm.target {
-    code := Impl.Sha256.Arm.Stream.init
-    verified := .unscrubbed Proof.Sha256.Arm.Shared.init },
-  Spec.Sha256.updateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
-    verified := .unscrubbed Proof.Sha256.Arm.Shared.update },
-  Spec.Sha256.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
-    verified := .unscrubbed Proof.Sha256.Arm.Shared.finalize },
-  Spec.Sha256.digest256Api.artifact Arm.target {
-    code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha256H
-    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha256_digest }]
+  Spec.Sha256.init224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha224InitReg,
+  Spec.Sha256.finalize224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha224FinalizeReg,
+  Spec.Sha256.digest224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha224DigestReg,
+  Spec.Sha256.initApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha256InitReg,
+  Spec.Sha256.updateApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha256UpdateReg,
+  Spec.Sha256.finalizeApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha256FinalizeReg,
+  Spec.Sha256.digest256Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha256DigestReg]
 
 end VG.Artifacts.Sha256.Arm
