@@ -55,7 +55,7 @@ theorem pwTbl_ok {Wn : Nat} {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Na
       exact in_off hin (by unfold Impl.Gcm.AArch64.Pmull.pwOff; split <;> omega_arith) (by omega_using [])) 8 (Nat.le_refl _))
     fun s₂ ⟨hI₂, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have hw : InRegions s₂.wr (s₂.gpr .x19 + BitVec.ofNat 64 512) 192 := by
-    rw [wr₂, g₂, wr₁, g₁ _ (by decide), he.x19]; exact he.perm.wW (by decide)
+    rw [wr₂, g₂, wr₁, g₁ _ (by decide), he.x19]; exact he.perm.wWn (by have := he.perm.hWn; omega)
   exact WP.mono (tbl_ok hI₂ hw) fun t hT => tbl_post (by rw [g₂, g₁ _ (by decide), he.x19]) hT
     (fun r hr => by rw [g₂, g₁ r hr]) (by rw [m₂, m₁]) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
 
