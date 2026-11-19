@@ -366,6 +366,10 @@ structure _root_.VG.Impl.Residue.AArch64.Clear.WF (cl : Clear) : Prop where
 
 theorem hi_not_all : ∀ w, w ∈ hiVecs → w ∉ allVecs := by decide
 
+theorem preserved_not_all : ∀ q, q ∈ preserved → q ∉ allGprs := by decide
+
+theorem hi_of_preservedV : ∀ w, w ∈ preservedV → w ∈ hiVecs := by decide
+
 theorem _root_.VG.Impl.Residue.AArch64.Clear.WF.disj {cl : Clear} (h : cl.WF) {w : VReg} (hw : w ∈ cl.his) : w ∉ cl.vecs :=
   fun hv => hi_not_all w (h.his w hw) (h.vecs w hv)
 
@@ -786,10 +790,10 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : C
       exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)) ex
     · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
       have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
-      have hng : q ∉ cl.gprs := fun h => absurd (hwf.gprs q h) (by cases q <;> simp_all [preserved, allGprs])
+      have hng : q ∉ cl.gprs := fun h => preserved_not_all q hq' (hwf.gprs q h)
       rw [tr.gpr]; simp only [h9, ↓reduceIte, hgq q h0, cleared, hng]; exact ha.1 q hq'
     · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
-      have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
+      have hh : w ∈ hiVecs := hi_of_preservedV w hw
       have hnv : w ∉ cl.vecs := fun h' => hi_not_all w hh (hwf.vecs w h')
       rw [tr.v]; simp only [h31, ↓reduceIte, cleared]
       by_cases hc : w ∈ cl.his
@@ -862,10 +866,10 @@ theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} {cl : Cl
       ⟨fun q hq' => ?_, ha.2.1, fun w hw => ?_⟩, ?_⟩
     · exact Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)
     · have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
-      have hng : q ∉ cl.gprs := fun h => absurd (hwf.gprs q h) (by cases q <;> simp_all [preserved, allGprs])
+      have hng : q ∉ cl.gprs := fun h => preserved_not_all q hq' (hwf.gprs q h)
       show g q = _
       simp only [hgq q h0, cleared, hng, ↓reduceIte]; exact ha.1 q hq'
-    · have hh : w ∈ hiVecs := by cases w <;> simp_all [preservedV, hiVecs]
+    · have hh : w ∈ hiVecs := hi_of_preservedV w hw
       have hnv : w ∉ cl.vecs := fun h' => hi_not_all w hh (hwf.vecs w h')
       show BitVec.extractLsb' 0 64 ((cleared cl u).v w) = _
       simp only [cleared]
