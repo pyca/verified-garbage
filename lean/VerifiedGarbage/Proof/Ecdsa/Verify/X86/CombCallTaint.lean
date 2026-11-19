@@ -35,4 +35,10 @@ def τV : VG.X86.Taint.T :=
 stack argument. -/
 def τComb : VG.X86.Taint.T := { τV with regs := ⟨151⟩, argBases := [] }
 
+/-- What is public on entry to every call of the field functions from ECDH's
+windows, which `VerifyLadderCT.ladder` checks from `scratchArgτ`: `τV`
+without the base of a stack argument. A summary from it applies at each of
+those calls. -/
+def τWin : VG.X86.Taint.T := { τV with argBases := [] }
+
 end VG.Proof.Ecdsa.Verify.X86

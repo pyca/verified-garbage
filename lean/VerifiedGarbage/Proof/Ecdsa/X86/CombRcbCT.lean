@@ -36,6 +36,15 @@ structure CombRcbCT (c : Cfg) (d : CombData) : Prop where
   step : ∀ b, RelCT isa (VG.X86.Taint.Agree (combτAt b)) (c.combCfg d).step (fun _ _ => True)
   sp : SpOk (c.combCfg d).step 20
 
+/-- What is public on entry to every call of the field functions from an
+iteration of the comb, checked from `combτAt scratchSecond` (`CombRcbCT.step`):
+the stack pointer, the call's arguments and the working space's base. A
+summary from it applies at each of those calls. -/
+def combCallτ (scratchSecond : Bool) : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := 16 :: (combτAt scratchSecond).lens,
+    bases := [(.edi, combRegion scratchSecond + 1, 0), (.esp, 0, 4)], slots := ⟨[65535]⟩,
+    wbases := [(0, 0, combRegion scratchSecond + 1)], stk := [none, some 16], room := 20 }
+
 variable {c : Cfg} {d : CombData} {scratchSecond : Bool}
 
 /-- The comb's invariant supplies the public values an iteration's taint

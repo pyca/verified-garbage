@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86Comb
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Proof.P521.Comb7Shape
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Lit
@@ -16,9 +18,11 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 meta import VerifiedGarbage.Impl.Ecdsa.P521.X86Comb
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.P521.Comb7
 meta import VerifiedGarbage.Proof.P521.Comb7Shape
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -67,13 +71,36 @@ theorem p521W_length : p521W.length = 95616 :=
 def combStep : Prog isa := (p521Comb.combCfg p521d).step
 materialize_code combStep
 
+/-! The field functions modulo `p`, analysed once from what is public on
+entry to their calls from an iteration (`combCallτ`), for each place of the
+working space among the regions, in place of each call. -/
+
+taint_summary mulSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary addSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary subSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary mulSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary addSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary subSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+
 /-- The taint checks of the comb's code. -/
 theorem combCT : CombRcbCT p521Comb p521d where
   prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
   init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
   step := fun b => by
     change RelCT isa _ combStep _
-    cases b <;> exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
+    cases b
+    · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt false) combStep h).isSome = true := by
+        taint_decide_sum [mulSumF, addSumF, subSumF]
+      exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
+    · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt true) combStep h).isSome = true := by
+        taint_decide_sum [mulSumT, addSumT, subSumT]
+      exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
   sp := by
     change SpOk combStep 20
     exact ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
