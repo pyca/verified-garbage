@@ -141,64 +141,73 @@ structure XInv (s₀ : State) (m : Mem) (k : Nat) (s : State) : Prop where
 theorem niPre_eq : niPre = .mov .edi (argOp 4) :: .mov .eax (argOp 0) :: .mov .ecx (argOp 1) ::
     .mov .edx (argOp 2) :: ([.movdquLoad .xmm0 (at_ .edx 0)] : List Instr) := rfl
 
+/-- `niPre`, from a state whose stack arguments are the entry state's. -/
+theorem niPre_run {s₀ s : State} {Q : State → Prop} (hesp : s.gpr .esp = s₀.gpr .esp)
+    (hin : ∀ i < 6, InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4)
+    (harg : ∀ i < 6, s.mem.readW (argAddr s₀ i) 32 = arg s₀ i)
+    (hst : InRegions (s.rd ++ s.wr) ((arg s₀ 2).setWidth 64) 16)
+    (k : ∀ s', s'.gpr .edi = arg s₀ 4 → s'.gpr .eax = arg s₀ 0 → s'.gpr .ecx = arg s₀ 1 →
+      s'.gpr .edx = arg s₀ 2 → s'.gpr .esi = s.gpr .esi → s'.gpr .esp = s.gpr .esp → s'.mem = s.mem →
+      s'.rd = s.rd → s'.wr = s.wr → s'.xmm .xmm0 = s.mem.readW ((arg s₀ 2).setWidth 64) 128 → Q s') :
+    WP isa (.block niPre) s Q := by
+  rw [niPre_eq]
+  refine wp_arg (s₀ := s₀) hesp (hin 4 (by decide)) (harg 4 (by decide)) fun s₁ u₁ => ?_
+  refine wp_arg (s₀ := s₀) (by rw [u₁.other _ (by decide), hesp]) (by rw [u₁.rd, u₁.wr]; exact hin 0 (by decide))
+    (by rw [u₁.mem]; exact harg 0 (by decide)) fun s₂ u₂ => ?_
+  refine wp_arg (s₀ := s₀) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hesp])
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 1 (by decide))
+    (by rw [u₂.mem, u₁.mem]; exact harg 1 (by decide)) fun s₃ u₃ => ?_
+  refine wp_arg (s₀ := s₀) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hesp])
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 2 (by decide))
+    (by rw [u₃.mem, u₂.mem, u₁.mem]; exact harg 2 (by decide)) fun s₄ u₄ => ?_
+  obtain mem₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain ea : s₄.ea (at_ .edx 0) = (arg s₀ 2).setWidth 64 := by
+    rw [ea_at', u₄.gpr]
+    show (arg s₀ 2 + BitVec.ofNat 32 0).setWidth 64 = _
+    rw [add0']
+  obtain hin₄ : InRegions (s₄.rd ++ s₄.wr) ((arg s₀ 2).setWidth 64) 16 := by
+    rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hst
+  rw [WP.block_cons_iff]
+  refine ⟨s₄.setXmm .xmm0 (s₄.mem.readW ((arg s₀ 2).setWidth 64) 128), by
+    simp only [isa, reduceExec, State.load128, ea, hin₄, ite_true, Option.map_some],
+    WP.block_nil (k _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_)⟩
+  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
+  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]
+  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.gpr]
+  · rw [gpr_setXmm, u₄.gpr]
+  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  · rw [mem_setXmm, mem₄]
+  · rw [rd_setXmm, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  · rw [wr_setXmm, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+  · rw [xmm_setXmm_self, mem₄]
+
 theorem niPre_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ 0 s) :
     WP isa (.block niPre) s (XInv s₀ s.mem 0) := by
   obtain big := UPre.big_of h.frame
   obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
-  rw [niPre_eq]
-  refine wp_arg (s₀ := s₀) h.esp (by rw [hrw]; exact hp.arg_in (by decide)) (hp.arg_keep big (by decide))
-    fun s₁ u₁ => ?_
-  refine wp_arg (s₀ := s₀) (by rw [u₁.other _ (by decide), h.esp])
-    (by rw [u₁.rd, u₁.wr, hrw]; exact hp.arg_in (by decide))
-    (by rw [u₁.mem]; exact hp.arg_keep big (by decide)) fun s₂ u₂ => ?_
-  refine wp_arg (s₀ := s₀) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.esp])
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, hrw]; exact hp.arg_in (by decide))
-    (by rw [u₂.mem, u₁.mem]; exact hp.arg_keep big (by decide)) fun s₃ u₃ => ?_
-  refine wp_arg (s₀ := s₀) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.esp])
-    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, hrw]; exact hp.arg_in (by decide))
-    (by rw [u₃.mem, u₂.mem, u₁.mem]; exact hp.arg_keep big (by decide)) fun s₄ u₄ => ?_
-  obtain mem₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  obtain ea : s₄.ea (at_ .edx 0) = (St s₀).setWidth 64 := by
-    rw [ea_at', u₄.gpr]
-    show (St s₀ + BitVec.ofNat 32 0).setWidth 64 = _
-    rw [add0']
-  obtain hin : InRegions (s₄.rd ++ s₄.wr) ((St s₀).setWidth 64) 16 := by
-    rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, hrw]
-    exact ⟨stR s₀, by simp [hp.wr], Region.contains_self _ _⟩
-  rw [WP.block_cons_iff]
-  refine ⟨s₄.setXmm .xmm0 (s₄.mem.readW ((St s₀).setWidth 64) 128), by
-    simp only [isa, reduceExec, State.load128, ea, hin, ite_true, Option.map_some], WP.block_nil ⟨?_, ?_, ?_, ?_, ?_,
-      ?_, ?_, ?_, ?_, ?_⟩⟩
-  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
-      h.esi]
-  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, Nat.sub_zero]
-    exact arg_ofNat s₀ 4
-  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]
-  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.gpr]
-    exact arg_ofNat s₀ 1
-  · rw [gpr_setXmm, u₄.gpr]
-  · rw [gpr_setXmm, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
-      h.esp]
-  · rw [rd_setXmm, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
-  · rw [wr_setXmm, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
-  · rw [mem_setXmm, mem₄]
-  · rw [xmm_setXmm_self, mem₄, st_readW, h.state]
+  refine niPre_run h.esp (fun i hi => by rw [hrw]; exact hp.arg_in hi) (fun i hi => hp.arg_keep big hi)
+    (by rw [hrw]; exact ⟨stR s₀, by simp [hp.wr], Region.contains_self _ _⟩)
+    fun s' edi eax ecx edx esi esp mem rd wr x => ⟨by rw [esi, h.esi], ?_, eax, ?_, edx, by rw [esp, h.esp],
+      by rw [rd, h.rd], by rw [wr, h.wr], mem, ?_⟩
+  · rw [edi, Nat.sub_zero]; exact arg_ofNat s₀ 4
+  · rw [ecx]; exact arg_ofNat s₀ 1
+  · rw [x, st_readW]; exact h.state
 
-/-- The round keys, read from the schedule the invariant keeps in `eax`. -/
-theorem XInv.keys {s₀ : State} (hp : UPre s₀) {m : Mem} (hm : Frame (Big s₀) s₀.mem m) {s : State}
-    (heax : s.gpr .eax = W s₀) (hrd : s.rd = s₀.rd) (hmem : s.mem = m) :
-    Keys (R s₀) (Spec.Aes.bytesAt s₀.mem ((W s₀).setWidth 64) (16 * (R s₀ + 1))) s := by
-  obtain hnr : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_using [h]
-  obtain he : ∀ j ≤ R s₀, s.ea (Impl.Aes.X86.AesNi.at_ .eax (16 * j)) =
-      (W s₀).setWidth 64 + BitVec.ofNat 64 (16 * j) := fun j hj => by
+/-- The round keys, read from the schedule that `eax` points at. -/
+theorem niKeys {s : State} {P : BitVec 32} {nr : Nat} (hnr : nr ≤ 14) (hfit : P.toNat + 240 ≤ 2 ^ 32)
+    (heax : s.gpr .eax = P) (hmem : (⟨P.setWidth 64, 240⟩ : Region) ∈ s.rd ++ s.wr) :
+    Keys nr (Spec.Aes.bytesAt s.mem (P.setWidth 64) (16 * (nr + 1))) s := by
+  obtain he : ∀ j ≤ nr, s.ea (Impl.Aes.X86.AesNi.at_ .eax (16 * j)) =
+      P.setWidth 64 + BitVec.ofNat 64 (16 * j) := fun j hj => by
     show addr (s.gpr .eax) (16 * j) = _
     rw [heax]
-    exact addr_eq (by have := hp.sch_fit; omega_using [this, hj, hnr])
+    exact addr_eq (by omega_using [hfit, hj, hnr])
   refine ⟨hnr, fun j hj => ?_, fun j hj => ?_⟩
-  · rw [he j hj, hrd]
-    exact ⟨schR s₀, by simp [hp.rd], Offset.contains_base _ (by omega_using [hj, hnr]) (by omega_using [hj, hnr])⟩
-  · rw [he j hj, hmem, ← UPre.sched_bytes hp hm]
-    have h := byte_roundKey m ((W s₀).setWidth 64) (L := 16 * (R s₀ + 1)) (j := j) (by omega_using [hj])
+  · rw [he j hj]
+    exact ⟨_, hmem, Offset.contains_base _ (by omega_using [hj, hnr]) (by omega_using [hj, hnr])⟩
+  · rw [he j hj]
+    have h := byte_roundKey s.mem (P.setWidth 64) (L := 16 * (nr + 1)) (j := j) (by omega_using [hj])
     rw [ofInt_natCast] at h
     exact h
 
@@ -206,6 +215,36 @@ theorem sub_one_ofNat {n : Nat} (h : 0 < n) : BitVec.ofNat 32 n - 1 = BitVec.ofN
   obtain ⟨j, rfl⟩ : ∃ j, n = j + 1 := ⟨n - 1, by omega_using [h]⟩
   rw [BitVec.ofNat_add, Nat.add_sub_cancel]
   exact BitVec.add_sub_cancel _ _
+
+/-- The block at `esi` (at `D`) XORed into `xmm0`, which is then enciphered. -/
+theorem niBlock_wp {s : State} {D : Addr} {nr : Nat} {w : List Byte} {rest : Prog isa} {Q : State → Prop}
+    (hea : s.ea (at_ .esi 0) = D) (hin : InRegions (s.rd ++ s.wr) D 16) (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14)
+    (hK : Keys nr w s) (hc : s.gpr .ecx = BitVec.ofNat 32 nr)
+    (k : ∀ s', st (s'.xmm .xmm0) =
+        Spec.Aes.cipher nr w (st (XBinOp.eval .pxor (s.xmm .xmm0) (s.mem.readW D 128))) →
+      s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → WP isa rest s' Q) :
+    WP isa (.seq (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm0 .xmm7)])
+      (.seq (Impl.Aes.X86.AesNi.aes [.xmm0]) rest)) s Q := by
+  obtain ⟨d, hd⟩ : ∃ d, s.mem.readW D 128 = d := ⟨_, rfl⟩
+  obtain ⟨s₁, hs₁⟩ : ∃ s₁, (s.setXmm .xmm7 d).setXmm .xmm0
+    (XBinOp.eval .pxor ((s.setXmm .xmm7 d).xmm .xmm0) ((s.setXmm .xmm7 d).xmm .xmm7)) = s₁ := ⟨_, rfl⟩
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s.setXmm .xmm7 d, by
+    simp only [isa, reduceExec, State.load128, hea, hin, ite_true, Option.map_some, hd], ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨s₁, hs₁ ▸ rfl, WP.block_nil ?_⟩
+  obtain x₁ : s₁.xmm .xmm0 = XBinOp.eval .pxor (s.xmm .xmm0) d := by
+    rw [← hs₁, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_self]
+  obtain g₁ : s₁.gpr = s.gpr := by rw [← hs₁, gpr_setXmm, gpr_setXmm]
+  obtain m₁ : s₁.mem = s.mem := by rw [← hs₁, mem_setXmm, mem_setXmm]
+  obtain rd₁ : s₁.rd = s.rd := by rw [← hs₁, rd_setXmm, rd_setXmm]
+  obtain wr₁ : s₁.wr = s.wr := by rw [← hs₁, wr_setXmm, wr_setXmm]
+  obtain hK₁ : Keys nr w s₁ :=
+    ⟨hK.le, by simp only [State.ea, g₁, rd₁, wr₁]; exact hK.keys, by simp only [State.ea, g₁, m₁]; exact hK.bytes⟩
+  refine WP.seq (WP.mono (aes_ok [.xmm0] (by decide) (by decide) hnr s₁ hK₁ (by rw [g₁, hc])) fun s₂ ⟨c₂, f₂⟩ => ?_)
+  exact k s₂ (by rw [c₂ .xmm0 List.mem_cons_self, x₁, hd]) (f₂.gpr.trans g₁) (f₂.mem.trans m₁) (f₂.rd.trans rd₁)
+    (f₂.wr.trans wr₁)
 
 /-- One block. -/
 theorem niBody_wp {s₀ : State} (hp : UPre s₀) {m : Mem} (hm : Frame (Big s₀) s₀.mem m) {k : Nat} (hk : k < N s₀)
@@ -219,24 +258,10 @@ theorem niBody_wp {s₀ : State} (hp : UPre s₀) {m : Mem} (hm : Frame (Big s�
   obtain hin : InRegions (s.rd ++ s.wr) ((Dp s₀).setWidth 64 + BitVec.ofNat 64 (16 * k)) 16 := by
     rw [h.rd]
     exact ⟨dataR s₀, by simp [hp.rd], Offset.contains_base _ (by omega_using [hk]) (by have := hp.data_fit; omega_using [this, hk])⟩
-  obtain ⟨d, hd⟩ : ∃ d, s.mem.readW ((Dp s₀).setWidth 64 + BitVec.ofNat 64 (16 * k)) 128 = d := ⟨_, rfl⟩
-  obtain ⟨s₁, hs₁⟩ : ∃ s₁, (s.setXmm .xmm7 d).setXmm .xmm0
-    (XBinOp.eval .pxor ((s.setXmm .xmm7 d).xmm .xmm0) ((s.setXmm .xmm7 d).xmm .xmm7)) = s₁ := ⟨_, rfl⟩
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s.setXmm .xmm7 d, by
-    simp only [isa, reduceExec, State.load128, ea, hin, ite_true, Option.map_some, hd], ?_⟩
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, hs₁ ▸ rfl, WP.block_nil ?_⟩
-  obtain x₁ : s₁.xmm .xmm0 = XBinOp.eval .pxor (s.xmm .xmm0) d := by
-    rw [← hs₁, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_self]
-  obtain g₁ : s₁.gpr = s.gpr := by rw [← hs₁, gpr_setXmm, gpr_setXmm]
-  obtain m₁ : s₁.mem = m := by rw [← hs₁, mem_setXmm, mem_setXmm, h.mem]
-  obtain rd₁ : s₁.rd = s₀.rd := by rw [← hs₁, rd_setXmm, rd_setXmm, h.rd]
-  obtain wr₁ : s₁.wr = s₀.wr := by rw [← hs₁, wr_setXmm, wr_setXmm, h.wr]
-  refine WP.seq (WP.mono (aes_ok [.xmm0] (by decide) (by decide) hp.rounds s₁
-    (XInv.keys hp hm (by rw [g₁, h.eax]) rd₁ m₁) (by rw [g₁, h.ecx])) fun s₂ ⟨c₂, f₂⟩ => ?_)
-  obtain g₂ : s₂.gpr = s.gpr := f₂.gpr.trans g₁
+  obtain hK := niKeys (s := s) (nr := R s₀) (by rcases hp.rounds with h | h | h <;> omega_using [h]) hp.sch_fit h.eax
+    (by rw [h.rd]; simp [hp.rd])
+  rw [h.mem, UPre.sched_bytes hp hm] at hK
+  refine niBlock_wp ea hin hp.rounds hK h.ecx fun s₂ c₂ g₂ m₂ rd₂ wr₂ => ?_
   obtain hpos : 0 < N s₀ - k := by omega_using [hk]
   obtain edi' : s.gpr .edi - 1 = BitVec.ofNat 32 (N s₀ - (k + 1)) := by
     rw [h.edi, sub_one_ofNat hpos]; rfl
@@ -253,11 +278,11 @@ theorem niBody_wp {s₀ : State} (hp : UPre s₀) {m : Mem} (hm : Frame (Big s�
   · exact h.ecx
   · exact h.edx
   · exact h.esp
-  · rw [f₂.rd, rd₁]
-  · rw [f₂.wr, wr₁]
-  · rw [f₂.mem, m₁]
-  · rw [c₂ .xmm0 List.mem_cons_self, x₁, take_succ_blks s₀ hk, Proof.Cmac.chain_append, Proof.Cmac.chain_single,
-      ← h.chain, ← UPre.block_bytes hp hm hk, ← h.mem, ← st_readW, hd]
+  · rw [rd₂, h.rd]
+  · rw [wr₂, h.wr]
+  · rw [m₂, h.mem]
+  · rw [c₂, take_succ_blks s₀ hk, Proof.Cmac.chain_append, Proof.Cmac.chain_single, ← h.chain,
+      ← UPre.block_bytes hp hm hk, ← h.mem, ← st_readW]
     exact congrArg (fun x => (Spec.Aes.cipher (R s₀) _ x).toList) (st_pxor _ _).symm
   · rw [edi', MdStream.X86.ofNat_beq_zero (by have : N s₀ < 2 ^ 32 := (arg s₀ 4).isLt; omega_using [this])]
     exact congrArg some (decide_eq_decide.mpr (by omega_using [hk]))

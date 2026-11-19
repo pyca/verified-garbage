@@ -46,7 +46,12 @@ Decryption's CBC code for `v` is `decryptCode v`: for AES-NI (`hardware`),
 the code that deciphers six blocks at a time with no call
 (`Impl/AesCbc/X86/Decrypt.lean`, `Proof/AesCbc/X86/Decrypt.lean`), which
 writes only the first 240 bytes of `scratch` (`decWritten`); for any other
-implementation, `decryptZ` around its `vg_aes_decrypt_blocks`.
+implementation, `decryptZ` around its `vg_aes_decrypt_blocks`. Encryption's
+is `encryptCode v`: for AES-NI, the code that keeps the chaining value in a
+register with no call (`Impl.AesCbc.X86.encryptNi`,
+`Proof.AesCbc.X86.Encrypt`), which leaves `scratch` unchanged or zero
+(`encWritten`); for any other implementation, `encryptZ` around its
+`vg_aes_encrypt_blocks`.
 -/
 
 @[expose] public section
@@ -107,10 +112,38 @@ theorem decrypt_stack (b : Impl.Aes.X86.Blocks) (h : stackUse b.code = 0) :
     Impl.AesCbc.X86.blkCall, stackUse, h]
   decide
 
-/-! ## Decryption's CBC code -/
+/-! ## The CBC code -/
 
-/-- `v` is AES-NI, whose CBC decryption deciphers the blocks itself. -/
+/-- `v` is AES-NI, whose CBC code enciphers and deciphers the blocks itself. -/
 def hardware (v : BlocksImpl) : Bool := v.dec.name == "vg_aes_decrypt_blocks_aesni"
+
+/-- The CBC encryption code for `v`: with AES-NI, the code that keeps the
+chaining value in a register; otherwise the code around `v`'s
+`vg_aes_encrypt_blocks`. -/
+def encryptCode (v : BlocksImpl) : Prog isa :=
+  if hardware v then Impl.AesCbc.X86.encryptNi else Impl.AesCbc.X86.encryptZ v.enc
+
+/-- `encryptCode v` writes no byte of `scratch` at offset `encWritten v` or
+beyond, but zeros. -/
+def encWritten (v : BlocksImpl) : Nat := if hardware v then 0 else v.encWritten
+
+theorem encWritten_le (v : BlocksImpl) : encWritten v ≤ 2048 := by
+  unfold encWritten
+  split
+  · exact Nat.zero_le _
+  · exact v.encWrittenLe
+
+theorem encryptCode_noSp (v : BlocksImpl) : NoSp (encryptCode v) := by
+  unfold encryptCode
+  split
+  · exact Encrypt.noSp
+  · exact encrypt_noSp _ v.encNosp
+
+theorem encryptCode_stack (v : BlocksImpl) : stackUse (encryptCode v) ≤ 24 := by
+  unfold encryptCode
+  split
+  · rw [Encrypt.stack]; exact Nat.zero_le _
+  · exact encrypt_stack _ v.encStack
 
 /-- The CBC decryption code for `v`: with AES-NI, the code that deciphers six
 blocks at a time; otherwise the code around `v`'s `vg_aes_decrypt_blocks`. -/
@@ -177,11 +210,17 @@ theorem tail_of {s s' : State} {w : Nat}
   exact h
 
 theorem encrypt_tail (v : BlocksImpl) :
-    Verified X86.target (Impl.AesCbc.X86.encryptZ v.enc)
-      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailZPost 32 (encPost 32) v.encWritten) false 24 none) :=
-  Verified.tailZ_of (Proof.AesCbc.encrypt_keyed (Proof.AesCbc.X86.encryptZ_verified v))
-    (fun s t s' hs he => tail_of (Proof.AesCbc.X86.encryptZ_tail v s (Proof.AesCbc.X86.enc_implies.pre s hs) t s' he))
-    args_length
+    Verified X86.target (encryptCode v)
+      (Spec.Cbc.aesSig.contract X86.abi (pre 32) (tailZPost 32 (encPost 32) (encWritten v)) false 24 none) := by
+  by_cases h : hardware v = true
+  · rw [encryptCode, encWritten, ite_eq_left h, ite_eq_left h]
+    exact Verified.tailZ_of (Proof.AesCbc.encrypt_keyed Encrypt.verified)
+      (fun s t s' hs he => tail_of (Encrypt.tail s (Proof.AesCbc.X86.enc_implies.pre s hs) t s' he))
+      args_length
+  · rw [encryptCode, encWritten, ite_eq_right h, ite_eq_right h]
+    exact Verified.tailZ_of (Proof.AesCbc.encrypt_keyed (Proof.AesCbc.X86.encryptZ_verified v))
+      (fun s t s' hs he => tail_of (Proof.AesCbc.X86.encryptZ_tail v s (Proof.AesCbc.X86.enc_implies.pre s hs) t s' he))
+      args_length
 
 theorem decrypt_tail (v : BlocksImpl) :
     Verified X86.target (decryptCode v)
@@ -199,8 +238,8 @@ theorem decrypt_tail (v : BlocksImpl) :
 
 /-- `vg_aes_cbc_encrypt` for a `v` whose encryption writes nothing in
 `scratch`: the CBC code, which leaves `scratch` scrubbed. -/
-theorem encrypt_free (v : BlocksImpl) (h : v.encWritten = 0) :
-    Verified X86.target (Impl.AesCbc.X86.encryptZ v.enc) (Spec.Cbc.aesEncryptContract X86.abi 24) :=
+theorem encrypt_free (v : BlocksImpl) (h : encWritten v = 0) :
+    Verified X86.target (encryptCode v) (Spec.Cbc.aesEncryptContract X86.abi 24) :=
   (h ▸ encrypt_tail v).post_mono (tailZPost_zero 32 _)
 
 theorem decrypt_free (v : BlocksImpl) (h : decWritten v = 0) :
@@ -208,17 +247,18 @@ theorem decrypt_free (v : BlocksImpl) (h : decWritten v = 0) :
   (h ▸ decrypt_tail v).post_mono (tailZPost_zero 32 _)
 
 theorem encrypt_scrubbed (v : BlocksImpl) :
-    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
+    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v))
       (Spec.Cbc.aesSig.contract X86.abi (pre 32) (scrubbedPost 32 (encPost 32)) false 72 none) :=
   Verified.callWipeTail' (sig := Spec.Cbc.aesSig) (stack := 24) (zst := 0)
-    (pre := pre 32) (post := tailZPost 32 (encPost 32) v.encWritten)
+    (pre := pre 32) (post := tailZPost 32 (encPost 32) (encWritten v))
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5) (j := 5)
     (encrypt_tail v) Proof.Zeroize.X86.verified
-    (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega_using [this])
-    (by decide) (encrypt_noSp _ v.encNosp) (encrypt_stack _ v.encStack) zeroize_noSp zeroize_stack (by decide)
+    (by decide) rfl rfl (by decide) (Nat.le_trans (encWritten_le v) (by decide))
+    (by have := encWritten_le v; omega_using [this])
+    (by decide) (encryptCode_noSp v) (encryptCode_stack v) zeroize_noSp zeroize_stack (by decide)
     (pre_local 32) (tailZPost_local 32 _ (encPost_local 32))
-    (tailZPost_out 32 (Nat.le_trans v.encWrittenLe (by decide)) (encPost_out 32)) (wipedTailZ 32 _ _) (sat _)
+    (tailZPost_out 32 (Nat.le_trans (encWritten_le v) (by decide)) (encPost_out 32)) (wipedTailZ 32 _ _) (sat _)
 
 theorem decrypt_scrubbed (v : BlocksImpl) :
     Verified X86.target (Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v))
@@ -235,7 +275,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
     (tailZPost_out 32 (Nat.le_trans (decWritten_le v) (by decide)) (decPost_out 32)) (wipedTailZ 32 _ _) (sat _)
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten)
+    Verified X86.target (Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v))
       (Spec.Cbc.aesEncryptContract X86.abi 72) :=
   encrypt_scrubbed v
 
@@ -265,9 +305,15 @@ theorem decryptZ_spSafe (v : BlocksImpl) :
     Code.all, v.decSpSafe]
   decide
 
+theorem encryptCode_spSafe (v : BlocksImpl) : (encryptCode v).all (fun i => !isa.writesSp i) = true := by
+  unfold encryptCode
+  split
+  · exact Encrypt.spSafe
+  · exact encryptZ_spSafe v
+
 theorem encrypt_spSafe (v : BlocksImpl) :
-    (Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten).all (fun i => !isa.writesSp i) = true :=
-  wiped_spSafe (encryptZ_spSafe v)
+    (Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)).all (fun i => !isa.writesSp i) = true :=
+  wiped_spSafe (encryptCode_spSafe v)
 
 theorem decryptCode_spSafe (v : BlocksImpl) : (decryptCode v).all (fun i => !isa.writesSp i) = true := by
   unfold decryptCode
@@ -280,18 +326,18 @@ theorem decrypt_spSafe (v : BlocksImpl) :
   wiped_spSafe (decryptCode_spSafe v)
 
 /-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted: the
-CBC code itself where `v` writes nothing in `scratch`, the call wiping its
-first `v.encWritten` bytes otherwise. -/
+CBC code itself (`encryptCode v`) where it writes nothing in `scratch`, the
+call wiping its first `encWritten v` bytes otherwise. -/
 def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi X86.target) :=
-  if h : v.encWritten = 0 then [{
+  if h : encWritten v = 0 then [{
     suffix := v.suffix
-    code := Impl.AesCbc.X86.encryptZ v.enc
+    code := encryptCode v
     stack := 24
     verified := encrypt_free v h
-    spSafe := encryptZ_spSafe v }]
+    spSafe := encryptCode_spSafe v }]
   else [{
     suffix := v.suffix
-    code := Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten
+    code := Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)
     stack := 72
     verified := encrypt_verified v
     spSafe := encrypt_spSafe v }]
