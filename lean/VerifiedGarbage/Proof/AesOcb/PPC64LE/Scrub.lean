@@ -20,7 +20,7 @@ it, and 2688 for `seal` and `open` (`withStackScratchArgs`), the offsets and
 the working space of the block functions among it. Their postconditions
 read the memory on return only within the key context, the data and the
 tag, as on AArch64 (`Proof/AesOcb/AArch64/Frame.lean`): `init`'s for a key
-of a length its precondition allows (`postOut_of_local_pre`).
+of a length its precondition allows (`initPostOut_of_local_pre`).
 -/
 
 @[expose] public section
@@ -35,7 +35,7 @@ open VG.PPC64LE VG.PPC64LE.Scrub VG.Proof.Aes.ScrubLocal
 only within the buffers when the precondition holds, as for RSA
 (`Rsa.PPC64LE.Scrub.postOut_of_local_pre`, whose module this one does not
 import). -/
-theorem postOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+theorem initPostOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
@@ -74,7 +74,7 @@ theorem postOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 
 theorem initOut (stack : Nat) :
     PostOut (Spec.Ocb.initContract PPC64LE.abi stack) (Spec.Ocb.initSig.retBits 64) :=
-  postOut_of_local_pre (leak := none) ScrubAbi.plain (Proof.AesOcb.initPostOut_local _)
+  initPostOut_of_local_pre (leak := none) ScrubAbi.plain (Proof.AesOcb.initPostOut_local _)
 
 theorem sealOut (stack : Nat) :
     PostOut (Spec.Ocb.sealContract PPC64LE.abi stack) (Spec.Ocb.sealSig.retBits 64) :=
