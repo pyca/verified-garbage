@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PkTr
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
@@ -28,8 +29,8 @@ as x86-64's `Proof/MlDsa/X86_64/Scrub.lean` proves them): each
 implementation, generic over the Keccak-f[1600] implementation it calls,
 returns with every register it may leave secret cleared and its whole stack
 zeroed (`ScrubAll.scrubAllOf`, with the registers `clear` and the `…Side`
-theorems below; `pk_tr`, whose registers differ with the permutation, by
-`ScrubAll.withScrubAll` still).
+theorems below; `pk_tr`'s are its own, `pkTrOwn`, with those its permutation
+writes, `Permutation.clear`).
 -/
 
 @[expose] public section
@@ -509,5 +510,24 @@ theorem prepareSecretSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p =
       scrubSide (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p)
       80 ((prepareSecretKeySig p).retBits abi.ptrBits) prepareSecretClear []) = true := by lit_decide
   exact List.all_eq_true.mp e p (mem_of hp)
+
+/-- The registers `pk_tr` writes with every implementation of the permutation:
+its tail clears these and those the implementation states its permutation
+writes (`Permutation.clear`). -/
+def pkTrOwn : VG.Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v24, .v25, .v30,
+   .v31],
+   []⟩
+
+/-- Of the hash of a public key, with each implementation of the permutation. -/
+theorem pkTrSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    scrubSide (Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee p)
+      16 ((pkTrSig p).retBits abi.ptrBits) (clearUnion pkTrOwn v.clear) [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => [mlDsa44, mlDsa65, mlDsa87].all fun p =>
+      scrubSide (Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee p)
+      16 ((pkTrSig p).retBits abi.ptrBits) (clearUnion pkTrOwn v.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) p (mem_of hp)
 
 end VG.Proof.MlDsa.AArch64.Scrub

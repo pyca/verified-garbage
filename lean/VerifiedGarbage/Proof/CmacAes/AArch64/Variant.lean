@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCT
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
@@ -30,6 +31,10 @@ structure UpdateImpl where
   keepsV : callee.code.allInstrs AArch64.keepsV = true
   suffix : String
   features : List String
+  /-- The registers `callee.code` writes: a caller's tail clears them with
+  its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this
+  to the code. -/
+  clear : Impl.Residue.AArch64.Clear
   /-- The implementation of `vg_aes_ctr32` that goes with it, for callers
   that also run counter mode (AES-CCM, AES-SIV): the one it is built on, or
   for the chaining kept in registers, `vg_aes_ctr32_aes`. It needs the same
@@ -40,7 +45,7 @@ structure UpdateImpl where
   ctrScratch : ctr.scratch ≤ scratch
 
 /-- The existing generic CMAC chaining loop, for any CTR implementation. -/
-def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
+def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) (clear : Impl.Residue.AArch64.Clear) : UpdateImpl where
   callee := ⟨"vg_cmac_aes_update" ++ v.suffix, Impl.CmacAes.AArch64.update v.callee⟩
   noFrames := by
     simp [Impl.CmacAes.AArch64.update, Impl.CmacAes.AArch64.body, Code.noFrames, v.noFrames]
@@ -53,6 +58,7 @@ def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
   keepsV := update_keepsV v
   suffix := v.suffix
   features := v.features
+  clear := clear
   ctr := v
   ctrFeatures := rfl
   ctrScratch := by rcases v.scratch_ok with h | h <;> rw [h] <;> decide
@@ -72,6 +78,10 @@ def UpdateImpl.aese : UpdateImpl where
   keepsV := by decide +kernel
   suffix := "_aes"
   features := ["aes"]
+  clear := ⟨[.x3, .x4, .x6, .x7, .x9],
+    [.v0, .v1, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30,
+     .v31],
+    []⟩
   ctr := .aese
   ctrFeatures := rfl
   ctrScratch := Nat.le_refl _

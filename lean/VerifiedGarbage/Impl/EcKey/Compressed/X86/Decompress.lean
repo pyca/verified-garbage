@@ -74,8 +74,16 @@ def tonelliSetup (c : Cfg) : List Instr :=
   copy (2 * c.n) (c.sl T0) (c.sl ACC) ++ copy (2 * c.n) (c.sl ACC) (c.sl T5) ++
   setConst c.n (c.sl T1) (c.mont zq) ++ [.mov .eax (.imm 95), .store (sc (c.sl T2)) .eax]
 
+/-- P-521's `(p + 1) / 4 = 2^519`: the root is 519 squarings. -/
+def p521RootOps : List PowerOp := [.squares 519]
+
+/-- The root's candidate: for `p ≡ 3 (mod 4)` the power `(p + 1) / 4`, by
+P-521's chain for its `p`, else by the generic power; for P-224, Tonelli and
+Shanks' descent. -/
 def rootCandidate (c : Cfg) : Prog isa :=
-  if c.C.p % 4 = 3 then rootPower c ((c.C.p + 1) / 4) 2
+  if c.C.p % 4 = 3 then
+    if c.C.p = Mont.p521Prime then chainPower (rootPow c 2) c.SP p521RootOps
+    else rootPower c ((c.C.p + 1) / 4) 2
   else progs [tonelliPowers c, .block (tonelliSetup c), .loop (descentRound c) .ne]
 
 def parityMask (c : Cfg) : List Instr :=
