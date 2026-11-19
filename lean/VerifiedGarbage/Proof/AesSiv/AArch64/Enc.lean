@@ -106,8 +106,8 @@ theorem start_ok (h : EPre Nw s₀ C A P W D R N L) :
   have hwD := e.wD
   have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s₀.wr (W + BitVec.ofNat 64 (dOff + d)) 8 := by
     rw [← Offset.add_add, ← e.hD]; exact h.inD hd
-  obtain z₀ := e.inW (s := s₀) rfl (d := zOff) (n := 8) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))
-  obtain z₁ := e.inW (s := s₀) rfl (d := zOff + 8) (n := 8) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))
+  obtain z₀ := e.inW (s := s₀) rfl (d := zOff) (n := 8) (by have := sivOffs; omega)
+  obtain z₁ := e.inW (s := s₀) rfl (d := zOff + 8) (n := 8) (by have := sivOffs; omega)
   obtain d₀ := inD 0 (by decide)
   obtain d₁ := inD 8 (by decide)
   rw [Nat.add_zero] at d₀
@@ -133,9 +133,9 @@ context as the key, the state `D`, the zero block at `W + 16` and the working
 space at `W + 256`. -/
 theorem Started.fargs (h : EPre Nw s₀ C A P W D R N L) {s : State} (hs : Started s₀ C A P W D R N L s) :
     FArgs s C D (W + BitVec.ofNat 64 zOff) (W + BitVec.ofNat 64 csOff) 16 R Nw :=
-  h.env.fargs' hs.rd hs.wr (h.env.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))) h.c_d h.env.wD
-    h.covD (h.env.dS (d := zOff) (n := 16) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))).symm
-    (Offset.disjoint W (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by decide) (by have := h.env.wW; omega_arith))
+  h.env.fargs' hs.rd hs.wr (h.env.dS (by have := sivOffs; omega) (by have := sivOffs; omega)) h.c_d h.env.wD
+    h.covD (h.env.dS (d := zOff) (n := 16) (by have := sivOffs; omega) (by have := sivOffs; omega)).symm
+    (Offset.disjoint W (by have := sivOffs; omega) (by decide) (by have := h.env.wW; omega_arith))
     (by rw [toNat_add_lt W h.env.wW (show zOff < 272 + Nw by have := sivOffs; omega)]; have := h.env.wW; simp only [zOff]; omega_arith)
     (Covers.right (cov_off h.env.workIn (by simp [zOff] <;> omega))) (by decide)
     hs.x0 hs.x1 hs.x2 hs.x3 hs.x4 hs.x5
@@ -194,7 +194,7 @@ theorem start_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : EP
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨_, List.mem_cons_self, Offset.sub W (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))⟩)
+      · exact ⟨_, List.mem_cons_self, Offset.sub W (by have := sivOffs; omega) (by have := sivOffs; omega)⟩)
   refine ⟨by rw [g₃ _ (by decide) (by decide), h₂.x19], by rw [g₃ _ (by decide) (by decide), h₂.x20],
     by rw [g₃ _ (by decide) (by decide), h₂.x21], by rw [g₃ _ (by decide) (by decide), h₂.x24, Nat.mul_zero, k0],
     by rw [g₃ _ (by decide) (by decide), h₂.x25, Nat.sub_zero], by rw [g₃ _ (by decide) (by decide), h₂.x26],
@@ -209,28 +209,28 @@ theorem start_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : EP
     obtain sv2 := sv1.frame (Proof.Cmac.frame_store2 D 0 0) fun p hp r hr => by
       have := saved_ge p hp
       simp only [List.mem_singleton] at hr; subst hr
-      exact (e.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; have := e.small; omega)).symm
+      exact (e.dS (by have := sivOffs; omega) (by have := sivOffs; have := e.small; omega)).symm
     obtain sv : Spill.Saved W s₀.gpr saved s₂.mem := by rw [h₂.mem]; exact sv2
     refine sv.frame f₃ fun p hp r hr => ?_
     have := saved_ge p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (e.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; have := e.small; omega)).symm
-    · exact Offset.disjoint W (by simp only [csOff]; omega_arith) (by omega_arith) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))
+    · exact (e.dS (by have := sivOffs; omega) (by have := sivOffs; have := e.small; omega)).symm
+    · exact Offset.disjoint W (by simp only [csOff]; omega_arith) (by omega_arith) (by have := sivOffs; have := h.env.small; have := h.env.big; omega)
   · -- `CIPH(0 ⊕ (0 ⊕ K1))`, the CMAC of `<zero>`.
     have ctx {d n : Nat} (hd : d + n ≤ 512) :
         Spec.Aes.bytesAt s₂.mem (C + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt s₀.mem (C + BitVec.ofNat 64 d) n :=
       Proof.Cmac.bytesAt_frame fs (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact (e.c_w.sub_left (Offset.sub_base C hd)).sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+        · exact (e.c_w.sub_left (Offset.sub_base C hd)).sub_right (e.sW (by have := sivOffs; omega))
         · exact h.c_d.sub_left (Offset.sub_base C hd)) (by omega_arith)
     obtain hz : Spec.Aes.bytesAt s₂.mem (W + BitVec.ofNat 64 zOff) 16 = Spec.Cmac.zeros 16 := by
       obtain fr : Frame [⟨D, 16⟩] (Proof.Cmac.zero2 (Spill.saveMem s₀.mem W s₀.gpr saved) (W + BitVec.ofNat 64 zOff))
           (startMem s₀ W D) := Proof.Cmac.frame_store2 _ _ _
       rw [h₂.mem, Proof.Cmac.bytesAt_frame fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (e.dS (d := zOff) (n := 16) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))).symm) (by decide)]
+        exact (e.dS (d := zOff) (n := 16) (by have := sivOffs; omega) (by have := sivOffs; omega)).symm) (by decide)]
       exact Proof.Cmac.zero2_bytes _ _
     obtain hd : Spec.Aes.bytesAt s₂.mem D 16 = Spec.Cmac.zeros 16 := by
       rw [h₂.mem, startMem]; exact Proof.Cmac.zero2_bytes _ _
@@ -277,7 +277,7 @@ theorem AInv.desc (h : EPre Nw s₀ C A P W D R N L) {i : Nat} {s : State} (hi :
   hi.frame.readW (Offset.contains_base A hd (by have := h.wA; omega_arith)) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact h.desc_w.sub_right (h.env.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+    · exact h.desc_w.sub_right (h.env.sW (by have := sivOffs; omega))
     · exact h.desc_d) (by decide)
 
 /-- The component's address and length from its descriptor. -/
@@ -332,7 +332,7 @@ theorem adBody_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : E
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, Offset.sub W (by have := sivOffs; omega) (by have := sivOffs; omega)⟩
-    · exact ⟨_, List.mem_cons_self, Offset.sub W (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))⟩
+    · exact ⟨_, List.mem_cons_self, Offset.sub W (by have := sivOffs; omega) (by have := sivOffs; omega)⟩
   refine ⟨by rw [g₃' _ (by decide), hr₂.x19], by rw [g₃' _ (by decide), hr₂.x20],
     by rw [g₃' _ (by decide), hr₂.x21], ?_, ?_, by rw [g₃' _ (by decide), k₂ _ (by decide), hi.x26],
     by rw [g₃' _ (by decide), k₂ _ (by decide), hi.x27], by rw [sp₃, hr₂.sp], by rw [rd₃, hr₂.rd],
@@ -347,7 +347,7 @@ theorem adBody_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : E
       · exact Offset.disjoint W (by omega_arith) (by omega_arith) (by have := e.small; omega)
     · have := saved_ge p hp
       simp only [List.mem_singleton] at hr; subst hr
-      exact (e.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; have := e.small; omega)).symm
+      exact (e.dS (by have := sivOffs; omega) (by have := sivOffs; have := e.small; omega)).symm
   · exact (hi.frame.trans (f₂.sub sub₂)).trans (f₃.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩)
@@ -356,20 +356,20 @@ theorem adBody_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : E
       Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact e.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; have := e.small; omega)
-        · exact e.dS (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by have := sivOffs; have := e.small; omega)) (by decide)
+        · exact e.dS (by have := sivOffs; omega) (by have := sivOffs; have := e.small; omega)
+        · exact e.dS (by have := sivOffs; omega) (by have := sivOffs; have := e.small; omega)) (by decide)
     obtain hf3 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 16, 256 + Nw⟩ : Region), ⟨D, 16⟩], (⟨C, 512⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact e.c_w.sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+      · exact e.c_w.sub_right (e.sW (by have := sivOffs; omega))
       · exact h.c_d
     obtain hq3 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 16, 256 + Nw⟩ : Region), ⟨D, 16⟩],
         (⟨(comp s₀.mem A i).base, (comp s₀.mem A i).len⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact hQ.p_w.sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+      · exact hQ.p_w.sub_right (e.sW (by have := sivOffs; omega))
       · exact hQ.d_p.symm
     have o₂ := h₂.out
     rw [m₁, ctxMac_frame hi.frame hf3 hRb, Proof.Cmac.bytesAt_frame hi.frame hq3 (by have := hQ.lt; omega_arith)] at o₂
@@ -434,9 +434,9 @@ theorem EPre.sdone_dis (h : EPre Nw s₀ C A P W D R N L) :
   have e := h.env
   refine ⟨fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩ <;>
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr <;> rcases hr with rfl | rfl
-  · exact e.c_w.sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+  · exact e.c_w.sub_right (e.sW (by have := sivOffs; omega))
   · exact h.c_d
-  · exact e.p_w.sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+  · exact e.p_w.sub_right (e.sW (by have := sivOffs; omega))
   · exact e.d_p.symm
   · exact Offset.base_disjoint W (by decide) (by have := e.wW; omega_arith)
   · have := e.dS (d := 0) (n := 16) (by have := sivOffs; omega) (by omega); rw [k0] at this; exact this.symm
@@ -501,8 +501,8 @@ theorem sivIn_wp (h : EPre Nw s₀ C A P W D R N L) (hT : SivArg Nw s₀ P W D T
   obtain a₂ : s.mem.readW (W + BitVec.ofNat 64 248) 64 = T := by rw [hs.saved (.x6, 248) (by decide), hT.x6]
   have iT (d : Nat) (hd : d + 8 ≤ 16) : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 d) 8 := by
     rw [hr.rd, hr.wr]; exact ⟨_, hT.tIn, Offset.contains_base T hd (by have := hT.wT; omega_arith)⟩
-  obtain ⟨s', run, m', g', sp', rd', wr'⟩ := sivIn_ok hr.x19 a₂ (e.inRW hr.rd hr.wr (d := 248) (n := 8) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
-    (iT 0 (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))) (iT 8 (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))) (e.inW hr.wr (d := 0) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega))) (e.inW hr.wr (d := 8) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+  obtain ⟨s', run, m', g', sp', rd', wr'⟩ := sivIn_ok hr.x19 a₂ (e.inRW hr.rd hr.wr (d := 248) (n := 8) (by have := sivOffs; omega))
+    (iT 0 (by have := sivOffs; omega)) (iT 8 (by have := sivOffs; omega)) (e.inW hr.wr (d := 0) (by have := sivOffs; omega)) (e.inW hr.wr (d := 8) (by have := sivOffs; omega))
   obtain fW : Frame [⟨W, 16⟩] s.mem s'.mem := by rw [m', k0]; exact Proof.Cmac.frame_store2 _ _ _
   refine WP.of_runBlock ⟨s', run, ⟨hr.keep' (fun r hr' => g' r (by rintro rfl; revert hr'; decide)
       (by rintro rfl; revert hr'; decide)) sp' rd' wr', by rw [g' _ (by decide) (by decide), hs.spre.x26],
@@ -519,7 +519,7 @@ theorem sivIn_wp (h : EPre Nw s₀ C A P W D R N L) (hT : SivArg Nw s₀ P W D T
   exact Proof.Cmac.bytesAt_frame hs.frame (fun r hr' => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl
-    · exact hT.t_w.sub_right (e.sW (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+    · exact hT.t_w.sub_right (e.sW (by have := sivOffs; omega))
     · exact hT.t_d) (by decide)
 
 theorem decrypt_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : EPre Nw s₀ C A P W D R N L)
@@ -534,17 +534,17 @@ theorem decrypt_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : 
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases e.rounds with h | h | h <;> omega_arith
   obtain ⟨dC, dP, -⟩ := h.sdone_dis
   obtain wC : ∀ r ∈ [(⟨W, 16⟩ : Region)], (⟨C, 512⟩ : Region).Disjoint r := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact e.c_w.sub_right (Region.sub_prefix (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))
+    simp only [List.mem_singleton] at hr; subst hr; exact e.c_w.sub_right (Region.sub_prefix (by have := sivOffs; omega))
   refine WP.seq (WP.mono (encS2v_wp v hv h) fun s hs => WP.seq (WP.mono (sivIn_wp h hT hs)
     fun s₁ ⟨sp₁, sv₁, f₁, v₁⟩ => WP.mono (openTail_wp v hv e h.cp h.pw sp₁ sv₁)
     fun s' ⟨g', sp', _, out'⟩ => ⟨⟨g', sp'⟩, ?_⟩))
   rw [ctxMac_frame f₁ wC hRb, ctxCiph_frame f₁ wC hRb,
     Proof.Cmac.bytesAt_frame (p := P) f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact e.p_w.sub_right (Region.sub_prefix (len := 16) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)))) (by have := e.lt; omega_arith),
+      exact e.p_w.sub_right (Region.sub_prefix (len := 16) (by have := sivOffs; omega))) (by have := e.lt; omega_arith),
     Proof.Cmac.bytesAt_frame (p := D) f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (by have := e.dS (d := 0) (n := 16) (by have := sivOffs; first | omega | (have := e.small; have := e.big; omega) | (have := h.env.small; have := h.env.big; omega)) (by omega); rwa [k0] at this)) (by decide), v₁,
+      exact (by have := e.dS (d := 0) (n := 16) (by have := sivOffs; omega) (by omega); rwa [k0] at this)) (by decide), v₁,
     ctxMac_frame hs.frame dC hRb, ctxCiph_frame hs.frame dC hRb,
     Proof.Cmac.bytesAt_frame hs.frame dP (by have := e.lt; omega_arith), hs.acc] at out'
   rw [Spec.Siv.decryptWith_eq]
