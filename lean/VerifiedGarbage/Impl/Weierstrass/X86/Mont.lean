@@ -30,6 +30,8 @@ modulus is in the code (immediates), so it is not stored.
   squaring, equal public operand
   pointers select a full-width Comba square (36 word products) followed by
   eight sparse REDC rounds; the common final subtraction is unchanged.
+  For P-521's, they select `p521Square` (153 word products, then the
+  reduction as two rows by `2⁹`).
 * `addFn`, `subFn`: `[a] ± [b]` into the accumulator through pointers in
   `ecx` and `edx` (`chainP`), then a conditional subtraction (the sum) or
   addition of `m` under the mask of the borrow (the difference) into
@@ -264,11 +266,76 @@ def squareInit : List Instr :=
 def squareBody : List Instr := squareInit ++ squareRounds 8
 
 
-/-- Public operand-pointer equality selects the dedicated P-256 square. -/
+/-! ## P-521's square
+
+`[a]²` for `[a]` below `p = 2⁵²¹ - 1`, whose top word is zero, in the
+accumulator's 37 words, by the rows' own steps: the products of different
+words (`sqRows`: row `i` adds `a_i (a_0 … a_{i-1})` at word `i`), doubled
+(`dblWords`), and the squares `a_i²` at words `2i` and `2i + 1`
+(`diagSteps`), 153 products; then `(P + L p) / 2⁵⁷⁶` as two rows by `2⁹`
+(`p521Fold`, as `2⁵²¹ = 2⁹ 2⁵¹²`): the low sixteen words `L₀` added at word
+16, which clears them, then the next two at word 32. -/
+
+/-- Words `0 … n - 1` of the number at `[ebp + acc]` cleared. -/
+def zeroWords (acc n : Nat) : List Instr :=
+  .mov .eax (.imm 0) :: (List.range n).map fun j => .store (bp (acc + 4 * j)) .eax
+
+/-- `[ebp + d + 4j]`. -/
+def accWord (d j : Nat) : Src := .mem (bp (d + 4 * j))
+
+/-- Row `i` of the products of different words: `ecx = a_i` (through
+`esi`), and the window at word `i` `+= a_i (a_0 … a_{i-1})`. -/
+def sqRow (acc i : Nat) : List Instr :=
+  ([.mov .ecx (.mem (at_ .esi (4 * i)))] : List Instr) ++
+    rowG bWord (acc + 4 * i) i (carryUp (acc + 4 * i) i)
+
+/-- The rows `1 … r`. -/
+def sqRows (acc : Nat) : Nat → List Instr
+  | 0 => []
+  | r + 1 => sqRows acc r ++ sqRow acc (r + 1)
+
+/-- Words `0 … n - 1` doubled in place: a row's steps by `ecx = 1` of the
+words themselves, the carry word in `ebx`. -/
+def dblSteps (acc : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => dblSteps acc n ++ stepG (accWord acc n) acc n
+
+/-- The `n` words at `[ebp + acc]` doubled. -/
+def dblWords (acc n : Nat) : List Instr :=
+  ([.mov .ecx (.imm 1), .mov .ebx (.imm 0)] : List Instr) ++ dblSteps acc n
+
+/-- `a_i²` added at words `2i` and `2i + 1`, with the carry word `ebx`. -/
+def diagStep (acc i : Nat) : List Instr :=
+  ([.mov .ecx (.mem (at_ .esi (4 * i)))] : List Instr) ++ stepG (bWord i) acc (2 * i) ++
+    stepG (.imm 0) acc (2 * i + 1)
+
+/-- The squares of words `0 … n - 1`. -/
+def diagSteps (acc : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => diagSteps acc n ++ diagStep acc n
+
+/-- `(P + L p) / 2⁵⁷⁶` for the product `P` at `[ebp + acc]`, in words `18 … 35`:
+words `16 … 33` `+= 2⁹` (words `0 … 15`), then words `32 … 35` `+= 2⁹`
+(words `16`, `17`). -/
+def p521Fold (acc : Nat) : List Instr :=
+  ([.mov .ecx (.imm 512)] : List Instr) ++
+    rowG (accWord acc) (acc + 64) 16 (carryUp (acc + 64) 16) ++
+    rowG (accWord (acc + 64)) (acc + 128) 2 (carryUp (acc + 128) 2)
+
+/-- P-521's square before the common final conditional subtraction. -/
+def p521Square : List Instr :=
+  zeroWords (own 9) 37 ++ sqRows (own 9) 16 ++ dblWords (own 9) 34 ++
+    ([.mov .ebx (.imm 0)] : List Instr) ++ diagSteps (own 9) 17 ++ p521Fold (own 9)
+
+/-- Public operand-pointer equality selects the dedicated P-256 square, or
+P-521's. -/
 def mulBody (k m : Nat) : Prog isa :=
   if k = 4 ∧ m = p256Prime then
     .seq (.block [.alu .cmp .edi (.reg .esi)])
       (.ite .e (.block squareBody) (.block (rowsF k m (2 * k))))
+  else if k = 9 ∧ m = p521Prime then
+    .seq (.block [.alu .cmp .edi (.reg .esi)])
+      (.ite .e (.block p521Square) (.block (rowsF k m (2 * k))))
   else .block (rowsF k m (2 * k))
 
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
