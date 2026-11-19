@@ -460,7 +460,6 @@ arm vg_sm4_ofb_final
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
 arm vg_zeroize
-powerpc64le vg_ct_eq
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal
 riscv64 vg_aes_gcm_init
