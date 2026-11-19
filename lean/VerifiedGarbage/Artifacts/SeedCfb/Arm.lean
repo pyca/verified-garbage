@@ -15,15 +15,15 @@ namespace VG.Artifacts.SeedCfb.Arm
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncrypt
-    verified := Proof.Seed.Arm.cfbEncrypt_framed },
+    verified := .unscrubbed Proof.Seed.Arm.cfbEncrypt_framed },
   Spec.Seed.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecrypt
-    verified := Proof.Seed.Arm.cfbDecrypt_framed },
+    verified := .unscrubbed Proof.Seed.Arm.cfbDecrypt_framed },
   Spec.Seed.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncryptFinal
-    verified := Proof.Seed.Arm.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Seed.Arm.cfbEncryptFinal_framed },
   Spec.Seed.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecryptFinal
-    verified := Proof.Seed.Arm.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Seed.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.SeedCfb.Arm

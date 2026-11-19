@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
-/-! # P-256 scalar inversion: a fixed prefix and the existing suffix loop -/
+/-! # P-256's and P-521's scalar inversions: a fixed prefix and the existing suffix loop -/
 
 @[expose] public section
 
@@ -50,6 +50,41 @@ theorem p256ScalarPower_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {bas
   · rw [u₃.mem]; exact I₂.acc_lt
   · rw [u₃.mem]; exact I₂.acc_val
 
+/-- A chain for the exponent's bits from `low`, then the loop for the others. -/
+theorem prefixPower_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+    (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    (ops : List PowerOp) (hb : ∀ op ∈ ops, powerOpBound op) {e low t : Nat}
+    (he : chainExponents ops (1, 1) = (e >>> low, t)) (hlow : 1 ≤ low) (hnb : low ≤ P.nbits)
+    {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
+    (hB : wordsVal s.mem base P.base P.M.n < m)
+    (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0) :
+    WP isa (prefixPower P F ops low) s fun u => Keeps powClob s u ∧
+      Unch base (powWx P wk) s.mem u.mem ∧ wordsVal u.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal u.mem base P.acc P.M.n) =
+        toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by
+  refine WP.seq (WP.mono (powerInit_ok hL hW hs hM hB) fun s₁ ⟨I₁, K₁, U₁⟩ => ?_)
+  refine WP.seq (WP.mono (powerChain_ok hL hW hm ops hb (v := (1, 1)) I₁) fun s₂ ⟨I₂, K₂, U₂⟩ => ?_)
+  rw [he] at I₂
+  refine WP.seq (wp_movS rfl fun s₃ u₃ _ => WP.block_nil ?_)
+  refine countLoop_ok (Inv := fun j u => PowInv P wk base size m e s u j) (n := low)
+    (fun j u h1 h2 hi => powBody_ok hL hW hm hB hbits h1 (by omega_using [hnb, h2]) hi)
+    (fun u hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hlow ?_
+  refine ⟨I₂.scr.of_keeps u₃.keeps (by decide), u₃.gpr,
+    ((K₁.mono (by decide)).trans K₂).trans (u₃.keeps.mono (by decide)), ?_, ?_, ?_⟩
+  · intro x hx
+    rw [u₃.mem, U₂ x hx, U₁ x hx]
+  · rw [u₃.mem]; exact I₂.acc_lt
+  · rw [u₃.mem]; exact I₂.acc_val
+
+theorem p521ScalarPrefix_exponent : chainExponents p521ScalarPrefixOps (1, 1) =
+    ((Spec.P521.n - 2) >>> 259, 2 ^ 131 - 1) := by
+  decide +kernel
+
+theorem p521ScalarPrefix_bound : ∀ op ∈ p521ScalarPrefixOps, powerOpBound op := by
+  simp only [p521ScalarPrefixOps, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, powerOpBound]
+  decide +kernel
+
 theorem powScalar_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
@@ -68,6 +103,14 @@ theorem powScalar_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
         if (p256Order - 2).testBit t then 1 else 0 := by simpa only [hp.1] using hbits
     exact WP.mono (p256ScalarPower_ok hL hW hm hs hM hB hp.2 hb) fun u ⟨K, U, L, V⟩ =>
       ⟨K, U, L, by rw [← hp.1] at V; exact V⟩
-  next _ => exact pow_ok hL hW hm hs hB hO hbits he
+  next _ =>
+    split
+    next hp =>
+      have hb : ∀ t < P.nbits, s.mem (off base (P.bits + t)) =
+          if (Spec.P521.n - 2).testBit t then 1 else 0 := by simpa only [hp.1] using hbits
+      exact WP.mono (prefixPower_ok hL hW hm p521ScalarPrefixOps p521ScalarPrefix_bound
+        p521ScalarPrefix_exponent (by decide) hp.2 hs hM hB hb) fun u ⟨K, U, L, V⟩ =>
+        ⟨K, U, L, by rw [← hp.1] at V; exact V⟩
+    next _ => exact pow_ok hL hW hm hs hB hO hbits he
 
 end VG.Proof.Weierstrass.X86

@@ -15,9 +15,9 @@ namespace VG.Artifacts.BlowfishOfb.Arm
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofb
-    verified := Proof.Blowfish.Arm.ofb_framed },
+    verified := .unscrubbed Proof.Blowfish.Arm.ofb_framed },
   Spec.Blowfish.ofbFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofbFinal
-    verified := Proof.Blowfish.Arm.ofbFinal_framed }]
+    verified := .unscrubbed Proof.Blowfish.Arm.ofbFinal_framed }]
 
 end VG.Artifacts.BlowfishOfb.Arm

@@ -24,20 +24,20 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Arm.verifySecp256k1Comb
-    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHash_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHash_verified hasLaw.law) },
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Arm.verifySecp256k1CombU
-    verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHashU_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHashU_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (secp256k1CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-    verified := secp256k1T_verified hasLaw.law },
+    verified := .unscrubbed (secp256k1T_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
     code := signCodeT (secp256k1CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-    verified := secp256k1UT_verified hasLaw.law }]
+    verified := .unscrubbed (secp256k1UT_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdsaSecp256k1.Arm

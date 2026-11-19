@@ -32,7 +32,7 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.map fun v =>
-    Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target (Proof.Ffdh.PPC64LE.Scrub.searchReg v))
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map fun v =>
+    Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target (Proof.Ffdh.PPC64LE.Scrub.searchReg v.1 v.2))
 
 end VG.Artifacts.Ffdh.PPC64LE

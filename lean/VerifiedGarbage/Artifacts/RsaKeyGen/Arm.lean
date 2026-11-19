@@ -250,7 +250,7 @@ namespace VG.Artifacts.RsaKeyGen.Arm
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
     code := Impl.RsaKeyGen.Arm.KeyInit.init
-    verified := Proof.RsaKeyGen.Arm.KeyInit.init_verified }]
+    verified := .unscrubbed Proof.RsaKeyGen.Arm.KeyInit.init_verified }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -258,6 +258,6 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact Arm.target {
       suffix := v.suffix
       code := Proof.RsaKeyGen.Arm.Generate.genCode v
-      verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }])
+      verified := .unscrubbed (Proof.RsaKeyGen.Arm.Generate.gen_verified v) }])
 
 end VG.Artifacts.RsaKeyGen.Arm

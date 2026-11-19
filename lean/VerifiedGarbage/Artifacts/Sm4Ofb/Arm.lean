@@ -15,9 +15,9 @@ namespace VG.Artifacts.Sm4Ofb.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialOfb.crypt
-    verified := Proof.Sm4.Arm.SerialOfbVerified.framed },
+    verified := .unscrubbed Proof.Sm4.Arm.SerialOfbVerified.framed },
   Spec.Sm4.ofbFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Sm4.Arm.ofbFinal
-    verified := Proof.Sm4.Arm.ofbFinal_framed }]
+    verified := .unscrubbed Proof.Sm4.Arm.ofbFinal_framed }]
 
 end VG.Artifacts.Sm4Ofb.Arm

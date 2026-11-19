@@ -29,26 +29,26 @@ namespace VG.Artifacts.Dsa.X86
 def direct : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Comb.generateKey
-    verified := Proof.Dsa.X86.Comb.key_verified },
+    verified := .unscrubbed Proof.Dsa.X86.Comb.key_verified },
   Spec.Dsa.deriveKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Generate.deriveKey
-    verified := Proof.Dsa.X86.deriving_verified },
+    verified := .unscrubbed Proof.Dsa.X86.deriving_verified },
   Spec.Dsa.validatePrivateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.PrevalidatedSign.validate
-    verified := Proof.Dsa.X86.privateValidating_verified },
+    verified := .unscrubbed Proof.Dsa.X86.privateValidating_verified },
   Spec.Dsa.randomSignPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.RandomSign.code Proof.Dsa.X86.prevalidatedSignFn.name
       Proof.Dsa.X86.prevalidatedSignFn.code
-    verified := Proof.Dsa.X86.randomSigningPrevalidated_verified },
+    verified := .unscrubbed Proof.Dsa.X86.randomSigningPrevalidated_verified },
   Spec.Dsa.validatePublicKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Prevalidated.validate
-    verified := Proof.Dsa.X86.validating_verified },
+    verified := .unscrubbed Proof.Dsa.X86.validating_verified },
   Spec.Dsa.verifyPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Prevalidated.verify
-    verified := Proof.Dsa.X86.prevalidated_verified },
+    verified := .unscrubbed Proof.Dsa.X86.prevalidated_verified },
   Spec.Dsa.parameterInitApi.artifact X86.target {
     code := Impl.Dsa.X86.Generation.init
-    verified := Proof.Dsa.X86.Generation.Init.init_verified }]
+    verified := .unscrubbed Proof.Dsa.X86.Generation.Init.init_verified }]
 
 end VG.Artifacts.Dsa.X86
 
@@ -62,7 +62,7 @@ def artifacts : List Artifact :=
       suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
       code := Impl.Dsa.X86.Generation.code (Proof.Dsa.X86.Generation.geo1 v1 v)
         (Proof.Dsa.X86.Generation.geo256 256 v256 v) (Proof.Dsa.X86.Generation.geo256 384 v256 v)
-      verified := Proof.Dsa.X86.Generation.verified v1 v256 v
+      verified := .unscrubbed (Proof.Dsa.X86.Generation.verified v1 v256 v)
       spSafe := Proof.Dsa.X86.Generation.code_all v1 v256 v })
 
 end VG.Artifacts.Dsa.X86

@@ -20,11 +20,11 @@ def artifacts : List Artifact :=
     Spec.Sha1.digestApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)
-      verified := Proof.MdStream.X86.Digest.sha1_digest v.stream
+      verified := .unscrubbed (Proof.MdStream.X86.Digest.sha1_digest v.stream)
       spSafe := Proof.MdStream.X86.Digest.sha1_digestSp v.stream }]) ++ [
   Spec.Sha1.initApi.artifact X86.target {
     code := Impl.Sha1.X86.Stream.init
-    verified := Proof.Sha1.X86.Shared.init }] ++
+    verified := .unscrubbed Proof.Sha1.X86.Shared.init }] ++
   (VG.Proof.Variants.Sha1.X86.variants.flatMap fun (v : Proof.Sha1.X86.Variants.Backend) =>
     v.functions.map fun f =>
       f.api.artifact X86.target { f.reg with suffix := v.suffix})

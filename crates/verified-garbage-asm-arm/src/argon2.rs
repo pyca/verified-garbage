@@ -302,7 +302,7 @@ mov r1, #64
 mov r0, r4
 mov r2, r4
 mov r3, #0
-bl {vg_blake2b_init}
+bl {vg_blake2b_init_core}
 ldr r0, [r11, #212]
 str r0, [r4, #768]
 ldr r0, [r11, #252]
@@ -4475,7 +4475,7 @@ ldr lr, [sp, #36]
 ldr r3, [sp], #40
 ldr r0, [sp], #16
 bx lr",
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
         vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,

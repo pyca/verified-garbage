@@ -16,9 +16,9 @@ namespace VG.Artifacts.SeedOfb.X86
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofb
-    verified := Proof.Seed.X86.Fb.ofb_framed },
+    verified := .unscrubbed Proof.Seed.X86.Fb.ofb_framed },
   Spec.Seed.ofbFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofbFinal
-    verified := Proof.Seed.X86.FbFinal.ofbFinal_framed }]
+    verified := .unscrubbed Proof.Seed.X86.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.SeedOfb.X86

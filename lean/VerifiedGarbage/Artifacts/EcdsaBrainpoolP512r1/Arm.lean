@@ -23,20 +23,20 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
       Impl.Ecdsa.Arm.verifyBrainpoolP512r1Comb
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHash_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHash_verified hasLaw.law) },
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
       Impl.Ecdsa.Arm.verifyBrainpoolP512r1CombU
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHashU_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHashU_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp512r1CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vars
-    verified := brainpoolp512r1T_verified hasLaw.law },
+    verified := .unscrubbed (brainpoolp512r1T_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp512r1CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vars
-    verified := brainpoolp512r1UT_verified hasLaw.law }]
+    verified := .unscrubbed (brainpoolp512r1UT_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.Arm

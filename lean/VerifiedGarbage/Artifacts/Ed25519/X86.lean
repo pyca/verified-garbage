@@ -24,12 +24,12 @@ def artifacts : List Artifact := [
     code := Impl.Ed25519.X86.KeyPair.keyPair Spec.Sha512.digest512Api.name
       Proof.Ed25519.X86.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.X86.PublicKey.publicKeyExpanded
-    verified := Proof.Ed25519.X86.KeyPair.verified },
+    verified := .unscrubbed Proof.Ed25519.X86.KeyPair.verified },
   Spec.Ed25519.signExpandedApi.artifact X86.target {
     code := Impl.Ed25519.X86.SignCached.codeExpanded
-    verified := Proof.Ed25519.X86.SignCached.signExpanded_verified },
+    verified := .unscrubbed Proof.Ed25519.X86.SignCached.signExpanded_verified },
   Spec.Ed25519.verifyApi.artifact X86.target {
     code := Impl.Ed25519.X86.VerifyMessage.code
-    verified := Proof.Ed25519.X86.VerifyMessage.verifyMessage_verified }]
+    verified := .unscrubbed Proof.Ed25519.X86.VerifyMessage.verifyMessage_verified }]
 
 end VG.Artifacts.Ed25519.X86

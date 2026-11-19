@@ -16,15 +16,15 @@ namespace VG.Artifacts.Sm4Cfb.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.cfbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialCfb.encrypt
-    verified := Proof.Sm4.Arm.SerialCfbVerified.framed },
+    verified := .unscrubbed Proof.Sm4.Arm.SerialCfbVerified.framed },
   Spec.Sm4.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.BatchCfb.decrypt
-    verified := Proof.Sm4.Arm.CfbBatchVerified.framed },
+    verified := .unscrubbed Proof.Sm4.Arm.CfbBatchVerified.framed },
   Spec.Sm4.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbEncryptFinal
-    verified := Proof.Sm4.Arm.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Sm4.Arm.cfbEncryptFinal_framed },
   Spec.Sm4.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbDecryptFinal
-    verified := Proof.Sm4.Arm.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Sm4.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.Sm4Cfb.Arm

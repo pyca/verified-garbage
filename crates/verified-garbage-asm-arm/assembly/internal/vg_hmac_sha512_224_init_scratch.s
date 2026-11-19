@@ -21,9 +21,9 @@ vg_hmac_sha512_224_init_scratch:
 	mov r7, r3
 	mov r11, r12
 	mov r0, r4
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	mov r0, r5
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	movw r1, #13878
 	movt r1, #13878
 	str r1, [r4, #64]

@@ -16,9 +16,9 @@ open VG.Proof.AesCbc.Arm.Wiped
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact Arm.target {
     code := encrypt
-    verified := encrypt_verified },
+    verified := .unscrubbed encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact Arm.target {
     code := decrypt
-    verified := decrypt_verified }]
+    verified := .unscrubbed decrypt_verified }]
 
 end VG.Artifacts.AesCbc.Arm

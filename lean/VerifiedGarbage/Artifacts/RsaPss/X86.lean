@@ -27,7 +27,7 @@ def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.S
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
       code := Proof.RsaPss.X86.Vf.verifyCode (mvars vs1 vs256) (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline
+      verified := .unscrubbed (verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline)
       spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline }]
   else []
 
@@ -49,7 +49,7 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
       code := Proof.RsaPss.X86.Sg.signCodeP (mvars vs1 vs256) (vars vs1 vs256) c crtPBaseline
-      verified := signP_ok _ _ h c crtPBaseline
+      verified := .unscrubbed (signP_ok _ _ h c crtPBaseline)
       spSafe := Proof.RsaPss.X86.Sg.code_spP h c crtPBaseline }]
   else []
 

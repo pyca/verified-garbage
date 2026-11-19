@@ -44,9 +44,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_sha384_init}
+bl {vg_sha384_init_core}
 mov r0, r5
-bl {vg_sha384_init}
+bl {vg_sha384_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #64]
@@ -246,7 +246,7 @@ beq 25f
 movw r12, #2484
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha384_init}
+bl {vg_sha384_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1144,7 +1144,7 @@ str r2, [r12, #3400]
 str r2, [r12, #3404]
 add sp, sp, #3424
 b 21b",
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
