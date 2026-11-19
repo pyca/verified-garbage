@@ -1,0 +1,91 @@
+//! ECDH over brainpoolP320r1 beside OpenSSL (aws-lc-rs has no brainpool curves).
+
+use criterion::Criterion;
+
+pub const USES: &[&str] = &[
+    "ecdh_brainpoolp320r1",
+    "ec_brainpoolp320r1",
+    "ec_brainpoolp320r1_validate",
+];
+
+#[cfg(target_arch = "x86_64")]
+pub fn bench(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::BenchmarkId;
+    use openssl::bn::{BigNum, BigNumContext};
+    use openssl::derive::Deriver;
+    use openssl::ec::{EcGroup, EcKey, EcPoint};
+    use openssl::nid::Nid;
+    use openssl::pkey::PKey;
+    use verified_garbage::ec::{BrainpoolP320r1, PrivateKey, PublicKey};
+
+    use crate::{BenchDyn, OPENSSL, VG};
+
+    // Keys below brainpoolP320r1's order.
+    let d = [0x42; 40];
+    let peer_d = [0x24; 40];
+    let peer = *PrivateKey::<BrainpoolP320r1>::from_bytes(&peer_d)
+        .public_key()
+        .unwrap()
+        .as_bytes();
+    let group = EcGroup::from_curve_name(Nid::BRAINPOOL_P320R1).unwrap();
+    let mut ctx = BigNumContext::new().unwrap();
+    let d_bn = BigNum::from_slice(&d).unwrap();
+    let mut public = EcPoint::new(&group).unwrap();
+    public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
+    // Each side's private key is loaded once, outside the measurements, as a
+    // party holds its key across exchanges; the peer's public key comes with
+    // each exchange, and is decoded and validated in it.
+    let vg_private = PrivateKey::<BrainpoolP320r1>::from_bytes(&d);
+    let openssl_private =
+        PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
+    let mut g = c.benchmark_group("ecdh_brainpoolp320r1");
+    // The ids' size is the bytes of the shared secret.
+    g.bench(BenchmarkId::new(VG, 40), |b| {
+        b.iter(|| {
+            black_box(&vg_private)
+                .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                .unwrap()
+        })
+    });
+    g.bench(BenchmarkId::new(OPENSSL, 40), |b| {
+        b.iter(|| {
+            let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
+            let peer = PKey::from_ec_key(EcKey::from_public_key(&group, &point).unwrap()).unwrap();
+            let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
+            d.set_peer(&peer).unwrap();
+            d.derive_to_vec().unwrap()
+        })
+    });
+    g.finish();
+
+    {
+        let mut g = c.benchmark_group("ec_validate_brainpoolp320r1");
+        g.bench(BenchmarkId::new(VG, 81), |b| {
+            b.iter(|| BrainpoolP320r1::validate_public_key(black_box(&peer)))
+        });
+        g.bench(BenchmarkId::new(OPENSSL, 81), |b| {
+            b.iter(|| {
+                let point = EcPoint::from_bytes(&group, black_box(&peer), &mut ctx).unwrap();
+                // OpenSSL validates coordinates and the curve equation while decoding.
+                !point.is_infinity(&group)
+            })
+        });
+        // aws-lc-rs has no standalone public-point validation API.
+        let mut one = [0; 40];
+        one[39] = 1;
+        let key = PrivateKey::<BrainpoolP320r1>::from_bytes(&one);
+        g.bench(BenchmarkId::new("scalar-multiply", 81), |b| {
+            b.iter(|| {
+                black_box(&key)
+                    .exchange(&PublicKey::from_bytes(black_box(&peer)))
+                    .is_ok()
+            })
+        });
+        g.finish();
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn bench(_: &mut Criterion) {}
