@@ -186,17 +186,18 @@ and at the end `h` is `A r² + B r`. So after every pair `A r² + B r` is the
 accumulator after the blocks so far.
 
 `pmuludq` multiplies registers, and eight registers cannot hold the
-multipliers, so they are in a frame of 480 bytes on the stack, 16 bytes
+multipliers, so they are in a frame of 512 bytes on the stack, 16 bytes
 each (`slot`): the limbs of `r²` in both lanes and their multiples by 5
 (table 0), the limbs of `r²` and of `r` and their multiples by 5 (table 1),
 the mask `2²⁶ - 1` and the bit `2²⁴` of a block's fifth limb (`2¹²⁸`); three
 of the five sums of products are kept there too while the others are
 computed. `r²` is computed first, by the code that absorbs a block, on `h`
-saved in the frame and replaced by `r`. The frame also holds the number of
+saved in the frame and replaced by `r`, and reduced fully; the lanes take
+`h` from the frame, and `h` is written again at the end. The frame also holds the number of
 pairs, the five limbs of the result and the pieces of its words.
 
 `pmuludq` runs inside an MCDT frame (`TCB/X86/Isa.lean`), where the frame
-of 480 bytes is 12 bytes further up (`o = 12`). Before the frame is
+of 512 bytes is 12 bytes further up (`o = 12`). Before the frame is
 released, it and the SSE registers are zeroed. The branches are on the
 number of pairs, and every address is `esp`, `edi` or `esi` plus a
 constant. -/
@@ -213,15 +214,15 @@ def uOff (k : Nat) : Nat := 24 + 4 * k
 def vOff (k : Nat) : Nat := 44 + 4 * k
 /-- The 16-byte slot `j`. -/
 def slot (j : Nat) : Nat := 64 + 16 * j
-/-- Limb `k` of table `t`, and its multiple by 5 (`1 ≤ k`). -/
-def rSlot (t k : Nat) : Nat := slot (9 * t + k)
-def sSlot (t k : Nat) : Nat := slot (9 * t + 4 + k)
-def maskSlot : Nat := slot 18
-def hibitSlot : Nat := slot 19
+/-- Limb `k` of table `t`, and its multiple by 5. -/
+def rSlot (t k : Nat) : Nat := slot (10 * t + k)
+def sSlot (t k : Nat) : Nat := slot (10 * t + 5 + k)
+def maskSlot : Nat := slot 20
+def hibitSlot : Nat := slot 21
 /-- Where the sums of products `d1`, `d2`, `d3` are kept. -/
-def dSlot (k : Nat) : Nat := slot (19 + k)
+def dSlot (k : Nat) : Nat := slot (21 + k)
 /-- Limb `k` of the result, 8 bytes. -/
-def outOff (k : Nat) : Nat := 432 + 8 * k
+def outOff (k : Nat) : Nat := 464 + 8 * k
 
 /-- The register of limb `k`. -/
 def lreg : Nat → XReg
@@ -245,30 +246,45 @@ def lshift : Nat → Nat
   | 3 => 14
   | _ => 40
 
-/-- Limb `k` of the 16 bytes at `b + off` into `xmm6` (low lane; with `two`,
-that of the 16 bytes after them in the high lane, through `xmm7`); `xmm5`
-holds the mask. -/
-def limb (b : Reg) (off k : Nat) (two : Bool) : List Instr :=
-  ([.movqLoad .xmm6 (at_ b (off + lbyte k))] : List Instr) ++
-  (if two then [.movqLoad .xmm7 (at_ b (off + 16 + lbyte k)), .xop (.bin .punpcklqdq .xmm6 .xmm7)] else []) ++
-  ([.xop (.shift .psrlq .xmm6 (BitVec.ofNat 8 (lshift k))), .xop (.bin .pand .xmm6 .xmm5)] : List Instr)
+/-- The limbs of a fully reduced `h` (17 bytes and a little: less than
+`2¹³⁰`): as a block's, but the fifth is the 26 bits from byte 13 on. -/
+def qbyte : Nat → Nat
+  | 0 => 0
+  | 1 => 0
+  | 2 => 6
+  | 3 => 8
+  | _ => 13
+def qshift : Nat → Nat
+  | 0 => 0
+  | 1 => 26
+  | 2 => 4
+  | 3 => 14
+  | _ => 0
+
+/-- The 8 bytes at `b + d`, shifted right by `n` and masked, into `xmm6` (low
+lane; with `two`, the same of the 8 bytes at `b + d + 16` in the high lane,
+through `xmm7`); `xmm5` holds the mask. -/
+def limb (b : Reg) (d n : Nat) (two : Bool) : List Instr :=
+  ([.movqLoad .xmm6 (at_ b d)] : List Instr) ++
+  (if two then [.movqLoad .xmm7 (at_ b (d + 16)), .xop (.bin .punpcklqdq .xmm6 .xmm7)] else []) ++
+  ([.xop (.shift .psrlq .xmm6 (BitVec.ofNat 8 n)), .xop (.bin .pand .xmm6 .xmm5)] : List Instr)
 
 /-- The limbs of the two blocks at `esi`, with their `2¹²⁸`, added to the
 lanes. -/
 def addMsg (o : Nat) : List Instr :=
-  (List.range 5).flatMap fun k => limb .esi 0 k true ++
-    (if k = 4 then [.movdquLoad .xmm7 (fs o hibitSlot), .xop (.bin .paddq .xmm6 .xmm7)] else []) ++
-    ([.xop (.bin .paddq (lreg k) .xmm6)] : List Instr)
+  ((List.range 5).flatMap fun k => limb .esi (lbyte k) (lshift k) true ++
+    ([.xop (.bin .paddq (lreg k) .xmm6)] : List Instr)) ++
+  ([.movdquLoad .xmm7 (fs o hibitSlot), .xop (.bin .paddq .xmm4 .xmm7)] : List Instr)
 
-/-- The top word of `h`, times `2²⁴`, into the low lane of `x` (through
-`eax`). -/
-def top (x : XReg) : List Instr :=
-  [.mov .eax (.mem (at_ .edi (hOff 4))), .shift .ror .eax 8, .xop (.movd x .eax)]
-
-/-- The limbs of `h` into the low lanes; the high lanes are zero. -/
-def initH : List Instr :=
-  ((List.range 5).flatMap fun k => limb .edi 0 k false ++ ([.xop (.bin .movdqa (lreg k) .xmm6)] : List Instr)) ++
-  top .xmm6 ++ ([.xop (.bin .paddq .xmm4 .xmm6)] : List Instr)
+/-- The limbs of `h`, saved in the frame, into the low lanes; the high lanes
+are zero. The fifth limb gets the top word, times `2²⁴` (through `eax`): its
+low three bits, which are all of it in a state the contract describes (it is
+at most 4), so that the lanes are bounded whatever the state holds. -/
+def initH (o : Nat) : List Instr :=
+  ((List.range 5).flatMap fun k => limb .esp (o + lbyte k) (lshift k) false ++
+    ([.xop (.bin .movdqa (lreg k) .xmm6)] : List Instr)) ++
+  ([.mov .eax (.mem (fs o (svOff 4))), .alu .and .eax (.imm 7), .xop (.movd .xmm6 .eax),
+    .xop (.shift .psllq .xmm6 24), .xop (.bin .paddq .xmm4 .xmm6)] : List Instr)
 
 /-- The mask (also left in `xmm5`) and the bit `2²⁴`, in both lanes. -/
 def consts (o : Nat) : List Instr :=
@@ -281,15 +297,15 @@ def consts (o : Nat) : List Instr :=
 def times5 (o d : Nat) (x : XReg) : List Instr :=
   [.xop (.bin .movdqa .xmm7 x), .xop (.shift .psllq .xmm7 2), .xop (.bin .paddq .xmm7 x), .movdquStore (fs o d) .xmm7]
 
-/-- Limb `k` of the tables: `h` holds `r²` (its limb in both lanes of table
-0, in the low lane of table 1), and `r` is at `edi + 72` (the high lane of
-table 1). -/
+/-- Limb `k` of the tables: `h` holds `r²`, fully reduced (its limb in both
+lanes of table 0, in the low lane of table 1), and `r` is at `edi + 72` (the
+high lane of table 1). -/
 def tableLimb (o k : Nat) : List Instr :=
-  limb .edi 0 k false ++ (if k = 4 then top .xmm7 ++ ([.xop (.bin .paddq .xmm6 .xmm7)] : List Instr) else []) ++
-  ([.xop (.bin .movdqa .xmm0 .xmm6)] : List Instr) ++ limb .edi (rOff 0) k false ++
+  limb .edi (qbyte k) (qshift k) false ++ ([.xop (.bin .movdqa .xmm0 .xmm6)] : List Instr) ++
+  limb .edi (rOff 0 + lbyte k) (lshift k) false ++
   ([.xop (.bin .movdqa .xmm1 .xmm0), .xop (.bin .punpcklqdq .xmm1 .xmm1), .movdquStore (fs o (rSlot 0 k)) .xmm1,
     .xop (.bin .punpcklqdq .xmm0 .xmm6), .movdquStore (fs o (rSlot 1 k)) .xmm0] : List Instr) ++
-  (if k = 0 then [] else times5 o (sSlot 0 k) .xmm1 ++ times5 o (sSlot 1 k) .xmm0)
+  times5 o (sSlot 0 k) .xmm1 ++ times5 o (sSlot 1 k) .xmm0
 
 def tables (o : Nat) : List Instr := (List.range 5).flatMap (tableLimb o)
 
@@ -338,17 +354,14 @@ def saveH : List Instr :=
   ((List.range 5).flatMap fun k => [.mov .eax (.mem (at_ .edi (hOff k))), .store (fs 0 (svOff k)) .eax]) ++
   ([.mov .eax (.imm 0)] : List Instr) ++ (List.range 5).map fun k => .store (at_ .edi (hOff k)) .eax
 
-/-- `h` back from the frame. -/
-def restoreH (o : Nat) : List Instr :=
-  (List.range 5).flatMap fun k => [.mov .eax (.mem (fs o (svOff k))), .store (at_ .edi (hOff k)) .eax]
-
 /-- The pieces of the words of the number whose limbs `lk` are in the frame:
-`uk = lk / 2^(6k)` and `vk = l(k+1) · 2^(26 - 6k) mod 2³²`. -/
+`u0 = l0`, and for `1 ≤ k` the words of `lk · 2^(26 k mod 32) = v(k-1) +
+2³² uk` (a product), so that the number is the sum of the `(uk + vk) 2^(32 k)`. -/
 def pieces : List Instr :=
-  ((List.range 5).flatMap fun k => ([.mov .eax (.mem (fs 0 (outOff k)))] : List Instr) ++
-    (if k = 0 then [] else [.shift .shr .eax (6 * k)]) ++ ([.store (fs 0 (uOff k)) .eax] : List Instr)) ++
-  ((List.range 4).flatMap fun k => [.mov .eax (.mem (fs 0 (outOff (k + 1)))), .shift .ror .eax (6 * (k + 1)),
-    .alu .and .eax (.imm (BitVec.ofNat 32 (2 ^ 32 - 2 ^ (26 - 6 * k)))), .store (fs 0 (vOff k)) .eax])
+  ([.mov .eax (.mem (fs 0 (outOff 0))), .store (fs 0 (uOff 0)) .eax] : List Instr) ++
+  (List.range 4).flatMap fun k => [.mov .eax (.mem (fs 0 (outOff (k + 1)))),
+    .mov .ecx (.imm (BitVec.ofNat 32 (2 ^ (26 - 6 * k)))), .mul .ecx,
+    .store (fs 0 (vOff k)) .eax, .store (fs 0 (uOff (k + 1))) .edx]
 
 /-- The words `uk + vk`, with the carries, into `h`. -/
 def packH : List Instr :=
@@ -360,12 +373,12 @@ def packH : List Instr :=
 /-- The SSE registers and the frame zeroed. -/
 def wipeV : List Instr :=
   ([.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7].map fun x => .xop (.bin .pxor x x)) ++
-  (List.range 30).map fun j => .movdquStore (fs 0 (16 * j)) .xmm0
+  (List.range 32).map fun j => .movdquStore (fs 0 (16 * j)) .xmm0
 
 /-- What the MCDT frame runs: the tables, the lanes from `h` and the first
 two blocks, a pair of blocks at a time, and the result's limbs. -/
 def lanes : Prog isa :=
-  .seq (.block (consts 12 ++ tables 12 ++ restoreH 12 ++ initH ++ addMsg 12 ++
+  .seq (.block (consts 12 ++ tables 12 ++ initH 12 ++ addMsg 12 ++
     ([.alu .add .esi (.imm 32), .mov .ecx (.mem (fs 12 cntOff)), .alu .sub .ecx (.imm 1)] : List Instr)))
   (.seq (.loop (.block (mulV 12 0 ++ carryV ++ addMsg 12 ++
       ([.alu .add .esi (.imm 32), .alu .sub .ecx (.imm 1)] : List Instr))) .ne)
@@ -374,11 +387,11 @@ def lanes : Prog isa :=
 /-- Absorbs the `ecx ≥ 2` pairs of blocks at `esi`, which it advances past
 them: `edi` holds `state`, after `setup`. -/
 def pairs : Prog isa :=
-  .frame (.alloc 480)
-    (.seq (.block (saveH ++ ([.store (fs 0 cntOff) .ecx] : List Instr) ++ absorbAt .edi (rOff 0) 0))
+  .frame (.alloc 512)
+    (.seq (.block (saveH ++ ([.store (fs 0 cntOff) .ecx] : List Instr) ++ absorbAt .edi (rOff 0) 0 ++ reduce))
     (.seq (.frame (.mcdtEnter .eax) lanes .mcdtLeave)
       (.block (pieces ++ packH ++ wipeV))))
-    (.free 480)
+    (.free 512)
 
 /-! ## `blocks(state, blocks, n)`
 

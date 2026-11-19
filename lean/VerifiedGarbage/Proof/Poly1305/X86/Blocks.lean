@@ -885,14 +885,14 @@ def AddInv (i : Nat) (s' : State) : Prop :=
 end
 
 /-- The hypotheses of `addBlock_ok`: the block at `b + d` is at `bp`, outside
-the state or in its buffer (words 14 to 17). -/
+the state or in its words from 5 on (the buffer, words 14 to 17, or `r`). -/
 structure AddPre (st bp : BitVec 32) (b : Reg) (d : Nat) (s : State) (f : Nat → Nat) : Prop where
   ctx : Ctx st s
   words : Words s.mem st f
   base : b ≠ .eax
   ea : ∀ k < 4, addr (s.gpr b) (d + 4 * k) = addr bp (4 * k)
   rd : ∀ k < 4, InRegions (s.rd ++ s.wr) (addr bp (4 * k)) 4
-  disj : ∀ k < 4, (sub bp (4 * k) 4).Disjoint (sR st) ∨ addr bp (4 * k) = addr st (4 * (14 + k))
+  disj : ∀ k < 4, (sub bp (4 * k) 4).Disjoint (sR st) ∨ ∃ j, 5 ≤ j ∧ j < 32 ∧ addr bp (4 * k) = addr st (4 * j)
 
 theorem addFirst_ok {st bp : BitVec 32} {b : Reg} {d : Nat} {s : State} {f : Nat → Nat}
     (hp : AddPre st bp b d s f) (pad : BitVec 32) :
@@ -909,12 +909,12 @@ theorem addStep_ok {st bp : BitVec 32} {b : Reg} {d : Nat} {s : State} {f : Nat 
     WP isa (.block (addWord b d i)) s' (AddInv st bp s f pad (i + 1)) := by
   obtain ⟨A, c⟩ := h
   obtain hb : bw bp s' i = bw bp s i := by
-    rcases hp.disj i (by omega_using [hi]) with hd | he
+    rcases hp.disj i (by omega_using [hi]) with hd | ⟨j, hj5, hj, he⟩
     · simp only [bw, wv]; rw [A.wd hd]
     · simp only [bw, wv, wd]
-      rw [he, show (s'.mem.readW (addr st (4 * (14 + i))) 32).toNat = _ from A.words (14 + i) (by omega_using [hi]),
-        show (s.mem.readW (addr st (4 * (14 + i))) 32).toNat = _ from hp.words (14 + i) (by omega_using [hi]),
-        ite_eq_right (by omega_using [])]
+      rw [he, show (s'.mem.readW (addr st (4 * j)) 32).toNat = _ from A.words j hj,
+        show (s.mem.readW (addr st (4 * j)) 32).toNat = _ from hp.words j hj,
+        ite_eq_right (by omega_using [hi, hj5])]
   obtain hlt := asum_lt (f := f) (b := bw bp s) (pad := pad.toNat) (fun k hk => hp.words.lt (by omega_using [hk]))
     (fun k _ => BitVec.isLt _) pad.isLt
   refine WP.mono (addWord_ok (bp := bp) (A.ctx hp.ctx) A.words hp.base (i := i) (by omega_using [hi])
@@ -2241,14 +2241,14 @@ theorem absorbBuf_okList (pad : BitVec 32) : okList false aRegs hS false (absorb
   rfl
 
 /-- Absorbing the block at `b + d` (at `bp`, outside the state or in its
-buffer): it runs, and where `C` gives the bounds, the new `h` is congruent to
+words from 5 on): it runs, and where `C` gives the bounds, the new `h` is congruent to
 `(h + m + pad · 2¹²⁸) r` modulo `p`. -/
 theorem absorbAtFull_ok {st bp : BitVec 32} {s : State} (hc : Ctx st s) {b : Reg} {d : Nat} {blk : Bool}
     {pad : BitVec 32} (hok : okList blk aRegs hS false (absorbAt b d pad) = true)
     (hb : blk = true → BlkIn s) (hbase : b ≠ .eax)
     (hea : ∀ k < 4, addr (s.gpr b) (d + 4 * k) = addr bp (4 * k))
     (hrd : ∀ k < 4, InRegions (s.rd ++ s.wr) (addr bp (4 * k)) 4)
-    (hd : ∀ k < 4, (sub bp (4 * k) 4).Disjoint (sR st) ∨ addr bp (4 * k) = addr st (4 * (14 + k)))
+    (hd : ∀ k < 4, (sub bp (4 * k) 4).Disjoint (sR st) ∨ ∃ j, 5 ≤ j ∧ j < 32 ∧ addr bp (4 * k) = addr st (4 * j))
     (hpad : pad.toNat ≤ 1) {C : Prop} {r0 q1 q2 q3 : Nat}
     (hC : C → Coefs (words s.mem st) r0 q1 q2 q3 ∧ words s.mem st 4 ≤ 4) :
     WP isa (.block (absorbAt b d pad)) s fun s' => Safe st aRegs hS s s' ∧ (C → words s'.mem st 4 ≤ 4 ∧
