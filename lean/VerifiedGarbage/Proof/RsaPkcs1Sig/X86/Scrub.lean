@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.Scrub
+public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
@@ -9,7 +11,9 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Rsa.X86.Scrub
+meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified

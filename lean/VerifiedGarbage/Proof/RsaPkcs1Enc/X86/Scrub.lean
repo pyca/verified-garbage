@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.Scrub
+public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Rsa.X86.Scrub
+meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 meta import VerifiedGarbage.Proof.Framework.Lit
