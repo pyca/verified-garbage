@@ -47,6 +47,7 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P521.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P521
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P521Decompress
+public import VerifiedGarbage.Proof.EcKey.X86.P521.Scrub
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on x86 -/
 
@@ -57,14 +58,8 @@ namespace VG.Artifacts.EcP521.X86
 open VG.Proof.P521.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.P521.code
-    verified := .unscrubbed Proof.EcKey.Compressed.X86.P521.verified },
-  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.P521Decompress.code
-    verified := .unscrubbed (Proof.EcKey.Compressed.X86.P521Decompress.verified hasLaw.law) },
-  Spec.EcKey.P521.publicKeyApi.artifact X86.target {
-    code := Impl.EcKey.X86.publicKeyP521
-    verified := .unscrubbed (Proof.EcKey.X86.P521.pk_verified hasLaw.law) }]
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86.target Proof.EcKey.X86.P521.Scrub.compressReg,
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P521.Scrub.decompressReg hasLaw.law),
+  Spec.EcKey.P521.publicKeyApi.artifact X86.target (Proof.EcKey.X86.P521.Scrub.publicKeyReg hasLaw.law)]
 
 end VG.Artifacts.EcP521.X86

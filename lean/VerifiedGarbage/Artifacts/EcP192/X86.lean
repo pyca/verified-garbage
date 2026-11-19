@@ -60,6 +60,7 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P192.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P192
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P192Decompress
+public import VerifiedGarbage.Proof.EcKey.X86.P192.Scrub
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on x86 -/
 
@@ -70,14 +71,8 @@ namespace VG.Artifacts.EcP192.X86
 open VG.Proof.P192.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.P192.code
-    verified := .unscrubbed Proof.EcKey.Compressed.X86.P192.verified },
-  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.P192Decompress.code
-    verified := .unscrubbed (Proof.EcKey.Compressed.X86.P192Decompress.verified hasLaw.law) },
-  Spec.EcKey.P192.publicKeyApi.artifact X86.target {
-    code := Impl.EcKey.X86.publicKeyP192
-    verified := .unscrubbed (Proof.EcKey.X86.P192.pk_verified hasLaw.law) }]
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86.target Proof.EcKey.X86.P192.Scrub.compressReg,
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P192.Scrub.decompressReg hasLaw.law),
+  Spec.EcKey.P192.publicKeyApi.artifact X86.target (Proof.EcKey.X86.P192.Scrub.publicKeyReg hasLaw.law)]
 
 end VG.Artifacts.EcP192.X86

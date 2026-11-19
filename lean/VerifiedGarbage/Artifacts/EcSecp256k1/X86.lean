@@ -45,6 +45,7 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Secp256k1.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1Decompress
+public import VerifiedGarbage.Proof.EcKey.X86.Secp256k1.Scrub
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on x86 -/
 
@@ -55,14 +56,8 @@ namespace VG.Artifacts.EcSecp256k1.X86
 open VG.Proof.Secp256k1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.Secp256k1.code
-    verified := .unscrubbed (Proof.EcKey.Compressed.X86.Secp256k1.verified hasLaw.inv) },
-  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.Secp256k1Decompress.code
-    verified := .unscrubbed (Proof.EcKey.Compressed.X86.Secp256k1Decompress.verified hasLaw.law hasLaw.inv) },
-  Spec.EcKey.Secp256k1.publicKeyApi.artifact X86.target {
-    code := Impl.EcKey.X86.publicKeySecp256k1
-    verified := .unscrubbed (Proof.EcKey.X86.Secp256k1.pk_verified hasLaw.law hasLaw.inv) }]
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.Secp256k1.Scrub.compressReg hasLaw.inv),
+  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.Secp256k1.Scrub.decompressReg hasLaw.law hasLaw.inv),
+  Spec.EcKey.Secp256k1.publicKeyApi.artifact X86.target (Proof.EcKey.X86.Secp256k1.Scrub.publicKeyReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcSecp256k1.X86
