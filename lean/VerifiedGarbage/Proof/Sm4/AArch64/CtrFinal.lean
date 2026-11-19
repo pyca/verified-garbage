@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.CtrFinal
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.Sm4.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
@@ -211,6 +212,10 @@ structure CtrImpl where
   noDit : code.all (fun i => !i.writesDit) = true
   keepsV : code.allInstrs keepsV = true
   suffix : String
+  /-- The registers `code` writes: a caller's tail clears them with its own
+  (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this to the
+  code. -/
+  clear : Impl.Residue.AArch64.Clear
 
 namespace CtrImpl
 
@@ -224,6 +229,10 @@ def scalar : CtrImpl where
   noDit := ctr_noDit
   keepsV := ctrFramed_keepsV
   suffix := ""
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27,
+     .v28, .v29, .v30, .v31],
+    []⟩
 
 /-- `vg_sm4_ctr_sm4`, with the Armv8 SM4 instructions. -/
 def sm4 : CtrImpl where
@@ -235,6 +244,9 @@ def sm4 : CtrImpl where
   noDit := ctrSm4_noDit
   keepsV := ctrFramedSm4_keepsV
   suffix := "_sm4"
+  clear := ⟨[.x4, .x5, .x6, .x7, .x8, .x9, .x10, .x13, .x14, .x15, .x16, .x17],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23],
+    []⟩
 
 end CtrImpl
 

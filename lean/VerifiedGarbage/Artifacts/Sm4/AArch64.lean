@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
@@ -23,9 +24,13 @@ def artifacts : List Artifact := [
     code := Impl.Sm4.AArch64.Sm4e.expandKey
     verified := Proof.Sm4.AArch64.Sm4e.expandKey_verified
     residue := some ⟨Proof.Sm4.AArch64.Sm4e.expandKey_noResidue _⟩ },
-  Spec.Sm4.expandKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Sm4.expandKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Sm4.AArch64.Serial.expandKey
-    verified := Proof.Sm4.AArch64.Serial.expandKey_verified } Proof.Sm4.AArch64.CtrScrub.expandKeyOk),
+    verified := Proof.Sm4.AArch64.Serial.expandKey_verified }
+      ⟨[.x6, .x7, .x8, .x9, .x10, .x11, .x15],
+       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+       .v27, .v28, .v29, .v30, .v31],
+       []⟩ Proof.Sm4.AArch64.CtrScrub.expandKeyOk),
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.Sm4e.ecbCleared .encrypt
