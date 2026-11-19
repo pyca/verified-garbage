@@ -50,10 +50,10 @@ open VG.Proof.P384.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeP384
-    verified := Proof.Ecdh.Arm.P384.ecdh_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdh.Arm.P384.ecdh_verified hasLaw.law) },
   Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeP384U
-    verified := Proof.Ecdh.Arm.P384.ecdhU_verified hasLaw.law }]
+    verified := .unscrubbed (Proof.Ecdh.Arm.P384.ecdhU_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdhP384.Arm

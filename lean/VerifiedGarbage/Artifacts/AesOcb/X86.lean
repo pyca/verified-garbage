@@ -55,17 +55,17 @@ def artifacts : List Artifact :=
     Spec.Ocb.initApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
-      verified := init_framed v
+      verified := .unscrubbed (init_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v) },
     Spec.Ocb.sealApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
-      verified := Proof.AesOcb.seal_keyed (seal_framed v)
+      verified := .unscrubbed (Proof.AesOcb.seal_keyed (seal_framed v))
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) },
     Spec.Ocb.openApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
-      verified := Proof.AesOcb.open_keyed (open_framed v)
+      verified := .unscrubbed (Proof.AesOcb.open_keyed (open_framed v))
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }]
 
 end VG.Artifacts.AesOcb.X86

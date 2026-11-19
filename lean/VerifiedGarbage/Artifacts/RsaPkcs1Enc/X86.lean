@@ -22,7 +22,7 @@ open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 def direct : List Artifact := [
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Enc.X86.Random.code Proof.RsaPkcs1Enc.X86.Rnd.encName (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline)
-    verified := Proof.RsaPkcs1Enc.X86.Rnd.code_verified Proof.RsaPkcs1Enc.X86.Rnd.encName baseline
+    verified := .unscrubbed (Proof.RsaPkcs1Enc.X86.Rnd.code_verified Proof.RsaPkcs1Enc.X86.Rnd.encName baseline)
     spSafe := Proof.RsaPkcs1Enc.X86.Rnd.code_sp Proof.RsaPkcs1Enc.X86.Rnd.encName baseline }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86
@@ -37,7 +37,7 @@ def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86.target {
     suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c Proof.Rsa.X86.PrivChecked.crtPBaseline
-    verified := Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c
+    verified := .unscrubbed (Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c)
     spSafe := Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c Proof.Rsa.X86.PrivChecked.crtPBaseline }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86.Sha256RsaPrivateCrt

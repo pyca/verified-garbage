@@ -19,12 +19,12 @@ def artifacts : List Artifact :=
     Spec.Ofb.aesApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesOfb.X86.crypt v.enc
-      verified := Proof.AesOfb.keyed (crypt_verified v)
+      verified := .unscrubbed (Proof.AesOfb.keyed (crypt_verified v))
       spSafe := crypt_spSafe v },
     Spec.Ofb.aesFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal v.enc v.suffix)
-      verified := Proof.AesOfb.final_keyed (cryptFinal_framed v)
+      verified := .unscrubbed (Proof.AesOfb.final_keyed (cryptFinal_framed v))
       spSafe := cryptFinal_framed_spSafe v }]
 
 end VG.Artifacts.AesOfb.X86

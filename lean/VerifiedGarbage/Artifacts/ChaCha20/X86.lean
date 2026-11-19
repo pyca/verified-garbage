@@ -17,10 +17,10 @@ namespace VG.Artifacts.ChaCha20.X86
 def direct : List Artifact := [
   Spec.ChaCha20.initApi.artifact X86.target {
     code := Impl.ChaCha20.X86.Stream.init
-    verified := Proof.ChaCha20.X86.Stream.init_verified },
+    verified := .unscrubbed Proof.ChaCha20.X86.Stream.init_verified },
   Spec.ChaCha20.setNonceApi.artifact X86.target {
     code := Impl.ChaCha20.X86.Stream.setNonce
-    verified := Proof.ChaCha20.X86.Stream.setNonce_verified } ]
+    verified := .unscrubbed Proof.ChaCha20.X86.Stream.setNonce_verified } ]
 
 def artifacts : List Artifact :=
   direct ++
@@ -28,7 +28,7 @@ def artifacts : List Artifact :=
     Spec.ChaCha20.applyApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.ChaCha20.X86.Stream.apply v.callee
-      verified := Proof.ChaCha20.X86.Stream.apply_verified v
+      verified := .unscrubbed (Proof.ChaCha20.X86.Stream.apply_verified v)
       spSafe := Proof.ChaCha20.X86.Stream.apply_spSafe v }])
 
 end VG.Artifacts.ChaCha20.X86

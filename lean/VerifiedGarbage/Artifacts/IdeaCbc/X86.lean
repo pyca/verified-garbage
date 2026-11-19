@@ -17,9 +17,9 @@ namespace VG.Artifacts.IdeaCbc.X86
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcEncryptChained
-    verified := Proof.Idea.X86.Cbc.cbcEncryptChained_framed },
+    verified := .unscrubbed Proof.Idea.X86.Cbc.cbcEncryptChained_framed },
   Spec.Idea.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcDecryptChained
-    verified := Proof.Idea.X86.Cbc.cbcDecryptChained_framed }]
+    verified := .unscrubbed Proof.Idea.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.IdeaCbc.X86

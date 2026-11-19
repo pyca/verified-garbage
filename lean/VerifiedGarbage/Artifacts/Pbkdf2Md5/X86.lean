@@ -21,7 +21,7 @@ def artifacts : List Artifact := [
   Spec.Hmac.md5I.pbkdf2Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
       Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5
-      Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat }]
+    verified := .unscrubbed (Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5
+      Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat) }]
 
 end VG.Artifacts.Pbkdf2Md5.X86

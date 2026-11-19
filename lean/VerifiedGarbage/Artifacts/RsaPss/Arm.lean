@@ -24,14 +24,14 @@ def artifacts : List Artifact :=
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
         code := Proof.RsaPss.Arm.Sg.signCodeP Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
-        verified := signP_ok h v },
+        verified := .unscrubbed (signP_ok h v) },
       Spec.RsaPss.verifyPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
         code := Proof.RsaPss.Arm.Vf.verifyCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars
           (Proof.Rsa.Arm.pdOfCrt v)
-        verified := verify_ok h (Proof.Rsa.Arm.pdOfCrt v) }]
+        verified := .unscrubbed (verify_ok h (Proof.Rsa.Arm.pdOfCrt v)) }]
     else []
 
 end VG.Artifacts.RsaPss.Arm

@@ -14,12 +14,12 @@ namespace VG.Artifacts.Sm3.X86
 def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact X86.target {
     code := Impl.Sm3.X86.Stream.init
-    verified := Proof.Sm3.X86.Shared.init },
+    verified := .unscrubbed Proof.Sm3.X86.Shared.init },
   Spec.Sm3.updateApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sm3.X86.Stream.update
-    verified := Proof.Sm3.X86.Shared.update },
+    verified := .unscrubbed Proof.Sm3.X86.Shared.update },
   Spec.Sm3.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sm3.X86.Stream.finalize
-    verified := Proof.Sm3.X86.Shared.finalize }]
+    verified := .unscrubbed Proof.Sm3.X86.Shared.finalize }]
 
 end VG.Artifacts.Sm3.X86
