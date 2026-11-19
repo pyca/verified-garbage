@@ -510,9 +510,6 @@ powerpc64le vg_aes_gcm_stream_verify
 powerpc64le vg_aes_ocb_init
 powerpc64le vg_aes_ocb_open
 powerpc64le vg_aes_ocb_seal
-powerpc64le vg_aes_siv_decrypt
-powerpc64le vg_aes_siv_encrypt
-powerpc64le vg_aes_siv_init
 powerpc64le vg_aes_xts_decrypt_unit
 powerpc64le vg_aes_xts_encrypt_unit
 powerpc64le vg_argon2
