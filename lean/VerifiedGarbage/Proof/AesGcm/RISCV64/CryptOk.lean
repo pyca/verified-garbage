@@ -713,6 +713,23 @@ theorem tailKs_ok {o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Addr} {n :
       · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
 
+/-- The bitsliced round keys, through `tailArgsB`'s zeroing of the keystream block. -/
+theorem BkIn.tailArgs {o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Addr} {n : Nat} {m₀ : Mem} {j : Nat}
+    {s s₂ : State} (h : CrMid o V sp R icb P S D n m₀ j s)
+    (hb : BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R m₀ S D n s)
+    (hm₂ : s₂.mem = (s.mem.writeW (V .s1 + BitVec.ofNat 64 64) (0 : BitVec 64)).writeW
+        (V .s1 + BitVec.ofNat 64 64 + BitVec.ofNat 64 8) (0 : BitVec 64))
+    (hrd : s₂.rd = s.rd) (hwr : s₂.wr = s.wr) :
+    BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s₂.mem S D n s₂ := by
+  obtain fz : Frame [⟨V .s1 + BitVec.ofNat 64 64, 16⟩] s.mem s₂.mem := by
+    rw [hm₂]; exact Proof.Cmac.frame_store2 _ _ _
+  obtain hb₀ := hb.mid L h
+  refine ⟨by rw [hrd, hwr]; exact hb₀.rd, hb₀.al, hb₀.st, hb₀.w, hb₀.sk, hb₀.d, hb₀.src, ?_⟩
+  exact keysAt_ctx_frame h.rounds fz (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hb₀.st.sub_right (Lay.stSub (by decide)))
+    (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact L.cs.sub_right (Lay.stSub (by decide))) hb₀.keys
+
 /-- The new keystream block (with the round keys bitsliced if `bs`). -/
 theorem tailKsB_ok {bs o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Addr} {n : Nat} {m₀ : Mem} {j : Nat}
     {s : State} (h : CrMid o V sp R icb P S D n m₀ j s) (hc : ciphOf s.mem (V .s2) R = ciphOf m₀ (V .s2) R)
@@ -737,13 +754,8 @@ theorem tailKsB_ok {bs o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Addr} 
       (V .s1 + BitVec.ofNat 64 64) (V .s0 + BitVec.ofNat 64 512) R 1) := by
     cases bs
     · exact ctr_call (ctrTail_mk L he₂ a3 a4 a5 a6 a7 a8 h.rounds)
-    · obtain hb₀ := (hb rfl).mid L h
-      refine ctrBs_call (ctrTailBs_mk L he₂ a3 a4 a5 a6 a7 a8 h.rounds (S := S) (D := D) (n := n) ?_)
-      refine ⟨by rw [hk₂.rd, hk₂.wr]; exact hb₀.rd, hb₀.al, hb₀.st, hb₀.w, hb₀.sk, hb₀.d, hb₀.src, ?_⟩
-      exact keysAt_ctx_frame h.rounds fz (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hb₀.st.sub_right (Lay.stSub (by decide)))
-        (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.cs.sub_right (Lay.stSub (by decide))) hb₀.keys
+    · exact ctrBs_call (ctrTailBs_mk L he₂ a3 a4 a5 a6 a7 a8 h.rounds
+        ((hb rfl).tailArgs L h hm₂ hk₂.rd hk₂.wr))
   refine WP.mono hcall fun s₃ g => ?_
   obtain gout := g.out; have gctr := g.ctr; have gframe := g.frame
   rw [blocksAt_one, blocksAt_one, hKS0, Proof.Cmac.ctr32_one, List.cons.injEq] at gout

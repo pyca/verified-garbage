@@ -290,6 +290,22 @@ theorem ctrTagBs_mk {o R : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env V
   · exact Covers.cons (covers_prefix he.perm.st (by decide)) (Covers.cons (he.perm.wC (by omega_using [ho]))
       (Covers.cons (he.perm.wC (by decide)) Covers.nil))
 
+/-- The round keys, through `tagArgsB`'s copy of the accumulator to `W + o`. -/
+theorem BkIn.tagArgs {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) {S D : Addr} {n : Nat}
+    {s s₂ : State} {x y : BitVec 64} (hb : BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S D n s)
+    (hm₂ : s₂.mem = (s.mem.writeW (V .s0 + BitVec.ofNat 64 o) x).writeW (V .s0 + BitVec.ofNat 64 (o + 8)) y)
+    (hrd : s₂.rd = s.rd) (hwr : s₂.wr = s.wr) :
+    BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s₂.mem S D n s₂ := by
+  rw [show V .s0 + BitVec.ofNat 64 (o + 8) = V .s0 + BitVec.ofNat 64 o + BitVec.ofNat 64 8 from
+      (add_ofNat_assoc _ _ _).symm] at hm₂
+  have f₂ : Frame [⟨V .s0 + BitVec.ofNat 64 o, 16⟩] s.mem s₂.mem := by
+    rw [hm₂]; exact Proof.Cmac.frame_store2 _ _ _
+  exact hb.frame hR f₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hb.w.sub_right (Lay.wSub (by omega_using [ho])))
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_using [ho])))
+    hrd hwr
+
 /-- The copy and the call of `vg_aes_ctr32` (or, the round keys bitsliced, of `vg_aes_ctr32_bs`) on it. -/
 theorem tagCallB_ok {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen : Nat} {m₀ : Mem}
     {s : State} (h : TagMid V sp R H Y J aLen cLen m₀ s) (h28 : V .s3 = BitVec.ofNat 64 R)

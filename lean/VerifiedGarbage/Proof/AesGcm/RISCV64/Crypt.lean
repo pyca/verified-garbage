@@ -188,6 +188,13 @@ theorem keysAt_ctx_frame {B c : Addr} {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 
   rw [bytesAt_frame hf (fun r hr => (hc r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
   exact Proof.Aes.RISCV64.keysAt_frameK hf hb (keysIn960 B hR) h
 
+/-- A frame apart from the buffer and the context keeps the round keys. -/
+theorem BkIn.frame {B c st w sp : Addr} {R : Nat} {m m' : Mem} {S D : Addr} {n : Nat} {s s' : State}
+    (hb : BkIn B c st w sp R m S D n s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {rs : List Region} (hf : Frame rs m m')
+    (hbr : ∀ r ∈ rs, (⟨B, 960⟩ : Region).Disjoint r) (hc : ∀ r ∈ rs, (⟨c, 256⟩ : Region).Disjoint r)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : BkIn B c st w sp R m' S D n s' :=
+  ⟨by rw [hrd, hwr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src, keysAt_ctx_frame hR hf hbr hc hb.keys⟩
+
 /-- Code never changes the permissions. -/
 theorem WP.with_rdwr' {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
     WP isa c s fun s' => Q s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
