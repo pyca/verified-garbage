@@ -130,11 +130,12 @@ theorem absorbPre_local (rate pb : Nat) : ∀ vs m₁ m₂, vs.length = (absorbS
   exact h
 
 /-- `absorbPost` reads the memory on entry only within the state and the
-data, with 64-bit pointers (`len` is then the length of the data). -/
-theorem absorbPost_local (rate : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (absorbSig.words 64).length →
+data: the bytes it reads of the data, `len` taken to the pointer width, are
+at most the buffer's. -/
+theorem absorbPost_local (rate pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (absorbSig.words pb).length →
     (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (absorbSig.words 64) (absorbPost rate 64) vs m₁ m' r →
-      Curry.apply (absorbSig.words 64) (absorbPost rate 64) vs m₂ m' r := by
+    Curry.apply (absorbSig.words pb) (absorbPost rate pb) vs m₁ m' r →
+      Curry.apply (absorbSig.words pb) (absorbPost rate pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
   replace hlen := Nat.succ.inj hlen
@@ -147,10 +148,13 @@ theorem absorbPost_local (rate : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (abso
   simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   refine ⟨fun msg hr hc => ?_, h.2⟩
-  have hd : bytesAt m₂ dt ln.toNat = bytesAt m₁ dt ln.toNat :=
-    bytesAt_congr (agreeBuf ln.isLt (by simpa [Elem.size] using hb.2))
-  show Spec.Sha3.Repr m' st rate (msg ++ bytesAt m₂ dt (ln.setWidth 64).toNat)
-  rw [BitVec.setWidth_eq, hd]
+  have hle : (ln.setWidth pb).toNat ≤ ln.toNat := by
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+  have hd : bytesAt m₂ dt (ln.setWidth pb).toNat = bytesAt m₁ dt (ln.setWidth pb).toNat :=
+    bytesAt_congr (agreeBuf (Nat.lt_of_le_of_lt hle ln.isLt) fun a ha => hb.2 a (by
+      simp only [Region.Contains, Elem.size] at ha ⊢; omega_using [ha, hle]))
+  show Spec.Sha3.Repr m' st rate (msg ++ bytesAt m₂ dt (ln.setWidth pb).toNat)
+  rw [hd]
   refine h.1 msg ?_ hc
   show stateAt m₁ st = _
   rw [← stateAgree hb.1]
