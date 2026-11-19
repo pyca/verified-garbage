@@ -251,6 +251,8 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_AES_FEATURES`); `vg_aes_gcm_stream_init_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -304,6 +306,8 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_AES_FEATURES`); `vg_aes_gcm_stream_aad_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -360,6 +364,8 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES`); `vg_aes_gcm_stream_encrypt_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -418,6 +424,8 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES`); `vg_aes_gcm_stream_decrypt_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -472,6 +480,8 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AES_FEATURES`); `vg_aes_gcm_stream_finish_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -528,6 +538,8 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AES_FEATURES`); `vg_aes_gcm_stream_verify_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
