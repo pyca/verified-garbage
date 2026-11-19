@@ -61,9 +61,9 @@ abbrev frontFrame' (St W : Addr) : List Region := j0Frame St W ++ [keyR W]
 
 /-- After `front`, from `s₀`: `J₀` and the first counter block, `H'`, the
 additional data `a` absorbed, and the data `D` of `n` bytes in `x23` and `x26`. -/
-structure FFront (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) (n : Nat) (s₀ s : State) :
+structure FFront (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) (n : Nat) (s₀ s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   x22 : s.gpr .x22 = s₀.gpr .x22
   x28 : s.gpr .x28 = s₀.gpr .x28
   x23 : s.gpr .x23 = D
@@ -78,7 +78,7 @@ structure FFront (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) 
   wr : s.wr = s₀.wr
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 theorem slots_frontFrame' : ∀ r ∈ frontFrame' St W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
@@ -90,7 +90,7 @@ theorem slots_frontFrame' : ∀ r ∈ frontFrame' St W, (⟨W + BitVec.ofNat 64 
 
 omit L in
 /-- `j012` writes only `x9`–`x12` of the registers. -/
-theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP k H Np 12 s) :
+theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
     WP isa (.block j012) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := by
   have he := h.env
   have hd := h.data
@@ -107,8 +107,9 @@ theorem j012_others {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} 
 
 omit L in
 /-- `initState` writes only `x9`–`x12` of the registers. -/
-theorem initState_others {s : State} (he : Env Ctx St W SP s) :
+theorem initState_others {s : State} (he : Env Wn Ctx St W SP s) :
     WP isa (.block initState) s fun s' => Others [.x9, .x10, .x11, .x12] s s' := by
+  obtain hWn := he.perm.hWn
   obtain r₀ := he.perm.stR (show 0 + 4 ≤ 80 by decide)
   obtain r₁ := he.perm.stR (show 4 + 4 ≤ 80 by decide)
   obtain r₂ := he.perm.stR (show 8 + 4 ≤ 80 by decide)
@@ -127,11 +128,11 @@ theorem initState_others {s : State} (he : Env Ctx St W SP s) :
 /-- `front`, from the 12-byte nonce at `Np`, the `al` (at most 16) bytes of
 additional data at `A` (`x4`, `x5`), and the data (`x6`, `x7`). -/
 theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
-    (hJ : J0In Ctx St W SP k H Np 12 s₀) (haad : DataOk St W s₀ A al) (hal : al ≤ 16)
+    (hJ : J0In Wn Ctx St W SP k H Np 12 s₀) (haad : DataOk Wn St W s₀ A al) (hal : al ≤ 16)
     (h4 : s₀.gpr .x4 = A) (h5 : s₀.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₀.gpr .x6 = D)
     (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) :
     WP isa Impl.AesGcm.AArch64.Fast.front s₀
-      (FFront Ctx St W SP H (bytesAt s₀.mem Np 12) (bytesAt s₀.mem A al) D n s₀) := by
+      (FFront Wn Ctx St W SP H (bytesAt s₀.mem Np 12) (bytesAt s₀.mem A al) D n s₀) := by
   unfold Impl.AesGcm.AArch64.Fast.front
   simp only [Impl.AesGcm.AArch64.Fast.hPrime, List.append_assoc]
   refine WP.seq ?_
@@ -150,7 +151,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
       ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
   refine WP.of_runBlock ⟨s₁', run₁', ?_⟩
   obtain he₁' := he₁.of_regs r₁'
-  obtain hM : J0Mid Ctx St W SP s₁'.gpr H (bytesAt s₀.mem Np 12) s₀.mem s₁' :=
+  obtain hM : J0Mid Wn Ctx St W SP s₁'.gpr H (bytesAt s₀.mem Np 12) s₀.mem s₁' :=
     ⟨he₁', fun _ _ => rfl, by rw [r₁'.mem]; exact h₁.hH, by rw [r₁'.mem]; exact h₁.j0, by rw [r₁'.mem]; exact h₁.frame⟩
   rw [WP.block_append_iff]
   refine WP.mono (WP.with_rdwr (WP.block_and (initState_ok L hM) (initState_others he₁')))
@@ -175,7 +176,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
   rw [WP.block_append_iff]
   refine WP.mono (key_ok (H := H) (by rw [x0₃, add_ofNat_zero]; exact he₃.perm.ctxR (by decide))
     (by rw [x0₃, add_ofNat_zero, r₃.mem]; exact h₂.hH)) fun s₄ ⟨hk₄, g₄, v₄, m₄, rd₄, wr₄, sp₄⟩ => ?_
-  obtain he₄ : Env Ctx St W SP s₄ := he₃.keep (fun r hr => g₄ r (by
+  obtain he₄ : Env Wn Ctx St W SP s₄ := he₃.keep (fun r hr => g₄ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide) (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -185,7 +186,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
   rw [WP.block_append_iff]
   refine WP.mono (keep_ok (by rw [he₄.x19]; exact he₄.perm.wW (by decide))
     (by rw [he₄.x19]; exact he₄.perm.wW (by decide))) fun s₅ ⟨m₅, y₅, v₅, g₅, rd₅, wr₅, sp₅⟩ => ?_
-  obtain he₅ : Env Ctx St W SP s₅ := he₄.keep (fun r _ => by rw [g₅]) sp₅ rd₅ wr₅
+  obtain he₅ : Env Wn Ctx St W SP s₅ := he₄.keep (fun r _ => by rw [g₅]) sp₅ rd₅ wr₅
   -- Where `H'` is kept.
   obtain c₀ : (keyR W).Contains (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 :=
     Offset.contains W (Nat.le_refl _) (by decide) (by decide)

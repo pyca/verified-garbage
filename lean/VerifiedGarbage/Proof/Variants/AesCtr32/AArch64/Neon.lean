@@ -32,6 +32,8 @@ def neon : Ctr32Impl where
   toNoFrames := by lit_decide
   toOk := Neon.ctr32ToN_correct
   toCt := Neon.ctr32ToN_ct
+  toOkW := by rw [Proof.Aes.ctr32ToAArch64With_2048]; exact Neon.ctr32ToN_correct
+  toCtW := by rw [Proof.Aes.ctr32ToAArch64With_2048]; exact Neon.ctr32ToN_ct
   toKeepsV := by lit_decide
   suffix := "_neon"
   features := []

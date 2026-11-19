@@ -109,15 +109,15 @@ but for the first `P` bytes of the text at `D`, decrypted to the output at
 `O`, and the counter block past them; in place (`O = D`), the first counter
 block at `W + cbO`. The ciphertext is `C₁ ++ C₂`, of which `D` holds `C₂`
 after its first `P` bytes. -/
-structure MidSG (to : Bool) (fr : List Region) (Ctx W SP D O Np A : Addr) (R nl al n tl P : Nat)
+structure MidSG (Wn : Nat) (to : Bool) (fr : List Region) (Ctx W SP D O Np A : Addr) (R nl al n tl P : Nat)
     (C₁ C₂ : List Byte) (s s₇ : State) : Prop where
-  env : Env Ctx (W + BitVec.ofNat 64 16) W SP s₇
+  env : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₇
   frame : Frame fr s.mem s₇.mem
   x22 : s₇.gpr .x22 = BitVec.ofNat 64 R
   x27 : s₇.gpr .x27 = BitVec.ofNat 64 (if decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R)
     (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl) (bytesAt s.mem A al)
     (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) then 1 else 0)
-  data : cond to (DataOk (W + BitVec.ofNat 64 16) W s₇ D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n)
+  data : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s₇ D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n)
   sD : s₇.mem.readW (W + BitVec.ofNat 64 232) 64 = D
   sN : s₇.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
   hP : P = 128 * (n / 128)
@@ -132,22 +132,22 @@ structure MidSG (to : Bool) (fr : List Region) (Ctx W SP D O Np A : Addr) (R nl 
   ciph : ciphOf s₇.mem Ctx R = ciphOf s.mem Ctx R
   out : cond to (OutIn Ctx W D O n s₇) (O = D)
 
-theorem MidSG.dataOk {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
-    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
-    DataOk (W + BitVec.ofNat 64 16) W s₇ D n := dataOk_of mo.data
+theorem MidSG.dataOk {Wn : Nat} {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
+    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    DataOk Wn (W + BitVec.ofNat 64 16) W s₇ D n := dataOk_of mo.data
 
-theorem MidSG.outW {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
-    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+theorem MidSG.outW {Wn : Nat} {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
+    {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := outG_dataW mo.out mo.data
 
 section
 variable {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ : List Byte}
-  (L : Lay Ctx (W + BitVec.ofNat 64 16) W)
+  (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W)
 include L
 
 omit L in
-theorem failArgs_ok {fr : List Region} {s s₇ : State}
-    (mo : MidSG false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+theorem failArgs_ok {Wn : Nat} {fr : List Region} {s s₇ : State}
+    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
@@ -158,15 +158,15 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State}
       Others [.x9, .x23, .x24, .x25, .x26] s₇ s₈ ∧ s₈.sp = s₇.sp ∧ s₈.rd = s₇.rd ∧ s₈.wr = s₇.wr := by
   have he := mo.env
   have hn := mo.dataOk.lt
-  obtain q₀ := he.perm.wR (show 320 + 16 ≤ 2560 by decide)
-  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  obtain q₀ := he.perm.wR (show 320 + 16 ≤ 512 by decide)
+  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 512 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 512 by decide)
   obtain w₀ := he.perm.stW (show 48 + 16 ≤ 80 by decide)
   obtain e₁ : s₇.mem.read (W + 232#64) 8 = D := by
     rw [show s₇.mem.read (W + 232#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 232) 64 from rfl, mo.sD]
   obtain e₂ : s₇.mem.read (W + 240#64) 8 = BitVec.ofNat 64 n := by
     rw [show s₇.mem.read (W + 240#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, mo.sN]
-  obtain rs : ∀ {v : BitVec (8 * 16)} (d : Nat), 80 ≤ d → d + 8 ≤ 2560 →
+  obtain rs : ∀ {v : BitVec (8 * 16)} (d : Nat), 80 ≤ d → d + 8 ≤ Wn →
       (s₇.mem.write (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16 v).read (W + BitVec.ofNat 64 d) 8 =
         s₇.mem.read (W + BitVec.ofNat 64 d) 8 := fun d h₁ h₂ => by
     rw [add_ofNat_assoc]
@@ -188,8 +188,8 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State}
 omit L in
 /-- `okS`'s loads: the rest of the text, and out of place the output past the
 first bytes in `x26`. -/
-theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
-    (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+theorem okArgsG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State}
+    (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     ∃ s₈, runBlock isa (([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++
       Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
       cond to ([.ldr .x .x26 .x19 dstO, .add .x .x26 .x26 .x9] : List Instr) []) s₇ = some s₈ ∧
@@ -200,9 +200,9 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
   have he := mo.env
   have hn := mo.dataOk.lt
   obtain hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
-  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
-  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
+  obtain q₁ := he.perm.wR (show 232 + 8 ≤ 512 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 512 by decide)
+  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 512 by decide)
   obtain e₁ : s₇.mem.read (W + 232#64) 8 = D := by
     rw [show s₇.mem.read (W + 232#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 232) 64 from rfl, mo.sD]
   obtain e₂ : s₇.mem.read (W + 240#64) 8 = BitVec.ofNat 64 n := by
@@ -236,17 +236,17 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
 
 /-- `omBS to`: the rest decrypted if the tag is right; if not, in place the
 text as it was, out of place the output zeroed. -/
-theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo : MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
     WP isa (omBS v.callees to) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
       let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (C₁ ++ C₂)
       let b := decide (T.take tl = bytesAt s.mem W tl)
-      (Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      (Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
       s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
       bytesAt s'.mem O n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (C₁ ++ C₂)
-        else cond to (List.replicate n 0) (C₁ ++ C₂)) ∧ Frame (crFrame (W + BitVec.ofNat 64 16) W O n) s₇.mem s'.mem := by
+        else cond to (List.replicate n 0) (C₁ ++ C₂)) ∧ Frame (crFrame Wn (W + BitVec.ofNat 64 16) W O n) s₇.mem s'.mem := by
   have hdk := mo.dataOk
   have hn := hdk.lt
   have hwrap := hdk.wrap
@@ -261,7 +261,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
   obtain hsplit : ∀ (m : Mem) (E : Addr), bytesAt m E n = bytesAt m E P ++ bytesAt m (E + BitVec.ofNat 64 P) (n - P) :=
     fun m E => by rw [← bytesAt_add, Nat.add_sub_cancel' hPn]
   obtain crSub : ∀ {E : Addr} {k : Nat}, Region.Sub ⟨E, k⟩ ⟨O, n⟩ →
-      ∀ r ∈ crFrame (W + BitVec.ofNat 64 16) W E k, ∃ r' ∈ crFrame (W + BitVec.ofNat 64 16) W O n, Region.Sub r r' :=
+      ∀ r ∈ crFrame Wn (W + BitVec.ofNat 64 16) W E k, ∃ r' ∈ crFrame Wn (W + BitVec.ofNat 64 16) W O n, Region.Sub r r' :=
     fun {E k} hE r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -279,8 +279,8 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
   unfold omBS
   obtain hite : WP isa (.ite (.zero .x .x27) (Impl.AesGcm.AArch64.Stitch.failS v.callees to)
       (Impl.AesGcm.AArch64.Stitch.okS v.callees to)) s₇
-      (fun (s₉ : State) => Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ ∧ s₉.gpr .x27 = s₇.gpr .x27 ∧
-      Frame (crFrame (W + BitVec.ofNat 64 16) W O n) s₇.mem s₉.mem ∧
+      (fun (s₉ : State) => Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₉ ∧ s₉.gpr .x27 = s₇.gpr .x27 ∧
+      Frame (crFrame Wn (W + BitVec.ofNat 64 16) W O n) s₇.mem s₉.mem ∧
       bytesAt s₉.mem O n = if B then gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂)
         else cond to (List.replicate n 0) (C₁ ++ C₂)) := by
     refine WP.ite (decide ((if B then 1 else 0) = 0)) (eval_zero x27₇ (by cases B <;> decide)) (fun ht => ?_)
@@ -308,7 +308,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
         simp only [Impl.AesGcm.AArch64.Stitch.failS, Bool.cond_false]
         obtain ⟨s₈, run₈, m₈, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
         refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
-        obtain he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
+        obtain he₈ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
         obtain f₈ : Frame [⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩] s₇.mem s₈.mem := by
@@ -354,7 +354,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
       obtain hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
           (ciphOf s₈.mem Ctx R) J P :=
         ⟨by rw [r₈.mem, cb₇]; congr 1; omega_using [hP16], fun h => absurd hP16 h⟩
-      obtain hfin : ∀ {s₉ : State}, Frame (crFrame (W + BitVec.ofNat 64 16) W (O + BitVec.ofNat 64 P) (n - P)) s₈.mem s₉.mem →
+      obtain hfin : ∀ {s₉ : State}, Frame (crFrame Wn (W + BitVec.ofNat 64 16) W (O + BitVec.ofNat 64 P) (n - P)) s₈.mem s₉.mem →
           bytesAt s₉.mem (O + BitVec.ofNat 64 P) (n - P) =
             xorKs (ciphOf s₈.mem Ctx R) J P (bytesAt s₈.mem (D + BitVec.ofNat 64 P) (n - P)) →
           bytesAt s₉.mem O n = gctr (ciphOf s.mem Ctx R) J (C₁ ++ C₂) := fun {s₉} f₉ o₉ => by
@@ -386,7 +386,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
       | true =>
         have ou : OutIn Ctx W D O n s₇ := mo.out
         have x26t : s₈.gpr .x26 = O + BitVec.ofNat 64 P := x26₈
-        obtain hCr : CrInG true Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P)
+        obtain hCr : CrInG Wn true Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P)
             (O + BitVec.ofNat 64 P) (n - P) s₈ :=
           ⟨he₈, (fun _ _ => rfl : KeptTo s₈.gpr s₈), by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈,
             x25₈, ((dataOk_of mo.data).drop hPn).of_eq r₈.rd r₈.wr,
@@ -406,23 +406,25 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
 
 omit L in
 /-- The first counter block kept at `W + cbO`. -/
-theorem saveCb_ok {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) :
+theorem saveCb_ok {Wn : Nat} {s : State} (he : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s) :
     ∃ t, runBlock isa [.ldrq .v0 .x20 48, .strq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO] s = some t ∧
       t.mem = s.mem.write (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) 16
         (s.mem.read (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16) ∧
       t.gpr = s.gpr ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain hWn := he.perm.hWn
   obtain q₀ := he.perm.stR (show 48 + 16 ≤ 80 by decide)
-  obtain w₀ := he.perm.wW (show 320 + 16 ≤ 2560 by decide)
+  obtain w₀ := he.perm.wW (show 320 + 16 ≤ 512 by decide)
   refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20, q₀, w₀, gpr_setV, wr_setV, rd_setV,
     mem_setV, sp_setV, v_setV_self], ?_⟩
   exact ⟨by simp [Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20], rfl, rfl, rfl, rfl⟩
 
 omit L in
 /-- Out of place, the destination (kept at `W + dstO`) loaded into `x15`. -/
-theorem ldrDst_ok {s : State} {O : Addr} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+theorem ldrDst_ok {Wn : Nat} {s : State} {O : Addr} (he : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s)
     (sO : s.mem.readW (W + BitVec.ofNat 64 320) 64 = O) :
     ∃ t, runBlock isa [.ldr .x .x15 .x19 dstO] s = some t ∧ t.gpr .x15 = O ∧ Regs [.x15] s t := by
-  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
+  obtain hWn := he.perm.hWn
+  obtain q₃ := he.perm.wR (show 320 + 8 ≤ 512 by decide)
   obtain e₃ : s.mem.read (W + 320#64) 8 = O := by
     rw [show s.mem.read (W + 320#64) 8 = s.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, sO]
   refine ⟨_, by arun [he.x19, q₃, dstO], ?_⟩
@@ -470,7 +472,7 @@ among it; out of place it writes `fastFrameP`, outside of where `open_to`
 keeps `dst`. -/
 
 /-- What the path writes in the working space. -/
-abbrev sfr (to : Bool) (W : Addr) : List Region := cond to (fastFrameP W) (fastFrame W)
+abbrev sfr (to : Bool) (W : Addr) : List Region := cond to (fastFrameP Wn W) (fastFrame W)
 
 /-- What `decPre` writes: in place the first counter block, out of place nothing. -/
 abbrev cbF (to : Bool) (W : Addr) : List Region :=
@@ -488,8 +490,8 @@ theorem sfr_lo' {to : Bool} {W : Addr} {d k : Nat} (h₂ : 16 + d + k ≤ 128) :
   · exact fast_lo' h₂
   · exact fastP_lo' h₂
 
-theorem sfr_hi {to : Bool} {W : Addr} {d k : Nat}
-    (h : (256 ≤ d ∧ d + k ≤ 320) ∨ (512 ≤ d ∧ d + k ≤ 2560)) :
+theorem sfr_hi {Wn : Nat} {to : Bool} {W : Addr} {d k : Nat}
+    (h : (256 ≤ d ∧ d + k ≤ 320) ∨ (512 ≤ d ∧ d + k ≤ Wn)) :
     ∃ r' ∈ sfr to W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := by
   cases to
   · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
@@ -497,7 +499,7 @@ theorem sfr_hi {to : Bool} {W : Addr} {d k : Nat}
     · exact fast_hi (by omega_using [h₁]) h₂
   · exact fastP_hi h
 
-theorem sfr_work (to : Bool) (W : Addr) : ∀ r ∈ sfr to W, Region.Sub r (workR W) := by
+theorem sfr_work {Wn : Nat} (to : Bool) (W : Addr) : ∀ r ∈ sfr to W, Region.Sub r (workR Wn W) := by
   cases to
   · exact fastFrame_work W
   · exact fastFrameP_work W
@@ -546,14 +548,15 @@ theorem tag_sfr {to : Bool} {W : Addr} {k : Nat} (hk : k ≤ 16) :
 
 /-- `decPre`: in place the first counter block kept at `W + cbO`, out of
 place `dst` (kept at `W + dstO`) loaded into `x15`. -/
-theorem decPre_ok {to : Bool} {Ctx W SP O : Addr} {s₂ : State} {J0 : Block}
-    (he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂)
+theorem decPre_ok {Wn : Nat} {to : Bool} {Ctx W SP O : Addr} {s₂ : State} {J0 : Block}
+    (he₂ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂)
     (cb₂ : blockAt s₂.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = inc32 J0)
     (sO₂ : cond to (s₂.mem.readW (W + BitVec.ofNat 64 320) 64 = O) True) :
     ∃ s₂c, runBlock isa (Impl.AesGcm.AArch64.Stitch.decPre to) s₂ = some s₂c ∧ Frame (cbF to W) s₂.mem s₂c.mem ∧
       (∀ r, r ≠ .x15 → s₂c.gpr r = s₂.gpr r) ∧ cond to (s₂c.gpr .x15 = O) True ∧ s₂c.sp = s₂.sp ∧
       s₂c.rd = s₂.rd ∧ s₂c.wr = s₂.wr ∧
       cond to True (blockAt s₂c.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) = inc32 J0) := by
+  obtain hWn := he₂.perm.hWn
   cases to with
   | false =>
     obtain ⟨u, run, m, g, sp, rd, wr⟩ := saveCb_ok he₂
@@ -570,27 +573,27 @@ variable (cl : Prog isa) {Ctx W SP Np A D Tg : Addr} {R al n tl : Nat}
 /-- `openRunAX_ok` for `openRunAS`: the first bytes of the text at `D`
 (`x6`) decrypted by the interleaved loop to the output at `O`, over the text
 in place, to `dst` out of place (`to`). -/
-theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {to : Bool} {O : Addr}
+theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {to : Bool} {O : Addr}
     {s₀ t : State} {ex : List Region} {I : Mem → Prop}
-    (o : OpenInG to Ctx W SP Np A D O Tg R 12 al n tl s₀ t)
+    (o : OpenInG Wn to Ctx W SP Np A D O Tg R 12 al n tl s₀ t)
     (h4 : t.gpr .x4 = A) (h5 : t.gpr .x5 = BitVec.ofNat 64 al) (h6 : t.gpr .x6 = D)
     (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (hal : al ≤ 16) (hok : Spec.Gcm.tagLenOk tl = true)
-    (hexW : ∀ r ∈ ex, (workR W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
+    (hexW : ∀ r ∈ ex, (workR Wn W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
     (hexO : ∀ r ∈ ex, (⟨O, n⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hI : ∀ {m m' : Mem}, I m → Frame [workR W] m m' → I m')
+    (hI : ∀ {m m' : Mem}, I m → Frame [workR Wn W] m m' → I m')
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
-      s'.rd = t.rd → s'.wr = t.wr → s'.sp = SP → Frame [workR W, ⟨O, n⟩] t.mem s'.mem →
+      Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
+      s'.rd = t.rd → s'.wr = t.wr → s'.sp = SP → Frame [workR Wn W, ⟨O, n⟩] t.mem s'.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem)
-    (htb : ∀ u : State, Env Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = t.rd → u.wr = t.wr →
-      Frame [workR W, ⟨O, n⟩] t.mem u.mem → KeyAt (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) u.mem W →
+    (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = t.rd → u.wr = t.wr →
+      Frame [workR Wn W, ⟨O, n⟩] t.mem u.mem → KeyAt (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) u.mem W →
       WP isa (.block tb) u fun t' => TblOk t'.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) ∧
         Frame [Stitch.tblR W] u.mem t'.mem ∧ (∀ r, r ≠ .x5 → t'.gpr r = u.gpr r) ∧
         t'.sp = u.sp ∧ t'.rd = u.rd ∧ t'.wr = u.wr) :
     WP isa (openRunAS v.callees cl tb to) t fun u =>
-      MidSG to (⟨O, n⟩ :: (fastFrame W ++ ex)) Ctx W SP D O Np A R 12 al n tl (Stitch.pre n)
+      MidSG Wn to (⟨O, n⟩ :: (fastFrame W ++ ex)) Ctx W SP D O Np A R 12 al n tl (Stitch.pre n)
         (bytesAt t.mem D (Stitch.pre n)) (bytesAt t.mem (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n)) t u ∧
         I u.mem := by
   have L := o.lay
@@ -601,8 +604,8 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   have ddW := o.ddW
   have dcW := o.dcW
   have ow := o.outW
-  have doW : (⟨O, n⟩ : Region).Disjoint (workR W) := ow.ok.w
-  obtain hJ : J0In Ctx (W + BitVec.ofNat 64 16) W SP t.gpr (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) Np 12 t :=
+  have doW : (⟨O, n⟩ : Region).Disjoint (workR Wn W) := ow.ok.w
+  obtain hJ : J0In Wn Ctx (W + BitVec.ofNat 64 16) W SP t.gpr (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) Np 12 t :=
     ⟨o.env, fun _ _ => rfl, o.x23, o.x24, o.x26, o.x27, o.non, rfl⟩
   generalize hH : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H at hJ htb
   unfold openRunAS
@@ -616,9 +619,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   obtain hx₁0 : x₁.length % 16 = 0 := by
     rw [← hx₁, List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   have hwrap := hdk.wrap
-  obtain wE : ∀ {r : Region}, Region.Sub r (workR W) → ∃ r' ∈ [workR W, (⟨O, n⟩ : Region)], Region.Sub r r' :=
+  obtain wE : ∀ {r : Region}, Region.Sub r (workR Wn W) → ∃ r' ∈ [workR Wn W, (⟨O, n⟩ : Region)], Region.Sub r r' :=
     fun h => ⟨_, List.mem_cons_self .., h⟩
-  obtain dO : ∀ {r : Region}, Region.Sub r ⟨O, n⟩ → ∃ r' ∈ [workR W, (⟨O, n⟩ : Region)], Region.Sub r r' :=
+  obtain dO : ∀ {r : Region}, Region.Sub r ⟨O, n⟩ → ∃ r' ∈ [workR Wn W, (⟨O, n⟩ : Region)], Region.Sub r r' :=
     fun h => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), h⟩
   -- What the path has written by `front`.
   obtain Fa : Frame (sfr to W) t.mem s₂.mem := by
@@ -639,13 +642,13 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       rw [Fa.readW (r := ⟨W + BitVec.ofNat 64 320, 8⟩) (Region.contains_self _ _) (dst_fastFrameP W) (by decide)]
       exact (o.out : OutIn Ctx W D O n t).sO)
   refine WP.of_runBlock ⟨s₂c, run₂c, ?_⟩
-  obtain he₂c : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂c := he₂.keep (fun r hr => g₂c r (by
+  obtain he₂c : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂c := he₂.keep (fun r hr => g₂c r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₂c rd₂c wr₂c
-  obtain F₂c : Frame [workR W, ⟨O, n⟩] t.mem s₂c.mem :=
+  obtain F₂c : Frame [workR Wn W, ⟨O, n⟩] t.mem s₂c.mem :=
     (Fa.sub fun r hr => wE (sfr_work to W r hr)).trans
       (fcb.sub fun r hr => have ⟨r', h, hs⟩ := cbF_sub r hr; wE fun x hx => sfr_work to W r' h x (hs x hx))
-  obtain dcb : ∀ {X : Region}, X.Disjoint (workR W) → ∀ r ∈ cbF to W, X.Disjoint r := fun h =>
+  obtain dcb : ∀ {X : Region}, X.Disjoint (workR Wn W) → ∀ r ∈ cbF to W, X.Disjoint r := fun h =>
     cbF_disj (h.sub_right (Lay.wSub (by decide)))
   -- The first `P` bytes, by the interleaved loop, from `D` to `O`.
   obtain key₂c : KeyAt H s₂c.mem W := h₂.key.frame fcb (cbF_disj (L.w_w (.inl (by decide)) (by decide) (by decide)))
@@ -658,7 +661,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     cases to
     · exact o.out
     · exact ⟨x15₂c, (o.out : OutIn Ctx W D O n t).dd⟩
-  obtain hsrc₂c : DataOk (W + BitVec.ofNat 64 16) W s₂c D n := hdk.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
+  obtain hsrc₂c : DataOk Wn (W + BitVec.ofNat 64 16) W s₂c D n := hdk.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
   obtain hout₂c : DataW Ctx (W + BitVec.ofNat 64 16) W s₂c O n := ow.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
   refine WP.seq (WP.mono (Stitch.stitchDM_ok L gh hTb ⟨he₂c, by rw [g₂c _ (by decide), h₂.x22, o.x22], hRb,
     by rw [g₂c _ (by decide), h₂.x23], by rw [g₂c _ (by decide), h₂.x26], hsrc₂c, hout₂c, hmode, hH₂c,
@@ -701,9 +704,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   rw [hP] at x24₃
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   obtain he₃ := hm₂.env.of_regs r₃
-  obtain hdat₃ : DataOk (W + BitVec.ofNat 64 16) W s₃ D' (n - P) :=
+  obtain hdat₃ : DataOk Wn (W + BitVec.ofNat 64 16) W s₃ D' (n - P) :=
     hD' ▸ (hdk.drop hPn).of_eq (by rw [r₃.rd, hm₂.rd, rd₂c, h₂.rd]) (by rw [r₃.wr, hm₂.wr, wr₂c, h₂.wr])
-  obtain dOP : (⟨O, Stitch.pre n⟩ : Region).Disjoint (workR W) := doW.sub_left (Region.sub_prefix (Nat.mul_div_le n 128))
+  obtain dOP : (⟨O, Stitch.pre n⟩ : Region).Disjoint (workR Wn W) := doW.sub_left (Region.sub_prefix (Nat.mul_div_le n 128))
   obtain dKS : ∀ r ∈ Stitch.sFrame (W + BitVec.ofNat 64 16) W O n, (keyR W).Disjoint r := by
     intro r hr
     simp only [Stitch.sFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -725,7 +728,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     exact hH₂c
   generalize hC₀ : bytesAt s₂c.mem D P = C₀ at dat₂ y₂'
   obtain hC₀l : C₀.length = P := by rw [← hC₀, length_bytesAt]
-  obtain hM : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₂.gpr 16 H (x₁ ++ C₀) D' (n - P) 0 s₃.mem 0 s₃ :=
+  obtain hM : AbsMid Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂.gpr 16 H (x₁ ++ C₀) D' (n - P) 0 s₃.mem 0 s₃ :=
     ⟨he₃, fun r hr => by
         simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> rw [r₃.others _ (by decide), g₂' _ (by decide)],
@@ -733,8 +736,8 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       by rw [x24₃, Nat.sub_zero], by rw [x25₃], hdat₃, hH₃, fun ha => by simpa [bytesAt] using ha,
       .inr (by rw [List.length_append, hC₀l]; omega_arith), Frame.refl _ _⟩
   refine WP.mono (WP.with_rdwr (absSeg2_ok L (.inr rfl) hM)) fun s₆ ⟨h₆, rd₆, wr₆⟩ => ?_
-  obtain FW : Frame [workR W, ⟨O, n⟩] t.mem s₆.mem := by
-    obtain F3 : Frame [workR W, ⟨O, n⟩] s₂c.mem s₃.mem := by
+  obtain FW : Frame [workR Wn W, ⟨O, n⟩] t.mem s₆.mem := by
+    obtain F3 : Frame [workR Wn W, ⟨O, n⟩] s₂c.mem s₃.mem := by
       rw [r₃.mem]
       refine hm₂.frame.sub fun r hr => ?_
       simp only [Stitch.sFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -743,7 +746,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
       · exact wE (stW (by decide))
       · exact dO (Region.sub_prefix (Nat.mul_div_le n 128))
       · exact wE (Lay.wSub (by decide))
-    obtain F6 : Frame [workR W, ⟨O, n⟩] s₃.mem s₆.mem := by
+    obtain F6 : Frame [workR Wn W, ⟨O, n⟩] s₃.mem s₆.mem := by
       refine h₆.frame.sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -753,7 +756,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     exact (F₂c.trans F3).trans F6
   obtain rd₆' : s₆.rd = t.rd := by rw [rd₆, r₃.rd, hm₂.rd, rd₂c, h₂.rd]
   obtain wr₆' : s₆.wr = t.wr := by rw [wr₆, r₃.wr, hm₂.wr, wr₂c, h₂.wr]
-  obtain exW : ∀ {R : Region}, Region.Sub R (workR W) → ∀ r ∈ ex, R.Disjoint r :=
+  obtain exW : ∀ {R : Region}, Region.Sub R (workR Wn W) → ∀ r ∈ ex, R.Disjoint r :=
     fun hR r hr => (hexW r hr).sub_left hR
   obtain exS : ∀ {r : Region}, (∃ r' ∈ sfr to W, Region.Sub r r') → ∃ r' ∈ sfr to W ++ ex, Region.Sub r r' :=
     fun ⟨r', h, hs⟩ => ⟨r', List.mem_append_left _ h, hs⟩
@@ -790,12 +793,12 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   refine WP.mono (reload_ok (H := H) (by rw [he₇.x19]; exact he₇.perm.wR (by decide))
     (by rw [he₇.x19]; exact he₇.perm.wR (by decide)) (by rw [he₇.x19]) (by rw [he₇.x19]; exact key₇.2)
     key₇.1) fun s₈ ⟨hk₈, g₈, v₈, m₈, rd₈, wr₈, sp₈⟩ => ?_
-  obtain he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := he₇.keep (fun r hr => g₈ r (by
+  obtain he₈ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈ := he₇.keep (fun r hr => g₈ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
   refine WP.mono (loadRev_ok Y .x20 16 s₈ (by decide) (by decide) (by rw [he₈.x20]; exact he₈.perm.stR (by decide)))
     fun s₉ ⟨l₉, o₉⟩ => ?_
-  obtain he₉ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ := he₈.keep (fun r _ => by rw [o₉.gpr]) o₉.sp o₉.rd o₉.wr
+  obtain he₉ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₉ := he₈.keep (fun r _ => by rw [o₉.gpr]) o₉.sp o₉.rd o₉.wr
   obtain ⟨s₁₀, run₁₀, x13₁₀, x12₁₀, r₁₀, v₁₀⟩ : ∃ s₁₀, runBlock isa [mov .x13 .x24, mov .x12 .x23] s₉ = some s₁₀ ∧
       s₁₀.gpr .x13 = BitVec.ofNat 64 (n - P - j) ∧ s₁₀.gpr .x12 = D' + BitVec.ofNat 64 j ∧
       Regs [.x13, .x12] s₉ s₁₀ ∧ s₁₀.v = s₉.v := by
@@ -812,11 +815,11 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     rw [v₁₀, l₉, he₈.x20, m₈, rev64b_read]
   obtain rd₁₀ : s₁₀.rd = s₃.rd := by rw [r₁₀.rd, o₉.rd, rd₈, rd₇, rd₆]
   obtain wr₁₀ : s₁₀.wr = s₃.wr := by rw [r₁₀.wr, o₉.wr, wr₈, wr₇, wr₆]
-  obtain hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D' + BitVec.ofNat 64 j) (n - P - j) :=
+  obtain hdj : DataOk Wn (W + BitVec.ofNat 64 16) W s₁₀ (D' + BitVec.ofNat 64 j) (n - P - j) :=
     (hdat₃.drop hjn).of_eq rd₁₀ wr₁₀
   obtain x26₁₀ : s₁₀.gpr .x26 = BitVec.ofNat 64 n := by
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h₇.kept .x26 (by decide), h₂.x26]
-  obtain hfull₁₀ : DataOk (W + BitVec.ofNat 64 16) W s₁₀ D n :=
+  obtain hfull₁₀ : DataOk Wn (W + BitVec.ofNat 64 16) W s₁₀ D n :=
     hdk.of_eq (by rw [rd₁₀, r₃.rd, hm₂.rd, rd₂c, h₂.rd]) (by rw [wr₁₀, r₃.wr, hm₂.wr, wr₂c, h₂.wr])
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK he₁₀ hk₁₀ hy₁₀ x12₁₀ x13₁₀ (by omega_arith) hdj.rd
     (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ hnlt
@@ -856,7 +859,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     · exact fl (sfr_hi (.inr ⟨by decide, by decide⟩))
   obtain Fs : Frame (⟨O, n⟩ :: (sfr to W ++ ex)) s₂.mem s₃.mem :=
     (fcb.sub fun r hr => fl (cbF_sub r hr)).trans Fs₂
-  obtain dfr : ∀ {R : Region}, Region.Sub R (workR W) → (∀ r ∈ sfr to W ++ ex, R.Disjoint r) →
+  obtain dfr : ∀ {R : Region}, Region.Sub R (workR Wn W) → (∀ r ∈ sfr to W ++ ex, R.Disjoint r) →
       ∀ r ∈ (⟨O, n⟩ :: (sfr to W ++ ex)), R.Disjoint r := fun hR h r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · exact doW.symm.sub_left hR
@@ -871,9 +874,9 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   rw [WP.seq_iff]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  obtain w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  obtain w₂ := he₁₁.perm.wW (show 104 + 8 ≤ 2560 by decide)
-  obtain q₁ := he₁₁.perm.wR (show 224 + 8 ≤ 2560 by decide)
+  obtain w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 512 by decide)
+  obtain w₂ := he₁₁.perm.wW (show 104 + 8 ≤ 512 by decide)
+  obtain q₁ := he₁₁.perm.wR (show 224 + 8 ≤ 512 by decide)
   obtain x26₁₁ : s₁₁.gpr .x26 = BitVec.ofNat 64 n := by
     rw [og₁₁ _ (by decide), r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h₇.kept .x26 (by decide), h₂.x26]
   obtain ⟨s₁₂, run₁₂, m₁₂, og₁₂, sp₁₂, rd₁₂, wr₁₂, v₁₂⟩ : ∃ s₁₂, runBlock isa
@@ -891,7 +894,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     simp only [RegUpd.mem_write, Mem.writeW, BitVec.setWidth_eq, add_ofNat_assoc, gpr_write, ite_true, ite_false,
       reduceCtorEq, e₁, x26₁₁]
   refine WP.of_runBlock ⟨s₁₂, run₁₂, ?_⟩
-  obtain he₁₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₂ := he₁₁.keep (fun r hr => og₁₂ r (by
+  obtain he₁₂ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₁₂ := he₁₁.keep (fun r hr => og₁₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁₂ rd₁₂ wr₁₂
   obtain fT₁₂ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s₁₁.mem s₁₂.mem := by rw [m₁₂]; exact Proof.Cmac.frame_store2 _ _ _
@@ -913,7 +916,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     fun s₁₄ ⟨m₁₄, b₁₄, o₁₄⟩ => ?_
   obtain g₁₄ : s₁₄.gpr = s₁₂.gpr := by rw [o₁₄.gpr]; exact o₁₃.gpr
   rw [show s₁₃.gpr .x20 = W + BitVec.ofNat 64 16 by rw [o₁₃.gpr, he₁₂.x20]] at b₁₄ m₁₄
-  obtain he₁₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁₄ :=
+  obtain he₁₄ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₁₄ :=
     he₁₂.keep (fun r _ => by rw [g₁₄]) (by rw [o₁₄.sp, o₁₃.sp]) (by rw [o₁₄.rd, o₁₃.rd]) (by rw [o₁₄.wr, o₁₃.wr])
   obtain fY₁₄ : Frame [⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩] s₁₂.mem s₁₄.mem := by
     rw [m₁₄, o₁₃.mem]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -957,7 +960,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
   obtain I₂₀ : I s₂₀.mem := by
     rw [r₂₀.mem]
     exact hI I₇ ((((Fc.trans Fd).trans Fg).trans Fe).sub fun r hr =>
-      ⟨workR W, List.mem_singleton_self _, sfr_work to W r hr⟩)
+      ⟨workR Wn W, List.mem_singleton_self _, sfr_work to W r hr⟩)
   -- What the frames keep.
   obtain dCf : ∀ r ∈ sfr to W, (⟨Ctx, 256⟩ : Region).Disjoint r := keep_of_sub (sfr_work to W) dcW
   obtain dDf : ∀ r ∈ sfr to W, (⟨D, n⟩ : Region).Disjoint r := keep_of_sub (sfr_work to W) ddW
@@ -1031,7 +1034,7 @@ theorem openRunASX_ok (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr
     cases to with
     | true => trivial
     | false =>
-    obtain cW : ∀ {d k : Nat}, (d + k ≤ 320 ∨ 336 ≤ d) → d + k ≤ 2560 →
+    obtain cW : ∀ {d k : Nat}, (d + k ≤ 320 ∨ 336 ≤ d) → d + k ≤ Wn →
         (⟨W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
       fun h hk => L.w_w (by simp only [Impl.AesGcm.AArch64.Stitch.cbO]; omega_arith) (by decide) hk
     obtain cS : ∀ {a k : Nat}, a + k ≤ 80 →

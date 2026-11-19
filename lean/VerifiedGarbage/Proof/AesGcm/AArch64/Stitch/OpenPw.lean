@@ -41,8 +41,8 @@ open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 /-! ## `vg_aes_gcm_open_with_powers` -/
 
 /-- `pwTbl 16` writes the table, from the powers in `pw`. -/
-theorem pwTbl_forO {s : State} (hs : openPwN s) :
-    TbForOP (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
+theorem pwTbl_forO {Wn : Nat} {s : State} (hs : openPwN Wn s) :
+    TbForOP Wn (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallO_of hs (Y := stackArg s 3 + BitVec.ofNat 64 512)
       (S := stackArg s 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
@@ -66,7 +66,7 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
 include hMK gh
 
-theorem openPwS_correctN (s : State) (hs : openPwN s) :
+theorem openPwS_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openAArch64.post s s' :=
   WP.withPreservedV (openWithSh_wp (w := 3) v _ hMK gh (.inr rfl) hs.1
@@ -75,8 +75,8 @@ theorem openPwS_correctN (s : State) (hs : openPwN s) :
         pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_forO hs))
     (stitchOpenWithS_keepsV v (.inl ⟨rfl, rfl⟩) (pwTbl_keepsV (.inr (.inl rfl))) (pwSel_keepsV v g (.inr (.inl rfl))))
 
-theorem openPwS_ctN :
-    ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
+theorem openPwS_ctN {Wn : Nat} :
+    ConstantTime isa openPwN Wn (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn) :=
   openWithSh_ct (w := 3) v _ hMK gh (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
@@ -202,11 +202,11 @@ abbrev dstRT (s : State) : Region := ⟨stackArg s 0, (s.gpr .x7).toNat⟩
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs in one pass, on the regions
 its proofs run on: `openToPwN`, with `pw` apart from `dst`. -/
-def openToPwSN (s : State) : Prop := openToPwN s ∧ (pwRT s).Disjoint (dstRT s)
+def openToPwSN (s : State) : Prop := openToPwN Wn s ∧ (pwRT s).Disjoint (dstRT s)
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs in one pass: `openToPwW`,
 with `pw` apart from `dst`. -/
-def openToPwSW (s : State) : Prop := openToPwW s ∧ (pwRT s).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
+def openToPwSW (s : State) : Prop := openToPwW Wn s ∧ (pwRT s).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
 
 theorem openToPwSW_N {s : State} (h : openToPwSW s) : openToPwSN (narrowPT s) := by
   obtain ⟨hw, pd⟩ := h
@@ -224,10 +224,10 @@ def openToPwSAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space and `dst`: `pw` is at `[sp + 32]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
-theorem gwCallToS_of {σ s : State} {Y S : Addr} (hs : openToPwSN σ)
-    (sY : Region.Sub ⟨Y, 16⟩ (workR (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR (stackArg σ 5)))
+theorem gwCallToS_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : openToPwSN σ)
+    (sY : Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 5)))
     (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR (stackArg σ 5), dstRT σ] σ.mem s.mem) :
+    (hf : Frame [workR Wn (stackArg σ 5), dstRT σ] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 32) 64 = stackArg σ 4 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 32) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 4) := by
@@ -271,8 +271,8 @@ theorem gwCallToS_of {σ s : State} {Y S : Addr} (hs : openToPwSN σ)
         · exact pd) (show 128 ≤ 2 ^ 64 by decide) hi) rep
 
 /-- `pwTbl 32` writes the table, from the powers in `pw`. -/
-theorem pwTbl_forT {s : State} (hs : openToPwSN s) :
-    TbForOP (Impl.AesGcm.AArch64.Stitch.pwTbl 32) (s.gpr .x0) (stackArg s 5) s.sp (stackArg s 0)
+theorem pwTbl_forT {Wn : Nat} {s : State} (hs : openToPwSN s) :
+    TbForOP Wn (Impl.AesGcm.AArch64.Stitch.pwTbl 32) (s.gpr .x0) (stackArg s 5) s.sp (stackArg s 0)
       (s.gpr .x7).toNat s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallToS_of hs (Y := stackArg s 5 + BitVec.ofNat 64 512)

@@ -67,8 +67,8 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ctxH ctxCiph)
 
 /-- The bit `openMain` computes, after `tagIn`, is whether `open` succeeds. -/
-theorem tagBit {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
-    (o : OpenInG to Ctx W SP Np A D O Tg R nl al n tl s₀ t) (rt : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
+theorem tagBit {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
+    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t) (rt : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true) :
     decide ((Spec.Gcm.fullTag (ciphOf t.mem Ctx R) (blockAt t.mem (Ctx + BitVec.ofNat 64 240))
       (bytesAt t.mem Np nl) (bytesAt t.mem A al) (bytesAt t.mem D n)).take tl = bytesAt t.mem W tl) =
@@ -82,15 +82,15 @@ theorem tagBit {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s
   · rw [ite_eq_right hc]; simp [hc]
 
 /-- `FrontIn` from `OpenInG`. -/
-theorem OpenInG.front {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
-    (o : OpenInG to Ctx W SP Np A D O Tg R nl al n tl s₀ t) :
-    FrontIn Ctx (W + BitVec.ofNat 64 16) W SP t.gpr Np A D nl al n t :=
+theorem OpenInG.front {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
+    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t) :
+    FrontIn Wn Ctx (W + BitVec.ofNat 64 16) W SP t.gpr Np A D nl al n t :=
   ⟨o.env, fun _ _ => rfl, o.x23, o.x24, o.x26, o.x27, o.non, o.aad, o.sA, o.sL, o.sD, o.sN⟩
 
 /-- `openMain` (`openMainG to`) up to the branch on the tag, in two runs. -/
-theorem omA_rel (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₁ s₂ t₁ t₂ : State}
-    (o₁ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl s₁ t₁)
-    (o₂ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl s₂ t₂) :
+theorem omA_rel {Wn : Nat} (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₁ s₂ t₁ t₂ : State}
+    (o₁ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₁ t₁)
+    (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₂ t₂) :
     RelCT isa (Eq2 t₁ t₂) (omA v.callees) TT := by
   have L := o₁.lay
   have hal := o₁.aad.lt
@@ -100,9 +100,9 @@ theorem omA_rel (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al
       Frame (omFrame W) m m' := fun hs _ _ hf => hf.mono hs
   unfold omA
   refine front_rel L v o₁.front o₂.front fun u₁ u₂ p₁ p₂ => ?_
-  obtain mkB : ∀ {s t u : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl s t →
-      FrontOut Ctx (W + BitVec.ofNat 64 16) W SP t.gpr D al n t u →
-      BodyInG to Ctx (W + BitVec.ofNat 64 16) W SP u.gpr R n 0 D (Spec.Gcm.zeros al) []
+  obtain mkB : ∀ {s t u : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s t →
+      FrontOut Wn Ctx (W + BitVec.ofNat 64 16) W SP t.gpr D al n t u →
+      BodyInG Wn to Ctx (W + BitVec.ofNat 64 16) W SP u.gpr R n 0 D (Spec.Gcm.zeros al) []
         (blockAt u.mem (Ctx + BitVec.ofNat 64 240)) u := fun o p =>
     ⟨p.env, fun _ _ => rfl, by rw [p.x22, o.x22], o.rounds, by rw [p.x25, Proof.Gcm.length_zeros],
       p.x26, p.x27, p.x28, rfl, by decide, data_of_eq o.dat (by rw [p.rd]) (by rw [p.wr]), rfl⟩
@@ -144,13 +144,14 @@ theorem omA_rel (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al
     ⟨_, by taint_decide⟩
 
 /-- The loads of `wipeG true`: the output and its length. -/
-theorem wipeLd_ok {Ctx W SP O : Addr} {n : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
+theorem wipeLd_ok {Wn : Nat} {Ctx W SP O : Addr} {n : Nat} {s : State} (he : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s)
     (sO : s.mem.readW (W + BitVec.ofNat 64 320) 64 = O)
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) :
     WP isa (.block [.ldr .x .x9 .x19 dstO, .ldr .x .x10 .x19 lenO, imm .x11 0]) s fun s' =>
       s'.gpr .x9 = O ∧ s'.gpr .x10 = BitVec.ofNat 64 n ∧ s'.sp = s.sp := by
-  obtain q₁ := he.perm.wR (show 320 + 8 ≤ 2560 by decide)
-  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  obtain hWn := he.perm.hWn
+  obtain q₁ := he.perm.wR (show 320 + 8 ≤ 512 by decide)
+  obtain q₂ := he.perm.wR (show 240 + 8 ≤ 512 by decide)
   refine WP.run ⟨_, by arun [he.x19, q₁, q₂, dstO], rfl⟩ fun s' hs' => ?_
   subst hs'
   refine ⟨?_, ?_, rfl⟩
@@ -160,12 +161,13 @@ theorem wipeLd_ok {Ctx W SP O : Addr} {n : Nat} {s : State} (he : Env Ctx (W + B
     rw [show s.mem.read (W + 240#64) 8 = s.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, sN]; rfl
 
 /-- `wipeG true` in two runs: the `n` bytes at `O` zeroed, a byte at a time. -/
-theorem wipeTo_rel {Ctx W SP O : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP σ₁) (he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP σ₂)
+theorem wipeTo_rel {Wn : Nat} {Ctx W SP O : Addr} {n : Nat} {σ₁ σ₂ : State}
+    (he₁ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP σ₁) (he₂ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP σ₂)
     (sO₁ : σ₁.mem.readW (W + BitVec.ofNat 64 320) 64 = O) (sO₂ : σ₂.mem.readW (W + BitVec.ofNat 64 320) 64 = O)
     (sN₁ : σ₁.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sN₂ : σ₂.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) :
     RelCT isa (Eq2 σ₁ σ₂) (wipeG true) TT := by
+  obtain hWn := he₁.perm.hWn
   obtain tw : ∃ h, (taint.check (Taint.ofRegs [.x9, .x10]) wipeLoop h).isSome = true := ⟨_, by taint_decide⟩
   exact rel_seq (rel_taint [.x19] (by rw [he₁.sp, he₂.sp]) (by agree_tac [he₁.x19, he₂.x19]) ⟨_, by taint_decide⟩)
     (wipeLd_ok he₁ sO₁ sN₁) (wipeLd_ok he₂ sO₂ sN₂) fun _ _ ⟨x9₁, x10₁, sp₁⟩ ⟨x9₂, x10₂, sp₂⟩ =>
@@ -177,23 +179,24 @@ theorem omBG_false (c : Callees) : omBG c false = omB c := by
 /-- The rest of `openMainG to`, in two runs that agree on the tag: out of
 place the output zeroed if the tag is wrong (`wipeTo_rel`), and decrypted
 into if it is right (`cryptAlG_rel`). -/
-theorem omBG_rel (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n tl : Nat}
-    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
+theorem omBG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo₁ : MidOG to fr Ctx W SP D O Np A R nl al n tl s m₁) (mo₂ : MidOG to fr Ctx W SP D O Np A R nl al n tl s' m₂)
+    (mo₁ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s m₁) (mo₂ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omBG v.callees to) TT := by
+  obtain hWn := L.hWn
   unfold omBG
   obtain tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  obtain cr : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
+  obtain cr : ∀ {s₈ : State}, CrInG Wn to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
       (to = false → s₈.gpr .x26 = m₁.gpr .x26) → s₈.wr = m₁.wr → ∀ icb, WP isa (cryptAlG v.callees to) s₈
-        (CrOutG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
+        (CrOutG Wn to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
     fun h _ _ icb => cryptAlG_ok L v to (icb := icb) h rfl
-  obtain cr₂ : ∀ {s₈ : State}, CrInG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
+  obtain cr₂ : ∀ {s₈ : State}, CrInG Wn to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D O n s₈ →
       (to = false → s₈.gpr .x26 = m₂.gpr .x26) → s₈.wr = m₂.wr → ∀ icb, WP isa (cryptAlG v.callees to) s₈
-        (CrOutG to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
+        (CrOutG Wn to Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D O n s₈.mem) :=
     fun h _ _ icb => cryptAlG_ok L v to (icb := icb) h rfl
   refine rel_seq ?_ (omIteWithG_ok to (cryptAlG v.callees to) hR mo₁ dD dC cr)
     (omIteWithG_ok to (cryptAlG v.callees to) hR mo₂ dD dC cr₂)
@@ -205,7 +208,7 @@ theorem omBG_rel (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n
   obtain tld : ∃ h, (taint.check (Taint.ofRegs [.x19]) (.block (([.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO,
       imm .x25 0] : List Instr) ++ cond to ([.ldr .x .x26 .x19 dstO] : List Instr) [])) h).isSome = true := by
     cases to <;> exact ⟨_, by taint_decide⟩
-  obtain sO : ∀ {s₀ m : State}, MidOG to fr Ctx W SP D O Np A R nl al n tl s₀ m →
+  obtain sO : ∀ {s₀ m : State}, MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s₀ m →
       cond to (m.mem.readW (W + BitVec.ofNat 64 320) 64 = O) True := fun mo => by
     cases to
     · trivial
@@ -222,22 +225,23 @@ theorem omBG_rel (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n
     exact cryptAlG_rel L v to (ocInG to hR mo₁ h₁) (ocInG to hR mo₂ h₂) rfl
 
 /-- The rest of `openMain`, in two runs that agree on the tag. -/
-theorem omB_relD (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
-    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
+theorem omB_relD {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
+  obtain hWn := L.hWn
   rw [← omBG_false]
   exact omBG_rel v false L hR mo₁ mo₂ dD dC hx
 
-theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
-    (L : Lay Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
+theorem omB_rel {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
+    (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (ddW : (⟨D, n⟩ : Region).Disjoint (workR W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR W))
+    (ddW : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR Wn W))
     (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
-    (hfr : ∀ r ∈ fr, Region.Sub r (workR W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT :=
   omB_relD v L hR mo₁ mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW) hx
 
@@ -246,29 +250,29 @@ public arguments, with `fl` if the tag length is not allowed (in each run,
 `hfl₁` and `hfl₂`, and in two runs, `hflr`) and `m` once the received tag is
 at `W`: `m` in each run (`hm₁`, `hm₂`, for the ciphertext `C₁`, `C₂` and
 `F₁`, `F₂` of the memory, as `openRestWithFl_wp`), and in two runs (`hm`). -/
-theorem openRestWithFl_rel {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
+theorem openRestWithFl_rel {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
     {σ₁ σ₂ s₁ s₂ : State} {C₁ C₂ : List Byte} {F₁ F₂ : Mem → Prop}
-    (o₁ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁) (o₂ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂)
+    (o₁ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁) (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂)
     (x12₁ : s₁.gpr .x12 = Tg) (x12₂ : s₂.gpr .x12 = Tg)
-    (hfl₁ : ∀ {t : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ t → Others [.x9, .x10] s₁ t →
+    (hfl₁ : ∀ {t : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ t → Others [.x9, .x10] s₁ t →
       t.mem = s₁.mem → Spec.Gcm.tagLenOk tl = false →
-      WP isa fl t (OpenPostG Ctx W SP Np A O Tg R nl al n tl C₁ F₁ σ₁))
-    (hfl₂ : ∀ {t : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ t → Others [.x9, .x10] s₂ t →
+      WP isa fl t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C₁ F₁ σ₁))
+    (hfl₂ : ∀ {t : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ t → Others [.x9, .x10] s₂ t →
       t.mem = s₂.mem → Spec.Gcm.tagLenOk tl = false →
-      WP isa fl t (OpenPostG Ctx W SP Np A O Tg R nl al n tl C₂ F₂ σ₂))
-    (hflr : ∀ {t₁ t₂ : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁ →
-      OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂ → Spec.Gcm.tagLenOk tl = false →
+      WP isa fl t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C₂ F₂ σ₂))
+    (hflr : ∀ {t₁ t₂ : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁ →
+      OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂ → Spec.Gcm.tagLenOk tl = false →
       RelCT isa (Eq2 t₁ t₂) fl TT)
-    (hm₁ : ∀ {t : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ t →
+    (hm₁ : ∀ {t : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ t →
       bytesAt t.mem W tl = bytesAt σ₁.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₁.gpr r) →
-      WP isa m t (OpenPostG Ctx W SP Np A O Tg R nl al n tl C₁ F₁ σ₁))
-    (hm₂ : ∀ {t : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ t →
+      WP isa m t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C₁ F₁ σ₁))
+    (hm₂ : ∀ {t : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ t →
       bytesAt t.mem W tl = bytesAt σ₂.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
-      WP isa m t (OpenPostG Ctx W SP Np A O Tg R nl al n tl C₂ F₂ σ₂))
-    (hm : ∀ {t₁ t₂ : State}, OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁ →
-      OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂ →
+      WP isa m t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C₂ F₂ σ₂))
+    (hm : ∀ {t₁ t₂ : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁ →
+      OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂ →
       bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl → bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl →
       Spec.Gcm.tagLenOk tl = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₁.gpr r = s₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₂.gpr r = s₂.gpr r) →
@@ -308,7 +312,7 @@ theorem openRestWithFl_rel {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D O Tg :
 /-- `open` after its entry, in two runs from the same public arguments, with
 (of any ciphertext `C₁`, `C₂`, as `openRestWithG_wp`) `m` once the received tag is at `W`: `m` in each run (`hm₁`, `hm₂`), and in
 two runs (`hm`). -/
-theorem openRestWithG_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State} {C₁ C₂ : List Byte}
+theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State} {C₁ C₂ : List Byte}
     {F₁ F₂ : Mem → Prop}
     (o₁ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁)
@@ -320,7 +324,7 @@ theorem openRestWithG_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : Stat
         (stackArg σ₁ 1).toNat σ₁ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₁.gpr r) →
-      WP isa m t (OpenPostG (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      WP isa m t (OpenPostG Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat C₁ F₁ σ₁))
     (hm₂ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
@@ -328,7 +332,7 @@ theorem openRestWithG_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : Stat
         (stackArg σ₁ 1).toNat σ₂ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
-      WP isa m t (OpenPostG (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      WP isa m t (OpenPostG Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat C₂ F₂ σ₂))
     (hm : ∀ {t₁ t₂ : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
@@ -350,7 +354,7 @@ theorem openRestWithG_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : Stat
     (fun p₁ p₂ _ => rel_taint [] (by rw [p₁.env.sp, p₂.env.sp]) (by agree_tac []) t0) hm₁ hm₂ hm
 
 /-- `openRestWithG_rel`, in place. -/
-theorem openRestWith_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State}
+theorem openRestWith_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State}
     (o₁ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁)
     (o₂ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
@@ -361,7 +365,7 @@ theorem openRestWith_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State
         (stackArg σ₁ 1).toNat σ₁ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₁.gpr r) →
-      WP isa m t (OpenPost (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      WP isa m t (OpenPost Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁))
     (hm₂ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
@@ -369,7 +373,7 @@ theorem openRestWith_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State
         (stackArg σ₁ 1).toNat σ₂ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
-      WP isa m t (OpenPost (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      WP isa m t (OpenPost Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂))
     (hm : ∀ {t₁ t₂ : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
@@ -392,9 +396,9 @@ theorem openRestWith_rel {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State
     o₁ o₂ x12₁ x12₂ o₁.vals.2.2.2.2 o₂.vals.2.2.2.2 hm₁ hm₂ hm
 
 /-- `openMainG to` in two runs, after `tagIn`, whose tags compare alike. -/
-theorem openMainG_rel (v : GcmImpl) (to : Bool) {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
+theorem openMainG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
     {σ₁ σ₂ t₁ t₂ : State}
-    (p₁ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁) (p₂ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂)
+    (p₁ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ t₁) (p₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ t₂)
     (rt₁ : bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl) (rt₂ : bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true)
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem Ctx R) (ctxH σ₁.mem Ctx) tl (bytesAt σ₁.mem Np nl)

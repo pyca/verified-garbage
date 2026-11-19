@@ -98,7 +98,7 @@ theorem pwRestShort_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ 
 /-! ## `vg_aes_gcm_seal_with_powers` -/
 
 /-- `pwTbl 8` writes the table, from the powers in `pw`. -/
-theorem pwTbl_for {s : State} (hs : sealPwN s) : TbForP (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
+theorem pwTbl_for {Wn : Nat} {s : State} (hs : sealPwN Wn s) : TbForP Wn (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCall_of hs (Y := stackArg s 2 + BitVec.ofNat 64 512)
       (S := stackArg s 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
@@ -116,7 +116,7 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
 include hMK gh
 
-theorem sealPwS_correctN (s : State) (hs : sealPwN s) :
+theorem sealPwS_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       sealAArch64.post s s' :=
   WP.withPreservedV (sealWithSh_wp (w := 2) v _ hMK gh (.inr rfl) hs.1
@@ -125,8 +125,8 @@ theorem sealPwS_correctN (s : State) (hs : sealPwN s) :
         pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_for hs))
     (stitchSealWithS_keepsV v (.inr rfl) (pwTbl_keepsV (.inl rfl)) (pwSel_keepsV v g (.inl rfl)))
 
-theorem sealPwS_ctN :
-    ConstantTime isa sealPwN (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) :=
+theorem sealPwS_ctN {Wn : Nat} :
+    ConstantTime isa sealPwN Wn (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) :=
   sealWithSh_ct (w := 2) v _ hMK gh (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCall_of p sY sS hrd hwr hsp hf

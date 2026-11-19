@@ -39,12 +39,13 @@ theorem tagLenOk_le {t : Nat} (h : Spec.Gcm.tagLenOk t = true) : t ≤ 16 := by
   omega_using [h]
 
 /-- The entry of `verify`: `tag_len` in `x28` and `tag` in `x12`. -/
-theorem verEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
-    (hW : s.gpr .x7 = W) (hperm : Perm Ctx St W s) :
-    WP isa (.block (finEntry .x7 ++ [mov .x28 .x6, mov .x12 .x5])) s fun s' => Env Ctx St W s.sp s' ∧
+theorem verEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x2 = St)
+    (hW : s.gpr .x7 = W) (hperm : Perm Wn Ctx St W s) :
+    WP isa (.block (finEntry .x7 ++ [mov .x28 .x6, mov .x12 .x5])) s fun s' => Env Wn Ctx St W s.sp s' ∧
       Kept s'.gpr s' ∧ s'.gpr .x22 = BitVec.ofNat 64 (s.gpr .x1).toNat ∧ s'.gpr .x26 = s.gpr .x3 ∧
       s'.gpr .x27 = s.gpr .x4 ∧ s'.gpr .x28 = s.gpr .x6 ∧ s'.gpr .x12 = s.gpr .x5 ∧
       s'.mem = savedMem s.mem W s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain hWn := hperm.hWn
   refine WP.block_append (WP.mono (finEntry_ok hCtx hSt hW hperm)
     fun s₁ ⟨he₁, _, x22₁, x26₁, x27₁, x5₁, x6₁, m₁, rd₁, wr₁⟩ => ?_)
   refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
@@ -56,10 +57,10 @@ theorem verEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt 
     by rw [x12', x5₁], by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
 /-- What `verPre` gives. -/
-theorem lay_of_ver {s : State} (hs : verPre s) :
-    Lay (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧ Perm (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s ∧
+theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre s) :
+    Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧ Perm Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s ∧
       rounds (s.gpr .x1) ∧ Covers [⟨s.gpr .x5, (s.gpr .x6).toNat⟩] (s.rd ++ s.wr) ∧
-      (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, 2560⟩ := by
+      (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, Wn⟩ := by
   simp only [verPre] at hs
   obtain ⟨hrd, hwr, dcs, dcw, -, dsw, dtw, wc, ws, -, ww, hR⟩ := hs
   exact ⟨Lay.of wc ws ww dcs dcw dsw,
@@ -67,8 +68,9 @@ theorem lay_of_ver {s : State} (hs : verPre s) :
     covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- The parts of `W` that the entry and `tagIn` write. -/
-theorem tag16_inv {Ctx St W : Addr} (L : Lay Ctx St W) :
-    ∀ r ∈ [savedR W, ⟨W, 16⟩], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 2560⟩ := by
+theorem tag16_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) :
+    ∀ r ∈ [savedR W, ⟨W, 16⟩], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, Wn⟩ := by
+  obtain hWn := L.hWn
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -110,7 +112,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
   have ev : isa.eval (.zero .x .x9) s₃ =
       some (decide ((if Spec.Gcm.tagLenOk tl then 1 else 0) = 0)) :=
     eval_zero x9₃ (by split <;> decide)
-  refine WP.seq (WP.mono (Q := fun (s₄ : State) => Env (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp s₄ ∧
+  refine WP.seq (WP.mono (Q := fun (s₄ : State) => Env Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp s₄ ∧
       SavedAt s₄.mem (s.gpr .x7) s ∧
       (Absorbed s.mem (s.gpr .x2 + BitVec.ofNat 64 16) (s.gpr .x2 + BitVec.ofNat 64 32)
           (ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
@@ -134,7 +136,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
     refine WP.seq (WP.mono (tagIn_ok he₃.x19 x12₃ x28₃ hle (by rw [r₃.rd, r₃.wr, rd₂, wr₂]; exact tR)
       he₃.perm.w (dtw.sub_right (Region.sub_prefix (by decide))))
       fun s₄ ⟨in₄, f₄, og₄, sp₄, rd₄, wr₄⟩ => ?_)
-    have he₄ : Env (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp s₄ := he₃.keep (fun r hr => og₄ r (by
+    have he₄ : Env Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp s₄ := he₃.keep (fun r hr => og₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> decide)) sp₄ rd₄ wr₄
     have hk₄ : Kept s₃.gpr s₄ := Kept.of_others (fun _ _ => rfl) og₄
@@ -168,7 +170,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
       have dW : ∀ r ∈ finFrame (s.gpr .x2) (s.gpr .x7) 112, (⟨s.gpr .x7, tl⟩ : Region).Disjoint r := by
         intro r hr
         refine Region.Disjoint.sub_left ?_ (Region.sub_prefix hle)
-        have ww : ∀ e j, 16 ≤ e → e + j ≤ 2560 →
+        have ww : ∀ e j, 16 ≤ e → e + j ≤ Wn →
             (⟨s.gpr .x7, 16⟩ : Region).Disjoint ⟨s.gpr .x7 + BitVec.ofNat 64 e, j⟩ := fun e j h₁ h₂ => by
           simpa using L.w_w (a := 0) (n := 16) (d := e) (k := j) (.inl h₁) (by decide) h₂
         rcases List.mem_append.mp hr with hr | hr

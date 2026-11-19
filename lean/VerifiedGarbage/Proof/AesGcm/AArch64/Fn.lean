@@ -40,17 +40,17 @@ theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop}
   exact q
 
 /-- The layout, from disjointness of the context, the state and `W`. -/
-theorem Lay.of {Ctx St W : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
-    (ww : W.toNat + 2560 ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
-    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    Lay Ctx St W :=
+theorem Lay.of {Wn : Nat} {Ctx St W : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
+    (ww : W.toNat + Wn ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
+    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, Wn⟩) :
+    Lay Wn Ctx St W :=
   ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide))⟩
 
 theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFrame St W yo, (savedR W).Disjoint r := by
@@ -69,7 +69,7 @@ theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
-theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W o, (savedR W).Disjoint r := by
+theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame Wn St W o, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -87,7 +87,7 @@ theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
-    ∀ r ∈ crFrame St W D n, (savedR W).Disjoint r := by
+    ∀ r ∈ crFrame Wn St W D n, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -107,8 +107,9 @@ theorem saved_tag16 : ∀ r ∈ [(⟨W, 16⟩ : Region)], (savedR W).Disjoint r 
 
 /-- `flush` of no bytes: the accumulator as it was. -/
 theorem flush0_ok (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k : Reg → BitVec 64} {s : State}
-    (he : Env Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 0) :
-    WP isa (flush v.callees yo) s (TOut Ctx St W SP k yo 0 (blockAt s.mem (St + BitVec.ofNat 64 yo)) s.mem) := by
+    (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 0) :
+    WP isa (flush v.callees yo) s (TOut Wn Ctx St W SP k yo 0 (blockAt s.mem (St + BitVec.ofNat 64 yo)) s.mem) := by
+  obtain hWn := he.perm.hWn
   refine WP.seq (WP.mono (padSeg_ok L hyo (P := St + BitVec.ofNat 64 32) he hk h25 (by decide)
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, he.x20], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
     (covers_left (he.perm.stC (by omega_using []))) (L.st_w (by omega_using []) (.inr ⟨by decide, by decide⟩))) fun s₁ h₁ => ?_)

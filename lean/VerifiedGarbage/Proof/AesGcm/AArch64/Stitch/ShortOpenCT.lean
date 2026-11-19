@@ -76,38 +76,38 @@ theorem tagEqS_iff {Ctx Np A D Tg : Addr} {R al n tl : Nat} (hok : Spec.Gcm.tagL
 once the received tag is at `W`, that agree on the arguments and on whether
 the record opens, given its table and the rest of `openShortA` in two runs
 that agree on `shRegs`. -/
-theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat}
+theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat}
     {σ₁ σ₂ t₁ t₂ : State}
-    (o₁ : OpenInG to Ctx W SP Np A D O Tg R 12 al n tl σ₁ t₁) (o₂ : OpenInG to Ctx W SP Np A D O Tg R 12 al n tl σ₂ t₂)
+    (o₁ : OpenInG Wn to Ctx W SP Np A D O Tg R 12 al n tl σ₁ t₁) (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R 12 al n tl σ₂ t₂)
     (hx₁ : t₁.gpr .x4 = A ∧ t₁.gpr .x5 = BitVec.ofNat 64 al ∧ t₁.gpr .x6 = D ∧ t₁.gpr .x7 = BitVec.ofNat 64 n)
     (hx₂ : t₂.gpr .x4 = A ∧ t₂.gpr .x5 = BitVec.ofNat 64 al ∧ t₂.gpr .x6 = D ∧ t₂.gpr .x7 = BitVec.ofNat 64 n)
     (h16 : al ≤ 16) (hhi : n ≤ 96)
     (rt₁ : bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl) (rt₂ : bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true)
     (hb : decide (tagEqS Ctx Np A D Tg R al n tl σ₁) = decide (tagEqS Ctx Np A D Tg R al n tl σ₂))
-    (htb₁ : ∀ u : State, Env Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = σ₁.rd → u.wr = σ₁.wr →
-      Frame [workR W, ⟨O, n⟩] σ₁.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH σ₁.mem Ctx) u))
-    (htb₂ : ∀ u : State, Env Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = σ₂.rd → u.wr = σ₂.wr →
-      Frame [workR W, ⟨O, n⟩] σ₂.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH σ₂.mem Ctx) u))
+    (htb₁ : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = σ₁.rd → u.wr = σ₁.wr →
+      Frame [workR Wn W, ⟨O, n⟩] σ₁.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH σ₁.mem Ctx) u))
+    (htb₂ : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = σ₂.rd → u.wr = σ₂.wr →
+      Frame [workR Wn W, ⟨O, n⟩] σ₂.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH σ₂.mem Ctx) u))
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = SP → v₂.sp = SP → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
-      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR W, ⟨O, n⟩] σ₁.mem v₁.mem →
-      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR W, ⟨O, n⟩] σ₂.mem v₂.mem →
+      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, n⟩] σ₁.mem v₁.mem →
+      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, n⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Stitch.openShortG to tb) TT := by
   have L := o₁.lay
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
-  obtain hJ₁ : J0In Ctx (W + BitVec.ofNat 64 16) W SP t₁.gpr (ctxH σ₁.mem Ctx) Np 12 t₁ :=
+  obtain hJ₁ : J0In Wn Ctx (W + BitVec.ofNat 64 16) W SP t₁.gpr (ctxH σ₁.mem Ctx) Np 12 t₁ :=
     ⟨o₁.env, fun _ _ => rfl, o₁.x23, o₁.x24, o₁.x26, o₁.x27, o₁.non, o₁.vals.2.1⟩
-  obtain hJ₂ : J0In Ctx (W + BitVec.ofNat 64 16) W SP t₂.gpr (ctxH σ₂.mem Ctx) Np 12 t₂ :=
+  obtain hJ₂ : J0In Wn Ctx (W + BitVec.ofNat 64 16) W SP t₂.gpr (ctxH σ₂.mem Ctx) Np 12 t₂ :=
     ⟨o₂.env, fun _ _ => rfl, o₂.x23, o₂.x24, o₂.x26, o₂.x27, o₂.non, o₂.vals.2.1⟩
-  obtain j0W : ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W, ∃ r' ∈ [workR W, (⟨O, n⟩ : Region)], Region.Sub r r' := by
+  obtain j0W : ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W, ∃ r' ∈ [workR Wn W, (⟨O, n⟩ : Region)], Region.Sub r r' := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
-  obtain F₁ : Frame [workR W, ⟨O, n⟩] σ₁.mem t₁.mem :=
+  obtain F₁ : Frame [workR Wn W, ⟨O, n⟩] σ₁.mem t₁.mem :=
     o₁.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
-  obtain F₂ : Frame [workR W, ⟨O, n⟩] σ₂.mem t₂.mem :=
+  obtain F₂ : Frame [workR Wn W, ⟨O, n⟩] σ₂.mem t₂.mem :=
     o₂.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
   refine (openShort_split to tb).symm.rel (rel_seq ?_ (openShortA_ok gh o₁ x4₁ x5₁ x6₁ x7₁ h16 hhi rt₁ hok htb₁)
     (openShortA_ok gh o₂ x4₂ x5₂ x6₂ x7₂ h16 hhi rt₂ hok htb₂) fun m₁ m₂ hm₁ hm₂ => ?_)
@@ -152,7 +152,7 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
       obtain tm : ∃ h, (taint.check (Taint.ofRegs [.x24]) (.block [mov .x0 .x24]) h).isSome = true :=
         ⟨_, by taint_decide⟩
       -- The output's address from the slot, and the plaintext's in `B₁`.
-      obtain pl : ∀ {σ u : State}, ShortMid true Ctx W SP Np A D O Tg R al n tl σ u →
+      obtain pl : ∀ {σ u : State}, ShortMid Wn true Ctx W SP Np A D O Tg R al n tl σ u →
           WP isa (.block (Stitch.atP .x12 Stitch.b1O 1 ++ cond true ([.ldr .x .x11 .x19 dstO] : List Instr)
             [mov .x11 .x27] ++ [mov .x13 .x26])) u fun u' => u'.gpr .x11 = O ∧
             u'.gpr .x12 = W + BitVec.ofNat 64 (880 - 16 * ((n + 15) / 16)) ∧ u'.gpr .x13 = BitVec.ofNat 64 n ∧
@@ -164,10 +164,10 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
           Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [hhi]) u he.x19
           hm.x25 (by decide)
         refine WP.of_runBlock ⟨t₂, run₂, ?_⟩
-        obtain he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP t₂ := he.keep (fun r hr => g₂' r (by
+        obtain he₂ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP t₂ := he.keep (fun r hr => g₂' r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl <;> decide)) sp₂' rd₂' wr₂'
-        obtain q₃ := he₂.perm.wR (show 320 + 8 ≤ 2560 by decide)
+        obtain q₃ := he₂.perm.wR (show 320 + 8 ≤ 512 by decide)
         obtain e₃ : t₂.mem.read (W + 320#64) 8 = O := by
           rw [show t₂.mem.read (W + 320#64) 8 = t₂.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, m₂', sO]
         refine WP.run ⟨_, by arun [Bool.cond_true, he₂.x19, q₃, dstO], rfl⟩ fun u' hu' => ?_
@@ -177,7 +177,7 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
           rw [x12t₂]; rfl
         · simp only [gpr_write, ite_true, ite_false, reduceCtorEq]
           exact g₂' _ (by decide)
-      obtain wpE : ∀ {σ u : State}, ShortMid true Ctx W SP Np A D O Tg R al n tl σ u →
+      obtain wpE : ∀ {σ u : State}, ShortMid Wn true Ctx W SP Np A D O Tg R al n tl σ u →
           WP isa (.ite (.zero .x .x24) (wipeG true) (Impl.AesGcm.AArch64.Stitch.plainOutG true)) u
             fun u' => u'.sp = SP ∧ u'.gpr .x24 = u.gpr .x24 := fun {σ u} hm => by
         have ou : OutIn Ctx W D O n u := hm.out
@@ -205,8 +205,8 @@ theorem openShort_rel (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx W SP Np A 
 
 /-- The branch on the tag length failing, in two runs: 0 returned, and out of
 place the output zeroed. -/
-theorem failG_rel {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {σ₁ σ₂ s₁ s₂ : State}
-    (o₁ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁) (o₂ : OpenInG to Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂) :
+theorem failG_rel {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {σ₁ σ₂ s₁ s₂ : State}
+    (o₁ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁) (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂) :
     RelCT isa (Eq2 s₁ s₂) (.seq (.block [imm .x0 0]) (wipeG to)) TT := by
   cases to with
   | true => exact failTo_rel o₁ o₂
@@ -214,11 +214,11 @@ theorem failG_rel {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
 
 /-- After the entry of `open` or `open_to` (`to`): `openSelS` in two runs that
 agree on the arguments and on whether the record opens. -/
-theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {to : Bool}
+theorem openSelS_rel {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {to : Bool}
     {σ₁ σ₂ s₁ s₂ : State} {W O Tg : Addr} {tl : Nat}
-    (o₁ : OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+    (o₁ : OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
       (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ s₁)
-    (o₂ : OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+    (o₂ : OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
       (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ s₂)
     (x12₁ : s₁.gpr .x12 = Tg) (x12₂ : s₂.gpr .x12 = Tg)
     (k₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = σ₁.gpr r) (k₂ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = σ₁.gpr r)
@@ -229,55 +229,55 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
         (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat) (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
         (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat) (bytesAt σ₂.mem Tg tl)).isSome)
     (hgh₁ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = σ₁.rd → s'.wr = σ₁.wr → s'.sp = σ₁.sp →
-      Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem s'.mem →
+      Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem s'.mem →
       WP isa cl s' (GhPost s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (hgh₂ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = σ₂.rd → s'.wr = σ₂.wr → s'.sp = σ₁.sp →
-      Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem s'.mem →
+      Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem s'.mem →
       WP isa cl s' (GhPost s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (hrel : ∀ {s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat},
       GhCall s₁ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb → GhCall s₂ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) → s₁.sp = σ₁.sp → s₂.sp = σ₁.sp →
-      s₁.rd = σ₁.rd → s₁.wr = σ₁.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
-      s₂.rd = σ₂.rd → s₂.wr = σ₂.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
+      Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) → s₁.sp = σ₁.sp → s₂.sp = σ₁.sp →
+      s₁.rd = σ₁.rd → s₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
+      s₂.rd = σ₂.rd → s₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
       RelCT isa (Eq2 s₁ s₂) cl TT)
-    (htb₁ : TbForOP tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ₁)
-    (htb₂ : TbForOP tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ₂)
+    (htb₁ : TbForOP Wn tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ₁)
+    (htb₂ : TbForOP Wn tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ₂)
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = σ₁.sp → v₂.sp = σ₁.sp → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) →
       (to = true → v₁.gpr .x15 = v₂.gpr .x15) →
-      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
-      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT)
     (htbrelS : ∀ v₁ v₂ : State, v₁.sp = σ₁.sp → v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
-      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
-      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
     RelCT isa (Eq2 s₁ s₂) (openSelS v.callees to tb cl true) TT := by
   obtain hdk := dataOk_of o₁.dat
-  obtain hnb : (σ₁.gpr .x7).toNat + 2560 ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
+  obtain hnb : (σ₁.gpr .x7).toNat + Wn ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
   -- The branch on the tag length, and then `m`.
   have rest : ∀ {m : Prog isa} {u₁ u₂ : State},
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ u₁ →
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ u₂ →
       u₁.gpr .x12 = Tg → u₂.gpr .x12 = Tg →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r) →
-      (∀ {σ t : State}, OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
+      (∀ {σ t : State}, OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
           (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ t →
         (σ = σ₁ ∨ σ = σ₂) →
         bytesAt t.mem W tl = bytesAt σ.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
         (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = σ₁.gpr r) →
-        WP isa m t (OpenPostG (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) O Tg (σ₁.gpr .x1).toNat
+        WP isa m t (OpenPostG Wn (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) O Tg (σ₁.gpr .x1).toNat
           (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl (bytesAt σ.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
           (fun m => bytesAt m O (σ₁.gpr .x7).toNat = cond to (List.replicate (σ₁.gpr .x7).toNat 0)
             (bytesAt σ.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)) σ)) →
-      (∀ {t₁ t₂ : State}, OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
+      (∀ {t₁ t₂ : State}, OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
           (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ t₁ →
-        OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
+        OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg
           (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ t₂ →
         bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl → bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl →
         Spec.Gcm.tagLenOk tl = true →
@@ -304,23 +304,23 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
     ⟨kt _ (by simp), by rw [kt _ (by simp), ofNat_toNat'], kt _ (by simp), by rw [kt _ (by simp), ofNat_toNat']⟩
   obtain hghσ : ∀ {σ : State}, (σ = σ₁ ∨ σ = σ₂) → ∀ (s' : State) {Y Dd S : Addr} {nb : Nat},
       GhCall s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = σ.rd → s'.wr = σ.wr → s'.sp = σ₁.sp →
-      Frame [workR W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ.mem s'.mem →
+      Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ.mem s'.mem →
       WP isa cl s' (GhPost s' (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb) := fun {σ} hσ => by
     rcases hσ with rfl | rfl
     · exact hgh₁
     · exact hgh₂
-  obtain htbσ : ∀ {σ : State}, (σ = σ₁ ∨ σ = σ₂) → TbForOP tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ :=
+  obtain htbσ : ∀ {σ : State}, (σ = σ₁ ∨ σ = σ₂) → TbForOP Wn tb (σ₁.gpr .x0) W σ₁.sp O (σ₁.gpr .x7).toNat σ :=
     fun {σ} hσ => by
       rcases hσ with rfl | rfl
       · exact htb₁
       · exact htb₂
   -- The three paths for TLS records.
   obtain fastP : ∀ {u₁ u₂ : State} (hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12),
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ u₁ →
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ u₂ →
       u₁.gpr .x12 = Tg → u₂.gpr .x12 = Tg →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r) →
@@ -335,9 +335,9 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
         (fun s' _ _ _ _ c sY sS hr hw hsp hf _ => hgh₂ s' c sY sS hr hw hsp (frame_wD hf))
         fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ _ => hrel c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ (frame_wD f₁) r₂ w₂ (frame_wD f₂)
   obtain fastS : ∀ {u₁ u₂ : State} (hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12),
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ u₁ →
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ u₂ →
       u₁.gpr .x12 = Tg → u₂.gpr .x12 = Tg →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r) →
@@ -356,9 +356,9 @@ theorem openSelS_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {
         htb₁.tbFor htb₂.tbFor htbrel
   obtain short : ∀ {u₁ u₂ : State} (hc : (σ₁.gpr .x5).toNat ≤ 16 ∧ (σ₁.gpr .x3).toNat = 12),
       (σ₁.gpr .x7).toNat ≤ 96 →
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₁ u₁ →
-      OpenInG to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
+      OpenInG Wn to (σ₁.gpr .x0) W σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) O Tg (σ₁.gpr .x1).toNat
         (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat tl σ₂ u₂ →
       u₁.gpr .x12 = Tg → u₂.gpr .x12 = Tg →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₂.gpr r = σ₁.gpr r) →
@@ -453,39 +453,39 @@ records, `work` the stack argument `w`, is constant time, for a `cl` that
 hashes as `vg_ghash` and leaks the same in two runs, called with memory
 changed since the entry only in the working space and the text, and a `tb`
 that writes the table and leaks the same in two runs. -/
-theorem openWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
+theorem openWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 2 ∨ w = 3)
     {pre : State → Prop} {extra : State → List Region} (hpre : ∀ s, pre s → openPreXW w (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ w)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →
       s.rd = σ.rd → s.wr = σ.wr → s.sp = σ.sp →
-      Frame [workR (stackArg σ w), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
+      Frame [workR Wn (stackArg σ w), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
       WP isa cl s (GhPost s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (hrel : ∀ {σ₁ σ₂ s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ →
       GhCall s₁ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       GhCall s₂ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ₁ w)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ₁ w)) →
       s₁.sp = σ₁.sp → s₂.sp = σ₁.sp →
       s₁.rd = σ₁.rd → s₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
       RelCT isa (Eq2 s₁ s₂) cl TT)
-    (htbP : ∀ {σ : State}, pre σ → TbForOP tb (σ.gpr .x0) (stackArg σ w) σ.sp (σ.gpr .x6) (σ.gpr .x7).toNat σ)
+    (htbP : ∀ {σ : State}, pre σ → TbForOP Wn tb (σ.gpr .x0) (stackArg σ w) σ.sp (σ.gpr .x6) (σ.gpr .x7).toNat σ)
     (htbrel : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.dec) TT)
     (htbrelS : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees false w tb cl true) := by
@@ -510,40 +510,40 @@ theorem openWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
 records, `work` the stack argument `w`, in one pass, is constant time, as
 `openWithSh_ct`, with memory changed since the entry only in the working
 space and `dst`. -/
-theorem openToWithSh_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
+theorem openToWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 4 ∨ w = 5)
     {pre : State → Prop} {extra extraW : State → List Region}
     (hpre : ∀ s, pre s → openToPreXW w (extra s) s (extraW s))
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ w)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →
       s.rd = σ.rd → s.wr = σ.wr → s.sp = σ.sp →
-      Frame [workR (stackArg σ w), ⟨stackArg σ 0, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
+      Frame [workR Wn (stackArg σ w), ⟨stackArg σ 0, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
       WP isa cl s (GhPost s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (hrel : ∀ {σ₁ σ₂ s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ →
       GhCall s₁ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       GhCall s₂ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ₁ w)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ₁ w)) →
       s₁.sp = σ₁.sp → s₂.sp = σ₁.sp →
       s₁.rd = σ₁.rd → s₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
       RelCT isa (Eq2 s₁ s₂) cl TT)
-    (htbP : ∀ {σ : State}, pre σ → TbForOP tb (σ.gpr .x0) (stackArg σ w) σ.sp (stackArg σ 0) (σ.gpr .x7).toNat σ)
+    (htbP : ∀ {σ : State}, pre σ → TbForOP Wn tb (σ.gpr .x0) (stackArg σ w) σ.sp (stackArg σ 0) (σ.gpr .x7).toNat σ)
     (htbrel : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) → v₁.gpr .x15 = v₂.gpr .x15 →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec true)) TT)
     (htbrelS : ∀ {σ₁ σ₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ → ∀ v₁ v₂ : State, v₁.sp = σ₁.sp →
       v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
-      Frame [workR (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
+      Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
       RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees true w tb cl true) := by

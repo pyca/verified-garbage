@@ -63,13 +63,14 @@ theorem ghashFrom_pad (H y : Block) {b : List Byte} (hb : b.length ≤ 16) :
     rfl
 
 /-- `padMul`: the `n` bytes at `P`, padded in `T`, multiplied into `Y`. -/
-theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : State} (he : Env Ctx St W SP s) (hk : HKey H s)
+theorem padMul_ok {Wn : Nat} (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : State} (he : Env Wn Ctx St W SP s) (hk : HKey H s)
     (hy : s.v Y = ext8 y y) (h12 : s.gpr .x12 = P) (h13 : s.gpr .x13 = BitVec.ofNat 64 n) (hn : n ≤ 16)
     (hP : Covers [⟨P, n⟩] (s.rd ++ s.wr)) (hPW : (⟨P, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 16⟩) :
     WP isa Impl.AesGcm.AArch64.Fast.padMul s fun s' =>
-      s'.v Y = ext8 (padStep H y (bytesAt s.mem P n)) (padStep H y (bytesAt s.mem P n)) ∧ HKey H s' ∧ Env Ctx St W SP s' ∧
+      s'.v Y = ext8 (padStep H y (bytesAt s.mem P n)) (padStep H y (bytesAt s.mem P n)) ∧ HKey H s' ∧ Env Wn Ctx St W SP s' ∧
       Others [.x9, .x11, .x12, .x13, .x14, .x15] s s' ∧ Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem ∧
       (∀ r, r ∉ [A, LO, MID, HI, T, Y] → s'.v r = s.v r) := by
+  obtain hWn := he.perm.hWn
   unfold Impl.AesGcm.AArch64.Fast.padMul
   refine WP.ite (decide (n = 0)) (eval_zero h13 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
@@ -77,8 +78,8 @@ theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n
     exact WP.block_nil ⟨by rw [show bytesAt s.mem P 0 = [] from rfl]; exact hy, hk, he, fun _ _ => rfl,
       Frame.refl _ _, fun _ _ => rfl⟩
   have h0 : n ≠ 0 := by simpa using hf
-  have w₁ := he.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₂ := he.perm.wW (show 104 + 8 ≤ 2560 by decide)
+  have w₁ := he.perm.wW (show 96 + 8 ≤ 512 by decide)
+  have w₂ := he.perm.wW (show 104 + 8 ≤ 512 by decide)
   obtain ⟨s₁, run₁, m₁, x11₁, r₁⟩ : ∃ s₁, runBlock isa (Impl.AesGcm.AArch64.Fast.zeroT ++ [ptr .x11 .x19 tO]) s =
       some s₁ ∧ s₁.mem = (s.mem.writeW (W + BitVec.ofNat 64 96) (0 : BitVec 64)).writeW
         (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
@@ -115,7 +116,7 @@ theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n
     have h₂ : r ∉ [Reg.x9, .x11] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.1, hr.2.1⟩
     rw [g₂ r h₁, og₁ r h₂]
-  have he₂ : Env Ctx St W SP s₂ := he.keep (fun r hr => gg r (by
+  have he₂ : Env Wn Ctx St W SP s₂ := he.keep (fun r hr => gg r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
   have vv : s₂.v = s.v := by rw [v₂, v₁]

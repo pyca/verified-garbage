@@ -58,7 +58,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 omit L in
@@ -68,13 +68,13 @@ theorem hz_mod (o : Nat) (ho : o < 16) : (Spec.Gcm.zeros o).length % 16 = o := b
 /-- `fo`, `flush` and `textArgs` in two runs, and what each leaves, with the
 text in place or only read (`to`). -/
 theorem padArgs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr}
-    {a₁ a₂ c₁ c₂ : List Byte} {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyInG to Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyInG to Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
+    {a₁ a₂ c₁ c₂ : List Byte} {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyInG Wn to Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyInG Wn to Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
     {rest : Prog isa}
-    (hr : ∀ τ₁ τ₂, Env Ctx St W SP τ₁ → Env Ctx St W SP τ₂ → Kept k₁ τ₁ → Kept k₂ τ₂ →
+    (hr : ∀ τ₁ τ₂, Env Wn Ctx St W SP τ₁ → Env Wn Ctx St W SP τ₂ → Kept k₁ τ₁ → Kept k₂ τ₂ →
       τ₁.gpr .x23 = D → τ₂.gpr .x23 = D → τ₁.gpr .x24 = BitVec.ofNat 64 n → τ₂.gpr .x24 = BitVec.ofNat 64 n →
       τ₁.gpr .x25 = BitVec.ofNat 64 (P % 16) → τ₂.gpr .x25 = BitVec.ofNat 64 (P % 16) →
-      cond to (DataOk St W τ₁ D n) (DataW Ctx St W τ₁ D n) → cond to (DataOk St W τ₂ D n) (DataW Ctx St W τ₂ D n) →
+      cond to (DataOk Wn St W τ₁ D n) (DataW Ctx St W τ₁ D n) → cond to (DataOk Wn St W τ₂ D n) (DataW Ctx St W τ₂ D n) →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
   have hn := (dataOk_of h₁.data).lt
@@ -128,20 +128,21 @@ theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
 
 /-- `textAbs` in two runs. -/
 theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D : Addr} {σ₁ σ₂ : State}
-    (he₁ : Env Ctx St W SP σ₁) (he₂ : Env Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
+    (he₁ : Env Wn Ctx St W SP σ₁) (he₂ : Env Wn Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
     (h23₁ : σ₁.gpr .x23 = D) (h23₂ : σ₂.gpr .x23 = D)
     (h24₁ : σ₁.gpr .x24 = BitVec.ofNat 64 n) (h24₂ : σ₂.gpr .x24 = BitVec.ofNat 64 n)
     (h25₁ : σ₁.gpr .x25 = BitVec.ofNat 64 (P % 16)) (h25₂ : σ₂.gpr .x25 = BitVec.ofNat 64 (P % 16))
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 n) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 n)
-    (hd₁ : DataOk St W σ₁ D n) (hd₂ : DataOk St W σ₂ D n) :
+    (hd₁ : DataOk Wn St W σ₁ D n) (hd₂ : DataOk Wn St W σ₂ D n) :
     RelCT isa (Eq2 σ₁ σ₂) (textAbs v.callees) TT := by
+  obtain hWn := he₁.perm.hWn
   refine rel_ite (eval_zero h26₁ hd₁.lt) (eval_zero h26₂ hd₁.lt) (fun _ => ?_) (fun _ => ?_)
   · exact rel_taint [] (by rw [he₁.sp, he₂.sp]) (by agree_tac []) ⟨_, by taint_decide⟩
   · exact absorb_rel L v (.inr rfl)
       (⟨he₁, hk₁, h23₁, h24₁, h25₁, hz_mod _ (Nat.mod_lt _ (by decide)), hd₁, rfl⟩ :
-        AbsIn Ctx St W SP k₁ (blockAt σ₁.mem (Ctx + BitVec.ofNat 64 240)) (Spec.Gcm.zeros (P % 16)) D n (P % 16) σ₁)
+        AbsIn Wn Ctx St W SP k₁ (blockAt σ₁.mem (Ctx + BitVec.ofNat 64 240)) (Spec.Gcm.zeros (P % 16)) D n (P % 16) σ₁)
       (⟨he₂, hk₂, h23₂, h24₂, h25₂, hz_mod _ (Nat.mod_lt _ (by decide)), hd₂, rfl⟩ :
-        AbsIn Ctx St W SP k₂ (blockAt σ₂.mem (Ctx + BitVec.ofNat 64 240)) (Spec.Gcm.zeros (P % 16)) D n (P % 16) σ₂)
+        AbsIn Wn Ctx St W SP k₂ (blockAt σ₂.mem (Ctx + BitVec.ofNat 64 240)) (Spec.Gcm.zeros (P % 16)) D n (P % 16) σ₂)
 
 /-- `encBody` in two runs. -/
 theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
@@ -169,13 +170,14 @@ theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
 
 /-- `finBody o` in two runs. -/
 theorem finBody_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ : Reg → BitVec 64} {R A P : Nat}
-    {σ₁ σ₂ : State} (he₁ : Env Ctx St W SP σ₁) (he₂ : Env Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
+    {σ₁ σ₂ : State} (he₁ : Env Wn Ctx St W SP σ₁) (he₂ : Env Wn Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
     (h22₁ : σ₁.gpr .x22 = BitVec.ofNat 64 R) (h22₂ : σ₂.gpr .x22 = BitVec.ofNat 64 R)
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 A) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 A)
     (h27₁ : σ₁.gpr .x27 = BitVec.ofNat 64 P) (h27₂ : σ₂.gpr .x27 = BitVec.ofNat 64 P)
     (hA : A < 2 ^ 64) (hP : P < 2 ^ 64) :
     RelCT isa (Eq2 σ₁ σ₂) (finBody v.callees o) TT := by
+  obtain hWn := he₁.perm.hWn
   have ho' : (if P = 0 then A % 16 else P % 16) < 16 := by split <;> exact Nat.mod_lt _ (by decide)
   refine rel_seq (rel_taint [.x26, .x27] (by rw [he₁.sp, he₂.sp])
       (by agree_tac [h26₁, h26₂, h27₁, h27₂]) ⟨_, by taint_decide⟩)

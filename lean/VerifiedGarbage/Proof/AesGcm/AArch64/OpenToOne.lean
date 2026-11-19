@@ -62,7 +62,7 @@ open VG.Spec.Gcm (ctxH ctxCiph)
 /-- The entry of `open_to` in two runs, with `work` the stack argument `w`:
 the first load gives `work` (public), and the rest is checked by the taint
 analysis from it and the argument registers. -/
-theorem openEntryTo_rel {w : Nat} (hw : w = 4 ∨ w = 5) {σ₁ σ₂ : State} (T₁ : ToLay σ₁ w) (T₂ : ToLay σ₂ w)
+theorem openEntryTo_rel {Wn : Nat} {w : Nat} (hw : w = 4 ∨ w = 5) {σ₁ σ₂ : State} (T₁ : ToLay Wn σ₁ w) (T₂ : ToLay Wn σ₂ w)
     (qw : stackArg σ₁ w = stackArg σ₂ w) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (openEntryG true w)) TT := by
@@ -93,9 +93,9 @@ theorem imm0_ok (s : State) : WP isa (.block [imm .x0 0]) s fun s' => Regs [.x0]
 
 /-- The branch of `open_to` when the tag length is not allowed, in two runs:
 0 returned, and the output zeroed. -/
-theorem failTo_rel {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {σ₁ σ₂ s₁ s₂ : State}
-    (o₁ : OpenInG true Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁)
-    (o₂ : OpenInG true Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂) :
+theorem failTo_rel {Wn : Nat} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {σ₁ σ₂ s₁ s₂ : State}
+    (o₁ : OpenInG Wn true Ctx W SP Np A D O Tg R nl al n tl σ₁ s₁)
+    (o₂ : OpenInG Wn true Ctx W SP Np A D O Tg R nl al n tl σ₂ s₂) :
     RelCT isa (Eq2 s₁ s₂) (.seq (.block [imm .x0 0]) (wipeG true)) TT := by
   have t0 : ∃ h, (taint.check (Taint.ofRegs []) (.block [imm .x0 0]) h).isSome = true := ⟨_, by taint_decide⟩
   refine rel_seq (rel_taint [] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac []) t0) (imm0_ok s₁) (imm0_ok s₂)

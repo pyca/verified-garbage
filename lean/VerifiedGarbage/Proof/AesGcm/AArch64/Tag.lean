@@ -33,14 +33,14 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom toBytes ofBytes)
 open VG.Proof.Gcm (lensBlock)
 
 /-- The regions `tag o` writes. -/
-abbrev tagFrame (St W : Addr) (o : Nat) : List Region :=
-  [⟨St, 32⟩, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 512, 2048⟩]
+abbrev tagFrame (Wn : Nat) (St W : Addr) (o : Nat) : List Region :=
+  [⟨St, 32⟩, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 512, Wn - 512⟩]
 
 /-- Before the call of `tag o`: the accumulator `Y` copied to `W + o`, `J` at
 the state. -/
-structure Tag1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
+structure Tag1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   call : CtrCall s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1
   cp : blockAt s.mem (W + BitVec.ofNat 64 o) = Y
@@ -49,12 +49,12 @@ structure Tag1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Nat) (Y J : B
 
 /-- After `tag o`, from `m₀`: the tag of the accumulator `Y` (after the
 lengths block) and the counter block `J`. -/
-structure TagOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
+structure TagOut (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   out : bytesAt s.mem (W + BitVec.ofNat 64 o) 16 = toBytes (Y ^^^ ciphOf m₀ Ctx R J)
-  frame : Frame (tagFrame St W o) m₀ s.mem
+  frame : Frame (tagFrame Wn St W o) m₀ s.mem
 
 theorem bytesAt_copy2 (m : Mem) {p q : Addr} (hd : (⟨p, 8⟩ : Region).Disjoint ⟨q + BitVec.ofNat 64 8, 8⟩) :
     bytesAt ((m.writeW p (m.readW q 64)).writeW (p + BitVec.ofNat 64 8)
@@ -64,19 +64,20 @@ theorem bytesAt_copy2 (m : Mem) {p q : Addr} (hd : (⟨p, 8⟩ : Region).Disjoin
     ← Proof.Cmac.bytesAt_split]
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 /-- The accumulator copied, and the arguments of the call. -/
-theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W SP s)
+theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Wn Ctx St W SP s)
     (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    WP isa (.block (tagSeg o)) s (Tag1 Ctx St W SP k o R (blockAt s.mem (St + BitVec.ofNat 64 16))
+    WP isa (.block (tagSeg o)) s (Tag1 Wn Ctx St W SP k o R (blockAt s.mem (St + BitVec.ofNat 64 16))
       (blockAt s.mem St) s.mem) := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_arith
+  obtain hWn := he.perm.hWn
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ Wn) := by omega_arith
   have r₁ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₁ := he.perm.wW (show o + 8 ≤ 2560 by omega_arith)
-  have w₂ := he.perm.wW (show o + 8 + 8 ≤ 2560 by omega_arith)
+  have w₁ := he.perm.wW (show o + 8 ≤ Wn by omega_arith)
+  have w₂ := he.perm.wW (show o + 8 + 8 ≤ Wn by omega_arith)
   have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega_arith
   have ho0 : o % 8 = 0 ∧ o < 32768 := by omega_arith
   have ho' : o < 4096 := by omega_arith
@@ -102,7 +103,7 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
     · simp [gpr_write]
     · simp [gpr_write, he.x19]
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => og r (by
+  have he₁ : Env Wn Ctx St W SP s₁ := he.keep (fun r hr => og r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   rw [show W + BitVec.ofNat 64 (o + 8) = W + BitVec.ofNat 64 o + BitVec.ofNat 64 8 from (add_ofNat_assoc ..).symm,
@@ -116,7 +117,7 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
       by simpa using (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)),
-      dJo, by simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 2048) (by decide) (.inr ⟨by decide, by decide⟩),
+      dJo, by simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := Wn - 512) (by decide) (.inr ⟨by decide, by decide⟩),
       L.w_w (by omega_arith) (by omega_arith) (by decide), ?_, ?_⟩
     · refine covers_cons ?_ (covers_cons ?_ (covers_cons (covers_left (he₁.perm.wC (by omega_arith)))
         (covers_left (he₁.perm.wC (by decide)))))
@@ -131,8 +132,8 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
 
 /-- The call of `tag o`: `CIPH_K(J)` XORed into the copy. -/
 theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
-    {m₀ : Mem} {s : State} (h : Tag1 Ctx St W SP k o R Y J m₀ s) :
-    WP isa (ctrCall v.callees) s (TagOut Ctx St W SP k o R Y J m₀) := by
+    {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) :
+    WP isa (ctrCall v.callees) s (TagOut Wn Ctx St W SP k o R Y J m₀) := by
   refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gout := g.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
@@ -152,11 +153,12 @@ theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0
 
 /-- `tag o`, for `o` of 0 or 112. -/
 theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 ∨ o = 112) {s : State}
-    (he : Env Ctx St W SP s) (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R)
+    (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h25 : s.gpr .x25 = BitVec.ofNat 64 o') :
-    WP isa (tag v.callees o) s (TagOut Ctx St W SP k o R
+    WP isa (tag v.callees o) s (TagOut Wn Ctx St W SP k o R
       (ghashFrom (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blockAt s.mem (St + BitVec.ofNat 64 16))
         [ofBytes (lensBlock (s.gpr .x26).toNat (s.gpr .x27).toNat)]) (blockAt s.mem St) s.mem) := by
+  obtain hWn := he.perm.hWn
   refine WP.seq (WP.seq (WP.mono (lensSeg_ok L (yo := 16) (.inr rfl) he hk h25 (by decide)) fun s₁ h₁ =>
     WP.mono (lensCall_ok L (.inr rfl) v h₁) fun s₂ h₂ => ?_))
   have dJ : ∀ r ∈ tFrame St W 16, (⟨St, 16⟩ : Region).Disjoint r := by
@@ -183,7 +185,7 @@ theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base St (show 16 + 16 ≤ 32 by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 512, 2048⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 512, Wn - 512⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 end
 

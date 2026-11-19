@@ -50,9 +50,9 @@ abbrev padBlocks (o : Nat) : Nat := if o = 0 then 0 else 1
 
 /-- Before the call of a padding: the `o` bytes at `P` (in `m₀`) padded with
 zeros in `T`. -/
-structure Pad1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (P : Addr) (m₀ : Mem) (s : State) :
+structure Pad1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (P : Addr) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x25 : s.gpr .x25 = BitVec.ofNat 64 o
   call : GhCall s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 yo) (W + BitVec.ofNat 64 96)
@@ -61,16 +61,16 @@ structure Pad1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (P : Ad
   frame : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] m₀ s.mem
 
 /-- After a call of `vg_ghash` on `T` (or on nothing), from `m₀`. -/
-structure TOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (Y : Block) (m₀ : Mem)
+structure TOut (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (Y : Block) (m₀ : Mem)
     (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x25 : s.gpr .x25 = BitVec.ofNat 64 o
   out : blockAt s.mem (St + BitVec.ofNat 64 yo) = Y
   frame : Frame (tFrame St W yo) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 theorem ctx_tFrame : ∀ r ∈ tFrame St W yo, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
@@ -83,14 +83,15 @@ theorem ctx_tFrame : ∀ r ∈ tFrame St W yo, (⟨Ctx + BitVec.ofNat 64 240, 16
 
 /-- Padding the `o` bytes at `P`, which `src` points `x12` at. -/
 theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat} {s : State}
-    (he : Env Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 o) (ho : o < 16)
+    (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 o) (ho : o < 16)
     (hsrc : ∃ s₁, runBlock isa src s = some s₁ ∧ s₁.gpr .x12 = P ∧ Regs [.x12] s s₁)
     (hP : Covers [⟨P, o⟩] (s.rd ++ s.wr)) (hPW : (⟨P, o⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 16⟩) :
-    WP isa (padSeg yo src) s (Pad1 Ctx St W SP k yo o P s.mem) := by
+    WP isa (padSeg yo src) s (Pad1 Wn Ctx St W SP k yo o P s.mem) := by
+  obtain hWn := he.perm.hWn
   obtain ⟨s₁, run₁, x12₁, r₁⟩ := hsrc
   have he₁ := he.of_regs r₁
-  have w₁ := he₁.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₂ := he₁.perm.wW (show 104 + 8 ≤ 2560 by decide)
+  have w₁ := he₁.perm.wW (show 96 + 8 ≤ 512 by decide)
+  have w₂ := he₁.perm.wW (show 104 + 8 ≤ 512 by decide)
   obtain ⟨s₂, run₂, m₂, x11₂, x13₂, x12₂, r₂⟩ : ∃ s₂, runBlock isa [imm .x9 0, .str .x .x9 .x19 tO,
       .str .x .x9 .x19 (tO + 8), ptr .x11 .x19 tO, mov .x13 .x25] s₁ = some s₂ ∧
       s₂.mem = (s.mem.writeW (W + BitVec.ofNat 64 96) (0 : BitVec 64)).writeW
@@ -148,7 +149,7 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
   have hsp : s₅.sp = s.sp := by rw [r₅.sp, r₄.sp, sp₃, sp₂, r₁.sp]
   have hrd : s₅.rd = s.rd := by rw [r₅.rd, r₄.rd, rd₃, rd₂, r₁.rd]
   have hwr : s₅.wr = s.wr := by rw [r₅.wr, r₄.wr, wr₃, wr₂, r₁.wr]
-  have he₅ : Env Ctx St W SP s₅ := he.keep (fun r hr => ggA r (by
+  have he₅ : Env Wn Ctx St W SP s₅ := he.keep (fun r hr => ggA r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
   have fz : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₂.mem := by rw [m₂]; exact Proof.Cmac.frame_store2 _ _ _
@@ -178,8 +179,8 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
 
 /-- The call after a padding: `T` absorbed, if there were bytes. -/
 theorem padCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} {P : Addr} {m₀ : Mem} {s : State}
-    (h : Pad1 Ctx St W SP k yo o P m₀ s) :
-    WP isa (ghCall v.callees) s (TOut Ctx St W SP k yo o
+    (h : Pad1 Wn Ctx St W SP k yo o P m₀ s) :
+    WP isa (ghCall v.callees) s (TOut Wn Ctx St W SP k yo o
       (ghashFrom (blockAt m₀ (Ctx + BitVec.ofNat 64 240)) (blockAt m₀ (St + BitVec.ofNat 64 yo))
         (if o = 0 then [] else [ofBytes (bytesAt m₀ P o ++ zeros (16 - o))])) m₀) := by
   refine WP.mono (gh_call v.gh h.call) fun s' g => ?_
@@ -203,12 +204,13 @@ theorem padCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} {P : Addr} {m
 
 /-- `flush yo`: the buffer, of `o = len(x) mod 16` bytes, padded and absorbed. -/
 theorem flush_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List Byte} {o : Nat} {s : State}
-    (he : Env Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 o) (ho : x.length % 16 = o)
+    (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 o) (ho : x.length % 16 = o)
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
-    WP isa (flush v.callees yo) s fun s' => TOut Ctx St W SP k yo o (blockAt s'.mem (St + BitVec.ofNat 64 yo))
+    WP isa (flush v.callees yo) s fun s' => TOut Wn Ctx St W SP k yo o (blockAt s'.mem (St + BitVec.ofNat 64 yo))
         s.mem s' ∧ blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H x →
         Absorbed s'.mem (St + BitVec.ofNat 64 yo) (St + BitVec.ofNat 64 32) H (x ++ zeros (padLen x.length))) := by
+  obtain hWn := he.perm.hWn
   have hlt : o < 16 := by rw [← ho]; exact Nat.mod_lt _ (by decide)
   refine WP.seq (WP.mono (padSeg_ok L hyo (P := St + BitVec.ofNat 64 32) he hk h25 hlt
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, he.x20], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
@@ -239,9 +241,9 @@ theorem le8_lens (x : BitVec 64) : Proof.Cmac.le8 (AArch64.rev64 (x <<< 3)) = Sp
   rw [rev64_eq, Proof.Gcm.le8_byteRev64, lsl3_eq, BitVec.toNat_ofNat, Proof.Gcm.be64_mod]
 
 /-- Before the call of `lens yo ra rb`: the lengths block in `T`. -/
-structure Lens1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (a b : Nat) (m₀ : Mem) (s : State) :
+structure Lens1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (a b : Nat) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x25 : s.gpr .x25 = BitVec.ofNat 64 o
   call : GhCall s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 yo) (W + BitVec.ofNat 64 96)
@@ -249,13 +251,14 @@ structure Lens1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (a b :
   tb : bytesAt s.mem (W + BitVec.ofNat 64 96) 16 = lensBlock a b
   frame : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] m₀ s.mem
 
-theorem lensSeg_ok {k : Reg → BitVec 64} {o : Nat} {ra rb : Reg} {s : State} (he : Env Ctx St W SP s)
+theorem lensSeg_ok {k : Reg → BitVec 64} {o : Nat} {ra rb : Reg} {s : State} (he : Env Wn Ctx St W SP s)
     (hk : Kept k s) (h25 : s.gpr .x25 = BitVec.ofNat 64 o)
     (hrb : rb ≠ .x9) :
     WP isa (.block (lensSeg yo ra rb)) s
-      (Lens1 Ctx St W SP k yo o (s.gpr ra).toNat (s.gpr rb).toNat s.mem) := by
-  have w₁ := he.perm.wW (show 96 + 8 ≤ 2560 by decide)
-  have w₂ := he.perm.wW (show 104 + 8 ≤ 2560 by decide)
+      (Lens1 Wn Ctx St W SP k yo o (s.gpr ra).toNat (s.gpr rb).toNat s.mem) := by
+  obtain hWn := he.perm.hWn
+  have w₁ := he.perm.wW (show 96 + 8 ≤ 512 by decide)
+  have w₂ := he.perm.wW (show 104 + 8 ≤ 512 by decide)
   have hyo' : yo < 4096 := by omega_using [hyo]
   obtain ⟨s₁, run₁, m₁, x3₁, x0₁, x1₁, x4₁, x2₁, r₁⟩ : ∃ s₁, runBlock isa (lensSeg yo ra rb) s = some s₁ ∧
       s₁.mem = (s.mem.writeW (W + BitVec.ofNat 64 96) (AArch64.rev64 (s.gpr ra <<< 3))).writeW
@@ -274,7 +277,7 @@ theorem lensSeg_ok {k : Reg → BitVec 64} {o : Nat} {ra rb : Reg} {s : State} (
     · simp [gpr_write, he.x19]
   obtain ⟨og, sp₁, rd₁, wr₁⟩ := r₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => og r (by
+  have he₁ : Env Wn Ctx St W SP s₁ := he.keep (fun r hr => og r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   refine ⟨he₁, hk.of_others og, by rw [og _ (by decide), h25], ?_, ?_, ?_⟩
@@ -286,8 +289,8 @@ theorem lensSeg_ok {k : Reg → BitVec 64} {o : Nat} {ra rb : Reg} {s : State} (
 
 /-- The call of `lens`: the lengths block absorbed. -/
 theorem lensCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o a b : Nat} {m₀ : Mem} {s : State}
-    (h : Lens1 Ctx St W SP k yo o a b m₀ s) :
-    WP isa (ghCall v.callees) s (TOut Ctx St W SP k yo o
+    (h : Lens1 Wn Ctx St W SP k yo o a b m₀ s) :
+    WP isa (ghCall v.callees) s (TOut Wn Ctx St W SP k yo o
       (ghashFrom (blockAt m₀ (Ctx + BitVec.ofNat 64 240)) (blockAt m₀ (St + BitVec.ofNat 64 yo))
         [ofBytes (lensBlock a b)]) m₀) := by
   refine WP.mono (gh_call v.gh h.call) fun s' g => ?_

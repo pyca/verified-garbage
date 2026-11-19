@@ -86,8 +86,8 @@ theorem cond_ok {s : State} {al nl : Nat} (h5 : s.gpr .x5 = BitVec.ofNat 64 al) 
     exact WP.of_runBlock ⟨s₄, run₄, by rw [x10₄]; simp [this], (r₂.trans r₃).trans r₄⟩
 
 /-- `SealEntry` after code that writes only `x9` and `x10`. -/
-theorem SealEntry.of_regs {w : Nat} {s s₁ s₂ : State} (h : SealEntry w s s₁) (r : Regs [.x9, .x10] s₁ s₂) :
-    SealEntry w s s₂ :=
+theorem SealEntry.of_regs {Wn : Nat} {w : Nat} {s s₁ s₂ : State} (h : SealEntry Wn w s s₁) (r : Regs [.x9, .x10] s₁ s₂) :
+    SealEntry Wn w s s₂ :=
   ⟨h.env.of_regs r, by rw [r.others _ (by decide), h.x22], by rw [r.others _ (by decide), h.x23],
     by rw [r.others _ (by decide), h.x24], by rw [r.others _ (by decide), h.x26],
     by rw [r.others _ (by decide), h.x27], by rw [r.others _ (by decide), h.x28],
@@ -98,12 +98,12 @@ theorem SealEntry.of_regs {w : Nat} {s s₁ s₂ : State} (h : SealEntry w s s�
 argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of
 `vg_ghash` when run with memory changed since the entry only in the working
 space and the text. -/
-theorem sealWithE_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {w : Nat}
+theorem sealWithE_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {w : Nat}
     (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} (hs : sealPreXW w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) s fun s' =>
       GprAbi s s' ∧ sealAArch64.post s s' := by
@@ -123,12 +123,12 @@ theorem sealWithE_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmul
 /-- `vg_aes_gcm_seal` with the path for TLS records, its whole blocks hashed
 by `gh`, which hashes as `vg_ghash` when called with memory changed since the
 entry only in the working space and the text. -/
-theorem sealWith_wp (v : GcmImpl) (gh : Fn) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {extra : List Region}
+theorem sealWith_wp {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {extra : List Region}
     {s : State} (hs : sealPreX extra s)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
-      Region.Sub ⟨Y, 16⟩ (workR (stackArg s 1)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s 1)) →
+      Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s 1)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s 1)) →
       s'.rd = s.rd → s'.wr = s.wr →
-      Frame [workR (stackArg s 1), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      Frame [workR Wn (stackArg s 1), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
   sealWithE_wp (w := 1) v _ hMK (.inl rfl) (sealPreX_W hs) fun s' _ _ _ _ c y z r w _ f => hgh s' c y z r w f

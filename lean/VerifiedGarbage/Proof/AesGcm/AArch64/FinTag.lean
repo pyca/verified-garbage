@@ -48,10 +48,10 @@ theorem ghashInput_mod {a c : List Byte} : (ghashInput a c).length % 16 =
     omega_using [this]
 
 /-- The regions `finBody o` writes. -/
-abbrev finFrame (St W : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame St W o
+abbrev finFrame (St W : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame Wn St W o
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 omit L in
@@ -77,16 +77,17 @@ theorem finOff_ok {s : State} {A P : Nat} (h26 : s.gpr .x26 = BitVec.ofNat 64 A)
 
 /-- `finBody o`: the tag of the message `a`, `c` into `W + o`. -/
 theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg → BitVec 64} {R : Nat}
-    {a c : List Byte} {H : Block} {s : State} (he : Env Ctx St W SP s) (hk : Kept k s)
+    {a c : List Byte} {H : Block} {s : State} (he : Env Wn Ctx St W SP s) (hk : Kept k s)
     (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26 : s.gpr .x26 = BitVec.ofNat 64 a.length) (h27 : s.gpr .x27 = BitVec.ofNat 64 c.length)
     (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
-    WP isa (finBody v.callees o) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
+    WP isa (finBody v.callees o) s fun s' => Env Wn Ctx St W SP s' ∧ Kept k s' ∧
       Frame (finFrame St W o) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
         bytesAt s'.mem (W + BitVec.ofNat 64 o) 16 =
           toBytes (ghashFrom H (ghash H (blocks (padded a c))) [ofBytes (lensBlock a.length c.length)] ^^^
             ciphOf s.mem Ctx R (blockAt s.mem St))) := by
+  obtain hWn := he.perm.hWn
   have hA : a.length % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
   have h26' : s.gpr .x26 = BitVec.ofNat 64 (a.length % 2 ^ 64) := by rw [h26]; apply BitVec.eq_of_toNat_eq; simp
   refine WP.seq (WP.mono (finOff_ok h26' h27 hA hc) fun s₁ ⟨x25₁, r₁⟩ => ?_)

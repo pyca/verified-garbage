@@ -76,19 +76,20 @@ theorem fo_ok {s : State} {q n P : Nat} (h25 : s.gpr .x25 = BitVec.ofNat 64 q)
         subst hs'; exact ⟨by simp [gpr_write, h1], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 /-- `flush` after `fo`: GHASH has absorbed `xf a c n`, where it had absorbed
 `ghashInput a c`. -/
 theorem flushStep_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {s : State} {a c : List Byte} {n : Nat}
-    (he : Env Ctx St W SP s) (hk : Kept k s)
+    (he : Env Wn Ctx St W SP s) (hk : Kept k s)
     (h25 : s.gpr .x25 = BitVec.ofNat 64 (if n ≠ 0 ∧ c.length = 0 then a.length % 16 else 0))
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
-    WP isa (flush v.callees 16) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
+    WP isa (flush v.callees 16) s fun s' => Env Wn Ctx St W SP s' ∧ Kept k s' ∧
       blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧ Frame (tFrame St W 16) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
         Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (xf a c n)) := by
+  obtain hWn := he.perm.hWn
   by_cases hf : n ≠ 0 ∧ c.length = 0
   · have hc : c = [] := List.eq_nil_of_length_eq_zero hf.2
     subst hc
@@ -141,11 +142,11 @@ theorem Ctr.frame {m m' : Mem} {St : Addr} {ciph : Block → Block} {icb : Block
     (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using [])))
 
 section
-variable {Ctx St W : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W)
 include L
 
 /-- Parts of the state apart from a part of `W`. -/
-theorem st_wpart {d k e j : Nat} (hd : d + k ≤ 80) (he : 96 ≤ e ∧ e + j ≤ 2560) :
+theorem st_wpart {d k e j : Nat} (hd : d + k ≤ 80) (he : 96 ≤ e ∧ e + j ≤ Wn) :
     (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, j⟩ :=
   L.st_w hd (.inr he)
 
@@ -157,7 +158,7 @@ theorem st0_disj {e j : Nat} (h : 16 ≤ e) (he : e + j ≤ 80) :
     (⟨St, 16⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 e, j⟩ := by
   simpa using L.st_st (a := 0) (n := 16) (d := e) (k := j) (.inl h) (by decide) he
 
-theorem st0_w {e j : Nat} (he : 96 ≤ e ∧ e + j ≤ 2560) :
+theorem st0_w {e j : Nat} (he : 96 ≤ e ∧ e + j ≤ Wn) :
     (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, j⟩ := by
   simpa using L.st_w (a := 0) (n := 16) (d := e) (k := j) (by decide) (.inr he)
 
@@ -207,13 +208,13 @@ theorem WP.seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP
 
 /-- The regions the bodies write. -/
 abbrev bodyFrame (St W D : Addr) (n : Nat) : List Region :=
-  tFrame St W 16 ++ crFrame St W D n ++ absFrame St W 16
+  tFrame St W 16 ++ crFrame Wn St W D n ++ absFrame St W 16
 
 /-- Before a body; out of place (`to`), the text is only read (`DataOk`, as
 `decAbs` needs it). -/
-structure BodyInG (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr)
+structure BodyInG (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr)
     (a c : List Byte) (H : Block) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x22 : s.gpr .x22 = BitVec.ofNat 64 R
   rounds : R = 10 ∨ R = 12 ∨ R = 14
@@ -223,19 +224,19 @@ structure BodyInG (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n 
   x28 : s.gpr .x28 = D
   hc : c.length = P
   hP : P < 2 ^ 64
-  data : cond to (DataOk St W s D n) (DataW Ctx St W s D n)
+  data : cond to (DataOk Wn St W s D n) (DataW Ctx St W s D n)
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
 /-- Before a body, in place. -/
 abbrev BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr) (a c : List Byte)
     (H : Block) (s : State) : Prop :=
-  BodyInG false Ctx St W SP k R n P D a c H s
+  BodyInG Wn false Ctx St W SP k R n P D a c H s
 
 /-- What a body leaves, from `m₀`, where `e` is the data absorbed and `out`
 what it leaves at `D`. -/
-structure BodyOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr) (a c : List Byte)
+structure BodyOut (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr) (a c : List Byte)
     (H : Block) (icb : Block) (e out : List Byte) (m₀ : Mem) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   frame : Frame (bodyFrame St W D n) m₀ s.mem
   post : Absorbed m₀ (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
@@ -245,7 +246,7 @@ structure BodyOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D 
       bytesAt s.mem D n = out
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 theorem ctx_tFrame' : ∀ r ∈ tFrame St W 16, (⟨Ctx, 256⟩ : Region).Disjoint r := by
@@ -281,7 +282,7 @@ theorem ctr_absFrame : ∀ r ∈ absFrame St W 16, (⟨St + BitVec.ofNat 64 48, 
   · exact st_wpart L (by decide) ⟨by decide, by decide⟩
 
 theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
-    ∀ r ∈ crFrame St W D n, (⟨St + BitVec.ofNat 64 16, 32⟩ : Region).Disjoint r := by
+    ∀ r ∈ crFrame Wn St W D n, (⟨St + BitVec.ofNat 64 16, 32⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -290,7 +291,7 @@ theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n)
   · exact st_wpart L (by decide) ⟨by decide, by decide⟩
 
 omit L in
-theorem dataOk_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk St W s D n) :
+theorem dataOk_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk Wn St W s D n) :
     ∀ r ∈ tFrame St W 16, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -305,14 +306,14 @@ theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n)
   dataOk_tFrame hd.ok
 
 theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) {m m' : Mem}
-    (hf : Frame (crFrame St W D n) m m') :
+    (hf : Frame (crFrame Wn St W D n) m m') :
     blockAt m' (Ctx + BitVec.ofNat 64 240) = blockAt m (Ctx + BitVec.ofNat 64 240) :=
   blockAt_frame hf fun r hr => (ctx_crFrame L hd r hr).sub_left (Lay.ctxSub (by decide))
 
 /-- The additional data padded if this is the first text: `fo` and `flush`. -/
 theorem pad_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte}
-    {H : Block} {s : State} (h : BodyInG to Ctx St W SP k R n P D a c H s) :
-    WP isa (.seq fo (flush v.callees 16)) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
+    {H : Block} {s : State} (h : BodyInG Wn to Ctx St W SP k R n P D a c H s) :
+    WP isa (.seq fo (flush v.callees 16)) s fun s' => Env Wn Ctx St W SP s' ∧ Kept k s' ∧
       blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧ Frame (tFrame St W 16) s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
@@ -360,7 +361,7 @@ theorem mem_bt {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ tFrame St W 16)
   List.mem_append_left _ (List.mem_append_left _ h)
 
 omit L in
-theorem mem_bc {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ crFrame St W D n) : r ∈ bodyFrame St W D n :=
+theorem mem_bc {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ crFrame Wn St W D n) : r ∈ bodyFrame St W D n :=
   List.mem_append_left _ (List.mem_append_right _ h)
 
 omit L in
@@ -370,7 +371,7 @@ theorem mem_ba {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ absFrame St W 1
 /-- `encBody`: the data encrypted, and the ciphertext absorbed. -/
 theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
     {s : State} (h : BodyIn Ctx St W SP k R n P D a c H s) (icb : Block) :
-    WP isa (encBody v.callees) s (BodyOut Ctx St W SP k R n P D a c H icb
+    WP isa (encBody v.callees) s (BodyOut Wn Ctx St W SP k R n P D a c H icb
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n))
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n)) s.mem) := by
   have k22 : k .x22 = BitVec.ofNat 64 R := (h.kept .x22 (by decide)).symm.trans h.x22
@@ -420,7 +421,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
     rw [hn0] at this
     exact this
   · have hn0 : n ≠ 0 := by simpa using hf
-    have hA : AbsIn Ctx St W SP k H (xf a c n) D n (P % 16) s₅ :=
+    have hA : AbsIn Wn Ctx St W SP k H (xf a c n) D n (P % 16) s₅ :=
       ⟨he₅, hk₅, x23₅, x24₅, by rw [r₅.others _ (by decide), h₄.x25], by rw [xf_len hn0, h.hc],
         h.data.ok.of_eq (by rw [r₅.rd, rd₄, r₃.rd, rd₂]) (by rw [r₅.wr, wr₄, r₃.wr, wr₂]),
         by rw [r₅.mem, hH_crFrame L hd₃ h₄.frame, m₃, hH₂]⟩
@@ -433,7 +434,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
 /-- `decBody`: the data absorbed, and decrypted. -/
 theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
     {s : State} (h : BodyIn Ctx St W SP k R n P D a c H s) (icb : Block) :
-    WP isa (decBody v.callees) s (BodyOut Ctx St W SP k R n P D a c H icb (bytesAt s.mem D n)
+    WP isa (decBody v.callees) s (BodyOut Wn Ctx St W SP k R n P D a c H icb (bytesAt s.mem D n)
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n)) s.mem) := by
   have k22 : k .x22 = BitVec.ofNat 64 R := (h.kept .x22 (by decide)).symm.trans h.x22
   have k26 : k .x26 = BitVec.ofNat 64 n := (h.kept .x26 (by decide)).symm.trans h.x26
@@ -449,7 +450,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
     rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
   have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   -- After the text is absorbed.
-  have mid : WP isa (textAbs v.callees) s₃ fun s₄ => Env Ctx St W SP s₄ ∧ Kept k s₄ ∧
+  have mid : WP isa (textAbs v.callees) s₃ fun s₄ => Env Wn Ctx St W SP s₄ ∧ Kept k s₄ ∧
       s₄.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧ Frame (tFrame St W 16 ++ absFrame St W 16) s.mem s₄.mem ∧
       s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
@@ -465,7 +466,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
       rw [hn0] at this
       exact this
     · have hn0 : n ≠ 0 := by simpa using hf
-      have hA : AbsIn Ctx St W SP k H (xf a c n) D n (P % 16) s₃ :=
+      have hA : AbsIn Wn Ctx St W SP k H (xf a c n) D n (P % 16) s₃ :=
         ⟨he₃, hk₃, x23₃, x24₃, x25₃, by rw [xf_len hn0, h.hc], hd₃.ok, by rw [m₃, hH₂]⟩
       refine WP.mono (WP.with_rdwr (absorb_ok L (.inr rfl) v hA)) fun s₄ ⟨h₄, rd₄, wr₄⟩ =>
         ⟨h₄.env, h₄.kept, h₄.x25,

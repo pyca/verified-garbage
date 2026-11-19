@@ -59,6 +59,11 @@ structure Ctr32Impl where
   toOk : ∀ s, Proof.Aes.ctr32ToAArch64.pre s →
     ∃ t s', Exec isa to.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToAArch64.post s s'
   toCt : ConstantTime isa Proof.Aes.ctr32ToAArch64.pre Proof.Aes.ctr32ToAArch64.pub to.code
+  /-- `toOk` and `toCt` with `scratch` bytes of `scratch`, as `okW` and `ctW`. -/
+  toOkW : ∀ s, (Proof.Aes.ctr32ToAArch64With scratch).pre s →
+    ∃ t s', Exec isa to.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.ctr32ToAArch64With scratch).post s s'
+  toCtW : ConstantTime isa (Proof.Aes.ctr32ToAArch64With scratch).pre (Proof.Aes.ctr32ToAArch64With scratch).pub
+    to.code
   toKeepsV : to.code.allInstrs AArch64.keepsV = true
   /-- What the names of its callers' instances end with (e.g. `_aes`;
   nothing for the baseline implementation). -/
@@ -96,6 +101,8 @@ def scalar : Ctr32Impl where
   toNoFrames := by lit_decide
   toOk := OneBlock.ctr32ToN_correct
   toCt := OneBlock.ctr32ToN_ct
+  toOkW := by rw [Proof.Aes.ctr32ToAArch64With_2048]; exact OneBlock.ctr32ToN_correct
+  toCtW := by rw [Proof.Aes.ctr32ToAArch64With_2048]; exact OneBlock.ctr32ToN_ct
   toKeepsV := by lit_decide
   suffix := ""
   features := []
@@ -124,6 +131,8 @@ def aese : Ctr32Impl where
   toNoFrames := by lit_decide
   toOk := Aese.ctr32To_correct
   toCt := Aese.ctr32To_ct
+  toOkW := Aese.ctr32To_correctW 0
+  toCtW := Aese.ctr32To_ctW 0
   toKeepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]

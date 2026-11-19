@@ -35,20 +35,20 @@ theorem rounds_of_len {L : Nat} (hL : L = 16 ∨ L = 24 ∨ L = 32) :
 
 /-- Key setup up to the hash subkey, with a context of `cl` bytes, then `fin`
 from a state with the key context written and our caller's registers saved. -/
-theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl) {s : State}
+theorem initWith_wp {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl) {s : State}
     {K Ctx W : Addr} {L : Nat} (hK : s.gpr .x0 = K) (hLn : (s.gpr .x1).toNat = L) (hCtx : s.gpr .x2 = Ctx)
-    (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩]) (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, 2560⟩])
-    (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩) (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, 2560⟩)
-    (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, 2560⟩) (wc : Ctx.toNat + 256 ≤ 2 ^ 64)
+    (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩]) (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, Wn⟩])
+    (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩) (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, Wn⟩)
+    (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, Wn⟩) (wc : Ctx.toNat + 256 ≤ 2 ^ 64)
     (hL : L = 16 ∨ L = 24 ∨ L = 32) {Q : State → Prop}
     (hfin : ∀ s₅ : State, s₅.gpr .x19 = W → s₅.gpr .x21 = Ctx → s₅.sp = s.sp → s₅.rd = s.rd →
       s₅.wr = s.wr → SavedAt s₅.mem W s → KeyRepr s₅.mem Ctx (bytesAt s.mem K L) → WP isa fin s₅ Q) :
     WP isa (initWith v.callees fin) s Q := by
-  obtain pW : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain pW : Covers [⟨W, Wn⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
   obtain pC : Covers [⟨Ctx, 256⟩] s.wr := by
     rw [hwr]; exact covers_prefix (covers_of_mem (by simp)) hcl
   replace d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, 256⟩ := d_kc.sub_right (Region.sub_prefix hcl)
-  replace d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩ := d_cs.sub_left (Region.sub_prefix hcl)
+  replace d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩ := d_cs.sub_left (Region.sub_prefix hcl)
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x3 hW pW
   obtain hsi : s.gpr .x1 = BitVec.ofNat 64 L := by rw [← hLn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   obtain ⟨s₂, run₂, x19₂, x21₂, x22₂, x3₂, x0₂, x1₂, x2₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
@@ -89,8 +89,8 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
   obtain wr₃ : s₃.wr = s.wr := g.wr.trans wr₂'
   obtain w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
   obtain w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
-  obtain w₃ := in_off pW (show 96 + 8 ≤ 2560 by decide) (by decide)
-  obtain w₄ := in_off pW (show 104 + 8 ≤ 2560 by decide) (by decide)
+  obtain w₃ := in_off pW (show 96 + 8 ≤ 512 by decide) (by decide)
+  obtain w₄ := in_off pW (show 104 + 8 ≤ 512 by decide) (by decide)
   rw [← wr₃] at w₁ w₂ w₃ w₄
   obtain ⟨s₄, run₄, hm₄, x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, og₄, sp₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa initSeg2 s₃ = some s₄ ∧
       s₄.mem = (((s₃.mem.writeW (Ctx + BitVec.ofNat 64 240) (0 : BitVec 64)).writeW
@@ -112,7 +112,7 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
   refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
   obtain rd₄' : s₄.rd = s.rd := rd₄.trans rd₃
   obtain wr₄' : s₄.wr = s.wr := wr₄.trans wr₃
-  obtain dCW : ∀ d n, d + n ≤ 256 → ∀ e k, e + k ≤ 2560 →
+  obtain dCW : ∀ d n, d + n ≤ 256 → ∀ e k, e + k ≤ Wn →
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub he)
   obtain dK0 : (⟨Ctx, 240⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
@@ -143,15 +143,15 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
         simp only [List.mem_singleton] at hr; subst hr; exact d_ks.sub_right (Lay.wSub (by decide)))
         (by rcases hL with rfl | rfl | rfl <;> decide)]
   obtain pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄']; exact pC
-  obtain pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [wr₄']; exact pW
+  obtain pW' : Covers [⟨W, Wn⟩] s₄.wr := by rw [wr₄']; exact pW
   obtain cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 := by
     refine ⟨x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, hR', ?_, by decide, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
     · simpa using dCW 0 240 (by decide) 96 16 (by decide)
-    · simpa using dCW 0 240 (by decide) 512 2048 (by decide)
+    · simpa using dCW 0 240 (by decide) 512 (Wn - 512) (by decide)
     · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
     · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
-    · exact dCW 240 16 (by decide) 512 2048 (by decide)
+    · exact dCW 240 16 (by decide) 512 (Wn - 512) (by decide)
     · exact covers_cons (covers_left (covers_prefix pC' (by decide))) (covers_cons
         (covers_left (covers_off pW' (by decide) (by decide))) (covers_cons
         (covers_left (covers_off pC' (by decide) (by decide))) (covers_left (covers_off pW' (by decide) (by decide)))))
@@ -175,7 +175,7 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
     · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
   obtain dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩,
-      ⟨W + BitVec.ofNat 64 512, 2048⟩], (savedR W).Disjoint r := by
+      ⟨W + BitVec.ofNat 64 512, Wn - 512⟩], (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -204,7 +204,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, ws, hL⟩ := hp
   refine initWith_wp v _ (Nat.le_refl _) rfl rfl rfl rfl hrd hwr d_kc d_ks d_cs wc hL
     fun s₅ c19 _ csp crd cwr hsv hk => ?_
-  obtain pW : Covers [⟨s.gpr .x3, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain pW : Covers [⟨s.gpr .x3, Wn⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
   refine WP.mono (exit_ok c19 csp (by rw [crd, cwr]; exact covers_left pW) hsv) fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
   rw [hm]; exact hk
 
