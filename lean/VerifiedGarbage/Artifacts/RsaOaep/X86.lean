@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaOaep.X86.Scrub
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.X86.Print
@@ -16,19 +17,11 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 
-open VG.Proof.RsaOaep.X86 (OK enc_ok)
-open VG.Proof.HashTable.X86 (vars tables)
+open VG.Proof.RsaOaep.X86 (OK)
+open VG.Proof.RsaOaep.X86.Scrub (allVars encryptReg)
 
-def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
-    List Artifact :=
-  if h : OK (vars vs1 vs256) then [
-    Spec.RsaOaep.encryptMdTablesApi.artifact X86.target {
-      suffix := qualifiedName "" []
-      tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
-      code := Proof.RsaOaep.X86.Enc.encryptCode (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := .unscrubbed (enc_ok _ h)
-      spSafe := Proof.RsaOaep.X86.Enc.code_sp Proof.RsaPkcs1Sig.X86.Ver.baseline }]
-  else []
+def artifacts : List Artifact :=
+  if h : OK allVars then [Spec.RsaOaep.encryptMdTablesApi.artifact X86.target (encryptReg h)] else []
 
 end VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 
@@ -55,7 +48,7 @@ end VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256
 namespace VG.Artifacts.RsaOaep.X86
 
 def artifacts : List Artifact :=
-  AllSha1AllSha256.artifacts VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants ++
+  AllSha1AllSha256.artifacts ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants)
 
 end VG.Artifacts.RsaOaep.X86

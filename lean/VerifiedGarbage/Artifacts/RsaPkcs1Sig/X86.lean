@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Scrub
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -150,17 +151,10 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 @[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Sig.X86
-open VG.Proof.RsaPkcs1Sig.X86.Ver
 
 def direct : List Artifact := [
-  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact VG.X86.target {
-    code := Impl.RsaPkcs1Sig.X86.Verify.code baseline.name baseline.code
-    verified := .unscrubbed (verify_verified baseline)
-    spSafe := code_sp baseline },
-  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact VG.X86.target {
-    code := Impl.RsaPkcs1Sig.X86.Recover.code baseline.name baseline.code
-    verified := .unscrubbed (Proof.RsaPkcs1Sig.X86.Rcv.recover_verified baseline)
-    spSafe := Proof.RsaPkcs1Sig.X86.Rcv.code_sp baseline }]
+  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact VG.X86.target Proof.RsaPkcs1Sig.X86.Scrub.verifyPrecomputedReg,
+  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact VG.X86.target Proof.RsaPkcs1Sig.X86.Scrub.recoverPrecomputedReg]
 
 end VG.Artifacts.RsaPkcs1Sig.X86
 
