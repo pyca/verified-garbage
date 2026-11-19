@@ -52,7 +52,7 @@ theorem openRunWithS_postX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof
       s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR Wn W, ⟨O, n⟩] s₀.mem s'.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem)
-    (htb : TbForO Wn tb Ctx W SP O n s₀) :
+    (htb : TbForO Wn tb Ctx W SP O n s₀) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Stitch.openRunWithSG v.callees to tb cl) t fun u =>
       OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl (bytesAt s₀.mem D n)
         (fun m => bytesAt m O n = cond to (List.replicate n 0) (bytesAt s₀.mem D n)) s₀ u ∧ I u.mem := by
