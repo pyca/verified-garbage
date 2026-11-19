@@ -507,9 +507,6 @@ powerpc64le vg_aes_gcm_stream_encrypt
 powerpc64le vg_aes_gcm_stream_finish
 powerpc64le vg_aes_gcm_stream_init
 powerpc64le vg_aes_gcm_stream_verify
-powerpc64le vg_aes_ocb_init
-powerpc64le vg_aes_ocb_open
-powerpc64le vg_aes_ocb_seal
 powerpc64le vg_aes_siv_decrypt
 powerpc64le vg_aes_siv_encrypt
 powerpc64le vg_aes_siv_init
@@ -527,15 +524,6 @@ powerpc64le vg_ed448_public_key
 powerpc64le vg_ed448_sign_cached
 powerpc64le vg_ed448_verify
 powerpc64le vg_scrypt
-powerpc64le vg_sm4_gcm_init
-powerpc64le vg_sm4_gcm_open
-powerpc64le vg_sm4_gcm_seal
-powerpc64le vg_sm4_gcm_stream_aad
-powerpc64le vg_sm4_gcm_stream_decrypt
-powerpc64le vg_sm4_gcm_stream_encrypt
-powerpc64le vg_sm4_gcm_stream_finish
-powerpc64le vg_sm4_gcm_stream_init
-powerpc64le vg_sm4_gcm_stream_verify
 powerpc64le vg_x25519_base
 powerpc64le vg_x25519_exchange
 powerpc64le vg_x448_base
