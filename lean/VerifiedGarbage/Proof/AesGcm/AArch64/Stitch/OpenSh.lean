@@ -108,7 +108,7 @@ structure ShortMid (Wn : Nat) (to : Bool) (Ctx W SP Np A D O Tg : Addr) (R al n 
   pt : bytesAt u.mem (W + BitVec.ofNat 64 (880 - 16 * ((n + 15) / 16))) n =
     gctr (ctxCiph s₀.mem Ctx R) (inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12))) (bytesAt s₀.mem D n)
   dat : bytesAt u.mem D n = bytesAt s₀.mem D n
-  out : cond to (OutIn Ctx W D O n u) (O = D)
+  out : cond to (OutIn Wn Ctx W D O n u) (O = D)
   ow : DataW Wn Ctx (W + BitVec.ofNat 64 16) W u O n
   sN : u.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
 
@@ -523,11 +523,11 @@ theorem openShortA_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
   obtain wr₁₇' : s₁₇.wr = t.wr := by rw [r₁₇.wr, wr₁₆, wr₁₅, wr₁₄, wr₁₃, wr₁₂, wr₁₁, wr₁₀, wr₉', o.wr₀]
   obtain sN₁₇ : s₁₇.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n := by
     rw [slot_kept Ff (slots_fastFrameP W) (by decide) (by decide), o.sN]
-  obtain out₁₇ : cond to (OutIn Ctx W D O n s₁₇) (O = D) := by
+  obtain out₁₇ : cond to (OutIn Wn Ctx W D O n s₁₇) (O = D) := by
     cases to with
     | false => exact o.out
     | true =>
-      exact OutIn.of_eq (o.out : OutIn Ctx W D O n t) rd₁₇' wr₁₇'
+      exact OutIn.of_eq (o.out : OutIn Wn Ctx W D O n t) rd₁₇' wr₁₇'
         (Ff.readW (r := ⟨W + BitVec.ofNat 64 320, 8⟩) (Region.contains_self _ _) (dst_fastFrameP W) (by decide))
   exact ⟨he₁₇, sv₁₇, by rw [r₁₇.rd, rd₁₆, rd₁₅, rd₁₄, rd₁₃, rd₁₂, rd₁₁, rd₁₀, rd₉'],
     by rw [r₁₇.wr, wr₁₆, wr₁₅, wr₁₄, wr₁₃, wr₁₂, wr₁₁, wr₁₀, wr₉'], x24₁₇,
@@ -597,7 +597,7 @@ theorem openShortB_ok {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al
       subst e
       exact WP.block_nil (fin u he₁₇ sv₁₇ (fun h => absurd h hne) fun _ => ⟨by rw [x24₁₇]; simp [hne], dat₁₇⟩)
     | true =>
-      have ou : OutIn Ctx W D O n u := out₁₇
+      have ou : OutIn Wn Ctx W D O n u := out₁₇
       refine WP.mono (wipeTo_ok he₁₇ ou.sO sN₁₇ ou.dw) fun s' ⟨z, f, g, sp, rd, wr⟩ => ?_
       refine fin s' (he₁₇.keep (fun r hr => g r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -630,7 +630,7 @@ theorem openShortB_ok {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al
         exact ⟨by simp [gpr_write, g₂' .x27 (by decide), x27₁₇, e], by simp [gpr_write, g₂' .x26 (by decide), x26₁₇],
           ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
       | true =>
-        have ou : OutIn Ctx W D O n u := out₁₇
+        have ou : OutIn Wn Ctx W D O n u := out₁₇
         obtain q₃ := he₂.perm.wR (show 320 + 8 ≤ 512 by decide)
         obtain e₃ : t₂.mem.read (W + 320#64) 8 = O := by
           rw [show t₂.mem.read (W + 320#64) 8 = t₂.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, m₂', ou.sO]

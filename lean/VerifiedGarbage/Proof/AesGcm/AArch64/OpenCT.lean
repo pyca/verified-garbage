@@ -96,8 +96,8 @@ theorem omA_rel {Wn : Nat} (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Add
   have hal := o₁.aad.lt
   obtain hn := (dataOk_of o₁.dat).lt
   obtain sl := slots_omFrame L o₁.ddW
-  obtain mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame W) → ∀ {m m' : Mem}, Frame rs m m' →
-      Frame (omFrame W) m m' := fun hs _ _ hf => hf.mono hs
+  obtain mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame Wn W) → ∀ {m m' : Mem}, Frame rs m m' →
+      Frame (omFrame Wn W) m m' := fun hs _ _ hf => hf.mono hs
   unfold omA
   refine front_rel L v o₁.front o₂.front fun u₁ u₂ p₁ p₂ => ?_
   obtain mkB : ∀ {s t u : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s t →
@@ -110,10 +110,10 @@ theorem omA_rel {Wn : Nat} (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Add
   obtain B₂ := mkB o₂ p₂
   refine rel_seq (decAbs_relG L v B₁ B₂ rfl) (decAbs_ok L v B₁) (decAbs_ok L v B₂)
     fun w₁ w₂ ⟨e₁, kk₁, _, fr₁, _, _, _⟩ ⟨e₂, kk₂, _, fr₂, _, _, _⟩ => ?_
-  obtain F₁ : Frame (omFrame W) t₁.mem w₁.mem :=
+  obtain F₁ : Frame (omFrame Wn W) t₁.mem w₁.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₁.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₁)
-  obtain F₂ : Frame (omFrame W) t₂.mem w₂.mem :=
+  obtain F₂ : Frame (omFrame Wn W) t₂.mem w₂.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₂.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₂)
   refine rel_seq (rel_taint [.x19] (by rw [e₁.sp, e₂.sp]) (by agree_tac [e₁.x19, e₂.x19]) ⟨_, by taint_decide⟩)
@@ -131,9 +131,9 @@ theorem omA_rel {Wn : Nat} (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Add
     (finBody_env v L (.inr rfl) (e₁.of_regs r₁) (fun _ _ => rfl) y22₁ o₁.rounds x26₁ x27₁ hn)
     (finBody_env v L (.inr rfl) (e₂.of_regs r₂) (fun _ _ => rfl) y22₂ o₂.rounds x26₂ x27₂ hn)
     fun g₁ g₂ ⟨ge₁, _, gf₁⟩ ⟨ge₂, _, gf₂⟩ => ?_
-  obtain G₁ : Frame (omFrame W) t₁.mem g₁.mem :=
+  obtain G₁ : Frame (omFrame Wn W) t₁.mem g₁.mem :=
     F₁.trans (by rw [r₁.mem] at gf₁; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₁)
-  obtain G₂ : Frame (omFrame W) t₂.mem g₂.mem :=
+  obtain G₂ : Frame (omFrame Wn W) t₂.mem g₂.mem :=
     F₂.trans (by rw [r₂.mem] at gf₂; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₂)
   refine rel_seq (rel_taint [.x19] (by rw [ge₁.sp, ge₂.sp]) (by agree_tac [ge₁.x19, ge₂.x19]) ⟨_, by taint_decide⟩)
     (ldr28_ok (V := BitVec.ofNat 64 tl) ge₁ (by rw [slot_kept G₁ sl (by decide) (by decide), o₁.sT]))
@@ -228,7 +228,7 @@ theorem omBG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr}
 theorem omB_relD {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
+    (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
@@ -240,7 +240,7 @@ theorem omB_rel {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl 
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR Wn W))
-    (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
+    (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
     (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT :=
   omB_relD v L hR mo₁ mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW) hx
@@ -314,12 +314,12 @@ theorem openRestWithFl_rel {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W SP Np
 two runs (`hm`). -/
 theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State} {C₁ C₂ : List Byte}
     {F₁ F₂ : Mem → Prop}
-    (o₁ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+    (o₁ : OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁)
-    (o₂ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+    (o₂ : OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₂ s₂)
     (x12₁ : s₁.gpr .x12 = stackArg σ₁ 0) (x12₂ : s₂.gpr .x12 = stackArg σ₁ 0) (hF₁ : F₁ s₁.mem) (hF₂ : F₂ s₂.mem)
-    (hm₁ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm₁ : ∀ {t : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -327,7 +327,7 @@ theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ 
       WP isa m t (OpenPostG Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat C₁ F₁ σ₁))
-    (hm₂ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm₂ : ∀ {t : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -335,10 +335,10 @@ theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ 
       WP isa m t (OpenPostG Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat C₂ F₂ σ₂))
-    (hm : ∀ {t₁ t₂ : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm : ∀ {t₁ t₂ : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁ t₁ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂ t₂ →
       bytesAt t₁.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -355,12 +355,12 @@ theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ 
 
 /-- `openRestWithG_rel`, in place. -/
 theorem openRestWith_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s₂ : State}
-    (o₁ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+    (o₁ : OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁)
-    (o₂ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+    (o₂ : OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
       (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₂ s₂)
     (x12₁ : s₁.gpr .x12 = stackArg σ₁ 0) (x12₂ : s₂.gpr .x12 = stackArg σ₁ 0)
-    (hm₁ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm₁ : ∀ {t : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -368,7 +368,7 @@ theorem openRestWith_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s
       WP isa m t (OpenPost Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁))
-    (hm₂ : ∀ {t : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm₂ : ∀ {t : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂ t →
       bytesAt t.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -376,10 +376,10 @@ theorem openRestWith_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s
       WP isa m t (OpenPost Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂))
-    (hm : ∀ {t₁ t₂ : State}, OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+    (hm : ∀ {t₁ t₂ : State}, OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₁ t₁ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6)
         (stackArg σ₁ 0) (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat
         (stackArg σ₁ 1).toNat σ₂ t₂ →
       bytesAt t₁.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₁.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
@@ -418,7 +418,7 @@ theorem openMainG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP Np A D O Tg
 
 /-- `openMain` in two runs, after `tagIn`, whose tags compare alike. -/
 theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {σ₁ σ₂ t₁ t₂ : State}
-    (p₁ : OpenIn Ctx W SP Np A D Tg R nl al n tl σ₁ t₁) (p₂ : OpenIn Ctx W SP Np A D Tg R nl al n tl σ₂ t₂)
+    (p₁ : OpenIn Wn Ctx W SP Np A D Tg R nl al n tl σ₁ t₁) (p₂ : OpenIn Wn Ctx W SP Np A D Tg R nl al n tl σ₂ t₂)
     (rt₁ : bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl) (rt₂ : bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true)
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem Ctx R) (ctxH σ₁.mem Ctx) tl (bytesAt σ₁.mem Np nl)
@@ -435,9 +435,9 @@ whose tags compare alike. -/
 theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State → Prop}
     {extra extraW : State → List Region} (hpre : ∀ s, pre s → openPreXW (Wn := Wn) w (extra s) s (extraW s))
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₂ s₂ →
       s₁.gpr .x12 = stackArg σ₁ 0 → s₂.gpr .x12 = stackArg σ₁ 0 →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = σ₁.gpr r) →
@@ -510,9 +510,9 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
 theorem open_ct_of {Wn : Nat} {X : Prog isa} {pre : State → Prop} {extra : State → List Region}
     (hpre : ∀ s, pre s → openPreX (Wn := Wn) (extra s) s)
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub 3 σ₁ σ₂ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁ →
-      OpenIn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
+      OpenIn Wn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₂ s₂ →
       s₁.gpr .x12 = stackArg σ₁ 0 → s₂.gpr .x12 = stackArg σ₁ 0 →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = σ₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₂.gpr r = σ₁.gpr r) →

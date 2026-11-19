@@ -85,7 +85,7 @@ theorem openDec_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
   obtain hmode : cond to (s₂c.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D) := by
     cases to
     · exact o.out
-    · exact ⟨x15₂c, (o.out : OutIn Ctx W D O n t).dd⟩
+    · exact ⟨x15₂c, (o.out : OutIn Wn Ctx W D O n t).dd⟩
   refine ⟨⟨he₂c, by rw [g₂c _ (by decide), h₂.x22, o.x22], o.rounds, by rw [g₂c _ (by decide), h₂.x23],
     by rw [g₂c _ (by decide), h₂.x26], (dataOk_of o.dat).of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr]),
     o.outW.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr]), hmode, hH₂c,
@@ -240,7 +240,7 @@ theorem openRunAS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
           · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)
           · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
           · exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)) (by decide)]
-      exact (o.out : OutIn Ctx W D O n t).sO
+      exact (o.out : OutIn Wn Ctx W D O n t).sO
   obtain ⟨s₂c, run₂c, fcb, g₂c, x15₂c, sp₂c, rd₂c, wr₂c, -⟩ := decPre_ok (to := to) (O := O) h₂.env h₂.cb
     (sOf o₁ h₂.frame)
   obtain ⟨u₂c, run₂c', fcb', g₂c', x15₂c', sp₂c', rd₂c', wr₂c', -⟩ := decPre_ok (to := to) (O := O) k₂.env k₂.cb
@@ -369,7 +369,7 @@ theorem okCrG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State} (hR 
     · have e : O = D := mo.out
       subst e
       rfl
-    · have ou : OutIn Ctx W D O n s₇ := mo.out
+    · have ou : OutIn Wn Ctx W D O n s₇ := mo.out
       exact OutAt.mkTo ((ou.dw.drop hPn).of_eq r₈.rd r₈.wr) ((ou.dd.sub_left (subR D)).sub_right (subR O))
         (by rw [show s₈.gpr .x26 = O + BitVec.ofNat 64 P from x26₈, BitVec.add_zero])
   · intro hto
@@ -401,7 +401,7 @@ theorem omBS_rel {Wn : Nat} (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVe
           fun _ h => absurd hP16 h) fun s₉ h₉ =>
           ⟨h₉.env.sp, by rw [h₉.kept .x27 (by decide), k27]⟩⟩)
       | true =>
-        have ou : OutIn Ctx W D O n m := mo.out
+        have ou : OutIn Wn Ctx W D O n m := mo.out
         exact WP.mono (wipeTo_ok mo.env ou.sO mo.sN ou.dw) fun s₉ ⟨_, _, g, sp, _, _⟩ =>
           ⟨sp.trans mo.env.sp, g _ (by decide) (by decide) (by decide)⟩
     · obtain ⟨s₈, run₈, hc, k27, k26, kw⟩ := okCrG_ok to hR mo
@@ -438,8 +438,8 @@ theorem omBS_rel {Wn : Nat} (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVe
       subst e₁ e₂
       exact cryptAlT_rel L v hc₁ hc₂ rfl (by rw [k₁, k₂])
     | true =>
-      have ou₁ : OutIn Ctx W D O n m₁ := mo₁.out
-      have ou₂ : OutIn Ctx W D O n m₂ := mo₂.out
+      have ou₁ : OutIn Wn Ctx W D O n m₁ := mo₁.out
+      have ou₂ : OutIn Wn Ctx W D O n m₂ := mo₂.out
       exact wipeTo_rel mo₁.env mo₂.env ou₁.sO ou₂.sO mo₁.sN mo₂.sN
   · obtain ⟨s₈, run₈, hc₁, -, k₁, -⟩ := okCrG_ok to hR mo₁
     obtain ⟨t₈, run₈', hc₂, -, k₂, -⟩ := okCrG_ok to hR mo₂

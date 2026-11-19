@@ -102,8 +102,8 @@ theorem failTo_rel {Wn : Nat} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
     fun u₁ u₂ r₁ r₂ => ?_
   have q₁ := o₁.of_regs r₁
   have q₂ := o₂.of_regs r₂
-  have ou₁ : OutIn Ctx W D O n u₁ := q₁.out
-  have ou₂ : OutIn Ctx W D O n u₂ := q₂.out
+  have ou₁ : OutIn Wn Ctx W D O n u₁ := q₁.out
+  have ou₂ : OutIn Wn Ctx W D O n u₂ := q₂.out
   exact wipeTo_rel q₁.env q₂.env ou₁.sO ou₂.sO q₁.sN q₂.sN
 
 /-- `vg_aes_gcm_open_to` (`openG c true w`, with `work` the stack argument

@@ -130,7 +130,7 @@ structure MidSG (Wn : Nat) (to : Bool) (fr : List Region) (Ctx W SP D O Np A : A
   cbs : cond to True (blockAt s₇.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.cbO) =
     inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)))
   ciph : ciphOf s₇.mem Ctx R = ciphOf s.mem Ctx R
-  out : cond to (OutIn Ctx W D O n s₇) (O = D)
+  out : cond to (OutIn Wn Ctx W D O n s₇) (O = D)
 
 theorem MidSG.dataOk {Wn : Nat} {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
     {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
@@ -221,7 +221,7 @@ theorem okArgsG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State}
     · show _ = _
       simp [gpr_write, e₂]
   | true =>
-    have ou : OutIn Ctx W D O n s₇ := mo.out
+    have ou : OutIn Wn Ctx W D O n s₇ := mo.out
     obtain e₃ : s₇.mem.read (W + 320#64) 8 = O := by
       rw [show s₇.mem.read (W + 320#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 320) 64 from rfl, ou.sO]
     refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, he.x19, q₁, q₂, q₃, dstO, Bool.cond_true], ?_⟩
@@ -289,7 +289,7 @@ theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ 
       subst hB
       cases to with
       | true =>
-        have ou : OutIn Ctx W D O n s₇ := mo.out
+        have ou : OutIn Wn Ctx W D O n s₇ := mo.out
         refine WP.mono (wipeTo_ok mo.env ou.sO mo.sN ou.dw) fun s₉ ⟨z, f, g, sp, rd, wr⟩ =>
           ⟨mo.env.keep (fun r hr => g r (by
               simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -384,7 +384,7 @@ theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ 
         · rw [← r₈.mem]; exact h₉.frame.sub (crSub (subR O))
         · rw [hfin h₉.frame (h₉.out hctr)]; rfl
       | true =>
-        have ou : OutIn Ctx W D O n s₇ := mo.out
+        have ou : OutIn Wn Ctx W D O n s₇ := mo.out
         have x26t : s₈.gpr .x26 = O + BitVec.ofNat 64 P := x26₈
         obtain hCr : CrInG Wn true Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (D + BitVec.ofNat 64 P)
             (O + BitVec.ofNat 64 P) (n - P) s₈ :=
@@ -472,7 +472,7 @@ among it; out of place it writes `fastFrameP`, outside of where `open_to`
 keeps `dst`. -/
 
 /-- What the path writes in the working space. -/
-abbrev sfr (to : Bool) (W : Addr) : List Region := cond to (fastFrameP Wn W) (fastFrame W)
+abbrev sfr (to : Bool) (W : Addr) : List Region := cond to (fastFrameP Wn W) (fastFrame Wn W)
 
 /-- What `decPre` writes: in place the first counter block, out of place nothing. -/
 abbrev cbF (to : Bool) (W : Addr) : List Region :=
@@ -510,7 +510,7 @@ theorem slots_sfr (to : Bool) (W : Addr) : ∀ r ∈ sfr to W, (⟨W + BitVec.of
   · exact slots_fastFrameP W
 
 theorem sfr_sub {to : Bool} {W : Addr} {ex : List Region} :
-    ∀ r ∈ sfr to W ++ ex, ∃ r' ∈ fastFrame W ++ ex, Region.Sub r r' := by
+    ∀ r ∈ sfr to W ++ ex, ∃ r' ∈ fastFrame Wn W ++ ex, Region.Sub r r' := by
   cases to
   · exact fun r hr => ⟨r, hr, fun _ h => h⟩
   · exact fastFrameP_sub
@@ -593,7 +593,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
         Frame [Stitch.tblR W] u.mem t'.mem ∧ (∀ r, r ≠ .x5 → t'.gpr r = u.gpr r) ∧
         t'.sp = u.sp ∧ t'.rd = u.rd ∧ t'.wr = u.wr) :
     WP isa (openRunAS v.callees cl tb to) t fun u =>
-      MidSG Wn to (⟨O, n⟩ :: (fastFrame W ++ ex)) Ctx W SP D O Np A R 12 al n tl (Stitch.pre n)
+      MidSG Wn to (⟨O, n⟩ :: (fastFrame Wn W ++ ex)) Ctx W SP D O Np A R 12 al n tl (Stitch.pre n)
         (bytesAt t.mem D (Stitch.pre n)) (bytesAt t.mem (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n)) t u ∧
         I u.mem := by
   have L := o.lay
@@ -640,7 +640,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
     | true =>
       show _ = _
       rw [Fa.readW (r := ⟨W + BitVec.ofNat 64 320, 8⟩) (Region.contains_self _ _) (dst_fastFrameP W) (by decide)]
-      exact (o.out : OutIn Ctx W D O n t).sO)
+      exact (o.out : OutIn Wn Ctx W D O n t).sO)
   refine WP.of_runBlock ⟨s₂c, run₂c, ?_⟩
   obtain he₂c : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂c := he₂.keep (fun r hr => g₂c r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -660,7 +660,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
   obtain hmode : cond to (s₂c.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D) := by
     cases to
     · exact o.out
-    · exact ⟨x15₂c, (o.out : OutIn Ctx W D O n t).dd⟩
+    · exact ⟨x15₂c, (o.out : OutIn Wn Ctx W D O n t).dd⟩
   obtain hsrc₂c : DataOk Wn (W + BitVec.ofNat 64 16) W s₂c D n := hdk.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
   obtain hout₂c : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₂c O n := ow.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
   refine WP.seq (WP.mono (Stitch.stitchDM_ok L gh hTb ⟨he₂c, by rw [g₂c _ (by decide), h₂.x22, o.x22], hRb,
@@ -694,7 +694,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
         rw [← hD', hP]
         exact (Offset.base_disjoint O (Nat.le_refl _) (by omega_arith)).symm
       · rw [hP]
-        exact ((o.out : OutIn Ctx W D O n t).dd.sub_left hsubD).sub_right (Region.sub_prefix hPn)
+        exact ((o.out : OutIn Wn Ctx W D O n t).dd.sub_left hsubD).sub_right (Region.sub_prefix hPn)
     · exact (ddW.sub_left hsubD).sub_right (Lay.wSub (by decide))
   -- The rest's whole blocks, by `gh`.
   rw [WP.seq_iff, WP.block_append_iff]
@@ -1114,11 +1114,11 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
     rw [r₂₀.rd, rd₁₉, rd₁₇, rd₁₆, o₁₄.rd, o₁₃.rd, rd₁₂, rd₁₁, rd₁₀, r₃.rd, hm₂.rd, rd₂c, h₂.rd]
   obtain wr₂₀ : s₂₀.wr = t.wr := by
     rw [r₂₀.wr, wr₁₉, wr₁₇, wr₁₆, o₁₄.wr, o₁₃.wr, wr₁₂, wr₁₁, wr₁₀, r₃.wr, hm₂.wr, wr₂c, h₂.wr]
-  obtain hout : cond to (OutIn Ctx W D O n s₂₀) (O = D) := by
+  obtain hout : cond to (OutIn Wn Ctx W D O n s₂₀) (O = D) := by
     cases to with
     | false => exact o.out
     | true =>
-      have ou : OutIn Ctx W D O n t := o.out
+      have ou : OutIn Wn Ctx W D O n t := o.out
       refine OutIn.of_eq ou rd₂₀ wr₂₀ (F₂₀.readW (r := ⟨W + BitVec.ofNat 64 320, 8⟩) (Region.contains_self _ _)
         (fun r hr => ?_) (by decide))
       rcases List.mem_cons.mp hr with rfl | hr

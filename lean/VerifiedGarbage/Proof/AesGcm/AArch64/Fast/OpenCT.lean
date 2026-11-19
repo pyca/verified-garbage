@@ -83,7 +83,7 @@ open VG.Spec.Gcm (Block blockAt zeros padLen ctxH ctxCiph)
 theorem omB_relDT {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s' m₁ m₂ : State}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo₁ : MidO fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A R nl al n tl s' m₂)
+    (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
     (x26₁ : m₁.gpr .x26 = BitVec.ofNat 64 n) (x26₂ : m₂.gpr .x26 = BitVec.ofNat 64 n)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
@@ -92,7 +92,7 @@ theorem omB_relDT {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n t
   unfold omBWith
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  have hcr : ∀ {m : State} {σ : State} (mo : MidO fr Ctx W SP D Np A R nl al n tl σ m),
+  have hcr : ∀ {m : State} {σ : State} (mo : MidO Wn fr Ctx W SP D Np A R nl al n tl σ m),
       m.gpr .x26 = BitVec.ofNat 64 n → ∀ {s₈ : State}, CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D n s₈ →
       s₈.gpr .x26 = m.gpr .x26 → s₈.wr = m.wr → ∀ icb, WP isa (Impl.AesGcm.AArch64.Tail.cryptAlT v.callees) s₈
         (CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D n s₈.mem) :=
@@ -322,7 +322,7 @@ working space and the text. -/
 theorem openRunWith_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {nl : Nat} {s₀₁ s₀₂ t₁ t₂ : State}
     {ex : List Region} (hexW : ∀ r ∈ ex, (workR Wn W).Disjoint r) (hexD : ∀ r ∈ ex, (⟨D, n⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (o₁ : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀₁ t₁) (o₂ : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀₂ t₂)
+    (o₁ : OpenIn Wn Ctx W SP Np A D Tg R nl al n tl s₀₁ t₁) (o₂ : OpenIn Wn Ctx W SP Np A D Tg R nl al n tl s₀₂ t₂)
     (h12 : nl = 12)
     (hx₁ : t₁.gpr .x4 = A ∧ t₁.gpr .x5 = BitVec.ofNat 64 al ∧ t₁.gpr .x6 = D ∧ t₁.gpr .x7 = BitVec.ofNat 64 n)
     (hx₂ : t₂.gpr .x4 = A ∧ t₂.gpr .x5 = BitVec.ofNat 64 al ∧ t₂.gpr .x6 = D ∧ t₂.gpr .x7 = BitVec.ofNat 64 n)

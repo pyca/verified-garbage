@@ -79,7 +79,7 @@ theorem openRunWithS_postX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof
     · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩)
   obtain ⟨he₄, x0₄, d₄⟩ := hpost
   have F₄ := (mo.frame.mono fun r hr => List.mem_append_left _ hr).trans
-    (f₈.mono fun r hr => List.mem_append_right (⟨O, n⟩ :: (fastFrame W ++ ex)) hr)
+    (f₈.mono fun r hr => List.mem_append_right (⟨O, n⟩ :: (fastFrame Wn W ++ ex)) hr)
   refine ⟨⟨he₄, o.sv.frame F₄ fun r hr => ?_, ?_⟩, I₄⟩
   · rcases List.mem_append.mp hr with hr | hr
     · rcases List.mem_cons.mp hr with h | hr

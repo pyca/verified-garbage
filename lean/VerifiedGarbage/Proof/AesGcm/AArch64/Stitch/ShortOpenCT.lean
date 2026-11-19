@@ -145,8 +145,8 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
         (by agree_tac [hm₁.env.x19, hm₂.env.x19, hm₁.x24, x24₂, hm₁.x25, hm₂.x25, hm₁.x26, hm₂.x26, hm₁.x27,
           hm₂.x27]) ⟨_, by taint_decide⟩
     | true =>
-      have ou₁ : OutIn Ctx W D O n m₁ := hm₁.out
-      have ou₂ : OutIn Ctx W D O n m₂ := hm₂.out
+      have ou₁ : OutIn Wn Ctx W D O n m₁ := hm₁.out
+      have ou₂ : OutIn Wn Ctx W D O n m₂ := hm₂.out
       obtain hlt : ∀ σ : State, (1 - if tagEqS Ctx Np A D Tg R al n tl σ then 0 else 1 : Nat) < 2 ^ 64 := fun _ => by
         split <;> decide
       obtain tm : ∃ h, (taint.check (Taint.ofRegs [.x24]) (.block [mov .x0 .x24]) h).isSome = true :=
@@ -158,7 +158,7 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
             u'.gpr .x12 = W + BitVec.ofNat 64 (880 - 16 * ((n + 15) / 16)) ∧ u'.gpr .x13 = BitVec.ofNat 64 n ∧
             u'.sp = u.sp ∧ u'.gpr .x24 = u.gpr .x24 ∧ u'.rd = u.rd ∧ u'.wr = u.wr := fun {σ u} hm => by
         have he := hm.env
-        obtain sO : u.mem.readW (W + BitVec.ofNat 64 320) 64 = O := (hm.out : OutIn Ctx W D O n u).sO
+        obtain sO : u.mem.readW (W + BitVec.ofNat 64 320) 64 = O := (hm.out : OutIn Wn Ctx W D O n u).sO
         rw [List.append_assoc, WP.block_append_iff]
         obtain ⟨t₂, run₂, x12t₂, g₂', m₂', _, sp₂', rd₂', wr₂'⟩ := Stitch.atP_ok (c := (n + 15) / 16) .x12
           Impl.AesGcm.AArch64.Stitch.b1O 1 (by decide) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [hhi]) u he.x19
@@ -180,7 +180,7 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
       obtain wpE : ∀ {σ u : State}, ShortMid Wn true Ctx W SP Np A D O Tg R al n tl σ u →
           WP isa (.ite (.zero .x .x24) (wipeG true) (Impl.AesGcm.AArch64.Stitch.plainOutG true)) u
             fun u' => u'.sp = SP ∧ u'.gpr .x24 = u.gpr .x24 := fun {σ u} hm => by
-        have ou : OutIn Ctx W D O n u := hm.out
+        have ou : OutIn Wn Ctx W D O n u := hm.out
         refine WP.ite _ (eval_zero hm.x24 (hlt σ)) (fun _ => ?_) (fun _ => ?_)
         · exact WP.mono (wipeTo_ok hm.env ou.sO hm.sN ou.dw) fun _ ⟨_, _, g, sp, _, _⟩ =>
             ⟨sp.trans hm.env.sp, g _ (by decide) (by decide) (by decide)⟩

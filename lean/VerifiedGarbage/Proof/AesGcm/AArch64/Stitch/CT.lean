@@ -213,10 +213,10 @@ include L
 
 /-- `Mid` after `cryptAl` on part `⟨D₂, n₂⟩` of the text. -/
 theorem Mid.cryptS {H : Block} {R n n₂ P : Nat} {D D₂ Tg X : Addr} {ρ s s' : State} {icb : Block}
-    (h : Mid Ctx W SP H R n D Tg X ρ s) (hsub : Region.Sub ⟨D₂, n₂⟩ ⟨D, n⟩)
+    (h : Mid Wn Ctx W SP H R n D Tg X ρ s) (hsub : Region.Sub ⟨D₂, n₂⟩ ⟨D, n⟩)
     (hd : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s D₂ n₂)
     (o : CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb P D₂ n₂ s.mem s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Wn Ctx W SP H R n D Tg X ρ s' := by
   obtain dWK : ∀ r ∈ crFrame Wn (W + BitVec.ofNat 64 16) W D₂ n₂, (keyR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -371,7 +371,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     (x24 : s₄.gpr .x24 = BitVec.ofNat 64 (n - Stitch.pre n))
     (x25 : s₄.gpr .x25 = BitVec.ofNat 64 (Stitch.pre n % 16))
     (r₄ : Regs [.x9, .x23, .x27, .x24, .x25] s₃ s₄) :
-    Mid Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
+    Mid Wn Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
       CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr R (Stitch.pre n) (D + BitVec.ofNat 64 (Stitch.pre n))
         (n - Stitch.pre n) s₄ := by
   obtain hpn : Stitch.pre n ≤ n := Nat.mul_div_le n 128
@@ -415,7 +415,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
 
 /-- The arguments of the call on the whole blocks of the rest of the ciphertext. -/
 theorem ctCS_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State}
-    (h : Mid Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄)
+    (h : Mid Wn Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄)
     (h25 : s₄.gpr .x25 = BitVec.ofNat 64 0) :
     WP isa (.block (([mov .x23 .x27] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++ ([.sub .x .x24 .x26 .x9] : List Instr) ++ absSeg2 16)) s₄
       (Abs3 Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H [] (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n)
@@ -449,7 +449,7 @@ theorem ctAS_ok (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {k : Reg → BitVe
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb
         Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
         ([.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr))))) s₁
-      fun s₄ => Mid Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
+      fun s₄ => Mid Wn Ctx W SP H R n D Tg (D + BitVec.ofNat 64 (Stitch.pre n)) ρ s₄ ∧
         CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr R (Stitch.pre n) (D + BitVec.ofNat 64 (Stitch.pre n))
           (n - Stitch.pre n) s₄ := by
   have hn := hdat.ok.lt
