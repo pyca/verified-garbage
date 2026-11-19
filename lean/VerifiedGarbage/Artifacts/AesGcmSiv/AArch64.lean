@@ -47,14 +47,10 @@ open VG.Proof.AesGcmSiv.AArch64
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.sealCode v)
-    verified := Proof.AesGcmSiv.seal_keyed (Stitch.sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v) },
-  Spec.GcmSiv.openApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.openCode v)
-    verified := Proof.AesGcmSiv.open_keyed (Stitch.openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v) }]
+  Spec.GcmSiv.sealApi.artifact AArch64.target
+    (Stitch.sealReg Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v),
+  Spec.GcmSiv.openApi.artifact AArch64.target
+    (Stitch.openReg Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v)]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl

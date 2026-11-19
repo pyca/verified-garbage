@@ -47,14 +47,6 @@ aarch64 vg_aes_gcm_seal_with_powers
 aarch64 vg_aes_gcm_seal_with_powers_aes
 aarch64 vg_aes_gcm_seal_with_powers_aes_sha3
 aarch64 vg_aes_gcm_seal_with_powers_neon
-aarch64 vg_aes_gcm_siv_open
-aarch64 vg_aes_gcm_siv_open_aes
-aarch64 vg_aes_gcm_siv_open_aes_sha3
-aarch64 vg_aes_gcm_siv_open_neon
-aarch64 vg_aes_gcm_siv_seal
-aarch64 vg_aes_gcm_siv_seal_aes
-aarch64 vg_aes_gcm_siv_seal_aes_sha3
-aarch64 vg_aes_gcm_siv_seal_neon
 aarch64 vg_aes_gcm_store_powers
 aarch64 vg_aes_gcm_stream_aad
 aarch64 vg_aes_gcm_stream_aad_aes
