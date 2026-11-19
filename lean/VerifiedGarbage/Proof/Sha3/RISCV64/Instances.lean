@@ -179,6 +179,105 @@ theorem update_verified_api {rate : Nat} (hr : rate ∈ rates) :
     Verified RISCV64.target (update rate) (Spec.Sha3.updateContract RISCV64.abi rate 1168) :=
   (update_verified hr).post_mono fun _ _ _ _ _ _ _ _ h => h.1
 
+/-! ## `absorb` -/
+
+/-- `absorb rate`'s contract on RISC-V, with the arguments in registers
+(`state = a0, pos = a1, data = a2, len = a3`): that of `Stream.absorb`
+(`Proof.Sha3.absorbRISCV64`), with the rate `rate`. -/
+def absorbFnRISCV64 (rate : Nat) : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 200⟩
+    let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+    let stack : Region := ⟨s.sp - 1168, 1168⟩
+    s.rd = [data] ∧ s.wr = [state] ∧ data.Disjoint state ∧
+    s.sp.toNat % 16 = 0 ∧ 1168 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint data ∧
+    (s.gpr .a1).toNat < rate
+  post s s' :=
+    (∀ msg, Repr s.mem (s.gpr .a0) rate msg → (s.gpr .a1).toNat = msg.length % rate →
+      Repr s'.mem (s.gpr .a0) rate (msg ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)) ∧
+    (s'.gpr .a0).toNat = ((s.gpr .a1).toNat + (s.gpr .a3).toNat) % rate
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+/-- The state after `absorbArgs rate`. -/
+def absorbState (rate : Nat) (s : State) : State :=
+  (((s.write .a4 (s.gpr .a3)).write .a3 (s.gpr .a2)).write .a2 (s.gpr .a1)).write .a1
+    (BitVec.ofNat 64 rate)
+
+theorem absorbArgs_run {rate : Nat} (hr : rate < 2048) (s : State) :
+    execBlock isa (absorbArgs rate) s = some (absorbState rate s, []) := by
+  simp [absorbArgs, absorbState, execBlock, isa, exec, Impl.Sha3.RISCV64.Stream.mov, addrs, imm12,
+    show (rate : Int) < 2048 by omega_using [hr], State.write]
+
+theorem absorbState_gpr (rate : Nat) (s : State) (r : Reg) :
+    (absorbState rate s).gpr r =
+      if r = .a1 then BitVec.ofNat 64 rate else if r = .a2 then s.gpr .a1
+      else if r = .a3 then s.gpr .a2 else if r = .a4 then s.gpr .a3 else s.gpr r := by
+  simp only [absorbState, State.write]
+
+@[simp] theorem absorbState_mem (rate : Nat) (s : State) : (absorbState rate s).mem = s.mem := rfl
+@[simp] theorem absorbState_rd (rate : Nat) (s : State) : (absorbState rate s).rd = s.rd := rfl
+@[simp] theorem absorbState_wr (rate : Nat) (s : State) : (absorbState rate s).wr = s.wr := rfl
+@[simp] theorem absorbState_sp (rate : Nat) (s : State) : (absorbState rate s).sp = s.sp := rfl
+
+theorem absorbState_keep (rate : Nat) (s : State) {r : Reg} (hr : r ∈ preserved ∨ r = .ra) :
+    (absorbState rate s).gpr r = s.gpr r := by
+  rcases hr with hr | rfl
+  · obtain ⟨h1, h2, h3, h4, -, -⟩ := preserved_ne r hr
+    simp only [absorbState_gpr, h1, h2, h3, h4, ite_false]
+  · simp only [absorbState_gpr]; rfl
+
+/-- A state satisfying `absorbFnRISCV64`'s precondition (with no data). -/
+def absorbFnSat : State :=
+  { Stream.absorbSat with
+    gpr := fun r => match r with | .a0 => 0x1000 | .a2 => 0x2000 | _ => 0 }
+
+theorem absorbFn_verified' {rate : Nat} (hr : rate ∈ rates) :
+    Verified RISCV64.target (absorb rate) (absorbFnRISCV64 rate) := by
+  obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+  refine Verified.of_prologue Stream.absorb_verified' (absorbState rate)
+    (fun s _ => absorbArgs_run (rate_lt hr) s)
+    (fun s hs => ?_) (fun s s' _ ha => ?_) (fun s s' _ hq => ?_) (fun s₁ s₂ _ _ hp => ?_)
+    ⟨absorbFnSat, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), h0⟩
+  · obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := hs
+    simp only [Proof.Sha3.absorbRISCV64, absorbState_gpr, absorbState_rd, absorbState_wr,
+      absorbState_sp, reduceCtorEq, ite_false, ite_true, toNat_rate hr]
+    exact ⟨h1, h2, h3, h4, h5, h6, h7, hr, h8⟩
+  · obtain ⟨h1, h2, h3⟩ := ha
+    exact ⟨fun r hr => by rw [h1 r hr, absorbState_keep _ _ (.inl hr)], h2,
+      by rw [h3, absorbState_keep _ _ (.inr rfl)]⟩
+  · obtain ⟨h1, h2⟩ := hq
+    simp only [absorbState_gpr, absorbState_mem, reduceCtorEq, ite_false, ite_true,
+      toNat_rate hr] at h1 h2
+    exact ⟨h1, h2⟩
+  · obtain ⟨p1, p2, p3, p4, p5⟩ := hp
+    simp only [Proof.Sha3.absorbRISCV64, absorbState_gpr, absorbState_sp, reduceCtorEq, ite_false,
+      ite_true]
+    exact ⟨p1, trivial, p2, p3, p4, p5⟩
+
+theorem absorbFn_verified {rate : Nat} (hr : rate ∈ rates) :
+    Verified RISCV64.target (absorb rate) (Spec.Sha3.absorbContract RISCV64.abi rate 1168) := by
+  obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
+  refine (absorbFn_verified' hr).of_implies
+    { pre := by sig_implies_pre [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
+          Spec.Sha3.absorbPost, absorbFnRISCV64, RISCV64.abi, RISCV64.argRegs]
+      post := by sig_implies_post [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
+          Spec.Sha3.absorbPost, absorbFnRISCV64, RISCV64.abi, RISCV64.argRegs]
+      pub := by sig_implies_pub [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre,
+          Spec.Sha3.absorbPost, absorbFnRISCV64, RISCV64.abi, RISCV64.argRegs]
+      sat := ?_ }
+  refine ⟨absorbFnSat, ?_⟩
+  sig_pre [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost,
+    RISCV64.abi, RISCV64.argRegs, absorbFnSat, Stream.absorbSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact h0
+
 /-! ## SHAKE's `finalize` -/
 
 /-- SHAKE's `finalize`'s contract on RISC-V for `X` (`state = a0, pos = a1`). -/
@@ -856,6 +955,10 @@ theorem update_sha3_224 :
     Verified RISCV64.target (update Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_224.rate 1168) :=
   update_verified_api (by decide)
 
+theorem absorb_sha3_224 :
+    Verified RISCV64.target (absorb Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.absorbContract RISCV64.abi Spec.Sha3.hashSha3_224.rate 1168) :=
+  absorbFn_verified (by decide)
+
 theorem finalize_sha3_224 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len)
       (Spec.Sha3.finalizeContract RISCV64.abi Spec.Sha3.hashSha3_224 (1168 + 32)) :=
@@ -871,6 +974,10 @@ theorem finalize_sha3_224 :
 theorem update_sha3_256 :
     Verified RISCV64.target (update Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_256.rate 1168) :=
   update_verified_api (by decide)
+
+theorem absorb_sha3_256 :
+    Verified RISCV64.target (absorb Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.absorbContract RISCV64.abi Spec.Sha3.hashSha3_256.rate 1168) :=
+  absorbFn_verified (by decide)
 
 theorem finalize_sha3_256 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
@@ -888,6 +995,10 @@ theorem update_sha3_384 :
     Verified RISCV64.target (update Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_384.rate 1168) :=
   update_verified_api (by decide)
 
+theorem absorb_sha3_384 :
+    Verified RISCV64.target (absorb Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.absorbContract RISCV64.abi Spec.Sha3.hashSha3_384.rate 1168) :=
+  absorbFn_verified (by decide)
+
 theorem finalize_sha3_384 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len)
       (Spec.Sha3.finalizeContract RISCV64.abi Spec.Sha3.hashSha3_384 (1168 + 32)) :=
@@ -904,6 +1015,10 @@ theorem update_sha3_512 :
     Verified RISCV64.target (update Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.hashSha3_512.rate 1168) :=
   update_verified_api (by decide)
 
+theorem absorb_sha3_512 :
+    Verified RISCV64.target (absorb Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.absorbContract RISCV64.abi Spec.Sha3.hashSha3_512.rate 1168) :=
+  absorbFn_verified (by decide)
+
 theorem finalize_sha3_512 :
     Verified RISCV64.target (finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len)
       (Spec.Sha3.finalizeContract RISCV64.abi Spec.Sha3.hashSha3_512 (1168 + 32)) :=
@@ -919,6 +1034,10 @@ theorem finalize_sha3_512 :
 theorem update_shake128 :
     Verified RISCV64.target (update Spec.Sha3.xofShake128.rate) (Spec.Sha3.updateContract RISCV64.abi Spec.Sha3.xofShake128.rate 1168) :=
   update_verified_api (by decide)
+
+theorem absorb_shake128 :
+    Verified RISCV64.target (absorb Spec.Sha3.xofShake128.rate) (Spec.Sha3.absorbContract RISCV64.abi Spec.Sha3.xofShake128.rate 1168) :=
+  absorbFn_verified (by decide)
 
 theorem finalize_shake128 :
     Verified RISCV64.target (xofFinalize Spec.Sha3.xofShake128.rate) (Spec.Sha3.xofFinalizeContract RISCV64.abi Spec.Sha3.xofShake128 1136) :=

@@ -42,6 +42,15 @@ def updateArgs (rate : Nat) : List Instr :=
 
 def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorb
 
+/-- `absorb`'s arguments, moved up a register, and `rate` in `a1`. -/
+def absorbArgs (rate : Nat) : List Instr :=
+  [mov .a4 .a3, mov .a3 .a2, mov .a2 .a1, .li .a1 rate]
+
+/-- `absorb rate (state = a0, pos = a1, data = a2, len = a3)` runs
+`absorb(state, rate, pos, data, len)`, which keeps its working space in
+frames on the stack: `update` without `scratch`. -/
+def absorb (rate : Nat) : Prog isa := .seq (.block (absorbArgs rate)) Stream.absorb
+
 /-- SHAKE's `finalize`'s arguments, moved to `pad`'s: `pos` to `a2`, `rate`
 into `a1` and SHAKE's suffix into `a3`. -/
 def xofPadArgs (rate : Nat) : List Instr := [mov .a2 .a1, .li .a1 rate, .li .a3 0x1f]

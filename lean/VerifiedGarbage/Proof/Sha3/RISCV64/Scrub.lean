@@ -143,4 +143,46 @@ def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api RISCV64.targe
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (xofSqueezeOut Spec.Sha3.xofShake256 _) (hbp_firstArray _ rfl)
       (Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
+
+/-! ## `absorb` -/
+
+theorem absorbOut (rate stack : Nat) :
+    PostOut (Spec.Sha3.absorbContract RISCV64.abi rate stack) (Spec.Sha3.absorbSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out rate 64)
+
+/-- `vg_sha3_224_absorb`. -/
+def absorbSha3_224Reg : Registration Spec.Sha3.absorbSha3_224Api RISCV64.target :=
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_224.rate, verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_224 } [(1168, [(24, 50), (140, 6)])]
+    (absorbOut Spec.Sha3.hashSha3_224.rate _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (absorbOut Spec.Sha3.hashSha3_224.rate _) (hbp_firstArray _ rfl)
+      (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_224.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-- `vg_sha3_256_absorb`. -/
+def absorbSha3_256Reg : Registration Spec.Sha3.absorbSha3_256Api RISCV64.target :=
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_256.rate, verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_256 } [(1168, [(24, 50), (140, 6)])]
+    (absorbOut Spec.Sha3.hashSha3_256.rate _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (absorbOut Spec.Sha3.hashSha3_256.rate _) (hbp_firstArray _ rfl)
+      (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_256.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-- `vg_sha3_384_absorb`. -/
+def absorbSha3_384Reg : Registration Spec.Sha3.absorbSha3_384Api RISCV64.target :=
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_384.rate, verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_384 } [(1168, [(24, 50), (140, 6)])]
+    (absorbOut Spec.Sha3.hashSha3_384.rate _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (absorbOut Spec.Sha3.hashSha3_384.rate _) (hbp_firstArray _ rfl)
+      (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_384.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-- `vg_sha3_512_absorb`. -/
+def absorbSha3_512Reg : Registration Spec.Sha3.absorbSha3_512Api RISCV64.target :=
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_512.rate, verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_512 } [(1168, [(24, 50), (140, 6)])]
+    (absorbOut Spec.Sha3.hashSha3_512.rate _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (absorbOut Spec.Sha3.hashSha3_512.rate _) (hbp_firstArray _ rfl)
+      (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_512.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-- `vg_shake128_absorb`. -/
+def absorbShake128Reg : Registration Spec.Sha3.absorbShake128Api RISCV64.target :=
+  withScrubSel { code := Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.xofShake128.rate, verified := Proof.Sha3.RISCV64.Instances.absorb_shake128 } [(1168, [(24, 50), (140, 6)])]
+    (absorbOut Spec.Sha3.xofShake128.rate _)
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [(.a0, 25 * Elem.u64.size)] hfs hsz hrb (absorbOut Spec.Sha3.xofShake128.rate _) (hbp_firstArray _ rfl)
+      (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.xofShake128.rate) 1168 64 rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
 end VG.Proof.Sha3.RISCV64
