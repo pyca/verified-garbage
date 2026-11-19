@@ -19,12 +19,12 @@ def artifacts : List Artifact := [
     verified := Proof.Blake2.AArch64.Stream.initSCleared_verified
     residue := some ⟨Proof.Blake2.AArch64.Stream.initSCleared_noResidue _⟩ },
   Spec.Blake2.updateSApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.s)
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.s)
     verified := Proof.Blake2.AArch64.Stream.updateS_framed }
-    (Proof.Blake2.AArch64.Scrub.updateSOk 592)),
+    (Proof.Blake2.AArch64.Scrub.updateSOk 128)),
   Spec.Blake2.finalizeSApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s)
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s)
     verified := Proof.Blake2.AArch64.Stream.finalizeS_framed }
-    (Proof.Blake2.AArch64.Scrub.finalizeSOk 592))]
+    (Proof.Blake2.AArch64.Scrub.finalizeSOk 128))]
 
 end VG.Artifacts.Blake2s.AArch64

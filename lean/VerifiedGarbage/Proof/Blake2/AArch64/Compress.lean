@@ -765,7 +765,7 @@ theorem exec_sub {sz : Size} {s : State} {d n m : Reg} :
     exec (.sub sz d n m) s = some (s.write sz d (s.read sz n - s.read sz m)) := rfl
 
 theorem setup_ok (s : State) (scr : Addr) (hx5 : s.gpr .x5 = scr)
-    (ho : ∀ d, d + 8 ≤ 512 → InRegions s.wr (scr + BitVec.ofNat 64 d) 8) :
+    (ho : ∀ d, d + 8 ≤ 56 → InRegions s.wr (scr + BitVec.ofNat 64 d) 8) :
     WP isa (.block (Impl.Blake2.AArch64.save ++ Impl.Blake2.AArch64.setup)) s fun s' =>
       s'.mem = setupMem s.mem scr (s.gpr .x25) (s.gpr .x26) (s.gpr .x27) (s.gpr .x3)
         ((s.gpr .x4).setWidth 32 != 0) ∧
@@ -784,7 +784,7 @@ theorem setup_ok (s : State) (scr : Addr) (hx5 : s.gpr .x5 = scr)
   · simp only [h3, h4, h27, ite_false]
 
 theorem restore_ok (s : State) (scr : Addr) (hx5 : s.gpr .x5 = scr)
-    (hi : ∀ d, d + 8 ≤ 512 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8) :
+    (hi : ∀ d, d + 8 ≤ 56 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8) :
     WP isa (.block Impl.Blake2.AArch64.restore) s fun s' =>
       s'.gpr .x25 = s.mem.readW (scr + BitVec.ofNat 64 0) 64 ∧
       s'.gpr .x26 = s.mem.readW (scr + BitVec.ofNat 64 8) 64 ∧
@@ -812,7 +812,7 @@ abbrev t₀ : Nat := (s₀.gpr .x3).toNat
 abbrev fl : Bool := (s₀.gpr .x4).setWidth 32 != 0
 abbrev stR : Region := ⟨st s₀, 8 * z.bytes⟩
 abbrev blR : Region := ⟨bp s₀, Spec.Blake2.blockBytes z.bits * nb s₀⟩
-abbrev scrR : Region := ⟨scr s₀, 512⟩
+abbrev scrR : Region := ⟨scr s₀, 56⟩
 abbrev H₀ : HashValue z.bits := Spec.Blake2.stateAt z.bits s₀.mem (st s₀)
 /-- Where block `i` starts. -/
 abbrev blkAddr (i : Nat) : Addr := bp s₀ + BitVec.ofNat 64 (Spec.Blake2.blockBytes z.bits * i)
@@ -883,11 +883,11 @@ theorem out_state {k : Nat} (hk : k < 8) :
     InRegions s₀.wr (st s₀ + BitVec.ofNat 64 (z.bytes * k)) z.bytes :=
   ⟨stR z s₀, by simp [h.wr], word_contains' z _ hk⟩
 
-theorem in_scr (d : Nat) (hd : d + 8 ≤ 512) :
+theorem in_scr (d : Nat) (hd : d + 8 ≤ 56) :
     InRegions (s₀.rd ++ s₀.wr) (scr s₀ + BitVec.ofNat 64 d) 8 :=
   ⟨scrR s₀, by simp [h.wr], Offset.contains_base _ hd (by omega_arith)⟩
 
-theorem out_scr (d : Nat) (hd : d + 8 ≤ 512) : InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 d) 8 :=
+theorem out_scr (d : Nat) (hd : d + 8 ≤ 56) : InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 d) 8 :=
   ⟨scrR s₀, by simp [h.wr], Offset.contains_base _ hd (by omega_arith)⟩
 
 theorem blk_contains' {i j : Nat} (hi : i < nb s₀) (hj : j < 16) :
@@ -905,7 +905,7 @@ theorem in_blk {i j : Nat} (hi : i < nb s₀) (hj : j < 16) :
   ⟨blR z s₀, by simp [h.rd], h.blk_contains' hi hj⟩
 
 /-- A scratch word is unchanged by writes to the state. -/
-theorem cell_frame {m m' : Mem} (hf : Frame [stR z s₀] m m') {d : Nat} (hd : d + 8 ≤ 512) :
+theorem cell_frame {m m' : Mem} (hf : Frame [stR z s₀] m m') {d : Nat} (hd : d + 8 ≤ 56) :
     m'.readW (scr s₀ + BitVec.ofNat 64 d) 64 = m.readW (scr s₀ + BitVec.ofNat 64 d) 64 :=
   hf.readW (r := scrR s₀) (Offset.contains_base _ hd (by omega_arith)) (by simpa using h.st_scr.symm)
     (by decide)
@@ -918,11 +918,11 @@ theorem state_frame {m m' : Mem} (hf : Frame [scrR s₀] m m') {k : Nat} (hk : k
     (by have := bits_le z; omega_arith)
 
 /-- A word of the state is unchanged by a write to a scratch word. -/
-theorem state_sep (m : Mem) (v : BitVec 64) {k e : Nat} (hk : k < 8) (he : e + 8 ≤ 512) :
+theorem state_sep (m : Mem) (v : BitVec 64) {k e : Nat} (hk : k < 8) (he : e + 8 ≤ 56) :
     (m.writeW (scr s₀ + BitVec.ofNat 64 e) v).readW (st s₀ + BitVec.ofNat 64 (z.bytes * k)) z.bits =
       m.readW (st s₀ + BitVec.ofNat 64 (z.bytes * k)) z.bits :=
   Mem.readW_writeW_sep (h.st_scr.sep (word_contains z _ hk)
-    (Offset.contains_base _ (show e + 64 / 8 ≤ 512 from he) (by omega_arith)))
+    (Offset.contains_base _ (show e + 64 / 8 ≤ 56 from he) (by omega_arith)))
     (by have := bits_le z; omega_arith)
 
 /-- A block word is where it was at the start, when only the state and the scratch changed. -/
@@ -937,7 +937,7 @@ end Pre
 
 /-- A scratch word is unchanged by a write to another. -/
 theorem cell_sep (p : Addr) (m : Mem) (v : BitVec 64) {d e : Nat}
-    (h : (d + 8 ≤ e ∨ e + 8 ≤ d) ∧ d + 8 ≤ 512 ∧ e + 8 ≤ 512) :
+    (h : (d + 8 ≤ e ∨ e + 8 ≤ d) ∧ d + 8 ≤ 56 ∧ e + 8 ≤ 56) :
     (m.writeW (p + BitVec.ofNat 64 e) v).readW (p + BitVec.ofNat 64 d) 64 =
       m.readW (p + BitVec.ofNat 64 d) 64 :=
   Mem.readW_writeW_sep (Offset.sep p (n := 64 / 8) (k := 64 / 8) h.1 (by omega_arith) (by omega_arith))
@@ -1052,9 +1052,9 @@ theorem body_ok (hR : ROk P) {s₀ : State} (hp : Pre z s₀) {i : Nat} (hi : i 
   obtain hcell : ∀ d, (d = 0 ∨ d = 8 ∨ d = 16 ∨ d = fOff) →
       s₄.mem.readW (scr s₀ + BitVec.ofNat 64 d) 64 = s.mem.readW (scr s₀ + BitVec.ofNat 64 d) 64 := by
     intro d hd
-    obtain h1 : (d + 8 ≤ hiOff ∨ hiOff + 8 ≤ d) ∧ d + 8 ≤ 512 ∧ hiOff + 8 ≤ 512 := by
+    obtain h1 : (d + 8 ≤ hiOff ∨ hiOff + 8 ≤ d) ∧ d + 8 ≤ 56 ∧ hiOff + 8 ≤ 56 := by
       simp only [hiOff, fOff] at hd ⊢; omega_arith
-    obtain h2 : (d + 8 ≤ loOff ∨ loOff + 8 ≤ d) ∧ d + 8 ≤ 512 ∧ loOff + 8 ≤ 512 := by
+    obtain h2 : (d + 8 ≤ loOff ∨ loOff + 8 ≤ d) ∧ d + 8 ≤ 56 ∧ loOff + 8 ≤ 56 := by
       simp only [loOff, fOff] at hd ⊢; omega_arith
     rw [hm₄, cell_sep _ _ _ h1, cell_sep _ _ _ h2, hp.cell_frame hF₃' h1.2.1]
   obtain hcommon : Common P s₀ (i + 1) s₄ := by
@@ -1092,7 +1092,7 @@ theorem body_ok (hR : ROk P) {s₀ : State} (hp : Pre z s₀) {i : Nat} (hi : i 
 
 theorem setup_frame (s₀ : State) (r25 r26 r27 t : BitVec 64) (f : Bool) :
     Frame [scrR s₀] s₀.mem (setupMem s₀.mem (scr s₀) r25 r26 r27 t f) := by
-  obtain c : ∀ d, d + 8 ≤ 512 → (scrR s₀).Contains (scr s₀ + BitVec.ofNat 64 d) (64 / 8) :=
+  obtain c : ∀ d, d + 8 ≤ 56 → (scrR s₀).Contains (scr s₀ + BitVec.ofNat 64 d) (64 / 8) :=
     fun d hd => Offset.contains_base _ hd (by omega_arith)
   obtain m : scrR s₀ ∈ [scrR s₀] := List.mem_singleton_self _
   exact ((((((Frame.refl _ _).writeW m _ (c 0 (by decide))).writeW m _ (c 8 (by decide))).writeW m _

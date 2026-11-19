@@ -6,12 +6,12 @@
 
 vg_blake2b_update_scratch:
 	str x30, [sp, #-16]!
-	str x19, [x4, #512]
-	str x20, [x4, #520]
-	str x21, [x4, #528]
-	str x22, [x4, #536]
-	str x23, [x4, #544]
-	str x24, [x4, #552]
+	str x19, [x4, #56]
+	str x20, [x4, #64]
+	str x21, [x4, #72]
+	str x22, [x4, #80]
+	str x23, [x4, #88]
+	str x24, [x4, #96]
 	add x19, x0, #0
 	add x20, x4, #0
 	add x21, x2, #0
@@ -110,12 +110,12 @@ vg_blake2b_update_scratch:
 	b 23f
 22:
 23:
-	ldr x19, [x20, #512]
-	ldr x21, [x20, #528]
-	ldr x22, [x20, #536]
-	ldr x23, [x20, #544]
-	ldr x24, [x20, #552]
-	ldr x20, [x20, #520]
+	ldr x19, [x20, #56]
+	ldr x21, [x20, #72]
+	ldr x22, [x20, #80]
+	ldr x23, [x20, #88]
+	ldr x24, [x20, #96]
+	ldr x20, [x20, #64]
 	ldr x30, [sp], #16
 	ret
 	.p2align 6

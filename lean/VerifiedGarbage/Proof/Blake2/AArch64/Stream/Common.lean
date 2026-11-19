@@ -44,12 +44,12 @@ def initAArch64 : Contract isa where
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
 
 /-- AArch64 contract for `update(state = x0, count = x1, data = x2, len = x3,
-scratch = x4)`. -/
-def updateAArch64 : Contract isa where
+scratch = x4)`, with `W` bytes of scratch space (at least the 104 it uses). -/
+def updateAArch64 (W : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .x0, bufOff w + blockBytes w⟩
     let data : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
-    let scratch : Region := ⟨s.gpr .x4, 576⟩
+    let scratch : Region := ⟨s.gpr .x4, W⟩
     let stack : Region := ⟨s.sp - 16, 16⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
@@ -62,12 +62,12 @@ def updateAArch64 : Contract isa where
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
 /-- AArch64 contract for `finalize(state = x0, count = x1, out = x2, scratch =
-x3)`. -/
-def finalizeAArch64 : Contract isa where
+x3)`, with `W` bytes of scratch space (at least the 104 it uses). -/
+def finalizeAArch64 (W : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .x0, bufOff w + blockBytes w⟩
     let out : Region := ⟨s.gpr .x2, bufOff w⟩
-    let scratch : Region := ⟨s.gpr .x3, 576⟩
+    let scratch : Region := ⟨s.gpr .x3, W⟩
     let stack : Region := ⟨s.sp - 16, 16⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧
     state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
@@ -169,11 +169,11 @@ may be accessed. -/
 structure CallOk (s : State) (st scr src : Addr) (len : Nat) : Prop where
   x19 : s.gpr .x19 = st
   x20 : s.gpr .x20 = scr
-  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 512⟩
+  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 56⟩
   d₂ : Region.Disjoint ⟨src, len⟩ ⟨st, bufOff w⟩
-  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 512⟩
-  hc : Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 512⟩] (s.rd ++ s.wr)
-  hw : Covers [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.wr
+  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 56⟩
+  hc : Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 56⟩] (s.rd ++ s.wr)
+  hw : Covers [⟨st, bufOff w⟩, ⟨scr, 56⟩] s.wr
 
 /-- The arguments of the call, set up from `σ`. -/
 structure Setup (σ s : State) (src n t : BitVec 64) (last : Bool) : Prop where
@@ -200,7 +200,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
     {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) →
-      Frame [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.mem s'.mem →
+      Frame [⟨st, bufOff w⟩, ⟨scr, 56⟩] s.mem s'.mem →
       stateAt w s'.mem st = compressBlocks P (stateAt w s.mem st) s.mem src n.toNat t.toNat last →
       Q s') :
     WP isa (compressWith P args) s Q := by
@@ -213,7 +213,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
   have e4 : s₁.callEntry.gpr .x4 = s₁.gpr .x4 := State.callEntry_gpr _ (by decide)
   have e5 : s₁.callEntry.gpr .x5 = scr := (State.callEntry_gpr _ (by decide)).trans (hs.x5.trans h.x20)
   refine WP.call (k := compressAArch64 P) hf.verified
-    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 512⟩]) ?_ ?_ ?_ ?_ hf.noFrames
+    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 56⟩]) ?_ ?_ ?_ ?_ hf.noFrames
   · simp only [compressAArch64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, e0, e1, e2, e5]
     exact ⟨trivial, trivial, h.d₁, h.d₂, h.d₃⟩
@@ -375,21 +375,21 @@ theorem zeroLoop_ok {s₀ : State} {st : Addr} {r k : Nat} (hN : bufOff w ≤ 64
 /-- The caller's callee-saved registers `g` are saved in the scratch space at `b`. -/
 abbrev Saved (b : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop := Spill.Saved b g saved m
 
-/-- The memory after saving `x19`–`x24` (values `g`) at `b + 512 …`. -/
+/-- The memory after saving `x19`–`x24` (values `g`) at `b + 56 …`. -/
 abbrev saveMem (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Mem := Spill.saveMem m b g saved
 
-theorem saved_off : ∀ p ∈ saved, 512 ≤ p.2 ∧ p.2 + 8 ≤ 560 := by decide
+theorem saved_off : ∀ p ∈ saved, 56 ≤ p.2 ∧ p.2 + 8 ≤ 104 := by decide
 
 theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Saved b g (saveMem m b g) :=
   Spill.saveMem_saved (by decide) m b g
 
 theorem saveMem_frame (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
-    Frame [⟨b + BitVec.ofNat 64 512, 48⟩] m (saveMem m b g) :=
+    Frame [⟨b + BitVec.ofNat 64 56, 48⟩] m (saveMem m b g) :=
   Spill.saveMem_frame (by decide) (by decide) m b g
 
 /-- Saving `x19`–`x24` with the scratch pointer in `b`. -/
 theorem save_ok {b : Reg} {rest : List Instr} {s : State} {Q : State → Prop}
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions s.wr (s.gpr b + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 56 ≤ d → d + 8 ≤ 104 → InRegions s.wr (s.gpr b + BitVec.ofNat 64 d) 8)
     (k : ∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = saveMem s.mem (s.gpr b) s.gpr → WP isa (.block rest) s' Q) :
     WP isa (.block (save b ++ rest)) s Q :=
@@ -398,11 +398,11 @@ theorem save_ok {b : Reg} {rest : List Instr} {s : State} {Q : State → Prop}
 
 /-- `restore`, `x20` (the base) last. -/
 abbrev restored : List (Reg × Nat) :=
-  [(.x19, 512), (.x21, 528), (.x22, 536), (.x23, 544), (.x24, 552), (.x20, 520)]
+  [(.x19, 56), (.x21, 72), (.x22, 80), (.x23, 88), (.x24, 96), (.x20, 64)]
 
 /-- Restoring `x19`–`x24` from the save area at `scr`. -/
 theorem restore_ok {s : State} {scr : Addr} (h20 : s.gpr .x20 = scr)
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 56 ≤ d → d + 8 ≤ 104 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
     (g : Reg → BitVec 64) (hsv : Saved scr g s.mem) {Q : State → Prop}
     (k : ∀ s', (∀ p ∈ saved, s'.gpr p.1 = g p.1) →
       (∀ r, r ∉ saved.map Prod.fst → s'.gpr r = s.gpr r) →
@@ -427,12 +427,12 @@ theorem preserved_of {s₀ s' : State} (hsv : ∀ p ∈ saved, s'.gpr p.1 = s₀
   intro r hr h30
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact hsv (.x19, 512) (by simp [saved])
-  · exact hsv (.x20, 520) (by simp [saved])
-  · exact hsv (.x21, 528) (by simp [saved])
-  · exact hsv (.x22, 536) (by simp [saved])
-  · exact hsv (.x23, 544) (by simp [saved])
-  · exact hsv (.x24, 552) (by simp [saved])
+  · exact hsv (.x19, 56) (by simp [saved])
+  · exact hsv (.x20, 64) (by simp [saved])
+  · exact hsv (.x21, 72) (by simp [saved])
+  · exact hsv (.x22, 80) (by simp [saved])
+  · exact hsv (.x23, 88) (by simp [saved])
+  · exact hsv (.x24, 96) (by simp [saved])
   all_goals first | exact absurd rfl h30 | exact hu _ (by simp [untouched])
 
 /-- A byte of a region disjoint from a frame is unchanged by the push. -/

@@ -50,7 +50,7 @@ open VG.WriteBytes (writeBytes writeBytes_before writeBytes_frame)
 open VG.Proof.Blake2 (ReprR bufLen_le repr_iff reprR_append reprR_flush reprR_blocks repr_of_reprR
   stateAt_congr bytesAt_congr bytesAt_add updateAArch64)
 
-variable {w : Nat} {P : Params w}
+variable {w W : Nat} {P : Params w}
 
 /-! ## The precondition -/
 
@@ -64,7 +64,7 @@ abbrev len : Nat := (s₀.gpr .x3).toNat
 abbrev scr : Addr := s₀.gpr .x4
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev dR : Region := ⟨dp s₀, len s₀⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR (W : Nat) : Region := ⟨scr s₀, W⟩
 /-- The first `c` bytes of data. -/
 abbrev D (c : Nat) : List Byte := bytesAt s₀.mem (dp s₀) c
 /-- The frame saving `x30`, below the stack pointer. -/
@@ -72,23 +72,25 @@ abbrev stkR : Region := ⟨s₀.sp - 16, 16⟩
 
 end
 
-structure Pre (w : Nat) (s₀ : State) : Prop where
+structure Pre (w W : Nat) (s₀ : State) : Prop where
+  hW : 104 ≤ W
+  hW' : W ≤ 576
   rd : s₀.rd = [dR s₀]
-  wr : s₀.wr = [stR s₀ w, scR s₀]
-  st_scr : (stR s₀ w).Disjoint (scR s₀)
+  wr : s₀.wr = [stR s₀ w, scR s₀ W]
+  st_scr : (stR s₀ w).Disjoint (scR s₀ W)
   d_st : (dR s₀).Disjoint (stR s₀ w)
-  d_scr : (dR s₀).Disjoint (scR s₀)
+  d_scr : (dR s₀).Disjoint (scR s₀ W)
 
 /-- The frame is below the stack pointer, and disjoint from the buffers. -/
-structure Stack (w : Nat) (s₀ : State) : Prop where
+structure Stack (w W : Nat) (s₀ : State) : Prop where
   sp16 : 16 ≤ s₀.sp.toNat
   st : (stkR s₀).Disjoint (stR s₀ w)
   d : (stkR s₀).Disjoint (dR s₀)
-  scr : (stkR s₀).Disjoint (scR s₀)
+  scr : (stkR s₀).Disjoint (scR s₀ W)
 
-theorem pre_of {s₀ : State} (h : (updateAArch64 P).pre s₀) : Pre w s₀ ∧ Stack w s₀ := by
+theorem pre_of {s₀ : State} (hW : 104 ≤ W) (hW' : W ≤ 576) (h : (updateAArch64 P W).pre s₀) : Pre w W s₀ ∧ Stack w W s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
+  exact ⟨⟨hW, hW', h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
 
 theorem len_lt (s₀ : State) : len s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
 theorem cnt_lt (s₀ : State) : cnt s₀ < 2 ^ 64 := (s₀.gpr .x1).isLt
@@ -107,7 +109,7 @@ theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length =
 /-! ## Invariants -/
 
 /-- What holds throughout, after consuming `c` bytes of data. -/
-structure Common (w : Nat) (s₀ : State) (c : Nat) (s : State) : Prop where
+structure Common (w W : Nat) (s₀ : State) (c : Nat) (s : State) : Prop where
   c_le : c ≤ len s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -118,12 +120,12 @@ structure Common (w : Nat) (s₀ : State) (c : Nat) (s : State) : Prop where
   x22 : s.gpr .x22 = BitVec.ofNat 64 (len s₀ - c)
   x24 : s.gpr .x24 = BitVec.ofNat 64 (cnt s₀ + c)
   keep : ∀ r ∈ untouched, s.gpr r = s₀.gpr r
-  frame : Frame [stR s₀ w, scR s₀] s₀.mem s.mem
+  frame : Frame [stR s₀ w, scR s₀ W] s₀.mem s.mem
   saved : Saved (scr s₀) s₀.gpr s.mem
 
 /-- The state represents the data followed by the first `c` bytes of data,
 the last `r` of them in the buffer. -/
-structure Inv (P : Params w) (s₀ : State) (c r : Nat) (s : State) : Prop extends Common w s₀ c s where
+structure Inv (P : Params w) (W : Nat) (s₀ : State) (c r : Nat) (s : State) : Prop extends Common w W s₀ c s where
   x23 : s.gpr .x23 = BitVec.ofNat 64 r
   repr : ∀ h0 d, R₀ P s₀ h0 d → ReprR P h0 s.mem (st s₀) (d ++ D s₀ c) r
 
@@ -133,10 +135,10 @@ abbrev commonRegs : List Reg := [.x19, .x20, .x21, .x22, .x24, .x25, .x26, .x27,
 theorem notC {r : Reg} (hr : r ∈ commonRegs) (x : Reg) (hx : x ∉ commonRegs := by decide) : r ≠ x :=
   fun h => hx (h ▸ hr)
 
-theorem Common.of_gpr {s₀ : State} {c : Nat} {s s' : State} (h : Common w s₀ c s)
+theorem Common.of_gpr {s₀ : State} {c : Nat} {s s' : State} (h : Common w W s₀ c s)
     (hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r)
     (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp) :
-    Common w s₀ c s' where
+    Common w W s₀ c s' where
   c_le := h.c_le
   rd := hrd.trans h.rd
   wr := hwr.trans h.wr
@@ -151,26 +153,26 @@ theorem Common.of_gpr {s₀ : State} {c : Nat} {s s' : State} (h : Common w s₀
   saved := by rw [hm]; exact h.saved
 
 /-- The data is unchanged. -/
-theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : Common w s₀ c s) {i : Nat}
+theorem Common.data {s₀ : State} (hp : Pre w W s₀) {c : Nat} {s : State} (h : Common w W s₀ c s) {i : Nat}
     (hi : i < len s₀) : s.mem (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i) :=
   h.frame.bytes (R := dR s₀) (by simpa using ⟨hp.d_st, hp.d_scr⟩) (Nat.le_of_lt (len_lt s₀)) hi
 
 /-- Writes to the state and the compression function's scratch space keep the
 saved registers. -/
-theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (scr s₀) s₀.gpr m)
-    (hf : Frame [stR s₀ w, ⟨scr s₀, 512⟩] m m') : Saved (scr s₀) s₀.gpr m' :=
+theorem saved_frame {s₀ : State} (hp : Pre w W s₀) {m m' : Mem} (h : Saved (scr s₀) s₀.gpr m)
+    (hf : Frame [stR s₀ w, ⟨scr s₀, 56⟩] m m') : Saved (scr s₀) s₀.gpr m' :=
   Spill.Saved.frame h hf fun p hp' r' hr' => by
     obtain hoff := saved_off p hp'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl
-    · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega_using [hoff]))
+    · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega_using [hoff, hp.hW, hp.hW']))
     · exact Offset.disjoint_base _ (by omega_using [hoff]) (by omega_using [hoff])
 
 /-! ## Prologue -/
 
-theorem prologue_ok {s₀ : State} (hp : Pre w s₀) :
-    WP isa (.block updateStart) s₀ fun s => Common w s₀ 0 s ∧ s.mem = saveMem s₀.mem (scr s₀) s₀.gpr := by
-  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_using [hd₂]) (by omega_using [hd₂])⟩)
+theorem prologue_ok {s₀ : State} (hp : Pre w W s₀) :
+    WP isa (.block updateStart) s₀ fun s => Common w W s₀ 0 s ∧ s.mem = saveMem s₀.mem (scr s₀) s₀.gpr := by
+  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀ W, by simp [hp.wr], Offset.contains_base _ (by omega_using [hd₂, hp.hW, hp.hW']) (by omega_using [hd₂, hp.hW, hp.hW'])⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
     wp_mov fun s₆ u₆ => WP.block_nil ⟨⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_⟩, ?_⟩
@@ -198,15 +200,15 @@ theorem prologue_ok {s₀ : State} (hp : Pre w s₀) :
   · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
     exact (saveMem_frame _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨scR s₀, by simp, Offset.sub_base _ (by omega_using [])⟩
+      exact ⟨scR s₀ W, by simp, Offset.sub_base _ (by omega_using [hp.hW, hp.hW'])⟩
   · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]; exact saveMem_saved _ _ _
   · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
 
 /-! ## The bytes in the buffer -/
 
-theorem bufLen_ok' (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (hC : Common w s₀ 0 s)
+theorem bufLen_ok' (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {s : State} (hC : Common w W s₀ 0 s)
     (hm : s.mem = saveMem s₀.mem (scr s₀) s₀.gpr) :
-    WP isa (Impl.Blake2.AArch64.Stream.bufLen (w := w)) s (Inv P s₀ 0 (Blake2.bufLen w (cnt s₀))) := by
+    WP isa (Impl.Blake2.AArch64.Stream.bufLen (w := w)) s (Inv P W s₀ 0 (Blake2.bufLen w (cnt s₀))) := by
   have hN := hP.len
   obtain hrepr : ∀ h0 d, R₀ P s₀ h0 d →
       ReprR P h0 s.mem (st s₀) (d ++ D s₀ 0) (Blake2.bufLen w (cnt s₀)) := by
@@ -216,7 +218,7 @@ theorem bufLen_ok' (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (hC 
     refine repr_congr hP (fun i hi => ?_) hd.1
     rw [hm]
     exact (saveMem_frame _ _ _).bytes (R := stR s₀ w)
-      (by simpa using hp.st_scr.sub_right (Offset.sub_base _ (by omega_using []))) (by simp only; omega_using [hN]) hi
+      (by simpa using hp.st_scr.sub_right (Offset.sub_base _ (by omega_using [hp.hW, hp.hW']))) (by simp only; omega_using [hN]) hi
   refine WP.mono (bufLen_ok hP) fun s' ⟨h23, g, m, rd, wr, sp⟩ => ?_
   rw [hC.x24, Nat.add_zero, toNat_ofNat_lt (cnt_lt s₀)] at h23
   exact { hC.of_gpr (fun r hr => g r (notC hr .x9) (notC hr .x23)) m rd wr sp with
@@ -243,17 +245,17 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : 
 
 /-- Copying `k` bytes of data, from byte `c` on, into the buffer, from byte
 `r` on. -/
-theorem copy_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c r k : Nat} (hk : 1 ≤ k)
+theorem copy_ok (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {c r k : Nat} (hk : 1 ≤ k)
     (hrk : r + k ≤ blockBytes w) (hck : c + k ≤ len s₀) {s : State}
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hx19 : s.gpr .x19 = st s₀)
     (hx21 : s.gpr .x21 = dp s₀ + BitVec.ofNat 64 c) (hx23 : s.gpr .x23 = BitVec.ofNat 64 r)
-    (hx11 : s.gpr .x11 = BitVec.ofNat 64 k) (hf : Frame [stR s₀ w, scR s₀] s₀.mem s.mem)
+    (hx11 : s.gpr .x11 = BitVec.ofNat 64 k) (hf : Frame [stR s₀ w, scR s₀ W] s₀.mem s.mem)
     (hs : Saved (scr s₀) s₀.gpr s.mem)
     (hrepr : ∀ h0 d, R₀ P s₀ h0 d → ReprR P h0 s.mem (st s₀) (d ++ D s₀ c) r) :
     WP isa (copyLoop (w := w)) s fun s' =>
       (∀ x, x ≠ .x9 → x ≠ .x12 → x ≠ .x21 → x ≠ .x23 → x ≠ .x11 → s'.gpr x = s.gpr x) ∧
       s'.gpr .x21 = dp s₀ + BitVec.ofNat 64 (c + k) ∧ s'.gpr .x23 = BitVec.ofNat 64 (r + k) ∧
-      s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s.sp ∧ Frame [stR s₀ w, scR s₀] s₀.mem s'.mem ∧
+      s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s.sp ∧ Frame [stR s₀ w, scR s₀ W] s₀.mem s'.mem ∧
       Saved (scr s₀) s₀.gpr s'.mem ∧
       ∀ h0 d, R₀ P s₀ h0 d → ReprR P h0 s'.mem (st s₀) (d ++ D s₀ (c + k)) (r + k) := by
   have hl := hP.len
@@ -298,11 +300,11 @@ def Src (w : Nat) (s₀ : State) (src : Addr) (n : Nat) : Prop :=
   (src = st s₀ + BitVec.ofNat 64 (bufOff w) ∧ n = blockBytes w) ∨
     ∃ c₀, src = dp s₀ + BitVec.ofNat 64 c₀ ∧ c₀ + n ≤ len s₀
 
-theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : Common w s₀ c s)
+theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {c : Nat} {s : State} (h : Common w W s₀ c s)
     {src : Addr} {n : Nat} (hsrc : Src w s₀ src n) : CallOk (w := w) s (st s₀) (scr s₀) src n := by
   obtain hl := hP.len; have := len_lt s₀
-  obtain eN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain eso : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
+  obtain eN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [hp.hW, hp.hW'])
+  obtain eso : Region.Sub ⟨scr s₀, 56⟩ (scR s₀ W) := Region.sub_prefix (by omega_using [hp.hW, hp.hW'])
   obtain eSrc : Region.Sub ⟨src, n⟩ (stR s₀ w) ∨ Region.Sub ⟨src, n⟩ (dR s₀) := by
     rcases hsrc with ⟨h', rfl⟩ | ⟨c₀, h', hc₀⟩
     · exact .inl (h' ▸ Offset.sub_base _ (by omega_using []))
@@ -323,29 +325,29 @@ theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State
       · exact ⟨stR s₀ w, by simp, bufOff w, h', by simp⟩
       · exact ⟨dR s₀, by simp, c₀, h', hc₀⟩
     · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
-    · exact ⟨scR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scR s₀ W, by simp, 0, by simp, by simp; omega_using [hp.hW, hp.hW']⟩
   · rw [h.wr, hp.wr]
     apply Covers.of_sub
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
-    · exact ⟨scR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scR s₀ W, by simp, 0, by simp, by simp; omega_using [hp.hW, hp.hW']⟩
 
 theorem commonRegs_preserved : ∀ r ∈ commonRegs, r ∈ preserved ∧ r ≠ .x30 := by decide
 
 /-- A call keeps what holds throughout. -/
-theorem Common.after_call (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s s' : State}
-    (h : Common w s₀ c s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
+theorem Common.after_call (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {c : Nat} {s s' : State}
+    (h : Common w W s₀ c s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
     (hcs : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r)
-    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨scr s₀, 512⟩] s.mem s'.mem) :
-    Common w s₀ c s' := by
+    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨scr s₀, 56⟩] s.mem s'.mem) :
+    Common w W s₀ c s' := by
   have hl := hP.len
-  obtain hf' : Frame [stR s₀ w, ⟨scr s₀, 512⟩] s.mem s'.mem := hf.sub fun r hr => by
+  obtain hf' : Frame [stR s₀ w, ⟨scr s₀, 56⟩] s.mem s'.mem := hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨stR s₀ w, by simp, Region.sub_prefix (by omega_using [])⟩
-    · exact ⟨⟨scr s₀, 512⟩, by simp, fun _ h => h⟩
+    · exact ⟨⟨scr s₀, 56⟩, by simp, fun _ h => h⟩
   obtain hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r := fun r hr =>
     hcs r (commonRegs_preserved r hr).1 (commonRegs_preserved r hr).2
   refine ⟨h.c_le, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, by rw [hg _ (by simp)]; exact h.x19,
@@ -356,7 +358,7 @@ theorem Common.after_call (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨stR s₀ w, by simp, fun _ h => h⟩
-  · exact ⟨scR s₀, by simp, Region.sub_prefix (by omega_using [])⟩
+  · exact ⟨scR s₀ W, by simp, Region.sub_prefix (by omega_using [hp.hW, hp.hW'])⟩
 
 theorem compressBlocks_one (h : HashValue w) (m : Mem) (p : Addr) (t : Nat) (f : Bool) :
     compressBlocks P h m p 1 t f = F P h (blockAt w m p) t f := by
@@ -365,9 +367,9 @@ theorem compressBlocks_one (h : HashValue w) (m : Mem) (p : Addr) (t : Nat) (f :
 theorem one_toNat : (BitVec.setWidth 64 (1 : BitVec 16)).toNat = 1 := rfl
 
 /-- Compressing the full buffer. -/
-theorem compressBuf_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀)
-    {c : Nat} {s : State} (hI : Inv P s₀ c (blockBytes w) s) :
-    WP isa (compressBuf P) s (Inv P s₀ c 0) := by
+theorem compressBuf_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀)
+    {c : Nat} {s : State} (hI : Inv P W s₀ c (blockBytes w) s) :
+    WP isa (compressBuf P) s (Inv P W s₀ c 0) := by
   have hl := hP.len
   have hN := hP.N64
   have hc := hI.c_le
@@ -397,9 +399,9 @@ theorem le_of_div_ne {x b : Nat} (h : x / b ≠ 0) : b ≤ x := by
   refine Nat.le_of_not_lt fun hc => h (Nat.div_eq_of_lt hc)
 
 /-- Copying `min(B - r, len - c)` bytes of data into the buffer. -/
-theorem fill_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c r : Nat} (hr : r ≤ blockBytes w) {s : State}
-    (hI : Inv P s₀ c r s) :
-    WP isa (fill (w := w)) s (Inv P s₀ (c + min (blockBytes w - r) (len s₀ - c))
+theorem fill_ok (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {c r : Nat} (hr : r ≤ blockBytes w) {s : State}
+    (hI : Inv P W s₀ c r s) :
+    WP isa (fill (w := w)) s (Inv P W s₀ (c + min (blockBytes w - r) (len s₀ - c))
       (r + min (blockBytes w - r) (len s₀ - c))) := by
   have hl := hP.len
   obtain hL := len_lt s₀
@@ -503,12 +505,12 @@ theorem fill_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c r : Nat} (hr : r
 
 /-- After `head`: all the data is in, with the buffer not empty, or the
 buffer is empty and data is left. -/
-def HeadPost (P : Params w) (s₀ : State) (s : State) : Prop :=
-  ∃ c r, Inv P s₀ c r s ∧ ((c = len s₀ ∧ 1 ≤ r) ∨ (c < len s₀ ∧ r = 0))
+def HeadPost (P : Params w) (W : Nat) (s₀ : State) (s : State) : Prop :=
+  ∃ c r, Inv P W s₀ c r s ∧ ((c = len s₀ ∧ 1 ≤ r) ∨ (c < len s₀ ∧ r = 0))
 
-theorem head_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) {r : Nat}
-    (hr : r ≤ blockBytes w) (hl : 0 < len s₀) {s : State} (hI : Inv P s₀ 0 r s) :
-    WP isa (head P) s (HeadPost P s₀) := by
+theorem head_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀) {r : Nat}
+    (hr : r ≤ blockBytes w) (hl : 0 < len s₀) {s : State} (hI : Inv P W s₀ 0 r s) :
+    WP isa (head P) s (HeadPost P W s₀) := by
   obtain hL := len_lt s₀
   have hl' := hP.len
   unfold head
@@ -558,9 +560,9 @@ theorem directArgs_ok {σ : State} (hB : B w < 4096) :
   · rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
 
 /-- The blocks of data but the last, straight from the data. -/
-theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) {c : Nat}
-    (hc : c < len s₀) {s : State} (hI : Inv P s₀ c 0 s) :
-    WP isa (direct P) s (Inv P s₀ (c + blockBytes w * ((len s₀ - c - 1) / blockBytes w)) 0) := by
+theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀) {c : Nat}
+    (hc : c < len s₀) {s : State} (hI : Inv P W s₀ c 0 s) :
+    WP isa (direct P) s (Inv P W s₀ (c + blockBytes w * ((len s₀ - c - 1) / blockBytes w)) 0) := by
   have hl := hP.len
   obtain hL := len_lt s₀
   obtain hcn := cnt_lt s₀
@@ -575,7 +577,7 @@ theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp 
   refine WP.seq (wp_subImm (by decide) fun s₁ u₁ => wp_lsr hP.lbb.1 fun s₂ u₂ => WP.block_nil ?_)
   obtain h10 : s₂.gpr .x10 = BitVec.ofNat 64 k := by
     rw [u₂.gpr, u₁.gpr, hI.x22, sub_ofNat (by omega_using [hc]), shr_ofNat hP (by omega_using [hL]), hk]
-  have hC₂ : Common w s₀ c s₂ := hI.toCommon.of_gpr
+  have hC₂ : Common w W s₀ c s₂ := hI.toCommon.of_gpr
     (fun r hr => by rw [u₂.other r (notC hr .x10), u₁.other r (notC hr .x9)])
     (by rw [u₂.mem, u₁.mem]) (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr]) (by rw [u₂.sp, u₁.sp])
   obtain h23 : s₂.gpr .x23 = BitVec.ofNat 64 0 := by
@@ -641,9 +643,9 @@ theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp 
       toNat_ofNat_lt (by omega_using [hBk', hm, hcnt, hlt]), List.length_append, D, bytesAt_length, ← hcnt]
 
 /-- The last `1` to `B` bytes of data, into the empty buffer. -/
-theorem tail_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} (hc₁ : c < len s₀)
-    (hc₂ : len s₀ - c ≤ blockBytes w) {s : State} (hI : Inv P s₀ c 0 s) :
-    WP isa (tail (w := w)) s (Inv P s₀ (len s₀) (len s₀ - c)) := by
+theorem tail_ok (hP : Ok P) {s₀ : State} (hp : Pre w W s₀) {c : Nat} (hc₁ : c < len s₀)
+    (hc₂ : len s₀ - c ≤ blockBytes w) {s : State} (hI : Inv P W s₀ c 0 s) :
+    WP isa (tail (w := w)) s (Inv P W s₀ (len s₀) (len s₀ - c)) := by
   obtain hL := len_lt s₀
   unfold tail
   refine WP.seq (wp_mov fun s₁ u₁ => wp_add fun s₂ u₂ => wp_movz fun s₃ u₃ => WP.block_nil ?_)
@@ -677,10 +679,10 @@ theorem tail_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} (hc₁ : 
     exact hI.keep r hr
 
 /-- All the data is in, and the buffer is not empty. -/
-def Full (P : Params w) (s₀ : State) (s : State) : Prop := ∃ r, Inv P s₀ (len s₀) r s ∧ 1 ≤ r
+def Full (P : Params w) (W : Nat) (s₀ : State) (s : State) : Prop := ∃ r, Inv P W s₀ (len s₀) r s ∧ 1 ≤ r
 
-theorem rest_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) {s : State}
-    (h : HeadPost P s₀ s) : WP isa (rest P) s (Full P s₀) := by
+theorem rest_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀) {s : State}
+    (h : HeadPost P W s₀ s) : WP isa (rest P) s (Full P W s₀) := by
   obtain hL := len_lt s₀
   have hpos := hP.pos
   obtain ⟨c, r, hI, hcr⟩ := h
@@ -702,22 +704,22 @@ theorem rest_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : 
 /-! ## Epilogue and the whole function -/
 
 /-- All the data is in. -/
-def Done (P : Params w) (s₀ : State) (s : State) : Prop :=
-  Common w s₀ (len s₀) s ∧
+def Done (P : Params w) (W : Nat) (s₀ : State) (s : State) : Prop :=
+  Common w W s₀ (len s₀) s ∧
     ∀ h0 d, R₀ P s₀ h0 d → Spec.Blake2.Repr P h0 s.mem (st s₀) (d ++ D s₀ (len s₀))
 
-theorem Full.done (hP : Ok P) {s₀ : State} {s : State} (h : Full P s₀ s) : Done P s₀ s := by
+theorem Full.done (hP : Ok P) {s₀ : State} {s : State} (h : Full P W s₀ s) : Done P W s₀ s := by
   obtain ⟨r, hI, hr⟩ := h
   exact ⟨hI.toCommon, fun h0 d hd => repr_of_reprR P hP.pos (hI.repr h0 d hd) hr⟩
 
 /-- The epilogue's postcondition. -/
-def Post (P : Params w) (s₀ s' : State) : Prop :=
-  (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (updateAArch64 P).post s₀ s'
+def Post (P : Params w) (W : Nat) (s₀ s' : State) : Prop :=
+  (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (updateAArch64 P W).post s₀ s'
 
-theorem epilogue_ok {s₀ : State} (hp : Pre w s₀) {s : State} (hI : Done P s₀ s) :
-    WP isa (.block restore) s (Post P s₀) := by
+theorem epilogue_ok {s₀ : State} (hp : Pre w W s₀) {s : State} (hI : Done P W s₀ s) :
+    WP isa (.block restore) s (Post P W s₀) := by
   refine restore_ok (scr := scr s₀) hI.1.x20
-    (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hI.1.rd, hI.1.wr, hp.wr], Offset.contains_base _ (by omega_using [hd₂]) (by omega_using [hd₂])⟩)
+    (fun d hd₁ hd₂ => ⟨scR s₀ W, by simp [hI.1.rd, hI.1.wr, hp.wr], Offset.contains_base _ (by omega_using [hd₂, hp.hW, hp.hW']) (by omega_using [hd₂, hp.hW, hp.hW'])⟩)
     s₀.gpr hI.1.saved fun s' hs ho hmem _ _ hsp => ⟨preserved_of hs fun r hr => ?_, by rw [hsp, hI.1.sp],
       fun h0 d hr hc hl => ?_⟩
   · rw [ho r (by simp only [untouched] at hr; simp only [saved, List.map_cons, List.map_nil]; decide +revert),
@@ -725,13 +727,13 @@ theorem epilogue_ok {s₀ : State} (hp : Pre w s₀) {s : State} (hI : Done P s�
   · rw [hmem]; exact hI.2 h0 d ⟨hr, hc, hl⟩
 
 /-- `update` without its frame: the callee-saved registers but `x30` are kept. -/
-theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) :
-    WP isa (updateMain P) s₀ (Post P s₀) := by
+theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀) :
+    WP isa (updateMain P) s₀ (Post P W s₀) := by
   obtain hL := len_lt s₀
   unfold updateMain
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hC, hm⟩ => ?_)
   refine WP.seq (WP.mono (bufLen_ok' hP hp hC hm) fun s₂ hI => ?_)
-  refine WP.seq (WP.mono (Q := Done P s₀) ?_ fun s₄ h => epilogue_ok hp h)
+  refine WP.seq (WP.mono (Q := Done P W s₀) ?_ fun s₄ h => epilogue_ok hp h)
   refine WP.ite _ (zero_iff s₂ hI.x22 (by omega_using [hL])) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq, Nat.sub_zero] at hb
     refine WP.block_nil ⟨by rw [hb]; exact hI.toCommon, fun h0 d hd => ?_⟩
@@ -753,12 +755,12 @@ theorem noFrames_updateMain (hf : CalleeOk P (compress P)) : (updateMain P).noFr
 abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
-theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
-    (hpre : (updateAArch64 P).pre s₀) :
-    WP isa (update P) s₀ fun s' => GprAbi s₀ s' ∧ (updateAArch64 P).post s₀ s' := by
-  obtain ⟨hp, hs⟩ := pre_of hpre
+theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hW : 104 ≤ W) (hW' : W ≤ 576)
+    (hpre : (updateAArch64 P W).pre s₀) :
+    WP isa (update P) s₀ fun s' => GprAbi s₀ s' ∧ (updateAArch64 P W).post s₀ s' := by
+  obtain ⟨hp, hs⟩ := pre_of hW hW' hpre
   have hl := hP.len
-  obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
+  obtain hpi : Pre w W (inner s₀) := ⟨hp.hW, hp.hW', hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
   refine WP.frameReg hs.sp16 (fun R hR => ?_)
     (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (noFrames_updateMain hf)]; decide)
@@ -815,7 +817,7 @@ open VG.WriteBytes (writeBytes writeBytes_nil writeBytes_snoc writeBytes_frame w
 /-! ## Instructions at the word size -/
 
 section
-variable {w : Nat} {is : List Instr} {s : State} {Q : State → Prop}
+variable {w W : Nat} {is : List Instr} {s : State} {Q : State → Prop}
 
 theorem wp_movImm64 {d : Reg} {v : BitVec 64} {rest : List Instr}
     (k : ∀ s', Upd s s' d v → WP isa (.block rest) s' Q) :
@@ -855,7 +857,7 @@ end
 /-! ## Sizes -/
 
 section
-variable {w : Nat} (hw : w = 64 ∨ w = 32)
+variable {w W : Nat} (hw : w = 64 ∨ w = 32)
 include hw
 
 theorem w_le : w ≤ 64 := by omega_arith
@@ -884,7 +886,7 @@ end
 /-! ## The initial hash value -/
 
 section
-variable {w : Nat} (P : Params w)
+variable {w W : Nat} (P : Params w)
 
 /-- `IV[k]`, for any `k`. -/
 def ivAt (k : Nat) : BitVec w := if h : k < 8 then P.IV[k] else 0
@@ -997,7 +999,7 @@ end
 /-! ## The key block -/
 
 section
-variable {w : Nat}
+variable {w W : Nat}
 
 theorem writeW_zero (m : Mem) (a : Addr) :
     m.writeW a (0 : BitVec 64) = writeBytes m a (List.replicate 8 0) := by
@@ -1137,7 +1139,7 @@ theorem keyLoop_ok (hw : w = 64 ∨ w = 32) {s₀ : State} {Z : Mem} {σ : State
 end
 
 section
-variable {w : Nat} {P : Params w}
+variable {w W : Nat} {P : Params w}
 
 theorem keyBlock_eq : Impl.Blake2.AArch64.Stream.keyBlock (w := w) =
     .seq (.block ((.movz .x .x9 0 0 :: (List.range (B w / 8)).flatMap fun j =>
@@ -1274,38 +1276,40 @@ abbrev op : Addr := s₀.gpr .x2
 abbrev scr : Addr := s₀.gpr .x3
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev outR (w : Nat) : Region := ⟨op s₀, bufOff w⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR (W : Nat) : Region := ⟨scr s₀, W⟩
 /-- The frame saving `x30`, below the stack pointer. -/
 abbrev stkR : Region := ⟨s₀.sp - 16, 16⟩
 
 end
 
-structure Pre (w : Nat) (s₀ : State) : Prop where
+structure Pre (w W : Nat) (s₀ : State) : Prop where
+  hW : 104 ≤ W
+  hW' : W ≤ 576
   rd : s₀.rd = []
-  wr : s₀.wr = [stR s₀ w, outR s₀ w, scR s₀]
+  wr : s₀.wr = [stR s₀ w, outR s₀ w, scR s₀ W]
   st_out : (stR s₀ w).Disjoint (outR s₀ w)
-  st_scr : (stR s₀ w).Disjoint (scR s₀)
-  out_scr : (outR s₀ w).Disjoint (scR s₀)
+  st_scr : (stR s₀ w).Disjoint (scR s₀ W)
+  out_scr : (outR s₀ w).Disjoint (scR s₀ W)
 
 /-- The frame is below the stack pointer, and disjoint from the buffers. -/
-structure Stack (w : Nat) (s₀ : State) : Prop where
+structure Stack (w W : Nat) (s₀ : State) : Prop where
   sp16 : 16 ≤ s₀.sp.toNat
   st : (stkR s₀).Disjoint (stR s₀ w)
   out : (stkR s₀).Disjoint (outR s₀ w)
-  scr : (stkR s₀).Disjoint (scR s₀)
+  scr : (stkR s₀).Disjoint (scR s₀ W)
 
-theorem pre_of {w : Nat} {P : Params w} {s₀ : State} (h : (finalizeAArch64 P).pre s₀) :
-    Pre w s₀ ∧ Stack w s₀ := by
+theorem pre_of {w W : Nat} {P : Params w} {s₀ : State} (hW : 104 ≤ W) (hW' : W ≤ 576) (h : (finalizeAArch64 P W).pre s₀) :
+    Pre w W s₀ ∧ Stack w W s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
+  exact ⟨⟨hW, hW', h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
 
 /-- The saved registers are outside everything written after the saves. -/
-theorem Saved.frame {w : Nat} {s₀ : State} (hp : Pre w s₀) {g : Reg → BitVec 64} {m m' : Mem}
-    (h : Saved (scr s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩] m m') :
+theorem Saved.frame {w W : Nat} {s₀ : State} (hp : Pre w W s₀) {g : Reg → BitVec 64} {m m' : Mem}
+    (h : Saved (scr s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 56⟩] m m') :
     Saved (scr s₀) g m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
     obtain hoff := saved_off p hp'
-    obtain hsub : Region.Sub ⟨scr s₀ + BitVec.ofNat 64 p.2, 8⟩ (scR s₀) := Offset.sub_base _ (by omega_arith)
+    obtain hsub : Region.Sub ⟨scr s₀ + BitVec.ofNat 64 p.2, 8⟩ (scR s₀ W) := Offset.sub_base _ (by have := hp.hW; have := hp.hW'; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.st_scr.symm.sub_left hsub
@@ -1326,10 +1330,10 @@ structure Start (s₀ s : State) : Prop where
   keep : ∀ r ∈ untouched, s.gpr r = s₀.gpr r
   mem : s.mem = saveMem s₀.mem (scr s₀) s₀.gpr
 
-theorem prologue_ok {w : Nat} {s₀ : State} (hp : Pre w s₀) :
+theorem prologue_ok {w W : Nat} {s₀ : State} (hp : Pre w W s₀) :
     WP isa (.block (save .x3 ++ ([mov .x19 .x0, mov .x20 .x3, mov .x21 .x2, mov .x24 .x1] : List Instr)))
       s₀ (Start s₀) := by
-  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
+  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀ W, by simp [hp.wr], Offset.contains_base _ (by have := hp.hW; have := hp.hW'; omega_arith) (by have := hp.hW; have := hp.hW'; omega_arith)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
     WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_⟩
@@ -1347,7 +1351,7 @@ theorem prologue_ok {w : Nat} {s₀ : State} (hp : Pre w s₀) :
 /-! ## Zeroing the rest of the buffer -/
 
 section
-variable {w : Nat}
+variable {w W : Nat}
 
 /-- Zeroing the buffer from byte `r` (in `x23`) on. -/
 theorem pad_ok {s : State} {st : Addr} {r : Nat} (hN : bufOff w ≤ 64) (hr : r ≤ blockBytes w)
@@ -1421,7 +1425,7 @@ theorem pad_bytes {m m' : Mem} {st : Addr} {N r bb : Nat} (hr : r ≤ bb) (hlt :
 /-! ## Copying the hash value out -/
 
 section
-variable {w : Nat}
+variable {w W : Nat}
 
 theorem output_eq : output (w := w) = (List.range (N w / 8)).flatMap fun k =>
     [.ldr .x .x9 .x19 (8 * k), .str .x .x9 .x21 (8 * k)] := rfl
@@ -1470,7 +1474,7 @@ end
 /-! ## The whole function -/
 
 section
-variable {w : Nat} {P : Params w}
+variable {w W : Nat} {P : Params w}
 
 theorem noFrames_finalizeMain (hf : CalleeOk P (compress P)) : (finalizeMain P).noFrames = true := by
   simp only [finalizeMain, pad, compressLast, Impl.Blake2.AArch64.Stream.compressWith, zeroLoop,
@@ -1483,19 +1487,19 @@ theorem commonKeep_ok : ∀ r ∈ commonKeep,
     r ∈ preserved ∧ r ≠ .x30 ∧ r ≠ .x9 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x23 := by decide
 
 /-- The epilogue's postcondition. -/
-def Post (P : Params w) (s₀ s' : State) : Prop :=
-  (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (finalizeAArch64 P).post s₀ s'
+def Post (P : Params w) (W : Nat) (s₀ s' : State) : Prop :=
+  (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (finalizeAArch64 P W).post s₀ s'
 
 /-- `finalize` without its frame: the callee-saved registers but `x30` are kept. -/
-theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) :
-    WP isa (finalizeMain P) s₀ (Post P s₀) := by
+theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w W s₀) :
+    WP isa (finalizeMain P) s₀ (Post P W s₀) := by
   have hl := hP.len
   have hN := hP.N64
   have hbb := hP.bb
   obtain hN8 : bufOff w % 8 = 0 := by simp only [bufOff]; omega_arith
-  obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
-  obtain hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 512, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
-    simpa using hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))
+  obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by have := hp.hW; have := hp.hW'; omega_arith)
+  obtain hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 56, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
+    simpa using hp.st_scr.sub_right (Offset.sub_base _ (by have := hp.hW; have := hp.hW'; omega_arith))
   unfold finalizeMain
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
   obtain hkeep : ∀ i < bufOff w + blockBytes w,
@@ -1522,7 +1526,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   -- The call.
   obtain hbuf : Region.Sub ⟨st s₀ + BitVec.ofNat 64 (bufOff w), blockBytes w⟩ (stR s₀ w) :=
     Offset.sub_base _ (by omega_arith)
-  obtain hscr : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
+  obtain hscr : Region.Sub ⟨scr s₀, 56⟩ (scR s₀ W) := Region.sub_prefix (by have := hp.hW; have := hp.hW'; omega_arith)
   obtain hcall : CallOk (w := w) s₃ (st s₀) (scr s₀) (s₃.gpr .x19 + BitVec.ofNat 64 (bufOff w))
       (blockBytes w * (BitVec.setWidth 64 (1 : BitVec 16)).toNat) := by
     rw [show (BitVec.setWidth 64 (1 : BitVec 16)).toNat = 1 from rfl, Nat.mul_one, hx19₃]
@@ -1535,14 +1539,14 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
       rcases hr with rfl | rfl | rfl
       · exact ⟨stR s₀ w, by simp, bufOff w, rfl, by simp only; omega_arith⟩
       · exact ⟨stR s₀ w, by simp, 0, (BitVec.add_zero _).symm, by simp only; omega_arith⟩
-      · exact ⟨scR s₀, by simp, 0, (BitVec.add_zero _).symm, by simp only; omega_arith⟩
+      · exact ⟨scR s₀ W, by simp, 0, (BitVec.add_zero _).symm, by simp only; have := hp.hW; have := hp.hW'; omega_arith⟩
     · rw [hwr₃, hp.wr]
       apply Covers.of_sub
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨stR s₀ w, by simp, 0, (BitVec.add_zero _).symm, by simp only; omega_arith⟩
-      · exact ⟨scR s₀, by simp, 0, (BitVec.add_zero _).symm, by simp only; omega_arith⟩
+      · exact ⟨scR s₀ W, by simp, 0, (BitVec.add_zero _).symm, by simp only; have := hp.hW; have := hp.hW'; omega_arith⟩
   unfold compressLast
   refine WP.seq (compressWith_ok hf (bufArgs_ok (by omega_arith)) hcall fun s₄ rd₄ wr₄ sp₄ cs₄ f₄ e₄ => ?_)
   obtain cs : ∀ r ∈ commonKeep, s₄.gpr r = s₁.gpr r := fun r hr => by
@@ -1562,7 +1566,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     exact ⟨outR s₀ w, by simp, h⟩
   · rw [hx19₄, hx21₄]; exact hp.st_out.sub_left hstN
   -- What the call and the stores wrote.
-  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩] s₁.mem s₅.mem := by
+  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 56⟩] s₁.mem s₅.mem := by
     obtain f₃ : Frame [stR s₀ w] s₁.mem s₃.mem := by
       rw [hm₃]; exact writeBytes_frame _ _ _ (Offset.contains_base _ (by simp; omega_arith) (by omega_arith))
     obtain f₅ : Frame [outR s₀ w] s₄.mem s₅.mem := by
@@ -1575,8 +1579,8 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     · exact ⟨_, by simp, fun _ h => h⟩
   obtain hsv : Saved (scr s₀) s₀.gpr s₅.mem := Saved.frame hp (h₁.mem ▸ saveMem_saved _ _ _) F₁
   refine restore_ok (scr := scr s₀) (by rw [g₅ _ (by decide), cs _ (by simp), h₁.x20])
-    (fun d hd₁ hd₂ => ⟨scR s₀, by simp [rd₅, wr₅, rd₄, wr₄, hrd₃, hwr₃, hp.wr],
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) s₀.gpr hsv
+    (fun d hd₁ hd₂ => ⟨scR s₀ W, by simp [rd₅, wr₅, rd₄, wr₄, hrd₃, hwr₃, hp.wr],
+      Offset.contains_base _ (by have := hp.hW; have := hp.hW'; omega_arith) (by have := hp.hW; have := hp.hW'; omega_arith)⟩) s₀.gpr hsv
     fun s₆ hs ho m₆ _ _ sp₆ => ⟨preserved_of hs fun r hr => ?_, by rw [sp₆, sp₅, sp₄, hsp₃], ?_⟩
   · rw [ho r (by simp only [untouched] at hr; simp only [saved, List.map_cons, List.map_nil]; decide +revert),
       g₅ r (notU hr .x9), cs r (by simp only [untouched] at hr; simp [hr]), h₁.keep r hr]
@@ -1601,12 +1605,12 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
 abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
-theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
-    (hpre : (finalizeAArch64 P).pre s₀) :
-    WP isa (finalize P) s₀ fun s' => GprAbi s₀ s' ∧ (finalizeAArch64 P).post s₀ s' := by
-  obtain ⟨hp, hs⟩ := pre_of hpre
+theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hW : 104 ≤ W) (hW' : W ≤ 576)
+    (hpre : (finalizeAArch64 P W).pre s₀) :
+    WP isa (finalize P) s₀ fun s' => GprAbi s₀ s' ∧ (finalizeAArch64 P W).post s₀ s' := by
+  obtain ⟨hp, hs⟩ := pre_of hW hW' hpre
   have hl := hP.len
-  obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
+  obtain hpi : Pre w W (inner s₀) := ⟨hp.hW, hp.hW', hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
   refine WP.frameReg hs.sp16 (fun R hR => ?_)
     (WP.mono (correctMain hP hf hpi) fun s' ⟨hk, hsp, hpost⟩ mm u f => ?_)
     (by rw [fdepth_of_noFrames (noFrames_finalizeMain hf)]; decide)
@@ -1662,23 +1666,23 @@ def initSat (w : Nat) : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩]
 
-/-- `update`, with no data, for `w`-bit words. -/
-def updateSat (w : Nat) : State where
+/-- `update`, with no data, for `w`-bit words and `W` bytes of scratch space. -/
+def updateSat (w : Nat) (W : Nat := 576) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x2 => 0x2000 | .x4 => 0x3000 | _ => 0
   sp := 0x5000
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, W⟩]
 
-/-- `finalize`, for `w`-bit words. -/
-def finalizeSat (w : Nat) : State where
+/-- `finalize`, for `w`-bit words and `W` bytes of scratch space. -/
+def finalizeSat (w : Nat) (W : Nat := 576) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x2 => 0x2000 | .x3 => 0x3000 | _ => 0
   sp := 0x5000
   mem _ := 0
   rd := []
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, W⟩]
 
 /-! ## BLAKE2b -/
 
@@ -1687,15 +1691,27 @@ theorem initB_correct (st : State) (hs : (initAArch64 b).pre st) :
       (initAArch64 b).post st s' :=
   WP.withPreservedV (Init.correct okB hs) (by lit_decide)
 
+theorem updateB_correctW {W : Nat} (hW : 104 ≤ W) (hW' : W ≤ 576) (st : State)
+    (hs : (updateAArch64 b W).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.update b) st t s' ∧ abiPreserved st s' ∧
+      (updateAArch64 b W).post st s' :=
+  WP.withPreservedV (Update.correct okB calleeB hW hW' hs) (by lit_decide)
+
 theorem updateB_correct (st : State) (hs : (updateAArch64 b).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.update b) st t s' ∧ abiPreserved st s' ∧
       (updateAArch64 b).post st s' :=
-  WP.withPreservedV (Update.correct okB calleeB hs) (by lit_decide)
+  updateB_correctW (by decide) (by decide) st hs
+
+theorem finalizeB_correctW {W : Nat} (hW : 104 ≤ W) (hW' : W ≤ 576) (st : State)
+    (hs : (finalizeAArch64 b W).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.finalize b) st t s' ∧ abiPreserved st s' ∧
+      (finalizeAArch64 b W).post st s' :=
+  WP.withPreservedV (Finalize.correct okB calleeB hW hW' hs) (by lit_decide)
 
 theorem finalizeB_correct (st : State) (hs : (finalizeAArch64 b).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.finalize b) st t s' ∧ abiPreserved st s' ∧
       (finalizeAArch64 b).post st s' :=
-  WP.withPreservedV (Finalize.correct okB calleeB hs) (by lit_decide)
+  finalizeB_correctW (by decide) (by decide) st hs
 
 theorem initB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.init b)
@@ -1729,15 +1745,27 @@ theorem initS_correct (st : State) (hs : (initAArch64 s).pre st) :
       (initAArch64 s).post st s' :=
   WP.withPreservedV (Init.correct okS hs) (by lit_decide)
 
+theorem updateS_correctW {W : Nat} (hW : 104 ≤ W) (hW' : W ≤ 576) (st : State)
+    (hs : (updateAArch64 s W).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.update s) st t s' ∧ abiPreserved st s' ∧
+      (updateAArch64 s W).post st s' :=
+  WP.withPreservedV (Update.correct okS calleeS hW hW' hs) (by lit_decide)
+
 theorem updateS_correct (st : State) (hs : (updateAArch64 s).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.update s) st t s' ∧ abiPreserved st s' ∧
       (updateAArch64 s).post st s' :=
-  WP.withPreservedV (Update.correct okS calleeS hs) (by lit_decide)
+  updateS_correctW (by decide) (by decide) st hs
+
+theorem finalizeS_correctW {W : Nat} (hW : 104 ≤ W) (hW' : W ≤ 576) (st : State)
+    (hs : (finalizeAArch64 s W).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.finalize s) st t s' ∧ abiPreserved st s' ∧
+      (finalizeAArch64 s W).post st s' :=
+  WP.withPreservedV (Finalize.correct okS calleeS hW hW' hs) (by lit_decide)
 
 theorem finalizeS_correct (st : State) (hs : (finalizeAArch64 s).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.AArch64.Stream.finalize s) st t s' ∧ abiPreserved st s' ∧
       (finalizeAArch64 s).post st s' :=
-  WP.withPreservedV (Finalize.correct okS calleeS hs) (by lit_decide)
+  finalizeS_correctW (by decide) (by decide) st hs
 
 theorem initS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.init s)
@@ -1771,35 +1799,108 @@ as an argument (`update_scratch`, `finalize_scratch`); `update` and
 `finalize` run them in a frame that allocates it (`Verified.stackScratch`).
 -/
 
+/-- `vg_blake2{b,s}_update_scratch` and `_finalize_scratch` with `scratch: *mut [u64; n]`:
+`Proof.Blake2.updateBScratchSig` and the rest with room for `n` words of
+scratch space rather than 72. The code uses 104 bytes of it (the compression
+function's 56 and the 48 that hold our caller's `x19`–`x24`), so `update` and
+`finalize` allocate 14 words, a multiple of 16 bytes. -/
+def updateBScratchSigN (n : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 n)]
+
+def updateBScratchContractN {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (updateBScratchSigN n).contract A
+    (post := fun state count data len _scratch => updateBPost A.ptrBits state count data len)
+    (stack := stack)
+
+def finalizeBScratchSigN (n : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 64), ("scratch", .array true .u64 n)]
+
+def finalizeBScratchContractN {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (finalizeBScratchSigN n).contract A
+    (post := fun state count out _scratch => finalizeBPost A.ptrBits state count out)
+    (stack := stack)
+
+def updateSScratchSigN (n : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 n)]
+
+def updateSScratchContractN {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (updateSScratchSigN n).contract A
+    (post := fun state count data len _scratch => updateSPost A.ptrBits state count data len)
+    (stack := stack)
+
+def finalizeSScratchSigN (n : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 32), ("scratch", .array true .u64 n)]
+
+def finalizeSScratchContractN {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (finalizeSScratchSigN n).contract A
+    (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
+    (stack := stack)
+
+theorem updateB_verified14 :
+    Verified AArch64.target (Impl.Blake2.AArch64.Stream.update b)
+      (updateBScratchContractN AArch64.abi 14 16) :=
+  Verified.of_correct (updateB_correctW (W := 112) (by decide) (by decide)) updateB_ct (by
+    sig_implies [updateBScratchContractN, updateBScratchSigN, Proof.Blake2.updateAArch64,
+      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
+      [updateSat] using updateSat 64 112)
+
 theorem updateB_framed : Verified AArch64.target
-    (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update b))
-    (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
-    updateB_verified (by decide) (by decide)
+    (Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update b))
+    (Spec.Blake2.updateBContract AArch64.abi (16 + 112)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+    updateB_verified14 (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
+theorem finalizeB_verified14 :
+    Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize b)
+      (finalizeBScratchContractN AArch64.abi 14 16) :=
+  Verified.of_correct (finalizeB_correctW (W := 112) (by decide) (by decide)) finalizeB_ct (by
+    sig_implies [finalizeBScratchContractN, finalizeBScratchSigN, Proof.Blake2.finalizeAArch64,
+      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
+      [finalizeSat] using finalizeSat 64 112)
+
 theorem finalizeB_framed : Verified AArch64.target
-    (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize b))
-    (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
-    finalizeB_verified (by decide) (by decide)
+    (Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize b))
+    (Spec.Blake2.finalizeBContract AArch64.abi (16 + 112)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+    finalizeB_verified14 (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeBPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
+theorem updateS_verified14 :
+    Verified AArch64.target (Impl.Blake2.AArch64.Stream.update s)
+      (updateSScratchContractN AArch64.abi 14 16) :=
+  Verified.of_correct (updateS_correctW (W := 112) (by decide) (by decide)) updateS_ct (by
+    sig_implies [updateSScratchContractN, updateSScratchSigN, Proof.Blake2.updateAArch64,
+      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
+      [updateSat] using updateSat 32 112)
+
 theorem updateS_framed : Verified AArch64.target
-    (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update s))
-    (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
-    updateS_verified (by decide) (by decide)
+    (Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update s))
+    (Spec.Blake2.updateSContract AArch64.abi (16 + 112)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+    updateS_verified14 (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Blake2.updateSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
+theorem finalizeS_verified14 :
+    Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize s)
+      (finalizeSScratchContractN AArch64.abi 14 16) :=
+  Verified.of_correct (finalizeS_correctW (W := 112) (by decide) (by decide)) finalizeS_ct (by
+    sig_implies [finalizeSScratchContractN, finalizeSScratchSigN, Proof.Blake2.finalizeAArch64,
+      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
+      [finalizeSat] using finalizeSat 32 112)
+
 theorem finalizeS_framed : Verified AArch64.target
-    (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize s))
-    (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
-  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
-    finalizeS_verified (by decide) (by decide)
+    (Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize s))
+    (Spec.Blake2.finalizeSContract AArch64.abi (16 + 112)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
+    finalizeS_verified14 (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Blake2.finalizeSPost_out _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
