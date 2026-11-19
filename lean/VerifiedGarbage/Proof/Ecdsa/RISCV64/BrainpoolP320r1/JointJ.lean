@@ -1,0 +1,326 @@
+module
+
+-- separate module: brainpoolP320r1's verification is its only importer, but it builds on both
+-- the joint ladder's proofs and the windows', which its importers need not re-check
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Joint
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Window
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.BrainpoolP320r1.Point
+import VerifiedGarbage.Proof.Weierstrass.PointFacts
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
+import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+
+/-!
+# ECDSA verification over brainpoolP320r1 on RISC-V: the joint ladder with Jacobian doublings
+
+`VerifyJ.Cfg.joint brainpoolp320r1 dblJa` leaves in `R` a representative of
+`[u]G + [v]Q` (`jointJ_ok`), as the joint ladder of `Joint.lean` does: the same
+table (`Joint.build_ok`) and window entries (`Joint.select_ok`), and each step's
+`T = 4 R` by two Jacobian doublings (`quad2_ok`, from the windows' `toJ`, `dblJa`
+and `fromJ`, `Window.lean`) before `R = T + E`.
+-/
+
+-- `R = 2^320` is evaluated where the doublings' Montgomery forms are unified.
+set_option exponentiation.threshold 512
+
+@[expose] public section
+
+
+namespace VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.JointJ
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Proof.Mont VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdsa.RISCV64.Verify
+open VG.Impl.Weierstrass VG.Impl.Weierstrass.RISCV64 VG.Impl.Ecdh.RISCV64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64
+open VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1 (W field_ok unit)
+open VG.Proof.Ecdsa.RISCV64.Joint
+open VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Joint (PtOk addPt_ok keepU JPre JTab select_ok build_ok)
+open VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.Window (c wSl wLay wShort S quadW quadWl KC dblStep_ok toJStep_ok
+  dbl_apart_DT dbl_apart_TD)
+open VG.Proof.Ecdsa.RISCV64.WindowA (d2)
+open VG.Impl.Weierstrass (dblJa)
+open VG.Proof.X25519.RISCV64 (Rest)
+open VG.Spec.Weierstrass (Point Fe mul onCurve)
+
+theorem fromJT_apart : RcbApart S (c.pt DX DY DZ) (WindowA.Cfg.zeroPt c) (c.pt TX TY TZ) := ⟨by decide, by decide⟩
+
+/-- `D` back in projective coordinates in `T`. -/
+theorem fromJTStep_ok {base : Addr} {s : State} {V : List Nat} {E : Nat → Fe W}
+    (hI : Inv 5 base W.p (· ∈ wSl) V E s) (hV : ∀ x ∈ rcbR S (c.pt DX DY DZ) (WindowA.Cfg.zeroPt c), x ∈ V) :
+    WP isa (fprog brainpoolp320r1Field (fromJ S (c.pt DX DY DZ) (WindowA.Cfg.zeroPt c) (c.pt TX TY TZ))) s fun s' =>
+      KeepR 5 base (rcbW S (c.pt TX TY TZ)) s s' ∧
+      ∃ E', Inv 5 base W.p (· ∈ wSl) ([c.sl TX, c.sl TY, c.sl TZ] ++ V) E' s' ∧
+        (E' (c.sl TX), E' (c.sl TY), E' (c.sl TZ)) =
+          (E (c.sl DX) * E (c.sl DZ), E (c.sl DY) + E (c.sl ZERO),
+            E (c.sl DZ) * E (c.sl DZ) * E (c.sl DZ)) ∧
+        ∀ x, x ∉ rcbW S (c.pt TX TY TZ) → E' x = E x := by
+  rw [fromJ_eq]
+  refine WP.mono (ofN_ok (F := brainpoolp320r1Field) field_ok rfl wLay wShort unit fromJN_ok fromJT_apart (by decide) hI hV)
+    fun s' ⟨k, I, v, kp⟩ => ⟨k, _, I, v.trans (fromJN_run _), kp⟩
+
+/-- `T = 4 R`, for `R` representing `P`. -/
+theorem quad2_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK : KC base s) {P : Point W}
+    (hP : onCurve W P = true) (hR : PtOk base s (c.pt RX RY RZ) P) :
+    WP isa (VerifyJ.Cfg.quad2 c dblJa) s fun s' => Kp s s' ∧ Unch base quadW s.mem s'.mem ∧
+      PtOk base s' (c.pt TX TY TZ) (d2 (d2 P)) := by
+  obtain hp0 : 0 < W.p := by decide
+  have hn := hw.nowrap
+  rw [VerifyJ.Cfg.quad2, VerifyJ.Cfg.jSlots_gen _ rfl]
+  simp only [progs]
+  -- The start: `a`, `b`, zero and `R`.
+  obtain hI : Inv 5 base W.p (· ∈ wSl) [c.sl AP, c.sl B3P, c.sl ZERO, c.sl RX, c.sl RY, c.sl RZ]
+      (fun x => toM W.p (2 ^ (64 * 5)) (wordsVal s.mem base x 5)) s := by
+    refine ⟨hw, by decide, fun x hx => ?_, fun x _ => rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [hK.ap]; exact Nat.mod_lt _ hp0
+    · rw [hK.bp]; exact Nat.mod_lt _ hp0
+    · rw [hK.zero]; exact hp0
+    exacts [hR.x, hR.y, hR.z]
+  obtain e0 : toM W.p (2 ^ (64 * 5)) (wordsVal s.mem base (c.sl ZERO) 5) = 0 := by
+    rw [hK.zero]; exact toM_zero _ _
+  obtain ea : toM W.p (2 ^ (64 * 5)) (wordsVal s.mem base (c.sl AP) 5) = Fin.ofNat W.p W.a := by
+    rw [hK.ap, toM_mont unit]
+  -- To Jacobian coordinates.
+  refine WP.seq (WP.mono (toJStep_ok hL hI (by decide) hR.rep e0) fun s₁ ⟨k₁, E₁, I₁, J₁, p₁⟩ => ?_)
+  obtain a₁ : E₁ (c.sl AP) = Fin.ofNat W.p W.a := (p₁ _ (by decide)).trans ea
+  -- Two doublings.
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_DT (by decide) I₁ (by decide) a₁ hP J₁)
+    fun s₂ ⟨k₂, E₂, I₂, J₂, p₂⟩ => ?_)
+  obtain a₂ : E₂ (c.sl AP) = Fin.ofNat W.p W.a := (p₂ _ (by decide)).trans a₁
+  refine WP.seq (WP.mono (dblStep_ok hL dbl_apart_TD (by decide) I₂ (by decide) a₂ (hL.onCurve_add hP hP) J₂)
+    fun s₃ ⟨k₃, E₃, I₃, J₃, p₃⟩ => ?_)
+  -- Back to projective coordinates, in `T`.
+  refine WP.seq (WP.mono (fromJTStep_ok I₃ (by decide)) fun s₆ ⟨k₆, E₆, I₆, v₆, p₆⟩ => ?_)
+  obtain z₅ : E₃ (c.sl ZERO) = 0 := by
+    rw [p₃ _ (by decide), p₂ _ (by decide), p₁ _ (by decide)]; exact e0
+  simp only [Prod.mk.injEq] at v₆
+  obtain ⟨vx, vy, vz⟩ := v₆
+  rw [z₅, Lean.Grind.AddCommMonoid.add_zero] at vy
+  have hw₆ := I₆.ws
+  have hn₆ := hw₆.nowrap
+  obtain ltx := I₆.lt (c.sl TX) (by decide)
+  obtain lty := I₆.lt (c.sl TY) (by decide)
+  obtain ltz := I₆.lt (c.sl TZ) (by decide)
+  obtain vx' : tmv W 5 base s₆ (c.sl TX) = E₆ (c.sl TX) := I₆.val (c.sl TX) (by decide)
+  obtain vy' : tmv W 5 base s₆ (c.sl TY) = E₆ (c.sl TY) := I₆.val (c.sl TY) (by decide)
+  obtain vz' : tmv W 5 base s₆ (c.sl TZ) = E₆ (c.sl TZ) := I₆.val (c.sl TZ) (by decide)
+  -- `Y = 1` where `Z = 0`.
+  obtain KK : KeepR 5 base quadWl s s₆ :=
+    (((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans ((k₃.mono (by decide)).trans (k₆.mono (by decide))))
+  have UK : Unch base (quadWl.map (fun w => (w, 8 * 5)) ++ [(own 5, 64 * 5)]) s.mem s₆.mem := KK.mem
+  obtain onep₆ : wordsVal s₆.mem base (c.sl ONEP) 5 = 2 ^ 320 % W.p := by
+    rw [UK.wordsVal (by decide) (by decide)]; exact hK.onep
+  refine WP.block_append (WP.mono (zeroMask_ok hw₆ (n := 5) (a := c.sl TZ) (by decide) (by decide))
+    fun s₇ ⟨r₇, m₇, a7₇⟩ => ?_)
+  obtain hw₇ := hw₆.of_rest r₇
+  refine WP.mono (sel_ok (decide (wordsVal s₆.mem base (c.sl TZ) 5 = 0)) 5 hw₇ a7₇
+    (o := c.sl TY) (a := c.sl TY) (b := c.sl ONEP) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (Or.inl (Nat.le_refl _)) (by decide)) fun s₈ ⟨e₈, r₈, O₈⟩ => ?_
+  rw [m₇] at e₈ O₈
+  obtain ex : wordsVal s₈.mem base (c.sl TX) 5 = wordsVal s₆.mem base (c.sl TX) 5 :=
+    O₈.wordsVal (by decide) (by decide)
+  obtain ez : wordsVal s₈.mem base (c.sl TZ) 5 = wordsVal s₆.mem base (c.sl TZ) 5 :=
+    O₈.wordsVal (by decide) (by decide)
+  obtain hZ : (wordsVal s₆.mem base (c.sl TZ) 5 = 0) ↔ E₃ (c.sl DZ) = 0 := by
+    rw [← toM_eq_zero_iff unit ltz]
+    show tmv W 5 base s₆ (c.sl TZ) = 0 ↔ _
+    rw [vz', vz]
+    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
+  obtain hrep := InvJ.out hL J₃
+  refine ⟨KK.kp.trans ((Kp.of_rest r₇).trans (Kp.of_rest r₈)), (UK.trans O₈.unch).cover (by decide), ⟨?_, ?_, ?_, ?_⟩⟩
+  · show Rep W (tmv W 5 base s₈ (c.sl TX)) (tmv W 5 base s₈ (c.sl TY)) (tmv W 5 base s₈ (c.sl TZ)) _
+    simp only [tmv]
+    rw [ex, ez]
+    show Rep W (tmv W 5 base s₆ (c.sl TX)) _ (tmv W 5 base s₆ (c.sl TZ)) _
+    rw [vx', vz', vx, vz, e₈]
+    by_cases h0 : E₃ (c.sl DZ) = 0
+    · have hc : decide (wordsVal s₆.mem base (c.sl TZ) 5 = 0) = true := decide_eq_true (hZ.mpr h0)
+      have h0' : E₃ (c.pt DX DY DZ).z = 0 := h0
+      rw [show (if E₃ (c.pt DX DY DZ).z = 0 then (1 : Fe W) else E₃ (c.pt DX DY DZ).y) = 1 from
+        by simp [h0']] at hrep
+      simp only [hc, ↓reduceIte]
+      rw [onep₆, toM_one unit]
+      exact hrep
+    · have hc : decide (wordsVal s₆.mem base (c.sl TZ) 5 = 0) = false :=
+        decide_eq_false fun h => h0 (hZ.mp h)
+      have h0' : ¬E₃ (c.pt DX DY DZ).z = 0 := h0
+      rw [show (if E₃ (c.pt DX DY DZ).z = 0 then (1 : Fe W) else E₃ (c.pt DX DY DZ).y) =
+        E₃ (c.pt DX DY DZ).y from by simp [h0']] at hrep
+      simp only [hc, ↓reduceIte, Bool.false_eq_true]
+      show Rep W _ (tmv W 5 base s₆ (c.sl TY)) _ _
+      rw [vy', vy]
+      exact hrep
+  · show wordsVal s₈.mem base (c.sl TX) 5 < W.p
+    rw [ex]; exact ltx
+  · show wordsVal s₈.mem base (c.sl TY) 5 < W.p
+    rw [e₈]; split
+    · rw [onep₆]; exact Nat.mod_lt _ (by decide)
+    · exact lty
+  · show wordsVal s₈.mem base (c.sl TZ) 5 < W.p
+    rw [ez]; exact ltz
+
+
+/-! ## The steps -/
+
+/-- What the steps read, as the loop's start `s₀` holds it. -/
+structure LPre (base : Addr) (s₀ : State) (G Q : Point W) (u v : Nat) : Prop where
+  ap : wordsVal s₀.mem base (brainpoolp320r1.sl AP) 5 = W.a * 2 ^ 320 % W.p
+  bp : wordsVal s₀.mem base (brainpoolp320r1.sl B3P) 5 = 3 * W.b * 2 ^ 320 % W.p
+  zero : wordsVal s₀.mem base (brainpoolp320r1.sl ZERO) 5 = 0
+  onep : wordsVal s₀.mem base (brainpoolp320r1.sl ONEP) 5 = 2 ^ 320 % W.p
+  uu : wordsVal s₀.mem base (brainpoolp320r1.sl UU) 5 = u
+  vv : wordsVal s₀.mem base (brainpoolp320r1.sl VV) 5 = v
+  tab : JTab base s₀ G Q
+  g : onCurve W G = true
+  q : onCurve W Q = true
+
+/-- What the steps write. -/
+abbrev stepW : List (Nat × Nat) := [(624, 600), (2384, 120), (3776, 320)]
+
+/-- The loop's invariant at `s1 = j`: `R` represents `[u >>> 2 j]G + [v >>> 2 j]Q`. -/
+structure LInv (base : Addr) (s₀ s : State) (G Q : Point W) (u v j : Nat) : Prop where
+  ws : WsReg s base
+  ctr : s.gpr .s1 = BitVec.ofNat 64 j
+  keep : Kc s₀ s
+  unch : Unch base stepW s₀.mem s.mem
+  rep : PtOk base s (brainpoolp320r1.pt RX RY RZ) (jp G Q u v j)
+
+/-- A step: from `[u >>> 2 j]G + [v >>> 2 j]Q` to `[u >>> 2 (j - 1)]G + [v >>> 2 (j - 1)]Q`. -/
+theorem stepJ_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v : Nat} (hP : LPre base s₀ G Q u v)
+    {j : Nat} (hj1 : 1 ≤ j) (hj : j ≤ 160) {s : State} (hI : LInv base s₀ s G Q u v j) :
+    WP isa (VerifyJ.Cfg.step brainpoolp320r1 dblJa) s fun s' => LInv base s₀ s' G Q u v (j - 1) := by
+  have hn := hI.ws.nowrap
+  obtain uS : ∀ d, (d + 40 ≤ 624 ∨ 1224 ≤ d) → (d + 40 ≤ 2384 ∨ 2504 ≤ d) → (d + 40 ≤ 3776 ∨ 4096 ≤ d) → d + 40 ≤ 6016 →
+      wordsVal s.mem base d 5 = wordsVal s₀.mem base d 5 := fun d h1 h2 h3 h4 =>
+    hI.unch.wordsVal (by simp; omega_using [h1, h2, h3]) (by omega_using [h4])
+  obtain hT : JTab base s G Q := hP.tab.of_eq fun d h1 h2 => uS d (by omega_using [h1]) (by omega_using [h1]) (.inr h1) h2
+  rw [VerifyJ.Cfg.step]
+  refine WP.seq (wp_decCounter hj1 hI.ctr fun s₁ u₁ => ?_)
+  obtain hw₁ := hI.ws.of_kc (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))
+  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega_using [hj]) u₁.gpr (hT.of_eq fun d _ _ => by rw [u₁.mem]))
+    fun s₂ ⟨pE, O₂, r₂⟩ => ?_
+  rw [u₁.mem, uS _ (by decide) (by decide) (by decide) (by decide), uS _ (by decide) (by decide) (by decide) (by decide), hP.uu, hP.vv] at pE
+  rw [u₁.mem] at O₂
+  obtain hw₂ := hw₁.of_rest r₂
+  obtain e₂ : ∀ d, (d + 40 ≤ 624 ∨ 1224 ≤ d) → (d + 40 ≤ 2384 ∨ 2504 ≤ d) → (d + 40 ≤ 3776 ∨ 4096 ≤ d) → d + 40 ≤ 6016 →
+      wordsVal s₂.mem base d 5 = wordsVal s₀.mem base d 5 := fun d h1 h2 h3 h4 => by
+    rw [O₂.wordsVal (by omega_using [h2]) (by omega_using [h4]), uS d h1 h2 h3 h4]
+  obtain pR₂ : PtOk base s₂ (brainpoolp320r1.pt RX RY RZ) (jp G Q u v j) :=
+    hI.rep.of_eq (O₂.wordsVal (by decide) (by decide)) (O₂.wordsVal (by decide) (by decide))
+      (O₂.wordsVal (by decide) (by decide))
+  obtain ap₂ : wordsVal s₂.mem base (brainpoolp320r1.sl AP) 5 = W.a * 2 ^ 320 % W.p := by
+    rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.ap
+  obtain bp₂ : wordsVal s₂.mem base (brainpoolp320r1.sl B3P) 5 = 3 * W.b * 2 ^ 320 % W.p := by
+    rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.bp
+  obtain hX := ent_curve hL hP.g hP.q (u >>> (2 * j)) (v >>> (2 * j))
+  obtain hD := hL.onCurve_add hX hX
+  obtain hT4 := hL.onCurve_add hD hD
+  obtain hE := ent_curve hL hP.g hP.q ((u >>> (2 * (j - 1))) % 4) ((v >>> (2 * (j - 1))) % 4)
+  obtain hK₂ : KC base s₂ :=
+    ⟨ap₂, bp₂, by rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.zero,
+      by rw [e₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hP.onep⟩
+  -- `T = 4 R`.
+  refine WP.seq (WP.mono (quad2_ok hL hw₂ hK₂ hX pR₂) fun s₄ ⟨K₄, U₄, pT⟩ => ?_)
+  obtain hw₄ := hw₂.of_kp K₄
+  obtain k₄ : ∀ d ∈ [brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl brainpoolp320r1.EX, brainpoolp320r1.sl brainpoolp320r1.EY, brainpoolp320r1.sl brainpoolp320r1.EZ],
+      wordsVal s₄.mem base d 5 = wordsVal s₂.mem base d 5 := fun d hd =>
+    U₄.wordsVal (fun w hw => by
+      have := (by decide : ∀ d ∈ [brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl brainpoolp320r1.EX, brainpoolp320r1.sl brainpoolp320r1.EY,
+        brainpoolp320r1.sl brainpoolp320r1.EZ], ∀ w ∈ quadW, d + 8 * 5 ≤ w.1 ∨ w.1 + w.2 ≤ d) d hd w hw
+      exact this) (by have := (by decide : ∀ d ∈ [brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl brainpoolp320r1.EX,
+        brainpoolp320r1.sl brainpoolp320r1.EY, brainpoolp320r1.sl brainpoolp320r1.EZ], d < 4096) d hd; omega_using [this])
+  obtain pE₄ := pE.of_eq (k₄ _ (by decide)) (k₄ _ (by decide)) (k₄ _ (by decide))
+  -- `R = T + E`.
+  refine WP.mono (addPt_ok hL hw₄ ((k₄ _ (by decide)).trans ap₂) ((k₄ _ (by decide)).trans bp₂)
+    (p := brainpoolp320r1.pt TX TY TZ) (q := brainpoolp320r1.pt brainpoolp320r1.EX brainpoolp320r1.EY brainpoolp320r1.EZ) (o := brainpoolp320r1.pt RX RY RZ) ⟨by decide, by decide⟩ (by decide)
+    hT4 hE pT pE₄) fun s₅ ⟨K₅, U₅, pR₅⟩ => ?_
+  refine ⟨hw₄.of_kp K₅, ?_, ?_, ?_, ?_⟩
+  · rw [K₅.gpr _ (by decide), K₄.gpr _ (by decide), r₂.gpr _ (by decide), u₁.gpr]
+  · exact ((hI.keep.trans (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))).trans (Kc.of_rest r₂)).trans
+      (K₄.kc.trans K₅.kc)
+  · exact (((hI.unch.trans (show Unch base [(2384, 120)] s.mem s₂.mem from O₂.unch)).trans U₄).trans
+      U₅).cover (by decide)
+  · have e := jstep hL hP.g hP.q u v (j - 1)
+    rw [show j - 1 + 1 = j by omega_using [hj1]] at e
+    rw [← e]
+    exact pR₅
+
+/-! ## The joint ladder -/
+
+/-- What `joint` writes. -/
+abbrev jointW : List (Nat × Nat) := [(624, 600), (1904, 600), (4096, 1920), (3776, 320)]
+
+/-- `R = [u]G + [v]Q`, for `u` and `v` in their slots and `Q` in the check's. -/
+theorem jointJ_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q) :
+    WP isa (VerifyJ.Cfg.joint brainpoolp320r1 dblJa) s fun s' => Kc s s' ∧ Unch base jointW s.mem s'.mem ∧
+      PtOk base s' (brainpoolp320r1.pt RX RY RZ) (Spec.Weierstrass.add (mul (wordsVal s.mem base (brainpoolp320r1.sl UU) 5)
+        (Spec.Weierstrass.G W)) (mul (wordsVal s.mem base (brainpoolp320r1.sl VV) 5) Q)) := by
+  have hn := hp.ws.nowrap
+  obtain hp0 : 0 < W.p := by decide
+  rw [VerifyJ.Cfg.joint]
+  refine WP.seq (WP.mono (build_ok hL hp) fun s₁ ⟨K₁, U₁, T₁⟩ => ?_)
+  obtain hw₁ := hp.ws.of_kp K₁
+  obtain e₁ : ∀ d ∈ [brainpoolp320r1.sl ZERO, brainpoolp320r1.sl ONEP, brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl UU, brainpoolp320r1.sl VV],
+      wordsVal s₁.mem base d 5 = wordsVal s.mem base d 5 := keepU U₁ (by decide)
+  rw [show brainpoolp320r1.n = 5 from rfl]
+  simp only [List.append_assoc]
+  refine WP.seq (WP.block_append (WP.mono (copy_ok 5 hw₁ (o := brainpoolp320r1.sl RX) (a := brainpoolp320r1.sl ZERO) (by decide)
+    (by decide) (by decide) (by decide) (by decide)) fun s₂ ⟨x₂, r₂, O₂⟩ => ?_))
+  obtain hw₂ := hw₁.of_rest r₂
+  refine WP.block_append (WP.mono (copy_ok 5 hw₂ (o := brainpoolp320r1.sl RY) (a := brainpoolp320r1.sl ONEP) (by decide)
+    (by decide) (by decide) (by decide) (by decide)) fun s₃ ⟨y₃, r₃, O₃⟩ => ?_)
+  obtain hw₃ := hw₂.of_rest r₃
+  refine WP.block_append (WP.mono (copy_ok 5 hw₃ (o := brainpoolp320r1.sl RZ) (a := brainpoolp320r1.sl ZERO) (by decide)
+    (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨z₄, r₄, O₄⟩ => ?_)
+  obtain hw₄ := hw₃.of_rest r₄
+  refine wp_li (imm := 160) (by decide) fun s₅ u₅ => WP.block_nil ?_
+  obtain r₅ : Rest [.t0, .s1] s₁ s₅ :=
+    ((r₂.trans (r₃.trans r₄)).mono (by decide)).trans (u₅.rest (by decide))
+  obtain hw₅ : WsReg s₅ base := hw₄.of_kc (Kc.of_rest (u₅.rest (ws := [.s1]) (by decide)))
+  obtain U₅ : Unch base [(624, 120)] s₁.mem s₅.mem := by
+    rw [u₅.mem]
+    exact ((O₂.unch.trans O₃.unch).trans O₄.unch).cover (by decide)
+  obtain e₅ : ∀ d ∈ [brainpoolp320r1.sl ZERO, brainpoolp320r1.sl ONEP, brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl UU, brainpoolp320r1.sl VV],
+      wordsVal s₅.mem base d 5 = wordsVal s.mem base d 5 := fun d hd =>
+    (keepU U₅ (D := [brainpoolp320r1.sl ZERO, brainpoolp320r1.sl ONEP, brainpoolp320r1.sl AP, brainpoolp320r1.sl B3P, brainpoolp320r1.sl UU, brainpoolp320r1.sl VV]) (by decide) d hd).trans
+      (e₁ d hd)
+  obtain T₅ : JTab base s₅ (Spec.Weierstrass.G W) Q := T₁.of_eq fun d h1 h2 => U₅.wordsVal (by simp; omega_using [h1]) (by omega_using [h2])
+  -- The start: `R = O`.
+  generalize hu : wordsVal s.mem base (brainpoolp320r1.sl UU) 5 = u
+  generalize hv : wordsVal s.mem base (brainpoolp320r1.sl VV) 5 = v
+  obtain hu' : u < 2 ^ 320 := hu ▸ wordsVal_lt _ _ _ _
+  obtain hv' : v < 2 ^ 320 := hv ▸ wordsVal_lt _ _ _ _
+  obtain hP : LPre base s₅ (Spec.Weierstrass.G W) Q u v :=
+    ⟨(e₅ _ (by decide)).trans hp.ap, (e₅ _ (by decide)).trans hp.bp, (e₅ _ (by decide)).trans hp.zero,
+      by rw [e₅ _ (by decide), hp.onep, Nat.one_mul], (e₅ _ (by decide)).trans hu,
+      (e₅ _ (by decide)).trans hv, T₅, VG.Proof.BrainpoolP320r1.onCurve_G, hp.on⟩
+  obtain rx : wordsVal s₅.mem base (brainpoolp320r1.sl RX) 5 = 0 := by
+    rw [u₅.mem, O₄.wordsVal (by decide) (by decide), O₃.wordsVal (by decide) (by decide), x₂,
+      e₁ _ (by decide), hp.zero]
+  obtain ry : wordsVal s₅.mem base (brainpoolp320r1.sl RY) 5 = 1 * 2 ^ 320 % W.p := by
+    rw [u₅.mem, O₄.wordsVal (by decide) (by decide), y₃, O₂.wordsVal (by decide) (by decide),
+      e₁ _ (by decide), hp.onep]
+  obtain rz : wordsVal s₅.mem base (brainpoolp320r1.sl RZ) 5 = 0 := by
+    rw [u₅.mem, z₄, O₃.wordsVal (by decide) (by decide), O₂.wordsVal (by decide) (by decide),
+      e₁ _ (by decide), hp.zero]
+  obtain hI : LInv base s₅ s₅ (Spec.Weierstrass.G W) Q u v 160 := by
+    refine ⟨hw₅, u₅.gpr, ⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩, Unch.refl _ _ _, ⟨?_, ?_, ?_, ?_⟩⟩
+    · rw [jp_top (n := 5) _ _ hu' hv']
+      show Rep W (tmv W 5 base s₅ (brainpoolp320r1.sl RX)) (tmv W 5 base s₅ (brainpoolp320r1.sl RY)) (tmv W 5 base s₅ (brainpoolp320r1.sl RZ)) _
+      simp only [tmv]
+      rw [rx, ry, rz, toM_zero, Nat.one_mul, toM_one unit]
+      exact rep_infinity' hL
+    · show wordsVal _ _ (brainpoolp320r1.sl RX) 5 < _; rw [rx]; exact hp0
+    · show wordsVal _ _ (brainpoolp320r1.sl RY) 5 < _; rw [ry]; exact Nat.mod_lt _ hp0
+    · show wordsVal _ _ (brainpoolp320r1.sl RZ) 5 < _; rw [rz]; exact hp0
+  -- The steps.
+  refine countLoop_ok (Inv := fun j s' => LInv base s₅ s' (Spec.Weierstrass.G W) Q u v j) (n := 160)
+    (fun j s' hi => hi.ctr) (fun j s' h1 h2 hi => stepJ_ok hL hP h1 h2 hi) (fun s' hi => ?_) (by decide) (by decide) hI
+  refine ⟨(K₁.kc.trans (Kc.of_rest r₅)).trans hi.keep, ((U₁.trans U₅).trans hi.unch).cover (by decide), ?_⟩
+  rw [← jp_zero]
+  exact hi.rep
+
+end VG.Proof.Ecdsa.RISCV64.BrainpoolP320r1.JointJ
