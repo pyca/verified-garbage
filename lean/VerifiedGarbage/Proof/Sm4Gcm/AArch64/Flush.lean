@@ -30,7 +30,7 @@ Untrusted: everything here is checked by Lean. As AES-GCM's
 (`Proof/AesGcm/AArch64/Env.lean`, whose tactics and lemmas on lengths and
 registers this uses), but with SM4-GCM's key context (256 bytes at `Ctx`: the
 schedule, then `H` at 128) and working space (768 bytes at `W`), and the
-3264 bytes of stack below `SP` that the callees use (`stk SP`), apart from
+3264 bytes of stack below `SP` that the callees use (`stk S SP`), apart from
 them all (`Lay`).
 -/
 
@@ -43,7 +43,7 @@ open VG.Spec.Aes (bytesAt)
 
 /-- The regions: the context, the state, the parts of `W`, and the stack
 below `SP`. -/
-structure Lay (Ctx St W SP : Addr) : Prop where
+structure Lay (S : Nat) (Ctx St W SP : Addr) : Prop where
   cw : Ctx.toNat + 256 ≤ 2 ^ 64
   sw : St.toNat + 80 ≤ 2 ^ 64
   ww : W.toNat + 768 ≤ 2 ^ 64
@@ -51,10 +51,10 @@ structure Lay (Ctx St W SP : Addr) : Prop where
   cw' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 768⟩
   sa : (⟨St, 80⟩ : Region).Disjoint ⟨W, 16⟩
   sb : (⟨St, 80⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 672⟩
-  sp : 3264 ≤ SP.toNat
-  kc : (stk SP).Disjoint ⟨Ctx, 256⟩
-  ks : (stk SP).Disjoint ⟨St, 80⟩
-  kw : (stk SP).Disjoint ⟨W, 768⟩
+  sp : S ≤ SP.toNat
+  kc : (stk S SP).Disjoint ⟨Ctx, 256⟩
+  ks : (stk S SP).Disjoint ⟨St, 80⟩
+  kw : (stk S SP).Disjoint ⟨W, 768⟩
 
 /-- What a state may access. -/
 structure Perm (Ctx St W : Addr) (s : State) : Prop where
@@ -115,7 +115,7 @@ theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 768) :
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
 
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- Parts of the state and of `W` outside `[16, 96)` are disjoint. -/
@@ -143,10 +143,10 @@ theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 76
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
-theorem stk_st {a n : Nat} (ha : a + n ≤ 80) : (stk SP).Disjoint ⟨St + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_st {a n : Nat} (ha : a + n ≤ 80) : (stk S SP).Disjoint ⟨St + BitVec.ofNat 64 a, n⟩ :=
   L.ks.sub_right (stSub ha)
 
-theorem stk_w {a n : Nat} (ha : a + n ≤ 768) : (stk SP).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_w {a n : Nat} (ha : a + n ≤ 768) : (stk S SP).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
   L.kw.sub_right (wSub ha)
 
 end Lay
@@ -334,7 +334,7 @@ structure AbsOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo : Nat) (H : Bl
   frame : Frame (absFrame St W yo) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 omit L in
@@ -385,7 +385,7 @@ theorem ghArgs_eq (yo : Nat) (rest : List Instr) :
     ghArgs yo ++ rest = ptr .x0 .x21 240 :: ptr .x1 .x20 yo :: ptr .x4 .x19 scrO :: rest := rfl
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 /-- Filling the buffer. -/
@@ -828,7 +828,7 @@ structure TOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (yo o : Nat) (Y : Bl
   frame : Frame (tFrame St W yo) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) {yo : Nat} (hyo : yo = 0 ∨ yo = 16)
 include L hyo
 
 theorem ctx_tFrame : ∀ r ∈ tFrame St W yo, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by

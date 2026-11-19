@@ -163,7 +163,7 @@ theorem carry_val (d : BitVec 64) :
   · rw [decide_eq_false h, ite_eq_right_of_eq_false _ _ (eq_false h)]; rfl
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- `cmpSeg`: 0 in `x10` iff the first `t` bytes of the tag at `W + 112` are
@@ -318,7 +318,7 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Ctx St W SP s) (
 end
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- `cmp`: `cmpSeg`, or for 16-byte tags `cmp16`, which compares them where they are. -/
@@ -570,9 +570,9 @@ theorem finishEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (h
     by rw [r.others _ (by decide), x26₁], by rw [r.others _ (by decide), x27₁], by simp [gpr_write, x5₁],
     by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
-/-- What `finPre` gives. -/
-theorem lay_of_fin {s : State} (hs : finPre s) :
-    Lay (s.gpr .x0) (s.gpr .x1) (s.gpr .x5) s.sp ∧ Perm (s.gpr .x0) (s.gpr .x1) (s.gpr .x5) s ∧
+/-- What `finPre S` gives. -/
+theorem lay_of_fin {S : Nat} {s : State} (hs : finPre S s) :
+    Lay S (s.gpr .x0) (s.gpr .x1) (s.gpr .x5) s.sp ∧ Perm (s.gpr .x0) (s.gpr .x1) (s.gpr .x5) s ∧
       Covers [⟨s.gpr .x4, 16⟩] s.wr ∧
       (⟨s.gpr .x4, 16⟩ : Region).Disjoint ⟨s.gpr .x5, 768⟩ := by
   simp only [finPre] at hs
@@ -582,7 +582,7 @@ theorem lay_of_fin {s : State} (hs : finPre s) :
     covers_of_mem (by rw [hwr]; simp), dtw⟩
 
 /-- What writes to the parts `rs` of `W` keep, outside the state. -/
-theorem fin_inv {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {rs : List Region}
+theorem fin_inv {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) {rs : List Region}
     (hrs : ∀ r ∈ rs, (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 768⟩) {m₀ m : Mem} (hf : Frame rs m₀ m)
     {x : List Byte} :
     ciphOf m Ctx = ciphOf m₀ Ctx ∧ blockAt m St = blockAt m₀ St ∧
@@ -595,16 +595,16 @@ theorem fin_inv {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {rs : List Region}
     fun ha => Absorbed.frame hf (fun r hr => (hrs r hr).1.sub_left (Lay.stSub (by decide))) ha⟩
 
 /-- The saved registers' slots are parts of `W` outside the state. -/
-theorem savedR_inv {Ctx St W SP : Addr} (L : Lay Ctx St W SP) :
+theorem savedR_inv {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) :
     ∀ r ∈ [savedR W], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 768⟩ := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨L.sb.sub_right (Lay.bSub (by decide) (by decide)), Lay.wSub (by decide)⟩
 
 /-- One run of `stream_finish`, for a message `a`, `c` of those lengths. -/
-theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c : List Byte}
+theorem fin_run {S : Nat} (v : GcmImpl) {s : State} (hs : (streamFinishAArch64 S).pre s) {a c : List Byte}
     (h3 : s.gpr .x2 = BitVec.ofNat 64 a.length) (h4 : s.gpr .x3 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) :
+    (hc : c.length < 2 ^ 64) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x1 + BitVec.ofNat 64 16) (s.gpr .x1 + BitVec.ofNat 64 32)
           (ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
@@ -612,7 +612,7 @@ theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c 
           toBytes (ghashFrom (ctxH s.mem (s.gpr .x0)) (ghash (ctxH s.mem (s.gpr .x0)) (blocks (padded a c)))
             [ofBytes (lensBlock a.length c.length)] ^^^
             ciphOf s.mem (s.gpr .x0) (blockAt s.mem (s.gpr .x1)))) := by
-  have hs' : finPre s := hs
+  have hs' : finPre S s := hs
   obtain ⟨L, perm, tW, dtw⟩ := lay_of_fin hs'
   refine WP.seq (WP.mono (finishEntry_ok rfl rfl rfl perm)
     fun s₁ ⟨he₁, hk₁, x26₁, x27₁, x28₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -640,8 +640,8 @@ theorem fin_run (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) {a c 
   rw [add_ofNat_zero] at this
   exact this
 
-theorem streamFinish_wp (v : GcmImpl) {s : State} (hs : streamFinishAArch64.pre s) :
-    WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧ streamFinishAArch64.post s s' := by
+theorem streamFinish_wp {S : Nat} (v : GcmImpl) {s : State} (hs : (streamFinishAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (streamFinish v.callees) s fun s' => GprAbi s s' ∧ (streamFinishAArch64 S).post s s' := by
   have h3 : s.gpr .x2 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x2).toNat).length := by
     rw [Proof.Gcm.length_zeros, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have h4 : s.gpr .x3 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x3).toNat).length := by
@@ -718,9 +718,9 @@ theorem verEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt 
     by rw [r.others _ (by decide), x26₁], by rw [r.others _ (by decide), x27₁], by rw [x28', x6₁],
     by rw [x12', x5₁], by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
-/-- What `verPre` gives. -/
-theorem lay_of_ver {s : State} (hs : verPre s) :
-    Lay (s.gpr .x0) (s.gpr .x1) (s.gpr .x6) s.sp ∧ Perm (s.gpr .x0) (s.gpr .x1) (s.gpr .x6) s ∧
+/-- What `verPre S` gives. -/
+theorem lay_of_ver {S : Nat} {s : State} (hs : verPre S s) :
+    Lay S (s.gpr .x0) (s.gpr .x1) (s.gpr .x6) s.sp ∧ Perm (s.gpr .x0) (s.gpr .x1) (s.gpr .x6) s ∧
       Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint ⟨s.gpr .x6, 768⟩ := by
   simp only [verPre] at hs
@@ -730,7 +730,7 @@ theorem lay_of_ver {s : State} (hs : verPre s) :
     covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- The parts of `W` that the entry and `tagIn` write. -/
-theorem tag16_inv {Ctx St W SP : Addr} (L : Lay Ctx St W SP) :
+theorem tag16_inv {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) :
     ∀ r ∈ [savedR W, ⟨W, 16⟩], (⟨St, 80⟩ : Region).Disjoint r ∧ Region.Sub r ⟨W, 768⟩ := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -739,9 +739,9 @@ theorem tag16_inv {Ctx St W SP : Addr} (L : Lay Ctx St W SP) :
   · exact ⟨L.sa, Region.sub_prefix (by decide)⟩
 
 /-- One run of `stream_verify`, for a message `a`, `c` of those lengths. -/
-theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c : List Byte}
+theorem ver_run {S : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 S).pre s) {a c : List Byte}
     (h3 : s.gpr .x2 = BitVec.ofNat 64 a.length) (h4 : s.gpr .x3 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) :
+    (hc : c.length < 2 ^ 64) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     WP isa (streamVerify v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x1 + BitVec.ofNat 64 16) (s.gpr .x1 + BitVec.ofNat 64 32)
           (ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
@@ -751,7 +751,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
         if Spec.Gcm.tagLenOk (s.gpr .x5).toNat ∧ T.take (s.gpr .x5).toNat =
             bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat then (s'.gpr .x0).setWidth 32 = 1
         else (s'.gpr .x0).setWidth 32 = 0) := by
-  have hs' : verPre s := hs
+  have hs' : verPre S s := hs
   obtain ⟨L, perm, tR, dtw⟩ := lay_of_ver hs'
   generalize hT : toBytes (ghashFrom (ctxH s.mem (s.gpr .x0)) (ghash (ctxH s.mem (s.gpr .x0)) (blocks (padded a c)))
       [ofBytes (lensBlock a.length c.length)] ^^^
@@ -826,7 +826,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
     have hT₅ : bytesAt s₅.mem (s.gpr .x6 + BitVec.ofNat 64 112) 16 = T := by
       rw [out₅ (hA₄ ha), hc₄, hj₄, ← hT]
     have hW₅ : bytesAt s₅.mem (s.gpr .x6) tl = bytesAt s.mem (s.gpr .x4) tl := by
-      have dW : ∀ r ∈ finFrame (s.gpr .x1) (s.gpr .x6) s.sp 112, (⟨s.gpr .x6, tl⟩ : Region).Disjoint r := by
+      have dW : ∀ r ∈ finFrame S (s.gpr .x1) (s.gpr .x6) s.sp 112, (⟨s.gpr .x6, tl⟩ : Region).Disjoint r := by
         intro r hr
         refine Region.Disjoint.sub_left ?_ (Region.sub_prefix hle)
         have ww : ∀ e j, 16 ≤ e → e + j ≤ 768 →
@@ -867,8 +867,8 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
   rw [hx0]
   exact post₄ ha
 
-theorem streamVerify_wp (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) :
-    WP isa (streamVerify v.callees) s fun s' => GprAbi s s' ∧ streamVerifyAArch64.post s s' := by
+theorem streamVerify_wp {S : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (streamVerify v.callees) s fun s' => GprAbi s s' ∧ (streamVerifyAArch64 S).post s s' := by
   have h3 : s.gpr .x2 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x2).toNat).length := by
     rw [Proof.Gcm.length_zeros, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have h4 : s.gpr .x3 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x3).toNat).length := by
@@ -935,12 +935,14 @@ theorem rel_gh (g : GhashImpl) {σ₁ σ₂ : State} {H Y D S : Addr} {n : Nat} 
     (h₂ : GhCall σ₂ H Y D S n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call g.fn.name g.fn.code) TT :=
   gh_rel g fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, S, n, h₁, h₂, hsp⟩
 
-theorem rel_ctr (c : CtrImpl) {σ₁ σ₂ : State} {K C D : Addr} {n : Nat} (h₁ : CtrCall σ₁ K C D n)
-    (h₂ : CtrCall σ₂ K C D n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call c.fn.name c.fn.code) TT :=
+theorem rel_ctr {S : Nat} (c : CtrImpl) {σ₁ σ₂ : State} {K C D : Addr} {n : Nat} (h₁ : CtrCall S σ₁ K C D n)
+    (h₂ : CtrCall S σ₂ K C D n) (hsp : σ₁.sp = σ₂.sp)
+    (hvS : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) : RelCT isa (Eq2 σ₁ σ₂) (.call c.fn.name c.fn.code) TT :=
   ctr_rel c fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, n, h₁, h₂, hsp⟩
 
-theorem rel_key (c : KeyImpl) {σ₁ σ₂ : State} {K C : Addr} (h₁ : KeyCall σ₁ K C) (h₂ : KeyCall σ₂ K C)
-    (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call c.fn.name c.fn.code) TT :=
+theorem rel_key {S : Nat} (c : KeyImpl) {σ₁ σ₂ : State} {K C : Addr} (h₁ : KeyCall S σ₁ K C) (h₂ : KeyCall S σ₂ K C)
+    (hsp : σ₁.sp = σ₂.sp) (hk : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _ |
+      exact Nat.le_trans (CtrImpl.key_stack _) ‹_›) : RelCT isa (Eq2 σ₁ σ₂) (.call c.fn.name c.fn.code) TT :=
   key_rel c fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, h₁, h₂, hsp⟩
 
 end VG.Proof.Sm4Gcm.AArch64
@@ -977,7 +979,7 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ofBytes)
 open VG.Proof.Gcm (lensBlock)
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 theorem absorb_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block}
@@ -1055,10 +1057,10 @@ theorem lens_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Re
 
 /-- `crypt`. -/
 theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ P D n σ₂) :
+    (h₁ : CrIn S Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn S Ctx St W SP k₂ P D n σ₂) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 σ₁ σ₂) (crypt v.callees) TT := by
-  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k P D n σ) {m' : Mem},
-      Frame (crFrame St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
+  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn S Ctx St W SP k P D n σ) {m' : Mem},
+      Frame (crFrame S St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
     fun h _ hf => ciph_frame hf (ctx_crFrame L h.data)
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x25] (by rw [h₁.env.sp, h₂.env.sp])
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x23, h₂.x23, h₁.x24, h₂.x24, h₁.x25, h₂.x25]) ⟨_, by taint_decide⟩)
@@ -1076,10 +1078,10 @@ theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : A
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
 theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ P D n σ₂) (hP : P % 16 = 0) :
+    (h₁ : CrIn S Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn S Ctx St W SP k₂ P D n σ₂) (hP : P % 16 = 0) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
-  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k P D n σ) {m' : Mem},
-      Frame (crFrame St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
+  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn S Ctx St W SP k P D n σ) {m' : Mem},
+      Frame (crFrame S St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
     fun h _ hf => ciph_frame hf (ctx_crFrame L h.data)
   have m₁ := h₁.mid (icb := 0) hP
   have m₂ := h₂.mid (icb := 0) hP
@@ -1109,7 +1111,7 @@ theorem lens_ok (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Reg
 /-- `tag o`. -/
 theorem tag_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ : Reg → BitVec 64} {o₁ o₂ : Nat}
     {σ₁ σ₂ : State} (he₁ : Env Ctx St W SP σ₁) (he₂ : Env Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
-    (h25₁ : σ₁.gpr .x25 = BitVec.ofNat 64 o₁) (h25₂ : σ₂.gpr .x25 = BitVec.ofNat 64 o₂) :
+    (h25₁ : σ₁.gpr .x25 = BitVec.ofNat 64 o₁) (h25₂ : σ₂.gpr .x25 = BitVec.ofNat 64 o₂) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 σ₁ σ₂) (tag v.callees o) TT := by
   have t₁ : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21]) (.block (tagSeg o)) h).isSome = true := by
     rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
@@ -1229,7 +1231,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 omit L in
@@ -1238,10 +1240,10 @@ theorem hz_mod (o : Nat) (ho : o < 16) : (Spec.Gcm.zeros o).length % 16 = o := b
 
 /-- `fo`, `flush` and `textArgs` in two runs, and what each leaves. -/
 theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn S Ctx St W SP k₁ n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn S Ctx St W SP k₂ n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
     {rest : Prog isa}
-    (hr : ∀ τ₁ τ₂, CrIn Ctx St W SP k₁ P D n τ₁ → CrIn Ctx St W SP k₂ P D n τ₂ →
+    (hr : ∀ τ₁ τ₂, CrIn S Ctx St W SP k₁ P D n τ₁ → CrIn S Ctx St W SP k₂ P D n τ₂ →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
   have hn := h₁.data.ok.lt
@@ -1298,8 +1300,8 @@ theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
 
 /-- `encBody` in two runs. -/
 theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn S Ctx St W SP k₁ n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn S Ctx St W SP k₂ n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 σ₁ σ₂) (encBody v.callees) TT := by
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
   have k28₁ : k₁ .x28 = D := (h₁.kept .x28 (by decide)).symm.trans h₁.x28
@@ -1325,7 +1327,7 @@ theorem finBody_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ 
     {σ₁ σ₂ : State} (he₁ : Env Ctx St W SP σ₁) (he₂ : Env Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 A) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 A)
     (h27₁ : σ₁.gpr .x27 = BitVec.ofNat 64 P) (h27₂ : σ₂.gpr .x27 = BitVec.ofNat 64 P)
-    (hA : A < 2 ^ 64) (hP : P < 2 ^ 64) :
+    (hA : A < 2 ^ 64) (hP : P < 2 ^ 64) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 σ₁ σ₂) (finBody v.callees o) TT := by
   have ho' : (if P = 0 then A % 16 else P % 16) < 16 := by split <;> exact Nat.mod_lt _ (by decide)
   refine rel_seq (rel_taint [.x26, .x27] (by rw [he₁.sp, he₂.sp])
@@ -1371,22 +1373,22 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
 /-- `finBody o`, run, from the state after the entry. -/
-theorem finBody_env (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {o : Nat} (ho : o = 0 ∨ o = 112)
+theorem finBody_env {S : Nat} (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay S Ctx St W SP) {o : Nat} (ho : o = 0 ∨ o = 112)
     {k : Reg → BitVec 64} {A P : Nat} {τ : State} (he : Env Ctx St W SP τ) (hk : Kept k τ)
-    (h26 : τ.gpr .x26 = BitVec.ofNat 64 A) (h27 : τ.gpr .x27 = BitVec.ofNat 64 P) (hP : P < 2 ^ 64) :
+    (h26 : τ.gpr .x26 = BitVec.ofNat 64 A) (h27 : τ.gpr .x27 = BitVec.ofNat 64 P) (hP : P < 2 ^ 64) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     WP isa (finBody v.callees o) τ fun τ' => Env Ctx St W SP τ' ∧ Kept k τ' ∧
-      Frame (finFrame St W SP o) τ.mem τ'.mem :=
+      Frame (finFrame S St W SP o) τ.mem τ'.mem :=
   WP.mono (finBody_ok L v ho (a := Spec.Gcm.zeros A) (c := Spec.Gcm.zeros P)
     (H := blockAt τ.mem (Ctx + BitVec.ofNat 64 240)) he hk
     (by rw [Proof.Gcm.length_zeros]; exact h26) (by rw [Proof.Gcm.length_zeros]; exact h27)
     (by rw [Proof.Gcm.length_zeros]; exact hP) rfl) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
-theorem streamFinish_ct (v : GcmImpl) :
-    ConstantTime isa streamFinishAArch64.pre streamFinishAArch64.pub (streamFinish v.callees) := by
+theorem streamFinish_ct {S : Nat} (v : GcmImpl) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ConstantTime isa (streamFinishAArch64 S).pre (streamFinishAArch64 S).pub (streamFinish v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, qsp⟩ := hq
-  have p₁ : finPre σ₁ := h₁
-  have p₂ : finPre σ₂ := h₂
+  have p₁ : finPre S σ₁ := h₁
+  have p₂ : finPre S σ₂ := h₂
   obtain ⟨L, perm₁, -, -⟩ := lay_of_fin p₁
   obtain ⟨-, perm₂, -, -⟩ := lay_of_fin p₂
   rw [← q0, ← q1, ← q5] at perm₂
@@ -1411,12 +1413,12 @@ theorem streamFinish_ct (v : GcmImpl) :
   exact rel_taint [.x19, .x28] (by rw [f₁.1.sp, f₂.1.sp])
     (by agree_tac [f₁.1.x19, f₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem streamVerify_ct (v : GcmImpl) :
-    ConstantTime isa streamVerifyAArch64.pre streamVerifyAArch64.pub (streamVerify v.callees) := by
+theorem streamVerify_ct {S : Nat} (v : GcmImpl) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ConstantTime isa (streamVerifyAArch64 S).pre (streamVerifyAArch64 S).pub (streamVerify v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, qsp⟩ := hq
-  have p₁ : verPre σ₁ := h₁
-  have p₂ : verPre σ₂ := h₂
+  have p₁ : verPre S σ₁ := h₁
+  have p₂ : verPre S σ₂ := h₂
   obtain ⟨L, perm₁, tR₁, dtw⟩ := lay_of_ver p₁
   obtain ⟨-, perm₂, tR₂, -⟩ := lay_of_ver p₂
   rw [← q0, ← q1, ← q6] at perm₂

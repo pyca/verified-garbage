@@ -180,7 +180,7 @@ structure J0Out (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : L
   frame : Frame (j0Frame St W) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 omit L in
@@ -547,11 +547,11 @@ theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop}
 
 /-- The layout, from disjointness of the context, the state, `W` and the
 stack below `SP`. -/
-theorem Lay.of {Ctx St W SP : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
+theorem Lay.of {S : Nat} {Ctx St W SP : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
     (ww : W.toNat + 768 ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
     (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 768⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, 768⟩)
-    (sp : 3264 ≤ SP.toNat) (kC : (stk SP).Disjoint ⟨Ctx, 256⟩) (kS : (stk SP).Disjoint ⟨St, 80⟩)
-    (kW : (stk SP).Disjoint ⟨W, 768⟩) : Lay Ctx St W SP :=
+    (sp : S ≤ SP.toNat) (kC : (stk S SP).Disjoint ⟨Ctx, 256⟩) (kS : (stk S SP).Disjoint ⟨St, 80⟩)
+    (kW : (stk S SP).Disjoint ⟨W, 768⟩) : Lay S Ctx St W SP :=
   ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide)),
     sp, kC, kS, kW⟩
 
@@ -559,7 +559,7 @@ theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFrame St W yo, (savedR W).Disjoint r := by
@@ -578,7 +578,7 @@ theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
-theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
+theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame S St W SP o, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -596,8 +596,8 @@ theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
-theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St SP D n, (savedR W).Disjoint r := by
+theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW S Ctx St W SP s D n) :
+    ∀ r ∈ crFrame S St SP D n, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -702,7 +702,7 @@ theorem fo_ok {s : State} {q n P : Nat} (h25 : s.gpr .x25 = BitVec.ofNat 64 q)
         subst hs'; exact ⟨by simp [gpr_write, h1], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- `flush` after `fo`: GHASH has absorbed `xf a c n`, where it had absorbed
@@ -769,7 +769,7 @@ theorem Ctr.frame {m m' : Mem} {St : Addr} {ciph : Block → Block} {icb : Block
     (blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using [])))
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- Parts of the state apart from a part of `W`. -/
@@ -836,11 +836,11 @@ theorem WP.seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP
     | seq ea eb => exact ⟨_, _, .seq ea (.seq eb e₂), q⟩
 
 /-- The regions the bodies write. -/
-abbrev bodyFrame (St W SP D : Addr) (n : Nat) : List Region :=
-  tFrame St W 16 ++ crFrame St SP D n ++ absFrame St W 16
+abbrev bodyFrame (S : Nat) (St W SP D : Addr) (n : Nat) : List Region :=
+  tFrame St W 16 ++ crFrame S St SP D n ++ absFrame St W 16
 
 /-- Before a body. -/
-structure BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : Addr) (a c : List Byte)
+structure BodyIn (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : Addr) (a c : List Byte)
     (H : Block) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -850,16 +850,16 @@ structure BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : A
   x28 : s.gpr .x28 = D
   hc : c.length = P
   hP : P < 2 ^ 64
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
 /-- What a body leaves, from `m₀`, where `e` is the data absorbed and `out`
 what it leaves at `D`. -/
-structure BodyOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : Addr) (a c : List Byte)
+structure BodyOut (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : Addr) (a c : List Byte)
     (H : Block) (icb : Block) (e out : List Byte) (m₀ : Mem) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
-  frame : Frame (bodyFrame St W SP D n) m₀ s.mem
+  frame : Frame (bodyFrame S St W SP D n) m₀ s.mem
   post : Absorbed m₀ (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
     Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a (c ++ e)) ∧
@@ -867,7 +867,7 @@ structure BodyOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (n P : Nat) (D : 
       bytesAt s.mem D n = out
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 theorem ctx_tFrame' : ∀ r ∈ tFrame St W 16, (⟨Ctx, 256⟩ : Region).Disjoint r := by
@@ -902,8 +902,8 @@ theorem ctr_absFrame : ∀ r ∈ absFrame St W 16, (⟨St + BitVec.ofNat 64 48, 
   · exact st_st' L (.inr (by decide)) (by decide) (by decide)
   · exact st_wpart L (by decide) ⟨by decide, by decide⟩
 
-theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St SP D n, (⟨St + BitVec.ofNat 64 16, 32⟩ : Region).Disjoint r := by
+theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW S Ctx St W SP s D n) :
+    ∀ r ∈ crFrame S St SP D n, (⟨St + BitVec.ofNat 64 16, 32⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -912,7 +912,7 @@ theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D
   · exact (L.stk_st (by decide)).symm
 
 omit L in
-theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
+theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW S Ctx St W SP s D n) :
     ∀ r ∈ tFrame St W 16, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -921,14 +921,14 @@ theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D
   · exact hd.ok.w.sub_right (Lay.wSub (by decide))
   · exact hd.ok.w.sub_right (Lay.wSub (by decide))
 
-theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) {m m' : Mem}
-    (hf : Frame (crFrame St SP D n) m m') :
+theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW S Ctx St W SP s D n) {m m' : Mem}
+    (hf : Frame (crFrame S St SP D n) m m') :
     blockAt m' (Ctx + BitVec.ofNat 64 240) = blockAt m (Ctx + BitVec.ofNat 64 240) :=
   blockAt_frame hf fun r hr => (ctx_crFrame L hd r hr).sub_left (Lay.ctxSub (by decide))
 
 /-- The additional data padded if this is the first text: `fo` and `flush`. -/
 theorem pad_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Ctx St W SP k n P D a c H s) :
+    {s : State} (h : BodyIn S Ctx St W SP k n P D a c H s) :
     WP isa (.seq fo (flush v.callees 16)) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
       blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧ Frame (tFrame St W 16) s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -973,21 +973,21 @@ theorem textPiece_ok {k : Reg → BitVec 64} {n : Nat} {D : Addr} {s : State} (h
   exact ⟨by simp [gpr_write, h28], by simp [gpr_write, h26], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
 
 omit L in
-theorem mem_bt {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ tFrame St W 16) : r ∈ bodyFrame St W SP D n :=
+theorem mem_bt {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ tFrame St W 16) : r ∈ bodyFrame S St W SP D n :=
   List.mem_append_left _ (List.mem_append_left _ h)
 
 omit L in
-theorem mem_bc {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ crFrame St SP D n) : r ∈ bodyFrame St W SP D n :=
+theorem mem_bc {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ crFrame S St SP D n) : r ∈ bodyFrame S St W SP D n :=
   List.mem_append_left _ (List.mem_append_right _ h)
 
 omit L in
-theorem mem_ba {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ absFrame St W 16) : r ∈ bodyFrame St W SP D n :=
+theorem mem_ba {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ absFrame St W 16) : r ∈ bodyFrame S St W SP D n :=
   List.mem_append_right _ h
 
 /-- `encBody`: the data encrypted, and the ciphertext absorbed. -/
 theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Ctx St W SP k n P D a c H s) (icb : Block) :
-    WP isa (encBody v.callees) s (BodyOut Ctx St W SP k n P D a c H icb
+    {s : State} (h : BodyIn S Ctx St W SP k n P D a c H s) (icb : Block) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (encBody v.callees) s (BodyOut S Ctx St W SP k n P D a c H icb
       (xorKs (ciphOf s.mem Ctx) icb P (bytesAt s.mem D n))
       (xorKs (ciphOf s.mem Ctx) icb P (bytesAt s.mem D n)) s.mem) := by
   have k26 : k .x26 = BitVec.ofNat 64 n := (h.kept .x26 (by decide)).symm.trans h.x26
@@ -998,8 +998,8 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
   refine WP.seq (WP.mono (textArgs_ok hk₂ k26 k27 k28 h.hP) fun s₃ ⟨x25₃, x23₃, x24₃, r₃⟩ => ?_)
   have he₃ := he₂.of_regs r₃
   have hk₃ := hk₂.of_others r₃.others
-  have hd₃ : DataW Ctx St W SP s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
-  have hCr : CrIn Ctx St W SP k P D n s₃ :=
+  have hd₃ : DataW S Ctx St W SP s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
+  have hCr : CrIn S Ctx St W SP k P D n s₃ :=
     ⟨he₃, hk₃, x23₃, x24₃, x25₃, hd₃⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L v (icb := icb) hCr)) fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
   refine WP.seq (WP.mono (textPiece_ok h₄.kept k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
@@ -1010,7 +1010,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
     rw [m₃]; exact ciph_frame f₂ (ctx_tFrame' L)
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
     rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
-  have F₅ : Frame (bodyFrame St W SP D n) s.mem s₅.mem := by
+  have F₅ : Frame (bodyFrame S St W SP D n) s.mem s₅.mem := by
     rw [r₅.mem]
     exact (f₂.sub fun r hr => ⟨r, mem_bt hr, fun _ h => h⟩).trans
       (by rw [← m₃]; exact h₄.frame.sub fun r hr => ⟨r, mem_bc hr, fun _ h => h⟩)
@@ -1048,8 +1048,8 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
 
 /-- `decBody`: the data absorbed, and decrypted. -/
 theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Ctx St W SP k n P D a c H s) (icb : Block) :
-    WP isa (decBody v.callees) s (BodyOut Ctx St W SP k n P D a c H icb (bytesAt s.mem D n)
+    {s : State} (h : BodyIn S Ctx St W SP k n P D a c H s) (icb : Block) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (decBody v.callees) s (BodyOut S Ctx St W SP k n P D a c H icb (bytesAt s.mem D n)
       (xorKs (ciphOf s.mem Ctx) icb P (bytesAt s.mem D n)) s.mem) := by
   have k26 : k .x26 = BitVec.ofNat 64 n := (h.kept .x26 (by decide)).symm.trans h.x26
   have k27 : k .x27 = BitVec.ofNat 64 P := (h.kept .x27 (by decide)).symm.trans h.x27
@@ -1062,7 +1062,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
   have m₃ : s₃.mem = s₂.mem := r₃.mem
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
     rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
-  have hd₃ : DataW Ctx St W SP s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
+  have hd₃ : DataW S Ctx St W SP s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   -- After the text is absorbed.
   have mid : WP isa (textAbs v.callees) s₃ fun s₄ => Env Ctx St W SP s₄ ∧ Kept k s₄ ∧
       s₄.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧ Frame (tFrame St W 16 ++ absFrame St W 16) s.mem s₄.mem ∧
@@ -1092,8 +1092,8 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
   refine WP.seq (WP.mono (textPiece_ok hk₄ k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
   have he₅ := he₄.of_regs r₅
   have hk₅ := hk₄.of_others r₅.others
-  have hd₅ : DataW Ctx St W SP s₅ D n := h.data.of_eq (by rw [r₅.rd, rd₄]) (by rw [r₅.wr, wr₄])
-  have hCr : CrIn Ctx St W SP k P D n s₅ :=
+  have hd₅ : DataW S Ctx St W SP s₅ D n := h.data.of_eq (by rw [r₅.rd, rd₄]) (by rw [r₅.wr, wr₄])
+  have hCr : CrIn S Ctx St W SP k P D n s₅ :=
     ⟨he₅, hk₅, x23₅, x24₅,
       by rw [r₅.others _ (by decide), x25₄], hd₅⟩
   have ctxF : ∀ r ∈ tFrame St W 16 ++ absFrame St W 16, (⟨Ctx, 256⟩ : Region).Disjoint r := by
@@ -1181,10 +1181,10 @@ theorem ghashInput_mod {a c : List Byte} : (ghashInput a c).length % 16 =
     omega_using [this]
 
 /-- The regions `finBody o` writes. -/
-abbrev finFrame (St W SP : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame St W SP o
+abbrev finFrame (S : Nat) (St W SP : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame S St W SP o
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 omit L in
@@ -1212,9 +1212,9 @@ theorem finOff_ok {s : State} {A P : Nat} (h26 : s.gpr .x26 = BitVec.ofNat 64 A)
 theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg → BitVec 64}
     {a c : List Byte} {H : Block} {s : State} (he : Env Ctx St W SP s) (hk : Kept k s)
     (h26 : s.gpr .x26 = BitVec.ofNat 64 a.length) (h27 : s.gpr .x27 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
+    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     WP isa (finBody v.callees o) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
-      Frame (finFrame St W SP o) s.mem s'.mem ∧
+      Frame (finFrame S St W SP o) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
         bytesAt s'.mem (W + BitVec.ofNat 64 o) 16 =
           toBytes (ghashFrom H (ghash H (blocks (padded a c))) [ofBytes (lensBlock a.length c.length)] ^^^
@@ -1252,7 +1252,7 @@ theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg →
         · exact st0_w L ⟨by decide, by decide⟩)]
     rfl
 
-theorem saved_finFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ finFrame St W SP o, (savedR W).Disjoint r := by
+theorem saved_finFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ finFrame S St W SP o, (savedR W).Disjoint r := by
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact saved_tFrame L (.inr rfl) r hr
@@ -1292,29 +1292,29 @@ open VG.Spec.Gcm (ctxH)
 abbrev args (s : State) (n : Nat) : Region := ⟨stackArgAddr s 0, 8 * n⟩
 
 /-- `vg_sm4_gcm_init(key = x0, ctx = x1, scratch = x2)`. -/
-def initAArch64 : Contract isa where
+def initAArch64 (S : Nat) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, 16⟩
     let ctx : Region := ⟨s.gpr .x1, 256⟩
     let scr : Region := ⟨s.gpr .x2, 768⟩
-    3264 ≤ s.sp.toNat ∧ s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+    S ≤ s.sp.toNat ∧ s.rd = [key] ∧ s.wr = [ctx, scr] ∧
       key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
-      (stk s.sp).Disjoint key ∧ (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint scr ∧
+      (stk S s.sp).Disjoint key ∧ (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint scr ∧
       (s.gpr .x0).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 768 ≤ 2 ^ 64
   post s s' := KeyRepr s'.mem (s.gpr .x1) (bytesAt s.mem (s.gpr .x0) 16)
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp
 
 /-- What `vg_sm4_gcm_stream_encrypt` and `vg_sm4_gcm_stream_decrypt` need:
 `(ctx = x0, state = x1, aad_len = x2, text_len = x3, data = x4, len = x5, scratch = x6)`. -/
-def streamCryptPre (s : State) : Prop :=
+def streamCryptPre (S : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let st : Region := ⟨s.gpr .x1, 80⟩
   let data : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let scr : Region := ⟨s.gpr .x6, 768⟩
-  3264 ≤ s.sp.toNat ∧ s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
+  S ≤ s.sp.toNat ∧ s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
     st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
-    (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint st ∧ (stk s.sp).Disjoint data ∧ (stk s.sp).Disjoint scr ∧
+    (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint st ∧ (stk S s.sp).Disjoint data ∧ (stk S s.sp).Disjoint scr ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + 768 ≤ 2 ^ 64
 
@@ -1324,8 +1324,8 @@ def streamCryptPub (s₁ s₂ : State) : Prop :=
     s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.sp = s₂.sp
 
 /-- `vg_sm4_gcm_stream_encrypt`. -/
-def streamEncryptAArch64 : Contract isa where
-  pre := streamCryptPre
+def streamEncryptAArch64 (S : Nat) : Contract isa where
+  pre := streamCryptPre S
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .x0)
     let h := ctxH s.mem (s.gpr .x0)
@@ -1336,8 +1336,8 @@ def streamEncryptAArch64 : Contract isa where
   pub := streamCryptPub
 
 /-- `vg_sm4_gcm_stream_decrypt`. -/
-def streamDecryptAArch64 : Contract isa where
-  pre := streamCryptPre
+def streamDecryptAArch64 (S : Nat) : Contract isa where
+  pre := streamCryptPre S
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .x0)
     let h := ctxH s.mem (s.gpr .x0)
@@ -1350,21 +1350,21 @@ def streamDecryptAArch64 : Contract isa where
 
 /-- What `vg_sm4_gcm_stream_finish` needs: `(ctx = x0, state = x1, aad_len = x2,
 text_len = x3, tag = x4, work = x5)`. -/
-def finPre (s : State) : Prop :=
+def finPre (S : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let st : Region := ⟨s.gpr .x1, 80⟩
   let tag : Region := ⟨s.gpr .x4, 16⟩
   let work : Region := ⟨s.gpr .x5, 768⟩
-  3264 ≤ s.sp.toNat ∧ s.rd = [ctx] ∧ s.wr = [st, tag, work] ∧
+  S ≤ s.sp.toNat ∧ s.rd = [ctx] ∧ s.wr = [st, tag, work] ∧
     ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧
     tag.Disjoint work ∧
-    (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint st ∧ (stk s.sp).Disjoint tag ∧ (stk s.sp).Disjoint work ∧
+    (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint st ∧ (stk S s.sp).Disjoint tag ∧ (stk S s.sp).Disjoint work ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 16 ≤ 2 ^ 64 ∧
     (s.gpr .x5).toNat + 768 ≤ 2 ^ 64
 
 /-- `vg_sm4_gcm_stream_finish`. -/
-def streamFinishAArch64 : Contract isa where
-  pre := finPre
+def streamFinishAArch64 (S : Nat) : Contract isa where
+  pre := finPre S
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .x0)
     let h := ctxH s.mem (s.gpr .x0)
@@ -1376,20 +1376,20 @@ def streamFinishAArch64 : Contract isa where
 
 /-- What `vg_sm4_gcm_stream_verify` needs: `(ctx = x0, state = x1, aad_len = x2,
 text_len = x3, tag = x4, tag_len = x5, work = x6)`. -/
-def verPre (s : State) : Prop :=
+def verPre (S : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let st : Region := ⟨s.gpr .x1, 80⟩
   let tag : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let work : Region := ⟨s.gpr .x6, 768⟩
-  3264 ≤ s.sp.toNat ∧ s.rd = [ctx, tag] ∧ s.wr = [st, work] ∧
+  S ≤ s.sp.toNat ∧ s.rd = [ctx, tag] ∧ s.wr = [st, work] ∧
     ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧ tag.Disjoint work ∧
-    (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint st ∧ (stk s.sp).Disjoint tag ∧ (stk s.sp).Disjoint work ∧
+    (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint st ∧ (stk S s.sp).Disjoint tag ∧ (stk S s.sp).Disjoint work ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + 768 ≤ 2 ^ 64
 
 /-- `vg_sm4_gcm_stream_verify`. -/
-def streamVerifyAArch64 : Contract isa where
-  pre := verPre
+def streamVerifyAArch64 (S : Nat) : Contract isa where
+  pre := verPre S
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .x0)
     let h := ctxH s.mem (s.gpr .x0)
@@ -1405,20 +1405,20 @@ def streamVerifyAArch64 : Contract isa where
 
 /-- What `vg_sm4_gcm_seal` needs: `(ctx = x0, nonce = x1, nonce_len = x2, aad = x3, aad_len = x4,
 data = x5, len = x6, tag = x7, work = [sp])`. -/
-def sealPre (s : State) : Prop :=
+def sealPre (S : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat⟩
   let aad : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
   let data : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
   let tag : Region := ⟨s.gpr .x7, 16⟩
   let work : Region := ⟨stackArg s 0, 768⟩
-  3264 ≤ s.sp.toNat ∧ s.rd = [ctx, nonce, aad, args s 1] ∧ s.wr = [data, tag, work] ∧
+  S ≤ s.sp.toNat ∧ s.rd = [ctx, nonce, aad, args s 1] ∧ s.wr = [data, tag, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint tag ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
     nonce.Disjoint work ∧ aad.Disjoint data ∧ aad.Disjoint tag ∧ aad.Disjoint work ∧ data.Disjoint tag ∧
     data.Disjoint work ∧ data.Disjoint (args s 1) ∧ tag.Disjoint work ∧ tag.Disjoint (args s 1) ∧
     work.Disjoint (args s 1) ∧
-    (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint nonce ∧ (stk s.sp).Disjoint aad ∧ (stk s.sp).Disjoint data ∧
-    (stk s.sp).Disjoint tag ∧ (stk s.sp).Disjoint work ∧
+    (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint nonce ∧ (stk S s.sp).Disjoint aad ∧ (stk S s.sp).Disjoint data ∧
+    (stk S s.sp).Disjoint tag ∧ (stk S s.sp).Disjoint work ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + (s.gpr .x2).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + (s.gpr .x6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x7).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 768 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 ≤ 2 ^ 64
@@ -1430,8 +1430,8 @@ def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
     s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧ ∀ i < n, stackArg s₁ i = stackArg s₂ i
 
 /-- `vg_sm4_gcm_seal`. -/
-def sealAArch64 : Contract isa where
-  pre := sealPre
+def sealAArch64 (S : Nat) : Contract isa where
+  pre := sealPre S
   post s s' :=
     encryptWith (ctxCiph s.mem (s.gpr .x0)) (ctxH s.mem (s.gpr .x0)) 16
         (bytesAt s.mem (s.gpr .x1) (s.gpr .x2).toNat) (bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat)
@@ -1441,19 +1441,19 @@ def sealAArch64 : Contract isa where
 
 /-- What `vg_sm4_gcm_open` needs: `(ctx = x0, nonce = x1, nonce_len = x2, aad = x3, aad_len = x4,
 data = x5, len = x6, tag = x7, tag_len = [sp], work = [sp + 8])`. -/
-def openPre (s : State) : Prop :=
+def openPre (S : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat⟩
   let aad : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
   let data : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
   let tag : Region := ⟨s.gpr .x7, (stackArg s 0).toNat⟩
   let work : Region := ⟨stackArg s 1, 768⟩
-  3264 ≤ s.sp.toNat ∧ s.rd = [ctx, nonce, aad, tag, args s 2] ∧ s.wr = [data, work] ∧
+  S ≤ s.sp.toNat ∧ s.rd = [ctx, nonce, aad, tag, args s 2] ∧ s.wr = [data, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ tag.Disjoint data ∧
     data.Disjoint work ∧ data.Disjoint (args s 2) ∧ tag.Disjoint work ∧ work.Disjoint (args s 2) ∧
-    (stk s.sp).Disjoint ctx ∧ (stk s.sp).Disjoint nonce ∧ (stk s.sp).Disjoint aad ∧ (stk s.sp).Disjoint data ∧
-    (stk s.sp).Disjoint tag ∧ (stk s.sp).Disjoint work ∧
+    (stk S s.sp).Disjoint ctx ∧ (stk S s.sp).Disjoint nonce ∧ (stk S s.sp).Disjoint aad ∧ (stk S s.sp).Disjoint data ∧
+    (stk S s.sp).Disjoint tag ∧ (stk S s.sp).Disjoint work ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + (s.gpr .x2).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + (s.gpr .x6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x7).toNat + (stackArg s 0).toNat ≤ 2 ^ 64 ∧
@@ -1469,8 +1469,8 @@ def openRes (s : State) : Option (List Byte) :=
 def openLeakOf (s : State) : List Nat := [if (openRes s).isSome = true then 1 else 0]
 
 /-- `vg_sm4_gcm_open`. -/
-def openAArch64 : Contract isa where
-  pre := openPre
+def openAArch64 (S : Nat) : Contract isa where
+  pre := openPre S
   post s s' :=
     match openRes s with
     | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x5) (s.gpr .x6).toNat = pt
