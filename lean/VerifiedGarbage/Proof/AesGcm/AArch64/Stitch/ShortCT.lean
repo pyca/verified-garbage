@@ -265,7 +265,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
     rw [f₂.hW, ← q0, ← q6, ← q7] at hgh₂
     obtain htb := fun {σ} (p : pre σ) => (htbP p).tbFor
     obtain htb₂ := htb p₂
-    unfold TbFor Wn at htb₂
+    unfold TbFor at htb₂
     rw [f₂.hW, ← q0, ← q6, ← q7, ← qsp] at htb₂
     have e₁ := b₁
     have e₂ := b₂
