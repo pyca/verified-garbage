@@ -361,8 +361,8 @@ b 244f
 .inst 0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f
 .inst 0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x9123c3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_aes = sym super::aes_gcm_siv::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_aes_expand_key_scratch_aes = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
@@ -894,8 +894,8 @@ b 253f
 .inst 0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f
 .inst 0x3d82353f,0x3d82393f,0x9123c3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_aes = sym super::aes_gcm_siv::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_aes_expand_key_scratch_aes = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
@@ -1263,8 +1263,8 @@ b 244f
 .inst 0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f
 .inst 0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x9123c3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_aes = sym super::aes_gcm_siv::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_aes_expand_key_scratch_aes = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
@@ -1813,8 +1813,8 @@ b 253f
 .inst 0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f
 .inst 0x3d82353f,0x3d82393f,0x9123c3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_aes = sym super::aes_gcm_siv::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_aes_expand_key_scratch_aes = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
     )
 }
@@ -2025,8 +2025,8 @@ b 232f
 .inst 0x3d83853f,0x3d83893f,0x3d838d3f,0x3d83913f,0x3d83953f,0x3d83993f,0x3d839d3f,0x3d83a13f
 .inst 0x3d83a53f,0x3d83a93f,0x3d83ad3f,0x3d83b13f,0x3d83b53f,0x3d83b93f,0x913bc3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_neon = sym super::aes_gcm_siv::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
@@ -2254,8 +2254,8 @@ b 238f
 .inst 0x3d83953f,0x3d83993f,0x3d839d3f,0x3d83a13f,0x3d83a53f,0x3d83a93f,0x3d83ad3f,0x3d83b13f
 .inst 0x3d83b53f,0x3d83b93f,0x913bc3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32_neon = sym super::aes_gcm_siv::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
@@ -2466,8 +2466,8 @@ b 232f
 .inst 0x3d83853f,0x3d83893f,0x3d838d3f,0x3d83913f,0x3d83953f,0x3d83993f,0x3d839d3f,0x3d83a13f
 .inst 0x3d83a53f,0x3d83a93f,0x3d83ad3f,0x3d83b13f,0x3d83b53f,0x3d83b93f,0x913bc3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -2695,31 +2695,11 @@ b 238f
 .inst 0x3d83953f,0x3d83993f,0x3d839d3f,0x3d83a13f,0x3d83a53f,0x3d83a93f,0x3d83ad3f,0x3d83b13f
 .inst 0x3d83b53f,0x3d83b93f,0x913bc3ff,0xd65f03c0
 .p2align 6",
-        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32.rs"]
-pub(crate) mod vg_aes_ctr32;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_aes.rs"]
-pub(crate) mod vg_aes_ctr32_aes;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_neon.rs"]
-pub(crate) mod vg_aes_ctr32_neon;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch.rs"]
-pub(crate) mod vg_aes_expand_key_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch_aes.rs"]
-pub(crate) mod vg_aes_expand_key_scratch_aes;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]
