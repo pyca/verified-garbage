@@ -22,30 +22,30 @@ open VG.Proof.Sm4Gcm.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
-    verified := init_framed },
+    verified := .unscrubbed init_framed },
   Spec.Sm4.Gcm.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
-    verified := seal_framed },
+    verified := .unscrubbed seal_framed },
   Spec.Sm4.Gcm.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
-    verified := open_framed },
+    verified := .unscrubbed open_framed },
   Spec.Sm4.Gcm.streamInitApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
-    verified := Proof.AesGcm.RISCV64.streamInit_framed },
+    verified := .unscrubbed Proof.AesGcm.RISCV64.streamInit_framed },
   Spec.Sm4.Gcm.streamAadApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
-    verified := Proof.AesGcm.RISCV64.streamAad_framed },
+    verified := .unscrubbed Proof.AesGcm.RISCV64.streamAad_framed },
   Spec.Sm4.Gcm.streamEncryptApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
-    verified := streamEncrypt_framed },
+    verified := .unscrubbed streamEncrypt_framed },
   Spec.Sm4.Gcm.streamDecryptApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
-    verified := streamDecrypt_framed },
+    verified := .unscrubbed streamDecrypt_framed },
   Spec.Sm4.Gcm.streamFinishApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
-    verified := streamFinish_framed },
+    verified := .unscrubbed streamFinish_framed },
   Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
-    verified := streamVerify_framed }]
+    verified := .unscrubbed streamVerify_framed }]
 
 end VG.Artifacts.Sm4Gcm.RISCV64

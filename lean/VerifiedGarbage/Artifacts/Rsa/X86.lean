@@ -20,22 +20,22 @@ namespace VG.Artifacts.Rsa.X86
 def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesDetApi.artifact X86.target {
     code := Impl.Rsa.X86.RecoverDetRt.code
-    verified := Proof.Rsa.X86.Recover.verifiedD
+    verified := .unscrubbed Proof.Rsa.X86.Recover.verifiedD
     spSafe := Proof.Rsa.X86.RtShape.recoverDet_spSafe },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     code := Impl.Rsa.X86.KeyCheckRt.code true
-    verified := Proof.Rsa.X86.KeyCheck.verified true
+    verified := .unscrubbed (Proof.Rsa.X86.KeyCheck.verified true)
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe true },
   Spec.Rsa.crtValuesApi.artifact X86.target {
     code := Impl.Rsa.X86.CrtValuesRt.code
-    verified := Proof.Rsa.X86.CrtValues.verified
+    verified := .unscrubbed Proof.Rsa.X86.CrtValues.verified
     spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
-    verified := Proof.Bignum.X86.precompute_verified },
+    verified := .unscrubbed Proof.Bignum.X86.precompute_verified },
   Spec.Rsa.privatePrecomputeApi.artifact X86.target {
     code := Proof.Bignum.X86.PrivPre.ppCode
-    verified := Proof.Bignum.X86.PrivPre.pp_verified
+    verified := .unscrubbed Proof.Bignum.X86.PrivPre.pp_verified
     spSafe := Proof.Bignum.X86.PrivPre.pp_spSafe }]
 
 end VG.Artifacts.Rsa.X86

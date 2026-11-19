@@ -15,12 +15,12 @@ open VG.Proof.AesSiv.PPC64LE
 def artifacts : List Artifact := [
   Spec.Siv.initApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesSiv.PPC64LE.init
-    verified := init_framed },
+    verified := .unscrubbed init_framed },
   Spec.Siv.encryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
+    verified := .unscrubbed (Proof.AesSiv.encrypt_keyed encrypt_framed) },
   Spec.Siv.decryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+    verified := .unscrubbed (Proof.AesSiv.decrypt_keyed decrypt_framed) }]
 
 end VG.Artifacts.AesSiv.PPC64LE

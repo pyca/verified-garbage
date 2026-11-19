@@ -14,9 +14,9 @@ namespace VG.Artifacts.Sm4Cbc.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialCbc.encrypt
-    verified := Proof.Sm4.Arm.SerialCbcVerified.framed },
+    verified := .unscrubbed Proof.Sm4.Arm.SerialCbcVerified.framed },
   Spec.Sm4.cbcDecryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.BatchCbc.decrypt
-    verified := Proof.Sm4.Arm.CbcBatchVerified.framed }]
+    verified := .unscrubbed Proof.Sm4.Arm.CbcBatchVerified.framed }]
 
 end VG.Artifacts.Sm4Cbc.Arm

@@ -16,12 +16,12 @@ open VG.Proof.CmacAes.Arm
 def artifacts : List Artifact := [
   Spec.Cmac.aesInitApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
-    verified := Proof.CmacAes.Stream.Arm.init_framed },
+    verified := .unscrubbed Proof.CmacAes.Stream.Arm.init_framed },
   Spec.Cmac.aesAbsorbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2320 2 Impl.CmacAes.Stream.Arm.absorb
-    verified := Proof.CmacAes.Stream.Arm.absorb_framed },
+    verified := .unscrubbed Proof.CmacAes.Stream.Arm.absorb_framed },
   Spec.Cmac.aesFinishApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2320 1 Impl.CmacAes.Stream.Arm.finish
-    verified := Proof.CmacAes.Stream.Arm.finish_framed }]
+    verified := .unscrubbed Proof.CmacAes.Stream.Arm.finish_framed }]
 
 end VG.Artifacts.CmacAes.Arm

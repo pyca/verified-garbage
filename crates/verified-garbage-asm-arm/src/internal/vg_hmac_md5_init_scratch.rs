@@ -27,9 +27,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 mov r0, r5
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #16]
@@ -133,7 +133,7 @@ ldr r10, [r11, #136]
 ldr lr, [r11, #140]
 ldr r11, [r11, #144]
 bx lr",
-        vg_md5_init = sym crate::md5::vg_md5_init,
+        vg_md5_init_core = sym crate::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

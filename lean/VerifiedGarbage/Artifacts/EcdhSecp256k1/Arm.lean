@@ -51,10 +51,10 @@ open VG.Proof.Secp256k1.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.exchangeSecp256k1
-    verified := Proof.Ecdh.Arm.Secp256k1.ecdh_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdh.Arm.Secp256k1.ecdh_verified hasLaw.law) },
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeSecp256k1U
-    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law }]
+    verified := .unscrubbed (Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdhSecp256k1.Arm

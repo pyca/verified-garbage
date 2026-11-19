@@ -115,5 +115,9 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_split;
 pub(crate) mod vg_aes_gcm_open_split;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_split.rs"]
 pub(crate) mod vg_aes_gcm_seal_split;

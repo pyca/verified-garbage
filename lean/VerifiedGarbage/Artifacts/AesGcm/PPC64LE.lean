@@ -1,14 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealSplit.Frame
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.GatherSplit.Verified
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.RoundsTo
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
@@ -20,41 +13,19 @@ import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 
 namespace VG.Artifacts.AesGcm.PPC64LE
 
-open VG.Proof.AesGcm.PPC64LE
+open VG.Proof.AesGcm.PPC64LE.Scrub
 
 def artifacts : List Artifact := [
-  Spec.Gcm.initApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
-    verified := init_framed },
-  Spec.Gcm.streamInitApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 Impl.AesGcm.PPC64LE.streamInit
-    verified := streamInit_framed },
-  Spec.Gcm.streamAadApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 Impl.AesGcm.PPC64LE.streamAad
-    verified := streamAad_framed },
-  Spec.Gcm.streamEncryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
-    verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed },
-  Spec.Gcm.streamDecryptApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
-    verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed },
-  Spec.Gcm.streamFinishApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 Impl.AesGcm.PPC64LE.streamFinish
-    verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed },
-  Spec.Gcm.streamVerifyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamVerify
-    verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed },
-  Spec.Gcm.sealApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
-    verified := Proof.AesGcm.seal_keyed seal_framed },
-  Spec.Gcm.openApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesGcm.PPC64LE.open
-    verified := Proof.AesGcm.open_keyed open_framed },
-  Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
-    code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
-    verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified },
-  Spec.Gcm.openToApi.artifact PPC64LE.target {
-    code := Impl.AesGcm.PPC64LE.OpenTo.openTo
-    verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]
+  Spec.Gcm.initApi.artifact PPC64LE.target initReg,
+  Spec.Gcm.streamInitApi.artifact PPC64LE.target streamInitReg,
+  Spec.Gcm.streamAadApi.artifact PPC64LE.target streamAadReg,
+  Spec.Gcm.streamEncryptApi.artifact PPC64LE.target streamEncryptReg,
+  Spec.Gcm.streamDecryptApi.artifact PPC64LE.target streamDecryptReg,
+  Spec.Gcm.streamFinishApi.artifact PPC64LE.target streamFinishReg,
+  Spec.Gcm.streamVerifyApi.artifact PPC64LE.target streamVerifyReg,
+  Spec.Gcm.sealApi.artifact PPC64LE.target sealReg,
+  Spec.Gcm.openApi.artifact PPC64LE.target openReg,
+  Spec.Gcm.sealGatherApi.artifact PPC64LE.target sealGatherReg,
+  Spec.Gcm.openToApi.artifact PPC64LE.target openToReg]
 
 end VG.Artifacts.AesGcm.PPC64LE

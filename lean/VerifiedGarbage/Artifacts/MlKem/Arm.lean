@@ -19,33 +19,33 @@ namespace VG.Artifacts.MlKem.Arm
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.keyGen
-    verified := Proof.MlKem.Arm.Wipe.keyGen_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encaps
-    verified := Proof.MlKem.Arm.Wipe.encaps_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encapsH
-    verified := Proof.MlKem.Arm.Wipe.encapsH_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.decaps
-    verified := Proof.MlKem.Arm.Wipe.decaps_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact Arm.target {
     code := Impl.MlKem.Arm.checkEk
-    verified := Proof.MlKem.Arm.CheckEk.verified },
+    verified := .unscrubbed Proof.MlKem.Arm.CheckEk.verified },
   Spec.MlKem1024.checkEkApi.artifact Arm.target {
     code := Impl.MlKem1024.Arm.checkEk1024
-    verified := Proof.MlKem1024.Arm.CheckEk.verified },
+    verified := .unscrubbed Proof.MlKem1024.Arm.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.keyGen1024
-    verified := Proof.MlKem.Arm.Wipe.keyGen1024_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encaps1024
-    verified := Proof.MlKem.Arm.Wipe.encaps1024_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encapsH1024
-    verified := Proof.MlKem.Arm.Wipe.encapsH1024_verified },
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.decaps1024
-    verified := Proof.MlKem.Arm.Wipe.decaps1024_verified }]
+    verified := .unscrubbed Proof.MlKem.Arm.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem.Arm

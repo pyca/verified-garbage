@@ -15,10 +15,10 @@ namespace VG.Artifacts.Sm4Ctr.X86
 def artifacts : List Artifact := [
   Spec.Sm4.ctrApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr
-    verified := Proof.Sm4.X86.Ctr.ctr_framed },
+    verified := .unscrubbed Proof.Sm4.X86.Ctr.ctr_framed },
   Spec.Sm4.ctrFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal
-    verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed
+    verified := .unscrubbed Proof.Sm4.X86.CtrFinal.ctrFinal_framed
     spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe }]
 
 end VG.Artifacts.Sm4Ctr.X86

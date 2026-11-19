@@ -44,9 +44,10 @@ section
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the SHA-256 and HMAC-SHA-256 functions it calls
 
 `decFns`: SHA-256's `init`, `update` and `finalize` and HMAC-SHA-256's
-`init` and `finalize`, the ARMv7 artifacts (`Artifacts/Sha256/Arm.lean`,
-`Artifacts/HmacSha256/Arm.lean`), each with the working space in its own
-frame; their proofs, and the stack they use. HMAC's `init` is the one for a
+`init` and `finalize`, the code of the ARMv7 artifacts
+(`Artifacts/Sha256/Arm.lean`, `Artifacts/HmacSha256/Arm.lean`), each called
+under an internal name of its own (the artifact's, then `_core`) and with
+the working space in its own frame; their proofs, and the stack they use. HMAC's `init` is the one for a
 key of any length (`initAnyKeyContract`); decryption's keys are 32 bytes.
 -/
 
@@ -58,16 +59,16 @@ open VG VG.Arm
 
 /-- The functions decryption calls. -/
 def decFns : Impl.RsaPkcs1Enc.Arm.Decrypt.Fns where
-  initN := Spec.Sha256.initApi.name
+  initN := Spec.Sha256.initApi.name ++ "_core"
   initC := Impl.Sha256.Arm.Stream.init
-  updN := Spec.Sha256.updateApi.name
+  updN := Spec.Sha256.updateApi.name ++ "_core"
   updC := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
-  finN := Spec.Sha256.finalizeApi.name
+  finN := Spec.Sha256.finalizeApi.name ++ "_core"
   finC := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
-  hiN := Spec.Hmac.sha256I.initAnyKeyApi.name
+  hiN := Spec.Hmac.sha256I.initAnyKeyApi.name ++ "_core"
   hiC := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
     Proof.Pbkdf2.Whole.Arm.sha256F
-  hfN := Spec.Hmac.sha256I.finalizeApi.name
+  hfN := Spec.Hmac.sha256I.finalizeApi.name ++ "_core"
   hfC := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
     Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
 
