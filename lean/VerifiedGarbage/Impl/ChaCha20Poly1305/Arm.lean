@@ -163,7 +163,7 @@ def keyGen : Prog isa :=
 /-- The Poly1305 state for the one-time key, at `ctx[0, 128)`. -/
 def polyInit : Prog isa :=
   .seq (.block [.mov .r0 (.reg .r7), .dp .add .r1 .r7 (.imm (BitVec.ofNat 32 keyOff))])
-  (.seq (.call "vg_poly1305_init" Impl.Poly1305.Arm.init)
+  (.seq (.call "vg_poly1305_init_core" Impl.Poly1305.Arm.init)
     (.block [.mov .r7 (.reg .r0)]))
 
 /-- The Poly1305 functions called, by the arithmetic of theirs (`umaal`, or

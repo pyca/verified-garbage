@@ -1843,6 +1843,10 @@ pub(crate) mod vg_sha512_256_init_core;
 pub(crate) mod vg_sha512_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_core.rs"]
+pub(crate) mod vg_sha512_digest_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch.rs"]
 pub(crate) mod vg_sha512_finalize_scratch;
 

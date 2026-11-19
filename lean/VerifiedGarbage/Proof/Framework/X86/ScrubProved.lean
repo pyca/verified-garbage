@@ -23,7 +23,7 @@ Which form to use:
 
 * `scrubFOf r hpost`: code with frames or direct calls, whose stack use
   (`stackUse`, callees included) fits in the registration's `stack` bytes,
-  with `0 < stack < 4096` and `stack % 4 = 0`. The scrub zeroes those
+  with `0 < stack` and `stack % 4 = 0`. The scrub zeroes those
   `stack` bytes below `esp`, then appends `tail`. `hpost` says that the
   postcondition reads the memory on return only within the buffers; build it
   from the contract's locality lemma with `postOut_of_local`:
@@ -52,7 +52,7 @@ namespace VG.X86.Scrub
 open VG.Impl.Scrub.X86
 
 /-- The result's bits of `r`'s function, which the tail keeps. -/
-abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 /-- What `scrubOf` needs of code `c`: it calls nothing and has no frame,
@@ -68,24 +68,24 @@ theorem of_scrubSide {c : Prog isa} (h : scrubSide c = true) :
 /-- What `scrubFOf` needs of code `c` scrubbed over `stack` bytes: its calls
 and frames use at most `stack` bytes below `esp` (`stackUse`), it makes no
 indirect call (`noIcall`), it has no MMX instruction, and `stack` is a frame
-the wipe can zero (`FrameOk`: positive, below a page, a multiple of 4).
+the wipe can zero (`FrameOk`: positive, a multiple of 4).
 It is the one place these conditions are stated: covering more code (calls
 through tables rather than none, `noIcall`) changes this definition and
 `of_scrubFSide`, and call sites keep their proof. -/
 noncomputable def scrubFSide (c : Prog isa) (stack : Nat) : Bool :=
   decide (stackUse c ≤ stack) && noIcall c && c.allInstrs (fun i => !i.isMmx) &&
-    decide (0 < stack) && decide (stack < 4096) && stack % 4 == 0
+    decide (0 < stack) && stack % 4 == 0
 
 theorem of_scrubFSide {c : Prog isa} {stack : Nat} (h : scrubFSide c stack = true) :
     stackUse c ≤ stack ∧ noIcall c = true ∧ c.allInstrs (fun i => !i.isMmx) = true ∧ FrameOk stack := by
   simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at h
-  exact ⟨h.1.1.1.1.1, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
+  exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 /-- `r`, code that calls nothing and has no frame, followed by `tail`
 (`scrub`), returning without secret residue: `scrubReg`, with what it needs
 of the code proved as one Boolean (`scrubSide`), by default by the kernel's
 evaluation where the registration is defined. -/
-def scrubOf {api : Api} (r : Registration api target)
+def scrubOf {api : Api} (r : Unscrubbed api target)
     (hs : scrubSide r.code = true := by (try dsimp only); lit_decide) : Registration api target :=
   scrubReg r (of_scrubSide hs).1 (of_scrubSide hs).2
 
@@ -100,7 +100,7 @@ registration is defined.
 A registration generic over the implementations of what its code calls
 gives `W`, its stack, and `hs`, proved of every implementation of the list
 by one evaluation: `hs` is then stated with `W`, not with `r.stack`. -/
-def scrubFOf {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r))
+def scrubFOf {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
     (W : Nat := r.stack)
     (hs : scrubFSide r.code W = true := by (try dsimp only); lit_decide)
     (hW : r.stack = W := by rfl) (hw : r.written = [] := by rfl) : Registration api target :=

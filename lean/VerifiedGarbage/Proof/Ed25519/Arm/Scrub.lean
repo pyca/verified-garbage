@@ -1972,10 +1972,11 @@ theorem frameOk_280 : FrameOk 280 := by decide
 
 theorem frameOk_600 : FrameOk 600 := by decide
 
-/-- The code of `vg_ed25519_key_pair`: the digest by `vg_sha512_digest`, and the public key by
+/-- The code of `vg_ed25519_key_pair`: the digest by `vg_sha512_digest`'s code, called as the
+internal `vg_sha512_digest_core`, and the public key by
 `vg_ed25519_public_key_expanded` (with `umaal`, `vg_ed25519_public_key_expanded_umaal`). -/
 def keyPairCode (umaal : Bool) : Prog isa :=
-  Impl.Ed25519.Arm.KeyPair.keyPair Spec.Sha512.digest512Api.name Proof.Ed25519.Arm.KeyPair.dgCode
+  Impl.Ed25519.Arm.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core") Proof.Ed25519.Arm.KeyPair.dgCode
     ("vg_ed25519_public_key_expanded" ++ suffix umaal) (PublicKey.codeExpanded umaal)
 
 theorem keyPair_noIcall (umaal : Bool) : noIcall (keyPairCode umaal) = true := by

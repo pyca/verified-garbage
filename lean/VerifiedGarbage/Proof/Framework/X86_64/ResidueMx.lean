@@ -153,7 +153,7 @@ structure AnalysedOps (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)
     VG.Taint.OpsCheck rtaintMx ops (init sig stack pubs) code (resOkB · stack ks (chunks stack))
 
 /-- `resOk_reg`, from `AnalysedOps`. -/
-theorem resOk_regOps {api : Api} (r : Registration api target) {pubs : List (Nat × Nat × Nat)}
+theorem resOk_regOps {api : Api} (r : Unscrubbed api target) {pubs : List (Nat × Nat × Nat)}
     (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs)
     (a : AnalysedOps api.sig r.stack pubs r.code) :
     ResOk r.code r.contract r.stack a.ks (chunks r.stack) := by

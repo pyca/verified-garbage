@@ -16,8 +16,7 @@ namespace VG.Artifacts.Sha1.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha1.initApi.artifact PPC64LE.target {
     code := Impl.Sha1.PPC64LE.Stream.init
-    verified := Proof.Sha1.PPC64LE.Shared.init
-    residue := some ⟨Proof.Sha1.PPC64LE.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Sha1.PPC64LE.Shared.init, Proof.Sha1.PPC64LE.Stream.init_noResidue _ _⟩ },
   Spec.Sha1.updateApi.artifact PPC64LE.target Proof.Sha1.PPC64LE.updateReg,
   Spec.Sha1.finalizeApi.artifact PPC64LE.target Proof.Sha1.PPC64LE.finalizeReg,
   Spec.Sha1.digestApi.artifact PPC64LE.target Proof.Sha1.PPC64LE.digestReg]

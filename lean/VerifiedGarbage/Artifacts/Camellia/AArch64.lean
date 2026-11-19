@@ -17,15 +17,15 @@ namespace VG.Artifacts.Camellia.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.expandKeyCode
-    verified := Proof.Camellia.AArch64.Residue.expandKeyCode_verified
-    residue := some ⟨Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.expandKeyCode_verified,
+      Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue⟩ },
   Spec.Camellia.ecbEncryptApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.ecbEncryptCode
-    verified := Proof.Camellia.AArch64.Residue.ecbEncryptCode_verified
-    residue := some ⟨Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ecbEncryptCode_verified,
+      Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue⟩ },
   Spec.Camellia.ecbDecryptApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.ecbDecryptCode
-    verified := Proof.Camellia.AArch64.Residue.ecbDecryptCode_verified
-    residue := some ⟨Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ecbDecryptCode_verified,
+      Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.Camellia.AArch64

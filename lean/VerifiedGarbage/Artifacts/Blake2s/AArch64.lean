@@ -16,8 +16,8 @@ namespace VG.Artifacts.Blake2s.AArch64
 def artifacts : List Artifact := [
   Spec.Blake2.initSApi.artifact AArch64.target {
     code := Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.s)
-    verified := Proof.Blake2.AArch64.Stream.initSCleared_verified
-    residue := some ⟨Proof.Blake2.AArch64.Stream.initSCleared_noResidue _⟩ },
+    verified := .scrubbed ⟨Proof.Blake2.AArch64.Stream.initSCleared_verified,
+      Proof.Blake2.AArch64.Stream.initSCleared_noResidue _⟩ },
   Spec.Blake2.updateSApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.s)
     verified := Proof.Blake2.AArch64.Stream.updateS_framed }

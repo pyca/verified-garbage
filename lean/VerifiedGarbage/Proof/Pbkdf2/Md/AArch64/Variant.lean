@@ -1045,7 +1045,7 @@ structure StreamFn where
   scrubOk : AArch64.ScrubAll.ScrubAllOk contract stack (api.sig.retBits AArch64.abi.ptrBits)
 
 /-- `f` as a registration of its `Api` (`Api.artifact`), as it is. -/
-def StreamFn.reg₀ (f : StreamFn) : Registration f.api AArch64.target where
+def StreamFn.reg₀ (f : StreamFn) : Unscrubbed f.api AArch64.target where
   consts := []
   tables := []
   code := f.code
@@ -1361,7 +1361,7 @@ theorem pbkdf2Ok (I : Spec.Hmac.Instance) :
 
 /-- `vg_pbkdf2_hmac_<hash>` with `v`, its working space in a frame of its own
 (`pbkdf2F`), as it is. -/
-def pbkdf2Reg₀ (v : MdHash) : Registration v.I.pbkdf2Api AArch64.target where
+def pbkdf2Reg₀ (v : MdHash) : Unscrubbed v.I.pbkdf2Api AArch64.target where
   suffix := v.suffix
   consts := []
   tables := []
@@ -1393,7 +1393,7 @@ theorem finOk (I : Spec.Hmac.Instance) (w : Nat) :
     (by omega) (Nat.le_refl _) (Proof.Hmac.finalizePostOut_local I.S _)
 
 /-- `vg_hmac_<hash>_finalize` with `v`, in a frame of the `finW` words it uses, as it is. -/
-def hmacFinReg₀ (v : MdHash) : Registration v.I.finalizeApi AArch64.target where
+def hmacFinReg₀ (v : MdHash) : Unscrubbed v.I.finalizeApi AArch64.target where
   suffix := v.suffix
   consts := []
   tables := []
@@ -1490,23 +1490,22 @@ def hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi AArch64.target :=
       code := v.initScrubbed
       contract := v.I.initAnyKeyContract AArch64.abi (16 + anyFrame v.I)
       stack := 16 + anyFrame v.I
-      verified := initEntry_verified
+      verified := .scrubbed ⟨initEntry_verified
         (AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) v.hmacShortR h.1 h.2.2.2.2.2.2.2.2.1
           (initShortOk v.I v.initW v.reprLocal v.stateBytes_lt))
         (AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) v.hmacAnyF h.2.1 h.2.2.2.2.2.2.2.2.1
           (initLongOk v.I v.reprLocal v.stateBytes_lt))
-        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2 v.hmacAnyF.2.2
-      ofApi := rfl
-      ofSig := by
-        unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-        exact ⟨_, _, _, rfl⟩
-      spSafe := Code.all_of_forall (fun _ => rfl) _
-      residue := some ⟨initEntry_noResidue
+        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2 v.hmacAnyF.2.2, initEntry_noResidue
         (noResidue_branch v.hmacShortR h.1 (initShortOk v.I v.initW v.reprLocal v.stateBytes_lt) h.2.2.1
           h.2.2.2.2.1 h.2.2.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1)
         (noResidue_branch v.hmacAnyF h.2.1 (initLongOk v.I v.reprLocal v.stateBytes_lt) h.2.2.2.1
           h.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1)
-        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2⟩ }
+        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2⟩
+      ofApi := rfl
+      ofSig := by
+        unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+        exact ⟨_, _, _, rfl⟩
+      spSafe := Code.all_of_forall (fun _ => rfl) _ }
   else
     { suffix := v.suffix
       consts := []
@@ -1514,7 +1513,7 @@ def hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi AArch64.target :=
       code := initCode v.H v.I
       contract := v.I.initAnyKeyContract AArch64.abi (16 + anyFrame v.I)
       stack := 16 + anyFrame v.I
-      verified := v.hmacInitF
+      verified := .unscrubbed v.hmacInitF
       ofApi := rfl
       ofSig := by
         unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract

@@ -92,3 +92,62 @@ def finalize (c : Callee) (rate len : Nat) : Prog isa :=
   StackScratch.AArch64.withStackScratch 672 .x3 (finBody c rate len)
 
 end VG.Impl.Sha3.AArch64.Instances
+
+/-! ## The functions, as emitted
+
+Each function is its code above, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, but the result's bits of `x0`, and
+the stack it uses is zeroed, so that it returns without secret residue. The
+registers are those its own instructions write, stated here, and those the
+permutation it calls states it writes (`Callee.clear`). -/
+
+namespace VG.Impl.Sha3.AArch64.Fn
+
+open VG.AArch64
+open VG.Impl.Sha3.AArch64 (Callee)
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `update` writes itself: those of `Instances.absorb`'s own
+instructions and of an absorb an implementation gives as a whole
+(`Callee.absorbOverride`). -/
+def updateOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v24, .v25, .v30,
+   .v31],
+   []⟩
+
+/-- Those `finalize` and `xofSqueeze` write themselves. -/
+def finalizeOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v24, .v25, .v30, .v31],
+   []⟩
+
+/-- Those `xofFinalize` writes itself. -/
+def xofFinalizeOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v24, .v25, .v30, .v31],
+   []⟩
+
+/-- `vg_sha3_*_update` and `vg_shake*_update`: `Instances.absorb`, its
+registers cleared but the position it returns, and its 656 bytes of stack
+zeroed. -/
+def update (c : Callee) (rate : Nat) : Prog isa :=
+  scrubAll 656 64 (updateOwn.union c.clear) (Instances.absorb c rate)
+
+/-- `vg_sha3_*_finalize`: `Instances.finalize`, its registers cleared and its
+688 bytes of stack zeroed. -/
+def finalize (c : Callee) (rate len : Nat) : Prog isa :=
+  scrubAll 688 0 (finalizeOwn.union c.clear) (Instances.finalize c rate len)
+
+/-- `vg_shake*_finalize`: `Instances.xofFinalize`, its registers cleared and
+its 656 bytes of stack zeroed. -/
+def xofFinalize (c : Callee) (rate : Nat) : Prog isa :=
+  scrubAll 656 0 (xofFinalizeOwn.union c.clear) (Instances.xofFinalize c rate)
+
+/-- `vg_shake*_squeeze`: `Instances.xofSqueeze`, its registers cleared but
+the position it returns, and its 656 bytes of stack zeroed. -/
+def xofSqueeze (c : Callee) (rate : Nat) : Prog isa :=
+  scrubAll 656 64 (finalizeOwn.union c.clear) (Instances.xofSqueeze c rate)
+
+end VG.Impl.Sha3.AArch64.Fn

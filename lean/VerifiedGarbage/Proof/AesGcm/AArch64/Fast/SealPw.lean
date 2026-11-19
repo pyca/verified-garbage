@@ -196,9 +196,9 @@ def sealPwAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space and the text: `pw` is at `[sp + 8]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
-theorem gwCall_of {σ s : State} {Y S : Addr} (hs : sealPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR (stackArg σ 2)))
-    (sS : Region.Sub ⟨S, 256⟩ (workR (stackArg σ 2))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR (stackArg σ 2), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
+theorem gwCall_of {σ s : State} {Y S : Addr} (hs : sealPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 2)))
+    (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 2))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
+    (hf : Frame [workR 2560 (stackArg σ 2), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg σ 1 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 1) := by

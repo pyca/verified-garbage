@@ -17,6 +17,6 @@ def artifacts : List Artifact := [
     doc := Spec.Ct.eqApi.doc
     code := Impl.Ct.PPC64LE.eq
     contract := Spec.Ct.eqContract abi
-    verified := Proof.Ct.PPC64LE.verified
+    verified := .unscrubbed Proof.Ct.PPC64LE.verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 end VG.Artifacts.Ct.PPC64LE

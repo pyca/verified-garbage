@@ -20,14 +20,14 @@ namespace VG.Artifacts.Sha256.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
-    verified := Proof.Sha256.PPC64LE.Shared.init224
-    residue := some ⟨Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Sha256.PPC64LE.Shared.init224,
+      Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩ },
   Spec.Sha256.finalize224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalize224Reg,
   Spec.Sha256.digest224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest224Reg,
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
-    verified := Proof.Sha256.PPC64LE.Shared.init
-    residue := some ⟨Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Sha256.PPC64LE.Shared.init,
+      Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩ },
   Spec.Sha256.updateApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.updateReg,
   Spec.Sha256.finalizeApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalizeReg,
   Spec.Sha256.digest256Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest256Reg]

@@ -46,7 +46,7 @@ theorem init_call (hc : Ctx E g m₀ rd wr t)
     (hcov : Covers (rd' ++ wr') (rd ++ FR E :: wr))
     (hw : ∀ r ∈ wr', Within r (FR E) ∨ ∃ R ∈ wr, Within r R)
     {scr : BitVec 32} (ha : t.gpr .r0 = scr) :
-    WP isa (.call Spec.Sha512.init512Api.name (init Spec.Sha512.H0_512)) t fun u =>
+    WP isa (.call (Spec.Sha512.init512Api.name ++ "_core") (init Spec.Sha512.H0_512)) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame wr' t.mem u.mem ∧
       Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (State.addr scr) [] := by
   refine call_ok hc (Proof.Sha512.Arm.Stream.init_verified _).1 rfl hp hcov hw

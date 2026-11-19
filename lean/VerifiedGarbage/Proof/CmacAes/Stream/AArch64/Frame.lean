@@ -1501,7 +1501,7 @@ theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
 no working space, and 2240 with one that does, whose working space holds its
 secrets (the cost of zeroing them is accepted). -/
 def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
-  let r : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
+  let r : Unscrubbed Spec.Cmac.aesAbsorbApi AArch64.target :=
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)
       verified := absorb_framed v

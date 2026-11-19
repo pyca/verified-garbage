@@ -14,11 +14,11 @@ namespace VG.Artifacts.TripleDesCfb8.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.cfb8EncryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_noResidue⟩ },
   Spec.TripleDes.cfb8DecryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDesCfb8.AArch64

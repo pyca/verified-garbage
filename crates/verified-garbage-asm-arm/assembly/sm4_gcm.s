@@ -18,7 +18,7 @@ vg_sm4_gcm_init:
 	str lr, [r2, #160]
 	mov r11, r2
 	mov r9, r1
-	bl {vg_sm4_expand_key}
+	bl {vg_sm4_expand_key_core}
 	mov r0, #0
 	str r0, [r9, #240]
 	str r0, [r9, #244]

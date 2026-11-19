@@ -50,16 +50,16 @@ theorem fastOpenWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
     (Impl.AesGcm.AArch64.Fast.openWith v.callees gh).allInstrs keepsV = true :=
   fastOpenWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, hgh])
 
-theorem fastOpen_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : openAArch64.pre s) :
+theorem fastOpen_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«open» v.callees) s t s' ∧ abiPreserved s s' ∧
-      openAArch64.post s s' :=
+      (openAArch64 Wn).post s s' :=
   WP.withPreservedV (Fast.openWith_wp v.gh.fn v hMK hs fun _ _ _ _ _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fastOpenWith_keepsV v v.gh.keepsV)
 
 theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«open» v.callees)
       (Proof.AesGcm.openScratchContract AArch64.abi) :=
-  Verified.of_correct (fastOpen_correct v hMK) (Fast.open_fast_ct v hMK) (by
+  Verified.of_correct (fastOpen_correct (Wn := 2560) v hMK) (Fast.open_fast_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
       Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,

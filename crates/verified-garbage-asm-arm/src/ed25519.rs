@@ -32,7 +32,7 @@ push {{r0, r1, r3}}
 mov r0, r2
 ldr r2, [sp, #4]
 movw r1, #32
-bl {vg_sha512_digest}
+bl {vg_sha512_digest_core}
 ldr r0, [sp, #0]
 ldr r1, [sp, #4]
 ldr r2, [sp, #8]
@@ -200,7 +200,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_umaal = sym super::ed25519::vg_ed25519_public_key_expanded_umaal::vg_ed25519_public_key_expanded_umaal,
     )
 }
@@ -342,7 +342,7 @@ add r12, sp, #0
 str r0, [r12, #84]
 ldr r0, [sp, #268]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 add r0, sp, #56
 add r12, sp, #0
 str r0, [r12, #0]
@@ -401,7 +401,7 @@ add r2, r2, #0
 bl {vg_ed25519_scalar_base_umaal}
 ldr r0, [sp, #268]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 ldr r0, [sp, #248]
 add r0, r0, #0
 add r12, sp, #0
@@ -732,7 +732,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -780,7 +780,7 @@ add r12, sp, #248
 str lr, [r12, #16]
 ldr r0, [sp, #264]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 ldr r0, [sp, #260]
 add r0, r0, #0
 add r12, sp, #0
@@ -964,7 +964,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -995,7 +995,7 @@ push {{r0, r1, r3}}
 mov r0, r2
 ldr r2, [sp, #4]
 movw r1, #32
-bl {vg_sha512_digest}
+bl {vg_sha512_digest_core}
 ldr r0, [sp, #0]
 ldr r1, [sp, #4]
 ldr r2, [sp, #8]
@@ -1163,7 +1163,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -1299,7 +1299,7 @@ add r12, sp, #0
 str r0, [r12, #84]
 ldr r0, [sp, #268]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 add r0, sp, #56
 add r12, sp, #0
 str r0, [r12, #0]
@@ -1358,7 +1358,7 @@ add r2, r2, #0
 bl {vg_ed25519_scalar_base}
 ldr r0, [sp, #268]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 ldr r0, [sp, #248]
 add r0, r0, #0
 add r12, sp, #0
@@ -1689,7 +1689,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -1731,7 +1731,7 @@ add r12, sp, #248
 str lr, [r12, #16]
 ldr r0, [sp, #264]
 add r0, r0, #0
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 ldr r0, [sp, #260]
 add r0, r0, #0
 add r12, sp, #0
@@ -1915,7 +1915,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,

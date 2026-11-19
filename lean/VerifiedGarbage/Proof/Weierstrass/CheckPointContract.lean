@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.MontContract
 
 Not trusted: the contract of one function for
 each curve of `curves` (P-192, P-224, P-256, secp256k1, P-384, P-521,
-brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working space where the code of the curve's ECDH
+brainpoolP256r1, brainpoolP320r1, brainpoolP384r1 and brainpoolP512r1), on the working space where the code of the curve's ECDH
 and ECDSA verification keeps the public point it checks, so that both can
 call one copy of the check instead of repeating it:
 
