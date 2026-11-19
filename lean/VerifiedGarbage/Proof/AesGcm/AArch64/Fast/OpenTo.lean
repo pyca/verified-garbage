@@ -91,7 +91,7 @@ theorem openToWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ₁ w)) →
       s₁.sp = σ₁.sp → s₂.sp = σ₁.sp → s₁.rd = σ₁.rd → s₁.wr = σ₁.wr →
       Frame [workR Wn (stackArg σ₁ w)] σ₁.mem s₁.mem → s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
-      Frame [workR Wn (stackArg σ₁ w)] σ₂.mem s₂.mem → RelCT isa (Eq2 s₁ s₂) cl TT) :
+      Frame [workR Wn (stackArg σ₁ w)] σ₂.mem s₂.mem → RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithEG v.callees true w cl) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
@@ -233,14 +233,14 @@ section
 variable (v : GcmImpl) (hMK : MulKey)
 include hMK
 
-theorem fastOpenTo_correct {Wn : Nat} (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem fastOpenTo_correct {Wn : Nat} (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openTo v.callees) s t s' ∧ abiPreserved s s' ∧
       (openToAArch64 Wn).post s s' :=
   WP.withPreservedV (openToWithE_wp (w := 4) _ v hMK (.inl rfl) hs
       fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc)
     (fastOpenToWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, GcmImpl.callees, v.gh.keepsV]))
 
-theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openTo v.callees) :=
   openToWithE_ct (w := 4) v _ hMK (.inl rfl) (extra := fun _ => []) (extraW := fun _ => []) (fun _ h => h)
     (fun _ hc _ _ _ _ _ _ => gh_call v.gh hc)
@@ -296,13 +296,13 @@ abbrev pwRT (s : State) : Region := ⟨stackArg s 4, 128⟩
 /-- What `vg_aes_gcm_open_to_with_powers` needs, on the regions its proofs
 run on: `openToPreXW 5`, with `pw` readable, apart from the working space,
 and holding the powers of the hash subkey. -/
-def openToPwN (Wn : Nat) (s : State) : Prop :=
-  openToPreXW (Wn := Wn) 5 [pwRT s] s ∧ (pwRT s).Disjoint ⟨stackArg s 5, Wn⟩ ∧
+def openToPwN (s : State) : Prop :=
+  openToPreXW 5 [pwRT s] s ∧ (pwRT s).Disjoint ⟨stackArg s 5, 2560⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 4) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs: `openToPreXW 5`, with `pw`
 readable before the stack arguments, holding the powers. -/
-def openToPwW (Wn : Nat) (s : State) : Prop :=
+def openToPwW (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
@@ -310,7 +310,7 @@ def openToPwW (Wn : Nat) (s : State) : Prop :=
   let dst : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
   let tag : Region := ⟨stackArg s 2, (stackArg s 3).toNat⟩
   let pw : Region := pwRT s
-  let work : Region := ⟨stackArg s 5, Wn⟩
+  let work : Region := ⟨stackArg s 5, 2560⟩
   s.rd = [ctx, nonce, aad, src, tag, pw, args s 6] ∧ s.wr = [dst, work] ∧
     ctx.Disjoint dst ∧ ctx.Disjoint work ∧ nonce.Disjoint dst ∧ nonce.Disjoint work ∧
     aad.Disjoint dst ∧ aad.Disjoint work ∧ src.Disjoint dst ∧ src.Disjoint work ∧
@@ -320,7 +320,7 @@ def openToPwW (Wn : Nat) (s : State) : Prop :=
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
     (stackArg s 2).toNat + (stackArg s 3).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 5).toNat + Wn ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 6 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
+    (stackArg s 5).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 6 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
     (stackArg s 1).toNat = (s.gpr .x7).toNat ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 4) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
@@ -333,10 +333,10 @@ def openToPwAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space: `pw` is at `[sp + 32]`, readable, apart from the accumulator and the
 working space of the call, and holds the powers. -/
-theorem gwCallTo_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : openToPwN Wn σ)
-    (sY : Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 5)))
+theorem gwCallTo_of {σ s : State} {Y S : Addr} (hs : openToPwN σ)
+    (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 5)))
     (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR Wn (stackArg σ 5)] σ.mem s.mem) :
+    (hf : Frame [workR 2560 (stackArg σ 5)] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 32) 64 = stackArg σ 4 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 32) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 4) := by
@@ -348,8 +348,8 @@ theorem gwCallTo_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : openToPwN Wn σ
     show Region.Sub ⟨σ.sp + BitVec.ofNat 64 32, 8⟩ ⟨σ.sp + BitVec.ofNat 64 (8 * 0), 8 * 6⟩
     rw [show σ.sp + BitVec.ofNat 64 (8 * 0) = σ.sp by rw [Nat.mul_zero, BitVec.add_zero]]
     exact Offset.sub_base _ (by decide)
-  obtain kW : ∀ {X : Region}, X.Disjoint (workR Wn (stackArg σ 5)) →
-      ∀ r ∈ [workR Wn (stackArg σ 5)], X.Disjoint r := fun hX r hr => by
+  obtain kW : ∀ {X : Region}, X.Disjoint (workR 2560 (stackArg σ 5)) →
+      ∀ r ∈ [workR 2560 (stackArg σ 5)], X.Disjoint r := fun hX r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hX
   refine ⟨?_, by rw [hrd, hwr, hsp]; exact hspA, ⟨?_, (pw.sub_right sY).symm, (pw.sub_right sS).symm, ?_⟩⟩
   · rw [hsp, hf.readW (r := ⟨σ.sp + BitVec.ofNat 64 32, 8⟩) (Region.contains_self _ _)
@@ -370,7 +370,7 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : MulKey)
 include hMK
 
-theorem openToPw_correctN {Wn : Nat} (s : State) (hs : openToPwN Wn s) :
+theorem openToPw_correctN (s : State) (hs : openToPwN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openToPostOf s s' :=
   WP.withPreservedV (openToWithE_wp (w := 5) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
@@ -378,8 +378,8 @@ theorem openToPw_correctN {Wn : Nat} (s : State) (hs : openToPwN Wn s) :
       pwSel_call v g (k := 32) (by decide) q.1 q.2.1 hc q.2.2)
     (fastOpenToWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr (.inr rfl))))
 
-theorem openToPw_ctN {Wn : Nat} :
-    ConstantTime isa openToPwN Wn (fun s₁ s₂ => onePub 6 s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
+theorem openToPw_ctN :
+    ConstantTime isa openToPwN (fun s₁ s₂ => onePub 6 s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn) :=
   openToWithE_ct (w := 5) v _ hMK (.inr rfl) (extra := fun s => [pwRT s]) (extraW := fun _ => [])
     (fun _ h => h.1)
@@ -407,20 +407,20 @@ def narrowRdPT (s : State) : List Region :=
 /-- `s` with the readable regions of the proofs. -/
 def narrowPT (s : State) : State := s.withRegions (narrowRdPT s) s.wr
 
-theorem narrowPT_pre {Wn : Nat} {s : State} (h : openToPwW Wn s) : openToPwN Wn (narrowPT s) := by
+theorem narrowPT_pre {s : State} (h : openToPwW s) : openToPwN (narrowPT s) := by
   obtain ⟨-, hwr, cd, cw, nd, nw, ad, aw, sd, sw, dt, dw, da, tw, wa, pw, b0, b2, b4, b6, bd, bt, b1, bsp, hr,
     hl, rep⟩ := h
   exact ⟨⟨rfl, hwr, cd, cw, nd, nw, ad, aw, sd, sw, dt, dw, da, tw, wa, b0, b2, b4, b6, bd, bt, b1, bsp, hr, hl⟩,
     pw, rep⟩
 
-theorem narrowPT_covers {Wn : Nat} {s : State} (h : openToPwW Wn s) :
+theorem narrowPT_covers {s : State} (h : openToPwW s) :
     Covers ((narrowPT s).rd ++ (narrowPT s).wr) (s.rd ++ s.wr) := by
   rw [show (narrowPT s).rd = narrowRdPT s from rfl, show (narrowPT s).wr = s.wr from rfl, h.1]
   refine Covers.append (Covers.of_mem fun r hr => ?_) (Covers.refl _)
   simp only [narrowRdPT, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
-theorem narrowPT_exec {Wn : Nat} {c : Prog isa} {s s₁ : State} {t : List Leak} (h : openToPwW Wn s)
+theorem narrowPT_exec {c : Prog isa} {s s₁ : State} {t : List Leak} (h : openToPwW s)
     (he : Exec isa c (narrowPT s) t s₁) : Exec isa c s t (s₁.withRegions s.rd s.wr) := by
   have := Exec.widen he (narrowPT_covers h) (Covers.refl _)
   rwa [show (narrowPT s).withRegions s.rd s.wr = s from rfl] at this
@@ -464,7 +464,7 @@ theorem openToPw_ct :
 theorem openToPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn)
       (Proof.AesGcm.openToWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openToPw_correct (Wn := 2560) v g hMK) (openToPw_ct (Wn := 2560) v g hMK)
+  Verified.of_correct (openToPw_correct v g hMK) (openToPw_ct v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openToWithPowersScratchContract, Proof.AesGcm.openToWithPowersScratchSig,
           Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToPre, Proof.AesGcm.openToWithPowersRoundsPost,
