@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
 public import VerifiedGarbage.Proof.P192.PPC64LE.Law
@@ -29,10 +30,8 @@ open VG.Proof.HmacTable.PPC64LE (vars tables)
 open VG.Proof.P192.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target {
-    code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
-      Impl.Ecdsa.Verify.PPC64LE.verifyP192
-    verified := Proof.Ecdsa.Verify.PPC64LE.P192.verifyHash_verified hasLaw.law }] ++
+  Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target
+    (Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify hasLaw.law)] ++
   (if hv : OK vars then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]

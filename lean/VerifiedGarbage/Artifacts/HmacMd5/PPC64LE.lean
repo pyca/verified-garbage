@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
+public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -12,12 +12,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.HmacMd5.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.initAnyKeyApi.artifact PPC64LE.target {
-    code := Proof.Hmac.Stream.PPC64LE.initCode Proof.Hmac.Stream.PPC64LE.Md5.hash Spec.Hmac.md5I 6
-    verified := Proof.Hmac.Stream.PPC64LE.Md5.initAny },
-  Spec.Hmac.md5I.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I) .r7
-      Proof.Hmac.Stream.PPC64LE.Md5.hash.finalize
-    verified := Proof.Hmac.Stream.PPC64LE.Md5.finalize }]
+  Spec.Hmac.md5I.initAnyKeyApi.artifact PPC64LE.target Proof.Hmac.Stream.PPC64LE.Scrub.md5InitAnyKeyReg,
+  Spec.Hmac.md5I.finalizeApi.artifact PPC64LE.target Proof.Hmac.Stream.PPC64LE.Scrub.md5FinalizeReg]
 
 end VG.Artifacts.HmacMd5.PPC64LE
