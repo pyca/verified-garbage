@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -192,6 +194,33 @@ str r2, [r12, #500]
 str r2, [r12, #504]
 str r2, [r12, #508]
 add sp, sp, #528
+sub sp, sp, #528
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #528
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,
     )
@@ -200,6 +229,8 @@ bx lr",
 /// RC2-CBC decryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is RC2 decryption under the same 128-byte little-endian schedule as encryption, as written at the start of the context by `vg_rc2_cbc_init`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -390,6 +421,33 @@ str r2, [r12, #500]
 str r2, [r12, #504]
 str r2, [r12, #508]
 add sp, sp, #528
+sub sp, sp, #528
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #528
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block::vg_rc2_decrypt_block,
     )

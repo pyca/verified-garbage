@@ -352,11 +352,6 @@ arm vg_pbkdf2_hmac_sha512
 arm vg_pbkdf2_hmac_sha512_224
 arm vg_pbkdf2_hmac_sha512_256
 arm vg_poly1305_init
-arm vg_rc2_cbc_decrypt_chained
-arm vg_rc2_cbc_encrypt_chained
-arm vg_rc2_cbc_init
-arm vg_rc4_apply
-arm vg_rc4_init
 arm vg_rsa_check_key
 arm vg_rsa_check_key_umaal
 arm vg_rsa_crt_values
