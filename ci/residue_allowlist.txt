@@ -483,13 +483,9 @@ arm vg_sha384_digest
 arm vg_sha384_finalize
 arm vg_sha384_init
 arm vg_sha3_224_finalize
-arm vg_sha3_224_update
 arm vg_sha3_256_finalize
-arm vg_sha3_256_update
 arm vg_sha3_384_finalize
-arm vg_sha3_384_update
 arm vg_sha3_512_finalize
-arm vg_sha3_512_update
 arm vg_sha512_224_digest
 arm vg_sha512_224_finalize
 arm vg_sha512_224_init
@@ -502,7 +498,6 @@ arm vg_sha512_init
 arm vg_sha512_update
 arm vg_shake128_finalize
 arm vg_shake128_squeeze
-arm vg_shake128_update
 arm vg_shake256_finalize
 arm vg_shake256_squeeze
 arm vg_sm3_finalize
@@ -1107,13 +1102,9 @@ x86 vg_sha384_digest
 x86 vg_sha384_finalize
 x86 vg_sha384_init
 x86 vg_sha3_224_finalize
-x86 vg_sha3_224_update
 x86 vg_sha3_256_finalize
-x86 vg_sha3_256_update
 x86 vg_sha3_384_finalize
-x86 vg_sha3_384_update
 x86 vg_sha3_512_finalize
-x86 vg_sha3_512_update
 x86 vg_sha512_224_digest
 x86 vg_sha512_224_finalize
 x86 vg_sha512_224_init
@@ -1126,7 +1117,6 @@ x86 vg_sha512_init
 x86 vg_sha512_update
 x86 vg_shake128_finalize
 x86 vg_shake128_squeeze
-x86 vg_shake128_update
 x86 vg_shake256_finalize
 x86 vg_shake256_squeeze
 x86 vg_sm3_finalize
