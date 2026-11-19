@@ -4,7 +4,12 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["ec_brainpoolp320r1_compressed"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64", target_arch = "riscv64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 pub fn bench(c: &mut Criterion) {
     crate::ec_compressed::ec_compressed_bench!(
         c,
@@ -15,5 +20,10 @@ pub fn bench(c: &mut Criterion) {
     );
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64", target_arch = "riscv64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+)))]
 pub fn bench(_: &mut Criterion) {}
