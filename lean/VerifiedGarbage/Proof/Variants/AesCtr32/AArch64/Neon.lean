@@ -35,6 +35,10 @@ def neon : Ctr32Impl where
   toKeepsV := by lit_decide
   suffix := "_neon"
   features := []
+  clear := ⟨[.x1, .x3, .x4, .x6, .x7, .x8, .x9, .x10, .x12],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
   expand := .scalar
   expandNoFrames := Ctr32Impl.scalar.expandNoFrames
   expandOk := Ctr32Impl.scalar.expandOk
