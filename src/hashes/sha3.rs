@@ -22,10 +22,10 @@
 
 use crate::align::CacheAligned;
 use crate::arch::dispatch::sha3::{
-    vg_sha3_224_update_auto, vg_sha3_224_finalize_auto, vg_sha3_256_update_auto,
-    vg_sha3_256_finalize_auto, vg_sha3_384_update_auto, vg_sha3_384_finalize_auto,
-    vg_sha3_512_update_auto, vg_sha3_512_finalize_auto, vg_shake128_update_auto,
-    vg_shake128_finalize_auto, vg_shake128_squeeze_auto, vg_shake256_finalize_auto,
+    vg_sha3_224_finalize_auto, vg_sha3_224_update_auto, vg_sha3_256_finalize_auto,
+    vg_sha3_256_update_auto, vg_sha3_384_finalize_auto, vg_sha3_384_update_auto,
+    vg_sha3_512_finalize_auto, vg_sha3_512_update_auto, vg_shake128_finalize_auto,
+    vg_shake128_squeeze_auto, vg_shake128_update_auto, vg_shake256_finalize_auto,
     vg_shake256_squeeze_auto,
 };
 
