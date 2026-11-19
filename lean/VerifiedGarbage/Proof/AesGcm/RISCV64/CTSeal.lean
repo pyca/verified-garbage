@@ -1040,16 +1040,24 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
   · rw [hk₁.wr, hwr]; exact covers_mem (by simp)
 
 /-- The head of the entry: `W`, the stack argument at `sp + off`, into `t1`. -/
-theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 8 ∨ off = 16) (hsa : s₀.sp.toNat % 16 = 0)
+theorem oneAg_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off % 8 = 0 ∧ off < 2048) (hsa : s₀.sp.toNat % 16 = 0)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
     WP isa (.block [.addSp .t1 0, .load .d .t1 .t1 off]) s₀ fun sA =>
       sA.gpr .t1 = W ∧ (∀ r, r ≠ .t1 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
-  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff]) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
+  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff.2]) (by rw [uA.gpr, add_ofNat_zero])
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff.1])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
   exact ⟨by rw [uB.gpr, uA.mem, hWv], fun r hr => by rw [uB.other r hr, uA.other r hr],
     ⟨by rw [uB.mem, uA.mem], by rw [uB.rd, uA.rd], by rw [uB.wr, uA.wr], by rw [uB.sp, uA.sp]⟩⟩
+
+/-- `oneAg_ok` at `sp + 8` or `sp + 16`. -/
+theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 8 ∨ off = 16) (hsa : s₀.sp.toNat % 16 = 0)
+    (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
+    WP isa (.block [.addSp .t1 0, .load .d .t1 .t1 off]) s₀ fun sA =>
+      sA.gpr .t1 = W ∧ (∀ r, r ≠ .t1 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA :=
+  oneAg_ok (by rcases hoff with rfl | rfl <;> decide) hsa hWi hWv
 
 /-- The rest of the entry, after `W` is in `t1`. -/
 abbrev oneRestAt (tagO : Nat) : List Instr :=
@@ -1076,6 +1084,15 @@ theorem oneHead16_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs 
 /-- `bkLoad 8` reads the stack at a public address. -/
 theorem bkLoad_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs []) (.block (bkLoad 8)) h).isSome = true :=
   ⟨_, by taint_decide⟩
+
+/-- `bkLoad` at either offset of `open`'s (`bkOff`) reads the stack at a public address. -/
+theorem bkLoadOff_taint (o : Bool) : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
+    (.block (bkLoad (bkOff o))) h).isSome = true := by
+  cases o <;> exact ⟨_, by taint_decide⟩
+
+/-- The head of `open_bitsliced`'s entry, which loads `W` from `sp + 24`. -/
+theorem oneHead24_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
+    (.block [.addSp .t1 0, .load .d .t1 .t1 24]) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem oneRest_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1]) (.block oneRest) h).isSome = true :=
