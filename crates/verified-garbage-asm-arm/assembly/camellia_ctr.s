@@ -304,7 +304,7 @@ vg_camellia_ctr:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #8
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -587,7 +587,7 @@ vg_camellia_ctr:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #4
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -742,7 +742,7 @@ vg_camellia_ctr:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #2
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -842,7 +842,7 @@ vg_camellia_ctr:
 	mov r1, r11
 	add r2, r8, #56
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #56]
 	eor r9, r9, r10
@@ -927,6 +927,29 @@ vg_camellia_ctr:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #88
+	sub sp, sp, #3040
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #95
+212:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 212b
+	add sp, sp, #3040
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_camellia_ctr_final:
@@ -956,7 +979,7 @@ vg_camellia_ctr_final:
 	and r8, r8, #15
 	add r7, r3, r12, lsl #4
 	push {r12, lr}
-	bl {vg_camellia_ctr}
+	bl {vg_camellia_ctr_entry}
 	ldr r12, [sp], #8
 	cmp r8, #0
 	beq 20f
@@ -972,7 +995,7 @@ vg_camellia_ctr_final:
 	add r3, r12, #40
 	mov r12, #1
 	push {r12, lr}
-	bl {vg_camellia_ctr}
+	bl {vg_camellia_ctr_entry}
 	ldr r12, [sp], #8
 	ldr r12, [sp, #4]
 	add r0, r12, #40
@@ -1017,4 +1040,31 @@ vg_camellia_ctr_final:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #72
+	sub sp, sp, #3120
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #97
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #3120
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

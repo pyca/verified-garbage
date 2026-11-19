@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
-public import VerifiedGarbage.Proof.Camellia.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
+public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,17 +11,9 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.CamelliaCfb.Arm
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt
-    verified := .unscrubbed Proof.Camellia.Arm.cfbEncrypt_framed },
-  Spec.Camellia.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
-    verified := .unscrubbed Proof.Camellia.Arm.cfbDecrypt_framed },
-  Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal
-    verified := .unscrubbed Proof.Camellia.Arm.cfbEncryptFinal_framed },
-  Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal
-    verified := .unscrubbed Proof.Camellia.Arm.cfbDecryptFinal_framed }]
+  Spec.Camellia.cfbEncryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbEncryptReg,
+  Spec.Camellia.cfbDecryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbDecryptReg,
+  Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbEncryptFinalReg,
+  Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.CamelliaCfb.Arm

@@ -59,9 +59,12 @@ def ctrFinalMoves : List Instr :=
 /-- The registers saved; the arguments to their registers. -/
 def ctrFinalSetup : List Instr := ctrSave ++ finalSave ++ ctrFinalMoves
 
-/-- The call of `vg_camellia_ctr`, with the number of blocks in `r12`
-pushed as its stack argument. -/
-def ctrCall : Prog isa := .frame (.push [.r12, .lr]) (.call "vg_camellia_ctr" ctrFramed) (.pop .r12 8)
+/-- The call of `vg_camellia_ctr`'s code, with the number of blocks in
+`r12` pushed as its stack argument: its code as it is verified, under a name
+of its own (`vg_camellia_ctr_entry`), which the emitter writes as an
+internal function, since the artifact `vg_camellia_ctr` is that code
+scrubbed (`Proof/Camellia/Arm/Scrub.lean`). -/
+def ctrCall : Prog isa := .frame (.push [.r12, .lr]) (.call "vg_camellia_ctr_entry" ctrFramed) (.pop .r12 8)
 
 /-- The block at `save + 40` zeroed, through `r0`, and the arguments of
 `vg_camellia_ctr` on it: the schedule, the rounds, the counter block, the

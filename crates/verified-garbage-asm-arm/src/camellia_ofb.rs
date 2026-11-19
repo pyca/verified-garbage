@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -14,7 +16,7 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 2824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 2832 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ofb(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
@@ -805,6 +807,33 @@ str r2, [r12, #2780]
 str r2, [r12, #2784]
 str r2, [r12, #2788]
 add sp, sp, #2816
+sub sp, sp, #2832
+add r12, sp, #0
+mov r2, #0
+mov r3, #88
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #2832
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_camellia_ecb_encrypt_keys = sym super::camellia::vg_camellia_ecb_encrypt_keys::vg_camellia_ecb_encrypt_keys,
         vg_camellia_ecb_keyed = sym super::camellia::vg_camellia_ecb_keyed::vg_camellia_ecb_keyed,
@@ -815,6 +844,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Camellia.ofbFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -822,7 +853,7 @@ bx lr",
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 2904 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 2912 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ofb_final(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -865,7 +896,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_entry}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -942,7 +973,30 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #88
+sub sp, sp, #2912
+add r12, sp, #0
+mov r2, #0
+mov r3, #91
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+add sp, sp, #2912
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
+        vg_camellia_ecb_encrypt_entry = sym super::camellia::vg_camellia_ecb_encrypt_entry::vg_camellia_ecb_encrypt_entry,
     )
 }

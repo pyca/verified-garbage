@@ -800,6 +800,33 @@ vg_camellia_cfb128_encrypt:
 	str r2, [r12, #2784]
 	str r2, [r12, #2788]
 	add sp, sp, #2816
+	sub sp, sp, #2832
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #88
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2832
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_camellia_cfb128_decrypt:
@@ -926,7 +953,7 @@ vg_camellia_cfb128_decrypt:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #8
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -1121,7 +1148,7 @@ vg_camellia_cfb128_decrypt:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #4
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -1236,7 +1263,7 @@ vg_camellia_cfb128_decrypt:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #2
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -1328,7 +1355,7 @@ vg_camellia_cfb128_decrypt:
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -1397,6 +1424,29 @@ vg_camellia_cfb128_decrypt:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #88
+	sub sp, sp, #3040
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #95
+212:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 212b
+	add sp, sp, #3040
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_camellia_cfb128_encrypt_final:
@@ -1439,7 +1489,7 @@ vg_camellia_cfb128_encrypt_final:
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -1524,6 +1574,29 @@ vg_camellia_cfb128_encrypt_final:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #88
+	sub sp, sp, #2912
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #91
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #2912
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_camellia_cfb128_decrypt_final:
@@ -1566,7 +1639,7 @@ vg_camellia_cfb128_decrypt_final:
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_entry}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -1659,4 +1732,27 @@ vg_camellia_cfb128_decrypt_final:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #88
+	sub sp, sp, #2912
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #91
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #2912
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
