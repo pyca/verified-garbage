@@ -86,7 +86,7 @@ theorem omB_relDT {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n t
     (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
     (x26₁ : m₁.gpr .x26 = BitVec.ofNat 64 n) (x26₂ : m₂.gpr .x26 = BitVec.ofNat 64 n)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     RelCT isa (Eq2 m₁ m₂) (omBWith (Impl.AesGcm.AArch64.Tail.cryptAlT v.callees)) TT := by
   obtain hWn := L.hWn
   unfold omBWith
@@ -183,7 +183,7 @@ theorem openRunA_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {t
       s₁.rd = t₁.rd → s₁.wr = t₁.wr → Frame [workR Wn W] t₁.mem s₁.mem →
       s₂.rd = t₂.rd → s₂.wr = t₂.wr → Frame [workR Wn W] t₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (openRunA v.callees cl) TT := by
   have L := o₁.lay
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
@@ -235,7 +235,7 @@ theorem omB_relDTG {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Add
     (mo₁ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s m₁) (mo₂ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s' m₂)
     (x26₁ : m₁.gpr .x26 = BitVec.ofNat 64 n) (x26₂ : m₂.gpr .x26 = BitVec.ofNat 64 n)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     RelCT isa (Eq2 m₁ m₂) (omBWithG to (crT v.callees to)) TT := by
   obtain hWn := L.hWn
   cases to
@@ -279,7 +279,7 @@ theorem openRunWithG_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey
       s₁.rd = s₀₁.rd → s₁.wr = s₀₁.wr → Frame [workR Wn W] s₀₁.mem s₁.mem →
       s₂.rd = s₀₂.rd → s₂.wr = s₀₂.wr → Frame [workR Wn W] s₀₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Fast.openRunWithPG v.callees to cl) TT := by
   subst h12
   have L := o₁.lay
@@ -348,7 +348,7 @@ theorem openRunWith_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey)
       s₁.rd = s₀₁.rd → s₁.wr = s₀₁.wr → Frame [workR Wn W, ⟨D, n⟩] s₀₁.mem s₁.mem →
       s₂.rd = s₀₂.rd → s₂.wr = s₀₂.wr → Frame [workR Wn W, ⟨D, n⟩] s₀₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) TT :=
   openRunWithG_relX v cl hMK hexW hexD hexC o₁ o₂ h12 hx₁ hx₂ hal rt₁ rt₂ hok hb
     (fun s' _ _ _ _ c y z r w sp f hd => hgh₁ s' c y z r w sp (frame_wD f) hd)
@@ -386,7 +386,7 @@ theorem openWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) := by
   unfold Impl.AesGcm.AArch64.Fast.openWithE
@@ -454,7 +454,7 @@ theorem openWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) :=
   openWithEX_ct v cl hMK hw hpre (ex := fun _ => []) (fun _ => by simp) (fun _ => by simp) (fun _ => by simp)

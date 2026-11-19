@@ -303,8 +303,8 @@ theorem openRestWithFl_rel {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W SP Np
   obtain hle := tagLenOk_le hok
   refine rel_seq (rel_taint [.x19, .x28, .x12] (by rw [p₁.env.sp, p₂.env.sp])
       (by agree_tac [p₁.env.x19, p₂.env.x19, p₁.x28, p₂.x28, y12₁, y12₂]) ⟨_, by taint_decide⟩)
-    (tagIn_ok p₁.env.x19 y12₁ p₁.x28 hle p₁.tagR p₁.env.perm.w (p₁.dtW.sub_right (Region.sub_prefix (by decide))))
-    (tagIn_ok p₂.env.x19 y12₂ p₂.x28 hle p₂.tagR p₂.env.perm.w (p₂.dtW.sub_right (Region.sub_prefix (by decide))))
+    (tagIn_ok p₁.env.x19 y12₁ p₁.x28 hle p₁.tagR p₁.env.perm.w (p₁.dtW.sub_right (Region.sub_prefix (by omega))))
+    (tagIn_ok p₂.env.x19 y12₂ p₂.x28 hle p₂.tagR p₂.env.perm.w (p₂.dtW.sub_right (Region.sub_prefix (by omega))))
     fun t₁ t₂ ⟨rt₁, g₁, og₁, sp₁, rd₁, wr₁⟩ ⟨rt₂, g₂, og₂, sp₂, rd₂, wr₂⟩ => ?_
   exact hm (p₁.tagIn g₁ og₁ sp₁ rd₁ wr₁) (p₂.tagIn g₂ og₂ sp₂ rd₂ wr₂) (by rw [rt₁, p₁.tag]) (by rw [rt₂, p₂.tag]) hok
     (kx r₁ og₁) (kx r₂ og₂)
