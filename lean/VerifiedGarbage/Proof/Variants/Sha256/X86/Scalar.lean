@@ -125,7 +125,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
           ?_ ?_
         ofSig := ⟨_, _, _, rfl⟩
         ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
+        spSafe := Code.all_of_allInstrs ?_
+        post := Proof.Sha256.X86.Variants.updateOut _
+        scrub := ?_ },
       { api := Spec.Sha256.finalizeApi
         code := Impl.StackScratch.X86.withStackScratch 632 4 Impl.Sha256.X86.Stream.finalize
         contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
@@ -134,7 +136,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
           ?_ ?_
         ofSig := ⟨_, _, _, rfl⟩
         ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ },
+        spSafe := Code.all_of_allInstrs ?_
+        post := Proof.Sha256.X86.Variants.finalizeOut _
+        scrub := ?_ },
       { api := Spec.Sha256.finalize224Api
         code := Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize
         contract := Spec.Sha256.finalize224Contract X86.abi (20 + 632)
@@ -144,7 +148,11 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
           ?_ ?_
         ofSig := ⟨_, _, _, rfl⟩
         ofApi := rfl
-        spSafe := Code.all_of_allInstrs ?_ }],
+        spSafe := Code.all_of_allInstrs ?_
+        post := Proof.Sha256.X86.Variants.finalize224Out _
+        scrub := ?_ }],
+    digestScrub := ?_,
+    digest224Scrub := ?_,
     initSp := Code.all_of_allInstrs ?_,
     finSp := Code.all_of_allInstrs ?_,
     iterSp := Code.all_of_allInstrs ?_,

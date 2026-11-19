@@ -21,7 +21,7 @@ namespace VG.Artifacts.Ed25519.X86
 
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact X86.target {
-    code := Impl.Ed25519.X86.KeyPair.keyPair Spec.Sha512.digest512Api.name
+    code := Impl.Ed25519.X86.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
       Proof.Ed25519.X86.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.X86.PublicKey.publicKeyExpanded
     verified := .unscrubbed Proof.Ed25519.X86.KeyPair.verified },
