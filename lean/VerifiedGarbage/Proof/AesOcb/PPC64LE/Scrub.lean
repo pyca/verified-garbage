@@ -14,9 +14,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_aes_ocb_init`, `vg_aes_ocb_seal` and `vg_aes_ocb_open`, each followed by
 `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
 volatile registers they may write and the whole frame that holds their
-working space, which they do not wipe themselves: 2592 bytes for `init`
-(`withStackScratch`), the key schedule and its callees' working space among
-it, and 2688 for `seal` and `open` (`withStackScratchArgs`), the offsets and
+working space, which they do not wipe themselves: 320 bytes for `init`
+(`withStackScratch`, AES-GCM's frame: its callees need no working space), and
+2688 for `seal` and `open` (`withStackScratchArgs`), the offsets and
 the working space of the block functions among it. Their postconditions
 read the memory on return only within the key context, the data and the
 tag, as on AArch64 (`Proof/AesOcb/AArch64/Frame.lean`): `init`'s for a key
@@ -116,9 +116,9 @@ theorem openOut (stack : Nat) :
 /-- `Spec.Ocb.initApi`. -/
 def initReg : Registration Spec.Ocb.initApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 Impl.AesGcm.PPC64LE.init
       verified := Proof.AesOcb.PPC64LE.init_framed }
-    2592 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (initOut _)
     (by dsimp only; lit_decide)

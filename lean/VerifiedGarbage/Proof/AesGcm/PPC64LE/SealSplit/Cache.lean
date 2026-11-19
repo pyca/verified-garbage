@@ -31,10 +31,9 @@ theorem source_cache {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List Byt
   exact hs1.frame_in (lo := 112) (n := 16) (by decide) hf2 (by
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-    · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-    · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide))
+    · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))
 
 
 theorem source_layout {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List Byte}
@@ -60,7 +59,7 @@ theorem source_layout {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List By
     rw [wr,h1.en.keeps.wr]
     change InRegions (frameR 112 s::s.wr) ((s.sp-112#64)+96) 8
     exact ⟨frameR 112 s,List.mem_cons_self,Offset.contains _ (d := 96) (n := 8) (e := 32) (k := 80) (by decide) (by decide) (by decide)⟩
-  refine ⟨?_,?_,?_,?_,lay.fits (sourceR s) (by simp),?_,?_,?_,hslotW,by omega_using [hsp],?_,?_,?_,?_,?_,?_⟩
+  refine ⟨?_,?_,?_,?_,lay.fits (sourceR s) (by simp),?_,?_,?_,hslotW,by omega_using [hsp],?_,?_,?_,?_,?_,?_,?_⟩
   · rw [h23]; exact lay.bound
   · change s₂.mem.readW (s₂.gpr .r31+112) 64=s.gpr .r9
     rw [oa.env.r31,h31]
@@ -85,5 +84,14 @@ theorem source_layout {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List By
   · rw [h27,h23]; exact (lay.stackApart (dataR s) (by simp)).sub_left hslot
   · rw [h31]; exact (lay.stackApart (workR s) (by simp)).sub_left hslot
   · exact (lay.stackApart (sourceR s) (by simp)).sub_left hslot
+  · refine ⟨by rw [h31]; exact lay.fits (workR s) (by simp),
+      by rw [h29, h31]; exact (lay.workApart (contextR s) (by simp)).sub_right (Offset.sub_base _ (by decide)),
+      by rw [h30, h31]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+      by rw [h27, h23, h31]; exact (lay.workApart (dataR s) (by simp)).sub_right (Offset.sub_base _ (by decide)), ?_⟩
+    change Covers [⟨s₁.gpr .r31 + 448, 2112⟩] s₂.wr
+    rw [wr, h1.en.keeps.wr, h31]
+    change Covers _ (frameR 112 s::s.wr)
+    rw [lay.wr]
+    exact covers_off (p := stackArg s 3) (k := 2560) (Covers.of_mem (by simp [workR])) (by decide) (by decide)
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit

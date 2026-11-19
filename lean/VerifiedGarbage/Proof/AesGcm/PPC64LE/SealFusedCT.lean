@@ -39,6 +39,10 @@ def BI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29=c ∧ V .r30=st ∧ V .r31=w ∧ V .r28=BitVec.ofNat 64 R ∧
     V .r22=A ∧ V .r27=D ∧ V .r23=N ∧ Env V sp s ∧ DataW c st w s D N.toNat
 
+/-- `BI`, with the bulk helper's working space writable. -/
+def BK (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (s : State) : Prop :=
+  BI c st w sp R A D N s ∧ Covers [⟨w + 448, 2112⟩] s.wr
+
 def bodyPublic : List Reg := [.r22,.r23,.r27,.r28,.r29,.r30,.r31]
 
 theorem bi_agree {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s t : State}
@@ -59,14 +63,20 @@ theorem bi_agree {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s t : State}
   · rw [he.r31,he'.r31,hw,hw']
 
 def ArgsI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (t : State) : Prop :=
-  ∃ s, BI c st w sp R A D N s ∧ t=argsState s
+  ∃ s, BK c st w sp R A D N s ∧ t=argsState s
+
+theorem kern_of {c st w : Addr} {D N : BitVec 64} {V : Reg → BitVec 64} {s : State}
+    (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hc : V .r29 = c) (hst : V .r30 = st)
+    (hw : V .r31 = w) (hd : V .r27 = D) (hn : V .r23 = N) (hk : Covers [⟨w + 448, 2112⟩] s.wr) :
+    Kern V s :=
+  KernS.kern (by rw [hc, hw, hd, hn]; exact K) (by rw [hst, hw]; exact hstw) (by rw [hw]; exact hk)
 
 theorem block_call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64}
-    (L : Lay c st w) (hv : R=10 ∨ R=12 ∨ R=14) :
+    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14) :
     CT (ArgsI c st w sp R A D N)
       (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt) := by
-  refine RelCT.callEx Blocks.encrypt_correct Blocks.encrypt_ct fun a b ⟨⟨s,hs,ea⟩,⟨t,ht,eb⟩⟩ => ?_
+  refine RelCT.callEx Blocks.encrypt_correct Blocks.encrypt_ct fun a b ⟨⟨s,⟨hs,hk⟩,ea⟩,⟨t,⟨ht,hk'⟩,eb⟩⟩ => ?_
   subst a b
   obtain ⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩ := hs
   obtain ⟨V',hc',hst',hw',hR',ha',hd',hn',he',hdata'⟩ := ht
@@ -74,8 +84,8 @@ theorem block_call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpms
     rw [hc,hst,hw,hd,hn]; exact hdata
   have hdt : DataW (V' .r29) (V' .r30) (V' .r31) t (V' .r27) (V' .r23).toNat := by
     rw [hc',hst',hw',hd',hn']; exact hdata'
-  have hcs := args_call (L.v hc hst hw) he hds hR hv
-  have hct := args_call (L.v hc' hst' hw') he' hdt hR' hv
+  have hcs := args_call (L.v hc hst hw) (kern_of K hstw hc hst hw hd hn hk) he hds hR hv
+  have hct := args_call (L.v hc' hst' hw') (kern_of K hstw hc' hst' hw' hd' hn' hk') he' hdt hR' hv
   refine ⟨blockReads (argsState s),blockWrites (argsState s),
     blockReads (argsState t),blockWrites (argsState t),hcs.pre,hct.pre,?_,
     hcs.reads,hcs.writes,hct.reads,hct.writes⟩
@@ -90,24 +100,26 @@ theorem blockArgs_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs 
 
 theorem whole_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64}
-    (L : Lay c st w) (hv : R=10 ∨ R=12 ∨ R=14) :
-    CT (BI c st w sp R A D N)
+    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14) :
+    CT (BK c st w sp R A D N)
       (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
         (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt)) := by
   obtain ⟨_,hc⟩ := blockArgs_taint
-  exact CT.seq (J := ArgsI c st w sp R A D N) (CT.taint bodyPublic (fun _ _ => bi_agree) hc)
-    (fun s hs => WP.mono (args_ok s) fun t ht => ⟨s,hs,ht⟩) (block_call_ct L hv)
+  exact CT.seq (J := ArgsI c st w sp R A D N) (CT.taint bodyPublic (fun _ _ hs ht => bi_agree hs.1 ht.1) hc)
+    (fun s hs => WP.mono (args_ok s) fun t ht => ⟨s,hs,ht⟩) (block_call_ct L K hstw hv)
 
 theorem whole_bi [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s : State}
-    (L : Lay c st w) (hv : R=10 ∨ R=12 ∨ R=14) (hs : BI c st w sp R A D N s) :
+    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14)
+    (hs : BK c st w sp R A D N s) :
     WP isa (.seq (.block Impl.AesGcm.PPC64LE.SealFused.blockArgs)
       (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt)) s
       (BI c st w sp R A D N) := by
-  obtain ⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩ := hs
+  obtain ⟨⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩,hk⟩ := hs
   have hds : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat := by
     rw [hc,hst,hw,hd,hn]; exact hdata
-  refine WP.mono (WP.with_rdwr (SealFused.whole_ok (L.v hc hst hw) he hds hR hv)) fun t ⟨ho,rd,wr,_⟩ => ?_
+  refine WP.mono (WP.with_rdwr (SealFused.whole_ok (L.v hc hst hw) (kern_of K hstw hc hst hw hd hn hk) he hds
+    hR hv)) fun t ⟨ho,rd,wr,_⟩ => ?_
   exact ⟨V,hc,hst,hw,hR,ha,hd,hn,ho.env,hdata.of_eq rd wr⟩
 
 def GI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (s : State) : Prop :=
@@ -191,9 +203,9 @@ theorem absorb_fin_ct [VG.Proof.Gcm.PPC64LE.GhashLaw]
 
 theorem fastBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c st w sp : Addr} {R : Nat} {A D N : BitVec 64}
-    (L : Lay c st w) (hv : R=10 ∨ R=12 ∨ R=14) :
-    CT (BI c st w sp R A D N) Impl.AesGcm.PPC64LE.SealFused.fastBody :=
-  CT.seq (whole_ct L hv) (fun _ => whole_bi L hv)
+    (L : Lay c st w) (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hv : R=10 ∨ R=12 ∨ R=14) :
+    CT (BK c st w sp R A D N) Impl.AesGcm.PPC64LE.SealFused.fastBody :=
+  CT.seq (whole_ct L K hstw hv) (fun _ => whole_bi L K hstw hv)
     (CT.seq (tail_ct L hv) (fun _ => tail_gi L hv) (absorb_fin_ct L hv))
 
 theorem one_bi {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D N : BitVec 64}
@@ -221,13 +233,14 @@ theorem selector_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs b
 
 theorem body_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D N : BitVec 64}
-    (L : Lay c (W+BitVec.ofNat 64 16) W) (hv : R=10 ∨ R=12 ∨ R=14) :
-    CT (OneI c W sp R Np n Ad A D N) Impl.AesGcm.PPC64LE.SealFused.body := by
+    (L : Lay c (W+BitVec.ofNat 64 16) W) (K : KernS c W D N.toNat) (hv : R=10 ∨ R=12 ∨ R=14) :
+    CT (fun s => OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 2112⟩] s.wr)
+      Impl.AesGcm.PPC64LE.SealFused.body := by
   obtain ⟨_,hc⟩ := selector_taint
-  refine CT.seq (J := fun s => OneI c W sp R Np n Ad A D N s ∧
+  refine CT.seq (J := fun s => (OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 2112⟩] s.wr) ∧
     s.gpr .r12=BitVec.ofNat 64 (N.toNat/512))
-    (CT.taint bodyPublic (fun _ _ hs ht => bi_agree (one_bi hs) (one_bi ht)) hc)
-    (fun s hs => ?_) ?_
+    (CT.taint bodyPublic (fun _ _ hs ht => bi_agree (one_bi hs.1) (one_bi ht.1)) hc)
+    (fun s ⟨hs, hk⟩ => ?_) ?_
   · have hs₀ := hs
     obtain ⟨V,hc,hst,hw,hR,_,_,ha,hd,hn,he,_,_,hdata⟩ := hs
     have h23 := he.fr .r23 (by decide)
@@ -241,12 +254,12 @@ theorem body_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
         (∀ r, r≠.r12 → t.gpr r=s.gpr r) ∧ Keeps s t := by
       crun [h23,hshift]
       exact ⟨fun r h => by simp [h],⟨rfl,rfl,rfl,rfl,rfl⟩⟩
-    refine WP.mono hp fun t ⟨h12,hg,hk⟩ => ?_
-    have het := he.keep (fun r hr => hg r (by revert r; decide)) hk.sp hk.rd hk.wr
-    exact ⟨hs₀.keep (fun r hr => (he.fr r hr).symm) het hk.rd hk.wr,h12⟩
+    refine WP.mono hp fun t ⟨h12,hg,hk'⟩ => ?_
+    have het := he.keep (fun r hr => hg r (by revert r; decide)) hk'.sp hk'.rd hk'.wr
+    exact ⟨⟨hs₀.keep (fun r hr => (he.fr r hr).symm) het hk'.rd hk'.wr, by rw [hk'.wr]; exact hk⟩,h12⟩
   · exact CT.ite (decide (N.toNat/512=0))
       (fun _ hs => eval_zero hs.2 (by have := N.isLt; omega_using []))
-      (fun _ => (smallBody_ct L hv).mono fun _ hs => hs.1)
-      (fun _ => (fastBody_ct L hv).mono fun _ hs => one_bi hs.1)
+      (fun _ => (smallBody_ct L hv).mono fun _ hs => hs.1.1)
+      (fun _ => (fastBody_ct L K rfl hv).mono fun _ hs => ⟨one_bi hs.1.1, hs.1.2⟩)
 
 end VG.Proof.AesGcm.PPC64LE.SealFusedCT

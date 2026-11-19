@@ -28,6 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on PPC64LE: `vg_aes_gcm_open` is constant time
@@ -243,12 +244,12 @@ theorem open_one {t₀ s : State} (h : openPre t₀) (h1 : SO1 (stackArg t₀ 2)
     rw [hk₁.wr, hwr]; exact covers_mem (by simp)
   refine ⟨⟨⟨s.gpr, h1.r29, h1.r30, h1.r31, by rw [h1.r28]; exact toN, by rw [h1.r18]; exact toN, h1.r21,
     h1.r22, h1.r27, h1.r23, one_env h1 hC hW, ?_, ?_, ⟨⟨covers_left hDw, (t₀.gpr .r10).isLt, fd,
-      ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw, dcd⟩⟩, h1.r20, h19, ?_⟩, h1.r24,
+      ddW.sub_right (Offset.sub_base _ (by decide)), ddW.sub_right (Region.sub_prefix (by decide))⟩, hDw, dcd⟩⟩, h1.r20, h19, ?_⟩, h1.r24,
     by rw [h1.r25]; exact toN⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (t₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
+      (t₀.gpr .r6).isLt, fn, dnW.sub_right (Offset.sub_base _ (by decide)), dnW.sub_right (Region.sub_prefix (by decide))⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (t₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
+      (t₀.gpr .r8).isLt, fa, daW.sub_right (Offset.sub_base _ (by decide)), daW.sub_right (Region.sub_prefix (by decide))⟩
   · rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
 
 /-- The two runs of `openWith dec`, the first from `σ`, from states `I₀`
@@ -333,7 +334,7 @@ theorem openWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] (σ : State) (I₀ : State �
     refine CT.seq ?_ (fun s ⟨t₀, s₂, ht, h1, h19, g, k, _⟩ => ?_)
       (openGoodWith_ct (sp := σ.sp) (Np := σ.gpr .r5) (n := (σ.gpr .r6).toNat) (Ad := σ.gpr .r7)
         (A := σ.gpr .r8) (D := σ.gpr .r9) (Ln := σ.gpr .r10) (T := stackArg σ 0) (TL := stackArg σ 1) hP
-        L₀ hpσ.hR (hpσ.dtW.sub_right (Lay.wSub (by decide))) t1 t16 (openRes σ).isSome hdec hdecw)
+        L₀ hpσ.hR (hpσ.dtW.sub_right (Offset.sub_base _ (by decide))) t1 t16 (openRes σ).isSome hdec hdecw)
     · obtain ⟨_, hc⟩ := nil_taint [mov .r25 .r18] (.inr (.inl rfl))
       exact CT.taintEq _ (fun _ => 0) σ.sp (fun s ⟨t₀, s₂, ht, h1, _, _, k, _⟩ =>
         ⟨k.sp.trans (h1.en.keeps.sp.trans (h0 t₀ ht).2.2.2.2.2.2.2.2.2.1), by simp⟩) hc

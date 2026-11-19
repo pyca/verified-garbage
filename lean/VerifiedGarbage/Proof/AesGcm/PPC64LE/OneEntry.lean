@@ -71,12 +71,12 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 104 ∨ off 
     and_self, implies_true, BitVec.setWidth_eq, BitVec.add_zero]
   exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
-theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ off = 112)
-    (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} {n : Nat} (hoff : off = 104 ∨ off = 112)
+    (hW : Covers [⟨W, n⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
     (hTi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 96) 8)
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 96) 64 = T)
-    (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) :
+    (hTd : (⟨s₀.sp + BitVec.ofNat 64 96, 8⟩ : Region).Disjoint (savedR W)) (hn : 248 ≤ n := by decide) :
     WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) := by
   have ho4 : off % 4 = 0 := by omega_using [hoff]
   have ho15 : off < 2 ^ 15 := by omega_using [hoff]
@@ -84,7 +84,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 104 ∨ of
   refine WP.block_append (WP.block_append ?_)
   have hA := oneA_ok hoff hWi hWv
   refine WP.mono hA fun sA ⟨a12, gA, kA⟩ => ?_
-  refine WP.mono (save_ok (b := .r12) (by decide) (by rw [a12, kA.wr]; exact hW))
+  refine WP.mono (save_ok (b := .r12) (n := n) (by decide) (by rw [a12, kA.wr]; exact hW) hn)
     fun s₂ ⟨hg, h31, hk, hsv, hf⟩ => ?_
   rw [a12] at h31 hsv hf
   have e : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r31 → s₂.gpr r = s₀.gpr r := fun r a b c => by rw [hg r a c, gA r b]

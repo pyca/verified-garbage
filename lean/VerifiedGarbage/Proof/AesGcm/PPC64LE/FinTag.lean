@@ -33,10 +33,9 @@ open VG.Proof.Gcm (Absorbed lensBlock padded)
 theorem tFrame_sub {st w : Addr} {o : Nat} :
     ∀ r ∈ tFrame st w 16, ∃ r' ∈ tagFrame st w o, Region.Sub r r' := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base st (show 16 + 16 ≤ 32 by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-  · exact ⟨⟨w + BitVec.ofNat 64 512, 2048⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 theorem t_tagFrame {st w : Addr} {o : Nat} {m m' : Mem} (h : Frame (tFrame st w 16) m m') :
     Frame (tagFrame st w o) m m' := h.sub tFrame_sub
@@ -108,9 +107,8 @@ theorem finTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
   rw [show ghashInput a ct ++ zeros (padLen (ghashInput a ct).length) = padded a ct from rfl] at hw
   rw [hw, ciph_frame hf₄ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact L.cs.sub_right (Lay.stSub (by decide))
-      · exact L.cw'.sub_right (Lay.wSub (by decide))
       · exact L.cw'.sub_right (Lay.wSub (by decide))) hR,
     blockAt_frame hf₄ (j_tFrame L)]
 

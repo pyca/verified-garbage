@@ -92,7 +92,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 0
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 212:
 	b 25f
@@ -109,7 +108,6 @@ vg_aes_gcm_seal_core:
 	beq %cr0, 213f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 0
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 214f
 213:
@@ -155,7 +153,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 219f
 218:
@@ -173,7 +170,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 21f
 20:
@@ -246,7 +242,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 231:
 	b 224f
@@ -263,7 +258,6 @@ vg_aes_gcm_seal_core:
 	beq %cr0, 232f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 233f
 232:
@@ -309,7 +303,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 238f
 237:
@@ -340,7 +333,6 @@ vg_aes_gcm_seal_core:
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	addi %r5, %r30, 48
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	addi %r3, %r30, 64
 	or %r4, %r24, %r24
@@ -401,7 +393,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 255:
 	b 248f
@@ -418,7 +409,6 @@ vg_aes_gcm_seal_core:
 	beq %cr0, 256f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 257f
 256:
@@ -471,7 +461,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 264f
 263:
@@ -489,7 +478,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 0(%r31)
@@ -500,7 +488,6 @@ vg_aes_gcm_seal_core:
 	or %r5, %r30, %r30
 	addi %r6, %r31, 0
 	li %r7, 1
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	b 241f
 240:
@@ -557,7 +544,6 @@ vg_aes_gcm_seal_core:
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	addi %r5, %r30, 48
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	b 276f
 275:
@@ -572,7 +558,6 @@ vg_aes_gcm_seal_core:
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	addi %r5, %r30, 48
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	addi %r3, %r30, 64
 	or %r4, %r24, %r24
@@ -639,7 +624,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 290:
 	b 283f
@@ -656,7 +640,6 @@ vg_aes_gcm_seal_core:
 	beq %cr0, 291f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 292f
 291:
@@ -702,7 +685,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 297f
 296:
@@ -720,7 +702,6 @@ vg_aes_gcm_seal_core:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 0(%r31)
@@ -731,7 +712,6 @@ vg_aes_gcm_seal_core:
 	or %r5, %r30, %r30
 	addi %r6, %r31, 0
 	li %r7, 1
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 241:
 	ld %r3, 0(%r31)

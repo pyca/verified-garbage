@@ -66,27 +66,26 @@ include L
 
 theorem ghash1_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {b : Reg} {o : Nat}
     (hbo : (b = .r30 ∧ o = 32) ∨ (b = .r31 ∧ o = 96)) {P : Addr}
-    (hpy : (⟨st + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩)
-    (hpw : (⟨P, 16⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 512, 256⟩) :
+    (hpy : (⟨st + BitVec.ofNat 64 yo, 16⟩ : Region).Disjoint ⟨P, 16⟩) :
     CT (GhIn c st w sp b o P) (ghash1 yo b o) := by
   have hb : b = .r30 ∨ b = .r31 := by rcases hbo with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> simp
   have ho : o < 2 ^ 15 := by rcases hbo with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
-  refine CT.seq (J := fun s => GhCall s (c + BitVec.ofNat 64 240) (st + BitVec.ofNat 64 yo) P
-    (w + BitVec.ofNat 64 512) 1 ∧ s.sp = sp) ?_ (fun s ⟨⟨V, h29, h30, h31, he⟩, hP, hpr⟩ => ?_) ?_
+  refine CT.seq (J := fun s => GhCallF s (c + BitVec.ofNat 64 240) (st + BitVec.ofNat 64 yo) P 1 ∧
+    s.sp = sp) ?_ (fun s ⟨⟨V, h29, h30, h31, he⟩, hP, hpr⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r29, .r30, .r31])
-        (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r5 b o, .li .r6 1, .addi .r7 .r31 scrO])
+        (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r5 b o, .li .r6 1])
         h).isSome = true := by
       rcases hyo with rfl | rfl <;> rcases hbo with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ h₁ h₂ => ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr =>
       h₁.env.pin h₂.env (by simpa using hr)⟩) hc
-  · refine WP.mono (ghArgs_ok hyo he b o hb ho hP) fun s₁ ⟨h3, h4, h5, h6, h7, hkeep, hk⟩ => ?_
+  · refine WP.mono (ghArgs_ok hyo he b o hb ho hP) fun s₁ ⟨h3, h4, h5, h6, hkeep, hk⟩ => ?_
     have he₁ : Env V sp s₁ := he.keep (fun r hr => hkeep r (by revert r; decide) (by revert r; decide)
-      (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
-    have g := ghCall_mk (L.v h29 h30 h31) hyo he₁ h3 h4 h5 h6 h7 (by decide)
-      (by rw [h30]; simpa using hpy) (by rw [h31]; simpa using hpw) (by rw [hk.rd, hk.wr]; simpa using hpr)
-    rw [h29, h30, h31] at g
+      (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
+    have g := ghCall_mk (L.v h29 h30 h31) hyo he₁ h3 h4 h5 h6 (by decide)
+      (by rw [h30]; simpa using hpy) (by rw [hk.rd, hk.wr]; simpa using hpr)
+    rw [h29, h30] at g
     exact ⟨g, he₁.sp⟩
-  · exact CT.gh fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, _, h₁.1, h₂.1, h₁.2.trans h₂.2.symm⟩
+  · exact CT.gh fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, h₁.1, h₂.1, h₁.2.trans h₂.2.symm⟩
 
 end
 
@@ -121,10 +120,9 @@ theorem absorbHead_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q : Nat} (hn
     · rw [h₁.env.r30, h₂.env.r30, b₁, b₂]
   · refine CT.ite (decide (q + min (16 - q) n = 16)) (fun s ⟨_, _, _, _, _, _, _, _, hx, hm⟩ => by
       have := eval_sub16 hm.r6 hm.k16; rw [hm.kmin, hx] at this; exact this) (fun _ => ?_) (fun _ => CT.skip)
-    refine (ghash1_ct L hyo (.inl ⟨rfl, rfl⟩) (P := st + BitVec.ofNat 64 32) ?_ ?_).mono
+    refine (ghash1_ct L hyo (.inl ⟨rfl, rfl⟩) (P := st + BitVec.ofNat 64 32) ?_).mono
       fun s ⟨V, _, _, _, _, h29, h30, h31, _, hm⟩ => ⟨⟨V, h29, h30, h31, hm.env⟩, by rw [hm.env.r30, h30], ?_⟩
     · exact Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)
-    · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
     · rw [← h30]; exact covers_left (hm.env.perm.stC (by decide))
 
 theorem absorbFill_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q : Nat} (hn : n ≠ 0) (_hq : q < 16) :
@@ -136,14 +134,14 @@ theorem absorbFill_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q : Nat} (hn
 omit L in
 /-- `absorbWhole`'s arguments of the call of `vg_ghash`. -/
 theorem wholeArgs_ok {V : Reg → BitVec 64} {s : State} (he : Env V sp s) :
-    WP isa (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r7 .r31 scrO]) s
+    WP isa (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo]) s
       (fun s₂ : State => s₂.gpr .r3 = V .r29 + BitVec.ofNat 64 240 ∧
-        s₂.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧ s₂.gpr .r7 = V .r31 + BitVec.ofNat 64 512 ∧
-        (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂) := by
-  have h29 := he.r29; have h30 := he.r30; have h31 := he.r31
+        s₂.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧
+        (∀ r, r ≠ .r3 → r ≠ .r4 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂) := by
+  have h29 := he.r29; have h30 := he.r30
   have hyo' : yo < 2 ^ 15 := by omega_arith
-  crun [scrO, h29, h30, h31, hyo']
-  exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+  crun [h29, h30, hyo']
+  exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 theorem absorbWhole_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j) (absorbWhole yo) := by
   let nb := (n - j) / 16
@@ -169,31 +167,30 @@ theorem absorbWhole_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q j : Nat} 
     let J₂ : State → Prop := fun s => ∃ V, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ Env V sp s ∧
       DataOk (V .r30) (V .r31) s D n ∧ j ≤ n ∧
       s.gpr .r3 = V .r29 + BitVec.ofNat 64 240 ∧ s.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧
-      s.gpr .r5 = D + BitVec.ofNat 64 j ∧ s.gpr .r6 = BitVec.ofNat 64 nb ∧
-      s.gpr .r7 = V .r31 + BitVec.ofNat 64 512
+      s.gpr .r5 = D + BitVec.ofNat 64 j ∧ s.gpr .r6 = BitVec.ofNat 64 nb
     refine CT.seq (J := J₂) ?_ (fun s ⟨V, h29, h30, h31, he, hd, hj, h5, h6⟩ => ?_) ?_
     · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r29, .r30, .r31])
-          (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r7 .r31 scrO]) h).isSome = true := by
+          (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo]) h).isSome = true := by
         rcases hyo with rfl | rfl <;> exact ⟨_, by taint_decide⟩
       exact CT.taint _ (fun s₁ s₂ ⟨V₁, a₁, b₁, c₁, e₁, _⟩ ⟨V₂, a₂, b₂, c₂, e₂, _⟩ =>
         ⟨e₁.sp.trans e₂.sp.symm, fun r hr => (EnvC.pin ⟨V₁, a₁, b₁, c₁, e₁⟩ ⟨V₂, a₂, b₂, c₂, e₂⟩
           (by simpa using hr))⟩) hc
-    · refine WP.mono (wholeArgs_ok hyo he) fun s₂ ⟨h3, h4, h7, hg₂, hk₂⟩ => ?_
-      exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-        (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, h3, h4,
-        by rw [hg₂ _ (by decide) (by decide) (by decide), h5],
-        by rw [hg₂ _ (by decide) (by decide) (by decide), h6], h7⟩
-    · refine CT.gh fun s₁ s₂ ⟨V₁, a₁, b₁, c₁, he₁, hd₁, hj₁, a3, a4, a5, a6, a7⟩
-        ⟨V₂, a₂, b₂, c₂, he₂, hd₂, hj₂, b3, b4, b5, b6, b7⟩ => ?_
+    · refine WP.mono (wholeArgs_ok hyo he) fun s₂ ⟨h3, h4, hg₂, hk₂⟩ => ?_
+      exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide))
+        hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, h3, h4,
+        by rw [hg₂ _ (by decide) (by decide), h5],
+        by rw [hg₂ _ (by decide) (by decide), h6]⟩
+    · refine CT.gh fun s₁ s₂ ⟨V₁, a₁, b₁, c₁, he₁, hd₁, hj₁, a3, a4, a5, a6⟩
+        ⟨V₂, a₂, b₂, c₂, he₂, hd₂, hj₂, b3, b4, b5, b6⟩ => ?_
       have hdj₁ := hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
       have hdj₂ := hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
-      have g₁ := ghCall_mk (L.v a₁ b₁ c₁) hyo he₁ a3 a4 a5 a6 a7 (by have := hd₁.lt; omega_arith)
-        (hdj₁.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₁.w.sub_right (Lay.wSub (by decide))) hdj₁.rd
-      have g₂ := ghCall_mk (L.v a₂ b₂ c₂) hyo he₂ b3 b4 b5 b6 b7 (by have := hd₂.lt; omega_arith)
-        (hdj₂.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₂.w.sub_right (Lay.wSub (by decide))) hdj₂.rd
-      rw [a₁, b₁, c₁] at g₁
-      rw [a₂, b₂, c₂] at g₂
-      exact ⟨_, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+      have g₁ := ghCall_mk (L.v a₁ b₁ c₁) hyo he₁ a3 a4 a5 a6 (by have := hd₁.lt; omega_arith)
+        (hdj₁.st.sub_right (Lay.stSub (by omega_arith))).symm hdj₁.rd
+      have g₂ := ghCall_mk (L.v a₂ b₂ c₂) hyo he₂ b3 b4 b5 b6 (by have := hd₂.lt; omega_arith)
+        (hdj₂.st.sub_right (Lay.stSub (by omega_arith))).symm hdj₂.rd
+      rw [a₁, b₁] at g₁
+      rw [a₂, b₂] at g₂
+      exact ⟨_, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
 
 omit L hyo in
 theorem absorbTail_ct {D : Addr} {n q j : Nat} : CT (MidI c st w sp yo D n q j) absorbTail := by
@@ -223,7 +220,6 @@ theorem absorb_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {D : Addr} {n q : Nat} (hq : q
 /-- `ghash1 yo .r31 96`, of `T`. -/
 theorem ghT_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : CT (GhIn c st w sp .r31 96 (w + BitVec.ofNat 64 96)) (ghash1 yo .r31 tO) :=
   ghash1_ct L hyo (.inr ⟨rfl, rfl⟩) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
-    (Lay.w_w (.inl (by decide)) (by decide) (by decide))
 
 omit L hyo in
 theorem ghIn_T {s : State} (he : EnvC c st w sp s) : GhIn c st w sp .r31 96 (w + BitVec.ofNat 64 96) s := by

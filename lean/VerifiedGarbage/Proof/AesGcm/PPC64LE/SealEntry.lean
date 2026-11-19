@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -45,11 +46,11 @@ theorem entry_ready {s₀ s₁ : State} (h : SealAccess s₀)
     rw [hk₁.wr]; exact hDw₀
   refine ⟨⟨s₁.gpr, h1.r29, h1.r30, h1.r31, by rw [h1.r28]; exact toN, by rw [h1.r18]; exact toN, h1.r21,
     h1.r22, h1.r27, h1.r23, one_env h1 hC hW, ?_, ?_, ⟨⟨covers_left hDw, (s₀.gpr .r10).isLt, fd,
-      ddW.sub_right (Lay.wSub (by decide)), ddW⟩, hDw, dcd⟩⟩, h1.r24, by rw [h1.r25]; exact toN, h1.r20, ?_⟩
+      ddW.sub_right (Offset.sub_base _ (by decide)), ddW.sub_right (Region.sub_prefix (by decide))⟩, hDw, dcd⟩⟩, h1.r24, by rw [h1.r25]; exact toN, h1.r20, ?_⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hNr,
-      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
+      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Offset.sub_base _ (by decide)), dnW.sub_right (Region.sub_prefix (by decide))⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hAr,
-      (s₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
+      (s₀.gpr .r8).isLt, fa, daW.sub_right (Offset.sub_base _ (by decide)), daW.sub_right (Region.sub_prefix (by decide))⟩
   · rw [hk₁.wr]; exact hTag
 
 
@@ -63,7 +64,7 @@ theorem entry_wp {s : State} (h : SealAccess s) :
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
   exact one1_wp (.inl rfl) hW (args_in hA (by decide) (i := 1) (by decide)) rfl
     (args_in hA (by decide) (i := 0) (by decide)) rfl
-    ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
+    ((dWA.sub_left (Offset.sub_base _ (d := 128) (n := 120) (by decide))).sub_right
       (Region.sub_prefix (by decide : 8≤8*2))).symm
 
 

@@ -135,6 +135,14 @@ structure WholeIn (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (D : Addr) (s : 
   sd : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨D, (V .r23).toNat⟩
   hi : InRegions (s.rd ++ s.wr) (sp + BitVec.ofNat 64 120) 8
   hv : s.mem.readW (sp + BitVec.ofNat 64 120) 64 = D
+  /-- The helper's working space, `W + 448` (past the 288 bytes of `W` the
+  pieces use), apart from the other buffers, and writable. -/
+  kfit : (V .r31).toNat + 2560 ≤ 2 ^ 64
+  kc : (⟨V .r29, 256⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩
+  kst : (⟨V .r30, 80⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩
+  ksrc : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩
+  kdst : (⟨D, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩
+  kw : Covers [⟨V .r31 + BitVec.ofNat 64 448, 2112⟩] s.wr
 
 /-- After `whole`, from `s₀`. -/
 structure WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (D : Addr) (s₀ s : State) : Prop where
@@ -242,27 +250,26 @@ theorem whole_call {R : Nat} {D : Addr} {s s₁ : State} (L : Lay (V .r29) (V .r
       PPC64LE.abi, PPC64LE.argRegs]
     simp only [a.r3, a.r4, a.r5, a.r6, a.r7, a.r8, a.r9, a.r10, toNat64 hq, toNat64 hR]
     refine ⟨trivial, trivial, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, L.cw, fitOff _ L.sw (by decide) (by decide),
-      by have := hsrc.fit; omega_using [hle, this], by have := hdst.ok.fit; omega_using [hle, this], fitOff _ L.ww (by decide) (by decide),
+      by have := hsrc.fit; omega_using [hle, this], by have := hdst.ok.fit; omega_using [hle, this], fitOff _ h.kfit (by decide) (by decide),
       h.rounds, trivial⟩
     · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using
         L.ctx_st (a := 0) (n := 256) (d := 16) (k := 48) (by decide) (by decide)
     · exact hdst.ctx.sub_right (Region.sub_prefix hle)
-    · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using
-        L.ctx_w (a := 0) (n := 256) (d := 448) (k := 2112) (by decide) (by decide)
+    · exact h.kc
     · exact ((hsrc.st.sub_left (Region.sub_prefix hle)).sub_right (Lay.stSub (d := 16) (n := 48) (by decide))).symm
     · exact ((hdst.ok.st.sub_left (Region.sub_prefix hle)).sub_right (Lay.stSub (d := 16) (n := 48) (by decide))).symm
-    · exact L.st_w (a := 16) (n := 48) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide, by decide⟩)
+    · exact h.kst.sub_left (Lay.stSub (d := 16) (n := 48) (by decide))
     · exact (h.sd.sub_left (Region.sub_prefix hle)).sub_right (Region.sub_prefix hle)
-    · exact (hsrc.w.sub_left (Region.sub_prefix hle)).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
-    · exact (hdst.ok.w.sub_left (Region.sub_prefix hle)).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
+    · exact h.ksrc.sub_left (Region.sub_prefix hle)
+    · exact h.kdst.sub_left (Region.sub_prefix hle)
   · rw [k₁.rd, k₁.wr]
     exact Covers.cons he.perm.ctx (Covers.cons (covers_prefix hsrc.rd hle)
       (Covers.cons (covers_left (he.perm.stC (d := 16) (n := 48) (by decide)))
         (Covers.cons (covers_left (covers_prefix hdst.wr hle))
-          (Covers.cons (covers_left (he.perm.wC (d := 448) (n := 2112) (by decide))) Covers.nil))))
+          (Covers.cons (covers_left h.kw) Covers.nil))))
   · rw [k₁.wr]
     exact Covers.cons (he.perm.stC (d := 16) (n := 48) (by decide)) (Covers.cons (covers_prefix hdst.wr hle)
-      (Covers.cons (he.perm.wC (d := 448) (n := 2112) (by decide)) Covers.nil))
+      (Covers.cons h.kw Covers.nil))
 
 theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {R : Nat} {D : Addr}
     {s : State} (L : Lay (V .r29) (V .r30) (V .r31)) (h : WholeIn V sp R D s) :
@@ -329,7 +336,7 @@ theorem tail_in {R : Nat} {D : Addr} {s s₁ s₂ : State} (L : Lay (V .r29) (V 
     rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact hdst.ctx.sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact h.kc
   obtain he₂ : Env V sp s₂ := hw.env.keep (fun r hr => p.regs r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₂.sp k₂.rd k₂.wr
   obtain rd₂ : s₂.rd = s.rd := k₂.rd.trans hw.rd
@@ -387,7 +394,7 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact hdst.ctx.sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact h.kc
   -- the last bytes' arguments
   refine WP.seq (WP.seq (WP.mono (partArgs_ok hw.env hw.r26) fun s₂ ⟨a24, a25, a26, g₂, k₂⟩ => ?_))
   obtain he₂ : Env V sp s₂ := hw.env.keep (fun r hr => g₂ r (by revert r; decide) (by revert r; decide)
@@ -453,13 +460,12 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
       rcases hr with rfl | rfl | rfl
       · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
       · exact (h.sd.sub_left hs).sub_right (Region.sub_prefix (by omega_using [h16]))
-      · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
+      · exact h.ksrc.sub_left hs
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · rw [← hk]; exact (h.sd.sub_left hs).sub_right (Offset.sub_base _ (by omega_using [h16]))
       · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
-      · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
   let ct := bytesAt s.mem (V .r27) (V .r23).toNat
   obtain hct : ct = bytesAt s.mem (V .r27) (16 * Q V) ++
       bytesAt s.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat % 16) := by
@@ -496,8 +502,7 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using Lay.st_st (st := V .r30) (a := 0) (n := 16)
         (d := 16) (k := 48) (.inl (by decide)) (by decide) (by decide)
     · exact ((hdst.ok.st.sub_left (Region.sub_prefix hle)).sub_right (Region.sub_prefix (by decide))).symm
-    · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using L.st_w (a := 0) (n := 16) (d := 448) (k := 2112)
-        (by decide) (.inr ⟨by decide, by decide⟩)
+    · exact h.kst.sub_left (Region.sub_prefix (by decide))
   obtain hf := fg.out habv
   rw [hc₅, hj₅, ha] at hf
   -- the destination
@@ -506,10 +511,9 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   obtain hdone : bytesAt s₃.mem D (16 * Q V) = bytesAt s₁.mem D (16 * Q V) := by
     rw [bytesAt_frame o.frame (fun r hr => ?_) (by omega_using [h16]), k₂.mem]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact split_disj h16 hn
     · exact (hdst.ok.st.sub_left (Region.sub_prefix h16)).sub_right (Lay.stSub (by decide))
-    · exact (hdst.ok.w.sub_left (Region.sub_prefix h16)).sub_right (Lay.wSub (by decide))
   obtain hs₂ : bytesAt s₂.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat - 16 * Q V) =
       bytesAt s.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat - 16 * Q V) := by
     obtain hs : Region.Sub (⟨V .r27 + BitVec.ofNat 64 (16 * Q V), (V .r23).toNat - 16 * Q V⟩ : Region)
@@ -520,16 +524,15 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     rcases hr with rfl | rfl | rfl
     · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
     · exact (h.sd.sub_left hs).sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
+    · exact h.ksrc.sub_left hs
   obtain key := done_appendTo (P := 0) (hdone.trans hcw) (by rw [Nat.zero_add, o.out rfl, hs₂])
   rw [show 16 * Q V + ((V .r23).toNat - 16 * Q V) = (V .r23).toNat by omega_using [h16]] at key
   obtain hd₆ : bytesAt s₆.mem D (V .r23).toNat = bytesAt s₃.mem D (V .r23).toNat := by
     obtain dT : ∀ r ∈ tagFrame (V .r30) (V .r31) 112, (⟨D, (V .r23).toNat⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact hdst.ok.st.sub_right (Region.sub_prefix (by decide))
-      · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
       · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
       · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
     rw [bytesAt_frame fg.frame dT (by omega_using []),
@@ -544,23 +547,20 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], fun _ h => h⟩
   obtain F₃ : Frame T s₂.mem s₃.mem := o.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨⟨D, (V .r23).toNat⟩, by simp [T], Offset.sub_base _ (by omega_using [h16])⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   obtain F₅ : Frame T s₄.mem s₅.mem := ab.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   obtain F₆ : Frame T s₅.mem s₆.mem := fg.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Region.sub_prefix (by decide)⟩
     · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Region.sub_prefix (by decide)⟩
     · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   rw [k₂.mem] at F₃
   rw [k₄.mem] at F₅
   refine ⟨fg.env, rd₆'.trans rd₅, wr₆'.trans wr₅, ?_, hf, F₁.trans (F₃.trans (F₅.trans F₆))⟩
@@ -689,11 +689,11 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   obtain hN : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₀.gpr .r5) (s₀.gpr .r6).toNat := by
     rw [h4.r30, h4.r31]
     exact ⟨by rw [hk₄.rd, hk₄.wr]; exact hp.nonce,
-      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
+      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Offset.sub_base _ (by decide)), dnW.sub_right (Region.sub_prefix (by decide))⟩
   obtain hAd : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r21) (s₄.gpr .r22).toNat := by
     rw [h4.r30, h4.r31, h4.r21, h4.r22]
     exact ⟨by rw [hk₄.rd, hk₄.wr]; exact hp.aad,
-      (s₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
+      (s₀.gpr .r8).isLt, fa, daW.sub_right (Offset.sub_base _ (by decide)), daW.sub_right (Region.sub_prefix (by decide))⟩
   refine WP.seq (WP.mono (WP.with_rdwr (oneAad_ok L he₄ rfl h4.r24 (by rw [h4.r25]; exact toN)
     (by rw [h4.r18]; exact toN) hN hAd)) fun s₅ ⟨oa, rd₅, wr₅, _⟩ => ?_)
   have f₅ := oa.frame
@@ -705,7 +705,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     rw [rd₅, wr₅, hk₄.rd, hk₄.wr, h4.r20]
     exact hp.tag
   obtain hTd : (⟨s₄.gpr .r20, (stackArg s₀ 1).toNat⟩ : Region).Disjoint ⟨s₄.gpr .r31 + BitVec.ofNat 64 256, 16⟩ := by
-    rw [h4.r20, h4.r31]; exact dtW.sub_right (Lay.wSub (by decide))
+    rw [h4.r20, h4.r31]; exact dtW.sub_right (Offset.sub_base _ (by decide))
   refine WP.seq (WP.mono (recv_ok oa.env h19' t1 t16 hTr hTd) fun s₆ ⟨hb₆, hf₆, g₆, k₆⟩ => ?_)
   obtain he₆ := oa.env.keep (fun r hr => g₆ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) k₆.sp k₆.rd k₆.wr
@@ -722,7 +722,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   let W := stackArg s₀ 2
   obtain hW256 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)], (⟨s₄.gpr .r29, 256⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    rw [h4.r29]; exact dcW.sub_right (Lay.wSub (by decide))
+    rw [h4.r29]; exact dcW.sub_right (Offset.sub_base _ (by decide))
   obtain hH₄ : blockAt s₄.mem (s₄.gpr .r29 + BitVec.ofNat 64 240) = H := by
     rw [h4.r29]; exact ctxH_keep F₄ dcF
   obtain hH₆ : blockAt s₆.mem (s₄.gpr .r29 + BitVec.ofNat 64 240) = H := by
@@ -768,7 +768,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     obtain hd₆ : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₆ (s₄.gpr .r27) (s₄.gpr .r23).toNat := by
       rw [h4.r30, h4.r31, h4.r27, h4.r23]
       exact ⟨by rw [rd₆, wr₆]; exact hp.data, (s₀.gpr .r10).isLt, fd,
-        ddW.sub_right (Lay.wSub (by decide)), ddW⟩
+        ddW.sub_right (Offset.sub_base _ (by decide)), ddW.sub_right (Region.sub_prefix (by decide))⟩
     obtain h23 : s₆.gpr .r23 = BitVec.ofNat 64 (s₀.gpr .r10).toNat := by
       rw [he₆.fr .r23 (by decide), h4.r23]; exact toN
     refine WP.ite _ (eval_zero h23 (s₀.gpr .r10).isLt) (fun ht => ?_) (fun hf => ?_)
@@ -787,20 +787,24 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
       · rw [bytesAt_frame f₇ (fun r hr => ?_) (by decide)]
         · exact hr₆
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
+        rcases hr with rfl | rfl | rfl
         · exact (L₀.st_w (a := 0) (n := 48) (d := 256) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm.sub_right
             (by simpa using (Region.sub_prefix (by decide) : Region.Sub (⟨W + BitVec.ofNat 64 16, 48⟩ : Region) _))
         · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
         · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-        · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
     · -- the data, in one pass
       obtain hz : (s₀.gpr .r10).toNat ≠ 0 := by simpa using hf
       obtain wi : Pass.WholeIn s₄.gpr s₀.sp (s₀.gpr .r4).toNat Dst s₆ := by
         obtain hw : Covers [⟨Dst, (s₀.gpr .r10).toNat⟩] s₆.wr := by
           rw [wr₆, hwr]; exact covers_mem (by simp [Dst])
-        refine ⟨he₆, h28, hR, hd₆, ?_, ?_, ?_, dst_at h F₆⟩
+        refine ⟨he₆, h28, hR, hd₆, ?_, ?_, ?_, dst_at h F₆, by rw [h4.r31]; exact hp.fW,
+          by rw [h4.r29, h4.r31]; exact dcW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [h4.r30, h4.r31]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+          by rw [h4.r27, h4.r23, h4.r31]; exact ddW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [h4.r23, h4.r31]; exact dDW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [wr₆, h4.r31]; exact covers_off hp.w (by decide) (by decide)⟩
         · rw [h4.r29, h4.r30, h4.r31, h4.r23]
-          exact ⟨⟨covers_left hw, (s₀.gpr .r10).isLt, fD, dDW.sub_right (Lay.wSub (by decide)), dDW⟩, hw, dcD⟩
+          exact ⟨⟨covers_left hw, (s₀.gpr .r10).isLt, fD, dDW.sub_right (Offset.sub_base _ (by decide)), dDW.sub_right (Region.sub_prefix (by decide))⟩, hw, dcD⟩
         · rw [h4.r27, h4.r23]; exact dsD
         · rw [rd₆, wr₆]
           obtain hA : Covers [args s₀ 4] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
@@ -817,11 +821,12 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
         intro r hr
         simp only [Pass.passFrame, h4.r30, h4.r31, h4.r23, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact ⟨(dDW.sub_right (Lay.wSub (by decide))).symm, (dDW.sub_right (Lay.wSub (by decide))).symm⟩
+        · exact ⟨(dDW.sub_right (Offset.sub_base _ (by decide))).symm, (dDW.sub_right (Offset.sub_base _ (by decide))).symm⟩
         · have := (L₀.st_w (a := 0) (n := 80) (d := 256) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
           exact ⟨by simpa only [BitVec.add_zero] using this, by simpa using L₀.saved_st (d := 0) (k := 80) (by decide)⟩
         · exact ⟨Lay.w_w (.inr (by decide)) (by decide) (by decide), saved_w (by decide) (.inl (by decide))⟩
-        · exact ⟨Lay.w_w (.inl (by decide)) (by decide) (by decide), saved_w (by decide) (.inr (by decide))⟩
+        · exact ⟨Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+            Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)⟩
       refine ⟨po.env, po.rd, po.wr, ?_, ?_, ?_, sv₆.frame po.frame (fun r hr => (pf r hr).2)⟩
       · have ho := po.tag
         rw [h4.r31, hH', hc₆', hj₆, ct₆, ← Proof.Gcm.fullTag_eq] at ho
@@ -845,7 +850,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   obtain dst₈ : bytesAt s₈.mem Dst (s₀.gpr .r10).toNat = openPt s₀ := by
     rw [bytesAt_frame hf₈ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact dDW.sub_right (Lay.wSub (by decide))) (by have := (s₀.gpr .r10).isLt; omega_using [])]
+      exact dDW.sub_right (Offset.sub_base _ (by decide))) (by have := (s₀.gpr .r10).isLt; omega_using [])]
     exact dst₇
   refine ⟨(he₈.fr .r31 (by decide)).trans h4.r31, he₈.sp, fun r hr => ?_,
     k₈.rd.trans (rd₇.trans (k₆.rd.trans (rd₅.trans hk₄.rd))),

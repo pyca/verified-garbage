@@ -337,7 +337,7 @@ theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
       s₁.gpr .r20 = s₀.gpr .r10 ∧ Covers [⟨s₀.gpr .r10, 16⟩] s₁.wr := by
   obtain ⟨hrd, hwr, dcd, -, -, dnW, -, daW, -, ddW, -, -, dWA, -, fn, fa, fd, -, -, -, -, -, -, ddx, -, -, -, -⟩ := h
   have hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hW : Covers [⟨stackArg s₀ 0, 288⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have hXd : (⟨s₀.sp + BitVec.ofNat 64 (96 + 8), 8⟩ : Region).Disjoint (savedR (stackArg s₀ 0)) := by
     have hs := VG.Offset.sub_base (s₀.sp + BitVec.ofNat 64 96) (d := 8) (n := 8) (k := 16) (by decide)
@@ -559,13 +559,12 @@ variable {W x : Addr}
 theorem inW_j0 : ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W, ∃ r' ∈ WX W x, Region.Sub r r' := by
   intro r hr
   simp only [j0Frame, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
+  rcases hr with rfl | rfl <;> exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
 
 theorem inW_ot : ∀ r ∈ otFrame (W + BitVec.ofNat 64 16) W x 112, ∃ r' ∈ WX W x, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
   · exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
   · exact ⟨_, List.mem_cons_self .., VG.Offset.sub_base _ (by decide)⟩
@@ -589,10 +588,9 @@ theorem cb_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W) (X : XOk c (W + 
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · simpa using Lay.st_st (st := W + BitVec.ofNat 64 16) (a := 48) (n := 16) (d := 0) (k := 48) (.inr (by decide))
       (by decide) (by decide)
-  · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact X.sx.sub_left (Lay.stSub (by decide))
@@ -645,7 +643,7 @@ theorem open_head [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₄ : State} (h : openP
   obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
   obtain L₀ := oneLay fc fW dcW
   obtain hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  obtain hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := covers_prefix hW' (by decide)
+  obtain hW : Covers [⟨stackArg s₀ 1, 288⟩] s₀.wr := covers_prefix hW' (by decide)
   obtain he₄ := one_env h4 hC hW
   obtain L := L₀.v h4.r29 h4.r30 h4.r31
   obtain X₀ := oneX fx dcx dwx
@@ -906,7 +904,7 @@ theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
       SO1 (stackArg s₀ 1) (stackArg s₀ 2) s₀ s₂ ∧ s₂.gpr .r19 = stackArg s₀ 0 := by
   have hh := h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, dXA, -⟩ := hh
-  obtain hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  obtain hW : Covers [⟨stackArg s₀ 1, 288⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   obtain hA : Covers [args s₀ 3] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   obtain dA : (args s₀ 3).Disjoint (savedR (stackArg s₀ 1)) :=
     (dXA.sub_left (VG.Offset.sub_base _ (d := 128) (n := 120) (by decide))).symm
@@ -937,7 +935,7 @@ theorem open_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : openPPC64LE.
     dax, ddx, dtx, dwx, dxA, fx⟩ := hh
   obtain hW' : Covers [⟨stackArg s₀ 1, scrBytes⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   obtain hXw : Covers [xR (stackArg s₀ 2)] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  obtain hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := covers_prefix hW' (by decide)
+  obtain hW : Covers [⟨stackArg s₀ 1, 288⟩] s₀.wr := covers_prefix hW' (by decide)
   unfold «open»
   refine WP.seq (WP.mono (openEntry_wp h') fun s₂ ⟨h2, h19⟩ => ?_)
   -- the tag length
@@ -1177,7 +1175,7 @@ theorem open_one {t₀ s : State} (h : openPre t₀) (h1 : SO1 (stackArg t₀ 1)
   obtain ⟨hrd, hwr, dcd, -, -, dnW, -, daW, -, ddW, -, -, -, -, fn, fa, fd, -, -, -, -, -, -, ddx, -, -, -, -⟩ := h
   have hC : Covers [⟨t₀.gpr .r3, 256⟩] (t₀.rd ++ t₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have hW' : Covers [⟨stackArg t₀ 1, scrBytes⟩] t₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  have hW : Covers [⟨stackArg t₀ 1, 2560⟩] t₀.wr := covers_prefix hW' (by decide)
+  have hW : Covers [⟨stackArg t₀ 1, 288⟩] t₀.wr := covers_prefix hW' (by decide)
   have hk₁ := h1.en.keeps
   have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
   have hDw : Covers [⟨t₀.gpr .r8, (t₀.gpr .r9).toNat⟩] s.wr := by

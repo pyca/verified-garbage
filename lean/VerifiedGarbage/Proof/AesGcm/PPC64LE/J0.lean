@@ -85,7 +85,7 @@ theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := by simp
 
 /-- The regions `j0` writes. -/
 abbrev j0Frame (st w : Addr) : List Region :=
-  [⟨st, 80⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩]
+  [⟨st, 80⟩, ⟨w + BitVec.ofNat 64 96, 16⟩]
 
 /-- Before `j0`: the `n`-byte nonce at `Np`, its length also in `r18`. -/
 structure J0In (V : Reg → BitVec 64) (sp : Addr) (H : Block) (Np : Addr) (n : Nat) (s : State) : Prop where
@@ -242,19 +242,17 @@ theorem abs_j0Frame {m m' : Mem} (h : Frame (absFrame (V .r30) (V .r31) 0) m m')
     Frame (j0Frame (V .r30) (V .r31)) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
 
 omit L in
 theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame (V .r30) (V .r31) 0) m m') :
     Frame (j0Frame (V .r30) (V .r31)) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Lay.stSub (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The first block of `j0hash`: the accumulator at the state zeroed. -/

@@ -57,8 +57,8 @@ theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   rw [blockAt, blockAt, bytesAt_frame hf hd (by decide)]
 
 /-- The regions `absorb` writes. -/
-abbrev absFrame (st w : Addr) (yo : Nat) : List Region :=
-  [⟨st + BitVec.ofNat 64 yo, 16⟩, ⟨st + BitVec.ofNat 64 32, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩]
+abbrev absFrame (st _w : Addr) (yo : Nat) : List Region :=
+  [⟨st + BitVec.ofNat 64 yo, 16⟩, ⟨st + BitVec.ofNat 64 32, 16⟩]
 
 /-- Before `absorb yo`: GHASH has absorbed `x` (with hash subkey `H`), and
 `r24`, `r25`, `r26` hold the data, its length and `len(x) mod 16`. -/
@@ -105,20 +105,18 @@ theorem data_absFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk (V .r30) (V 
     ∀ r ∈ absFrame (V .r30) (V .r31) yo, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact hd.st.sub_right (Lay.stSub (by omega_arith))
   · exact hd.st.sub_right (Lay.stSub (by decide))
-  · exact hd.w.sub_right (Lay.wSub (by decide))
 
 /-- The hash subkey is apart from what `absorb` writes. -/
 theorem ctx_absFrame : ∀ r ∈ absFrame (V .r30) (V .r31) yo,
     (⟨V .r29 + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact L.ctx_st (by decide) (by omega_arith)
   · exact L.ctx_st (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
 
 omit L hyo in
 /-- A write within the buffer is within what `absorb` writes. -/
@@ -129,20 +127,19 @@ theorem buf_absFrame {m m' : Mem} {o k : Nat} (h : Frame [⟨V .r30 + BitVec.ofN
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by omega_arith) (by omega_arith)⟩
 
 omit L hyo in
-theorem gh_absFrame {m m' : Mem} (h : Frame [⟨V .r30 + BitVec.ofNat 64 yo, 16⟩,
-    ⟨V .r31 + BitVec.ofNat 64 512, 256⟩] m m') : Frame (absFrame (V .r30) (V .r31) yo) m m' :=
+theorem gh_absFrame {m m' : Mem} (h : Frame [⟨V .r30 + BitVec.ofNat 64 yo, 16⟩] m m') :
+    Frame (absFrame (V .r30) (V .r31) yo) m m' :=
   h.mono fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp
+    subst hr; simp
 
 /-- The hash subkey is apart from what a call of `vg_ghash` writes. -/
-theorem ctx_ghFrame : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 yo, 16⟩ : Region),
-    ⟨V .r31 + BitVec.ofNat 64 512, 256⟩], (⟨V .r29 + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
+theorem ctx_ghFrame : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 yo, 16⟩ : Region)],
+    (⟨V .r29 + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact L.ctx_st (by decide) (by omega_arith)
-  · exact L.ctx_w (by decide) (by decide)
+  subst hr
+  exact L.ctx_st (by decide) (by omega_arith)
 
 end
 
@@ -273,7 +270,7 @@ theorem headPost_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} 
     obtain h16 : x.length % 16 + k = 16 := by simpa using ht
     refine WP.mono (ghash1_ok L hyo he .r30 32 (.inl rfl) (by decide) (P := V .r30 + BitVec.ofNat 64 32)
       (by rw [he.r30]) (Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by decide))
-      (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)) (covers_left (he.perm.stC (by decide))))
+      (covers_left (he.perm.stC (by decide))))
       fun s₅ g => ?_
     refine ⟨k, rfl, g.env he, hkn, by rw [g.saved _ (by decide)]; exact h.r24,
       by rw [g.saved _ (by decide)]; exact h.r25, h.data.of_eq g.rd g.wr, ?_, ?_, .inr (by omega_arith), ?_⟩
@@ -343,24 +340,24 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {x : List Byte} {D 
     obtain hdj := h.data.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
     obtain h29 := he₁.r29; have h30 := he₁.r30; have h31 := he₁.r31
     obtain hyo' : yo < 2 ^ 15 := by omega_arith
-    obtain h₂ : WP isa (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r7 .r31 scrO]) s₁
+    obtain h₂ : WP isa (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo]) s₁
         (fun s₂ : State => s₂.gpr .r3 = V .r29 + BitVec.ofNat 64 240 ∧
-          s₂.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧ s₂.gpr .r7 = V .r31 + BitVec.ofNat 64 512 ∧
-          (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂) := by
-      crun [scrO, h29, h30, h31, hyo']
-      exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-    refine WP.seq (WP.mono h₂ fun s₂ ⟨h3', h4', h7', hg₂, hk₂⟩ => ?_)
-    obtain he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-      (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
+          s₂.gpr .r4 = V .r30 + BitVec.ofNat 64 yo ∧
+          (∀ r, r ≠ .r3 → r ≠ .r4 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂) := by
+      crun [h29, h30, h31, hyo']
+      exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+    refine WP.seq (WP.mono h₂ fun s₂ ⟨h3', h4', hg₂, hk₂⟩ => ?_)
+    obtain he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide))
+      hk₂.sp hk₂.rd hk₂.wr
     refine WP.mono (ghCall_ok L hyo he₂ (P := D + BitVec.ofNat 64 j) (n := nb) h3' h4'
-      (by rw [hg₂ _ (by decide) (by decide) (by decide), h5])
-      (by rw [hg₂ _ (by decide) (by decide) (by decide), h6]) h7' (by omega_arith)
-      (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj.w.sub_right (Lay.wSub (by decide)))
+      (by rw [hg₂ _ (by decide) (by decide), h5])
+      (by rw [hg₂ _ (by decide) (by decide), h6]) (by omega_arith)
+      (hdj.st.sub_right (Lay.stSub (by omega_arith))).symm
       (by rw [hk₂.rd, hk₂.wr, hk₁.rd, hk₁.wr]; exact hdj.rd)) fun s₃ g => ?_
     refine ⟨j + 16 * nb, by omega_arith, ⟨g.env he₂, by omega_arith, ?_, ?_,
       hd₁.of_eq (g.rd.trans hk₂.rd) (g.wr.trans hk₂.wr), ?_, ?_, .inr (by omega_arith), ?_⟩, by omega_arith⟩
-    · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide), h24]
-    · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide), h25]
+    · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide), h24]
+    · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide), h25]
     · rw [blockAt_frame g.frame (ctx_ghFrame L hyo), hk₂.mem, hk₁.mem]; exact h.hH
     · intro ha
       obtain ex : x ++ bytesAt m₀ D (j + 16 * nb) =

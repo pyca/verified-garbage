@@ -39,7 +39,12 @@ theorem entry_one {b t : State} (hb : scratchContract.pre b) (ht : EntryI b t) :
   obtain ⟨hsp,hg,hW,hT⟩ := prepared_public hb hs
   simp only [hsp,hg .r3 (by decide),hg .r4 (by decide),hg .r5 (by decide),hg .r6 (by decide),
     hg .r7 (by decide),hg .r8 (by decide),hg .r9 (by decide),hg .r10 (by decide),hW,hT] at hr
-  exact ⟨⟨hr.1,hr.2.2.2.1,hr.2.2.2.2⟩,hr.2.1,hr.2.2.1⟩
+  have hK : Covers [⟨stackArg b 3 + 448, 2112⟩] t.wr := by
+    have hW₀ : Covers [⟨stackArg (prepared s) 1, 2560⟩] (prepared s).wr :=
+      Covers.trans (Covers.of_mem (by simp [sealWrites])) (entry_access s hs.pre).writes
+    rw [h1.en.keeps.wr, ← hW]
+    exact covers_off hW₀ (d := 448) (n := 2112) (by decide) (by decide)
+  exact ⟨⟨hr.1,hr.2.2.2.1,hr.2.2.2.2,hK⟩,hr.2.1,hr.2.2.1⟩
 
 
 theorem aad_ready [VG.Proof.Gcm.PPC64LE.GhashLaw] {b s₁ : State}
@@ -110,7 +115,7 @@ theorem body_ready [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
   refine ⟨s₁.gpr,?_,?_,he,?_⟩
   · rw [h1.r31,hW]
   · rw [h1.r20,hT]
-  · rw [wz]; exact hot.2.2
+  · rw [wz]; exact hot.2.2.1
 
 
 theorem stages_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
@@ -119,7 +124,7 @@ theorem stages_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   have lay := layout_pre b hb
   have L : Lay ((prepared b).gpr .r3) (stackArg b 3+BitVec.ofNat 64 16) (stackArg b 3) := by
     rw [prepared_gpr b .r3 (by decide)]
-    exact oneLay (lay.fits (contextR b) (by simp)) (lay.fits (workR b) (by simp))
+    exact oneLay (n := 2560) (lay.fits (contextR b) (by simp)) (lay.fits (workR b) (by simp))
       (lay.workApart (contextR b) (by simp))
   have hv : ((prepared b).gpr .r4).toNat=10 ∨ ((prepared b).gpr .r4).toNat=12 ∨ ((prepared b).gpr .r4).toNat=14 := by
     rw [prepared_gpr b .r4 (by decide)]

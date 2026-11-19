@@ -35,7 +35,7 @@ structure Entered (s₀ : State) (W : Addr) (s : State) : Prop where
   frame : Frame [savedR W] s₀.mem s.mem
 
 /-- The entry: `j0`'s arguments. -/
-theorem siEntry_ok {s : State} (hW : Covers [⟨s.gpr .r7, 2560⟩] s.wr) :
+theorem siEntry_ok {s : State} (hW : Covers [⟨s.gpr .r7, 288⟩] s.wr) :
     WP isa (.block streamInitPre) s fun s' => Entered s (s.gpr .r7) s' ∧
       s'.gpr .r31 = s.gpr .r7 ∧ s'.gpr .r30 = s.gpr .r6 ∧ s'.gpr .r29 = s.gpr .r3 ∧
       s'.gpr .r24 = s.gpr .r4 ∧ s'.gpr .r25 = s.gpr .r5 ∧ s'.gpr .r18 = s.gpr .r5 := by
@@ -63,7 +63,7 @@ theorem si_entry {s : State} (hs : streamInitPPC64LE.pre s) :
   generalize hW : s.gpr .r7 = W at *
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .r5).isLt
   have hn' : s.gpr .r5 = BitVec.ofNat 64 n := by rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hWc : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hWc : Covers [⟨W, 288⟩] s.wr := by rw [hwr]; exact covers_mem (by simp)
   refine WP.mono (siEntry_ok (by rw [hW]; exact hWc)) fun s₁ ⟨en, h31, h30, h29, h24, h25, h18⟩ => ?_
   rw [hW] at en h31
   rw [hSt] at h30
@@ -74,7 +74,7 @@ theorem si_entry {s : State} (hs : streamInitPPC64LE.pre s) :
     (⟨covers_mem (by rw [hrd, hwr]; simp), covers_mem (by rw [hwr]; simp), hWc⟩ : Perm Ctx St W s).of_eq
       en.keeps.rd en.keeps.wr
   have he : Env s₁.gpr s.sp s₁ := ⟨fun _ _ => rfl, en.keeps.sp, by rw [h29, h30, h31]; exact perm⟩
-  have sW : Region.Sub (savedR W) ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
+  have sW : Region.Sub (savedR W) ⟨W, 288⟩ := Offset.sub_base _ (by decide)
   have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n :=
     bytesAt_frame en.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega_using [hn])

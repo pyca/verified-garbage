@@ -113,10 +113,9 @@ open VG.Proof.Gcm (Absorbed lensBlock padded)
 theorem tFrame_sub {st w x : Addr} {o : Nat} :
     ∀ r ∈ tFrame st w 16, ∃ r' ∈ tagFrame st w x o, Region.Sub r r' := fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base st (show 16 + 16 ≤ 32 by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-  · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
 theorem t_tagFrame {st w x : Addr} {o : Nat} {m m' : Mem} (h : Frame (tFrame st w 16) m m') :
     Frame (tagFrame st w x o) m m' := h.sub tFrame_sub
@@ -190,9 +189,8 @@ theorem finTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
   rw [show ghashInput a ct ++ zeros (padLen (ghashInput a ct).length) = padded a ct from rfl] at hw
   rw [hw, ciph_frame hf₄ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact L.cs.sub_right (Lay.stSub (by decide))
-      · exact L.cw'.sub_right (Lay.wSub (by decide))
       · exact L.cw'.sub_right (Lay.wSub (by decide))),
     blockAt_frame hf₄ (j_tFrame L)]
 
@@ -234,7 +232,7 @@ include h
 
 theorem finLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r8) := by
   obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
-  have fw' : (s₀.gpr .r8).toNat + 2560 ≤ 2 ^ 64 := fw
+  have fw' : (s₀.gpr .r8).toNat + 288 ≤ 2 ^ 64 := fw
   exact Lay.of fc fs (by omega_using [fw']) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
@@ -245,7 +243,7 @@ theorem finX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r8) (s₀.gpr .r9) :
 theorem fin_W' : Covers [⟨s₀.gpr .r8, scrBytes⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
-theorem fin_W : Covers [⟨s₀.gpr .r8, 2560⟩] s₀.wr := covers_prefix (fin_W' h) (by decide)
+theorem fin_W : Covers [⟨s₀.gpr .r8, 288⟩] s₀.wr := covers_prefix (fin_W' h) (by decide)
 
 theorem fin_X : Covers [xR (s₀.gpr .r9)] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
@@ -263,7 +261,7 @@ structure SF1 (s₀ s₁ : State) : Prop where
   r20 : s₁.gpr .r20 = s₀.gpr .r7
   r28 : s₁.gpr .r28 = s₀.gpr .r9
 
-theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r8, 2560⟩] s₀.wr) :
+theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r8, 288⟩] s₀.wr) :
     WP isa (.block finEntry) s₀ (SF1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r8) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   have e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
@@ -293,11 +291,10 @@ include L X
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame st w x o, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 32) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
-  · exact saved_w (by decide) (.inr (by decide))
   · exact X.wx.sub_left (Lay.wSub (by decide))
 
 end
@@ -439,7 +436,7 @@ structure IS1 (s₀ s₁ : State) : Prop where
 
 theorem is1_wp {s₀ : State} (h : initPPC64LE.pre s₀) : WP isa (.block initPre) s₀ (IS1 s₀) := by
   obtain ⟨-, hwr, -, -, -, -, -, -⟩ := h
-  obtain hW : Covers [⟨s₀.gpr .r5, 2560⟩] s₀.wr := by
+  obtain hW : Covers [⟨s₀.gpr .r5, 288⟩] s₀.wr := by
     rw [hwr]; exact covers_prefix (covers_mem (r := ⟨s₀.gpr .r5, scrBytes⟩) (by simp)) (by decide)
   refine WP.block_append (WP.mono (save_ok (b := .r5) (by decide) hW) fun s ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   obtain e4 : s.gpr .r4 = s₀.gpr .r4 := hg _ (by decide) (by decide)
@@ -469,7 +466,7 @@ theorem init_kc {s₀ s₁ : State} (h : initPPC64LE.pre s₀) (h1 : IS1 s₀ s�
 /-- `initArgs`: the hash subkey's block and `T` zeroed, and the arguments of
 SM4's counter mode. -/
 theorem initArgs_ok {C W X : Addr} {s : State} (h29 : s.gpr .r29 = C) (h31 : s.gpr .r31 = W)
-    (h28 : s.gpr .r28 = X) (hc : Covers [⟨C, 256⟩] s.wr) (hw : Covers [⟨W, 2560⟩] s.wr) :
+    (h28 : s.gpr .r28 = X) (hc : Covers [⟨C, 256⟩] s.wr) (hw : Covers [⟨W, 288⟩] s.wr) :
     WP isa (.block initArgs) s fun s' =>
       s'.mem = (((s.mem.writeW (C + BitVec.ofNat 64 240) (0 : BitVec 64)).writeW
           (C + BitVec.ofNat 64 240 + BitVec.ofNat 64 8) (0 : BitVec 64)).writeW (W + BitVec.ofNat 64 96)
@@ -480,8 +477,8 @@ theorem initArgs_ok {C W X : Addr} {s : State} (h29 : s.gpr .r29 = C) (h31 : s.g
       Keeps' s s' := by
   obtain c₀ := in_off hc (show 240 + 8 ≤ 256 by decide) (by decide)
   obtain c₁ := in_off hc (show 248 + 8 ≤ 256 by decide) (by decide)
-  obtain w₀ := in_off hw (show 96 + 8 ≤ 2560 by decide) (by decide)
-  obtain w₁ := in_off hw (show 104 + 8 ≤ 2560 by decide) (by decide)
+  obtain w₀ := in_off hw (show 96 + 8 ≤ 288 by decide) (by decide)
+  obtain w₁ := in_off hw (show 104 + 8 ≤ 288 by decide) (by decide)
   crun [initArgs, tO, h29, h31, h28, c₀, c₁, w₀, w₁, mov, BitVec.or_self, write_8]
   exact ⟨by simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.reduceAdd],
     fun r a b c d e f => by simp [a, b, c, d, e, f], ⟨rfl, rfl, rfl, rfl⟩⟩
@@ -496,7 +493,7 @@ theorem init_cc {C W X : Addr} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoi
     (a5 : s.gpr .r5 = C + BitVec.ofNat 64 240) (a6 : s.gpr .r6 = BitVec.ofNat 64 1)
     (a7 : s.gpr .r7 = X) :
     CtrCall s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240) X 1 := by
-  have fs' : W.toNat + 2560 ≤ 2 ^ 64 := fs
+  have fs' : W.toNat + 288 ≤ 2 ^ 64 := fs
   refine ⟨a3, a4, a5, a6, a7, by decide, ?_, ?_, ?_, ?_, ?_, ?_, by omega_using [fc], ?_, ?_, fx, ?_, ?_⟩
   · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
   · simpa using Offset.disjoint C (d := 0) (n := 128) (e := 240) (k := 16) (.inl (by decide))
@@ -521,10 +518,10 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ initPPC64LE.post s₀ s' := by
   have h' := h
   obtain ⟨hrd, hwr, dkc, dks, dcs, fk, fc, fs, dkx, dcx, dsx, fx⟩ := h'
-  have fs' : (s₀.gpr .r5).toNat + 2560 ≤ 2 ^ 64 := fs
+  have fs' : (s₀.gpr .r5).toNat + 288 ≤ 2 ^ 64 := fs
   obtain hW : Covers [⟨s₀.gpr .r5, scrBytes⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   obtain hX : Covers [⟨s₀.gpr .r6, xBytes⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  obtain hW' : Covers [⟨s₀.gpr .r5, 2560⟩] s₀.wr := covers_prefix hW (by decide)
+  obtain hW' : Covers [⟨s₀.gpr .r5, 288⟩] s₀.wr := covers_prefix hW (by decide)
   obtain hC : Covers [⟨s₀.gpr .r4, 256⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   -- Regions apart from the saved slots, and from the key schedule.
   obtain sW : ∀ {d k : Nat}, d + k ≤ scrBytes → (d + k ≤ 128 ∨ 248 ≤ d) →

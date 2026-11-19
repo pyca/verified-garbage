@@ -5,7 +5,7 @@
 // gives.
 
 vg_aes_ocb_init:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r6, %r1, 32
 	std %r18, 128(%r6)
 	std %r19, 136(%r6)
@@ -27,7 +27,6 @@ vg_aes_ocb_init:
 	or %r29, %r5, %r5
 	rldicl %r28, %r4, 62, 2
 	addi %r28, %r28, 6
-	addi %r6, %r31, 512
 	bl {vg_aes_expand_key_scratch}
 	li %r0, 0
 	std %r0, 240(%r29)
@@ -39,7 +38,6 @@ vg_aes_ocb_init:
 	addi %r5, %r31, 96
 	addi %r6, %r29, 240
 	li %r7, 1
-	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
 	or %r12, %r31, %r31
 	ld %r0, 240(%r12)
@@ -58,9 +56,9 @@ vg_aes_ocb_init:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -78,61 +76,27 @@ vg_aes_ocb_init:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2592
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	std %r0, 240(%r12)
+	std %r0, 248(%r12)
+	std %r0, 256(%r12)
+	std %r0, 264(%r12)
+	std %r0, 272(%r12)
+	std %r0, 280(%r12)
+	addi %r1, %r1, 320
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0

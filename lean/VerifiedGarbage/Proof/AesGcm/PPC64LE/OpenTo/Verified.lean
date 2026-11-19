@@ -262,15 +262,18 @@ open VG.Proof.Gcm (Absorbed)
 def DstX (c W sp : Addr) (S Ln : BitVec 64) (Dst : Addr) (s : State) : Prop :=
   DataW c (W + BitVec.ofNat 64 16) W s Dst Ln.toNat ∧ (⟨S, Ln.toNat⟩ : Region).Disjoint ⟨Dst, Ln.toNat⟩ ∧
     InRegions (s.rd ++ s.wr) (sp + BitVec.ofNat 64 120) 8 ∧ s.mem.readW (sp + BitVec.ofNat 64 120) 64 = Dst ∧
-    (⟨sp + BitVec.ofNat 64 120, 8⟩ : Region).Disjoint ⟨W, 2560⟩
+    (⟨sp + BitVec.ofNat 64 120, 8⟩ : Region).Disjoint ⟨W, 2560⟩ ∧
+    W.toNat + 2560 ≤ 2 ^ 64 ∧ (⟨c, 256⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧
+    (⟨S, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧ (⟨Dst, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧
+    Covers [⟨W + BitVec.ofNat 64 448, 2112⟩] s.wr
 
 abbrev DOk : Addr → Addr → Addr → State → Addr → Nat → Prop := fun _ st w s D n => DataOk st w s D n
 
 theorem DstX.frame {c W sp : Addr} {S Ln : BitVec 64} {Dst : Addr} {s t : State} (h : DstX c W sp S Ln Dst s)
     (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem t.mem)
     (hW : ∀ r ∈ rs, ∃ r' ∈ [(⟨W, 2560⟩ : Region)], Region.Sub r r') : DstX c W sp S Ln Dst t := by
-  obtain ⟨hd, hsd, hi, hv, hA⟩ := h
-  refine ⟨hd.of_eq hrd hwr, hsd, by rw [hrd, hwr]; exact hi, ?_, hA⟩
+  obtain ⟨hd, hsd, hi, hv, hA, k₁, k₂, k₃, k₄, k₅⟩ := h
+  refine ⟨hd.of_eq hrd hwr, hsd, by rw [hrd, hwr]; exact hi, ?_, hA, k₁, k₂, k₃, k₄, by rw [hwr]; exact k₅⟩
   rw [Frame.readW hf (Region.contains_self _ _) (fun r hr => by
     obtain ⟨r', hr', hs⟩ := hW r hr
     simp only [List.mem_singleton] at hr'; subst hr'
@@ -340,9 +343,11 @@ theorem passRest_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
     refine CT.ite _ ev (fun _ => (oneTag_ctP L hP (.inr rfl) hR).mono fun s h => h.1.1)
       (fun _ => (Pass.pass_ct (sp := sp) (A := A) (S := S) (N := Ln) (D := Dst) L hR).mono fun s ⟨hT, _, hX⟩ => ?_)
     obtain ⟨V, a, b, d, e, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
-    obtain ⟨hd, hsd, hi, hv, _⟩ := hX
+    obtain ⟨hd, hsd, hi, hv, _, k₁, k₂, k₃, k₄, k₅⟩ := hX
     exact ⟨V, a, b, d, i, j, k, ⟨he, e, hR, by rw [b, d, j, k]; exact hD, by rw [a, b, d, k]; exact hd,
-      by rw [j, k]; exact hsd, hi, hv⟩⟩
+      by rw [j, k]; exact hsd, hi, hv, by rw [d]; exact k₁, by rw [a, d]; exact k₂,
+      by rw [b, d]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+      by rw [j, k, d]; exact k₃, by rw [k, d]; exact k₄, by rw [d]; exact k₅⟩⟩
   · obtain ⟨V, a, b, d, e, f, g, i, j, k, he, hN, hA, hD⟩ := hT.1
     obtain ⟨H, x, hH, hl, hx⟩ := hab
     refine WP.ite _ (eval_zero (by rw [he.ofNat (r := .r23) (by decide), k]) Ln.isLt) (fun _ => ?_) (fun hb => ?_)
@@ -350,9 +355,12 @@ theorem passRest_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
         (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hx) (by rw [b, d, j, k]; exact hD)))
         fun s' ⟨ot, rd, wr, _⟩ => OneOP.keep hP hT (fun r hr => (he.fr r hr).symm) ot.env rd wr
     · have hpos : 0 < (V .r23).toNat := by rw [k]; have := of_decide_eq_false hb; omega_using [this]
-      obtain ⟨hd, hsd, hi, hv, _⟩ := hX
+      obtain ⟨hd, hsd, hi, hv, _, k₁, k₂, k₃, k₄, k₅⟩ := hX
       have wi : Pass.WholeIn V sp R Dst s :=
-        ⟨he, e, hR, by rw [b, d, j, k]; exact hD, by rw [a, b, d, k]; exact hd, by rw [j, k]; exact hsd, hi, hv⟩
+        ⟨he, e, hR, by rw [b, d, j, k]; exact hD, by rw [a, b, d, k]; exact hd, by rw [j, k]; exact hsd, hi, hv,
+          by rw [d]; exact k₁, by rw [a, d]; exact k₂,
+          by rw [b, d]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+          by rw [j, k, d]; exact k₃, by rw [k, d]; exact k₄, by rw [d]; exact k₅⟩
       refine WP.mono (Pass.pass_ok (L.v a b d) wi (by rw [i]; exact hl) hpos ?_) fun s' po =>
         OneOP.keep hP hT (fun r hr => (he.fr r hr).symm) po.env po.rd po.wr
       rw [ctxH_eq, a, b]; exact hH ▸ hx
@@ -380,29 +388,33 @@ theorem split_one {t₀ s : State} (h : splitPre t₀) (h1 : SO1 (stackArg t₀ 
   refine ⟨⟨s.gpr, h1.r29, h1.r30, h1.r31, by rw [h1.r28]; exact toN, by rw [h1.r18]; exact toN, h1.r21,
     h1.r22, h1.r27, h1.r23, one_env h1 hp.ctx hp.w, ?_, ?_, ?_⟩, h1.r20, h19, ?_⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hp.nonce, (t₀.gpr .r6).isLt, hp.fn,
-      hp.dnW.sub_right (Lay.wSub (by decide)), hp.dnW⟩
+      hp.dnW.sub_right (Offset.sub_base _ (by decide)), hp.dnW.sub_right (Region.sub_prefix (by decide))⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hp.aad, (t₀.gpr .r8).isLt, hp.fa,
-      hp.daW.sub_right (Lay.wSub (by decide)), hp.daW⟩
+      hp.daW.sub_right (Offset.sub_base _ (by decide)), hp.daW.sub_right (Region.sub_prefix (by decide))⟩
   · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact hp.data, (t₀.gpr .r10).isLt, hp.fd,
-      hp.ddW.sub_right (Lay.wSub (by decide)), hp.ddW⟩
+      hp.ddW.sub_right (Offset.sub_base _ (by decide)), hp.ddW.sub_right (Region.sub_prefix (by decide))⟩
   · rw [hk₁.rd, hk₁.wr]; exact hp.tag
 
 /-- After the entry, what the data's pass needs of the destination. -/
 theorem split_dstx {t₀ s : State} (h : splitPre t₀) (h1 : SO1 (stackArg t₀ 2) (stackArg t₀ 0) t₀ s) :
     DstX (t₀.gpr .r3) (stackArg t₀ 2) t₀.sp (t₀.gpr .r9) (t₀.gpr .r10) (stackArg t₀ 3) s := by
   have hh := h
-  obtain ⟨hrd, hwr, _, _, _, _, _, dWA, dcD, dsD, dDW, _, _, _, _, _, _, fD, _, _⟩ := hh
+  obtain ⟨hrd, hwr, dcW, _, _, dsW, _, dWA, dcD, dsD, dDW, _, _, _, _, _, fW, fD, _, _⟩ := hh
   have hk₁ := h1.en.keeps
   have hw : Covers [⟨stackArg t₀ 3, (t₀.gpr .r10).toNat⟩] s.wr := by rw [hk₁.wr, hwr]; exact covers_mem (by simp)
   have hA : Covers [args t₀ 4] (t₀.rd ++ t₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have hc : Region.Sub ⟨t₀.sp + BitVec.ofNat 64 120, 8⟩ (args t₀ 4) := by
     have := Offset.sub_base (stackArgAddr t₀ 0) (d := 24) (n := 8) (k := 8 * 4) (by decide)
     rwa [stackArgAddr_0, add_ofNat_assoc] at this
-  refine ⟨⟨⟨covers_left hw, (t₀.gpr .r10).isLt, fD, dDW.sub_right (Lay.wSub (by decide)), dDW⟩, hw, dcD⟩, dsD,
-    ?_, dst_at h (h1.en.frame.sub inW_saved), fun x hx₁ hx₂ => dWA x hx₂ (hc x hx₁)⟩
-  rw [hk₁.rd, hk₁.wr]
-  have := in_off hA (d := 24) (n := 8) (by decide) (by decide)
-  rwa [stackArgAddr_0, add_ofNat_assoc] at this
+  refine ⟨⟨⟨covers_left hw, (t₀.gpr .r10).isLt, fD, dDW.sub_right (Offset.sub_base _ (by decide)), dDW.sub_right (Region.sub_prefix (by decide))⟩, hw, dcD⟩, dsD,
+    ?_, dst_at h (h1.en.frame.sub inW_saved), fun x hx₁ hx₂ => dWA x hx₂ (hc x hx₁), fW,
+    dcW.sub_right (Offset.sub_base _ (by decide)), dsW.sub_right (Offset.sub_base _ (by decide)),
+    dDW.sub_right (Offset.sub_base _ (by decide)), ?_⟩
+  · rw [hk₁.rd, hk₁.wr]
+    have := in_off hA (d := 24) (n := 8) (by decide) (by decide)
+    rwa [stackArgAddr_0, add_ofNat_assoc] at this
+  · rw [hk₁.wr, hwr]
+    exact covers_off (p := stackArg t₀ 2) (k := 2560) (covers_mem (by simp)) (by decide) (by decide)
 
 theorem split_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     ConstantTime isa splitPPC64LE.pre splitPPC64LE.pub openSplit := by
@@ -484,7 +496,7 @@ theorem split_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
     refine CT.seq ?_ (fun s ⟨t₀, s₂, ht, h1, h19, g, k, _⟩ => ?_)
       (passRest_ct (sp := σ₁.sp) (Np := σ₁.gpr .r5) (n := (σ₁.gpr .r6).toNat) (Ad := σ₁.gpr .r7)
         (A := σ₁.gpr .r8) (S := σ₁.gpr .r9) (Ln := σ₁.gpr .r10) (T := stackArg σ₁ 0) (TL := stackArg σ₁ 1)
-        (Dst := stackArg σ₁ 3) L₀ hpσ₁.hR (hpσ₁.dtW.sub_right (Lay.wSub (by decide))) t1 t16)
+        (Dst := stackArg σ₁ 3) L₀ hpσ₁.hR (hpσ₁.dtW.sub_right (Offset.sub_base _ (by decide))) t1 t16)
     · obtain ⟨_, hc⟩ := nil_taint [mov .r25 .r18] (.inr (.inl rfl))
       exact CT.taintEq _ (fun _ => 0) σ₁.sp (fun s ⟨t₀, s₂, ht, h1, _, _, k, _⟩ =>
         ⟨k.sp.trans (h1.en.keeps.sp.trans (h0 t₀ ht).2.2.2.2.2.2.2.2.2.1), by simp⟩) hc

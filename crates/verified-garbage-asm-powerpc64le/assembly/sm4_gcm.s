@@ -5,7 +5,7 @@
 // gives.
 
 vg_sm4_gcm_init:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r5, %r1, 32
 	stdu %r1, -3296(%r1)
 	addi %r6, %r1, 32
@@ -6390,9 +6390,9 @@ vg_sm4_gcm_init:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3296
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3616(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -6464,12 +6464,6 @@ vg_sm4_gcm_init:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -6486,82 +6480,7 @@ vg_sm4_gcm_init:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -1856(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	addi %r1, %r1, 1856
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3616
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -6581,7 +6500,7 @@ vg_sm4_gcm_init:
 	blr
 
 vg_sm4_gcm_seal:
-	stdu %r1, -2672(%r1)
+	stdu %r1, -400(%r1)
 	addi %r12, %r1, 0
 	addi %r0, %r12, 104
 	std %r0, 96(%r12)
@@ -6672,7 +6591,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 0
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 212:
 	b 25f
@@ -6689,7 +6607,6 @@ vg_sm4_gcm_seal:
 	beq %cr0, 213f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 0
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 214f
 213:
@@ -6735,7 +6652,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 219f
 218:
@@ -6753,7 +6669,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 21f
 20:
@@ -6826,7 +6741,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 231:
 	b 224f
@@ -6843,7 +6757,6 @@ vg_sm4_gcm_seal:
 	beq %cr0, 232f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 233f
 232:
@@ -6889,7 +6802,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 238f
 237:
@@ -10381,7 +10293,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 286:
 	b 279f
@@ -10398,7 +10309,6 @@ vg_sm4_gcm_seal:
 	beq %cr0, 287f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 288f
 287:
@@ -10444,7 +10354,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 293f
 292:
@@ -10462,7 +10371,6 @@ vg_sm4_gcm_seal:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 0(%r31)
@@ -12173,9 +12081,9 @@ vg_sm4_gcm_seal:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3376
-	addi %r1, %r1, 2672
+	addi %r1, %r1, 400
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3776(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -12193,10 +12101,6 @@ vg_sm4_gcm_seal:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
@@ -12273,84 +12177,7 @@ vg_sm4_gcm_seal:
 	std %r0, 136(%r12)
 	std %r0, 144(%r12)
 	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -2016(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 2016
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3776
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -12384,9 +12211,9 @@ vg_sm4_gcm_seal:
 	blr
 
 vg_sm4_gcm_open:
-	stdu %r1, -2672(%r1)
+	stdu %r1, -400(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2768(%r12)
+	ld %r0, 496(%r12)
 	std %r0, 96(%r12)
 	addi %r0, %r12, 112
 	std %r0, 104(%r12)
@@ -12505,7 +12332,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 0
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 220:
 	b 213f
@@ -12522,7 +12348,6 @@ vg_sm4_gcm_open:
 	beq %cr0, 221f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 0
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 222f
 221:
@@ -12568,7 +12393,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 227f
 226:
@@ -12586,7 +12410,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 29f
 28:
@@ -12659,7 +12482,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 239:
 	b 232f
@@ -12676,7 +12498,6 @@ vg_sm4_gcm_open:
 	beq %cr0, 240f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 241f
 240:
@@ -12722,7 +12543,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 246f
 245:
@@ -12773,7 +12593,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 258:
 	b 251f
@@ -12790,7 +12609,6 @@ vg_sm4_gcm_open:
 	beq %cr0, 259f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 260f
 259:
@@ -12836,7 +12654,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 265f
 264:
@@ -12854,7 +12671,6 @@ vg_sm4_gcm_open:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 112(%r31)
@@ -18054,9 +17870,9 @@ vg_sm4_gcm_open:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3392
-	addi %r1, %r1, 2672
+	addi %r1, %r1, 400
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3792(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -18074,10 +17890,6 @@ vg_sm4_gcm_open:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
@@ -18156,84 +17968,7 @@ vg_sm4_gcm_open:
 	std %r0, 152(%r12)
 	std %r0, 160(%r12)
 	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -2032(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	std %r0, 192(%r12)
-	std %r0, 200(%r12)
-	addi %r1, %r1, 2032
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3792
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0
@@ -18268,7 +18003,7 @@ vg_sm4_gcm_open:
 	blr
 
 vg_sm4_gcm_stream_init:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r7, %r1, 32
 	std %r18, 128(%r7)
 	std %r19, 136(%r7)
@@ -18342,7 +18077,6 @@ vg_sm4_gcm_stream_init:
 	addi %r4, %r30, 0
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 212:
 	b 25f
@@ -18359,7 +18093,6 @@ vg_sm4_gcm_stream_init:
 	beq %cr0, 213f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 0
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 214f
 213:
@@ -18405,7 +18138,6 @@ vg_sm4_gcm_stream_init:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 219f
 218:
@@ -18423,7 +18155,6 @@ vg_sm4_gcm_stream_init:
 	addi %r4, %r30, 0
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 21f
 20:
@@ -18467,9 +18198,9 @@ vg_sm4_gcm_stream_init:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -18487,61 +18218,27 @@ vg_sm4_gcm_stream_init:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2592
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	std %r0, 240(%r12)
+	std %r0, 248(%r12)
+	std %r0, 256(%r12)
+	std %r0, 264(%r12)
+	std %r0, 272(%r12)
+	std %r0, 280(%r12)
+	addi %r1, %r1, 320
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -18575,7 +18272,7 @@ vg_sm4_gcm_stream_init:
 	blr
 
 vg_sm4_gcm_stream_aad:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r8, %r1, 32
 	std %r18, 128(%r8)
 	std %r19, 136(%r8)
@@ -18643,7 +18340,6 @@ vg_sm4_gcm_stream_aad:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 210:
 	b 23f
@@ -18660,7 +18356,6 @@ vg_sm4_gcm_stream_aad:
 	beq %cr0, 211f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 212f
 211:
@@ -18701,9 +18396,9 @@ vg_sm4_gcm_stream_aad:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -18721,61 +18416,27 @@ vg_sm4_gcm_stream_aad:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2592
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	std %r0, 240(%r12)
+	std %r0, 248(%r12)
+	std %r0, 256(%r12)
+	std %r0, 264(%r12)
+	std %r0, 272(%r12)
+	std %r0, 280(%r12)
+	addi %r1, %r1, 320
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -18809,7 +18470,7 @@ vg_sm4_gcm_stream_aad:
 	blr
 
 vg_sm4_gcm_stream_encrypt:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r9, %r1, 32
 	stdu %r1, -3296(%r1)
 	addi %r10, %r1, 32
@@ -22307,7 +21968,6 @@ vg_sm4_gcm_stream_encrypt:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 241f
 240:
@@ -22360,7 +22020,6 @@ vg_sm4_gcm_stream_encrypt:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 253:
 	b 246f
@@ -22377,7 +22036,6 @@ vg_sm4_gcm_stream_encrypt:
 	beq %cr0, 254f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 255f
 254:
@@ -22422,9 +22080,9 @@ vg_sm4_gcm_stream_encrypt:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3296
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3616(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -22496,12 +22154,6 @@ vg_sm4_gcm_stream_encrypt:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -22518,82 +22170,7 @@ vg_sm4_gcm_stream_encrypt:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -1856(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	addi %r1, %r1, 1856
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3616
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -22627,7 +22204,7 @@ vg_sm4_gcm_stream_encrypt:
 	blr
 
 vg_sm4_gcm_stream_decrypt:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r9, %r1, 32
 	stdu %r1, -3296(%r1)
 	addi %r10, %r1, 32
@@ -22683,7 +22260,6 @@ vg_sm4_gcm_stream_decrypt:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 25f
 24:
@@ -22736,7 +22312,6 @@ vg_sm4_gcm_stream_decrypt:
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 217:
 	b 210f
@@ -22753,7 +22328,6 @@ vg_sm4_gcm_stream_decrypt:
 	beq %cr0, 218f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 219f
 218:
@@ -26240,9 +25814,9 @@ vg_sm4_gcm_stream_decrypt:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3296
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3616(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -26314,12 +25888,6 @@ vg_sm4_gcm_stream_decrypt:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -26336,82 +25904,7 @@ vg_sm4_gcm_stream_decrypt:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -1856(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	addi %r1, %r1, 1856
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3616
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -26445,7 +25938,7 @@ vg_sm4_gcm_stream_decrypt:
 	blr
 
 vg_sm4_gcm_stream_finish:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r8, %r1, 32
 	stdu %r1, -3296(%r1)
 	addi %r9, %r1, 32
@@ -26501,7 +25994,6 @@ vg_sm4_gcm_stream_finish:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 23f
 22:
@@ -26519,7 +26011,6 @@ vg_sm4_gcm_stream_finish:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 0(%r31)
@@ -28230,9 +27721,9 @@ vg_sm4_gcm_stream_finish:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3296
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3616(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -28304,12 +27795,6 @@ vg_sm4_gcm_stream_finish:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -28326,82 +27811,7 @@ vg_sm4_gcm_stream_finish:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -1856(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	addi %r1, %r1, 1856
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3616
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -28435,7 +27845,7 @@ vg_sm4_gcm_stream_finish:
 	blr
 
 vg_sm4_gcm_stream_verify:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -320(%r1)
 	addi %r9, %r1, 32
 	stdu %r1, -3296(%r1)
 	addi %r10, %r1, 32
@@ -28529,7 +27939,6 @@ vg_sm4_gcm_stream_verify:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	b 212f
 211:
@@ -28547,7 +27956,6 @@ vg_sm4_gcm_stream_verify:
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
-	addi %r7, %r31, 512
 	bl {vg_ghash}
 	ld %r3, 16(%r30)
 	std %r3, 0(%r31)
@@ -30285,9 +29693,9 @@ vg_sm4_gcm_stream_verify:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 3296
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 320
 	li %r0, 0
-	stdu %r1, -4064(%r1)
+	stdu %r1, -3616(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -30359,12 +29767,6 @@ vg_sm4_gcm_stream_verify:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -30381,82 +29783,7 @@ vg_sm4_gcm_stream_verify:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	std %r0, 160(%r12)
-	std %r0, 168(%r12)
-	std %r0, 176(%r12)
-	std %r0, 184(%r12)
-	addi %r1, %r1, 4064
-	stdu %r1, -4032(%r1)
-	stdu %r1, -1856(%r1)
-	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	std %r0, 128(%r12)
-	std %r0, 136(%r12)
-	std %r0, 144(%r12)
-	std %r0, 152(%r12)
-	addi %r1, %r1, 1856
-	addi %r1, %r1, 4032
+	addi %r1, %r1, 3616
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0

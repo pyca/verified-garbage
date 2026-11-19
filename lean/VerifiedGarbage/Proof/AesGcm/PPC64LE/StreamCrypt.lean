@@ -45,7 +45,7 @@ structure SC1 (s₀ s₁ : State) : Prop where
   r20 : s₁.gpr .r20 = s₀.gpr .r8
   r19 : s₁.gpr .r19 = s₀.gpr .r9
 
-theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr) :
+theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr) :
     WP isa (.block cryptEntry) s₀ (SC1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r10) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   obtain e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
@@ -68,7 +68,7 @@ theorem scLay : Lay (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) := by
   obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
   exact Lay.of fc fs fw dcs dcw dsw
 
-theorem sc_W : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr := by
+theorem sc_W : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 /-- The environment after the entry. -/
@@ -94,21 +94,20 @@ include L
 
 theorem stp_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) {d k : Nat} (h1 : d + k ≤ 48) :
     ∀ r ∈ crFrame st w D n, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+  refine (fun (_ : Lay c st w) => ?_) L
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact (hd.ok.st.sub_right (Lay.stSub (by omega_arith))).symm
   · exact Lay.st_st (.inl h1) (by omega_arith) (by decide)
-  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_taFrame {d k : Nat} (hd : d + k ≤ 16 ∨ 48 ≤ d ∧ d + k ≤ 80) :
     ∀ r ∈ taFrame st w, (⟨st + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
   · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
-  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 theorem stp_saved {d k : Nat} (h1 : d + k ≤ 80) :
@@ -123,10 +122,9 @@ theorem ctx_saved : ∀ r ∈ [savedR w], (⟨c, 256⟩ : Region).Disjoint r := 
 theorem ctx_taFrame : ∀ r ∈ taFrame st w, (⟨c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact L.cs.sub_right (Lay.stSub (by decide))
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.cw'.sub_right (Lay.wSub (by decide))
 
 omit L in
@@ -134,10 +132,9 @@ theorem data_taFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk st w s D n) :
     ∀ r ∈ taFrame st w, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact hd.st.sub_right (Lay.stSub (by decide))
   · exact hd.st.sub_right (Lay.stSub (by decide))
-  · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hd.w.sub_right (Lay.wSub (by decide))
 
 omit L in
@@ -149,20 +146,18 @@ theorem data_saved {s : State} {D : Addr} {n : Nat} (hd : DataOk st w s D n) :
 theorem saved_taFrame : ∀ r ∈ taFrame st w, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact L.saved_st (by decide)
   · exact L.saved_st (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by decide) (.inr (by decide))
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
     ∀ r ∈ crFrame st w D n, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
   · exact L.saved_st (by decide)
-  · exact saved_w (by decide) (.inr (by decide))
 
 omit L in
 /-- `ciphOf` is `ctxCiph`, and a frame apart from the context keeps it. -/

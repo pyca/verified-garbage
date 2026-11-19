@@ -23,7 +23,7 @@ theorem partial_env_layout {V : Reg → BitVec 64} {sp S : Addr} {count : Nat} {
     exact hp r hr)) ht.sp ht.keep.2.1 ht.keep.2.2
   have layT : Call.Layout V sp S count t := by
     refine ⟨lay.bound,?_,?_,?_,lay.fit,lay.st,lay.data,lay.work,?_,lay.stackFit,lay.slotFit,
-      lay.slotContext,lay.slotState,lay.slotData,lay.slotWork,lay.slotSource⟩
+      lay.slotContext,lay.slotState,lay.slotData,lay.slotWork,lay.slotSource,lay.kern.of_eq ht.keep.2.2⟩
     · rw [ht.keep.gpr (by decide : Reg.r7∉PartialCopy.registers)]; exact lay.source
     · rw [ht.keep.gpr (by decide : Reg.r8∉PartialCopy.registers)]; exact lay.countReg
     · rw [ht.keep.2.1,ht.keep.2.2]; exact lay.reads

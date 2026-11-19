@@ -27,11 +27,14 @@ import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 `vg_aes_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
 `_verify`, each followed by `Impl.Scrub.PPC64LE.scrubTail`
 (`PPC64LE.Scrub.scrubOf`), which clears the volatile registers and the
-stack its frames used: each keeps its working space (the key schedule's
-expansion, the counter blocks and the powers of the hash subkey) in a frame
-of 2.5 KB or more that it does not wipe itself (`withStackScratch`,
-`withStackScratchArgs`, and the frames of `vg_aes_gcm_seal_split` and
-`vg_aes_gcm_open_split`), which the tail wipes whole, with `dcbz`. Every one
+stack its frames used: each keeps its working space (the padded blocks,
+the saved registers and the tags compared) in a frame it does not wipe
+itself (`withStackScratch`, `withStackScratchArgs`, and the frames of
+`vg_aes_gcm_seal_split` and `vg_aes_gcm_open_split`), which the tail wipes
+whole. The functions they call need no working space, so `init` and the
+streaming functions keep only 288 bytes, in a frame of 320; `seal`, `open`,
+`seal_gather` and `open_to` keep their helpers' working space as well, at
+`W + 448`, in frames of 2.6 KB or more. Every one
 may write every volatile register but CA (and `vg_aes_gcm_init` none of
 `v12`–`v18`), so the tail clears them all. The functions they call
 (`vg_aes_ctr32`, `vg_ghash`, `vg_aes_expand_key_scratch` and the split
@@ -223,9 +226,9 @@ def clearAll : Impl.Scrub.PPC64LE.Clear :=
 /-- `Spec.Gcm.initApi`. -/
 def initReg : Registration Spec.Gcm.initApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesGcm.PPC64LE.init
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 Impl.AesGcm.PPC64LE.init
       verified := init_framed }
-    2592 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (initOut _)
     (by dsimp only; lit_decide)
@@ -233,54 +236,54 @@ def initReg : Registration Spec.Gcm.initApi PPC64LE.target :=
 /-- `Spec.Gcm.streamInitApi`. -/
 def streamInitReg : Registration Spec.Gcm.streamInitApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 Impl.AesGcm.PPC64LE.streamInit
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r7 Impl.AesGcm.PPC64LE.streamInit
       verified := streamInit_framed }
-    2592 clearAll
+    320 clearAll
     (streamInitOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.streamAadApi`. -/
 def streamAadReg : Registration Spec.Gcm.streamAadApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 Impl.AesGcm.PPC64LE.streamAad
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8 Impl.AesGcm.PPC64LE.streamAad
       verified := streamAad_framed }
-    2592 clearAll
+    320 clearAll
     (streamAadOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.streamEncryptApi`. -/
 def streamEncryptReg : Registration Spec.Gcm.streamEncryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
       verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed }
-    2592 clearAll
+    320 clearAll
     (streamEncryptOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.streamDecryptApi`. -/
 def streamDecryptReg : Registration Spec.Gcm.streamDecryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
       verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed }
-    2592 clearAll
+    320 clearAll
     (streamDecryptOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.streamFinishApi`. -/
 def streamFinishReg : Registration Spec.Gcm.streamFinishApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 Impl.AesGcm.PPC64LE.streamFinish
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9 Impl.AesGcm.PPC64LE.streamFinish
       verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed }
-    2592 clearAll
+    320 clearAll
     (streamFinishOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.streamVerifyApi`. -/
 def streamVerifyReg : Registration Spec.Gcm.streamVerifyApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamVerify
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamVerify
       verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed }
-    2592 clearAll
+    320 clearAll
     (streamVerifyOut _)
     (by dsimp only; lit_decide)
 
