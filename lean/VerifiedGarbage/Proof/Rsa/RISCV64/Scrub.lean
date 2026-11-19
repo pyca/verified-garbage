@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -344,5 +345,36 @@ theorem oaepDecryptOut (ts : List FnTable) (stack : Nat) :
         have := hb.2.1 (ml + BitVec.ofNat 64 t) (contains_of (by simp only [Nat.reduceDiv] at ht; omega))
         exact this.symm
       exact fun H G h1 h2 => writtenDecrypt_of e' el (h H G h1 h2)
+
+/-! ## RSASSA-PSS -/
+
+theorem pssSignOut (tsH tsG : List FnTable) (stack : Nat) :
+    PostOut (Spec.RsaPss.signPrecomputedMdTableContract
+        (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
+      (Spec.RsaPss.signPrecomputedMdTableSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
+    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaPss.signPrecomputedMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp,
+        Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol : (outLen.setWidth 64).toNat = (nLen.setWidth 64).toNat := hp.2.1
+      rw [BitVec.setWidth_eq, BitVec.setWidth_eq] at hol
+      have e' : Spec.Rsa.bytesAt m₂ out (nLen.setWidth 64).toNat = Spec.Rsa.bytesAt m₁ out (nLen.setWidth 64).toNat :=
+        e _ (by rw [BitVec.setWidth_eq]; exact hol.symm)
+      exact fun H G h1 h2 => writtenOutcome_of e' (h H G h1 h2)
+
+theorem pssVerifyOut (tsH tsG : List FnTable) (stack : Nat) :
+    PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
+        (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
+      (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits 64) :=
+  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun
+    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 end VG.Proof.Rsa.RISCV64.Scrub

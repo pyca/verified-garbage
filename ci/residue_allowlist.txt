@@ -650,8 +650,6 @@ riscv64 vg_aes_ocb_seal
 riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
-riscv64 vg_rsa_pss_sign_precomputed
-riscv64 vg_rsa_pss_verify_precomputed
 riscv64 vg_sm4_gcm_init
 riscv64 vg_sm4_gcm_open
 riscv64 vg_sm4_gcm_seal
