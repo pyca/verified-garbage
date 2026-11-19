@@ -123,7 +123,7 @@ bl {vg_chacha20_xor}
 mov r7, r1
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -565,7 +565,7 @@ cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks_umaal = sym super::poly1305::vg_poly1305_blocks_umaal::vg_poly1305_blocks_umaal,
         vg_poly1305_finalize_scratch_umaal = sym super::poly1305::vg_poly1305_finalize_scratch_umaal::vg_poly1305_finalize_scratch_umaal,
     )
@@ -682,7 +682,7 @@ ldr r12, [r7, #28]
 str r12, [r7, #412]
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -1169,7 +1169,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks_umaal = sym super::poly1305::vg_poly1305_blocks_umaal::vg_poly1305_blocks_umaal,
         vg_poly1305_finalize_scratch_umaal = sym super::poly1305::vg_poly1305_finalize_scratch_umaal::vg_poly1305_finalize_scratch_umaal,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
@@ -1294,7 +1294,7 @@ ldr r12, [r7, #28]
 str r12, [r7, #412]
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -1783,7 +1783,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks_umaal = sym super::poly1305::vg_poly1305_blocks_umaal::vg_poly1305_blocks_umaal,
         vg_poly1305_finalize_scratch_umaal = sym super::poly1305::vg_poly1305_finalize_scratch_umaal::vg_poly1305_finalize_scratch_umaal,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
@@ -2183,7 +2183,7 @@ bl {vg_chacha20_xor}
 mov r7, r1
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -2625,7 +2625,7 @@ cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
@@ -2736,7 +2736,7 @@ ldr r12, [r7, #28]
 str r12, [r7, #412]
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -3223,7 +3223,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
@@ -3342,7 +3342,7 @@ ldr r12, [r7, #28]
 str r12, [r7, #412]
 mov r0, r7
 add r1, r7, #384
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 mov r7, r0
 mov r1, r8
 lsr r2, r9, #4
@@ -3831,7 +3831,7 @@ mov r12, #0
 cmp r2, r2
 bx lr",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,

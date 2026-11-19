@@ -2612,3 +2612,7 @@ pub(crate) mod vg_poly1305_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch_umaal.rs"]
 pub(crate) mod vg_poly1305_finalize_scratch_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_init_core.rs"]
+pub(crate) mod vg_poly1305_init_core;
