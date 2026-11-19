@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.CT
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Xts.Contract
@@ -1608,6 +1609,11 @@ structure XtsImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The registers `enc.code` and `dec.code` write: a caller's tail clears
+  them with its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide`
+  holds them to the code. -/
+  encClear : Impl.Residue.AArch64.Clear
+  decClear : Impl.Residue.AArch64.Clear
 
 namespace XtsImpl
 
@@ -1617,7 +1623,7 @@ theorem crypt_noFrames {b : Impl.Aes.AArch64.Blocks} (h : b.code.noFrames = true
 
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
-def blocks (v : BlocksImpl) : XtsImpl where
+def blocks (v : BlocksImpl) (encClear decClear : Impl.Residue.AArch64.Clear) : XtsImpl where
   enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc⟩
   encNoFrames := crypt_noFrames v.encNoFrames
   encOk := encrypt_correct v
@@ -1630,6 +1636,8 @@ def blocks (v : BlocksImpl) : XtsImpl where
   decKeepsV := decrypt_keepsV v
   suffix := v.suffix
   features := v.features
+  encClear := encClear
+  decClear := decClear
 
 /-- The one-pass functions with the AES instructions,
 `vg_aes_xts_encrypt_aes` and `vg_aes_xts_decrypt_aes`. -/
@@ -1646,6 +1654,14 @@ def aes : XtsImpl where
   decKeepsV := Aes.decrypt_keepsV
   suffix := "_aes"
   features := ["aes"]
+  encClear := ⟨[.x2, .x3, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
+  decClear := ⟨[.x2, .x3, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
 
 end XtsImpl
 

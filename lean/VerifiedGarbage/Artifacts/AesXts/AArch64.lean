@@ -19,14 +19,20 @@ open VG.Proof.AesXts.AArch64
 
 def artifacts : List Artifact := [
   ] ++
-  (VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
-    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.encrypt v.enc
-      verified := encrypt_verified v } Proof.AesXts.AArch64.Scrub.encryptOk),
-    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
-      verified := decrypt_verified v } Proof.AesXts.AArch64.Scrub.decryptOk)])
+  (VG.Proof.Variants.AesXts.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.AesXts.AArch64.XtsImpl // v ∈ VG.Proof.Variants.AesXts.AArch64.variants }) => [
+    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.AesXts.AArch64Unit.encrypt v.1.enc
+      verified := encrypt_verified v.1 }
+      (AArch64.ScrubAll.clearUnion Proof.AesXts.AArch64.Scrub.encryptOwn v.1.encClear)
+      Proof.AesXts.AArch64.Scrub.encryptOk (Proof.AesXts.AArch64.Scrub.encryptSide v.1 v.2)),
+    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.AesXts.AArch64Unit.decrypt v.1.enc v.1.dec
+      verified := decrypt_verified v.1 }
+      (AArch64.ScrubAll.clearUnion
+        (AArch64.ScrubAll.clearUnion Proof.AesXts.AArch64.Scrub.decryptOwn v.1.encClear) v.1.decClear)
+      Proof.AesXts.AArch64.Scrub.decryptOk (Proof.AesXts.AArch64.Scrub.decryptSide v.1 v.2))])
 
 end VG.Artifacts.AesXts.AArch64
