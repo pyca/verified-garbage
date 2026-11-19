@@ -50,7 +50,7 @@ theorem fastOpenWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
     (Impl.AesGcm.AArch64.Fast.openWith v.callees gh).allInstrs keepsV = true :=
   fastOpenWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, hgh])
 
-theorem fastOpen_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem fastOpen_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«open» v.callees) s t s' ∧ abiPreserved s s' ∧
       (openAArch64 Wn).post s s' :=
   WP.withPreservedV (Fast.openWith_wp v.gh.fn v hMK hs fun _ _ _ _ _ hc _ _ _ _ _ => gh_call v.gh hc)

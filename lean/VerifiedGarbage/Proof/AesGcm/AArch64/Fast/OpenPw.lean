@@ -73,7 +73,7 @@ space and the text: `pw` is at `[sp + 16]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
 theorem gwCallO_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : openPwN Wn σ) (sY : Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 3)))
     (sS : Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 3))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR Wn (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
+    (hf : Frame [workR Wn (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     s.mem.readW (s.sp + BitVec.ofNat 64 16) 64 = stackArg σ 2 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 2) := by
@@ -119,7 +119,7 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       (openAArch64 Wn).post s s' :=
   WP.withPreservedV (openWithE_wp (w := 3) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
@@ -127,7 +127,7 @@ theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) (hWn : 768 �
       pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
     (fastOpenWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr (.inl rfl))))
 
-theorem openPw_ctN {Wn : Nat} :
+theorem openPw_ctN {Wn : Nat} (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa openPwN Wn (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) :=
   openWithE_ct (w := 3) v _ hMK (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
@@ -193,13 +193,13 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem openPw_correct (s : State) (hs : openPwAArch64.pre s) :
+theorem openPw_correct (s : State) (hs : openPwAArch64.pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openPwAArch64.post s s' := by
   obtain ⟨t, s₁, he, ha, hp⟩ := openPw_correctN v g hMK _ (narrowPO_pre hs)
   exact ⟨t, _, narrowPO_exec hs he, ha, hp⟩
 
-theorem openPw_ct :
+theorem openPw_ct (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa openPwAArch64.pre openPwAArch64.pub (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨u₁, r₁, f₁, -⟩ := openPw_correctN v g hMK _ (narrowPO_pre h₁)
@@ -207,7 +207,7 @@ theorem openPw_ct :
   rw [(Exec.det e₁ (narrowPO_exec h₁ f₁)).1, (Exec.det e₂ (narrowPO_exec h₂ f₂)).1]
   exact openPw_ctN v g hMK _ _ _ _ _ _ (narrowPO_pre h₁) (narrowPO_pre h₂) hq f₁ f₂
 
-theorem openPw_verified :
+theorem openPw_verified (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
       (Proof.AesGcm.openWithPowersScratchContract AArch64.abi) :=
   Verified.of_correct (openPw_correct (Wn := 2560) v g hMK) (openPw_ct (Wn := 2560) v g hMK)
