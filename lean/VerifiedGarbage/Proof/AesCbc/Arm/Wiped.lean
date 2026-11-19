@@ -26,10 +26,11 @@ namespace VG.Proof.AesCbc.Arm.Wiped
 
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.AesCbc.Wipe
 
-/-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the
+/-- A call of `name`, whose code is `body`, then of `vg_zeroize`'s code
+(as the internal `vg_zeroize_core`) on the
 2176 bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.ArmStack.callWipeStack 2 4 2176 name body "vg_zeroize" Impl.Zeroize.Arm.zeroize
+  Impl.CallWipe.ArmStack.callWipeStack 2 4 2176 name body "vg_zeroize_core" Impl.Zeroize.Arm.zeroize
 
 /-- `vg_aes_cbc_encrypt`. -/
 def encrypt : Prog isa := wiped "vg_aes_cbc_encrypt_unwiped" Impl.AesCbc.Arm.encrypt

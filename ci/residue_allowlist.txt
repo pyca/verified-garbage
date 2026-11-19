@@ -477,13 +477,8 @@ arm vg_x25519_exchange_umaal
 arm vg_zeroize
 powerpc64le vg_aes_ccm_open
 powerpc64le vg_aes_ccm_seal
-powerpc64le vg_argon2
 powerpc64le vg_camellia_ctr_final
-powerpc64le vg_chacha20_apply
-powerpc64le vg_chacha20_init
-powerpc64le vg_chacha20_set_nonce
 powerpc64le vg_ct_eq
-powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.HPrime.CT
 public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Verified
+public import VerifiedGarbage.Proof.Argon2.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -13,8 +14,6 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.Argon2.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Argon2.deriveApi.artifact PPC64LE.target {
-    code := Impl.Argon2.PPC64LE.Derive.derive
-    verified := .unscrubbed Proof.Argon2.PPC64LE.Derive.deriveShared_verified }]
+  Spec.Argon2.deriveApi.artifact PPC64LE.target Proof.Argon2.PPC64LE.Scrub.deriveReg]
 
 end VG.Artifacts.Argon2.PPC64LE
