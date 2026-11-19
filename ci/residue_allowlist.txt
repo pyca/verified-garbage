@@ -827,11 +827,6 @@ x86 vg_pbkdf2_hmac_sha512_256
 x86 vg_poly1305_finalize
 x86 vg_poly1305_init
 x86 vg_poly1305_update
-x86 vg_rc2_cbc_decrypt_chained
-x86 vg_rc2_cbc_encrypt_chained
-x86 vg_rc2_cbc_init
-x86 vg_rc4_apply
-x86 vg_rc4_init
 x86 vg_rsa_check_key
 x86 vg_rsa_crt_values
 x86 vg_rsa_generate

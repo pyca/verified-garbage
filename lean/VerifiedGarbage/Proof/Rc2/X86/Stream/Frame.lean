@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -1131,8 +1131,8 @@ end
 
 `init` runs its code, proved with the working space as an
 argument (`Verified.lean`), in a frame of 608 bytes that allocates it and
-copies the six argument slots (`Verified.stackScratchWiped`), and zero it
-before returning.
+copies the six argument slots (`Verified.stackScratch`), which its
+registration zeroes before returning (`Proof/Rc2/X86/Scrub.lean`).
 -/
 
 @[expose] public section
@@ -1152,12 +1152,12 @@ theorem initFrameSat_pre : ∃ s, (Spec.Rc2.cbcInitContract X86.abi 632).pre s :
 
 theorem init_framed :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.init)
+      (Impl.StackScratch.X86.withStackScratch 608 6 Impl.Rc2.X86.Stream.init)
       (Spec.Rc2.cbcInitContract X86.abi 632) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc2.cbcInitSig) (nm := "scratch") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.Rc2.cbcInitSig) (nm := "scratch") (e := .u64)
     (n := 72) (post := Spec.Rc2.cbcInitPost X86.abi.ptrBits) (wa := true) (stack := 24)
-    (bytes := 608) (words := 144) init_verified (by decide) (by lit_decide) (by lit_decide)
-    (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (cbcInitPost_local _)
-    (cbcInitPostOut_local _) initFrameSat_pre
+    (bytes := 608) init_verified (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (cbcInitPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => cbcInitPostOut_local _ vs m m₁ m₂ r hl hb h) initFrameSat_pre
 
 end VG.Proof.Rc2.X86.Stream
