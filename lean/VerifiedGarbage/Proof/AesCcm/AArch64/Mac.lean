@@ -50,20 +50,20 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
   have hh := Proof.AesCcm.hdrLen_le a
   have hh2 : 2 ≤ hdrLen a := by unfold hdrLen; split <;> [omega_arith; split <;> omega_arith]
   refine WP.seq (WP.mono (header_ok E ha0 ha h24) fun s₁ ⟨E₁, x25₁, hg₁, rd₁, wr₁, f₁, hB₁⟩ => ?_)
-  have h24₁ : s₁.gpr .x24 = BitVec.ofNat 64 a := by rw [hg₁ _ (by decide), h24]
-  have h23₁ : s₁.gpr .x23 = A := by rw [hg₁ _ (by decide), h23]
+  have h24₁ : s₁.gpr .x24 = BitVec.ofNat 64 a := by rw [hg₁ _ (by first | decide | omega), h24]
+  have h23₁ : s₁.gpr .x23 = A := by rw [hg₁ _ (by first | decide | omega), h23]
   refine WP.seq (WP.mono (minK_ok s₁ x25₁ h24₁ (by omega_arith) ha) fun s₂ ⟨x10₂, hg₂, hm₂, sp₂, rd₂, wr₂⟩ => ?_)
   have hn1 : min (16 - hdrLen a) a = headLen a := by unfold headLen; omega_arith
   rw [hn1] at x10₂
   have hn1' : 1 ≤ headLen a ∧ headLen a ≤ a ∧ hdrLen a + headLen a ≤ 16 := by unfold headLen; omega_arith
-  have E₂ : Env c s₂ := E₁.others hg₂ (by decide) sp₂ rd₂ wr₂
+  have E₂ : Env c s₂ := E₁.others hg₂ (by first | decide | omega) sp₂ rd₂ wr₂
   obtain ⟨s₃, run₃, x11₃, x12₃, x13₃, hg₃, hm₃, sp₃, rd₃, wr₃⟩ : ∃ s₃, runBlock isa
       [.add .x .x11 .x19 .x25, ptr .x11 .x11 bO, mov .x12 .x23, mov .x13 .x10] s₂ = some s₃ ∧
       s₃.gpr .x11 = c.W + BitVec.ofNat 64 (32 + hdrLen a) ∧ s₃.gpr .x12 = A ∧
       s₃.gpr .x13 = BitVec.ofNat 64 (headLen a) ∧ Others [.x11, .x12, .x13] s₂ s₃ ∧
       s₃.mem = s₂.mem ∧ s₃.sp = s₂.sp ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-    have x25₂ : s₂.gpr .x25 = BitVec.ofNat 64 (hdrLen a) := by rw [hg₂ _ (by decide), x25₁]
-    have x23₂ : s₂.gpr .x23 = A := by rw [hg₂ _ (by decide), h23₁]
+    have x25₂ : s₂.gpr .x25 = BitVec.ofNat 64 (hdrLen a) := by rw [hg₂ _ (by first | decide | omega), x25₁]
+    have x23₂ : s₂.gpr .x23 = A := by rw [hg₂ _ (by first | decide | omega), h23₁]
     refine ⟨_, by carun [], ?_⟩
     refine ⟨?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
     · simp only [gpr_write, BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, E₂.x19, x25₂, BitVec.setWidth_eq]
@@ -74,20 +74,20 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp [gpr_write, hr]
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have E₃ : Env c s₃ := E₂.others hg₃ (by decide) sp₃ rd₃ wr₃
+  have E₃ : Env c s₃ := E₂.others hg₃ (by first | decide | omega) sp₃ rd₃ wr₃
   have hA₃ := hA.of_eq (s' := s₃) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁])
   have dAB : (⟨A, headLen a⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 (32 + hdrLen a), headLen a⟩ :=
     (hA.take hn1'.2.1).wd (by omega_arith)
   have lp : LoopPre s₃ A (c.W + BitVec.ofNat 64 (32 + hdrLen a)) (headLen a) :=
     ⟨by omega_arith, (hA₃.take hn1'.2.1).rd, E₃.perm.wC (by omega_arith), dAB⟩
   refine WP.seq (WP.mono (copyLoop_ok s₃ x12₃ x11₃ x13₃ hn1'.1 lp) fun s₄ ⟨hm₄, _, _, hg₄, sp₄, rd₄, wr₄⟩ => ?_)
-  have E₄ : Env c s₄ := E₃.others hg₄ (by decide) sp₄ rd₄ wr₄
+  have E₄ : Env c s₄ := E₃.others hg₄ (by first | decide | omega) sp₄ rd₄ wr₄
   have x23₄ : s₄.gpr .x23 = A := by
-    rw [hg₄ _ (by decide), hg₃ _ (by decide), hg₂ _ (by decide), h23₁]
+    rw [hg₄ _ (by first | decide | omega), hg₃ _ (by first | decide | omega), hg₂ _ (by first | decide | omega), h23₁]
   have x24₄ : s₄.gpr .x24 = BitVec.ofNat 64 a := by
-    rw [hg₄ _ (by decide), hg₃ _ (by decide), hg₂ _ (by decide), h24₁]
+    rw [hg₄ _ (by first | decide | omega), hg₃ _ (by first | decide | omega), hg₂ _ (by first | decide | omega), h24₁]
   have x10₄ : s₄.gpr .x10 = BitVec.ofNat 64 (headLen a) := by
-    rw [hg₄ _ (by decide), hg₃ _ (by decide), x10₂]
+    rw [hg₄ _ (by first | decide | omega), hg₃ _ (by first | decide | omega), x10₂]
   refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [], rfl⟩ fun s₅ hs₅ => ?_
   subst hs₅
   -- What was written.
@@ -96,12 +96,12 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
       exact Offset.contains c.W (d := 32 + hdrLen a) (n := headLen a) (e := 32) (k := 16) (by omega_arith) (by omega_arith)
-        (by decide))
+        (by first | decide | omega))
   have fB : Frame [⟨c.W + BitVec.ofNat 64 32, 16⟩] s.mem s₄.mem := by
     rw [← hm₂] at f₁; rw [← hm₃] at f₁; exact f₁.trans fC
   have hAk : bytesAt s₃.mem A (headLen a) = (bytesAt s.mem A a).take (headLen a) := by
     rw [hm₃, hm₂, Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (hA.take hn1'.2.1).wd (by decide)) (by omega_arith),
+      simp only [List.mem_singleton] at hr; subst hr; exact (hA.take hn1'.2.1).wd (by first | decide | omega)) (by omega_arith),
       bytesAt_prefix _ _ hn1'.2.1]
   have hB₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 32) 16 =
       Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a)) := by
@@ -109,7 +109,7 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
     have htl : ((bytesAt s.mem A a).take (headLen a)).length = headLen a := by
       rw [List.length_take, length_bytesAt]; omega_arith
     rw [hm₄, show c.W + BitVec.ofNat 64 (32 + hdrLen a) = c.W + BitVec.ofNat 64 32 + BitVec.ofNat 64 (hdrLen a) by
-        rw [add_ofNat_assoc], bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide),
+        rw [add_ofNat_assoc], bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by first | decide | omega),
       length_bytesAt, hAk, hm₃, hm₂, hB₁]
     rcases Proof.AesCcm.pad16_short (r := Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))
       (by rw [List.length_append, hl, htl]; omega_arith) with e | e
@@ -119,7 +119,7 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
         show 16 - hdrLen a - (hdrLen a + headLen a - hdrLen a) = 16 - (hdrLen a + headLen a) by omega_arith]
     · exact absurd (congrArg List.length e) (by rw [List.length_append, hl]; simp; omega_arith)
   refine ⟨E₄.others (rs := [.x23, .x24]) (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; simp [gpr_write, hr]) (by decide)
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; simp [gpr_write, hr]) (by first | decide | omega)
       rfl rfl rfl, by simp only [rd_write]; rw [rd₄, rd₃, rd₂, rd₁], by simp only [wr_write]; rw [wr₄, wr₃, wr₂, wr₁],
       fB, ?_, ?_, hB₄⟩
   · simp [gpr_write, x23₄, x10₄]
@@ -127,7 +127,7 @@ theorem aadHeadPre_ok {c : Cx} {s : State} (E : Env c s) {A : Addr} {a : Nat} (h
     exact ofNat_sub hn1'.2.1 ha
 
 /-- The first block of the associated data. -/
-theorem aadHead_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {s : State} (E : Env c s)
+theorem aadHead_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {s : State} (E : Env c s)
     {y : Nat} (hy : y = 0 ∨ y = 96) {A : Addr} {a : Nat} (hA : Buf c s A a) (ha0 : 0 < a)
     (h23 : s.gpr .x23 = A) (h24 : s.gpr .x24 = BitVec.ofNat 64 a) :
     WP isa (aadHead v.callee y) s (Absorbed c y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a) s
@@ -139,9 +139,9 @@ theorem aadHead_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {
     Proof.AesGcm.AArch64.bytesAt_frame fB (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rcases hy with rfl | rfl
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inr (by decide)) (by decide) (by decide)) (by decide)
-  refine WP.mono (updBlock_ok v L E₅ hy) fun s₆ ⟨E₆, g₆, rd₆, wr₆, f₆, h₆⟩ =>
+      · exact L.w_w (.inl (by first | decide | omega)) (by first | decide | omega) (by first | decide | omega)
+      · exact L.w_w (.inr (by first | decide | omega)) (by first | decide | omega) (by first | decide | omega)) (by first | decide | omega)
+  refine WP.mono (updBlock_ok v L hv E₅ hy) fun s₆ ⟨E₆, g₆, rd₆, wr₆, f₆, h₆⟩ =>
     ⟨E₆, by rw [g₆ _ (by simp), x23₅], by rw [g₆ _ (by simp), x24₅],
       (fB.sub fun r hr => ?_).trans (f₆.sub fun r hr => ?_), ?_, by rw [rd₆, rd₅], by rw [wr₆, wr₅]⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
@@ -151,7 +151,7 @@ theorem aadHead_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)]
 
 /-- The associated data, formatted and chained, if there is any. -/
-theorem aadPart_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {s : State} (E : Env c s)
+theorem aadPart_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {s : State} (E : Env c s)
     {y : Nat} (hy : y = 0 ∨ y = 96) (h23 : s.gpr .x23 = c.A) (h24 : s.gpr .x24 = BitVec.ofNat 64 c.al) :
     WP isa (.ite (.zero .x .x24) (.block []) (.seq (aadHead v.callee y) (absorbPad v.callee y))) s
       (MacStep c y s (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem (c.W + BitVec.ofNat 64 y) 16)
@@ -163,10 +163,10 @@ theorem aadPart_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {
     refine WP.block_nil ⟨E, Frame.refl _ _, ?_, rfl, rfl⟩
     simp only [adataBlocks, length_bytesAt, h0, ↓reduceIte]; rfl
   · have h0 : c.al ≠ 0 := of_decide_eq_false hf
-    refine WP.seq (WP.mono (aadHead_ok v L E hy hA (by omega_arith) h23 h24) fun s₂ A₂ => ?_)
+    refine WP.seq (WP.mono (aadHead_ok v L hv E hy hA (by omega_arith) h23 h24) fun s₂ A₂ => ?_)
     have hn1 : headLen c.al ≤ c.al := by unfold headLen; omega_arith
     have hT := (hA.drop hn1).of_eq (s' := s₂) A₂.rd A₂.wr
-    refine WP.mono (absorbPad_ok v L A₂.env hy hT A₂.x23 A₂.x24) fun s₃ A₃ =>
+    refine WP.mono (absorbPad_ok v L hv A₂.env hy hT A₂.x23 A₂.x24) fun s₃ A₃ =>
       ⟨A₃.env, A₂.frame.trans A₃.frame, ?_, by rw [A₃.rd, A₂.rd], by rw [A₃.wr, A₂.wr]⟩
     rw [A₃.out, A₂.out, buf_macR hT (by omega_arith) A₂.frame, ciph_macR L (by omega_arith) A₂.frame,
       bytesAt_suffix _ _ hn1, ← Proof.Cmac.chain_append]
@@ -177,8 +177,8 @@ theorem aadLd_ok {c : Cx} {s : State} (E : Env c s) (S : Slots c s.mem) :
     WP isa (.block [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO]) s fun s₁ =>
       s₁.gpr .x23 = c.A ∧ s₁.gpr .x24 = BitVec.ofNat 64 c.al ∧ Others [.x23, .x24] s s₁ ∧ s₁.mem = s.mem ∧
         s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have q₁ := E.perm.wR (show 216 + 8 ≤ 2560 by decide)
-  have q₂ := E.perm.wR (show 224 + 8 ≤ 2560 by decide)
+  have q₁ := E.perm.wR (show 216 + 8 ≤ 384 + c.N by omega)
+  have q₂ := E.perm.wR (show 224 + 8 ≤ 384 + c.N by omega)
   refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [E.x19, q₁, q₂], rfl⟩ fun s₁ hs₁ => ?_
   subst hs₁
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
@@ -197,26 +197,26 @@ theorem dataArgs_ok {c : Cx} {s : State} (E : Env c s) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; simp [gpr_write, hr]
 
 /-- CBC-MAC of the formatted nonce, associated data and payload into `W + y`. -/
-theorem mac_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {s : State} (E : Env c s)
+theorem mac_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {s : State} (E : Env c s)
     (S : Slots c s.mem) {nonce : List Byte} (hnl : nonce.length = c.nl)
     (hc0 : bytesAt s.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (mac v.callee y) s (MacStep c y s
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem c.K c.R) (Spec.Cmac.zeros 16)
         (Spec.Ccm.format c.tl nonce (bytesAt s.mem c.A c.al) (bytesAt s.mem c.D c.n)))) := by
-  have hy16 : y + 16 ≤ 2560 := by omega_arith
+  have hy16 : y + 16 ≤ 384 + c.N := by omega_arith
   refine WP.seq (WP.mono (aadLd_ok E S) fun s₁ ⟨x23₁, x24₁, og₁, hm₁, sp₁, rd₁, wr₁⟩ => ?_)
-  have E₁ : Env c s₁ := E.others og₁ (by decide) sp₁ rd₁ wr₁
-  refine WP.seq (WP.mono (b0_ok v L E₁ (by rw [hm₁]; exact S) x24₁ hnl (by rw [hm₁]; exact hc0) hy)
+  have E₁ : Env c s₁ := E.others og₁ (by first | decide | omega) sp₁ rd₁ wr₁
+  refine WP.seq (WP.mono (b0_ok v L hv E₁ (by rw [hm₁]; exact S) x24₁ hnl (by rw [hm₁]; exact hc0) hy)
     fun s₂ ⟨M₂, x23₂, x24₂⟩ => ?_)
-  refine WP.seq (WP.mono (aadPart_ok v L M₂.env hy (by rw [x23₂, x23₁]) (by rw [x24₂, x24₁])) fun s₃ M₃ => ?_)
+  refine WP.seq (WP.mono (aadPart_ok v L hv M₂.env hy (by rw [x23₂, x23₁]) (by rw [x24₂, x24₁])) fun s₃ M₃ => ?_)
   refine WP.seq (WP.mono (dataArgs_ok M₃.env) fun s₄ ⟨x23₄, x24₄, og₄, hm₄, sp₄, rd₄, wr₄⟩ => ?_)
-  have E₄ : Env c s₄ := M₃.env.others og₄ (by decide) sp₄ rd₄ wr₄
-  refine WP.mono (absorbPad_ok v L E₄ hy (L.bufD E₄.perm) x23₄ x24₄) fun s₅ A₅ => ?_
-  have f₃ : Frame (macR c.W y) s.mem s₃.mem := by rw [← hm₁]; exact M₂.frame.trans M₃.frame
+  have E₄ : Env c s₄ := M₃.env.others og₄ (by first | decide | omega) sp₄ rd₄ wr₄
+  refine WP.mono (absorbPad_ok v L hv E₄ hy (L.bufD E₄.perm) x23₄ x24₄) fun s₅ A₅ => ?_
+  have f₃ : Frame (macR c.W c.N y) s.mem s₃.mem := by rw [← hm₁]; exact M₂.frame.trans M₃.frame
   refine ⟨A₅.env, f₃.trans (by rw [← hm₄]; exact A₅.frame), ?_, by rw [A₅.rd, rd₄, M₃.rd, M₂.rd, rd₁],
     by rw [A₅.wr, wr₄, M₃.wr, M₂.wr, wr₁]⟩
   have hl : nonce.length ≤ 15 := by rw [hnl]; have := L.h13; omega_arith
-  have f₂ : Frame (macR c.W y) s.mem s₂.mem := by rw [← hm₁]; exact M₂.frame
+  have f₂ : Frame (macR c.W c.N y) s.mem s₂.mem := by rw [← hm₁]; exact M₂.frame
   rw [A₅.out, hm₄, M₃.out, M₂.out, ciph_macR L hy16 f₃, ciph_macR L hy16 f₂, hm₁, buf_macR (L.bufD E.perm) hy16 f₃,
     buf_macR (L.bufA E.perm) hy16 f₂, Proof.AesCcm.format_eq c.tl hl, length_bytesAt, length_bytesAt,
     Proof.Cmac.chain_append, Proof.Cmac.chain_append]

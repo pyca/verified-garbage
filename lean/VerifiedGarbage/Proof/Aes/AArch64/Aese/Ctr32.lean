@@ -251,6 +251,26 @@ def ctr32AArch64 : Contract AArch64.isa where
     s₁.sp = s₂.sp
 
 open VG.AArch64 in
+/-- `ctr32AArch64` with `n` bytes of `scratch`: for the implementations that
+need less of it (`Ctr32Impl.scratch`), so that their callers allocate only
+that. -/
+def ctr32AArch64With (n : Nat) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let counter : Region := ⟨s.gpr .x2, 16⟩
+    let data : Region := ⟨s.gpr .x3, 16 * (s.gpr .x4).toNat⟩
+    let scratch : Region := ⟨s.gpr .x5, n⟩
+    s.rd = [sched] ∧ s.wr = [counter, data, scratch] ∧
+    sched.Disjoint counter ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
+    counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
+    (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post := ctr32AArch64.post
+  pub := ctr32AArch64.pub
+
+theorem ctr32AArch64With_2048 : ctr32AArch64With 2048 = ctr32AArch64 := rfl
+
+open VG.AArch64 in
 /-- `ctr32AArch64` out of place, for the internal `vg_aes_ctr32_to` and
 `vg_aes_ctr32_to_aes` (`schedule = x0, rounds = x1, counter = x2, src = x3,
 n = x4, scratch = x5, dst = x6`): the `n` blocks at `src` XORed with the
@@ -744,9 +764,9 @@ end
 
 /-- The precondition of both contracts, `ctr32AArch64` in place and
 `ctr32ToAArch64` out of place (`to`). -/
-structure Pre (to : Bool) (s₀ : State) : Prop where
+structure Pre (to : Bool) (s₀ : State) (n : Nat := 2048) : Prop where
   rd : s₀.rd = ⟨kp s₀, 240⟩ :: cond to [dR s₀] []
-  wr : s₀.wr = [⟨cp s₀, 16⟩, oR s₀ to, ⟨s₀.gpr .x5, 2048⟩]
+  wr : s₀.wr = [⟨cp s₀, 16⟩, oR s₀ to, ⟨s₀.gpr .x5, n⟩]
   s_c : Region.Disjoint ⟨kp s₀, 240⟩ ⟨cp s₀, 16⟩
   c_o : Region.Disjoint ⟨cp s₀, 16⟩ (oR s₀ to)
   /-- Out of place, the data and the output do not overlap. -/
@@ -755,16 +775,19 @@ structure Pre (to : Bool) (s₀ : State) : Prop where
   wrapO : (op s₀ to).toNat + 16 * nb s₀ ≤ 2 ^ 64
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
 
-theorem pre_of {s₀ : State} (h : Proof.Aes.ctr32AArch64.pre s₀) : Pre false s₀ := by
+theorem pre_ofW {n : Nat} {s₀ : State} (h : (Proof.Aes.ctr32AArch64With n).pre s₀) : Pre false s₀ n := by
   obtain ⟨h1, h2, h3, _, _, h6, _, _, h9, h10⟩ := h
   exact ⟨h1, h2, h3, h6, fun h => Bool.noConfusion h, h9, h9, h10⟩
+
+theorem pre_of {s₀ : State} (h : Proof.Aes.ctr32AArch64.pre s₀) : Pre false s₀ :=
+  pre_ofW (n := 2048) h
 
 theorem preTo_of {s₀ : State} (h : Proof.Aes.ctr32ToAArch64.pre s₀) : Pre true s₀ := by
   obtain ⟨h1, h2, h3, _, _, _, h7, _, h9, _, _, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h7, fun _ => h9, h12, h13, h14⟩
 
 namespace Pre
-variable {to : Bool} {s₀ : State} (hp : Pre to s₀)
+variable {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n)
 include hp
 
 theorem nb16 : 16 * nb s₀ ≤ 2 ^ 64 := by have := hp.wrap; omega_using [this]
@@ -775,6 +798,8 @@ theorem dat : dR s₀ ∈ s₀.rd ++ s₀.wr := by
   | true => rw [hp.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
 
 theorem out : oR s₀ to ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
+
+theorem cpIn : (⟨cp s₀, 16⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_self
 
 theorem dDO : op s₀ to = dp s₀ ∨ Region.Disjoint (dR s₀) (oR s₀ to) := by
   cases to with
@@ -842,7 +867,7 @@ theorem outR_ne_x12 (to : Bool) : outR to ≠ .x12 := by cases to <;> decide
 
 /-- The counter blocks, AES and the XOR into the output, for the blocks
 `c … c + N - 1` (`N` the number of registers). -/
-theorem blocks_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) (rs : List VReg)
+theorem blocks_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) (rs : List VReg)
     (hrs : rs = regs8 ∨ rs = [.v0]) (tail : List Instr) {Q : State → Prop} {c : Nat}
     (hc : c + rs.length ≤ nb s₀) {s : State} (hI : Inv to s₀ c c s)
     (hQ : ∀ s', Inv to s₀ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
@@ -946,7 +971,7 @@ theorem Inv.adv {to : Bool} {s₀ : State} {c p d b : Nat} {s s' : State} (hI : 
       rw [ho rfl, this, hb]; exact Offset.add_add_eq _ (by omega_using [])
   · rw [h4, hI.x4, Offset.ofNat_sub_ofNat (by omega_using [hd]), show nb s₀ - p - d = nb s₀ - (p + d) by omega_using []]
 
-theorem tail8_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State}
+theorem tail8_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State}
     (hI : Inv to s₀ (c + 8) c s) :
     WP isa (.block (([.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128, .subImm .x .x4 .x4 8,
         .lsr .x .x13 .x4 3] : List Instr) ++ advO to 128)) s fun s' =>
@@ -971,7 +996,7 @@ theorem tail8_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c
     simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, hI.x4]
     rw [h4, ushr3 (by omega_using [hn])]
 
-theorem tail1_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c + 1 ≤ nb s₀) {s : State}
+theorem tail1_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) {c : Nat} (hc : c + 1 ≤ nb s₀) {s : State}
     (hI : Inv to s₀ (c + 1) c s) :
     WP isa (.block (([.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16, .subImm .x .x4 .x4 1] : List Instr) ++
       advO to 16)) s (Inv to s₀ (c + 1) (c + 1)) := by
@@ -989,13 +1014,13 @@ theorem tail1_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c
   · rw [g' _ (by decide)]; simp [State.write, State.read]
   · simp only [State.read]; rw [g' _ (by decide)]; simp [State.write, State.read, sw32]
 
-theorem body8_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State}
+theorem body8_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State}
     (hI : Inv to s₀ c c s) :
     WP isa (body8 to) s fun s' =>
       Inv to s₀ (c + 8) (c + 8) s' ∧ s'.gpr .x13 = BitVec.ofNat 64 ((nb s₀ - (c + 8)) / 8) :=
   blocks_ok hp regs8 (.inl rfl) _ hc hI fun _ hI' => tail8_ok hp hc hI'
 
-theorem body1_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c + 1 ≤ nb s₀) {s : State}
+theorem body1_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) {c : Nat} (hc : c + 1 ≤ nb s₀) {s : State}
     (hI : Inv to s₀ c c s) : WP isa (body1 to) s (Inv to s₀ (c + 1) (c + 1)) :=
   blocks_ok hp [.v0] (.inr rfl) _ hc hI fun _ hI' => tail1_ok hp hc hI'
 
@@ -1048,7 +1073,7 @@ theorem movO_ok (to : Bool) (s : State) :
     · simp [State.write, hr]
     · simp [State.write, State.read]
 
-theorem setup_ok {to : Bool} {s₀ s : State} (hp : Pre to s₀) (hg : ∀ r, r ≠ .x14 → s.gpr r = s₀.gpr r)
+theorem setup_ok {to : Bool} {s₀ s : State} {n : Nat} (hp : Pre to s₀ n) (hg : ∀ r, r ≠ .x14 → s.gpr r = s₀.gpr r)
     (ho : to = true → s.gpr .x14 = s₀.gpr .x6) (hm : s.mem = s₀.mem) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) :
     WP isa (.block setup) s fun s' => Inv to s₀ 0 0 s' ∧ s'.gpr .x13 = BitVec.ofNat 64 (nb s₀ / 8) := by
@@ -1090,7 +1115,7 @@ theorem setup_ok {to : Bool} {s₀ s : State} (hp : Pre to s₀) (hg : ∀ r, r 
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 12) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldr_w (off := 12) (by decide) (by
     simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false, rdwr, g2]
-    exact ⟨⟨cp s₀, 16⟩, by rw [hp.wr]; simp, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩), ?_⟩
+    exact ⟨⟨cp s₀, 16⟩, List.mem_append_right _ hp.cpIn, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_rev32, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_lsr_x (sh := 3) (by decide), WP.block_nil ?_⟩
   have hL : ∀ j, j ≤ nr s₀ → 16 * j + 16 ≤ 16 * (nr s₀ + 1) := fun j hj => by omega_using [hj]
@@ -1137,11 +1162,11 @@ def Post (to : Bool) (s₀ s : State) : Prop :=
       Spec.Gcm.ctr32 (Spec.Gcm.aesWith (nr s₀) (sch s₀)) (cb s₀) (Spec.Gcm.blocksAt s₀.mem (dp s₀) (nb s₀)) ∧
     Spec.Gcm.blockAt s.mem (cp s₀) = Nat.repeat Spec.Gcm.inc32 (nb s₀) (cb s₀)
 
-theorem ctrStore_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {s : State}
+theorem ctrStore_ok {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) {s : State}
     (hI : Inv to s₀ (nb s₀) (nb s₀) s) : WP isa (.block ctrStore) s (Post to s₀) := by
   have hn := hp.n16
   have hw : InRegions s.wr (cp s₀ + BitVec.ofNat 64 12) 4 :=
-    ⟨⟨cp s₀, 16⟩, by rw [hI.wr, hp.wr]; simp, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
+    ⟨⟨cp s₀, 16⟩, by rw [hI.wr]; exact hp.cpIn, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   rw [ctrStore, WP.block_cons_iff]; refine ⟨_, exec_rev32, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_str_w (off := 12) (by decide) (by
     simp only [State.write, reduceCtorEq, ite_false, hI.x2]; exact hw), WP.block_nil ?_⟩
@@ -1169,7 +1194,7 @@ theorem ctrStore_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {s : State}
 
 /-! ## The whole function -/
 
-theorem correct {to : Bool} {s₀ : State} (hp : Pre to s₀) : WP isa (ctr32Gen to) s₀ (Post to s₀) := by
+theorem correct {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n) : WP isa (ctr32Gen to) s₀ (Post to s₀) := by
   have hn := hp.n16
   refine WP.seq (WP.mono (Q := fun (s : State) => Inv to s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (nb s₀ / 8))
     ?_ fun s₁ ⟨hI₁, h13⟩ => ?_)
@@ -1210,12 +1235,17 @@ theorem correct {to : Bool} {s₀ : State} (hp : Pre to s₀) : WP isa (ctr32Gen
     have hlt : c < nb s₀ := by have := hI₂.le; simp at h; omega_using [h]
     exact WP.loop (M := isa) I1 hstep (nb s₀ - c) s₂ ⟨c, rfl, hlt, hI₂⟩
 
-theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
-    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' := by
+/-- Correct with any working space: the code uses none. -/
+theorem ctr32_correctW (n : Nat) (s : State) (hs : (Proof.Aes.ctr32AArch64With n).pre s) :
+    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.ctr32AArch64With n).post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
-    WP.gprs (rs := preserved) (show WP isa ctr32 s (Post false s) from correct (pre_of hs))
+    WP.gprs (rs := preserved) (show WP isa ctr32 s (Post false s) from correct (pre_ofW hs))
       (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+
+theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
+    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' :=
+  ctr32_correctW 2048 s hs
 
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
     ∃ t s', Exec isa ctr32To s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToAArch64.post s s' := by
@@ -1223,6 +1253,15 @@ theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
     WP.gprs (rs := preserved) (show WP isa ctr32To s (Post true s) from correct (preTo_of hs))
       (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+
+theorem ctr32_ctW (n : Nat) :
+    ConstantTime isa (Proof.Aes.ctr32AArch64With n).pre (Proof.Aes.ctr32AArch64With n).pub ctr32 := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])

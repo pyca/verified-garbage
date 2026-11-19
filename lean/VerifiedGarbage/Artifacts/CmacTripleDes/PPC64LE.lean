@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Frame
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
@@ -13,14 +13,8 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 namespace VG.Artifacts.CmacTripleDes.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cmac.tdesStreamInitApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.streamInit
-    verified := Proof.CmacTripleDes.Stream.PPC64LE.init_framed },
-  Spec.Cmac.tdesAbsorbApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 720 .r7 Impl.CmacTripleDes.Stream.PPC64LE.absorb
-    verified := Proof.CmacTripleDes.Stream.PPC64LE.absorb_framed },
-  Spec.Cmac.tdesFinishApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.finish
-    verified := Proof.CmacTripleDes.Stream.PPC64LE.finish_framed }]
+  Spec.Cmac.tdesStreamInitApi.artifact PPC64LE.target Proof.CmacTripleDes.Stream.PPC64LE.Scrub.initReg,
+  Spec.Cmac.tdesAbsorbApi.artifact PPC64LE.target Proof.CmacTripleDes.Stream.PPC64LE.Scrub.absorbReg,
+  Spec.Cmac.tdesFinishApi.artifact PPC64LE.target Proof.CmacTripleDes.Stream.PPC64LE.Scrub.finishReg]
 
 end VG.Artifacts.CmacTripleDes.PPC64LE

@@ -56,9 +56,11 @@ open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq ct_of)
 open VG.Proof.AesCcm (length_bytesAt)
 
 theorem seal_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    ConstantTime isa sealAArch64.pre sealAArch64.pub (Impl.AesCcm.AArch64.seal v.callee v.ctr.callee) := by
+    ConstantTime isa (sealAArch64 v.scratch).pre (sealAArch64 v.scratch).pub
+      (Impl.AesCcm.AArch64.seal v.callee v.ctr.callee) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  obtain ⟨A₁, A₂⟩ := args_two (args_of_seal h₁).1 (args_of_seal h₂).1 hq
+  obtain ⟨A₁, A₂⟩ := args_two (args_of_seal (scratch_le v) h₁).1 (args_of_seal (scratch_le v) h₂).1 hq
+  have hv : v.scratch ≤ (cxOf v.scratch (scratch_le v) σ₁).N := Nat.le_refl _
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, -, -⟩ := hq
   have L := A₁.lay
   refine rel_seq (entry_rel A₁ A₂ (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7])) (entry_ok A₁) (entry_ok A₂)
@@ -70,17 +72,17 @@ theorem seal_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
     fun ρ₁ ρ₂ ⟨E₁, f₁, c₁, _, _⟩ ⟨E₂, f₂, c₂, _, _⟩ => ?_
   have S₁ := En₁.slots.mut L (f₁.sub (frame_ctrs_mut _))
   have S₂ := En₂.slots.mut L (f₂.sub (frame_ctrs_mut _))
-  have hn₁ := length_bytesAt τ₁.mem (σ₁.gpr .x2) (cxOf σ₁).nl
-  have hn₂ := length_bytesAt τ₂.mem (σ₁.gpr .x2) (cxOf σ₁).nl
-  refine rel_seq (mac_rel v L E₁ E₂ (.inl rfl) S₁ S₂ hn₁ hn₂ c₁ c₂) (mac_ok v L E₁ S₁ hn₁ c₁ (.inl rfl))
-    (mac_ok v L E₂ S₂ hn₂ c₂ (.inl rfl)) fun κ₁ κ₂ M₁ M₂ => ?_
-  have d₁ := (Proof.AesGcm.AArch64.bytesAt_frame M₁.frame (macR_c0 L (.inl rfl)) (by decide)).trans c₁
-  have d₂ := (Proof.AesGcm.AArch64.bytesAt_frame M₂.frame (macR_c0 L (.inl rfl)) (by decide)).trans c₂
-  refine rel_seq (tag_rel v.ctr L M₁.env M₂.env hn₁ hn₂ d₁ d₂ (.inl rfl)) (tag_ok v.ctr L M₁.env hn₁ d₁ (.inl rfl))
-    (tag_ok v.ctr L M₂.env hn₂ d₂ (.inl rfl)) fun ω₁ ω₂ ⟨F₁, _, _, g₁, _⟩ ⟨F₂, _, _, g₂, _⟩ => ?_
-  have e₁ := (Proof.AesGcm.AArch64.bytesAt_frame g₁ (tagR_c0 L (.inl rfl)) (by decide)).trans d₁
-  have e₂ := (Proof.AesGcm.AArch64.bytesAt_frame g₂ (tagR_c0 L (.inl rfl)) (by decide)).trans d₂
-  refine rel_seq (ctr_rel v.ctr L F₁ F₂ hn₁ hn₂ e₁ e₂) (ctr_ok v.ctr L F₁ hn₁ e₁) (ctr_ok v.ctr L F₂ hn₂ e₂)
+  have hn₁ := length_bytesAt τ₁.mem (σ₁.gpr .x2) (cxOf v.scratch (scratch_le v) σ₁).nl
+  have hn₂ := length_bytesAt τ₂.mem (σ₁.gpr .x2) (cxOf v.scratch (scratch_le v) σ₁).nl
+  refine rel_seq (mac_rel v L hv E₁ E₂ (.inl rfl) S₁ S₂ hn₁ hn₂ c₁ c₂) (mac_ok v L hv E₁ S₁ hn₁ c₁ (.inl rfl))
+    (mac_ok v L hv E₂ S₂ hn₂ c₂ (.inl rfl)) fun κ₁ κ₂ M₁ M₂ => ?_
+  have d₁ := (Proof.AesGcm.AArch64.bytesAt_frame M₁.frame (macR_c0 L (.inl rfl)) (by first | decide | omega)).trans c₁
+  have d₂ := (Proof.AesGcm.AArch64.bytesAt_frame M₂.frame (macR_c0 L (.inl rfl)) (by first | decide | omega)).trans c₂
+  refine rel_seq (tag_rel v.ctr L (Nat.le_trans v.ctrScratch hv) M₁.env M₂.env hn₁ hn₂ d₁ d₂ (.inl rfl)) (tag_ok v.ctr L (Nat.le_trans v.ctrScratch hv) M₁.env hn₁ d₁ (.inl rfl))
+    (tag_ok v.ctr L (Nat.le_trans v.ctrScratch hv) M₂.env hn₂ d₂ (.inl rfl)) fun ω₁ ω₂ ⟨F₁, _, _, g₁, _⟩ ⟨F₂, _, _, g₂, _⟩ => ?_
+  have e₁ := (Proof.AesGcm.AArch64.bytesAt_frame g₁ (tagR_c0 L (.inl rfl)) (by first | decide | omega)).trans d₁
+  have e₂ := (Proof.AesGcm.AArch64.bytesAt_frame g₂ (tagR_c0 L (.inl rfl)) (by first | decide | omega)).trans d₂
+  refine rel_seq (ctr_rel v.ctr L (Nat.le_trans v.ctrScratch hv) F₁ F₂ hn₁ hn₂ e₁ e₂) (ctr_ok v.ctr L (Nat.le_trans v.ctrScratch hv) F₁ hn₁ e₁) (ctr_ok v.ctr L (Nat.le_trans v.ctrScratch hv) F₂ hn₂ e₂)
     fun π₁ π₂ ⟨G₁, _, _, h₁, _⟩ ⟨G₂, _, _, h₂, _⟩ => ?_
   have T₁ := S₁.mut L ((M₁.frame.sub (macR_mut (.inl rfl))).trans ((g₁.sub (tagR_mut _ (.inl rfl))).trans
     (h₁.sub (ctrR_mut _))))
@@ -88,7 +90,7 @@ theorem seal_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
     (h₂.sub (ctrR_mut _))))
   refine rel_seq (rel_env [] G₁ G₂ (by simp) ⟨_, by taint_decide⟩) (loadTag_ok G₁ T₁ .x11) (loadTag_ok G₂ T₂ .x11)
     fun ρ₁ ρ₂ ⟨x₁, og₁, _, sp₁, rd₁, wr₁⟩ ⟨x₂, og₂, _, sp₂, rd₂, wr₂⟩ => ?_
-  exact rel_env [.x11] (G₁.others og₁ (by decide) sp₁ rd₁ wr₁) (G₂.others og₂ (by decide) sp₂ rd₂ wr₂)
+  exact rel_env [.x11] (G₁.others og₁ (by first | decide | omega) sp₁ rd₁ wr₁) (G₂.others og₂ (by first | decide | omega) sp₂ rd₂ wr₂)
     (by agree_tac [x₁, x₂]) ⟨_, by taint_decide⟩
 
 end VG.Proof.AesCcm.AArch64
@@ -135,12 +137,12 @@ theorem open_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) :
 
 /-! ## Correctness and constant time -/
 
-theorem seal_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State) (hs : sealAArch64.pre s) :
-    ∃ t s', Exec isa («seal» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ sealAArch64.post s s' :=
+theorem seal_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State) (hs : (sealAArch64 v.scratch).pre s) :
+    ∃ t s', Exec isa («seal» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 v.scratch).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State) (hs : openAArch64.pre s) :
-    ∃ t s', Exec isa («open» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ openAArch64.post s s' :=
+theorem open_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State) (hs : (openAArch64 v.scratch).pre s) :
+    ∃ t s', Exec isa («open» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ (openAArch64 v.scratch).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 
 /-- A state satisfying the precondition of `vg_aes_ccm_seal`: a 7-byte nonce,
@@ -161,21 +163,79 @@ def openSat : State :=
 
 /-! ## The shared contracts -/
 
+/-- `vg_aes_ccm_seal` with `work: *mut [u64; w]`: `w = 48 + n / 8` for
+callees that need `n` bytes of working space (`UpdateImpl.scratch`). -/
+def sealScratchSigW (w : Nat) : Sig where
+  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("data", .slice true .u8 "len"), ("tag", .slice true .u8 "tag_len"),
+    ("work", .array true .u64 w)]
+
+/-- `Proof.AesCcm.sealScratchContract` with `w` words of `work`. -/
+def sealScratchContractW {M : ISA} (A : Abi M) (w : Nat) (stack : Nat := 0) : Contract M :=
+  (sealScratchSigW w).contract A
+    (pre := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      Spec.Ccm.sealPre A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (post := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      Proof.AesCcm.sealRoundsPost A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (writeArgs := true) (stack := stack)
+
+/-- `vg_aes_ccm_open` with `work: *mut [u64; w]`. -/
+def openScratchSigW (w : Nat) : Sig where
+  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"),
+    ("work", .array true .u64 w)]
+  ret := some .u32
+
+/-- `Proof.AesCcm.openScratchContract` with `w` words of `work`. -/
+def openScratchContractW {M : ISA} (A : Abi M) (w : Nat) (stack : Nat := 0) : Contract M :=
+  (openScratchSigW w).contract A
+    (pre := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      Spec.Ccm.openPre A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (post := fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      Proof.AesCcm.openRoundsPost A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun sch rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      Spec.Ccm.openLeak A.ptrBits sch rounds nonce nonceLen aad aadLen data len tag tagLen)
+
+/-- `sealSat` with `n` bytes of `work`. -/
+def sealSatW (n : Nat) : State := { sealSat with wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩, ⟨0, n⟩] }
+
+/-- `openSat` with `n` bytes of `work`. -/
+def openSatW (n : Nat) : State := { openSat with wr := [⟨0x4000, 0⟩, ⟨0, n⟩] }
+
 theorem seal_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    Verified AArch64.target («seal» v.callee v.ctr.callee) (Proof.AesCcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
-      sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+    Verified AArch64.target («seal» v.callee v.ctr.callee) (sealScratchContractW AArch64.abi (48 + v.scratch / 8)) := by
+  obtain hc := seal_correct v
+  obtain ht := seal_ct v
+  rcases v.scratch_ok with h | h <;> simp only [h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
+  · exact Verified.of_correct hc ht (by
+      sig_implies [sealScratchContractW, sealScratchSigW, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
+        sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 384)
+  · exact Verified.of_correct hc ht (by
+      sig_implies [sealScratchContractW, sealScratchSigW, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
+        sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 2560)
 
 theorem open_verified (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    Verified AArch64.target («open» v.callee v.ctr.callee) (Proof.AesCcm.openScratchContract AArch64.abi) :=
-  Verified.of_correct (open_correct v) (open_ct v) (by
-    sig_implies [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
-      Spec.Ccm.openLeak, openAArch64, openPre, oneLay, onePub, openRes, openLeak, args, rounds, AArch64.abi,
-      AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
+    Verified AArch64.target («open» v.callee v.ctr.callee) (openScratchContractW AArch64.abi (48 + v.scratch / 8)) := by
+  obtain hc := open_correct v
+  obtain ht := open_ct v
+  rcases v.scratch_ok with h | h <;> simp only [h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
+  · exact Verified.of_correct hc ht (by
+      sig_implies [openScratchContractW, openScratchSigW, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
+        Spec.Ccm.openLeak, openAArch64, openPre, oneLay, onePub, openRes, openLeak, args, rounds, AArch64.abi,
+        AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [openSatW, openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 384)
+  · exact Verified.of_correct hc ht (by
+      sig_implies [openScratchContractW, openScratchSigW, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
+        Spec.Ccm.openLeak, openAArch64, openPre, oneLay, onePub, openRes, openLeak, args, rounds, AArch64.abi,
+        AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [openSatW, openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560)
 
 end VG.Proof.AesCcm.AArch64
 
@@ -190,7 +250,8 @@ end
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
 (`Verified.stackArgScratch`): their working space is their third stack
-argument, after `tag` and `tag_len`, so the frame of 2592 bytes holds a copy
+argument, after `tag` and `tag_len`, so the frame of `416 + n` bytes (`n` the
+working space of the functions called: 2176, or none) holds a copy
 of those two, the address of the working space and the working space, at the
 next 16-byte boundary. The code itself uses no stack: its calls keep the
 return address in `x30`. `open`'s leak, whether it succeeds, reads only its
@@ -209,21 +270,34 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesCcm.sealRoundsContract AArch64.abi 2592).pre s := by
+theorem sealFrameSat_pre416 : ∃ s, (Proof.AesCcm.sealRoundsContract AArch64.abi 416).pre s := by
   implies_sat [Proof.AesCcm.sealRoundsContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
     AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
+theorem sealFrameSat_pre2592 : ∃ s, (Proof.AesCcm.sealRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesCcm.sealRoundsContract, Spec.Ccm.sealSig, Spec.Ccm.sealPre, Proof.AesCcm.sealRoundsPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
+/-- `vg_aes_ccm_seal` in a frame of `416 + n` bytes, `n` the working space
+its callees need (`UpdateImpl.scratch`). -/
 theorem seal_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («seal» v.callee v.ctr.callee))
-      (Proof.AesCcm.sealRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Ccm.sealPre AArch64.abi.ptrBits)
-    (post := Proof.AesCcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (seal_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _)
-    (sealPostOut_local _) sealFrameSat_pre
+      (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee))
+      (Proof.AesCcm.sealRoundsContract AArch64.abi (416 + v.scratch)) := by
+  obtain hv := seal_verified v
+  rcases v.scratch_ok with h | h <;> simp only [h, Nat.reduceAdd, Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+      (n := 48) (pre := Spec.Ccm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesCcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 416)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre416
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Ccm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesCcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _) (sealPostOut_local _) sealFrameSat_pre2592
 
 /-- A state satisfying `vg_aes_ccm_open`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
@@ -231,22 +305,36 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8000, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesCcm.openRoundsContract AArch64.abi 2592).pre s := by
+theorem openFrameSat_pre416 : ∃ s, (Proof.AesCcm.openRoundsContract AArch64.abi 416).pre s := by
   implies_sat [Proof.AesCcm.openRoundsContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
     Spec.Ccm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, openSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
+theorem openFrameSat_pre2592 : ∃ s, (Proof.AesCcm.openRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesCcm.openRoundsContract, Spec.Ccm.openSig, Spec.Ccm.openPre, Proof.AesCcm.openRoundsPost,
+    Spec.Ccm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop] [openFrameSat, openSat, sealSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+/-- `vg_aes_ccm_open` in a frame of `416 + n` bytes. -/
 theorem open_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» v.callee v.ctr.callee))
-      (Proof.AesCcm.openRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Ccm.openPre AArch64.abi.ptrBits)
-    (post := Proof.AesCcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (openPre_local _) (openPost_local _)
-    (openPostOut_local _) openFrameSat_pre
-    (hleak := openLeak_local _)
+      (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee))
+      (Proof.AesCcm.openRoundsContract AArch64.abi (416 + v.scratch)) := by
+  obtain hv := open_verified v
+  rcases v.scratch_ok with h | h <;> simp only [h, Nat.reduceAdd, Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+      (n := 48) (pre := Spec.Ccm.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesCcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 416)
+      (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (openPre_local _) (openPost_local _) (openPostOut_local _) openFrameSat_pre416
+      (hleak := openLeak_local _)
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Ccm.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesCcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+      (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (openPre_local _) (openPost_local _) (openPostOut_local _) openFrameSat_pre2592
+      (hleak := openLeak_local _)
 
 end VG.Proof.AesCcm.AArch64

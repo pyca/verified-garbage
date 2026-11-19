@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_cmac_triple_des_stream_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -28,6 +30,8 @@ pub unsafe fn vg_cmac_triple_des_stream_init_auto(_dit: verified_garbage_cpu::Di
 ///
 /// It runs `vg_cmac_triple_des_absorb`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -46,6 +50,8 @@ pub unsafe fn vg_cmac_triple_des_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs `vg_cmac_triple_des_finish`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
