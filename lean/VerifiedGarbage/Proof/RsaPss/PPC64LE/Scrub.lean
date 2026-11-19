@@ -1,15 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.SignP
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSASSA-PSS on PPC64LE, without secret residue
 
 `vg_rsa_pss_verify_precomputed` and `vg_rsa_pss_sign_precomputed`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`),
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
 which clears the volatile registers each may write and zeroes the stack
 their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
@@ -72,24 +74,24 @@ theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
 function. -/
 def verifyReg (h : OK mvars mvars) :
     Registration Spec.RsaPss.verifyPrecomputedMdTableApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
       verified := verify_ok' h }
+    304 .all
     (verifyOut _ _ _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.RsaPss.signPrecomputedMdTableApi`, with the tables of every hash
 function. -/
 def signReg (h : OK mvars mvars) :
     Registration Spec.RsaPss.signPrecomputedMdTableApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.Sign.signP (fnsOf mvars) (fns3 mvars)
       verified := signP_ok' h }
+    3792 .all
     (signOut _ _ _)
-
-/- The side conditions of `withScrub` on these, whose code is too long for
-`decide`, the emitter checks: it refuses a function without a proof that
-`ci/residue_allowlist.txt` does not list. -/
+    (by dsimp only; lit_decide)
 
 end VG.Proof.RsaPss.PPC64LE.Scrub
