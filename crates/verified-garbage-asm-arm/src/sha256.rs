@@ -191,7 +191,7 @@ mov r5, r2
 movw r12, #196
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha224_init}
+bl {vg_sha224_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -315,7 +315,7 @@ str r2, [r12, #320]
 str r2, [r12, #324]
 add sp, sp, #328
 bx lr",
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -662,7 +662,7 @@ mov r5, r2
 movw r12, #196
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -786,7 +786,7 @@ str r2, [r12, #320]
 str r2, [r12, #324]
 add sp, sp, #328
 bx lr",
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -797,12 +797,24 @@ bx lr",
 pub(crate) mod vg_sha256_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_core.rs"]
+pub(crate) mod vg_sha256_finalize_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_sha256_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]
 pub(crate) mod vg_sha256_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_core.rs"]
+pub(crate) mod vg_sha256_update_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_update_scratch.rs"]
