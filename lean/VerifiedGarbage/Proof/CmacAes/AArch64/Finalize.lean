@@ -81,7 +81,7 @@ theorem zero_ok (s : State) {C : Addr} (hc : s.gpr .x5 + BitVec.ofNat 64 2048 = 
       (∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [zero, cOff, mov, runBlock_cons, runStep_some, runBlock_nil,
+    simp (config := {decide := true}) only [zero, mov, runBlock_cons, runStep_some, runBlock_nil,
       exec, addr, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, wr_write,
       ite_true, ite_false, Option.bind_some, BitVec.setWidth_eq, hc, hc8, wc, wc8]
     rfl, ?_⟩

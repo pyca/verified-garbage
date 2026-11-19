@@ -281,7 +281,7 @@ theorem chainIn_ok (s : State) {C P Q : Addr} (hc : s.gpr .x24 + BitVec.ofNat 64
   obtain hc' : s.gpr .x24 + BitVec.ofNat 64 2056 = C + BitVec.ofNat 64 8 := by
     rw [← hc, BitVec.add_assoc]; rfl
   refine ⟨_, by
-    simp (config := {decide := true}) only [chainIn, updArgs, ctrArgs, cOff, mov, List.cons_append,
+    simp (config := {decide := true}) only [chainIn, updArgs, ctrArgs, ctrArgsAt, cOff, mov, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
       Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write, ite_true, ite_false,
       Option.bind_some, Option.map_some, hc, hc', hp, hq, BitVec.add_zero, BitVec.setWidth_eq,

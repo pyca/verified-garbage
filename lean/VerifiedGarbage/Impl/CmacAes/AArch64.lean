@@ -16,7 +16,12 @@ is emitted once for each implementation (e.g. `vg_cmac_aes_update` calls
 
 The scratch buffer (2176 bytes): `[0, 2048)` is the working space of
 `vg_aes_ctr32`, `[2048, 2064)` the counter block, and `[2064, 2120)` our
-caller's callee-saved registers and our return address `x30`. A call (`bl`)
+caller's callee-saved registers and our return address `x30`. `subkeys` and
+`finalize` take the working space `n` of the implementation they call
+(2048, or none, `Ctr32Impl.scratch`), and lay the rest out after it:
+`[n, n + 16)` the counter block and `[n + 16, n + 72)` the registers, in
+`n + 128` bytes, so that a caller of an implementation that needs no working
+space allocates 128. A call (`bl`)
 stores nothing in memory, so no stack is used.
 
 * `subkeys` computes `L = CIPH_K(0)` into the first block of `subkeys`, and
@@ -55,19 +60,22 @@ def cOff : Nat := 2048
 /-- The arguments of `vg_aes_ctr32` for one block, other than the schedule
 and the rounds: the counter block at `scr + cOff`, the data block at `out`,
 `n = 1`, and the working space at `scr`. -/
-def ctrArgs (scr out : Reg) : List Instr :=
-  [.addImm .x .x2 scr cOff, mov .x3 out, .movz .x .x4 1 0, mov .x5 scr]
+def ctrArgsAt (o : Nat) (scr out : Reg) : List Instr :=
+  [.addImm .x .x2 scr o, mov .x3 out, .movz .x .x4 1 0, mov .x5 scr]
+
+/-- `ctrArgsAt cOff`. -/
+def ctrArgs (scr out : Reg) : List Instr := ctrArgsAt cOff scr out
 
 /-! ## `vg_cmac_aes_subkeys` -/
 
 /-- Saves `x19`, `x20` and `x30`, keeps `subkeys` in `x19` and the scratch
 buffer in `x20`, zeroes the counter block and the first block of `subkeys`,
 and sets up the arguments of `vg_aes_ctr32`. -/
-def subkeysPre : List Instr :=
-  [.str .x .x19 .x3 2064, .str .x .x20 .x3 2072, .str .x .x30 .x3 2080, mov .x19 .x2, mov .x20 .x3,
-   .movz .x .x9 0 0, .str .x .x9 .x3 cOff, .str .x .x9 .x3 (cOff + 8), .str .x .x9 .x2 0,
+def subkeysPre (n : Nat := 2048) : List Instr :=
+  [.str .x .x19 .x3 (n + 16), .str .x .x20 .x3 (n + 24), .str .x .x30 .x3 (n + 32), mov .x19 .x2, mov .x20 .x3,
+   .movz .x .x9 0 0, .str .x .x9 .x3 n, .str .x .x9 .x3 (n + 8), .str .x .x9 .x2 0,
    .str .x .x9 .x2 8] ++
-  ctrArgs .x20 .x19
+  ctrArgsAt n .x20 .x19
 
 /-- The block at `x19 + src`, doubled (`VG.Spec.Cmac.dbl 16`), to `x19 + dst`. -/
 def dbl (src dst : Nat) : List Instr :=
@@ -79,11 +87,11 @@ def dbl (src dst : Nat) : List Instr :=
    .rev .x9 .x9, .rev .x10 .x10, .str .x .x9 .x19 dst, .str .x .x10 .x19 (dst + 8)]
 
 /-- `K1` over `L`, `K2` after it, and the saved registers restored. -/
-def subkeysPost : List Instr :=
-  dbl 0 0 ++ dbl 0 16 ++ [.ldr .x .x30 .x20 2080, .ldr .x .x19 .x20 2064, .ldr .x .x20 .x20 2072]
+def subkeysPost (n : Nat := 2048) : List Instr :=
+  dbl 0 0 ++ dbl 0 16 ++ [.ldr .x .x30 .x20 (n + 32), .ldr .x .x19 .x20 (n + 16), .ldr .x .x20 .x20 (n + 24)]
 
-def subkeys (c : Ctr32) : Prog isa :=
-  .seq (.block subkeysPre) (.seq (.call c.name c.code) (.block subkeysPost))
+def subkeys (c : Ctr32) (n : Nat := 2048) : Prog isa :=
+  .seq (.block (subkeysPre n)) (.seq (.call c.name c.code) (.block (subkeysPost n)))
 
 /-! ## `vg_cmac_aes_update` -/
 
@@ -125,14 +133,14 @@ def update (c : Ctr32) : Prog isa :=
 /-! ## `vg_cmac_aes_finalize` -/
 
 /-- `Mₙ = Mₙ* ⊕ K1` (`K1` at `x0 + 240`), for a complete last block. -/
-def full : List Instr :=
-  [.ldr .x .x9 .x3 0, .ldr .x .x10 .x0 240, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 cOff,
-   .ldr .x .x9 .x3 8, .ldr .x .x10 .x0 248, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 (cOff + 8)]
+def full (n : Nat := 2048) : List Instr :=
+  [.ldr .x .x9 .x3 0, .ldr .x .x10 .x0 240, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 n,
+   .ldr .x .x9 .x3 8, .ldr .x .x10 .x0 248, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 (n + 8)]
 
 /-- The counter block zeroed, with `x6` pointing at it, `x7` at the last
 bytes and `x8` counting them. -/
-def zero : List Instr :=
-  [.movz .x .x9 0 0, .str .x .x9 .x5 cOff, .str .x .x9 .x5 (cOff + 8), .addImm .x .x6 .x5 cOff,
+def zero (n : Nat := 2048) : List Instr :=
+  [.movz .x .x9 0 0, .str .x .x9 .x5 n, .str .x .x9 .x5 (n + 8), .addImm .x .x6 .x5 n,
    mov .x7 .x3, mov .x8 .x4]
 
 /-- The `x8` (nonzero) bytes at `x7` copied to `x6`, advancing both. -/
@@ -142,34 +150,34 @@ def copy : Prog isa :=
 
 /-- `0x80` after the bytes (at `x6`), and the block XORed with `K2` (at
 `x0 + 256`). -/
-def padK2 : List Instr :=
+def padK2 (n : Nat := 2048) : List Instr :=
   [.movz .x .x9 0x80 0, .strb .x9 .x6 0,
-   .ldr .x .x9 .x5 cOff, .ldr .x .x10 .x0 256, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 cOff,
-   .ldr .x .x9 .x5 (cOff + 8), .ldr .x .x10 .x0 264, .logic .eor .x .x9 .x9 .x10,
-   .str .x .x9 .x5 (cOff + 8)]
+   .ldr .x .x9 .x5 n, .ldr .x .x10 .x0 256, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 n,
+   .ldr .x .x9 .x5 (n + 8), .ldr .x .x10 .x0 264, .logic .eor .x .x9 .x9 .x10,
+   .str .x .x9 .x5 (n + 8)]
 
 /-- `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)`, for a partial last block (`last_len < 16`). -/
-def partialBlock : Prog isa :=
-  .seq (.block zero) (.seq (.ite (.zero .x .x4) (.block []) copy) (.block padK2))
+def partialBlock (n : Nat := 2048) : Prog isa :=
+  .seq (.block (zero n)) (.seq (.ite (.zero .x .x4) (.block []) copy) (.block (padK2 n)))
 
 /-- The counter block `C ⊕ Mₙ` (the state at `x2`), the state zeroed, `x19`
 and `x30` saved and the scratch buffer kept in `x19`, and the arguments of
 `vg_aes_ctr32` but the schedule (`x0`), the rounds (`x1`) and the working
 space (`x5`), which are ours. -/
-def finArgs : List Instr :=
-  [.ldr .x .x9 .x5 cOff, .ldr .x .x10 .x2 0, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 cOff,
-   .ldr .x .x9 .x5 (cOff + 8), .ldr .x .x10 .x2 8, .logic .eor .x .x9 .x9 .x10,
-   .str .x .x9 .x5 (cOff + 8),
+def finArgs (n : Nat := 2048) : List Instr :=
+  [.ldr .x .x9 .x5 n, .ldr .x .x10 .x2 0, .logic .eor .x .x9 .x9 .x10, .str .x .x9 .x5 n,
+   .ldr .x .x9 .x5 (n + 8), .ldr .x .x10 .x2 8, .logic .eor .x .x9 .x9 .x10,
+   .str .x .x9 .x5 (n + 8),
    .movz .x .x9 0 0, .str .x .x9 .x2 0, .str .x .x9 .x2 8,
-   .str .x .x19 .x5 2064, .str .x .x30 .x5 2072, mov .x19 .x5,
-   mov .x3 .x2, .addImm .x .x2 .x5 cOff, .movz .x .x4 1 0]
+   .str .x .x19 .x5 (n + 16), .str .x .x30 .x5 (n + 24), mov .x19 .x5,
+   mov .x3 .x2, .addImm .x .x2 .x5 n, .movz .x .x4 1 0]
 
 /-- Everything before the call. -/
-def finPre : Prog isa :=
+def finPre (n : Nat := 2048) : Prog isa :=
   .seq (.block [.subImm .x .x9 .x4 16])
-    (.seq (.ite (.zero .x .x9) (.block full) partialBlock) (.block finArgs))
+    (.seq (.ite (.zero .x .x9) (.block (full n)) (partialBlock n)) (.block (finArgs n)))
 
-def finalize (c : Ctr32) : Prog isa :=
-  .seq finPre (.seq (.call c.name c.code) (.block [.ldr .x .x30 .x19 2072, .ldr .x .x19 .x19 2064]))
+def finalize (c : Ctr32) (n : Nat := 2048) : Prog isa :=
+  .seq (finPre n) (.seq (.call c.name c.code) (.block [.ldr .x .x30 .x19 (n + 24), .ldr .x .x19 .x19 (n + 16)]))
 
 end VG.Impl.CmacAes.AArch64

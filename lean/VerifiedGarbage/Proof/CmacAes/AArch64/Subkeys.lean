@@ -196,7 +196,7 @@ theorem subkeysPre_ok (s : State)
       (∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.mem = preMem s ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [subkeysPre, ctrArgs, cOff, mov, List.cons_append,
+    simp (config := {decide := true}) only [subkeysPre, ctrArgsAt, mov, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
       Size.bits, State.read, gpr_write, mem_write, wr_write, ite_true, ite_false, Option.bind_some,
       BitVec.setWidth_eq, w₁, w₂, w₃, w₄, w₅, w₆, w₇]
