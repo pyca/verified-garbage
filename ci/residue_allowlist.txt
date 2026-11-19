@@ -537,8 +537,6 @@ powerpc64le vg_ed25519_verify
 powerpc64le vg_ed448_public_key
 powerpc64le vg_ed448_sign_cached
 powerpc64le vg_ed448_verify
-powerpc64le vg_rc4_apply
-powerpc64le vg_rc4_init
 powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
 powerpc64le vg_sm4_gcm_init
