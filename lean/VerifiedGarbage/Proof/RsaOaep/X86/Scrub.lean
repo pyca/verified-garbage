@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.Scrub
+public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -14,7 +16,9 @@ import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Md5.X86.Lit
-meta import VerifiedGarbage.Proof.Rsa.X86.Scrub
+meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 meta import VerifiedGarbage.Proof.Variants.Sha1.X86
 meta import VerifiedGarbage.Proof.Variants.Sha256.X86
