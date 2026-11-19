@@ -3,12 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Impl.MdStream.X86.Digest
-import VerifiedGarbage.Proof.Sha256.PostOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Impl.MdStream.X86.Digest
-meta import VerifiedGarbage.Proof.Sha256.PostOut
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -688,41 +682,18 @@ structure StreamFn where
     contract = api.sig.contract (X86.abi) pre post api.writeArgs stack leak
   ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
-  /-- Its postcondition reads the memory on return only within the buffers. -/
-  post : X86.Scrub.PostOut contract (api.sig.retBits 32)
-  /-- What `X86.Scrub.scrubFOf` needs of its code, which has a frame and
-  calls the compression function: evaluated where the variant is defined. -/
-  scrub : X86.Scrub.scrubFSide code stack = true
 
-/-- `f` as a registration of its `Api` (`Api.artifact`), followed by the
-zeroing of its stack and the clearing of the registers a callee may change
-(`X86.Scrub.scrubFOf`): it returns without secret residue. -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86.target :=
-  X86.Scrub.scrubFOf {
-      consts := []
-      tables := []
-      code := f.code
-      contract := f.contract
-      stack := f.stack
-      verified := f.verified
-      ofApi := f.ofApi
-      ofSig := f.ofSig
-      spSafe := f.spSafe }
-    f.post f.stack f.scrub
-
-/-! What the streaming functions' postconditions read of the memory on return. -/
-
-theorem updateOut (stack : Nat) :
-    X86.Scrub.PostOut (Spec.Sha256.updateContract X86.abi stack) (Spec.Sha256.updateSig.retBits 32) :=
-  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.updatePost_out 32)
-
-theorem finalizeOut (stack : Nat) :
-    X86.Scrub.PostOut (Spec.Sha256.finalizeContract X86.abi stack) (Spec.Sha256.finalizeSig.retBits 32) :=
-  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.finalizePost_out 32)
-
-theorem finalize224Out (stack : Nat) :
-    X86.Scrub.PostOut (Spec.Sha256.finalize224Contract X86.abi stack) (Spec.Sha256.finalize224Sig.retBits 32) :=
-  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.finalize224Post_out 32)
+/-- `f` as a registration of its `Api` (`Api.artifact`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
+  consts := []
+  tables := []
+  code := f.code
+  contract := f.contract
+  stack := f.stack
+  verified := .unscrubbed f.verified
+  ofApi := f.ofApi
+  ofSig := f.ofSig
+  spSafe := f.spSafe
 
 /-- The functions the whole of PBKDF2 calls, with the compression function
 `cmpN`/`cmpC` and the streaming functions `s`. -/
@@ -752,14 +723,6 @@ structure Backend where
   /-- Its own functions: the streaming functions made with it (SHA-224's
   `finalize` among them). -/
   functions : List StreamFn
-  /-- What `X86.Scrub.scrubFOf` needs of the one-shot SHA-256 digest made with
-  it (`vg_sha256_digest`): evaluated where the variant is defined. -/
-  digestScrub : X86.Scrub.scrubFSide (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream))
-    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) = true
-  /-- What `X86.Scrub.scrubFOf` needs of the one-shot SHA-224 digest made with
-  it (`vg_sha224_digest`): evaluated where the variant is defined. -/
-  digest224Scrub : X86.Scrub.scrubFSide (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream))
-    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) = true
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/
   initSp : (sha256M stream cmpN cmpC).hmacInit.all (fun i => !isa.writesSp i) = true
