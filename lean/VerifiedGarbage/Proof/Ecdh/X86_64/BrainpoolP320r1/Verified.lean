@@ -1,0 +1,253 @@
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP320r1.Lit
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.X86_64
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Lit
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Verified
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP320r1.Lit
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.X86_64
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP320r1.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `Ecdh.X86_64.BrainpoolP320r1.Contract`, which only this module used -/
+
+section
+
+/-!
+# ECDH over brainpoolP320r1 on x86-64: the contract the proof is written against
+
+The facts of `Spec.Ecdh.BrainpoolP320r1.exchangeApi`'s contract for x86-64, by name:
+`vg_ecdh_brainpoolp320r1(out = rdi, d = rsi, peer = rdx, scratch = rcx)`, the result
+in `eax`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86_64.BrainpoolP320r1
+
+open VG VG.X86_64 Spec.Weierstrass Spec.EcKey
+
+/-- The shared secret of the private key at `d` and the public key at
+`peer`, as the specification computes it. -/
+abbrev ex (m : Mem) (d peer : Addr) : Option (List Byte) :=
+  Spec.Ecdh.exchange Spec.BrainpoolP320r1.curve (ofBytes (bytesAt m d 40)) (bytesAt m peer 81)
+
+def ecdhX86_64 : Contract X86_64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, 40⟩
+    let d : Region := ⟨s.gpr .rsi, 40⟩
+    let peer : Region := ⟨s.gpr .rdx, 81⟩
+    let scratch : Region := ⟨s.gpr .rcx, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [d, peer] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
+      out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
+      ret.Disjoint out ∧ ret.Disjoint scratch ∧
+      (s.gpr .rdi).toNat + 40 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64
+  post s s' :=
+    match ex s.mem (s.gpr .rsi) (s.gpr .rdx) with
+    | some z => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) 40 = z
+    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) 40 = List.replicate 40 0
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+
+/-- A state satisfying the precondition. -/
+def satState : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x8000
+    | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x2000, 40⟩, ⟨0x3000, 81⟩]
+  wr := [⟨0x1000, 40⟩, ⟨0x8000, 8192⟩]
+
+theorem implies :
+    ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst X86_64.abi) := by
+  exact
+    { pre := by
+        sig_implies_pre [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+      post := by
+        intro s s' _ h
+        sig_post [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+        simp only [ecdhX86_64, ex, Spec.BrainpoolP320r1.curve] at h
+        revert h
+        generalize Spec.Ecdh.exchange _ _ _ = q
+        rcases q with _ | z <;> exact id
+      pub := by
+        sig_implies_pub [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, ecdhX86_64, ex]
+      sat := by
+        sig_implies_sat [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
+          Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+          X86_64.argRegs, satState] [satState] using satState }
+
+end VG.Proof.Ecdh.X86_64.BrainpoolP320r1
+
+end
+
+end
+
+/-!
+# ECDH over brainpoolP320r1 on x86-64: `Verified`
+
+brainpoolp320r1 is a curve the proof supports (`brainpoolp320r1_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.BrainpoolP320r1.law`), so `exchange_ok`
+gives the contract's postcondition; the callee-saved registers are restored,
+`rsp` is never written, and every store is to `out` or `scratch`, which the
+return address is apart from (`abiPreserved`). Constant time by taint
+tracking: the only branches are on loop counters, and every address is an
+argument plus a constant or a counter, so not even the peer's key (which the
+contract would let leak) affects timing.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86_64.BrainpoolP320r1
+
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdh.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.BrainpoolP320r1
+
+theorem pre_of {s : State} (h : ecdhX86_64.pre s) : EPre brainpoolp320r1 s := by
+  obtain ⟨h1, h2, h3, -, -, h6, h7, -, -, h10, h11⟩ := h
+  exact ⟨h1, h2, h3, h6, h7, h10, h11⟩
+
+theorem post_of {s s' : State} (h : EPost brainpoolp320r1 s s') : ecdhX86_64.post s s' := by
+  unfold EPost at h
+  dsimp only [ecdhX86_64]
+  revert h
+  generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
+  rw [show Spec.Ecdh.exchange brainpoolp320r1.C (dk brainpoolp320r1 s)
+      (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * brainpoolp320r1.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
+  rcases q with _ | z <;> exact id
+
+theorem ecdh_inlineOk : exchangeBrainpoolP320r1.InlineOk = true := by lit_decide
+
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa exchangeBrainpoolP320r1.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (brainpoolp320r1_ok hI) hL (pre_of hs) brainpoolp320r1_mulBase.2
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk
+  have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk)).2.2
+  obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hsv _ (by decide)
+    · exact hsv _ (by decide)
+    · exact Exec.gpr hsp he
+    · exact hsv _ (by decide)
+    · exact hsv _ (by decide)
+    · exact hsv _ (by decide)
+    · exact hsv _ (by decide)
+  · rw [hwr] at F
+    exact F.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl)
+      · exact hro
+      · exact hrs) (by decide)
+
+/-- `exchangeBrainpoolP320r1` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def exchangeBrainpoolP320r1Erased : Prog isa := Code.erase exchangeBrainpoolP320r1
+
+materialize_shared exchangeBrainpoolP320r1Erased
+
+theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeBrainpoolP320r1 := by
+  refine VG.Taint.constantTime_mapBlocks (c' := exchangeBrainpoolP320r1Erased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact h1
+  · exact h2
+  · exact h3
+  · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
+      Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst X86_64.abi 8).pre s)
+    (hp : ecdhX86_64.post s b) : ecdhX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 40)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [ecdhX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
+
+theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    Verified X86_64.target exchangeBrainpoolP320r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst X86_64.abi 8) :=
+  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI) ecdh_ct implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ecdh_brainpoolp320r1` must wipe on return, from the
+residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat := keep_for% Spec.Ecdh.BrainpoolP320r1.exchangeApi.sig 8 exchangeBrainpoolP320r1 []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.BrainpoolP320r1.exchangeApi.sig 8 []) exchangeBrainpoolP320r1 h).any
+      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ecdh_brainpoolp320r1`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    Registration Spec.Ecdh.BrainpoolP320r1.exchangeApi X86_64.target :=
+  RScrub.scrubOf {
+    code := exchangeBrainpoolP320r1
+    stack := 8
+    verified := ecdh_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
+    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
+    ⟨scrubKs, scrubOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+
+end VG.Proof.Ecdh.X86_64.BrainpoolP320r1

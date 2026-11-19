@@ -159,7 +159,7 @@ theorem winMulJF_ok (hc : CfgOk c) (hFC : P521F.FastCfg (winQ c) c.C size) (h9 :
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]

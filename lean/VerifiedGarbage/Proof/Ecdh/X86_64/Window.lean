@@ -548,7 +548,7 @@ theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
@@ -610,7 +610,7 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
     {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
-    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true)
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧ c.mulFn.noCalls = true)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPost c base P k s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0
@@ -644,7 +644,7 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
     · rw [K₄.gpr r hr, W.keep.gpr r (fun h => hr (List.mem_cons_of_mem _ h)),
         k₁.gpr r (fun h => hr (by
           rw [List.mem_singleton.mp h]
-          exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (r8_mem_clob _))))]
+          exact List.mem_cons_of_mem _ (mem_powClob_of_clob (r8_mem_clob _))))]
     · intro w hw
       refine List.mem_append_left _ ?_
       rcases List.mem_append.mp hw with hw | hw

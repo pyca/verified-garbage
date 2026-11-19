@@ -467,12 +467,12 @@ theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [invClob, powClob, clob]
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (r8_mem_clob _))
+    · exact List.mem_cons_of_mem _ (mem_powClob_of_clob (r8_mem_clob _))
   obtain c₃ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ invClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [invClob, powClob, clob]
   obtain c₁ : ∀ r ∈ [Reg.r8], r ∈ invClob c.n := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (r8_mem_clob _))
+    rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (mem_powClob_of_clob (r8_mem_clob _))
   obtain KK : KeepRegs (invClob c.n) s s₄ :=
     (((k₁.mono c₁).trans (k₂.mono c₂)).trans (k₃.mono c₃)).trans K₄
   refine ⟨hs₄.of_keepRegs K₅ (rdi_not_invClob _), by

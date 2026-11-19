@@ -434,19 +434,19 @@ theorem mulQJO_with (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (h
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain c₃ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
   obtain c₁ : ∀ r ∈ [Reg.r8], r ∈ powClob c.n := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    rw [List.mem_singleton.mp hr]; exact mem_powClob_of_clob (r8_mem_clob _)
   obtain c₄ : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · simp [powClob, clob]
     · simp [powClob, clob]
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain K67 : KeepRegs (powClob c.n) s₅ s₇ :=
     ((Keeps.regs k₆).mono (show ∀ r ∈ [Reg.rcx], r ∈ powClob c.n by
       intro r hr; rw [List.mem_singleton.mp hr]; simp [powClob, clob])).trans

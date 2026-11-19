@@ -334,7 +334,7 @@ theorem squareStep_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {count j : Nat}
   refine ⟨⟨(hs₁.of_keeps k₂ (by decide)).of_keeps k₃ (by decide), by rw [m₃]; exact hm₁,
     by rw [k₃.1 _ (by decide), hb₂], ?_, ?_, by rw [sv, m₃]; exact lt₁, ?_⟩, hz₃⟩
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
-    · have hr' : r ∉ clob c.n := fun h => hr (List.mem_cons_of_mem _ h)
+    · have hr' : r ∉ clob c.n := fun h => hr (mem_powClob_of_clob h)
       obtain hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
       rw [k₃.1 _ (by simp), k₂.1 _ (by simp [hrb]), k₁.gpr r hr', I.keep.gpr r hr]
     · rw [k₃.2.2.1, k₂.2.2.1, k₁.rd, I.keep.rd]
@@ -757,8 +757,8 @@ theorem descentRound_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {
     O₄.wordsVal (by have := sl_apart c hw; omega_using [h0, this]) (by have := sl_le c h7 hi; omega_using [hn, this])
   refine ⟨V.scr.of_keepRegs k₄ (by decide), ?_,
     unch_same U₁₂₃ (slot_frame (by decide : T2 ∈ roundSlots) (by omega_using [h0]) O₄), ?_, word₄, zf₄, ?_⟩
-  · exact ((k₁.trans (k₂.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
-      (V.keep.mono (fun _ h => List.mem_cons_of_mem _ h))).trans (k₄.mono (by simp [powClob]))
+  · exact ((k₁.trans (k₂.mono (fun _ h => mem_powClob_of_clob h))).trans
+      (V.keep.mono (fun _ h => mem_powClob_of_clob h))).trans (k₄.mono (by simp [powClob]))
   · intro i hi
     obtain hi45 : i < 45 := (by decide : ∀ i ∈ [ACC, T0, T1], i < 45) i hi
     obtain hn₂ : i ≠ T2 := (by decide : ∀ i ∈ [ACC, T0, T1], i ≠ T2) i hi

@@ -1386,7 +1386,7 @@ theorem decompressMiddle_ok {c : Cfg} (hc : BaseCfgOk c)
     rw [C.val, F.rhs]; rfl
   refine WP.seq (WP.mono (selectRoot_ok hc F₁.scr (modP_of hc F₁.fixed.mp)
     F₁.fixed.one F₁.fixed.zero) fun s₂ S => ?_)
-  obtain F₂ := F₁.frame hc (S.keep.mono (fun _ hr => List.mem_cons_of_mem _ hr)) S.unch
+  obtain F₂ := F₁.frame hc (S.keep.mono (fun _ hr => mem_powClob_of_clob hr)) S.unch
     (fixedOk_slW (l := [QY, W0, TMP]) (by decide)) (by
       intro i hi
       obtain h : ∀ i ∈ [E, D, R2P, W2, FLAG], i ∉ [QY, W0, TMP] := by decide

@@ -34,8 +34,21 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
-/-- The registers a power changes. -/
-def powClob (n : Nat) : List Reg := .rbx :: clob n
+/-- The registers a power changes, and `r15`: the functions of fewer than six
+words keep it in `xmm5` (`Cfg.invKeptX`), which the proofs do not follow, and
+for five words no product writes it (`clob`). -/
+def powClob (n : Nat) : List Reg := .rbx :: .r15 :: clob n
+
+theorem mem_powClob_of_clob {n : Nat} {r : Reg} (h : r ∈ clob n) : r ∈ powClob n :=
+  List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+
+theorem not_powClob {n : Nat} {r : Reg} (hb : r ≠ .rbx) (h15 : r ≠ .r15) (h : r ∉ clob n) : r ∉ powClob n :=
+  fun h' => by
+    rcases List.mem_cons.mp h' with h' | h'
+    · exact hb h'
+    rcases List.mem_cons.mp h' with h' | h'
+    · exact h15 h'
+    · exact h h'
 
 theorem mov32Rbx_ok (s : State) {j : Nat} (hj : j < 2 ^ 31) :
     WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 j))]) s fun s' =>
@@ -165,7 +178,7 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   have hm₄ : s₄.mem = s₃.mem := k₄.2.1
   refine ⟨hs₅.of_keeps k₆ (by decide), by rw [k₆.1 _ (by decide), hrbx₅], ?_, ?_, ?_, ?_⟩
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
-    · have hr' : r ∉ clob P.M.n := fun h => hr (List.mem_cons_of_mem _ h)
+    · have hr' : r ∉ clob P.M.n := fun h => hr (mem_powClob_of_clob h)
       obtain hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
       obtain hra : r ≠ .rax := fun h => hr' (h ▸ by simp [clob])
       obtain hrc : r ≠ .rcx := fun h => hr' (h ▸ by simp [clob])

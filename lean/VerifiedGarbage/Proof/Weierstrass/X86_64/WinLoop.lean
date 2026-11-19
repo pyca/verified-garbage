@@ -632,7 +632,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     rcases hr with rfl | rfl | rfl
     · simp [powClob, clob]
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   have S₂ := S₁.next hL (S₁.scr.of_keepRegs k₂ (by decide)) (k₂.mono c₂)
     (U₂.mono fun w hw => by
       rw [List.mem_singleton.mp hw]

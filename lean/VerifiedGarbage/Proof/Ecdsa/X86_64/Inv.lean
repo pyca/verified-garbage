@@ -365,10 +365,12 @@ theorem restoresX_ok (s : State) :
     RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.1,
     RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.2]
 
-/-- The inversion of four words writes every callee-saved register. -/
-theorem invKeptX_clob : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ invClob 4 := by decide
+/-- The inversion of four or five words may write every callee-saved
+register. -/
+theorem invKeptX_clob {n : Nat} (h : n = 4 ∨ n = 5) : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ invClob n := by
+  rcases h with rfl | rfl <;> decide
 
-/-- `vg_<curve>_inv_mod_p` or `_n` for fewer than six words (four): its body
+/-- `vg_<curve>_inv_mod_p` or `_n` for fewer than six words (four or five): its body
 from a state of the same memory and registers, the callee-saved registers
 copied to `xmm` registers and back, which `invClob` allows. -/
 theorem invFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) {body : Prog isa} {base : Addr} {s : State}
@@ -377,13 +379,13 @@ theorem invFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) {body : Prog isa} {base : Ad
       WP isa body s₁ fun s' => KeepRegs (invClob c.n) s₁ s' ∧ Unch base (pwI c) s₁.mem s'.mem ∧ Q s'.mem) :
     WP isa (c.invFn body) s fun s' => KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
       Q s'.mem := by
-  have h4 : c.n = 4 := by have := hc.even (by omega_arith); have := (hc.inv (by omega_arith)).1; omega_arith
+  have h4 : c.n = 4 ∨ c.n = 5 := by have := (hc.inv (by omega_arith)).1; omega_arith
   rw [show c.invFn body = Cfg.invFnX body from ite_eq_left_of_eq_true _ _ (eq_true h6)]
   refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
   have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
   refine WP.seq (WP.mono (hb s₁ hs₁ m₁ (fun r => by rw [g₁])) fun s₂ ⟨K₂, U₂, Q₂⟩ => ?_)
   refine WP.mono (restoresX_ok s₂) fun s' ⟨g', m', rd', wr'⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩
-  · rw [g' r (fun h => hr (h4 ▸ invKeptX_clob r h)), K₂.gpr r hr, g₁]
+  · rw [g' r (fun h => hr (invKeptX_clob h4 r h)), K₂.gpr r hr, g₁]
   · rw [rd', K₂.rd, rd₁]
   · rw [wr', K₂.wr, wr₁]
   · rw [m', ← m₁]

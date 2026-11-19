@@ -156,8 +156,8 @@ theorem toM_cmont (hc : BaseCfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.m
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-theorem rdi_not_powClob (n : Nat) : Reg.rdi ∉ powClob n := fun h =>
-  (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (rdi_not_clob n)
+theorem rdi_not_powClob (n : Nat) : Reg.rdi ∉ powClob n :=
+  not_powClob (by decide) (by decide) (rdi_not_clob n)
 
 theorem ladW_eq (c : Cfg) : ladW c.ladderCfg = slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
     T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] := rfl

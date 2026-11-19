@@ -115,7 +115,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
   even number of them, for its selection of 16 bytes at a time. -/
   window_am3 : c.windows = true → AM3 c.C
   comb_am3 : ∀ d, c.comb = some d → AM3 c.C
-  even : c.n ≤ 6 → c.n % 2 = 0
+  even : c.windows = true → c.n ≤ 6 → c.n % 2 = 0
   /-- With functions for the inversions (`Cfg.inverse`), up to nine words:
   divsteps modulo `p` and `n`. -/
   inverse : c.inverse.isSome = true → c.n ≤ 9 ∧ c.fastN = true

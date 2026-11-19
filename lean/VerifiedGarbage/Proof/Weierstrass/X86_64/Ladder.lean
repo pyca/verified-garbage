@@ -220,7 +220,7 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
         ← hE L.G.y (by simp [ladRo]), ← hE L.G.z (by simp [ladRo])]; exact h3)
   refine WP.mono (ladSel_ok hL A.scr (by omega_using [hj, hjn]) hrbx₃ hbyte)
     fun s' ⟨hs', b', z', k', U', ex, ey, ez⟩ => ⟨⟨hs', b', ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, z'⟩
-  · have hr' : r ∉ clob L.M.n := fun h => hr (List.mem_cons_of_mem _ h)
+  · have hr' : r ∉ clob L.M.n := fun h => hr (mem_powClob_of_clob h)
     have hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
     have hra : r ≠ .rax := fun h => hr' (h ▸ by simp [clob])
     have hrc : r ≠ .rcx := fun h => hr' (h ▸ by simp [clob])
