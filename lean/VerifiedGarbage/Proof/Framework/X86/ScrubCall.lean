@@ -206,4 +206,118 @@ macro "fill_calls" : tactic => `(tactic| repeat' (first
   | refine Fill.if_pos ?_ (by assumption)
   | refine Fill.if_neg ?_ (by assumption)))
 
+/-! ## Holes with a budget
+
+`Fill` adds the stack of the implementations, `n`, to the whole of the
+function's: too much when the function's deepest path does not call them.
+`FillB` instead gives each hole of the stub the stack of what fills it
+(`holeStub k`, a frame of `k` bytes around nothing), so that the stub's
+`scrubFSide`, over the function's own stack, holds of the code with any
+implementation (`scrubFSide_of_fillB`), with nothing added. -/
+
+/-- A stub's place for an implementation that uses at most `k` bytes of
+stack: a frame of `k` bytes around nothing, whose stack use is `k`. -/
+def holeStub (k : Nat) : Prog isa := .frame (.alloc k) (.block []) (.free k)
+
+/-- `b` is `a` with some of its holes (`holeStub k`) replaced by code that
+meets `calleeSide _ k`, and the names of its calls changed: as `Fill`, but
+each hole with its budget, and any code matching itself (`refl`), so that
+code the function calls whatever the implementation is not walked. -/
+inductive FillB : Prog isa → Prog isa → Prop
+  | refl (a : Prog isa) : FillB a a
+  | hole {k : Nat} {d : Prog isa} : calleeSide d k = true → FillB (holeStub k) d
+  | seq {a b a' b' : Prog isa} : FillB a a' → FillB b b' → FillB (.seq a b) (.seq a' b')
+  | ite {t e t' e' : Prog isa} (c : Cond) : FillB t t' → FillB e e' → FillB (.ite c t e) (.ite c t' e')
+  | loop {b b' : Prog isa} (c : Cond) : FillB b b' → FillB (.loop b c) (.loop b' c)
+  | call {b b' : Prog isa} (f g : String) : FillB b b' → FillB (.call f b) (.call g b')
+  | frame {b b' : Prog isa} (i j : Instr) : FillB b b' → FillB (.frame i b j) (.frame i b' j)
+  | icall {b x b' x' : Prog isa} (i : Instr) (f : String) :
+      FillB b b' → FillB x x' → FillB (.icall i f b x) (.icall i f b' x')
+
+namespace FillB
+
+variable {a b : Prog isa}
+
+theorem stackUse_le (h : FillB a b) : stackUse b ≤ stackUse a := by
+  induction h with
+  | refl => exact Nat.le_refl _
+  | hole hd =>
+    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    simp only [holeStub, stackUse, frameBytes, Nat.zero_add]; exact hd.1
+  | seq _ _ iha ihb => simp only [stackUse]; omega
+  | ite _ _ _ iht ihe => simp only [stackUse]; omega
+  | loop _ _ ih => simp only [stackUse]; exact ih
+  | call _ _ _ ih => simp only [stackUse]; omega
+  | frame _ _ _ ih => simp only [stackUse]; omega
+  | icall _ _ _ _ ihb ihx => simp only [stackUse]; omega
+
+theorem noMmx (h : FillB a b) (ha : a.allInstrs (fun i => !i.isMmx) = true) :
+    b.allInstrs (fun i => !i.isMmx) = true := by
+  induction h with
+  | refl => exact ha
+  | hole hd =>
+    simp only [calleeSide, Bool.and_eq_true] at hd
+    exact ((calleeOk_iff _).mp hd.2).2
+  | seq _ _ iha ihb | ite _ _ _ iha ihb =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
+  | loop _ _ ih | call _ _ _ ih => simp only [Code.allInstrs] at ha ⊢; exact ih ha
+  | frame _ _ _ ih =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ih ha.1.2⟩, ha.2⟩
+  | icall _ _ _ _ ihb ihx =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ihb ha.1.2⟩, ihx ha.2⟩
+
+theorem inames_eq (h : FillB a b) : inames b = inames a := by
+  induction h with
+  | refl => rfl
+  | hole hd =>
+    simp only [calleeSide, Bool.and_eq_true] at hd
+    exact (inames_of_noIcall ((calleeOk_iff _).mp hd.2).1).trans rfl
+  | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [inames, iha, ihb]
+  | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [inames, ih]
+  | icall _ _ _ _ ihb ihx => simp only [inames, ihb, ihx]
+
+/-- `FillB` into code that the implementation chooses, where it chooses `x`. -/
+theorem if_pos {p : Prop} [Decidable p] {x y : Prog isa} (h : FillB a x) (hp : p) :
+    FillB a (if p then x else y) := by
+  rw [ite_eq_left hp]; exact h
+
+/-- `FillB` into code that the implementation chooses, where it chooses `y`. -/
+theorem if_neg {p : Prop} [Decidable p] {x y : Prog isa} (h : FillB a y) (hp : ¬p) :
+    FillB a (if p then x else y) := by
+  rw [ite_eq_right hp]; exact h
+
+end FillB
+
+/-- `scrubFSide` of a function's code `b` with the tables `ts`, whatever the
+implementations it calls (`FillB a b`), from `scrubFSide` of its code `a`
+with stubs that use their implementations' stack (`holeStub`), over the
+same `W` bytes, which the kernel evaluates once. -/
+theorem scrubFSide_of_fillB {W : Nat} {ts : List (String × List FnTable)} {a b : Prog isa}
+    (hf : FillB a b) (ha : scrubFSide a ts W = true) : scrubFSide b ts W = true := by
+  obtain ⟨hs, ht, hm, hp, -⟩ := of_scrubFSide ha
+  have hsb := hf.stackUse_le
+  have ht' : tablesCall b ts = true := by rw [tablesCall, hf.inames_eq]; exact ht
+  have h4 : W % 4 = 0 := (of_scrubFSide ha).2.2.2.2
+  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
+  exact ⟨⟨⟨⟨by omega, ht'⟩, hf.noMmx hm⟩, hp⟩, h4⟩
+
+/-- `fill_calls` for `FillB`: proves `FillB a b` of a function's code with
+stubs (`a`, its holes `holeStub k`) and with implementations (`b`), from
+hypotheses `calleeSide c k = true` of each implementation's code `c`. Code
+the two share (the code of the functions it calls whatever the
+implementation) is matched as one term (`FillB.refl`, at reducible
+transparency, so it is not unfolded), and a branch on the implementation is
+chosen by a hypothesis `p` or `¬p`. -/
+macro "fillB_calls" : tactic => `(tactic| repeat' (first
+  | with_reducible exact FillB.refl _
+  | exact FillB.hole (by assumption)
+  | refine FillB.seq ?_ ?_
+  | refine FillB.ite _ ?_ ?_
+  | refine FillB.loop _ ?_
+  | refine FillB.call _ _ ?_
+  | refine FillB.frame _ _ ?_
+  | refine FillB.icall _ _ ?_ ?_
+  | refine FillB.if_pos ?_ (by assumption)
+  | refine FillB.if_neg ?_ (by assumption)))
+
 end VG.X86.Scrub
