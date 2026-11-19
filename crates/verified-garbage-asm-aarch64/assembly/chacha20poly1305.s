@@ -35281,7 +35281,7 @@ vg_chacha20_poly1305_seal_gather_sve2:
 	add x4, x8, #0
 	add x5, x9, #0
 	add x6, x10, #0
-	bl {vg_chacha20_poly1305_seal_sve2}
+	bl {vg_chacha20_poly1305_seal_core_sve2}
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	movz x1, #0, lsl #0
@@ -74884,7 +74884,7 @@ vg_chacha20_poly1305_seal_gather_neon:
 	add x4, x8, #0
 	add x5, x9, #0
 	add x6, x10, #0
-	bl {vg_chacha20_poly1305_seal_neon}
+	bl {vg_chacha20_poly1305_seal_core_neon}
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	movz x1, #0, lsl #0
@@ -88650,7 +88650,7 @@ vg_chacha20_poly1305_seal_gather:
 	add x4, x8, #0
 	add x5, x9, #0
 	add x6, x10, #0
-	bl {vg_chacha20_poly1305_seal}
+	bl {vg_chacha20_poly1305_seal_core}
 	ldr x30, [sp, #8]
 	add sp, sp, #16
 	movz x1, #0, lsl #0

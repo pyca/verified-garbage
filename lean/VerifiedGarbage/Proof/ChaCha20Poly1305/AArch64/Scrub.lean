@@ -18,7 +18,9 @@ keystream, returns with every register it may leave secret cleared and its
 whole stack zeroed (`ScrubAll.withScrubAll`). Their code wipes only the first
 768 bytes of its working space, and keeps keystream above them.
 
-`seal_gather` calls `seal` as emitted, scrubbed whole (`sealFnScrub`).
+`seal_gather` calls `seal`'s code as an internal function of its own,
+`vg_chacha20_poly1305_seal_core` (`sealFnCore`), so that its stack is zeroed
+once, by `seal_gather`'s scrubbing, as on RISC-V.
 -/
 
 @[expose] public section
@@ -45,22 +47,11 @@ theorem gatherOk (W : Nat) :
     ScrubAllOk (sealGatherContract abi W) W (sealGatherSig.retBits abi.ptrBits) :=
   scrubAllOk_args_any (sig := sealGatherSig) (Proof.ChaCha20Poly1305.sealGatherPost_out 64)
 
-/-- `scrubAll` over the 1280 bytes of `seal`'s stack keeps its frames within them. -/
-theorem depth_scrubAll {c : Prog isa} (cl : Clear) (rb : Nat) (h : 16 * c.aarch64Depth ≤ 1280) :
-    16 * (scrubAll 1280 rb cl c).aarch64Depth ≤ 1280 := by
-  suffices hd : (scrubAll 1280 rb cl c).aarch64Depth ≤ 80 by omega
-  show Code.aarch64Depth (.seq (withRet rb (.seq c (.block (clearsOf cl))))
-    (scrubTailG 1280 (List.range 80))) ≤ 80
-  simp only [withRet, scrubTailG, Code.aarch64Depth, Instr.frameUnits, Nat.reduceDiv, Nat.zero_add,
-    Nat.max_le, Nat.zero_le, Nat.le_refl, and_true]
-  omega
-
-/-- `vg_chacha20_poly1305_seal` over the backend `v`, scrubbed whole: what
-`seal_gather` calls, the code of its registration (`withScrubAll`). -/
-def sealFnScrub (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
-  name := (sealFn v).name
-  code := scrubAll 1280 (sealSig.retBits abi.ptrBits) (Clear.of (sealFn v).code) (sealFn v).code
-  verified := Verified.scrubAll (Clear.of_wf _) (sealFn v).verified (by decide) (by decide) (sealOk 1280)
-  depth := depth_scrubAll _ _ (sealFn v).depth
+/-- `vg_chacha20_poly1305_seal` over the backend `v`, as the internal
+function `vg_chacha20_poly1305_seal_core` (with `v`'s suffix) that
+`seal_gather` calls: the exported one zeroes its stack, which `seal_gather`'s
+own scrubbing zeroes again. -/
+def sealFnCore (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn :=
+  { sealFn v with name := "vg_chacha20_poly1305_seal_core" ++ v.callee.suffix }
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Scrub

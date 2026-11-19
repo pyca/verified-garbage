@@ -5928,7 +5928,7 @@ b 21f
 20:
 21:
 .inst 0x91000104,0x91000125,0x91000146
-bl {vg_chacha20_poly1305_seal_sve2}
+bl {vg_chacha20_poly1305_seal_core_sve2}
 .inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
 .inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
 .inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
@@ -5947,7 +5947,7 @@ bl {vg_chacha20_poly1305_seal_sve2}
 .inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
 .inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x911443ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal_sve2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_sve2,
+        vg_chacha20_poly1305_seal_core_sve2 = sym super::chacha20::vg_chacha20_poly1305_seal_core_sve2::vg_chacha20_poly1305_seal_core_sve2,
     )
 }
 
@@ -12300,7 +12300,7 @@ b 21f
 20:
 21:
 .inst 0x91000104,0x91000125,0x91000146
-bl {vg_chacha20_poly1305_seal_neon}
+bl {vg_chacha20_poly1305_seal_core_neon}
 .inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
 .inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
 .inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
@@ -12319,7 +12319,7 @@ bl {vg_chacha20_poly1305_seal_neon}
 .inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
 .inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x911443ff,0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal_neon = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_neon,
+        vg_chacha20_poly1305_seal_core_neon = sym super::chacha20::vg_chacha20_poly1305_seal_core_neon::vg_chacha20_poly1305_seal_core_neon,
     )
 }
 
@@ -14649,7 +14649,7 @@ b 21f
 20:
 21:
 .inst 0x91000104,0x91000125,0x91000146
-bl {vg_chacha20_poly1305_seal}
+bl {vg_chacha20_poly1305_seal_core}
 .inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
 .inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
 .inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
@@ -14668,6 +14668,6 @@ bl {vg_chacha20_poly1305_seal}
 .inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x911443ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )
 }
