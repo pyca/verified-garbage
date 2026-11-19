@@ -124,6 +124,15 @@ instructions in an ISA model) go in their own PR before either.
    list by one evaluation (`variants.all … = true`), and the registration
    file maps over `variants.attach` to pass each variant's membership
    (`Proof/RsaOaep/AArch64/Scrub.lean`, `Artifacts/RsaOaep/AArch64.lean`).
+   On ppc64le it is the same, with `PPC64LE.Scrub.scrubOf`
+   (`Proof/Framework/PPC64LE/ScrubProved.lean`), not `withScrub`: the
+   depth of the stack its frames use and the registers its tail clears are
+   literals at the call site, with one proof (`scrubSide … = true`, by
+   `dsimp only; lit_decide`); and `scrubWipedOf`, not `withScrubWiped`,
+   for code that wipes its own frame. Never add a use of a wrapper that
+   decides or computes when the registration is evaluated (`withScrub`,
+   `withScrubWiped`, `withScrubAll` on these targets): they are being
+   removed.
    Only functions `ci/residue_allowlist.txt` already lists may go
    without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
    emitter refuses a listed function that has a proof, so converting one
