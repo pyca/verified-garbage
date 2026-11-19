@@ -55,16 +55,16 @@ materialize_code absorbStub := withStackScratch 2336 6 (absorb stubCtr "")
 materialize_code absorbStubNi := withStackScratch 2336 6 (absorb stubCtrNi "")
 materialize_code finishStub := withStackScratch 2332 5 (finish stubCtr "")
 
-theorem init_side : scrubFSide (withStackScratch 2324 3 (init stubExpand stubCtr "")) 2376 = true := by
+theorem init_side : scrubFSide (withStackScratch 2324 3 (init stubExpand stubCtr "")) [] 2376 = true := by
   lit_decide
 
-theorem absorb_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtr "")) 2396 = true := by
+theorem absorb_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtr "")) [] 2396 = true := by
   lit_decide
 
-theorem absorbNi_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtrNi "")) 2396 = true := by
+theorem absorbNi_side : scrubFSide (withStackScratch 2336 6 (absorb stubCtrNi "")) [] 2396 = true := by
   lit_decide
 
-theorem finish_side : scrubFSide (withStackScratch 2332 5 (finish stubCtr "")) 2392 = true := by
+theorem finish_side : scrubFSide (withStackScratch 2332 5 (finish stubCtr "")) [] 2392 = true := by
   lit_decide
 
 theorem init_fill (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String)
@@ -91,20 +91,20 @@ open Proof.Aes.X86 (Ctr32Impl)
 
 /-- `scrubFSide` of `vg_cmac_aes_init`, whatever the implementation of AES. -/
 theorem init_scrub (v : Ctr32Impl) :
-    scrubFSide (withStackScratch 2324 3 (init v.expand v.callee v.suffix)) 2376 = true :=
+    scrubFSide (withStackScratch 2324 3 (init v.expand v.callee v.suffix)) [] 2376 = true :=
   scrubFSide_of_fill (init_fill _ _ _ (calleeSide_of_eq v.expandStack v.expandScrub)
     (calleeSide_of_eq v.stack v.scrub)) init_side
 
 /-- `scrubFSide` of `vg_cmac_aes_absorb`, whatever the implementation of AES. -/
 theorem absorb_scrub (v : Ctr32Impl) :
-    scrubFSide (withStackScratch 2336 6 (absorb v.callee v.suffix)) 2396 = true := by
+    scrubFSide (withStackScratch 2336 6 (absorb v.callee v.suffix)) [] 2396 = true := by
   by_cases h : Impl.CmacAes.X86.hardware v.callee = true
   · exact scrubFSide_of_fill (absorbNi_fill _ _ h) absorbNi_side
   · exact scrubFSide_of_fill (absorb_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) absorb_side
 
 /-- `scrubFSide` of `vg_cmac_aes_finish`, whatever the implementation of AES. -/
 theorem finish_scrub (v : Ctr32Impl) :
-    scrubFSide (withStackScratch 2332 5 (finish v.callee v.suffix)) 2392 = true :=
+    scrubFSide (withStackScratch 2332 5 (finish v.callee v.suffix)) [] 2392 = true :=
   scrubFSide_of_fill (finish_fill _ _ (calleeSide_of_eq v.stack v.scrub)) finish_side
 
 end VG.Proof.CmacAes.Stream.X86.Scrub
