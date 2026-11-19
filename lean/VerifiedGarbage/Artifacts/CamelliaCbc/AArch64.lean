@@ -14,11 +14,11 @@ namespace VG.Artifacts.CamelliaCbc.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode
-    verified := Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_verified
-    residue := some ⟨Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_verified,
+      Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_noResidue⟩ },
   Spec.Camellia.cbcDecryptChainedApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode
-    verified := Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_verified
-    residue := some ⟨Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_verified,
+      Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_noResidue⟩ }]
 
 end VG.Artifacts.CamelliaCbc.AArch64

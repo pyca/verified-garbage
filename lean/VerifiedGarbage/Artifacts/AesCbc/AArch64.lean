@@ -17,17 +17,17 @@ def direct : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Proof.AesCbc.AArch64.Decrypt.codeC
-    verified := Proof.AesCbc.AArch64.Wiped.decryptSha3C_scrubbed
+    verified := .scrubbed ⟨Proof.AesCbc.AArch64.Wiped.decryptSha3C_scrubbed,
+      Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _⟩
     written := [("scratch",0)]
-    writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenC
-    residue := some ⟨Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _⟩ },
+    writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenC },
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes"
     code := Proof.AesCbc.AArch64.Decrypt.codeAesC
-    verified := Proof.AesCbc.AArch64.Wiped.decryptAesC_scrubbed
+    verified := .scrubbed ⟨Proof.AesCbc.AArch64.Wiped.decryptAesC_scrubbed,
+      Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _⟩
     written := [("scratch",0)]
-    writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenAesC
-    residue := some ⟨Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _⟩ }]
+    writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenAesC }]
 
 end VG.Artifacts.AesCbc.AArch64
 

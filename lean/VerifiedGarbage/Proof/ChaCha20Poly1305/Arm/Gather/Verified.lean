@@ -1004,7 +1004,7 @@ theorem sealCode_eq (umaal : Bool) (suffix : String) : (sealReg umaal suffix).co
 
 theorem sealCode_verified (umaal : Bool) :
     Verified Arm.target (sealCode umaal) (Spec.ChaCha20Poly1305.sealContract Arm.abi 664) :=
-  (sealReg umaal "").verified
+  ((sealReg umaal "").verified).verified
 
 theorem sealCode_armStack (umaal : Bool) : armStack (sealCode umaal) ≤ 664 := by
   cases umaal <;> lit_decide

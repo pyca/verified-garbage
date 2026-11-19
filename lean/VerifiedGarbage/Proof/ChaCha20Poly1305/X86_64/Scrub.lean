@@ -587,7 +587,7 @@ theorem sealOut (stack : Nat) :
   postOut_of_local ScrubAbi.plain (sealPost_out _)
 
 /-- `seal` of an instance, unscrubbed. -/
-def sealPlain (v : XorImpl) : Registration Spec.ChaCha20Poly1305.sealApi X86_64.target where
+def sealPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.sealApi X86_64.target where
   suffix := v.suffix
   code := sealCode v.callee v.poly
   verified := Shared.seal_verified v
@@ -841,7 +841,7 @@ theorem openOut (stack : Nat) :
     PostOut (Spec.ChaCha20Poly1305.openZeroContract abi stack) (Spec.ChaCha20Poly1305.openSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain (openZeroPost_out _)
 
-def openPlain (v : XorImpl) : Registration Spec.ChaCha20Poly1305.openZeroApi X86_64.target where
+def openPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.openZeroApi X86_64.target where
   suffix := v.suffix
   code := openCode v.callee v.poly
   verified := Shared.open_verified v
@@ -1126,7 +1126,7 @@ theorem openToOut (stack : Nat) :
     PostOut (Spec.ChaCha20Poly1305.openToContract abi stack) (Spec.ChaCha20Poly1305.openToSig.retBits 64) :=
   postOut_of_local_pre ScrubAbi.plain (openToPost_out _)
 
-def openToPlain (v : XorImpl) : Registration Spec.ChaCha20Poly1305.openToApi X86_64.target where
+def openToPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.openToApi X86_64.target where
   suffix := v.suffix
   code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
   verified := OpenTo.openTo_verified v
@@ -1565,7 +1565,7 @@ theorem gatherOut (stack : Nat) :
       (Spec.ChaCha20Poly1305.sealGatherSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain (sealGatherPost_out _)
 
-def gatherPlain (v : XorImpl) : Registration Spec.ChaCha20Poly1305.sealGatherApi X86_64.target where
+def gatherPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.sealGatherApi X86_64.target where
   suffix := v.suffix
   code := Gather.gatherCode v
   verified := Gather.gather_verified v

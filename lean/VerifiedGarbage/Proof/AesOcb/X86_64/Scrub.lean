@@ -128,14 +128,14 @@ working space (`BlocksImpl.free` is `none`), its frame wiped whole on return,
 in 16-byte stores that are all aligned (the chunks `[8, 3632]`); over the
 others, as before. -/
 def sealReg (v : BlocksImpl) : Registration Spec.Ocb.sealApi X86_64.target :=
-  let r : Registration Spec.Ocb.sealApi X86_64.target := {
+  let r : Unscrubbed Spec.Ocb.sealApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4
       (Impl.AesOcb.X86_64.seal (Proof.AesOcb.X86_64.callees v))
     verified := Proof.AesOcb.seal_keyed (Proof.AesOcb.X86_64.seal_framed v)
     spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.seal_spSafe v) }
   match v.free with
-  | some _ => r
+  | some _ => r.registration
   | none => RScrub.withScrubAllC r (sealOut _) [8, 3632]
 
 /-- `vg_aes_ocb_open` over `v`: over an implementation of AES that needs
@@ -143,14 +143,14 @@ working space (`BlocksImpl.free` is `none`), its frame wiped whole on return,
 in 16-byte stores that are all aligned (the chunks `[8, 3632]`); over the
 others, as before. -/
 def openReg (v : BlocksImpl) : Registration Spec.Ocb.openApi X86_64.target :=
-  let r : Registration Spec.Ocb.openApi X86_64.target := {
+  let r : Unscrubbed Spec.Ocb.openApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4
       (Impl.AesOcb.X86_64.open (Proof.AesOcb.X86_64.callees v))
     verified := Proof.AesOcb.open_keyed (Proof.AesOcb.X86_64.open_framed v)
     spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.open_spSafe v) }
   match v.free with
-  | some _ => r
+  | some _ => r.registration
   | none => RScrub.withScrubAllC r (openOut _) [8, 3632]
 
 end VG.Proof.AesOcb.X86_64.Scrub

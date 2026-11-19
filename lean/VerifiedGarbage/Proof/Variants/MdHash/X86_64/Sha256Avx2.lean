@@ -118,11 +118,11 @@ def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig (finFn compress).s
 def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig (digFn compress).stack (digFn compress).code
 
 theorem updRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updKs
-    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).reg updKs (by taint_decide_lit)
+    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).unscrubbed updKs (by taint_decide_lit)
 theorem finRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finKs
-    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).reg finKs (by taint_decide_lit)
+    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).unscrubbed finKs (by taint_decide_lit)
 theorem digRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digKs
-    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).reg digKs (by taint_decide_lit)
+    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).unscrubbed digKs (by taint_decide_lit)
 
 def update : StreamFn := (updFn compress).scrub .avx updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
   (by decide) (updOut compress) updRes
@@ -147,10 +147,10 @@ def dig224Ks : List Nat :=
 
 theorem fin224Res : ResOk (Sha224.finFn compress).code (Sha224.finFn compress).contract
     (Sha224.finFn compress).stack fin224Ks (chunks (Sha224.finFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.finFn compress).reg fin224Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 (Sha224.finFn compress).unscrubbed fin224Ks (by taint_decide_lit)
 theorem dig224Res : ResOk (Sha224.digFn compress).code (Sha224.digFn compress).contract
     (Sha224.digFn compress).stack dig224Ks (chunks (Sha224.digFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.digFn compress).reg dig224Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 (Sha224.digFn compress).unscrubbed dig224Ks (by taint_decide_lit)
 
 def finalize224 : StreamFn := (Sha224.finFn compress).scrub .avx fin224Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (Sha224.finOut compress) fin224Res

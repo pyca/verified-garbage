@@ -440,7 +440,7 @@ theorem wipeCs_valid {ks cs : List Nat} (h : ∀ b ∈ cs, 0 < b ∧ b < 4096 �
 /-- `scrubCodeMC_noResidue`, with the registers `xs` and `gs` cleared,
 those two runs may not agree on (`RegsOk`): verified, and without secret
 residue. -/
-theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
+theorem scrubCodeMCR_ok {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : List Nat)
     (xs : List XReg) (gs : List Reg)
     (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
@@ -463,7 +463,7 @@ theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel)
         NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :=
-    ⟨(scrubRegMC r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hw hne).verified,
+    ⟨(scrubRegMC r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hw hne).verified.verified,
       scrubCodeMC_noResidue r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hne⟩
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -476,7 +476,7 @@ theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel)
     hst (fun hic => tablesCall_syms hic rfl) hall
 
 /-- `scrubRegMC`, with the registers `xs` and `gs` cleared (`scrubCodeMCR_ok`). -/
-def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
+def scrubRegMCR {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : List Nat)
     (xs : List XReg) (gs : List Reg)
     (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
@@ -494,7 +494,10 @@ def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs 
   code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     xs (psOf ks) gs ks (wipeCs ks cs) r.code
   contract := r.contract
-  verified := (scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).1
+  unscrubbed := !(tablesCall r.code r.tables)
+  verified := .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) <| Verification.ofBool (tablesCall r.code r.tables)
+    ((scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).1)
+    (fun hic => (scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).2 hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
@@ -505,8 +508,6 @@ def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs 
   vendor := r.vendor
   notWith := r.notWith
   -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
-  residue := if hic : tablesCall r.code r.tables = true then
-    some ⟨(scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).2 hic⟩ else none
 
 end VG.X86_64.Scrub
 
@@ -1578,7 +1579,7 @@ end
 
 /-- `scrubCodeMCR_ok` at the level `avx`, without `mxFix`, for code that writes `zmm16`–`zmm31`
 but leaves them agreeing in two runs (`hH`): the clearing keeps them. -/
-theorem scrubCodeMCRH_ok {api : Api} (r : Registration api target) (ks cs : List Nat)
+theorem scrubCodeMCRH_ok {api : Api} (r : Unscrubbed api target) (ks cs : List Nat)
     (xs : List XReg) (gs : List Reg)
     (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
@@ -1622,7 +1623,7 @@ theorem scrubCodeMCRH_ok {api : Api} (r : Registration api target) (ks cs : List
 
 /-- `scrubRegMCR` at the level `avx` for code that leaves `zmm16`–`zmm31`
 agreeing in two runs (`scrubCodeMCRH_ok`). -/
-def scrubRegMCRH {api : Api} (r : Registration api target) (ks cs : List Nat)
+def scrubRegMCRH {api : Api} (r : Unscrubbed api target) (ks cs : List Nat)
     (xs : List XReg) (gs : List Reg)
     (hcs : cs.sum = r.stack) (hcv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64)
@@ -1639,7 +1640,10 @@ def scrubRegMCRH {api : Api} (r : Registration api target) (ks cs : List Nat)
   code := scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
   contract := r.contract
-  verified := (scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).1
+  unscrubbed := !(tablesCall r.code r.tables)
+  verified := .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) <| Verification.ofBool (tablesCall r.code r.tables)
+    ((scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).1)
+    (fun hic => (scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).2 hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
@@ -1650,8 +1654,6 @@ def scrubRegMCRH {api : Api} (r : Registration api target) (ks cs : List Nat)
   vendor := r.vendor
   notWith := r.notWith
   -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
-  residue := if hic : tablesCall r.code r.tables = true then
-    some ⟨(scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).2 hic⟩ else none
 
 end VG.X86_64.Scrub
 
@@ -1664,7 +1666,7 @@ caller-saved registers `gs` (and `r11` if the stack is wiped, and the upper
 bits of `rax`), those two runs may not agree on at the end (`hregs`): for
 code that clears the registers it leaves secrets in on its own paths.
 `r` itself where a side condition fails. -/
-def withScrubResCR {api : Api} (r : Registration api target)
+def withScrubResCR {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (ks cs : List Nat) (hres : ResOk r.code r.contract r.stack ks cs)
     (xs : List XReg) (gs : List Reg) (hregs : RegsOk r.code r.contract xs (psOf ks) gs) : Registration api target :=
@@ -1682,13 +1684,15 @@ def withScrubResCR {api : Api} (r : Registration api target)
     scrubRegMCR r v ks cs xs gs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
       ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost hres hw (levelFor_ne _)
       (tailOk_ofB _ ht) hregs
-  else r else r else r else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration
 
 /-- `withScrubResCR` for code that writes `zmm16`–`zmm31` but leaves them
 agreeing in two runs (`hH`), and whose every `ldmxcsr` restores what it saved:
 the clearing at the level `avx`, which keeps them. `r` itself where a side
 condition fails. -/
-def withScrubResCRH {api : Api} (r : Registration api target)
+def withScrubResCRH {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (ks cs : List Nat) (hres : ResOk r.code r.contract r.stack ks cs)
     (xs : List XReg) (gs : List Reg) (hregs : RegsOk r.code r.contract xs (psOf ks) gs)
@@ -1706,6 +1710,8 @@ def withScrubResCRH {api : Api} (r : Registration api target)
     scrubRegMCRH r ks cs xs gs hcs (fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)) hd hst
       (MxSame.of_fun (mxFun_of (mxClassOnce_eq r.code ▸ hmx))) hrb hpost
       hres hw (fun x => by unfold xsOf; rw [hx]; exact mem_xregs x) (tailOk_ofB _ ht) hregs hH
-  else r else r else r else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration
 
 end VG.X86_64.RScrub

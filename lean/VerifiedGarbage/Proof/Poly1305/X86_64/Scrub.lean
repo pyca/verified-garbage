@@ -133,7 +133,7 @@ def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`,
 as a registration before its clearing. -/
-def updatePlain (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target where
+def updatePlain (v : BlocksImpl) : Unscrubbed Spec.Poly1305.updateApi X86_64.target where
   suffix := v.suffix
   code := updateCode v.name v.code
   stack := 160
@@ -151,6 +151,6 @@ path leave the same MXCSR (`Mx.mx`), so the clearing writes none
 def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
   match v.update with
   | some a => withScrubResM (updatePlain v) (updateOut _) a.ks (resOk_regOps (updatePlain v) rfl (pubOk_nil _) a)
-  | none => updatePlain v
+  | none => (updatePlain v).registration
 
 end VG.Proof.Poly1305.X86_64

@@ -14,11 +14,11 @@ namespace VG.Artifacts.IdeaCbc.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode
-    verified := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_verified
-    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
+      Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩ },
   Spec.Idea.cbcDecryptChainedApi.artifact AArch64.target {
     code := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode
-    verified := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_verified
-    residue := some ⟨Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
+      Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩ }]
 
 end VG.Artifacts.IdeaCbc.AArch64

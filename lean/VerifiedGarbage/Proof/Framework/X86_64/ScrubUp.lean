@@ -301,7 +301,7 @@ theorem upOk_spec {code : Prog isa} {tables : List (String × List FnTable)} (h 
   simp only [UpOk, levelLeOnce, Code.allOnce_eq, UpperLock.upOnce_eq, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
   exact ⟨fun i hi => by simpa [Instr.levelLe] using Code.all_instrs h.1.1 i hi, h.1.2, h.2⟩
 
-theorem scrubCodeU_verified {api : Api} (r : Registration api target)
+theorem scrubCodeU_verified {api : Api} (r : Unscrubbed api target)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hok : UpOk r.code r.tables = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
@@ -330,7 +330,7 @@ theorem scrubCodeU_verified {api : Api} (r : Registration api target)
 /-- `r`, scrubbed at the level `sse` with every granule of its stack wiped,
 for code below the level `evex` whose functions with AVX instructions, run
 through its tables, end with `vzeroupper` (`UpOk`). -/
-def scrubRegUp {api : Api} (r : Registration api target)
+def scrubRegUp {api : Api} (r : Unscrubbed api target)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hok : UpOk r.code r.tables = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
@@ -344,7 +344,8 @@ def scrubRegUp {api : Api} (r : Registration api target)
     (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
     (allKs (chunks r.stack)) (chunks r.stack) r.code
   contract := r.contract
-  verified := (scrubCodeU_verified r hd hst h8 hok hrb hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubCodeU_verified r hd hst h8 hok hrb hpost).1,
+    (scrubCodeU_verified r hd hst h8 hok hrb hpost).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe .sse _ _ _ _ _ _ (tailOk_of 0 r.code (allKs (chunks r.stack))).psOk
@@ -355,11 +356,10 @@ def scrubRegUp {api : Api} (r : Registration api target)
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨(scrubCodeU_verified r hd hst h8 hok hrb hpost).2⟩
 
 /-- `r`, scrubbed by `scrubRegUp` if its side conditions hold and the
 clearing needs no CPU feature that `r`'s code does not; otherwise `r`. -/
-def withUp {api : Api} (r : Registration api target)
+def withUp {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
     Registration api target :=
   if hd : r.code.x86_64Depth ≤ r.stack then
@@ -371,14 +371,15 @@ def withUp {api : Api} (r : Registration api target)
   if hw : r.written = [] then
     let r' := scrubRegUp r hd hst h8 hok hrb hpost hw
     if (Code.requiresDedup isa.requires r'.code).all
-        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
-  else r else r else r else r else r else r
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r.registration
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration
 
 /-- `withScrubAll`, but where it leaves `r` unscrubbed, `withUp`. -/
-def withScrubAllUp {api : Api} (r : Registration api target)
+def withScrubAllUp {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
     Registration api target :=
   let r' := withScrubAll r hpost
-  if r'.residue.isSome then r' else withUp r hpost
+  if !r'.unscrubbed then r' else withUp r hpost
 
 end VG.X86_64.Scrub

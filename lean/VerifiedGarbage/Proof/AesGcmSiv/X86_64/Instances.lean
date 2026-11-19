@@ -1494,7 +1494,7 @@ theorem regOpen_resOk (v : GcmImpl) :
     exact open_resOk (θ := 2 ^ 64) (Proof.AesGcmSivReg.X86_64.open_verified mulFacts) Proof.AesGcmSivReg.X86_64.open_spSafe Proof.AesGcmSivReg.X86_64.open_xdepth fun h => Proof.AesGcmSivReg.X86_64.open_wp mulFacts h
 
 /-- `vg_aes_gcm_siv_seal` in registers over `v`, before `scrub`. -/
-def regSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target where
+def regSealReg (v : GcmImpl) : Unscrubbed Spec.GcmSiv.sealApi X86_64.target where
   suffix := v.suffix
   code := withStackArgScratch 776 2 (regSeal (loopsOf v))
   stack := 784
@@ -1502,7 +1502,7 @@ def regSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target wh
   spSafe := regSeal_sp v
 
 /-- `vg_aes_gcm_siv_open` in registers over `v`, before `scrub`. -/
-def regOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target where
+def regOpenReg (v : GcmImpl) : Unscrubbed Spec.GcmSiv.openApi X86_64.target where
   suffix := v.suffix
   code := withStackArgScratch 776 2 (regOpen (loopsOf v))
   stack := 784
@@ -1513,7 +1513,7 @@ end
 
 /-- A registration of the code not in registers, its 3856 bytes of stack
 wiped whole on return, in the chunks `[8, 3848]`. -/
-def scrubSoft {api : Api} (r : Registration api X86_64.target)
+def scrubSoft {api : Api} (r : Unscrubbed api X86_64.target)
     (hpost : PostOut r.contract (api.sig.retBits
       ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
   withScrubAllC r hpost [8, 3848]

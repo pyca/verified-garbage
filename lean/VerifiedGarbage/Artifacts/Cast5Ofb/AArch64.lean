@@ -17,11 +17,11 @@ namespace VG.Artifacts.Cast5Ofb.AArch64
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.FbResidue.ofbCode
-    verified := Proof.Cast5.AArch64.FbResidue.ofbCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.FbResidue.ofbCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.FbResidue.ofbCode_verified,
+      Proof.Cast5.AArch64.FbResidue.ofbCode_noResidue⟩ },
   Spec.Cast5.ofbFinalApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.FbResidue.ofbFinalCode
-    verified := Proof.Cast5.AArch64.FbResidue.ofbFinalCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.FbResidue.ofbFinalCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.FbResidue.ofbFinalCode_verified,
+      Proof.Cast5.AArch64.FbResidue.ofbFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.Cast5Ofb.AArch64

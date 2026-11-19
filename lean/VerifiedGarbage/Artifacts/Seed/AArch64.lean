@@ -17,15 +17,15 @@ namespace VG.Artifacts.Seed.AArch64
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact AArch64.target {
     code := Proof.Seed.AArch64.ModesResidue.expandKeyCode
-    verified := Proof.Seed.AArch64.ModesResidue.expandKeyCode_verified
-    residue := some ⟨Proof.Seed.AArch64.ModesResidue.expandKeyCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.expandKeyCode_verified,
+      Proof.Seed.AArch64.ModesResidue.expandKeyCode_noResidue⟩ },
   Spec.Seed.ecbEncryptApi.artifact AArch64.target {
     code := Proof.Seed.AArch64.EcbResidue.ecbEncryptCode
-    verified := Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_verified
-    residue := some ⟨Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_verified,
+      Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩ },
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
     code := Proof.Seed.AArch64.EcbResidue.ecbDecryptCode
-    verified := Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_verified
-    residue := some ⟨Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_verified,
+      Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.Seed.AArch64

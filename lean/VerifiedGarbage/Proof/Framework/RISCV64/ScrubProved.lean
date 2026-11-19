@@ -52,7 +52,7 @@ A registration generic over the implementations of what its code calls
 gives `W` and `rb`, its stack and its result's bits, and `hs`, proved of
 every implementation of the list by one evaluation: `hs` is then stated
 with them, and not with projections of `r`. -/
-def scrubOf {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r))
+def scrubOf {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
     (W : Nat := r.stack) (rb : Nat := retBitsOf r)
     (hs : scrubSide r.code W rb r.tables = true := by
       dsimp only [VG.RISCV64.Scrub.retBitsOf]; lit_decide)
@@ -77,7 +77,7 @@ theorem of_selSide {fs : List (Nat × List (Nat × Nat))} {stack rb : Nat} (h : 
 (`scrubSel`), returning without secret residue: `withScrubSel`, with its
 conditions on `fs` proved (`selSide`) rather than decided when the
 registration is evaluated. `hnr` is `scrubSel_noResidue`'s, given them. -/
-def scrubSelOf {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+def scrubSelOf {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (hpost : PostOut r.contract (retBitsOf r))
     (hnr : FramesOk fs → sizeOf fs ≤ r.stack → retBitsOf r ≤ 64 →
       NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r))

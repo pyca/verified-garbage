@@ -363,7 +363,7 @@ theorem inames_of_depth : ∀ c : Prog isa, c.x86_64Depth = 0 → UpperLock.inam
   | .icall _ _ b n, h => by simp only [Code.x86_64Depth] at h; omega
 
 /-- `resOk_noStack`, for a registration. -/
-theorem resOk_noStack_reg {api : Api} (r : Registration api target) (hd : r.code.x86_64Depth = 0) :
+theorem resOk_noStack_reg {api : Api} (r : Unscrubbed api target) (hd : r.code.x86_64Depth = 0) :
     ResOk r.code r.contract r.stack [] (chunks r.stack) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   rw [e]
@@ -372,7 +372,7 @@ theorem resOk_noStack_reg {api : Api} (r : Registration api target) (hd : r.code
 /-- `r`'s code, with no VEX or EVEX instruction, no frame and no call,
 followed by the clearing of the SSE registers it may write, is verified and
 returns without secret residue. -/
-theorem scrubXs_ok {api : Api} (r : Registration api target)
+theorem scrubXs_ok {api : Api} (r : Unscrubbed api target)
     (hd : r.code.x86_64Depth = 0) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) = true)
     (hmx : (mxClass r.code).isSome = true)
@@ -403,7 +403,7 @@ theorem scrubXs_ok {api : Api} (r : Registration api target)
 no call, followed by the clearing of the SSE registers it may write and of
 the caller-saved general-purpose registers. It states what `r` does of how
 much of its arrays it writes. -/
-def scrubRegXs {api : Api} (r : Registration api target)
+def scrubRegXs {api : Api} (r : Unscrubbed api target)
     (hd : r.code.x86_64Depth = 0) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) = true)
     (hmx : (mxClass r.code).isSome = true)
@@ -417,7 +417,7 @@ def scrubRegXs {api : Api} (r : Registration api target)
   code := scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsW r.code) [] (gsOf Taint.clobbers r.code) [] (chunks r.stack) r.code
   contract := r.contract
-  verified := (scrubXs_ok r hd hst h8 hlv hmx hrb hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubXs_ok r hd hst h8 hlv hmx hrb hpost).1, (scrubXs_ok r hd hst h8 hlv hmx hrb hpost).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe .sse _ _ _ _ _ _ (fun _ h => nomatch h) (tailOk_of 0 r.code []).gsOk r.spSafe
@@ -435,7 +435,6 @@ def scrubRegXs {api : Api} (r : Registration api target)
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨(scrubXs_ok r hd hst h8 hlv hmx hrb hpost).2⟩
 
 end VG.X86_64.Scrub
 
@@ -446,9 +445,9 @@ open VG.X86_64.Scrub
 /-- `r`, returning without secret residue with only the SSE registers its
 code may write cleared (`Scrub.scrubRegXs`), if its code has no VEX or EVEX
 instruction, no frame and no call, and `scrub`'s side conditions hold;
-otherwise `r` itself, which then has no proof (`Registration.residue`), as
+otherwise `r` itself, which then has no proof (`Verification.unscrubbed`), as
 the emitter allows only of what `ci/residue_allowlist.txt` lists. -/
-def withScrubXs {api : Api} (r : Registration api target)
+def withScrubXs {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
     Registration api target :=
   if hd : r.code.x86_64Depth = 0 then
@@ -459,6 +458,7 @@ def withScrubXs {api : Api} (r : Registration api target)
   if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
       api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
     scrubRegXs r hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
-  else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration
 
 end VG.X86_64.RScrub

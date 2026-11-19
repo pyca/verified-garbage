@@ -37,15 +37,15 @@ namespace VG.Artifacts.TripleDes.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.expandKeyCleared
-    verified := Proof.TripleDes.AArch64.Key.verifiedCleared
-    residue := some ⟨Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.Key.verifiedCleared,
+      Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDes.AArch64

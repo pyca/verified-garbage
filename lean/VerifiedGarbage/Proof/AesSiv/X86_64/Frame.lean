@@ -382,7 +382,7 @@ bytes, its working space the 288 of `Lay.free`, its 328 bytes of stack wiped
 whole on return (`withScrubAllC`). -/
 def encryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : Registration Spec.Siv.encryptApi X86_64.target :=
-  let r : Registration Spec.Siv.encryptApi X86_64.target := {
+  let r : Unscrubbed Spec.Siv.encryptApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 312 1
       (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
@@ -399,7 +399,7 @@ on return (`withScrubAll`), of 1960 bytes over implementations that leave the
 first 512 bytes of their scratch buffers untouched (`v.small` and
 `v.ctr.small`), else 2600; over the others, of 2600 bytes, as before. -/
 def encryptReg (v : UpdateImpl) : Registration Spec.Siv.encryptApi X86_64.target :=
-  let r : Registration Spec.Siv.encryptApi X86_64.target := {
+  let r : Unscrubbed Spec.Siv.encryptApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (encrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix)
@@ -408,7 +408,7 @@ def encryptReg (v : UpdateImpl) : Registration Spec.Siv.encryptApi X86_64.target
     spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe (.inl rfl) v) }
   match v.free, v.ctr.free with
   | some f, some fc => encryptRegF v f fc
-  | none, some _ => r
+  | none, some _ => r.registration
   | _, none =>
     match v.small, v.ctr.small with
     | some f, some fc => withScrubAll {
@@ -424,7 +424,7 @@ def encryptReg (v : UpdateImpl) : Registration Spec.Siv.encryptApi X86_64.target
 /-- `vg_aes_siv_decrypt` in a frame of 312 bytes, as `encryptRegF`. -/
 def decryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : Registration Spec.Siv.decryptApi X86_64.target :=
-  let r : Registration Spec.Siv.decryptApi X86_64.target := {
+  let r : Unscrubbed Spec.Siv.decryptApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 312 1
       (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
@@ -435,7 +435,7 @@ def decryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
 
 /-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
 def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target :=
-  let r : Registration Spec.Siv.decryptApi X86_64.target := {
+  let r : Unscrubbed Spec.Siv.decryptApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (decrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix)
@@ -444,7 +444,7 @@ def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target
     spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe (.inl rfl) v) }
   match v.free, v.ctr.free with
   | some f, some fc => decryptRegF v f fc
-  | none, some _ => r
+  | none, some _ => r.registration
   | _, none =>
     match v.small, v.ctr.small with
     | some f, some fc => withScrubAll {
