@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_sha3_224_absorb_sha3:
+vg_sha3_224_update_sha3:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -2211,7 +2211,7 @@ vg_sha3_224_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha3_256_absorb_sha3:
+vg_sha3_256_update_sha3:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -4418,7 +4418,7 @@ vg_sha3_256_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha3_384_absorb_sha3:
+vg_sha3_384_update_sha3:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -6625,7 +6625,7 @@ vg_sha3_384_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_sha3_512_absorb_sha3:
+vg_sha3_512_update_sha3:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -8832,7 +8832,7 @@ vg_sha3_512_finalize_sha3:
 	ret
 	.p2align 6
 
-vg_shake128_absorb_sha3:
+vg_shake128_update_sha3:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -11458,7 +11458,7 @@ vg_shake256_squeeze_sha3:
 	ret
 	.p2align 6
 
-vg_sha3_224_absorb:
+vg_sha3_224_update:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -14608,7 +14608,7 @@ vg_sha3_224_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_256_absorb:
+vg_sha3_256_update:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -17758,7 +17758,7 @@ vg_sha3_256_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_384_absorb:
+vg_sha3_384_update:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -20908,7 +20908,7 @@ vg_sha3_384_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_512_absorb:
+vg_sha3_512_update:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0
@@ -24058,7 +24058,7 @@ vg_sha3_512_finalize:
 	ret
 	.p2align 6
 
-vg_shake128_absorb:
+vg_shake128_update:
 	sub sp, sp, #640
 	add x4, sp, #0
 	add x5, x4, #0

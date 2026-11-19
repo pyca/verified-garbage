@@ -127,6 +127,73 @@ theorem finTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
       · exact he.stk'.c) hR,
     blockAt_frame hf₄ (j_tFrame L he.stk')]
 
+
+theorem finTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
+    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
+    (ha : a.length % 16 = (V .s10).toNat % 16) (hP : (V .s11).toNat = ct.length) {S D : Addr} {n : Nat}
+    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S D n s) :
+    WP isa (finTagB bs o) s (FinOut V sp o R H a ct s.mem) := by
+  have h22 := he.fr .s10 (by decide)
+  have h23 := he.fr .s11 (by decide)
+  -- `s6`: the length of the buffered bytes, modulo 16
+  have mid : WP isa (.ite (.zero .s11) (.block [.logicImm .and .s6 .s10 15])
+      (.block [.logicImm .and .s6 .s11 15])) s fun s₂ =>
+      s₂.gpr .s6 = BitVec.ofNat 64 ((ghashInput a ct).length % 16) ∧
+        (∀ r, r ≠ .s6 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
+    refine WP.ite _ (eval_zero (he.ofNat (r := .s11) (by decide)) (V .s11).isLt) (fun ht => ?_) (fun hf => ?_)
+    · have hc : ct = [] := List.eq_nil_of_length_eq_zero (by rw [← hP]; simpa using ht)
+      have e : (ghashInput a ct).length % 16 = (V .s10).toNat % 16 := by
+        rw [hc, Proof.Gcm.ghashInput_nil, ha]
+      have hand := and15 (V .s10)
+      rw [e]
+      crun [Int.reduceNatCast', h22, hand]
+      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
+    · have hc : ct ≠ [] := fun e => by subst e; simp only [List.length_nil] at hP; simp [hP] at hf
+      have e : (ghashInput a ct).length % 16 = (V .s11).toNat % 16 := by
+        rw [Proof.Gcm.ghashInput_of_ne hc, List.length_append, List.length_append, Proof.Gcm.length_zeros, hP]
+        have := Proof.Gcm.length_pad_mod a.length; omega_using [this]
+      have hand := and15 (V .s11)
+      rw [e]
+      crun [Int.reduceNatCast', h23, hand]
+      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
+  refine WP.seq (WP.mono mid fun s₂ ⟨h26₂, hg₂, hk₂⟩ => ?_)
+  have he₂ := he.keep (fun r hr => hg₂ r (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
+  refine WP.seq (WP.mono (WP.with_rdwr' (flush_ok L (yo := 16) (.inr rfl) (x := ghashInput a ct) (H := H)
+    ⟨he₂, by rw [hk₂.mem]; exact hH⟩ h26₂)) fun s₄ ⟨hfl, rd₄, wr₄⟩ => ?_)
+  have hf₄ := hfl.frame
+  rw [hk₂.mem] at hf₄
+  -- the lengths
+  have h₅ : WP isa (.block [mov .s4 .s10, mov .s6 .s11]) s₄ fun s₅ =>
+      s₅.gpr .s4 = V .s10 ∧ s₅.gpr .s6 = V .s11 ∧ (∀ r, r ≠ .s4 → r ≠ .s6 → s₅.gpr r = s₄.gpr r) ∧
+        Keeps s₄ s₅ := by
+    have e22 := hfl.env.fr .s10 (by decide)
+    have e23 := hfl.env.fr .s11 (by decide)
+    crun [Int.reduceNatCast', mov, e22, e23]
+    exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
+  refine WP.seq (WP.mono h₅ fun s₅ ⟨h24₅, h26₅, hg₅, hk₅⟩ => ?_)
+  have he₅ := hfl.env.keep (fun r hr => hg₅ r (by revert r; decide) (by revert r; decide)) hk₅.sp hk₅.rd hk₅.wr
+  refine WP.mono (tagB_ok L ho he₅ h28 hR (H := H) (by rw [hk₅.mem]; exact hfl.hH) rfl (S := S) (D := D) (n := n)
+    fun hbs => by
+      obtain hb := hb hbs
+      refine ⟨by rw [hk₅.rd, hk₅.wr, rd₄, wr₄, hk₂.rd, hk₂.wr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src, ?_⟩
+      rw [hk₅.mem]
+      exact keysAt_ctx_frame hR hf₄ (bk_tFrame hb) (ctx_tFrame L he.stk') hb.keys) fun s₆ tg => ?_
+  rw [h24₅, h26₅, hP, hk₅.mem] at tg
+  refine ⟨tg.env, fun hab => ?_, (t_tagFrame hf₄).trans tg.frame⟩
+  rw [tg.out]
+  have hw := (hfl.abs (by rw [hk₂.mem]; exact hab)).whole_eq (by
+    simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
+  rw [show ghashInput a ct ++ zeros (padLen (ghashInput a ct).length) = padded a ct from rfl] at hw
+  rw [hw, ciph_frame hf₄ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact L.cs.sub_right (Lay.stSub (by decide))
+      · exact L.cw'.sub_right (Lay.wSub (by decide))
+      · exact L.cw'.sub_right (Lay.wSub (by decide))
+      · exact he.stk'.c) hR,
+    blockAt_frame hf₄ (j_tFrame L he.stk')]
+
 end
 
 end VG.Proof.AesGcm.RISCV64
@@ -183,7 +250,7 @@ theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp
   · have := c.frame; rwa [h20, add_ofNat_zero] at this
 
 section
-variable {s₀ : State} (h : finPre s₀)
+variable {ex : List Region} {s₀ : State} (h : finPreX ex s₀)
 include h
 
 theorem finLay : Lay (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a6) := by
@@ -231,8 +298,56 @@ theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a6, 2560⟩] s₀.wr) 
   refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
+/-- `finEntry`, then `s7 := t2`. -/
+theorem fin1B_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a6, 2560⟩] s₀.wr) (hal : (s₀.gpr .a6).toNat % 8 = 0) :
+    WP isa (.block (finEntry ++ [mov .s7 .t2])) s₀ fun s₁ => SF1 s₀ s₁ ∧ s₁.gpr .s7 = s₀.gpr .t2 := by
+  simp only [finEntry, List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.block_append (WP.mono (save_ok (b := .a6) hW hal) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
+  have e3 : s₁.gpr .a0 = s₀.gpr .a0 := hg _ (by decide)
+  have e4 : s₁.gpr .a1 = s₀.gpr .a1 := hg _ (by decide)
+  have e5 : s₁.gpr .a2 = s₀.gpr .a2 := hg _ (by decide)
+  have e6 : s₁.gpr .a3 = s₀.gpr .a3 := hg _ (by decide)
+  have e7 : s₁.gpr .a4 = s₀.gpr .a4 := hg _ (by decide)
+  have e8 : s₁.gpr .a5 = s₀.gpr .a5 := hg _ (by decide)
+  have e10 : s₁.gpr .t2 = s₀.gpr .t2 := hg _ (by decide)
+  crun [Int.reduceNatCast', mov, e3, e4, e5, e6, e7, e8, e10, h31]
+  refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals simp [h31]
+
+/-- The entry of `finish`, and with the round keys bitsliced `s7 := t2`. -/
+theorem fin1B_wp' {bs : Bool} {s₀ : State} (hW : Covers [⟨s₀.gpr .a6, 2560⟩] s₀.wr)
+    (hal : (s₀.gpr .a6).toNat % 8 = 0) :
+    WP isa (.block (finEntryB bs)) s₀ fun s₁ => SF1 s₀ s₁ ∧ (bs = true → s₁.gpr .s7 = s₀.gpr .t2) := by
+  cases bs
+  · exact WP.mono (fin1_wp hW hal) fun _ h => ⟨h, Bool.noConfusion⟩
+  · exact WP.mono (fin1B_wp hW hal) fun _ h => ⟨h.1, fun _ => h.2⟩
+
+/-- With the round keys bitsliced, `bk = t2`, with the scratch buffer in `w`:
+readable, a multiple of 8, apart from the state, `W` and the stack below
+`sp`, and holding the round keys of the schedule in the context. -/
+structure BsAtW (s₀ : State) (w : Reg) : Prop where
+  rd : Covers [⟨s₀.gpr .t2, 960⟩] s₀.rd
+  al : (s₀.gpr .t2).toNat % 8 = 0
+  st : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr .a2, 80⟩
+  w : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint ⟨s₀.gpr w, 2560⟩
+  sk : (⟨s₀.gpr .t2, 960⟩ : Region).Disjoint (below s₀.sp 2048)
+  keys : Proof.Aes.RISCV64.KeysAt s₀.mem (s₀.gpr .t2) (s₀.gpr .a1).toNat
+    (bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)))
+
+/-- The buffer after the entry, as `finTagB` takes it. -/
+theorem BsAtW.bkIn {s₀ s₁ : State} {w : Reg} (hb : BsAtW s₀ w) (L₀ : Lay (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr w))
+    (hR : (s₀.gpr .a1).toNat = 10 ∨ (s₀.gpr .a1).toNat = 12 ∨ (s₀.gpr .a1).toNat = 14)
+    (hrd : s₁.rd = s₀.rd) (hf : Frame [savedR (s₀.gpr w)] s₀.mem s₁.mem) :
+    BkIn (s₀.gpr .t2) (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr w) s₀.sp (s₀.gpr .a1).toNat s₁.mem (s₀.gpr w) (s₀.gpr w)
+      16 s₁ :=
+  ⟨covers_appL (by rw [hrd]; exact hb.rd), hb.al, hb.st, hb.w, hb.sk,
+    hb.w.sub_right (Region.sub_prefix (by decide)), hb.w.sub_right (Region.sub_prefix (by decide)),
+    keysAt_ctx_frame hR hf (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hb.w.sub_right (Lay.wSub (by decide)))
+      (ctx_saved L₀) hb.keys⟩
+
 /-- The environment after the entry. -/
-theorem fin_env {s₀ s₁ : State} (h : finPre s₀) (h1 : SF1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
+theorem fin_env {ex : List Region} {s₀ s₁ : State} (h : finPreX ex s₀) (h1 : SF1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
   have hk := fin_stk h
   obtain ⟨hrd, hwr, -⟩ := h
   have perm : Perm (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a6) s₁ :=
@@ -286,9 +401,9 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,
     h22, toNat_of_eq hl, lensBlock_mod, Proof.Gcm.fullTag_eq]
 
-theorem streamFinish_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamFinishRISCV64.pre s₀) :
-    WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishRISCV64.post s₀ s' := by
-  have h' : finPre s₀ := h
+theorem streamFinishB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
+    (h' : finPreX ex s₀) (hbs : bs = true → BsAtW s₀ .a6) :
+    WP isa (streamFinishB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishRISCV64.post s₀ s' := by
   have L₀ := finLay h'
   have hR := fin_R h'
   have hk₀ := fin_stk h'
@@ -296,20 +411,22 @@ theorem streamFinish_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : stre
   obtain ⟨-, hwr, -, -, -, -, -, dtw, -⟩ := hh
   have hTw : Covers [⟨s₀.gpr .a5, 16⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have run : ∀ {a ct : List Byte}, a.length % 16 = (s₀.gpr .a3).toNat % 16 → (s₀.gpr .a4).toNat = ct.length →
-      WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ ∀ iv,
+      WP isa (streamFinishB bs) s₀ fun s' => abiPreserved s₀ s' ∧ ∀ iv,
         StreamRepr s₀.mem (s₀.gpr .a2) (ctxCiph s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat)
           (ctxH s₀.mem (s₀.gpr .a0)) iv a ct → s₀.gpr .a3 = BitVec.ofNat 64 a.length →
         bytesAt s'.mem (s₀.gpr .a5) 16 =
           fullTag (ctxCiph s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat) (ctxH s₀.mem (s₀.gpr .a0)) iv a ct := by
     intro a ct ha hP
-    refine WP.seq (WP.mono (fin1_wp (fin_W h') (fin_al h')) fun s₁ h1 => ?_)
+    refine WP.seq (WP.mono (fin1B_wp' (bs := bs) (fin_W h') (fin_al h')) fun s₁ ⟨h1, h17⟩ => ?_)
     have he₁ := fin_env h' h1
     have L := L₀.v h1.s2 h1.s1 h1.s0
     have hH₁ : blockAt s₁.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .a0) := by
       rw [h1.s2]; exact ctxH_keep h1.en.frame (ctx_saved L₀)
-    refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L (o := 0) (.inl rfl) (a := a) (ct := ct) he₁
+    refine WP.seq (WP.mono (WP.with_rdwr (finTagB_ok L (o := 0) (.inl rfl) (a := a) (ct := ct) he₁
       (by rw [h1.s3, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hR hH₁ (by rw [h1.s10]; exact ha)
-      (by rw [h1.s11]; exact hP))) fun s₂ ⟨hf, rd₂, wr₂, _⟩ => ?_)
+      (by rw [h1.s11]; exact hP) (fun hb => by
+        rw [h17 hb, h1.s2, h1.s1, h1.s0]
+        exact (hbs hb).bkIn L₀ hR h1.en.keeps.rd h1.en.frame))) fun s₂ ⟨hf, rd₂, wr₂, _⟩ => ?_)
     have hTw₂ : Covers [⟨s₁.gpr .s9, 16⟩] s₂.wr := by
       rw [wr₂, h1.en.keeps.wr, h1.s9]; exact hTw
     have hTd : (⟨s₁.gpr .s9, 16⟩ : Region).Disjoint ⟨s₁.gpr .s0, 16⟩ := by
@@ -342,5 +459,9 @@ theorem streamFinish_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : stre
     fun i hi => WP.mono (run (a := i.2.1) (ct := i.2.2) (by rw [hi.2.1, toNat_mod16]) hi.2.2)
       fun s' hh => hh.2 i.1 hi.1 hi.2.1)
     fun s' hh => ⟨hh.1, fun iv a c hs hl hp => hh.2 ⟨iv, a, c⟩ ⟨hs, hl, hp⟩⟩
+
+theorem streamFinish_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamFinishRISCV64.pre s₀) :
+    WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishRISCV64.post s₀ s' :=
+  streamFinishB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

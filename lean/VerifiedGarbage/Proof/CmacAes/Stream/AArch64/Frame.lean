@@ -582,50 +582,51 @@ open VG.Proof.CmacAes.AArch64 (k0 readW_writeW_other agree_of)
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
 
 /-- The precondition, by name: the state `St`, the key `Kp` of `KL` bytes
-and the scratch buffer `S`. -/
-structure IPre (s₀ : State) (St Kp S : Addr) (KL : Nat) : Prop where
+and the scratch buffer `S`, with `W` bytes of working space. -/
+structure IPre (W : Nat) (s₀ : State) (St Kp S : Addr) (KL : Nat) : Prop where
   x0 : s₀.gpr .x0 = St
   x1 : s₀.gpr .x1 = Kp
   x2 : (s₀.gpr .x2).toNat = KL
   x3 : s₀.gpr .x3 = S
   rd : s₀.rd = [⟨Kp, KL⟩]
-  wr : s₀.wr = [⟨St, 304⟩, ⟨S, 2304⟩]
+  wr : s₀.wr = [⟨St, 304⟩, ⟨S, 32 + W⟩]
   st_k : (⟨St, 304⟩ : Region).Disjoint ⟨Kp, KL⟩
-  st_s : (⟨St, 304⟩ : Region).Disjoint ⟨S, 2304⟩
-  k_s : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 2304⟩
+  st_s : (⟨St, 304⟩ : Region).Disjoint ⟨S, 32 + W⟩
+  k_s : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 32 + W⟩
   wSt : St.toNat + 304 ≤ 2 ^ 64
   wK : Kp.toNat + KL ≤ 2 ^ 64
-  wS : S.toNat + 2304 ≤ 2 ^ 64
+  wS : S.toNat + (32 + W) ≤ 2 ^ 64
   klen : KL = 16 ∨ KL = 24 ∨ KL = 32
+  big : 512 ≤ W
 
-theorem IPre.of {s₀ : State} (h : initAArch64.pre s₀) :
-    IPre s₀ (s₀.gpr .x0) (s₀.gpr .x1) (s₀.gpr .x3) (s₀.gpr .x2).toNat :=
+theorem IPre.of {W : Nat} {s₀ : State} (h : (initAArch64With W).pre s₀) (hW : 512 ≤ W) :
+    IPre W s₀ (s₀.gpr .x0) (s₀.gpr .x1) (s₀.gpr .x3) (s₀.gpr .x2).toNat :=
   let ⟨a, b, c, d, e, f, g, h, i⟩ := h
-  ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i⟩
+  ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, hW⟩
 
-theorem IPre.rounds {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL) :
+theorem IPre.rounds {W : Nat} {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre W s₀ St Kp S KL) :
     KL / 4 + 6 = 10 ∨ KL / 4 + 6 = 12 ∨ KL / 4 + 6 = 14 := by
   rcases hp.klen with h | h | h <;> subst h <;> decide
 
 /-- The memory after saving the registers. -/
 def initSavedMem (s : State) (S : Addr) : Mem :=
-  (((s.mem.writeW (S + BitVec.ofNat 64 2176) (s.gpr .x19)).writeW (S + BitVec.ofNat 64 2184) (s.gpr .x20)).writeW
-    (S + BitVec.ofNat 64 2192) (s.gpr .x21)).writeW (S + BitVec.ofNat 64 2200) (s.gpr .x30)
+  (((s.mem.writeW (S + BitVec.ofNat 64 0) (s.gpr .x19)).writeW (S + BitVec.ofNat 64 8) (s.gpr .x20)).writeW
+    (S + BitVec.ofNat 64 16) (s.gpr .x21)).writeW (S + BitVec.ofNat 64 24) (s.gpr .x30)
 
 theorem initSavedMem_frame (s : State) (S : Addr) :
-    Frame [⟨S + BitVec.ofNat 64 2176, 32⟩] s.mem (initSavedMem s S) := by
-  have c (d : Nat) (hd : d + 8 ≤ 32) : (⟨S + BitVec.ofNat 64 2176, 32⟩ : Region).Contains
-      (S + BitVec.ofNat 64 (2176 + d)) 8 := by
-    rw [← Offset.add_add]; exact Offset.contains_base _ hd (by omega_arith)
-  exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simpa using c 0 (by decide))).writeW
+    Frame [⟨S + BitVec.ofNat 64 0, 32⟩] s.mem (initSavedMem s S) := by
+  have c (d : Nat) (hd : d + 8 ≤ 32) : (⟨S + BitVec.ofNat 64 0, 32⟩ : Region).Contains
+      (S + BitVec.ofNat 64 d) 8 :=
+    Offset.contains S (Nat.zero_le _) (by omega_arith) (by omega_arith)
+  exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
     (List.mem_singleton_self _) _ (c 8 (by decide))).writeW (List.mem_singleton_self _) _
     (c 16 (by decide))).writeW (List.mem_singleton_self _) _ (c 24 (by decide))
 
 theorem initSaved_read (s : State) (S : Addr) :
-    (initSavedMem s S).readW (S + BitVec.ofNat 64 2176) 64 = s.gpr .x19 ∧
-      (initSavedMem s S).readW (S + BitVec.ofNat 64 2184) 64 = s.gpr .x20 ∧
-      (initSavedMem s S).readW (S + BitVec.ofNat 64 2192) 64 = s.gpr .x21 ∧
-      (initSavedMem s S).readW (S + BitVec.ofNat 64 2200) 64 = s.gpr .x30 := by
+    (initSavedMem s S).readW (S + BitVec.ofNat 64 0) 64 = s.gpr .x19 ∧
+      (initSavedMem s S).readW (S + BitVec.ofNat 64 8) 64 = s.gpr .x20 ∧
+      (initSavedMem s S).readW (S + BitVec.ofNat 64 16) 64 = s.gpr .x21 ∧
+      (initSavedMem s S).readW (S + BitVec.ofNat 64 24) 64 = s.gpr .x30 := by
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [initSavedMem, readW_writeW_other _ _ _ (by decide) (by decide) (by decide),
       readW_writeW_other _ _ _ (by decide) (by decide) (by decide),
@@ -637,24 +638,24 @@ theorem initSaved_read (s : State) (S : Addr) :
 
 /-! ## Before the first call -/
 
-theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL) :
+theorem initPre_ok {W : Nat} {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre W s₀ St Kp S KL) :
     ∃ s₁, runBlock isa initPre s₀ = some s₁ ∧ s₁.gpr .x0 = Kp ∧ s₁.gpr .x1 = BitVec.ofNat 64 KL ∧
-      s₁.gpr .x2 = St ∧ s₁.gpr .x3 = S ∧ s₁.gpr .x19 = St ∧ s₁.gpr .x20 = S ∧
+      s₁.gpr .x2 = St ∧ s₁.gpr .x3 = S + BitVec.ofNat 64 32 ∧ s₁.gpr .x19 = St ∧ s₁.gpr .x20 = S ∧
       s₁.gpr .x21 = BitVec.ofNat 64 (KL / 4 + 6) ∧
       (∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → s₁.gpr r = s₀.gpr r) ∧ s₁.sp = s₀.sp ∧
       s₁.mem = initSavedMem s₀ S ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
-  have inS (d : Nat) (hd : d + 8 ≤ 2304) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr]; exact ⟨⟨S, 2304⟩, by simp, Offset.contains_base _ hd (by have := hp.wS; omega_arith)⟩
+  have inS (d : Nat) (hd : d + 8 ≤ 32 + W) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
+    rw [hp.wr]; exact ⟨⟨S, 32 + W⟩, by simp, Offset.contains_base _ hd (by have := hp.wS; omega_arith)⟩
   obtain hKL : s₀.gpr .x2 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x2
   refine ⟨_, by
-    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPre, initSaved, mov, List.map, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPre, initSaved, initWOff, mov, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
       Size.bits, State.read, gpr_write, Option.bind_some,
-      BitVec.setWidth_eq, hp.x3, inS 2176 (by decide), inS 2184 (by decide), inS 2192 (by decide),
-      inS 2200 (by decide)]
+      BitVec.setWidth_eq, hp.x3, inS 0 (by omega), inS 8 (by omega), inS 16 (by omega),
+      inS 24 (by omega)]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write, hp.x1], by simp [gpr_write, hKL], by simp [gpr_write, hp.x0],
-    by simp [gpr_write, hp.x3], by simp [gpr_write, hp.x0], by simp [gpr_write],
+    by simp [gpr_write], by simp [gpr_write, hp.x0], by simp [gpr_write],
     by simp [gpr_write, hKL, rounds_bv hp.klen], fun r hr h19 h20 h21 => ?_, rfl, ?_, rfl, rfl⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all [gpr_write]
@@ -662,7 +663,7 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
 
 /-- What the code before the first call leaves. -/
 structure IMid₁ (s₀ : State) (St Kp S : Addr) (KL : Nat) (s : State) : Prop where
-  args : EArgs s Kp St S KL
+  args : EArgs s Kp St (S + BitVec.ofNat 64 32) KL
   x19 : s.gpr .x19 = St
   x20 : s.gpr .x20 = S
   x21 : s.gpr .x21 = BitVec.ofNat 64 (KL / 4 + 6)
@@ -672,15 +673,17 @@ structure IMid₁ (s₀ : State) (St Kp S : Addr) (KL : Nat) (s : State) : Prop 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem initPre_wp {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL) :
+theorem initPre_wp {W : Nat} {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre W s₀ St Kp S KL) :
     WP isa (.block initPre) s₀ (IMid₁ s₀ St Kp S KL) := by
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, x19₁, x20₁, x21₁, o₁, sp₁, m₁, rd₁, wr₁⟩ := initPre_ok hp
   refine WP.of_runBlock ⟨s₁, run₁, ⟨?_, x19₁, x20₁, x21₁, o₁, sp₁, m₁, rd₁, wr₁⟩⟩
+  have hb := hp.big
+  obtain pS : Region.Sub ⟨S + BitVec.ofNat 64 32, 512⟩ ⟨S, 32 + W⟩ := Offset.sub_base S (by omega)
   exact
   { x0 := x0₁, x1 := x1₁, x2 := x2₁, x3 := x3₁, klen := hp.klen
     kw := hp.st_k.symm.sub_right (Region.sub_prefix (by decide))
-    ks := hp.k_s.sub_right (Region.sub_prefix (by decide))
-    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
+    ks := hp.k_s.sub_right pS
+    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right pS
     reads := by
       rw [rd₁, wr₁, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -688,24 +691,24 @@ theorem initPre_wp {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
       rcases hr with rfl | rfl | rfl
       · exact ⟨⟨Kp, KL⟩, by simp, 0, by simp, by simp⟩
       · exact ⟨⟨St, 304⟩, by simp, 0, by simp, by simp⟩
-      · exact ⟨⟨S, 2304⟩, by simp, 0, by simp, by simp⟩
+      · exact ⟨⟨S, 32 + W⟩, by simp, 32, rfl, by dsimp only; omega⟩
     writes := by
       rw [wr₁, hp.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨St, 304⟩, by simp, 0, by simp, by simp⟩
-      · exact ⟨⟨S, 2304⟩, by simp, 0, by simp, by simp⟩ }
+      · exact ⟨⟨S, 32 + W⟩, by simp, 32, rfl, by dsimp only; omega⟩ }
 
 /-! ## Between the calls, and after them -/
 
 theorem initMid_ok {s : State} {St S : Addr} {R : Nat} (h19 : s.gpr .x19 = St) (h20 : s.gpr .x20 = S)
     (h21 : s.gpr .x21 = BitVec.ofNat 64 R) :
     ∃ s', runBlock isa initMid s = some s' ∧ s'.gpr .x0 = St ∧ s'.gpr .x1 = BitVec.ofNat 64 R ∧
-      s'.gpr .x2 = St + BitVec.ofNat 64 240 ∧ s'.gpr .x3 = S ∧
+      s'.gpr .x2 = St + BitVec.ofNat 64 240 ∧ s'.gpr .x3 = S + BitVec.ofNat 64 32 ∧
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, initMid, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, initMid, initWOff, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
       Size.bits, State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write, h19], by simp [gpr_write, h21], by simp [gpr_write, h19],
@@ -722,15 +725,15 @@ theorem zeroCv_eq (m : Mem) (St : Addr) : zeroCv m St = Proof.Cmac.zero2 m (St +
 
 theorem initPost_ok {s : State} {St S : Addr} (h19 : s.gpr .x19 = St) (h20 : s.gpr .x20 = S)
     (w₁ : InRegions s.wr (St + BitVec.ofNat 64 272) 8) (w₂ : InRegions s.wr (St + BitVec.ofNat 64 280) 8)
-    (r₁ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 2176) 8)
-    (r₂ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 2184) 8)
-    (r₃ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 2192) 8)
-    (r₄ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 2200) 8) :
+    (r₁ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 0) 8)
+    (r₂ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 8) 8)
+    (r₃ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 16) 8)
+    (r₄ : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 24) 8) :
     ∃ s', runBlock isa initPost s = some s' ∧
-      s'.gpr .x19 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 2176) 64 ∧
-      s'.gpr .x20 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 2184) 64 ∧
-      s'.gpr .x21 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 2192) 64 ∧
-      s'.gpr .x30 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 2200) 64 ∧
+      s'.gpr .x19 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 0) 64 ∧
+      s'.gpr .x20 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 8) 64 ∧
+      s'.gpr .x21 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 16) 64 ∧
+      s'.gpr .x30 = (zeroCv s.mem St).readW (S + BitVec.ofNat 64 24) 64 ∧
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x30 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = zeroCv s.mem St := by
   refine ⟨_, by
@@ -743,8 +746,8 @@ theorem initPost_ok {s : State} {St S : Addr} (h19 : s.gpr .x19 = St) (h20 : s.g
   all_goals simp [gpr_write, mem_write, zeroCv, Mem.readW, Mem.writeW]
 
 /-- What the code between the calls leaves. -/
-structure IMid₂ (s₀ : State) (St S : Addr) (KL : Nat) (m : Mem) (s : State) : Prop where
-  args : SArgs s St (St + BitVec.ofNat 64 240) S (KL / 4 + 6)
+structure IMid₂ (W : Nat) (s₀ : State) (St S : Addr) (KL : Nat) (m : Mem) (s : State) : Prop where
+  args : SArgs s St (St + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 32) (KL / 4 + 6) W
   x19 : s.gpr .x19 = St
   x20 : s.gpr .x20 = S
   keep : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x30 → s.gpr r = s₀.gpr r
@@ -753,13 +756,16 @@ structure IMid₂ (s₀ : State) (St S : Addr) (KL : Nat) (m : Mem) (s : State) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem initMid_wp {s₀ s : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL)
+theorem initMid_wp {W : Nat} {s₀ s : State} {St Kp S : Addr} {KL : Nat} (hp : IPre W s₀ St Kp S KL)
     (h19 : s.gpr .x19 = St) (h20 : s.gpr .x20 = S) (h21 : s.gpr .x21 = BitVec.ofNat 64 (KL / 4 + 6))
     (hsp : s.sp = s₀.sp) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hk : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x30 → s.gpr r = s₀.gpr r) :
-    WP isa (.block initMid) s (IMid₂ s₀ St S KL s.mem) := by
+    WP isa (.block initMid) s (IMid₂ W s₀ St S KL s.mem) := by
   obtain ⟨s', run, x0, x1, x2, x3, sv, sp, mem, rd, wr⟩ := initMid_ok h19 h20 h21
   have hw := hp.wSt
+  have hb := hp.big
+  have sw := hp.wS
+  obtain pS : Region.Sub ⟨S + BitVec.ofNat 64 32, W⟩ ⟨S, 32 + W⟩ := Offset.sub_base S (by omega)
   obtain kSt : Region.Sub ⟨St + BitVec.ofNat 64 240, 32⟩ ⟨St, 304⟩ := Offset.sub_base St (by decide)
   refine WP.of_runBlock ⟨s', run, ⟨?_, by rw [sv _ (by simp [preserved]), h19],
     by rw [sv _ (by simp [preserved]), h20], fun r hr a b c d => by rw [sv r hr, hk r hr a b c d],
@@ -767,10 +773,10 @@ theorem initMid_wp {s₀ s : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ 
   exact
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, rounds := hp.rounds
     wk := Offset.base_disjoint St (by decide) (by omega_arith)
-    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
-    ks := (hp.st_s.sub_left kSt).sub_right (Region.sub_prefix (by decide))
+    ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right pS
+    ks := (hp.st_s.sub_left kSt).sub_right pS
     wrapK := by rw [toNat_add_lt St hw (by decide)]; omega_arith
-    wrapS := by have := hp.wS; omega_arith
+    wrapS := by rw [toNat_add_lt S sw (by omega)]; omega
     reads := by
       rw [rd, wr, hrd, hwr, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -778,20 +784,21 @@ theorem initMid_wp {s₀ s : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ 
       rcases hr with rfl | rfl | rfl
       · exact ⟨⟨St, 304⟩, by simp, 0, by simp, by simp⟩
       · exact ⟨⟨St, 304⟩, by simp, 240, rfl, by simp⟩
-      · exact ⟨⟨S, 2304⟩, by simp, 0, by simp, by simp⟩
+      · exact ⟨⟨S, 32 + W⟩, by simp, 32, rfl, by simp⟩
     writes := by
       rw [wr, hwr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨St, 304⟩, by simp, 240, rfl, by simp⟩
-      · exact ⟨⟨S, 2304⟩, by simp, 0, by simp, by simp⟩ }
+      · exact ⟨⟨S, 32 + W⟩, by simp, 32, rfl, by simp⟩ }
 
 /-! ## The whole function -/
 
-theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
-    WP isa (init v.expand v.callee v.suffix) s₀ fun s' => GprAbi s₀ s' ∧ initAArch64.post s₀ s' := by
-  obtain hp := IPre.of h0
+theorem init_wp (v : Ctr32Impl) {W : Nat} (hW : 128 + v.scratch ≤ W) (hb : 512 ≤ W) {s₀ : State}
+    (h0 : (initAArch64With W).pre s₀) :
+    WP isa (init v.expand v.callee v.suffix) s₀ fun s' => GprAbi s₀ s' ∧ (initAArch64With W).post s₀ s' := by
+  obtain hp := IPre.of h0 hb
   generalize s₀.gpr .x0 = St at hp
   generalize s₀.gpr .x1 = Kp at hp
   generalize s₀.gpr .x3 = S at hp
@@ -805,51 +812,51 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     (by rw [g₂ _ (by simp [preserved]) (by decide), h₁.x20])
     (by rw [g₂ _ (by simp [preserved]) (by decide), h₁.x21]) (by rw [h₂.sp, h₁.sp]) (by rw [h₂.rd, h₁.rd])
     (by rw [h₂.wr, h₁.wr]) (fun r hr a b c d => by rw [g₂ r hr d, h₁.other r hr a b c])) fun s₃ h₃ => ?_)
-  refine WP.seq (WP.mono (sub_call v _ h₃.args) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (sub_callLe v _ hW h₃.args) fun s₄ h₄ => ?_)
   have g₄ (r : Reg) (hr : r ∈ preserved) (h30 : r ≠ .x30) : s₄.gpr r = s₃.gpr r := h₄.saved r hr h30
-  have inS (d : Nat) (hd : d + 8 ≤ 2304) : InRegions s₄.wr (S + BitVec.ofNat 64 d) 8 := by
-    rw [h₄.wr, h₃.wr, hp.wr]; exact ⟨⟨S, 2304⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
+  have inS (d : Nat) (hd : d + 8 ≤ 32 + W) : InRegions s₄.wr (S + BitVec.ofNat 64 d) 8 := by
+    rw [h₄.wr, h₃.wr, hp.wr]; exact ⟨⟨S, 32 + W⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have inSt (d : Nat) (hd : d + 8 ≤ 304) : InRegions s₄.wr (St + BitVec.ofNat 64 d) 8 := by
     rw [h₄.wr, h₃.wr, hp.wr]; exact ⟨⟨St, 304⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
-  have inR (d : Nat) (hd : d + 8 ≤ 2304) : InRegions (s₄.rd ++ s₄.wr) (S + BitVec.ofNat 64 d) 8 := by
+  have inR (d : Nat) (hd : d + 8 ≤ 32 + W) : InRegions (s₄.rd ++ s₄.wr) (S + BitVec.ofNat 64 d) 8 := by
     obtain ⟨r, hr, hc⟩ := inS d hd; exact ⟨r, List.mem_append_right _ hr, hc⟩
   obtain ⟨s₅, run₅, x19₅, x20₅, x21₅, x30₅, keep₅, sp₅, m₅⟩ := initPost_ok (s := s₄) (St := St) (S := S)
     (by rw [g₄ _ (by simp [preserved]) (by decide), h₃.x19])
     (by rw [g₄ _ (by simp [preserved]) (by decide), h₃.x20])
-    (inSt 272 (by decide)) (inSt 280 (by decide)) (inR 2176 (by decide)) (inR 2184 (by decide))
-    (inR 2192 (by decide)) (inR 2200 (by decide))
+    (inSt 272 (by decide)) (inSt 280 (by decide)) (inR 0 (by omega)) (inR 8 (by omega))
+    (inR 16 (by omega)) (inR 24 (by omega))
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   -- The memory, step by step.
   obtain fz : Frame [⟨St + BitVec.ofNat 64 272, 16⟩] s₄.mem (zeroCv s₄.mem St) := by
     rw [zeroCv_eq]; exact Proof.Cmac.frame_store2 _ _ _
-  obtain f₁ : Frame [⟨S + BitVec.ofNat 64 2176, 32⟩] s₀.mem s₁.mem := by
+  obtain f₁ : Frame [⟨S + BitVec.ofNat 64 0, 32⟩] s₀.mem s₁.mem := by
     rw [h₁.mem]; exact initSavedMem_frame _ _
-  have f₂ : Frame [⟨St, 240⟩, ⟨S, 512⟩] s₁.mem s₂.mem := h₂.frame
-  have f₄ : Frame [⟨St + BitVec.ofNat 64 240, 32⟩, ⟨S, 2176⟩] s₃.mem s₄.mem := h₄.frame
+  have f₂ : Frame [⟨St, 240⟩, ⟨S + BitVec.ofNat 64 32, 512⟩] s₁.mem s₂.mem := h₂.frame
+  have f₄ : Frame [⟨St + BitVec.ofNat 64 240, 32⟩, ⟨S + BitVec.ofNat 64 32, W⟩] s₃.mem s₄.mem := h₄.frame
   have m₃ : s₃.mem = s₂.mem := h₃.mem
   -- The saved registers.
-  have dSv (r : Region) (hr : r ∈ [⟨St, 240⟩, ⟨S, 512⟩, ⟨St + BitVec.ofNat 64 240, 32⟩,
-      ⟨S, 2176⟩, ⟨St + BitVec.ofNat 64 272, 16⟩]) (d : Nat) (hd : 2176 ≤ d) (hd' : d + 8 ≤ 2304) :
+  have dSv (r : Region) (hr : r ∈ [⟨St, 240⟩, ⟨S + BitVec.ofNat 64 32, 512⟩, ⟨St + BitVec.ofNat 64 240, 32⟩,
+      ⟨S + BitVec.ofNat 64 32, W⟩, ⟨St + BitVec.ofNat 64 272, 16⟩]) (d : Nat) (hd' : d + 8 ≤ 32) :
       (⟨S + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
-    obtain sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 2304⟩ := Offset.sub_base S hd'
+    obtain sub : Region.Sub ⟨S + BitVec.ofNat 64 d, 8⟩ ⟨S, 32 + W⟩ := Offset.sub_base S (by omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact (hp.st_s.sub_left (Region.sub_prefix (by decide))).symm.sub_left sub
-    · exact Offset.disjoint_base S (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint S (.inl hd') (by omega_arith) (by omega_arith)
     · exact (hp.st_s.sub_left (Offset.sub_base St (by decide))).symm.sub_left sub
-    · exact Offset.disjoint_base S (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint S (.inl hd') (by omega_arith) (by omega_arith)
     · exact (hp.st_s.sub_left (Offset.sub_base St (by decide))).symm.sub_left sub
-  have rd' (d : Nat) (hd : 2176 ≤ d) (hd' : d + 8 ≤ 2304) :
+  have rd' (d : Nat) (hd' : d + 8 ≤ 32) :
       (zeroCv s₄.mem St).readW (S + BitVec.ofNat 64 d) 64 = s₁.mem.readW (S + BitVec.ofNat 64 d) 64 := by
     obtain c := Region.contains_self (S + BitVec.ofNat 64 d) 8
     rw [fz.readW c (fun r hr => dSv r (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; simp [hr]) d hd hd') (by decide),
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; simp [hr]) d hd') (by decide),
       f₄.readW c (fun r hr => dSv r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-        rcases hr with rfl | rfl <;> simp) d hd hd') (by decide), m₃,
+        rcases hr with rfl | rfl <;> simp) d hd') (by decide), m₃,
       f₂.readW c (fun r hr => dSv r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-        rcases hr with rfl | rfl <;> simp) d hd hd') (by decide)]
+        rcases hr with rfl | rfl <;> simp) d hd') (by decide)]
   obtain ⟨sv₁, sv₂, sv₃, sv₄⟩ := initSaved_read s₀ S
   have m₁ := h₁.mem
   -- The state, outside what the last block writes.
@@ -860,13 +867,13 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     have := hp.klen; simp only [Spec.Aes.rounds]; omega_arith
   refine ⟨⟨fun r hr => ?_, by rw [sp₅, h₄.sp, h₃.sp]⟩, ?_⟩
   · by_cases h19 : r = .x19
-    · subst h19; rw [x19₅, rd' 2176 (by decide) (by decide), m₁]; exact sv₁
+    · subst h19; rw [x19₅, rd' 0 (by decide), m₁]; exact sv₁
     by_cases h20 : r = .x20
-    · subst h20; rw [x20₅, rd' 2184 (by decide) (by decide), m₁]; exact sv₂
+    · subst h20; rw [x20₅, rd' 8 (by decide), m₁]; exact sv₂
     by_cases h21 : r = .x21
-    · subst h21; rw [x21₅, rd' 2192 (by decide) (by decide), m₁]; exact sv₃
+    · subst h21; rw [x21₅, rd' 16 (by decide), m₁]; exact sv₃
     by_cases h30 : r = .x30
-    · subst h30; rw [x30₅, rd' 2200 (by decide) (by decide), m₁]; exact sv₄
+    · subst h30; rw [x30₅, rd' 24 (by decide), m₁]; exact sv₄
     obtain h9 : r ≠ .x9 := by rintro rfl; simp [preserved] at hr
     rw [keep₅ r h19 h20 h21 h30 h9, g₄ r hr h30, h₃.keep r hr h19 h20 h21 h30]
   · show Spec.Cmac.Repr s₅.mem (s₀.gpr .x0) (Spec.Aes.bytesAt s₀.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat) []
@@ -874,7 +881,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
     obtain hkey : Spec.Aes.bytesAt s₁.mem Kp KL = Spec.Aes.bytesAt s₀.mem Kp KL :=
       Proof.Cmac.bytesAt_frame f₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp.k_s.sub_right (Offset.sub_base S (by decide))) (by have := hp.wK; omega_arith)
+        exact hp.k_s.sub_right (Offset.sub_base S (by omega))) (by have := hp.wK; omega_arith)
     obtain hlen : (Spec.Aes.bytesAt s₀.mem Kp KL).length = KL := Proof.Cmac.bytesAt_length _ _ _
     -- The schedule, from the first call on.
     obtain sch : ∀ {d n : Nat}, d + n ≤ 240 → Spec.Aes.bytesAt s₅.mem (St + BitVec.ofNat 64 d) n =
@@ -884,7 +891,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initAArch64.pre s₀) :
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact Offset.disjoint St (by omega_arith) (by omega_arith) (by omega_arith)
-          · exact (hp.st_s.sub_left (Offset.sub_base St (by omega_arith))).sub_right (Region.sub_prefix (by decide)))
+          · exact (hp.st_s.sub_left (Offset.sub_base St (by omega_arith))).sub_right (Offset.sub_base S (by omega)))
           (by omega_arith), m₃]
     obtain hsch : Spec.Aes.bytesAt s₂.mem St (16 * (Spec.Aes.rounds (KL / 4) + 1)) =
         Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem Kp KL) := by rw [h₂.out, hkey]
@@ -920,13 +927,13 @@ theorem ek_after (v : Ctr32Impl) {s₀ s : State} {St Kp S : Addr} {KL : Nat} (h
       by rw [h₂.saved _ (by simp [preserved]) (by decide), h.x21], by rw [h₂.sp, h.sp],
       fun r hr a b c d => by rw [h₂.saved r hr d, h.other r hr a b c], by rw [h₂.rd, h.rd], by rw [h₂.wr, h.wr]⟩
 
-theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀) (h0' : initAArch64.pre s₀')
-    (hq : initAArch64.pub s₀ s₀') :
+theorem init_rel (v : Ctr32Impl) {W : Nat} (hW : 128 + v.scratch ≤ W) (hb : 512 ≤ W) {s₀ s₀' : State}
+    (h0 : (initAArch64With W).pre s₀) (h0' : (initAArch64With W).pre s₀') (hq : (initAArch64With W).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (init v.expand v.callee v.suffix) fun _ _ => True := by
   obtain ⟨q0, q1, q2, q3, q4⟩ := hq
-  obtain hp := IPre.of h0
-  obtain hp' : IPre s₀' (s₀.gpr .x0) (s₀.gpr .x1) (s₀.gpr .x3) (s₀.gpr .x2).toNat := by
-    rw [q0, q1, q2, q3]; exact IPre.of h0'
+  obtain hp := IPre.of h0 hb
+  obtain hp' : IPre W s₀' (s₀.gpr .x0) (s₀.gpr .x1) (s₀.gpr .x3) (s₀.gpr .x2).toNat := by
+    rw [q0, q1, q2, q3]; exact IPre.of h0' hb
   generalize s₀.gpr .x0 = St at hp hp'
   generalize s₀.gpr .x1 = Kp at hp hp'
   generalize s₀.gpr .x3 = S at hp hp'
@@ -956,19 +963,19 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
       · rw [h.1.x19, h.2.x19]
       · rw [h.1.x20, h.2.x20]
       · rw [h.1.x21, h.2.x21]) hB).wp
-    (F₁ := fun (s : State) => ∃ m, IMid₂ s₀ St S KL m s) (F₂ := fun (s : State) => ∃ m, IMid₂ s₀' St S KL m s)
+    (F₁ := fun (s : State) => ∃ m, IMid₂ W s₀ St S KL m s) (F₂ := fun (s : State) => ∃ m, IMid₂ W s₀' St S KL m s)
     fun a b h => ⟨WP.mono (initMid_wp hp h.1.x19 h.1.x20 h.1.x21 h.1.sp h.1.rd h.1.wr h.1.keep)
         fun _ h => ⟨_, h⟩,
       WP.mono (initMid_wp hp' h.2.x19 h.2.x20 h.2.x21 h.2.sp h.2.rd h.2.wr h.2.keep) fun _ h => ⟨_, h⟩⟩
-  obtain sk := (sub_rel v ("vg_cmac_aes_subkeys" ++ v.suffix)
-    (P := fun a b => (∃ m, IMid₂ s₀ St S KL m a) ∧ ∃ m, IMid₂ s₀' St S KL m b)
+  obtain sk := (sub_relLe v ("vg_cmac_aes_subkeys" ++ v.suffix) hW
+    (P := fun a b => (∃ m, IMid₂ W s₀ St S KL m a) ∧ ∃ m, IMid₂ W s₀' St S KL m b)
     fun a b ⟨⟨_, h₁⟩, ⟨_, h₂⟩⟩ => ⟨h₁.args, h₂.args, by rw [h₁.sp, h₂.sp, q4]⟩).wp
     (F₁ := fun (s : State) => s.gpr .x19 = St ∧ s.gpr .x20 = S ∧ s.sp = s₀.sp)
     (F₂ := fun (s : State) => s.gpr .x19 = St ∧ s.gpr .x20 = S ∧ s.sp = s₀'.sp)
     fun a b ⟨⟨_, h₁⟩, ⟨_, h₂⟩⟩ =>
-      ⟨WP.mono (sub_call v _ h₁.args) fun _ h => ⟨by rw [h.saved _ (by simp [preserved]) (by decide), h₁.x19],
+      ⟨WP.mono (sub_callLe v _ hW h₁.args) fun _ h => ⟨by rw [h.saved _ (by simp [preserved]) (by decide), h₁.x19],
           by rw [h.saved _ (by simp [preserved]) (by decide), h₁.x20], by rw [h.sp, h₁.sp]⟩,
-        WP.mono (sub_call v _ h₂.args) fun _ h => ⟨by rw [h.saved _ (by simp [preserved]) (by decide), h₂.x19],
+        WP.mono (sub_callLe v _ hW h₂.args) fun _ h => ⟨by rw [h.saved _ (by simp [preserved]) (by decide), h₂.x19],
           by rw [h.saved _ (by simp [preserved]) (by decide), h₂.x20], by rw [h.sp, h₂.sp]⟩⟩
   obtain p := RelCT.taint (A := taint)
     (P := fun a b => (a.gpr .x19 = St ∧ a.gpr .x20 = S ∧ a.sp = s₀.sp) ∧
@@ -982,9 +989,9 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((e.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((m.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((sk.mono (fun _ _ h => h) fun _ _ h => h.2).seq p)))
 
-theorem init_ct (v : Ctr32Impl) :
-    ConstantTime isa initAArch64.pre initAArch64.pub (init v.expand v.callee v.suffix) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (init_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem init_ct (v : Ctr32Impl) {W : Nat} (hW : 128 + v.scratch ≤ W) (hb : 512 ≤ W) :
+    ConstantTime isa (initAArch64With W).pre (initAArch64With W).pub (init v.expand v.callee v.suffix) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (init_rel v hW hb h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.Stream.AArch64
 
@@ -1190,18 +1197,31 @@ theorem absorb_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) : (absorb v.callee)
 theorem finish_keepsV (v : Ctr32Impl) : (finish v.callee v.suffix).allInstrs keepsV = true := by
   simp only [finish, finPre, lastLen, Code.allInstrs, finalize_keepsV v]; decide +kernel
 
-theorem init_correct (v : Ctr32Impl) (s : State) (hs : initAArch64.pre s) :
-    ∃ t s', Exec isa (init v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
-  WP.withPreservedV (init_wp v hs) (init_keepsV v)
+/-- The working space of `vg_cmac_aes_init` over `v`: the 512 bytes of the key
+expansion, or what `vg_cmac_aes_subkeys` needs (`128 + v.scratch`), if more. -/
+def initW (v : Ctr32Impl) : Nat := if v.scratch = 0 then 512 else 2176
+
+/-- The working space of `vg_cmac_aes_finish` over `v`: what
+`vg_cmac_aes_finalize` needs. -/
+def finW (v : Ctr32Impl) : Nat := 128 + v.scratch
+
+theorem initW_ok (v : Ctr32Impl) : 128 + v.scratch ≤ initW v ∧ 512 ≤ initW v := by
+  rcases v.scratch_ok with h | h <;> simp only [initW, h] <;> decide
+
+theorem init_correct (v : Ctr32Impl) (s : State) (hs : (initAArch64With (initW v)).pre s) :
+    ∃ t s', Exec isa (init v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧
+      (initAArch64With (initW v)).post s s' :=
+  WP.withPreservedV (init_wp v (initW_ok v).1 (initW_ok v).2 hs) (init_keepsV v)
 
 theorem absorb_correct (v : Proof.CmacAes.AArch64.UpdateImpl) (s : State)
     (hs : (absorbAArch64 (64 + v.scratch)).pre s) :
     ∃ t s', Exec isa (absorb v.callee) s t s' ∧ abiPreserved s s' ∧ (absorbAArch64 (64 + v.scratch)).post s s' :=
   WP.withPreservedV (absorb_wp v hs) (absorb_keepsV v)
 
-theorem finish_correct (v : Ctr32Impl) (s : State) (hs : finishAArch64.pre s) :
-    ∃ t s', Exec isa (finish v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ finishAArch64.post s s' :=
-  WP.withPreservedV (finish_wp v hs) (finish_keepsV v)
+theorem finish_correct (v : Ctr32Impl) (s : State) (hs : (finishAArch64With (finW v)).pre s) :
+    ∃ t s', Exec isa (finish v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧
+      (finishAArch64With (finW v)).post s s' :=
+  WP.withPreservedV (finish_wp v (Nat.le_refl _) hs) (finish_keepsV v)
 
 /-- A state satisfying `vg_cmac_aes_init`'s precondition. -/
 def initSat : State where
@@ -1212,11 +1232,34 @@ def initSat : State where
   rd := [⟨0x3000, 16⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
+/-- `initSat` with `F` bytes of scratch. -/
+def initSatW (F : Nat) : State := { initSat with wr := [⟨0x1000, 304⟩, ⟨0x4000, F⟩] }
+
+/-- `vg_cmac_aes_init` with `scratch: *mut [u64; w]`. -/
+def initScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u64 38), ("key", .slice false .u8 "key_len"),
+    ("scratch", .array true .u64 w)]
+
+/-- `aesInitContract`, whatever `scratch` is (of `w` words). -/
+def initScratchContractW {M : ISA} (A : Abi M) (w : Nat) (stack : Nat := 0) : Contract M :=
+  (initScratchSigW w).contract A
+    (pre := fun state key keyLen _scratch => Spec.Cmac.aesInitPre A.ptrBits state key keyLen)
+    (post := fun state key keyLen _scratch => Spec.Cmac.aesInitPost A.ptrBits state key keyLen)
+    (stack := stack)
+
 theorem init_verified (v : Ctr32Impl) :
-    Verified AArch64.target (init v.expand v.callee v.suffix) (initScratchContract AArch64.abi) :=
-  Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [initScratchContract, initScratchSig, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost, initAArch64, AArch64.abi,
-      AArch64.argRegs] [initSat] using initSat)
+    Verified AArch64.target (init v.expand v.callee v.suffix)
+      (initScratchContractW AArch64.abi ((32 + initW v) / 8)) := by
+  obtain hc := init_correct v
+  obtain ht := init_ct v (initW_ok v).1 (initW_ok v).2
+  rcases v.scratch_ok with h | h <;> simp only [initW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+    show (2048 : Nat) ≠ 0 by decide, ite_false] at hc ht ⊢
+  · exact Verified.of_correct hc ht (by
+      sig_implies [initScratchContractW, initScratchSigW, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost,
+        initAArch64With, AArch64.abi, AArch64.argRegs] [initSatW, initSat] using initSatW 544)
+  · exact Verified.of_correct hc ht (by
+      sig_implies [initScratchContractW, initScratchSigW, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost,
+        initAArch64With, AArch64.abi, AArch64.argRegs] [initSatW, initSat] using initSatW 2208)
 
 /-- A state satisfying `vg_cmac_aes_absorb`'s precondition (with no data). -/
 def absorbSat : State where
@@ -1267,11 +1310,34 @@ def finishSat : State where
   rd := []
   wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, 2304⟩]
 
+/-- `finishSat` with `F` bytes of scratch. -/
+def finishSatW (F : Nat) : State := { finishSat with wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, F⟩] }
+
+/-- `vg_cmac_aes_finish` with `scratch: *mut [u64; w]`. -/
+def finishScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u64 38), ("rounds", .int .usize true),
+    ("count", .int .u64 true), ("out", .array true .u8 16),
+    ("scratch", .array true .u64 w)]
+
+/-- `aesFinishContract`, whatever `scratch` is (of `w` words). -/
+def finishScratchContractW {M : ISA} (A : Abi M) (w : Nat) (stack : Nat := 0) : Contract M :=
+  (finishScratchSigW w).contract A
+    (pre := fun state rounds count out _scratch => Spec.Cmac.aesFinishPre A.ptrBits state rounds count out)
+    (post := fun state rounds count out _scratch => Spec.Cmac.aesFinishPost A.ptrBits state rounds count out)
+    (stack := stack)
+
 theorem finish_verified (v : Ctr32Impl) :
-    Verified AArch64.target (finish v.callee v.suffix) (finishScratchContract AArch64.abi) :=
-  Verified.of_correct (finish_correct v) (finish_ct v) (by
-    sig_implies [finishScratchContract, finishScratchSig, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost, finishAArch64, AArch64.abi,
-      AArch64.argRegs] [finishSat] using finishSat)
+    Verified AArch64.target (finish v.callee v.suffix)
+      (finishScratchContractW AArch64.abi ((16 + finW v) / 8)) := by
+  obtain hc := finish_correct v
+  obtain ht := finish_ct v (W := finW v) (Nat.le_refl _)
+  rcases v.scratch_ok with h | h <;> simp only [finW, h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
+  · exact Verified.of_correct hc ht (by
+      sig_implies [finishScratchContractW, finishScratchSigW, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost,
+        finishAArch64With, AArch64.abi, AArch64.argRegs] [finishSatW, finishSat] using finishSatW 144)
+  · exact Verified.of_correct hc ht (by
+      sig_implies [finishScratchContractW, finishScratchSigW, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost,
+        finishAArch64With, AArch64.abi, AArch64.argRegs] [finishSatW, finishSat] using finishSatW 2192)
 
 end VG.Proof.CmacAes.Stream.AArch64
 
@@ -1300,7 +1366,11 @@ open VG.Proof.Aes.AArch64 (Ctr32Impl)
 working space. -/
 def initFrameSat : State := { initSat with wr := [⟨0x1000, 304⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Cmac.aesInitContract AArch64.abi 2304).pre s := by
+theorem initFrameSat_pre544 : ∃ s, (Spec.Cmac.aesInitContract AArch64.abi 544).pre s := by
+  implies_sat [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, Spec.Cmac.aesInitPre,
+    Spec.Cmac.aesInitPost, AArch64.abi, AArch64.argRegs] [initFrameSat, initSat] using initFrameSat
+
+theorem initFrameSat_pre2208 : ∃ s, (Spec.Cmac.aesInitContract AArch64.abi 2208).pre s := by
   implies_sat [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, Spec.Cmac.aesInitPre,
     Spec.Cmac.aesInitPost, AArch64.abi, AArch64.argRegs] [initFrameSat, initSat] using initFrameSat
 
@@ -1322,20 +1392,35 @@ theorem absorbFrameSat_pre2240 : ∃ s, (Spec.Cmac.aesAbsorbContract AArch64.abi
 working space. -/
 def finishFrameSat : State := { finishSat with wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩] }
 
-theorem finishFrameSat_pre : ∃ s, (Spec.Cmac.aesFinishContract AArch64.abi 2304).pre s := by
+theorem finishFrameSat_pre144 : ∃ s, (Spec.Cmac.aesFinishContract AArch64.abi 144).pre s := by
   implies_sat [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, Spec.Cmac.aesFinishPre,
     Spec.Cmac.aesFinishPost, AArch64.abi, AArch64.argRegs] [finishFrameSat, finishSat]
     using finishFrameSat
 
+theorem finishFrameSat_pre2192 : ∃ s, (Spec.Cmac.aesFinishContract AArch64.abi 2192).pre s := by
+  implies_sat [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, Spec.Cmac.aesFinishPre,
+    Spec.Cmac.aesFinishPost, AArch64.abi, AArch64.argRegs] [finishFrameSat, finishSat]
+    using finishFrameSat
+
+/-- `vg_cmac_aes_init`, in a frame of `32 + initW v` bytes: its saved
+registers and the working space of the functions it calls. -/
 theorem init_framed (v : Ctr32Impl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratch 2304 .x3 (init v.expand v.callee v.suffix))
-      (Spec.Cmac.aesInitContract AArch64.abi 2304) :=
-  AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
-    (n := 288) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
-    (post := Spec.Cmac.aesInitPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) (init_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
+      (Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix))
+      (Spec.Cmac.aesInitContract AArch64.abi (32 + initW v)) := by
+  obtain hv := init_verified v
+  rcases v.scratch_ok with h | h <;> simp only [initW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+    show (2048 : Nat) ≠ 0 by decide, ite_false] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+      (n := 68) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
+      (post := Spec.Cmac.aesInitPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+      (bytes := 544) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre544
+  · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
+      (n := 276) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
+      (post := Spec.Cmac.aesInitPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+      (bytes := 2208) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre2208
 
 /-- `vg_cmac_aes_absorb`, in a frame of `64 + n` bytes for a chaining
 implementation that needs `n` (`UpdateImpl.scratch`): its saved registers
@@ -1357,15 +1442,24 @@ theorem absorb_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (bytes := 2240) hv (by decide) (by decide)
       (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.absorbPostOut_local _ vs m m₁ m₂ r hl) absorbFrameSat_pre2240
 
+/-- `vg_cmac_aes_finish`, in a frame of `16 + finW v` bytes: its saved
+registers and the working space of `vg_cmac_aes_finalize`. -/
 theorem finish_framed (v : Ctr32Impl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackScratch 2304 .x4 (finish v.callee v.suffix))
-      (Spec.Cmac.aesFinishContract AArch64.abi 2304) :=
-  AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
-    (n := 288) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
-    (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2304) (finish_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre
+      (Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix))
+      (Spec.Cmac.aesFinishContract AArch64.abi (16 + finW v)) := by
+  obtain hv := finish_verified v
+  rcases v.scratch_ok with h | h <;> simp only [finW, h, Nat.reduceAdd, Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+      (n := 18) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
+      (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+      (bytes := 144) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre144
+  · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
+      (n := 274) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
+      (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+      (bytes := 2192) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.CmacAes.Stream.finishPostOut_local _ vs m m₁ m₂ r hl) finishFrameSat_pre2192
 
 /-! ## Without secret residue -/
 
@@ -1414,5 +1508,42 @@ def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.ae
       consts := []
       stack := 64 + v.scratch }
   ScrubAll.withScrubAll r (absorbOk_framed v)
+
+/-- `vg_cmac_aes_init`'s postcondition reads the memory on return only within
+the state (`initPostOut_local`), so it returns with every register it may
+leave secret cleared and its whole frame zeroed (`ScrubAll.withScrubAll`). -/
+theorem initOk (W : Nat) (hW : 0 < W) :
+    ScrubAll.ScrubAllOk (Spec.Cmac.aesInitContract abi W) W (Spec.Cmac.aesInitSig.retBits abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesInitSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    (Proof.CmacAes.Stream.initPostOut_local _)
+
+/-- `vg_cmac_aes_finish`'s postcondition reads the memory on return only within
+`out` (`finishPostOut_local`), as `initOk`. -/
+theorem finishOk (W : Nat) (hW : 0 < W) :
+    ScrubAll.ScrubAllOk (Spec.Cmac.aesFinishContract abi W) W (Spec.Cmac.aesFinishSig.retBits abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesFinishSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    (Proof.CmacAes.Stream.finishPostOut_local _)
+
+/-- `vg_cmac_aes_init` over `v` in its frame (`init_framed`), scrubbed whole
+(`ScrubAll.withScrubAll`): 544 bytes over an implementation that needs no
+working space, else 2208. -/
+def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)
+      verified := init_framed v
+      consts := []
+      stack := 32 + initW v } (initOk _ (by omega_using []))
+
+/-- `vg_cmac_aes_finish` over `v` in its frame (`finish_framed`), scrubbed
+whole (`ScrubAll.withScrubAll`): 144 bytes over an implementation that needs
+no working space, else 2192. -/
+def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)
+      verified := finish_framed v
+      consts := []
+      stack := 16 + finW v } (finishOk _ (by omega_using []))
 
 end VG.Proof.CmacAes.Stream.AArch64

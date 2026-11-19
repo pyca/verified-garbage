@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -399,7 +401,7 @@ bne %cr0, 293b
 .base64 "AADR+AIAgDh4IoN+//9jOOAPY3gUGmN8"
 281:
 21:
-.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITggAIBO""#,
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITgAAAA4MfEh+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+LACDPi4Agz4wAIM+MgCDPjQAgz42AIM+OACDPjoAgz48AIM+PgCDPgAAwz4CAMM+BADDPgYAwz4IAMM+CgDDPgwAwz4OAMM+EADDPhIAwz4UAMM+FgDDPhgAwz4aAMM+HADDPh4Awz4gAMM+IgDDPiQAwz4mAMM+KADDPioAwz4sAMM+LgDDPjAAwz4yAMM+NADDPjYAwz44AMM+OgDDPjwAwz4+AMM+AAEDPgIBAz4EAQM+BgEDPggBAz4KAQM+DAEDPg4BAz4QAQM+EgEDPhQBAz4WAQM+GAEDPhoBAz4cAQM+HgEDPiABAz4iAQM+JAEDPiYBAz4oAQM+KgEDPiwBAz4uAQM+MAEDPjIBAz40AQM+NgEDPjgBAz46AQM+PAEDPj4BAz4AAUM+AgFDPgQBQz4GAUM+CAFDPgoBQz4MAUM+DgFDPhABQz4SAUM+FAFDPhYBQz4YAUM+GgFDPhwBQz4eAUM+IAFDPiIBQz4kAUM+JgFDPigBQz4qAUM+LAFDPi4BQz4wAUM+MgFDPjQBQz42AUM+OAFDPjoBQz48AUM+PgFDPgABgz4CAYM+BAGDPgYBgz4IAYM+CgGDPgwBgz4OAYM+EAGDPhIBgz4UAYM+FgGDPhgBgz4aAYM+HAGDPh4Bgz4gAYM+IgGDPiQBgz4mAYM+KAGDPioBgz4sAYM+LgGDPjABgz4yAYM+NAGDPjYBgz44AYM+OgGDPjwBgz4+AYM+AAHDPgIBwz4EAcM+BgHDPggBwz4KAcM+DAHDPg4Bwz4QAcM+EgHDPhQBwz4WAcM+GAHDPhoBwz4cAcM+HgHDPiABwz4iAcM+JAHDPiYBwz4oAcM+KgHDPiwBwz4uAcM+MAHDPjIBwz40AcM+NgHDPjgBwz46AcM+PAHDPj4Bwz4AAgM+AgIDPgQCAz4GAgM+CAIDPgoCAz4MAgM+DgIDPhACAz4SAgM+FAIDPhYCAz4YAgM+GgIDPhwCAz4eAgM+IAIDPiICAz4kAgM+JgIDPigCAz4qAgM+LAIDPi4CAz4wAgM+MgIDPjQCAz42AgM+OAIDPjoCAz48AgM+PgIDPgACQz4CAkM+BAJDPgYCQz4IAkM+CgJDPgwCQz4OAkM+EAJDPhICQz4UAkM+FgJDPhgCQz4aAkM+HAJDPh4CQz4gAkM+IgJDPiQCQz4mAkM+KAJDPioCQz4sAkM+LgJDPjACQz4yAkM+NAJDPjYCQz44AkM+OgJDPjwCQz4+AkM+AAKDPgICgz4EAoM+BgKDPggCgz4KAoM+DAKDPg4Cgz4QAoM+EgKDPhQCgz4WAoM+GAKDPhoCgz4cAoM+HgKDPiACgz4iAoM+JAKDPiYCgz4oAoM+KgKDPiwCgz4uAoM+MAKDPjICgz40AoM+NgKDPjgCgz46AoM+PAKDPj4Cgz4AAsM+AgLDPgQCwz4GAsM+CALDPgoCwz4MAsM+DgLDPhACwz4SAsM+FALDPhYCwz4YAsM+GgLDPhwCwz4eAsM+IALDPiICwz4kAsM+JgLDPigCwz4qAsM+LALDPi4Cwz4wAsM+MgLDPjQCwz42AsM+OALDPjoCwz48AsM+PgLDPgADAz4CAwM+BAMDPgYDAz4IAwM+CgMDPgwDAz4OAwM+EAMDPhIDAz4UAwM+FgMDPhgDAz4aAwM+HAMDPh4DAz4gAwM+IgMDPiQDAz4mAwM+KAMDPioDAz4sAwM+LgMDPjADAz4yAwM+NAMDPjYDAz44AwM+OgMDPjwDAz4+AwM+AANDPgIDQz4EA0M+BgNDPggDQz4KA0M+DANDPg4DQz4QA0M+EgNDPhQDQz4WA0M+GANDPhoDQz4cA0M+HgNDPiADQz4iA0M+JANDPiYDQz4oA0M+KgNDPiwDQz4uA0M+MANDPjIDQz40A0M+NgNDPjgDQz46A0M+PANDPj4DQz4AA4M+AgODPgQDgz4GA4M+CAODPgoDgz4MA4M+DgODPhADgz4SA4M+FAODPhYDgz4YA4M+GgODPhwDgz4eA4M+IAODPiIDgz4kA4M+JgODPigDgz4qA4M+NAOITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
@@ -407,6 +409,8 @@ bne %cr0, 293b
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -810,7 +814,7 @@ bne %cr0, 2105b
 .base64 "AABgOA=="
 291:
 21:
-.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITggAIBO""#,
+.base64 "AACBOfAADOimAwh8cADM6XgA7OmAAAzqiAAs6pAATOqYAGzqoACM6qgArOqwAMzquADs6sAADOvIACzr0ABM69gAbOvgAIzr6ACs6wABITgAAAA40f4h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4MAEhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

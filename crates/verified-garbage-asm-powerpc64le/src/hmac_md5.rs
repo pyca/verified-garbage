@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_md5_update_scratch}
 .base64 "cACV6oAA1eqIAPXqkAAV65gANet4ALXqIAAB6DAAITimAwh8oAEhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOAH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz4AAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO"
 20:
 .base64 "kf4h+CAA4TimAgh80f8h+CAAAfgAAYf6CAGn+hABx/oYAef6IAEH+ygBJ/sAAKc6AADDOgAA5DoAAAY7AAAlO6AAhzoAAHQ4"
 bl {vg_md5_init}
@@ -84,6 +86,8 @@ b 21b"#,
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -101,7 +105,7 @@ bl {vg_md5_finalize_scratch}
 bl {vg_md5_update_scratch}
 .base64 "AAB0OFAAgDigALU4AADVOA=="
 bl {vg_md5_finalize_scratch}
-.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4IACATg==""#,
+.base64 "oAAVgQAAF5GkABWBBAAXkagAFYEIABeRrAAVgQwAF5FwAJXqgADV6ogA9eqQABXrmAA163gAteogAAHoMAAhOKYDCHygASE4AAAAOAH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz4AAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
     )

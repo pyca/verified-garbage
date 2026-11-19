@@ -13,7 +13,9 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Gcm.Bitsliced
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
+public import VerifiedGarbage.Proof.Aes.RISCV64.Common
 
 /-!
 # AES-GCM on RISC-V: counter mode over a piece (`crypt`)
@@ -138,6 +140,91 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
   rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 end
+
+/-! ## The round keys bitsliced
+
+The `_bitsliced` functions call `vg_aes_ctr32_bs` on the round keys that
+`vg_aes_gcm_bitslice` bitsliced, at `B` (in `s7`): those of the key schedule
+in the context `c` (`KeysAt`), which no piece writes. -/
+
+/-- With the round keys bitsliced, their buffer `B`: the code may read it, it
+is a multiple of 8, apart from the state, `W`, the stack below `sp` that
+`vg_ghash`'s frame uses, and the text (`S` and `D`, `n` bytes); in `m₀`, it
+holds the round keys of the schedule in `c` for `R` rounds. -/
+structure BkIn (B c st w sp : Addr) (R : Nat) (m₀ : Mem) (S D : Addr) (n : Nat) (s : State) : Prop where
+  rd : Covers [⟨B, 960⟩] (s.rd ++ s.wr)
+  al : B.toNat % 8 = 0
+  st : (⟨B, 960⟩ : Region).Disjoint ⟨st, 80⟩
+  w : (⟨B, 960⟩ : Region).Disjoint ⟨w, 2560⟩
+  sk : (⟨B, 960⟩ : Region).Disjoint (below sp 2048)
+  d : (⟨B, 960⟩ : Region).Disjoint ⟨D, n⟩
+  src : (⟨B, 960⟩ : Region).Disjoint ⟨S, n⟩
+  keys : Proof.Aes.RISCV64.KeysAt m₀ B R (bytesAt m₀ c (16 * (R + 1)))
+
+theorem BkIn.of_eq {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s s' : State}
+    (h : BkIn B c st w sp R m₀ S D n s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    BkIn B c st w sp R m₀ S D n s' :=
+  ⟨by rw [hrd, hwr]; exact h.rd, h.al, h.st, h.w, h.sk, h.d, h.src, h.keys⟩
+
+/-- Part of the text. -/
+theorem BkIn.sub {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s : State}
+    (h : BkIn B c st w sp R m₀ S D n s) {j k : Nat} (hjk : j + k ≤ n) :
+    BkIn B c st w sp R m₀ (S + BitVec.ofNat 64 j) (D + BitVec.ofNat 64 j) k s :=
+  ⟨h.rd, h.al, h.st, h.w, h.sk, h.d.sub_right (Offset.sub_base _ hjk), h.src.sub_right (Offset.sub_base _ hjk),
+    h.keys⟩
+
+/-- The round keys' words, all in the buffer. -/
+theorem keysIn960 (B : Addr) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    Proof.Aes.RISCV64.KeysIn ⟨B, 960⟩ B R := fun j hj k hk => by
+  rw [VG.RISCV64.Straight.wordAddr, add_ofNat_assoc]
+  exact Offset.contains_base B (by omega_using [hR, hj, hk]) (by omega_using [hR, hj, hk])
+
+/-- The round keys of the bitsliced form of a key context (`Spec.Gcm.CtxSlicedRepr`), for up to 14 rounds. -/
+theorem keysAt_of_sliced {m : Mem} {bk ctx : Addr} {R : Nat} (hR : R ≤ 14) (h : Spec.Gcm.CtxSlicedRepr m bk ctx) :
+    Proof.Aes.RISCV64.KeysAt m bk R (bytesAt m ctx (16 * (R + 1))) := by
+  intro j hj b hb i hi
+  refine Proof.Aes.byte_ext fun t ht => ?_
+  have e := h.1 j (by omega_using [hR, hj]) t ht b hb i hi
+  rw [Proof.Aes.RISCV64.roundKey_getD hi] at e
+  rw [Proof.Aes.getLsbD_bsByte _ _ ht, Proof.Aes.RISCV64.roundKey_getD hi]
+  have hl₁ : 16 * j + i < 240 := by omega_using [hR, hj, hi]
+  have hl₂ : 16 * j + i < 16 * (R + 1) := by omega_using [hj, hi]
+  simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range, hl₁, hl₂,
+    Option.map_some, Option.getD_some] at e ⊢
+  exact e
+
+/-- A frame apart from the buffer and the context keeps the round keys. -/
+theorem keysAt_ctx_frame {B c : Addr} {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {rs : List Region}
+    {m m' : Mem} (hf : Frame rs m m') (hb : ∀ r ∈ rs, (⟨B, 960⟩ : Region).Disjoint r)
+    (hc : ∀ r ∈ rs, (⟨c, 256⟩ : Region).Disjoint r)
+    (h : Proof.Aes.RISCV64.KeysAt m B R (bytesAt m c (16 * (R + 1)))) :
+    Proof.Aes.RISCV64.KeysAt m' B R (bytesAt m' c (16 * (R + 1))) := by
+  have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
+  rw [bytesAt_frame hf (fun r hr => (hc r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
+  exact Proof.Aes.RISCV64.keysAt_frameK hf hb (keysIn960 B hR) h
+
+/-- A frame apart from the buffer and the context keeps the round keys. -/
+theorem BkIn.frame {B c st w sp : Addr} {R : Nat} {m m' : Mem} {S D : Addr} {n : Nat} {s s' : State}
+    (hb : BkIn B c st w sp R m S D n s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {rs : List Region} (hf : Frame rs m m')
+    (hbr : ∀ r ∈ rs, (⟨B, 960⟩ : Region).Disjoint r) (hc : ∀ r ∈ rs, (⟨c, 256⟩ : Region).Disjoint r)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : BkIn B c st w sp R m' S D n s' :=
+  ⟨by rw [hrd, hwr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src, keysAt_ctx_frame hR hf hbr hc hb.keys⟩
+
+/-- Code never changes the permissions. -/
+theorem WP.with_rdwr' {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun s' => Q s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q, (Exec.rdwr e).1, (Exec.rdwr e).2.1⟩
+
+/-- The buffer is apart from what `crypt` writes. -/
+theorem BkIn.crFrame {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s : State}
+    (h : BkIn B c st w sp R m₀ S D n s) : ∀ r ∈ crFrame st w D n, (⟨B, 960⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact h.d
+  · exact h.st.sub_right (Lay.stSub (by decide))
+  · exact h.w.sub_right (Lay.wSub (by decide))
 
 /-- `[D, D + j)` and `[D + j, D + n)` are apart. -/
 theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :

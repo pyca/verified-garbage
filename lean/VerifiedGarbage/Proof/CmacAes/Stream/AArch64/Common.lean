@@ -31,16 +31,18 @@ namespace VG.Proof.CmacAes.Stream.AArch64
 
 open VG VG.AArch64
 
-/-- `vg_cmac_aes_init(state = x0, key = x1, key_len = x2, scratch = x3)`. -/
-def initAArch64 : Contract isa where
+/-- `vg_cmac_aes_init(state = x0, key = x1, key_len = x2, scratch = x3)`,
+with `32 + W` bytes of scratch: the saved registers, and `W` bytes of
+working space for the functions it calls. -/
+def initAArch64With (W : Nat) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .x0, 304⟩
     let key : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat⟩
-    let scr : Region := ⟨s.gpr .x3, 2304⟩
+    let scr : Region := ⟨s.gpr .x3, 32 + W⟩
     s.rd = [key] ∧ s.wr = [state, scr] ∧
       state.Disjoint key ∧ state.Disjoint scr ∧ key.Disjoint scr ∧
       (s.gpr .x0).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + (s.gpr .x2).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .x3).toNat + 2304 ≤ 2 ^ 64 ∧
+      (s.gpr .x3).toNat + (32 + W) ≤ 2 ^ 64 ∧
       ((s.gpr .x2).toNat = 16 ∨ (s.gpr .x2).toNat = 24 ∨ (s.gpr .x2).toNat = 32)
   post s s' :=
     Spec.Cmac.Repr s'.mem (s.gpr .x0) (Spec.Aes.bytesAt s.mem (s.gpr .x1) (s.gpr .x2).toNat) []
@@ -71,16 +73,18 @@ def absorbAArch64 (F : Nat) : Contract isa where
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
 
-/-- `vg_cmac_aes_finish(state = x0, rounds = x1, count = x2, out = x3, scratch = x4)`. -/
-def finishAArch64 : Contract isa where
+/-- `vg_cmac_aes_finish(state = x0, rounds = x1, count = x2, out = x3, scratch = x4)`,
+with `16 + W` bytes of scratch: the saved registers, and `W` bytes of working
+space for `vg_cmac_aes_finalize`. -/
+def finishAArch64With (W : Nat) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .x0, 304⟩
     let out : Region := ⟨s.gpr .x3, 16⟩
-    let scr : Region := ⟨s.gpr .x4, 2304⟩
+    let scr : Region := ⟨s.gpr .x4, 16 + W⟩
     s.rd = [] ∧ s.wr = [state, out, scr] ∧
       state.Disjoint out ∧ state.Disjoint scr ∧ out.Disjoint scr ∧
       (s.gpr .x0).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .x4).toNat + 2304 ≤ 2 ^ 64 ∧
+      (s.gpr .x4).toNat + (16 + W) ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
   post s s' :=
     ∀ key msg, Spec.Cmac.Repr s.mem (s.gpr .x0) key msg →
@@ -110,7 +114,7 @@ namespace VG.Proof.CmacAes.Stream.AArch64
 
 open VG VG.AArch64
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
-open VG.Proof.CmacAes.AArch64 (updateAArch64 updateAArch64With subkeysAArch64 finalizeAArch64 update_correct subkeys_correct
+open VG.Proof.CmacAes.AArch64 (updateAArch64 updateAArch64With subkeysAArch64With finalizeAArch64With update_correct subkeys_correct
   finalize_correct update_ct subkeys_ct finalize_ct toNat_rounds callEntry_x0 callEntry_x1 callEntry_x2
   callEntry_x3 callEntry_x4 callEntry_x5)
 
@@ -304,67 +308,100 @@ theorem upd_relLe (v : Proof.CmacAes.AArch64.UpdateImpl) (nm : String) {N : Nat}
 /-! ## `vg_cmac_aes_subkeys` -/
 
 /-- What a call of `vg_cmac_aes_subkeys` needs: the key schedule `W`, the
-subkeys `K`, the working space `S` and the rounds `R`. -/
-structure SArgs (s : State) (W K S : Addr) (R : Nat) : Prop where
+subkeys `K`, `N` bytes of scratch at `S` and the rounds `R`. -/
+structure SArgs (s : State) (W K S : Addr) (R : Nat) (N : Nat := 2176) : Prop where
   x0 : s.gpr .x0 = W
   x1 : s.gpr .x1 = BitVec.ofNat 64 R
   x2 : s.gpr .x2 = K
   x3 : s.gpr .x3 = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   wk : (⟨W, 240⟩ : Region).Disjoint ⟨K, 32⟩
-  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 2176⟩
-  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S, 2176⟩
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, N⟩
+  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S, N⟩
   wrapK : K.toNat + 32 ≤ 2 ^ 64
-  wrapS : S.toNat + 2176 ≤ 2 ^ 64
-  reads : Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S, 2176⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨K, 32⟩, ⟨S, 2176⟩] s.wr
+  wrapS : S.toNat + N ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S, N⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨K, 32⟩, ⟨S, N⟩] s.wr
 
 /-- What a call of `vg_cmac_aes_subkeys` leaves. -/
-structure SPost (s : State) (W K S : Addr) (R : Nat) (s' : State) : Prop where
+structure SPost (s : State) (W K S : Addr) (R : Nat) (s' : State) (N : Nat := 2176) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨K, 32⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨K, 32⟩, ⟨S, N⟩] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem K 32 =
     (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).1 ++
       (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).2
 
-theorem SArgs.pre {s : State} {W K S : Addr} {R : Nat} (h : SArgs s W K S R) :
-    subkeysAArch64.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 2176⟩]) := by
+theorem SArgs.pre {n : Nat} {s : State} {W K S : Addr} {R : Nat} (h : SArgs s W K S R (128 + n)) :
+    (subkeysAArch64With n).pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 128 + n⟩]) := by
   have hR := toNat_rounds h.rounds
-  simp only [subkeysAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+  simp only [subkeysAArch64With, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, h.x0, h.x1, h.x2, h.x3, hR]
   exact ⟨trivial, trivial, h.wk, h.ws, h.ks, h.wrapK, h.wrapS, h.rounds⟩
 
-theorem sub_call (v : Ctr32Impl) (nm : String) {s : State} {W K S : Addr} {R : Nat}
-    (h : SArgs s W K S R) :
-    WP isa (.call nm (Impl.CmacAes.AArch64.subkeys v.callee)) s (SPost s W K S R) := by
+/-- `SArgs` with less scratch, a prefix of it. -/
+theorem SArgs.shrink {M N : Nat} {s : State} {W K S : Addr} {R : Nat} (h : SArgs s W K S R N) (hle : M ≤ N) :
+    SArgs s W K S R M :=
+  { h with
+    ws := h.ws.sub_right (Region.sub_prefix hle)
+    ks := h.ks.sub_right (Region.sub_prefix hle)
+    wrapS := by have := h.wrapS; omega
+    reads := covers_lastU (xs := [⟨W, 240⟩, ⟨K, 32⟩]) h.reads hle
+    writes := covers_lastU (xs := [⟨K, 32⟩]) h.writes hle }
+
+/-- A call of `vg_cmac_aes_subkeys` over `v`, with `N` bytes of scratch, at
+least the `128 + v.scratch` it needs. -/
+theorem sub_callLe (v : Ctr32Impl) (nm : String) {N : Nat} (hle : 128 + v.scratch ≤ N) {s : State}
+    {W K S : Addr} {R : Nat} (h : SArgs s W K S R N) :
+    WP isa (.call nm (Impl.CmacAes.AArch64.subkeys v.callee)) s fun s' => SPost s W K S R s' N := by
   have hR := toNat_rounds h.rounds
-  refine WP.call (k := subkeysAArch64) (subkeys_correct v) h.pre h.reads h.writes ?_ (subkeys_noFrames v)
+  refine WP.call (k := subkeysAArch64With v.scratch) (subkeys_correct v) (h.shrink hle).pre
+    (h.shrink hle).reads (h.shrink hle).writes ?_ (subkeys_noFrames v)
   intro s' hrd hwr hsp hf hsaved _ hpost
-  refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
-  simp only [subkeysAArch64, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+  refine ⟨hrd, hwr, hsp, hsaved, hf.sub fun r hr => ?_, ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix hle⟩
+  simp only [subkeysAArch64With, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     callEntry_x0, callEntry_x1, callEntry_x2, h.x0, h.x1, h.x2, hR] at hpost
   exact hpost
 
-theorem sub_rel (v : Ctr32Impl) (nm : String) {W K S : Addr} {R : Nat} {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → SArgs s₁ W K S R ∧ SArgs s₂ W K S R ∧ s₁.sp = s₂.sp) :
+theorem scratch_le (v : Ctr32Impl) : 128 + v.scratch ≤ 2176 := by
+  rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+
+theorem sub_call (v : Ctr32Impl) (nm : String) {s : State} {W K S : Addr} {R : Nat}
+    (h : SArgs s W K S R) :
+    WP isa (.call nm (Impl.CmacAes.AArch64.subkeys v.callee)) s (SPost s W K S R) :=
+  sub_callLe v nm (scratch_le v) h
+
+theorem sub_relLe (v : Ctr32Impl) (nm : String) {N : Nat} (hle : 128 + v.scratch ≤ N) {W K S : Addr} {R : Nat}
+    {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → SArgs s₁ W K S R N ∧ SArgs s₂ W K S R N ∧ s₁.sp = s₂.sp) :
     RelCT isa P (.call nm (Impl.CmacAes.AArch64.subkeys v.callee)) fun _ _ => True := by
-  refine RelCT.call (subkeys_correct v) (subkeys_ct v) [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 2176⟩] fun s₁ s₂ hp => ?_
+  refine RelCT.call (subkeys_correct v) (subkeys_ct v) [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 128 + v.scratch⟩]
+    fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
-  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
-  simp only [subkeysAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+  refine ⟨(h₁.shrink hle).pre, (h₂.shrink hle).pre, ?_, (h₁.shrink hle).reads, (h₁.shrink hle).writes,
+    (h₂.shrink hle).reads, (h₂.shrink hle).writes⟩
+  simp only [subkeysAArch64With, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3,
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₂.x0, h₂.x1, h₂.x2, h₂.x3, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
+theorem sub_rel (v : Ctr32Impl) (nm : String) {W K S : Addr} {R : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → SArgs s₁ W K S R ∧ SArgs s₂ W K S R ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call nm (Impl.CmacAes.AArch64.subkeys v.callee)) fun _ _ => True :=
+  sub_relLe v nm (scratch_le v) h
+
 /-! ## `vg_cmac_aes_finalize` -/
 
 /-- What a call of `vg_cmac_aes_finalize` needs: the key schedule and
-subkeys `K`, the state `St`, the `L` last bytes at `P`, the working space
-`S` and the rounds `R`. -/
-structure FArgs (s : State) (K St P S : Addr) (L R : Nat) : Prop where
+subkeys `K`, the state `St`, the `L` last bytes at `P`, `N` bytes of
+scratch at `S` and the rounds `R`. -/
+structure FArgs (s : State) (K St P S : Addr) (L R : Nat) (N : Nat := 2176) : Prop where
   x0 : s.gpr .x0 = K
   x1 : s.gpr .x1 = BitVec.ofNat 64 R
   x2 : s.gpr .x2 = St
@@ -374,24 +411,24 @@ structure FArgs (s : State) (K St P S : Addr) (L R : Nat) : Prop where
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   len : L ≤ 16
   kst : (⟨K, 272⟩ : Region).Disjoint ⟨St, 16⟩
-  ks : (⟨K, 272⟩ : Region).Disjoint ⟨S, 2176⟩
+  ks : (⟨K, 272⟩ : Region).Disjoint ⟨S, N⟩
   pst : (⟨P, L⟩ : Region).Disjoint ⟨St, 16⟩
-  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, 2176⟩
-  sts : (⟨St, 16⟩ : Region).Disjoint ⟨S, 2176⟩
+  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, N⟩
+  sts : (⟨St, 16⟩ : Region).Disjoint ⟨S, N⟩
   wrapK : K.toNat + 272 ≤ 2 ^ 64
   wrapSt : St.toNat + 16 ≤ 2 ^ 64
   wrapP : P.toNat + L ≤ 2 ^ 64
-  wrapS : S.toNat + 2176 ≤ 2 ^ 64
-  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩, ⟨S, 2176⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨St, 16⟩, ⟨S, 2176⟩] s.wr
+  wrapS : S.toNat + N ≤ 2 ^ 64
+  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩, ⟨S, N⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨St, 16⟩, ⟨S, N⟩] s.wr
 
 /-- What a call of `vg_cmac_aes_finalize` leaves. -/
-structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop where
+structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) (N : Nat := 2176) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨St, 16⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨St, 16⟩, ⟨S, N⟩] s.mem s'.mem
   out : let ciph := Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))
     let ks := Spec.Cmac.subkeys ciph 16
     Spec.Aes.bytesAt s.mem (K + 240) 32 = ks.1 ++ ks.2 →
@@ -399,41 +436,70 @@ structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop wh
       Spec.Aes.bytesAt s.mem St 16 = Spec.Cmac.chain ciph (Spec.Cmac.zeros 16) (Spec.Cmac.blocks 16 msg) →
       Spec.Aes.bytesAt s'.mem St 16 = Spec.Cmac.macFull ciph 16 (msg ++ Spec.Aes.bytesAt s.mem P L)
 
-theorem FArgs.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
-    finalizeAArch64.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩]) := by
+theorem FArgs.pre {n : Nat} {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R (128 + n)) :
+    (finalizeAArch64With n).pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 128 + n⟩]) := by
   have hR := toNat_rounds h.rounds
   have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
-  simp only [finalizeAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+  simp only [finalizeAArch64With, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x5,
     h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, hR, hL]
   exact ⟨trivial, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, h.wrapK, h.wrapSt, h.wrapP, h.wrapS,
     h.rounds, h.len⟩
 
-theorem fin_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L R : Nat}
-    (h : FArgs s K St P S L R) :
-    WP isa (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) s (FPost s K St P S L R) := by
+/-- `FArgs` with less scratch, a prefix of it. -/
+theorem FArgs.shrink {M N : Nat} {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R N)
+    (hle : M ≤ N) : FArgs s K St P S L R M :=
+  { h with
+    ks := h.ks.sub_right (Region.sub_prefix hle)
+    ps := h.ps.sub_right (Region.sub_prefix hle)
+    sts := h.sts.sub_right (Region.sub_prefix hle)
+    wrapS := by have := h.wrapS; omega
+    reads := covers_lastU (xs := [⟨K, 272⟩, ⟨P, L⟩, ⟨St, 16⟩]) h.reads hle
+    writes := covers_lastU (xs := [⟨St, 16⟩]) h.writes hle }
+
+/-- A call of `vg_cmac_aes_finalize` over `v`, with `N` bytes of scratch, at
+least the `128 + v.scratch` it needs. -/
+theorem fin_callLe (v : Ctr32Impl) (nm : String) {N : Nat} (hle : 128 + v.scratch ≤ N) {s : State}
+    {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R N) :
+    WP isa (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) s fun s' => FPost s K St P S L R s' N := by
   have hR := toNat_rounds h.rounds
   have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
-  refine WP.call (k := finalizeAArch64) (finalize_correct v) h.pre h.reads h.writes ?_
-    (finalize_noFrames v)
+  refine WP.call (k := finalizeAArch64With v.scratch) (finalize_correct v) (h.shrink hle).pre
+    (h.shrink hle).reads (h.shrink hle).writes ?_ (finalize_noFrames v)
   intro s' hrd hwr hsp hf hsaved _ hpost
-  refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
-  simp only [finalizeAArch64, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+  refine ⟨hrd, hwr, hsp, hsaved, hf.sub fun r hr => ?_, ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix hle⟩
+  simp only [finalizeAArch64With, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4,
     hR, hL] at hpost
   exact hpost
 
-theorem fin_rel (v : Ctr32Impl) (nm : String) {K St Q S : Addr} {L R : Nat} {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → FArgs s₁ K St Q S L R ∧ FArgs s₂ K St Q S L R ∧ s₁.sp = s₂.sp) :
+theorem fin_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L R : Nat}
+    (h : FArgs s K St P S L R) :
+    WP isa (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) s (FPost s K St P S L R) :=
+  fin_callLe v nm (scratch_le v) h
+
+theorem fin_relLe (v : Ctr32Impl) (nm : String) {N : Nat} (hle : 128 + v.scratch ≤ N) {K St Q S : Addr}
+    {L R : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → FArgs s₁ K St Q S L R N ∧ FArgs s₂ K St Q S L R N ∧ s₁.sp = s₂.sp) :
     RelCT isa P (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) fun _ _ => True := by
-  refine RelCT.call (finalize_correct v) (finalize_ct v) [⟨K, 272⟩, ⟨Q, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩]
+  refine RelCT.call (finalize_correct v) (finalize_ct v) [⟨K, 272⟩, ⟨Q, L⟩] [⟨St, 16⟩, ⟨S, 128 + v.scratch⟩]
     fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
-  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
-  simp only [finalizeAArch64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+  refine ⟨(h₁.shrink hle).pre, (h₂.shrink hle).pre, ?_, (h₁.shrink hle).reads, (h₁.shrink hle).writes,
+    (h₂.shrink hle).reads, (h₂.shrink hle).writes⟩
+  simp only [finalizeAArch64With, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x5,
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+theorem fin_rel (v : Ctr32Impl) (nm : String) {K St Q S : Addr} {L R : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → FArgs s₁ K St Q S L R ∧ FArgs s₂ K St Q S L R ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call nm (Impl.CmacAes.AArch64.finalize v.callee)) fun _ _ => True :=
+  fin_relLe v nm (scratch_le v) h
 
 /-! ## `vg_aes_expand_key_scratch` -/
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Bitslice
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamBs
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -54,6 +55,10 @@ def artifacts : List Artifact := [
   Spec.Gcm.openToApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 4 Impl.AesGcm.RISCV64.OpenTo.openTo
     verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_framed },
-  Spec.Gcm.bitsliceApi.artifact RISCV64.target Bitslice.bitsliceReg]
+  Spec.Gcm.bitsliceApi.artifact RISCV64.target Bitslice.bitsliceReg,
+  Spec.Gcm.streamEncryptBitslicedApi.artifact RISCV64.target streamEncryptBsReg,
+  Spec.Gcm.streamDecryptBitslicedApi.artifact RISCV64.target streamDecryptBsReg,
+  Spec.Gcm.streamFinishBitslicedApi.artifact RISCV64.target streamFinishBsReg,
+  Spec.Gcm.streamVerifyBitslicedApi.artifact RISCV64.target streamVerifyBsReg]
 
 end VG.Artifacts.AesGcm.RISCV64

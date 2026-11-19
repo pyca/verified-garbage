@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
@@ -2115,3 +2117,57 @@ theorem finish_framed :
     finishFrameSat_pre
 
 end VG.Proof.CmacTripleDes.Stream.RISCV64
+
+/-!
+# Streaming TDEA-CMAC on RISC-V, without secret residue
+
+`vg_cmac_triple_des_stream_init`, `_absorb` and `_finish`, each followed by
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+caller-saved registers and the whole stack its frames used: their working
+space, and the frame of ECB's serial code below it, which holds a copy of
+the key schedule. Their postconditions read the memory on return only within
+the state or the MAC (`RISCV64.Scrub.PostOut`).
+-/
+
+namespace VG.Proof.CmacTripleDes.Stream.RISCV64.Scrub
+
+open VG.RISCV64 VG.RISCV64.Scrub
+
+/-! ## Postconditions -/
+
+theorem initOut (stack : Nat) :
+    PostOut (Spec.Cmac.tdesStreamInitContract RISCV64.abi stack) (Spec.Cmac.tdesStreamInitSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacTripleDes.Stream.streamInitPostOut_local _)
+
+theorem absorbOut (stack : Nat) :
+    PostOut (Spec.Cmac.tdesAbsorbContract RISCV64.abi stack) (Spec.Cmac.tdesAbsorbSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacTripleDes.Stream.absorbPostOut_local _)
+
+theorem finishOut (stack : Nat) :
+    PostOut (Spec.Cmac.tdesFinishContract RISCV64.abi stack) (Spec.Cmac.tdesFinishSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacTripleDes.Stream.finishPostOut_local _)
+
+/-! ## The registrations -/
+
+/-- `vg_cmac_triple_des_stream_init`. -/
+def initReg : Registration Spec.Cmac.tdesStreamInitApi RISCV64.target :=
+  withScrub {
+      code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.streamInit
+      verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed }
+    (initOut _)
+
+/-- `vg_cmac_triple_des_absorb`. -/
+def absorbReg : Registration Spec.Cmac.tdesAbsorbApi RISCV64.target :=
+  withScrub {
+      code := Impl.StackScratch.RISCV64.withStackScratch 688 .a4 Impl.CmacTripleDes.Stream.RISCV64.absorb
+      verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed }
+    (absorbOut _)
+
+/-- `vg_cmac_triple_des_finish`. -/
+def finishReg : Registration Spec.Cmac.tdesFinishApi RISCV64.target :=
+  withScrub {
+      code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.finish
+      verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed }
+    (finishOut _)
+
+end VG.Proof.CmacTripleDes.Stream.RISCV64.Scrub

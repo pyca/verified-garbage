@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32
+public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Bs
 public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
@@ -289,6 +290,162 @@ theorem ctrTo_rel {name : String} {P : State → State → Prop}
     [⟨K, 240⟩, ⟨Src, 16 * n⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [Proof.Aes.ctr32ToRISCV64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+    callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a4 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a5 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a6 ∉ linkRegs),
+    h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₁.a6, h₂.a0, h₂.a1, h₂.a2, h₂.a3, h₂.a4, h₂.a5, h₂.a6, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_aes_ctr32_bs` and `vg_aes_ctr32_bs_to`
+
+With the round keys bitsliced at `B` (the buffer of `vg_aes_gcm_bitslice`),
+as those of the key schedule at `K` (`keys`): the calls leave what those of
+`vg_aes_ctr32` and `vg_aes_ctr32_to` on `K` leave (`CtrPost`, `CtrToPost`). -/
+
+/-- What a call of `vg_aes_ctr32_bs(keys, rounds, counter, data, n, scratch)` needs. -/
+structure CtrBsCall (s : State) (B K C D S : Addr) (R n : Nat) : Prop where
+  a0 : s.gpr .a0 = B
+  a1 : s.gpr .a1 = BitVec.ofNat 64 R
+  a2 : s.gpr .a2 = C
+  a3 : s.gpr .a3 = D
+  a4 : s.gpr .a4 = BitVec.ofNat 64 n
+  a5 : s.gpr .a5 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  n_lt : n < 2 ^ 64
+  kc : (⟨B, 960⟩ : Region).Disjoint ⟨C, 16⟩
+  kd : (⟨B, 960⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  ks : (⟨B, 960⟩ : Region).Disjoint ⟨S, 2048⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  fit : D.toNat + 16 * n ≤ 2 ^ 64
+  al : B.toNat % 8 = 0
+  keys : Proof.Aes.RISCV64.KeysAt s.mem B R (bytesAt s.mem K (16 * (R + 1)))
+  reads : Covers ([⟨B, 960⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.wr
+
+theorem CtrBsCall.pre {s : State} {B K C D S : Addr} {R n : Nat} (h : CtrBsCall s B K C D S R n) :
+    Proof.Aes.ctr32BsRISCV64.pre
+      (s.callEntry.withRegions [⟨B, 960⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
+  simp only [Proof.Aes.ctr32BsRISCV64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a5 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, h.a4, h.a5, toNat64 h.n_lt, toNat_rounds h.rounds]
+  exact ⟨by trivial, by trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.fit, h.rounds, h.al, _, h.keys⟩
+
+theorem ctrBs_call {name : String} {s : State} {B K C D S : Addr} {R n : Nat}
+    (h : CtrBsCall s B K C D S R n) :
+    WP isa (.call name Impl.Aes.RISCV64.ctr32Bs) s (CtrPost s K C D S R n) := by
+  refine WP.call (k := Proof.Aes.ctr32BsRISCV64) Proof.Aes.RISCV64.ctr32Bs_correct
+    (rd := [⟨B, 960⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
+    Proof.Aes.RISCV64.ctr32Bs_noFrames
+  intro s' hrd hwr hsp hf hcs _ hpost
+  simp only [Proof.Aes.ctr32BsRISCV64, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, h.a4, toNat64 h.n_lt, toNat_rounds h.rounds] at hpost
+  obtain ⟨h₁, h₂⟩ := hpost _ h.keys
+  exact ⟨hrd, hwr, hsp, hcs, hf, h₁, h₂⟩
+
+/-- Calls of `vg_aes_ctr32_bs` with the same arguments in both runs are constant time. -/
+theorem ctrBs_rel {name : String} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ B K C D S R n, CtrBsCall s₁ B K C D S R n ∧ CtrBsCall s₂ B K C D S R n ∧
+      s₁.sp = s₂.sp) :
+    RelCT isa P (.call name Impl.Aes.RISCV64.ctr32Bs) fun _ _ => True := by
+  refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Addr × Nat × Nat) (s₁ s₂ : State) =>
+      (∃ K₁, CtrBsCall s₁ x.1 K₁ x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2) ∧
+        (∃ K₂, CtrBsCall s₂ x.1 K₂ x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2) ∧ s₁.sp = s₂.sp)
+      (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
+      obtain ⟨B, K, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+      exact ⟨(B, C, D, S, R, n), ⟨K, h₁⟩, ⟨K, h₂⟩, hsp⟩) fun _ _ h => h
+  obtain ⟨B, C, D, S, R, n⟩ := x
+  refine RelCT.call Proof.Aes.RISCV64.ctr32Bs_correct Proof.Aes.RISCV64.ctr32Bs_ct [⟨B, 960⟩]
+    [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] fun s₁ s₂ ⟨⟨_, h₁⟩, ⟨_, h₂⟩, hsp⟩ => ?_
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  simp only [Proof.Aes.ctr32BsRISCV64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+    callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
+    callEntry_gpr' _ (by decide : Reg.a4 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a5 ∉ linkRegs),
+    h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₂.a0, h₂.a1, h₂.a2, h₂.a3, h₂.a4, h₂.a5, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- What a call of `vg_aes_ctr32_bs_to(keys, rounds, counter, dst, n, scratch, src)` needs. -/
+structure CtrBsToCall (s : State) (B K C D S Src : Addr) (R n : Nat) : Prop where
+  a0 : s.gpr .a0 = B
+  a1 : s.gpr .a1 = BitVec.ofNat 64 R
+  a2 : s.gpr .a2 = C
+  a3 : s.gpr .a3 = D
+  a4 : s.gpr .a4 = BitVec.ofNat 64 n
+  a5 : s.gpr .a5 = S
+  a6 : s.gpr .a6 = Src
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  n_lt : n < 2 ^ 64
+  kc : (⟨B, 960⟩ : Region).Disjoint ⟨C, 16⟩
+  kd : (⟨B, 960⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  ks : (⟨B, 960⟩ : Region).Disjoint ⟨S, 2048⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  xc : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨C, 16⟩
+  xd : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨D, 16 * n⟩
+  xs : (⟨Src, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
+  fit : D.toNat + 16 * n ≤ 2 ^ 64
+  xfit : Src.toNat + 16 * n ≤ 2 ^ 64
+  al : B.toNat % 8 = 0
+  keys : Proof.Aes.RISCV64.KeysAt s.mem B R (bytesAt s.mem K (16 * (R + 1)))
+  reads : Covers ([⟨B, 960⟩, ⟨Src, 16 * n⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.wr
+
+theorem CtrBsToCall.pre {s : State} {B K C D S Src : Addr} {R n : Nat} (h : CtrBsToCall s B K C D S Src R n) :
+    Proof.Aes.ctr32BsToRISCV64.pre
+      (s.callEntry.withRegions [⟨B, 960⟩, ⟨Src, 16 * n⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
+  simp only [Proof.Aes.ctr32BsToRISCV64, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a5 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a6 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, h.a4, h.a5, h.a6, toNat64 h.n_lt, toNat_rounds h.rounds]
+  exact ⟨by trivial, by trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.xc, h.xd, h.xs, h.fit, h.xfit,
+    h.rounds, h.al, _, h.keys⟩
+
+theorem ctrBsTo_call {name : String} {s : State} {B K C D S Src : Addr} {R n : Nat}
+    (h : CtrBsToCall s B K C D S Src R n) :
+    WP isa (.call name Impl.Aes.RISCV64.ctr32BsTo) s (CtrToPost s K C D S Src R n) := by
+  refine WP.call (k := Proof.Aes.ctr32BsToRISCV64) Proof.Aes.RISCV64.ctr32BsTo_correct
+    (rd := [⟨B, 960⟩, ⟨Src, 16 * n⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
+    Proof.Aes.RISCV64.ctr32BsTo_noFrames
+  intro s' hrd hwr hsp hf hcs _ hpost
+  simp only [Proof.Aes.ctr32BsToRISCV64, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a3 ∉ linkRegs),
+    callEntry_gpr' s (by decide : Reg.a4 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a6 ∉ linkRegs),
+    h.a0, h.a1, h.a2, h.a3, h.a4, h.a6, toNat64 h.n_lt, toNat_rounds h.rounds] at hpost
+  obtain ⟨h₁, h₂⟩ := hpost _ h.keys
+  exact ⟨hrd, hwr, hsp, hcs, hf, h₁, h₂⟩
+
+/-- Calls of `vg_aes_ctr32_bs_to` with the same arguments in both runs are constant time. -/
+theorem ctrBsTo_rel {name : String} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ B K C D S Src R n, CtrBsToCall s₁ B K C D S Src R n ∧
+      CtrBsToCall s₂ B K C D S Src R n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call name Impl.Aes.RISCV64.ctr32BsTo) fun _ _ => True := by
+  refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr × Addr × Addr × Nat × Nat) (s₁ s₂ : State) =>
+      (∃ K₁, CtrBsToCall s₁ x.1 K₁ x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2) ∧
+        (∃ K₂, CtrBsToCall s₂ x.1 K₂ x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2) ∧
+        s₁.sp = s₂.sp)
+      (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
+      obtain ⟨B, K, C, D, S, Src, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+      exact ⟨(B, C, D, S, Src, R, n), ⟨K, h₁⟩, ⟨K, h₂⟩, hsp⟩) fun _ _ h => h
+  obtain ⟨B, C, D, S, Src, R, n⟩ := x
+  refine RelCT.call Proof.Aes.RISCV64.ctr32BsTo_correct Proof.Aes.RISCV64.ctr32BsTo_ct
+    [⟨B, 960⟩, ⟨Src, 16 * n⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] fun s₁ s₂ ⟨⟨_, h₁⟩, ⟨_, h₂⟩, hsp⟩ => ?_
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  simp only [Proof.Aes.ctr32BsToRISCV64, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
     callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
     callEntry_gpr' _ (by decide : Reg.a4 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a5 ∉ linkRegs),

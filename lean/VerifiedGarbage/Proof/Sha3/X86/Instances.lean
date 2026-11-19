@@ -557,23 +557,23 @@ theorem updSat_pre {rate : Nat} (hr : rate ∈ rates) : (updateX86 rate).pre upd
 
 theorem update_verified {rate : Nat} (hr : rate ∈ rates)
     (hct : ConstantTime isa (updateX86 rate).pre (updateX86 rate).pub (update rate)) :
-    Verified X86.target (update rate) (Spec.Sha3.updateContract X86.abi rate 40) :=
+    Verified X86.target (update rate) (Proof.Sha3.updateScratchContract X86.abi rate 40) :=
   (show Verified X86.target (update rate) (updateX86 rate) from
     ⟨fun s hs => (update_correct hr hs).elim fun t ⟨s', he, h⟩ => ⟨t, s', he, h.1, h.2⟩, hct,
       ⟨updSat, updSat_pre hr⟩⟩).of_implies
-    { pre := by implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+    { pre := by implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
-      post := by implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+      post := by implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
-      pub := by implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+      pub := by implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
           Shared.setWidth_append32]
       sat := ⟨updSat, by
         obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
-        sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, updSat, updSatMem,
+        sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, updSat, updSatMem,
           X86.arg, X86.argAddr, Mem.readW, Mem.read]
         sig_and_intros
         all_goals first
@@ -584,27 +584,27 @@ theorem update_verified {rate : Nat} (hr : rate ∈ rates)
 
 theorem update_sha3_224 :
     Verified X86.target (update Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_224.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_224.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_256 :
     Verified X86.target (update Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_256.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_256.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_384 :
     Verified X86.target (update Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_384.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_384.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_sha3_512 :
     Verified X86.target (update Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_512.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.hashSha3_512.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 theorem update_shake128 :
     Verified X86.target (update Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake128.rate 40) :=
+      (Proof.Sha3.updateScratchContract X86.abi Spec.Sha3.xofShake128.rate 40) :=
   update_verified (by decide) (update_ct (by decide) (by taint_decide))
 
 /-- Two regions below `p`, apart. -/

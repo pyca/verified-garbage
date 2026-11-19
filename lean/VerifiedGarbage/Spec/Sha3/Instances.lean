@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3
-public import VerifiedGarbage.Spec.Zeroize
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -43,13 +42,8 @@ The functions take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0
 for one that uses none: it depends on the target. They may overwrite their
 arguments passed in memory, where the calling convention allows it
-(`writeArgs`). `scratch` is `update`'s working space, sized for the target
-with the fewest registers (the Rust sponge keeps it on its stack); the other
-functions keep theirs on the stack. `updateScrubbedContract` is `update`'s
-contract that also leaves nothing it computed in `scratch`
-(`Zeroize.scrubbed`); `updateApi` does not require it yet. `absorb`
-(`absorbApi`) is `update` without `scratch`: an implementation keeps its
-working space on its own stack, which its residue proof covers.
+(`writeArgs`). They keep their working space on their own stack, which
+their residue proofs cover: none is left in the caller's memory.
 -/
 
 @[expose] public section
@@ -100,43 +94,34 @@ def XofRepr (mem : Mem) (p : Addr) (rate pos : Nat) (xof : List Byte → Nat →
 
 /-! ## Absorbing -/
 
-/-- `vg_<f>_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize`.
+/-- `vg_<f>_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize`.
 `pos` is public. -/
 def updateSig : Sig where
   params := [("state", .array true .u64 25), ("pos", .int .usize true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 80)]
+    ("data", .slice false .u8 "len")]
   ret := some .usize
 
 /-- `pos < rate`. -/
 def updatePre (rate pb : Nat) : Curry (updateSig.words pb) (Mem → Prop) :=
-  fun _state pos _data _len _scratch _ => pos.toNat < rate
+  fun _state pos _data _len _ => pos.toNat < rate
 
-/-- If the state at `state` represents a message `msg` for `rate`, and `pos`
-is the length of `msg` modulo `rate`, then afterwards it represents `msg`
-followed by the `len` bytes at `data`. Returns `(pos + len) mod rate`, the
-position after them. Whatever `scratch` is. -/
-def updatePost (rate pb : Nat) : updateSig.Post pb := fun state pos data len _scratch m m' ret =>
+/-- If the state at `state` represents a message `msg` for `rate`, and `pos` is
+the length of `msg` modulo `rate`, then afterwards it represents `msg` followed
+by the `len` bytes at `data`. Returns `(pos + len) mod rate`, the position after
+them. -/
+def updatePost (rate pb : Nat) : updateSig.Post pb := fun state pos data len m m' ret =>
   (∀ msg, Repr m state rate msg → pos.toNat = msg.length % rate →
     Repr m' state rate (msg ++ bytesAt m data len.toNat)) ∧
   ret.toNat = (pos.toNat + len.toNat) % rate
 
-/-- `updatePre` and `updatePost`, for the rate `rate`. -/
+/-- `updatePre` and `updatePost`, for the rate `rate`. The memory a function
+may write is its arguments' (`Sig.contract`): an implementation keeps its
+working space on the stack, within `stack` bytes below the stack pointer,
+which the implementations' residue proofs cover, so none is left in the
+caller's memory. -/
 def updateContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
   updateSig.contract A (pre := updatePre rate A.ptrBits) (post := updatePost rate A.ptrBits)
     (writeArgs := true) (stack := stack)
-
-/-- `updatePost`, and each byte of `scratch` on return is unchanged or zero
-(`Zeroize.scrubbed`): nothing `update` computed is left in its working space,
-which the Rust sponge releases on return. -/
-def updateScrubbedPost (rate pb : Nat) : updateSig.Post pb :=
-  fun state pos data len scratch m m' ret =>
-    updatePost rate pb state pos data len scratch m m' ret ∧
-      Zeroize.scrubbed m m' scratch 640
-
-/-- `updatePre` and `updateScrubbedPost`, for the rate `rate`. -/
-def updateScrubbedContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
-  updateSig.contract A (pre := updatePre rate A.ptrBits)
-    (post := updateScrubbedPost rate A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- `vg_<rust>_update`, which absorbs data into a computation of `name`, with
 the rate `rate`, on every target. -/
@@ -149,68 +134,17 @@ def updateApi (name rust : String) (rate : Nat) : Api where
   summary := s!"Absorbs data into a {name} computation: if the state `*state` represents a message \
     whose length is `pos` modulo {rate} (`VG.Spec.Sha3.Repr` with {name}'s rate, {rate}), it then \
     represents that message followed by the `len` bytes at `data`. Returns the position after them, \
-    `(pos + len) % {rate}`. `*scratch` is its working space. A computation starts from the all-zero \
-    state, at position 0.\n\n\
-    Contract: `VG.Spec.Sha3.updateContract` with the rate {rate}. Constant time: only the pointers, \
-    `pos` and `len` may affect timing, not the state or the data."
-  safety := [
-    s!"`pos` must be less than {rate}.",
-    "The contents of `scratch` on return are unspecified."]
-
-/-! ## Absorbing, with the working space the implementation's own -/
-
-/-- `vg_<f>_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize`:
-`update` without `scratch` (`updateSig` is `absorbSig` with `scratch` after its
-parameters). `pos` is public. -/
-def absorbSig : Sig where
-  params := [("state", .array true .u64 25), ("pos", .int .usize true),
-    ("data", .slice false .u8 "len")]
-  ret := some .usize
-
-/-- `pos < rate`. -/
-def absorbPre (rate pb : Nat) : Curry (absorbSig.words pb) (Mem → Prop) :=
-  fun _state pos _data _len _ => pos.toNat < rate
-
-/-- `updatePost` without `scratch`: if the state at `state` represents a
-message `msg` for `rate`, and `pos` is the length of `msg` modulo `rate`, then
-afterwards it represents `msg` followed by the `len` bytes at `data`. Returns
-`(pos + len) mod rate`, the position after them. -/
-def absorbPost (rate pb : Nat) : absorbSig.Post pb := fun state pos data len m m' ret =>
-  (∀ msg, Repr m state rate msg → pos.toNat = msg.length % rate →
-    Repr m' state rate (msg ++ bytesAt m data len.toNat)) ∧
-  ret.toNat = (pos.toNat + len.toNat) % rate
-
-/-- `absorbPre` and `absorbPost`, for the rate `rate`. The memory a function
-may write is its arguments' (`Sig.contract`): an implementation keeps its
-working space on the stack, within `stack` bytes below the stack pointer,
-which the implementations' residue proofs cover, so none is left in the
-caller's memory. -/
-def absorbContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
-  absorbSig.contract A (pre := absorbPre rate A.ptrBits) (post := absorbPost rate A.ptrBits)
-    (writeArgs := true) (stack := stack)
-
-/-- `vg_<rust>_absorb`, which absorbs data into a computation of `name`, with
-the rate `rate`, on every target: `vg_<rust>_update` without `scratch`. -/
-def absorbApi (name rust : String) (rate : Nat) : Api where
-  module := "sha3"
-  name := s!"vg_{rust}_absorb"
-  sig := absorbSig
-  writeArgs := true
-  contracts := some fun A stack => absorbContract A rate stack
-  summary := s!"Absorbs data into a {name} computation: if the state `*state` represents a message \
-    whose length is `pos` modulo {rate} (`VG.Spec.Sha3.Repr` with {name}'s rate, {rate}), it then \
-    represents that message followed by the `len` bytes at `data`. Returns the position after them, \
     `(pos + len) % {rate}`. A computation starts from the all-zero state, at position 0.\n\n\
-    Contract: `VG.Spec.Sha3.absorbContract` with the rate {rate}. Constant time: only the pointers, \
+    Contract: `VG.Spec.Sha3.updateContract` with the rate {rate}. Constant time: only the pointers, \
     `pos` and `len` may affect timing, not the state or the data."
   safety := [s!"`pos` must be less than {rate}."]
 
-def absorbSha3_224Api : Api := absorbApi hashSha3_224.name hashSha3_224.rust hashSha3_224.rate
-def absorbSha3_256Api : Api := absorbApi hashSha3_256.name hashSha3_256.rust hashSha3_256.rate
-def absorbSha3_384Api : Api := absorbApi hashSha3_384.name hashSha3_384.rust hashSha3_384.rate
-def absorbSha3_512Api : Api := absorbApi hashSha3_512.name hashSha3_512.rust hashSha3_512.rate
-def absorbShake128Api : Api := absorbApi xofShake128.name xofShake128.rust xofShake128.rate
--- SHAKE256 absorbs with `vg_sha3_256_absorb`, SHA3-256's (the same rate, 136), as it updates.
+def updateSha3_224Api : Api := updateApi hashSha3_224.name hashSha3_224.rust hashSha3_224.rate
+def updateSha3_256Api : Api := updateApi hashSha3_256.name hashSha3_256.rust hashSha3_256.rate
+def updateSha3_384Api : Api := updateApi hashSha3_384.name hashSha3_384.rust hashSha3_384.rate
+def updateSha3_512Api : Api := updateApi hashSha3_512.name hashSha3_512.rust hashSha3_512.rate
+def updateShake128Api : Api := updateApi xofShake128.name xofShake128.rust xofShake128.rate
+-- SHAKE256 absorbs with `vg_sha3_256_update`, SHA3-256's (the same rate, 136).
 
 /-! ## SHA-3: the digest -/
 
@@ -255,10 +189,6 @@ def finalizeApi (H : HashFn) (digestName : String) : Api where
     s!"`pos` must be less than {H.rate}.",
     "The contents of `state` on return are unspecified."]
 
-def updateSha3_224Api : Api := updateApi hashSha3_224.name hashSha3_224.rust hashSha3_224.rate
-def updateSha3_256Api : Api := updateApi hashSha3_256.name hashSha3_256.rust hashSha3_256.rate
-def updateSha3_384Api : Api := updateApi hashSha3_384.name hashSha3_384.rust hashSha3_384.rate
-def updateSha3_512Api : Api := updateApi hashSha3_512.name hashSha3_512.rust hashSha3_512.rate
 def finalizeSha3_224Api : Api := finalizeApi hashSha3_224 "sha3_224"
 def finalizeSha3_256Api : Api := finalizeApi hashSha3_256 "sha3_256"
 def finalizeSha3_384Api : Api := finalizeApi hashSha3_384 "sha3_384"
@@ -351,7 +281,6 @@ def xofSqueezeApi (X : Xof) (xofName : String) : Api where
     Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state."
   safety := [s!"`pos` must be at most {X.rate}."]
 
-def updateShake128Api : Api := updateApi xofShake128.name xofShake128.rust xofShake128.rate
 def finalizeShake128Api : Api := xofFinalizeApi xofShake128 "shake128"
 def finalizeShake256Api : Api := xofFinalizeApi xofShake256 "shake256" "vg_sha3_256_update"
 def squeezeShake128Api : Api := xofSqueezeApi xofShake128 "shake128"
