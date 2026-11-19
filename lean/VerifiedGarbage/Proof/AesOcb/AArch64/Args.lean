@@ -34,39 +34,40 @@ def callees (v : BlocksImpl) : Callees := ⟨v.enc, v.dec, v.expand⟩
 
 /-- `n` blocks at `D` for a call: apart from the key context and the working
 space at `W + 512`, and readable and writable. -/
-structure Dst (K W : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
+structure Dst (T : Nat) (K W : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   wrap : D.toNat + 16 * n ≤ 2 ^ 64
   k : (⟨K, 256⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  scr : (⟨D, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, 2048⟩
+  scr : (⟨D, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, T - 512⟩
   rd : Covers [⟨D, 16 * n⟩] (s.rd ++ s.wr)
   wr : Covers [⟨D, 16 * n⟩] s.wr
 
-theorem toNat_W {W : Addr} (hw : W.toNat + 2560 ≤ 2 ^ 64) {d : Nat} (hd : d < 2560) :
+theorem toNat_W {T : Nat} {W : Addr} (hw : W.toNat + T ≤ 2 ^ 64) {d : Nat} (hd : d < T) :
     (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hw, hd])]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hw]), Nat.mod_eq_of_lt (by omega_using [hw, hd])]
 
 /-- Blocks of `W` below 512. -/
-theorem dstW {K W : Addr} {s : State} (L : Lay K W) (P : Perm K W s) {d n : Nat} (h : d + 16 * n ≤ 512) :
-    Dst K W s (W + BitVec.ofNat 64 d) n where
+theorem dstW {T : Nat} {K W : Addr} {s : State} (L : Lay T K W) (P : Perm T K W s) {d n : Nat} (h : d + 16 * n ≤ 512) :
+    Dst T K W s (W + BitVec.ofNat 64 d) n where
   wrap := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp only [Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt (W + BitVec.ofNat 64 d).isLt
-    · rw [toNat_W L.ww (by omega_using [h])]; have := L.ww; omega_using [h, this]
-  k := L.k_w.sub_right (Lay.wSub (by omega_using [h]))
-  scr := L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
-  rd := covers_left (P.wC (by omega_using [h]))
-  wr := P.wC (by omega_using [h])
+    · have := L.hT; rw [toNat_W L.ww (by omega)]; have := L.ww; omega
+  k := L.k_w.sub_right (Lay.wSub (by have := L.hT; omega))
+  scr := L.w_w (.inl (by omega_using [h])) (by have := L.hT; omega) (by have := L.hT; omega)
+  rd := covers_left (P.wC (by have := L.hT; omega))
+  wr := P.wC (by have := L.hT; omega)
 
 /-- Blocks of the data. -/
-theorem dstD {K W : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf K W s D (16 * n)) : Dst K W s D n where
+theorem dstD {T : Nat} (hT : 512 ≤ T) {K W : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf T K W s D (16 * n)) :
+    Dst T K W s D n where
   wrap := h.wrap
   k := h.k
-  scr := h.w.sub_right (Lay.wSub (by decide))
+  scr := h.w.sub_right (Lay.wSub (by omega))
   rd := h.rd
   wr := h.wr
 
-theorem Dst.of_eq {K W : Addr} {s s' : State} {D : Addr} {n : Nat} (h : Dst K W s D n)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Dst K W s' D n :=
+theorem Dst.of_eq {T : Nat} {K W : Addr} {s s' : State} {D : Addr} {n : Nat} (h : Dst T K W s D n)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Dst T K W s' D n :=
   { h with rd := by rw [hrd, hwr]; exact h.rd, wr := by rw [hwr]; exact h.wr }
 
 /-- What the arguments `args` of a call set: `x2` and `x3` (to `D` and `n`),
@@ -86,9 +87,9 @@ theorem oneBlock_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (d : Nat) (hd 
   all_goals rfl
 
 theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ s s' : State} {K D S : Addr}
-    {R n : Nat} (h : BPost f s K D S R n s') (hm : s.mem = s₀.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    {R n N : Nat} (h : BPost f s K D S R n s' N) (hm : s.mem = s₀.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hg : ∀ r ∈ preserved, r ≠ .x30 → s.gpr r = s₀.gpr r) (hsp : s.sp = s₀.sp) :
-    BPost f s₀ K D S R n s' where
+    BPost f s₀ K D S R n s' N where
   rd := by rw [h.rd, hrd]
   wr := by rw [h.wr, hwr]
   sp := by rw [h.sp, hsp]
@@ -97,12 +98,12 @@ theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
   out := by rw [← hm]; exact h.out
 
 /-- The arguments of a call of `b`, after `args`. -/
-theorem callArgs_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {s : State}
-    (E : Env K W D R n SP s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {args : List Instr} {D' : Addr} {k : Nat} (ha : ArgsOk args s D' k) (hD : Dst K W s D' k) :
+theorem callArgs_ok {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay T K W) {s : State}
+    (E : Env T K W D R n SP s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {args : List Instr} {D' : Addr} {k : Nat} (ha : ArgsOk args s D' k) (hD : Dst T K W s D' k) :
     WP isa (.block (args ++ [Impl.AesGcm.AArch64.mov .x0 .x20, Impl.AesGcm.AArch64.mov .x1 .x22,
         Impl.AesGcm.AArch64.ptr .x4 .x19 scrO])) s fun s₂ =>
-      BCall s₂ K D' (W + BitVec.ofNat 64 512) R k ∧ s₂.mem = s.mem ∧ s₂.sp = s.sp ∧ s₂.rd = s.rd ∧
+      BCall s₂ K D' (W + BitVec.ofNat 64 512) R k (T - 512) ∧ s₂.mem = s.mem ∧ s₂.sp = s.sp ∧ s₂.rd = s.rd ∧
         s₂.wr = s.wr ∧ ∀ r ∈ preserved, r ≠ .x30 → s₂.gpr r = s.gpr r := by
   obtain ⟨s₁, run₁, x2₁, x3₁, g₁, m₁, sp₁, rd₁, wr₁⟩ := ha
   have h19 : s₁.gpr .x19 = W := by rw [g₁ _ (by decide) (by decide), E.x19]
@@ -124,15 +125,16 @@ theorem callArgs_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {s : St
     · simp [gpr_write, h1, h2, h3]
     all_goals rfl
   have hD₂ := hD.of_eq (s' := s₂) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
-  have hc : BCall s₂ K D' (W + BitVec.ofNat 64 512) R k :=
+  have hT := L.hT
+  have hc : BCall s₂ K D' (W + BitVec.ofNat 64 512) R k (T - 512) :=
     { x0 := x0₂, x1 := x1₂, x2 := x2₂, x3 := x3₂, x4 := x4₂, rounds := hR, wrap := hD.wrap
       kd := hD.k.sub_left (Region.sub_prefix (by decide))
-      ks := (L.k_w.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
+      ks := (L.k_w.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega))
       ds := hD.scr
       reads := covers_append (covers_cons (covers_prefix (by rw [rd₂, rd₁, wr₂, wr₁]; exact E.perm.k)
           (by decide)) covers_nil)
-        (covers_cons hD₂.rd (covers_cons (covers_left (by rw [wr₂, wr₁]; exact E.perm.wC (by decide))) covers_nil))
-      writes := covers_cons hD₂.wr (covers_cons (by rw [wr₂, wr₁]; exact E.perm.wC (by decide)) covers_nil) }
+        (covers_cons hD₂.rd (covers_cons (covers_left (by rw [wr₂, wr₁]; exact E.perm.wC (by omega))) covers_nil))
+      writes := covers_cons hD₂.wr (covers_cons (by rw [wr₂, wr₁]; exact E.perm.wC (by omega)) covers_nil) }
   refine WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], hc,
     by rw [m₂, m₁], by rw [sp₂, sp₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun r hr h30 => ?_⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -143,14 +145,14 @@ theorem callArgs_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {s : St
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
 
 theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.AArch64.Blocks}
-    (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
-      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
+    {M : Nat} (ok : ∀ s, (Proof.Aes.blocksAArch64With M f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64With M f).post s s')
     (nf : b.code.noFrames = true)
-    {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {s : State} (E : Env K W D R n SP s)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {args : List Instr} {D' : Addr} {k : Nat} (ha : ArgsOk args s D' k) (hD : Dst K W s D' k) :
-    WP isa (callBlocks b args) s (BPost f s K D' (W + BitVec.ofNat 64 512) R k) :=
+    {T : Nat} (hM : M ≤ T - 512) {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay T K W) {s : State}
+    (E : Env T K W D R n SP s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {args : List Instr} {D' : Addr} {k : Nat} (ha : ArgsOk args s D' k) (hD : Dst T K W s D' k) :
+    WP isa (callBlocks b args) s fun s' => BPost f s K D' (W + BitVec.ofNat 64 512) R k s' (T - 512) :=
   WP.seq (WP.mono (callArgs_ok L E hR ha hD) fun _ ⟨hc, m₂, sp₂, rd₂, wr₂, g₂⟩ =>
-    WP.mono (blk_call ok nf hc) fun _ h => h.congr m₂ rd₂ wr₂ g₂ sp₂)
+    WP.mono (blk_callLe ok nf hM hc) fun _ h => h.congr m₂ rd₂ wr₂ g₂ sp₂)
 
 end VG.Proof.AesOcb.AArch64
