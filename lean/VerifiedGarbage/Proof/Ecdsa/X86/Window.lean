@@ -517,17 +517,17 @@ theorem winDbls_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {kk : Nat} :
       · exact hw
 
 /-- `winQuad`: `R = 2^w R`, the point at infinity as `(0 : 1 : 0)`. -/
-theorem winQuad_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {kk : Nat} {s : State}
+theorem winQuadN_ok (hc : CfgOk c) (hC : Law c.C) (w : Nat) {base : Addr} {kk : Nat} {s : State}
     (ctx : WinCtx c base kk s) {Q : Point c.C} (hQ : onCurve c.C Q = true)
     (hlt : ∀ i ∈ [RX, RY, RZ], sv c base s i < c.C.p)
     (hR : Rep c.C (fv c base s RX) (fv c base s RY) (fv c base s RZ) Q) :
-    WP isa c.winQuad s fun s' => Keeps clob s s' ∧ Unch base (pW c winWr) s.mem s'.mem ∧
+    WP isa (c.winQuadN w) s fun s' => Keeps clob s s' ∧ Unch base (pW c winWr) s.mem s'.mem ∧
       (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
-      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (dblPt Q c.winW) := by
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (dblPt Q w) := by
   have h7 := hc.n10
   have hn0 := hc.n0
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  rw [Cfg.winQuad, Cfg.zeroPt, toJ_eq]
+  rw [Cfg.winQuadN, Cfg.zeroPt, toJ_eq]
   -- To Jacobian coordinates, in `D`.
   refine WP.seq (WP.mono (ptOp_ok hc toJN_ok (p₁ := RX) (p₂ := RY) (p₃ := RZ) (q₁ := ZERO) (q₂ := ZERO)
     (q₃ := ZERO) (o₁ := DX) (o₂ := DY) (o₃ := DZ) (by decide) (by decide) (by decide) ctx.scr
@@ -536,7 +536,7 @@ theorem winQuad_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {kk : Nat} {s : S
   obtain J₁ : InvJ c.C (fv c base s₁ DX) (fv c base s₁ DY) (fv c base s₁ DZ) Q :=
     InvJ.of_toJ hC hR ctx.fv_zero (V₁.trans (toJN_run _))
   -- The doublings, and back.
-  refine WP.seq (WP.mono (winDbls_ok hc hC c.winW true ctx₁ hQ L₁ J₁)
+  refine WP.seq (WP.mono (winDbls_ok hc hC w true ctx₁ hQ L₁ J₁)
     fun s₂ ⟨K₂, U₂, L₂, X, Y, Z, J₂, rx₂, ry₂, rz₂⟩ => ?_)
   obtain ctx₂ := ctx₁.next hc K₂ edi_clob esp_clob U₂ (winW_winWr h7)
   have hs₂ := ctx₂.scr
@@ -605,6 +605,16 @@ theorem winQuad_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {kk : Nat} {s : S
         exact ry₂
     rw [ex, ey, ez]
     exact hout
+
+/-- `winQuad`: `R = 2^winW R`. -/
+theorem winQuad_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {kk : Nat} {s : State}
+    (ctx : WinCtx c base kk s) {Q : Point c.C} (hQ : onCurve c.C Q = true)
+    (hlt : ∀ i ∈ [RX, RY, RZ], sv c base s i < c.C.p)
+    (hR : Rep c.C (fv c base s RX) (fv c base s RY) (fv c base s RZ) Q) :
+    WP isa c.winQuad s fun s' => Keeps clob s s' ∧ Unch base (pW c winWr) s.mem s'.mem ∧
+      (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (dblPt Q c.winW) :=
+  winQuadN_ok hc hC c.winW ctx hQ hlt hR
 
 /-! ## The windows and the table: sizes -/
 

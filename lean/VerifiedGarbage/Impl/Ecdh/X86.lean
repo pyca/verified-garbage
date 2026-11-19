@@ -151,7 +151,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.winMul PX PY) <| .seq c.pPow (middle c)
+  .seq (c.ecdhMul PX PY) <| .seq c.pPow (middle c)
 
 end Cfg
 
