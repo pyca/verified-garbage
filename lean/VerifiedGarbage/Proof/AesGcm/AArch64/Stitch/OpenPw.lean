@@ -202,11 +202,11 @@ abbrev dstRT (s : State) : Region := ⟨stackArg s 0, (s.gpr .x7).toNat⟩
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs in one pass, on the regions
 its proofs run on: `openToPwN`, with `pw` apart from `dst`. -/
-def openToPwSN (s : State) : Prop := openToPwN 2560 s ∧ (pwRT s).Disjoint (dstRT s)
+def openToPwSN (s : State) : Prop := openToPwN s ∧ (pwRT s).Disjoint (dstRT s)
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs in one pass: `openToPwW`,
 with `pw` apart from `dst`. -/
-def openToPwSW (s : State) : Prop := openToPwW 2560 s ∧ (pwRT s).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
+def openToPwSW (s : State) : Prop := openToPwW s ∧ (pwRT s).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
 
 theorem openToPwSW_N {s : State} (h : openToPwSW s) : openToPwSN (narrowPT s) := by
   obtain ⟨hw, pd⟩ := h
@@ -277,7 +277,7 @@ theorem pwTbl_forT {s : State} (hs : openToPwSN s) :
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallToS_of hs (Y := stackArg s 5 + BitVec.ofNat 64 512)
       (S := stackArg s 5 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
-    have T := openToLay hs.1.1
+    have T := openToLay (Wn := 2560) hs.1.1
     have hH : Spec.Gcm.blockAt u.mem (s.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem (s.gpr .x0) :=
       blockAt_frame hf fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
