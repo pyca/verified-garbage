@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
@@ -44,7 +43,6 @@ meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
@@ -72,12 +70,12 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 meta import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT

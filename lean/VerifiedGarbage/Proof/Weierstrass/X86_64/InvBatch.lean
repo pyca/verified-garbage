@@ -1,14 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Omega
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Divstep.TcS
 import Mathlib.Tactic.LinearCombination
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 import VerifiedGarbage.Proof.Divstep.Packed
-import VerifiedGarbage.Proof.Divstep.Tc
+public import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -20,7 +19,6 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import VerifiedGarbage.Proof.Divstep.Alg
 import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import Mathlib.Data.Int.ModEq
 public import Mathlib.Data.BitVec

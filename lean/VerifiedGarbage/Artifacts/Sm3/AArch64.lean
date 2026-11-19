@@ -18,13 +18,7 @@ def artifacts : List Artifact := [
     verified := Proof.Sm3.AArch64.Shared.init
     residue := some ⟨Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩ }] ++
   (Proof.Variants.Sm3Compress.AArch64.variants.flatMap fun (v : Proof.Sm3.AArch64.Compress) => [
-    Spec.Sm3.updateApi.artifact AArch64.target {
-      code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
-      verified := Proof.Sm3.AArch64.Shared.update v
-      suffix := v.suffix },
-    Spec.Sm3.finalizeApi.artifact AArch64.target {
-      code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
-      verified := Proof.Sm3.AArch64.Shared.finalize v
-      suffix := v.suffix }])
+    Spec.Sm3.updateApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.updateReg v),
+    Spec.Sm3.finalizeApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.finalizeReg v)])
 
 end VG.Artifacts.Sm3.AArch64

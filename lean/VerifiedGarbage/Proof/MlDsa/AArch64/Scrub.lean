@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset

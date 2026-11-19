@@ -5,7 +5,7 @@ meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.PublicKeyVerified
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed25519.WholeLocal
@@ -49,8 +49,7 @@ import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
@@ -60,8 +59,8 @@ meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common

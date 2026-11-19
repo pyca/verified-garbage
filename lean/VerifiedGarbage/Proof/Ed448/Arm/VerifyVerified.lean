@@ -29,9 +29,9 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeLoop
 public import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
 public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
-import VerifiedGarbage.Proof.Ed448.Arm.BaseBits
+import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.Arm.Mem
@@ -42,18 +42,17 @@ import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
-import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.X448.Arm.Finish
-import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
+import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
 import VerifiedGarbage.Proof.X448.Arm.Initial
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeLoop
 meta import VerifiedGarbage.Proof.X448.Arm.Save
 meta import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
 meta import VerifiedGarbage.Proof.Ed25519.SlidingDigits
-meta import VerifiedGarbage.Proof.Ed448.Arm.BaseBits
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 meta import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.X448.Arm.Mem
@@ -66,9 +65,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.X448.Arm.Counters
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
-meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 meta import VerifiedGarbage.Proof.X448.Arm.Finish
-meta import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
 meta import VerifiedGarbage.Proof.X448.Arm.Initial

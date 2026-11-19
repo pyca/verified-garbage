@@ -42,14 +42,12 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 public import VerifiedGarbage.Proof.Ed25519.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Recover
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign

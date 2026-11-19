@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.RISCV64.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Sample.RejBounded
-import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.BitPack
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Round.Arith

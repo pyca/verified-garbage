@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 public import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
 public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
 import VerifiedGarbage.Proof.Argon2.Dimensions

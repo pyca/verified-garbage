@@ -29,7 +29,6 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Impl.MlKem.X86.CheckEk
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset

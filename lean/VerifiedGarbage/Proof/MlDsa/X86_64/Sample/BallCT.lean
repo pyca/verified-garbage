@@ -9,22 +9,20 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
-public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
-public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
-meta import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+meta import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 meta import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
-meta import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 meta import VerifiedGarbage.Proof.MlKem.Mem

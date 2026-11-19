@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp5
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Exp3
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
 import VerifiedGarbage.Proof.Rsa.TwosMath

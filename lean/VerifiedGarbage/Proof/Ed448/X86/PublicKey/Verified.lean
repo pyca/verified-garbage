@@ -11,7 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
@@ -20,7 +20,7 @@ public import VerifiedGarbage.Impl.Ed448.X86.PublicKey
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Prune
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 meta import VerifiedGarbage.Proof.Ed448.X86.Callee

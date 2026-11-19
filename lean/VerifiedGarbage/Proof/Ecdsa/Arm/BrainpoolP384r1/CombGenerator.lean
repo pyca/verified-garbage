@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
+public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Impl.NatPairs
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
@@ -12,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.BrainpoolP384r1.Comb7
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ### `BrainpoolP384r1.Arm.Comb`, which this module and modules that import it used -/

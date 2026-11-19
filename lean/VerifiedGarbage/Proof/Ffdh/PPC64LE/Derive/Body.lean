@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Range
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad

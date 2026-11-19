@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
 import VerifiedGarbage.Proof.Framework.Arm.Exec

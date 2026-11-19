@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
-import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
 
 /-!
 # RSAES-OAEP on ARMv7: the indirect calls of a table's functions

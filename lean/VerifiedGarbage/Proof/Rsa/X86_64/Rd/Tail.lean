@@ -1,11 +1,11 @@
 module
--- separate module: its proofs build in parallel with the constant-time ones, `CTBase`, `CTParts` and `CTLoops`
 
+-- separate module: its proofs build in parallel with the constant-time ones, `CTBase`, `CTParts` and `CTLoops`
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Framework.Omega

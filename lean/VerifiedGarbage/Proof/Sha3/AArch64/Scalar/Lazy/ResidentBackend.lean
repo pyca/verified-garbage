@@ -39,11 +39,11 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 meta import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.Block
@@ -60,10 +60,10 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Framework.Block

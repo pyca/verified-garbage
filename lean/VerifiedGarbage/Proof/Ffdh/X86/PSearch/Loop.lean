@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Proof.EntropyRequest
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Offset

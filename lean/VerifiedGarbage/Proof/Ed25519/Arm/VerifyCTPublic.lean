@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
@@ -16,9 +16,7 @@ import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
 import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import VerifiedGarbage.Proof.Ed25519.Group.Decode

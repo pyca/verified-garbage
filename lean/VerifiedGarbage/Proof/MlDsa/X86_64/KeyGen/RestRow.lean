@@ -2,9 +2,9 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 meta import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 meta import VerifiedGarbage.Proof.MlKem.KpkeMulContract

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Params
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfArith
@@ -15,14 +15,12 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 public import VerifiedGarbage.Impl.RsaPss.PPC64LE
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Pre
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Shift
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.EncBytes
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Select
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ShiftV
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Mid
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT

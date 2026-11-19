@@ -3,26 +3,23 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.MatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
@@ -34,11 +31,10 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.MatrixTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
@@ -51,14 +47,12 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
@@ -74,8 +68,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 meta import VerifiedGarbage.Proof.MlKem.Scrubbed
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 meta import VerifiedGarbage.Spec.MlKem.Contract1024

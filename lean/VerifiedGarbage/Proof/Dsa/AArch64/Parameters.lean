@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands

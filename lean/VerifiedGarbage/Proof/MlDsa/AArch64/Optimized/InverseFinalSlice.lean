@@ -2,8 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract

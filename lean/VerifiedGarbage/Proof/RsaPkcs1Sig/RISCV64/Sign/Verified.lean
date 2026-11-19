@@ -18,13 +18,13 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Setup
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPre
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCall
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Setup
-meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPre
+meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCall
 meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.AddrArith

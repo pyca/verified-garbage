@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TCombI
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves

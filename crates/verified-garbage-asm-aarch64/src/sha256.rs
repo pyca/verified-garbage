@@ -52,18 +52,20 @@ pub const VG_SHA224_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize_sha2(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -100,7 +102,14 @@ cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xb9401669
 .inst 0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0xf9403a93,0xf9404295,0xf9404696
-.inst 0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
+.inst 0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800009,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418
+.inst 0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f
+.inst 0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff
+.inst 0xd65f03c0
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -112,6 +121,8 @@ pub const VG_SHA224_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -177,7 +188,15 @@ bl {vg_sha256_compress_sha2}
 .inst 0xb9400a69,0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929
 .inst 0xb90012a9,0xb9401669,0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0x910003f0
 .inst 0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0x910343f0
-.inst 0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
         VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
@@ -188,17 +207,19 @@ bl {vg_sha256_compress_sha2}
 ///
 /// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -235,7 +256,12 @@ cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
 .inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xb9401669
 .inst 0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0xf9403a93,0xf9404295,0xf9404696
-.inst 0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
+.inst 0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e410,0x6f00e411
+.inst 0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd102c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -244,6 +270,8 @@ cbz x24, 20b
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.sha224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -308,7 +336,14 @@ bl {vg_sha256_compress}
 .inst 0xb9400a69,0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929
 .inst 0xb90012a9,0xb9401669,0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0x910003f0
 .inst 0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0x910343f0
-.inst 0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001,0xd2800002,0xd2800003
+.inst 0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b
+.inst 0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401
+.inst 0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         VG_SHA224_H0 = sym super::consts::VG_SHA224_H0,
@@ -322,17 +357,19 @@ pub const VG_SHA256_UPDATE_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_sha2(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
+        r".inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
 cbz x22, 20f
 22:
@@ -421,8 +458,14 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff
-.inst 0xd65f03c0
+.inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -435,18 +478,20 @@ pub const VG_SHA256_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = ver
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_sha2(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -481,7 +526,14 @@ bl {vg_sha256_compress_sha2}
 .inst 0xd2800017,0xd1000718
 cbz x24, 20b
 .inst 0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf9403a93,0xf9404295
-.inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
+.inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800009,0xd280000b,0xd280000c,0xd280000d,0xd2800010,0xd2800011
+.inst 0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407
+.inst 0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417
+.inst 0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f
+.inst 0xea01003f,0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f
+.inst 0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
     )
@@ -493,6 +545,8 @@ pub const VG_SHA256_DIGEST_SHA2_FEATURES: verified_garbage_cpu::Features = verif
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -556,7 +610,15 @@ b 211f
 bl {vg_sha256_compress_sha2}
 .inst 0x910003f3,0x91000355,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1
 .inst 0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800006,0xd2800007,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2::vg_sha256_compress_sha2,
         VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,
@@ -567,16 +629,18 @@ bl {vg_sha256_compress_sha2}
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
+        r".inst 0xd10283ff,0x910003e4,0xf81f0ffe,0xf9003893,0xf9003c94,0xf9004095,0xf9004496,0xf9004897
 .inst 0xf9004c98,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
 cbz x22, 20f
 22:
@@ -665,8 +729,13 @@ cbnz x22, 22b
 b 21f
 20:
 21:
-.inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff
-.inst 0xd65f03c0
+.inst 0xf9403a93,0xf9404295,0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f
+.inst 0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -676,17 +745,19 @@ b 21f
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".inst 0xd10983ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
+        r".inst 0xd10283ff,0x910003e3,0xf81f0ffe,0xf9003873,0xf9003c74,0xf9004075,0xf9004476,0xf9004877
 .inst 0xf9004c78,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
 .inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
 20:
@@ -721,7 +792,13 @@ bl {vg_sha256_compress}
 .inst 0xd2800017,0xd1000718
 cbz x24, 20b
 .inst 0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1,0xf9403a93,0xf9404295
-.inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910983ff,0xd65f03c0
+.inst 0xf9404696,0xf9404a97,0xf9404e98,0xf9403e94,0xf84107fe,0x910283ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd102c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f
+.inst 0x9102c3ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -730,6 +807,8 @@ cbz x24, 20b
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -792,7 +871,14 @@ b 211f
 bl {vg_sha256_compress}
 .inst 0x910003f3,0x91000355,0x3dc00260,0x3dc00661,0x6e200800,0x6e200821,0x3d8002a0,0x3d8006a1
 .inst 0x910003f0,0xd2800011,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611
-.inst 0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd65f03c0
+.inst 0x910343f0,0xa9405613,0xa9416616,0xa9426e1a,0xa9437a1c,0x910443ff,0xd2800001,0xd2800002
+.inst 0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000,0xd10443ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x910443ff,0xd65f03c0
 .p2align 6",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         VG_SHA256_H0 = sym super::consts::VG_SHA256_H0,

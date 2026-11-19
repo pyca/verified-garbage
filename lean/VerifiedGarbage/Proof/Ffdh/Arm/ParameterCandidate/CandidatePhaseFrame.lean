@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SavedFrame
 public import Init.Data.BitVec.BasicAux
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseInput
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
 
 /-! ### `Ffdh.Arm.ParameterCandidate.CandidatePhaseInput`, which the modules that import this one used -/
 

@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

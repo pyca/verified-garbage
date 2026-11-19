@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Framework.TaintMap
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Mont.X86_64.MulPX
@@ -29,7 +29,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 meta import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Framework.TaintMap
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
@@ -39,14 +39,14 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 meta import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
+public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
@@ -34,7 +33,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT

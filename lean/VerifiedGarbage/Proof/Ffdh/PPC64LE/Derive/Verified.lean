@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Fn
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Front
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Correct
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.CT
 public import VerifiedGarbage.Proof.Framework.Contract

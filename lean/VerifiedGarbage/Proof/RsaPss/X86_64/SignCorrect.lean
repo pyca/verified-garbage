@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import Batteries.Logic
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 import Mathlib.Algebra.NeZero
@@ -20,7 +20,6 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import Mathlib.Order.Defs.PartialOrder
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import Mathlib.Tactic.Set

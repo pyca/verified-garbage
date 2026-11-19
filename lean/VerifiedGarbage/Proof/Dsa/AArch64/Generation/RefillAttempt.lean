@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Refill
 public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillOutcome
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCall
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashChoice
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
@@ -32,10 +29,809 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSearch
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchBody
 public import VerifiedGarbage.Proof.Dsa.Generation.Search
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorCall
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedOutcome
+public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Proof.Dsa.ModPowContract
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+
+/-! ### `Dsa.AArch64.Generation.SearchStable`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.SearchLoop`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.SearchAdvance`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.SearchStatus`, which this module and modules that import it used -/
+
+section
+
+/-! # Status handling and termination test of the native p search -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem searchStatus_ok {s : State} {B : Addr} {counter stride status : Nat}
+    (h : SearchControl B counter stride s) (hv : status ≤ 3) :
+    WP isa (.block (Impl.Dsa.AArch64.Generation.pSearchStatus status)) s fun t =>
+      SearchControl B counter stride t ∧ word t.mem B 16 = BitVec.ofNat 64 status ∧
+      Outside B 16 8 s.mem t.mem ∧ Keep [.x3] s t := by
+  have hst := h.scr.st (d := 16) (by decide)
+  refine WP.mono (WP.keep [.x3] (Q := fun t =>
+    t.mem = s.mem.writeW (off B 16) (BitVec.ofNat 64 status)) (by
+    brun [Impl.Dsa.AArch64.Generation.pSearchStatus, h.x0,
+      hdr_enc (by decide : 2 < 32), hst]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega_using [hv]) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
+  have ho : Outside B 16 8 s.mem t.mem := by
+    rw [hm]; exact writeW_outside _ _ _ (by decide)
+  refine ⟨⟨h.scr.congr hk.wr, (hk.gpr _ (by decide)).trans h.x0, ?_, ?_⟩,
+    by rw [hm, word_writeW_self], ho, hk⟩
+  · rw [ho.word (Or.inl (by decide)) (by decide)]; exact h.count
+  · rw [ho.word (Or.inl (by decide)) (by decide)]; exact h.offset
+
+theorem searchStatusCmp_ok {s : State} {B : Addr} {counter stride status : Nat}
+    (h : SearchControl B counter stride s) (hv : status ≤ 3)
+    (hstat : word s.mem B 16 = BitVec.ofNat 64 status) :
+    WP isa (.block Impl.Dsa.AArch64.Generation.pSearchStatusCmp) s fun t =>
+      eval (.zero .x .x3) t = some (decide (status = 3)) ∧ t.mem = s.mem ∧ Keep [.x3] s t := by
+  refine WP.mono (WP.keep [.x3] (Q := fun t =>
+    eval (.zero .x .x3) t = some (decide (status = 3)) ∧ t.mem = s.mem) (by
+    brun [Impl.Dsa.AArch64.Generation.pSearchStatusCmp, h.x0,
+      hdr_enc (by decide : 2 < 32), h.scr.ld (d := 16) (by decide), hstat, eval]
+    apply Bool.eq_iff_iff.mpr
+    rw [beq_iff_eq, decide_eq_true_eq, BitVec.sub_eq_iff_eq_add]
+    change BitVec.ofNat 64 status = (3#64) ↔ status = 3
+    constructor
+    · intro he
+      have hn := congrArg BitVec.toNat he
+      change status % 2 ^ 64 = 3 at hn
+      rwa [Nat.mod_eq_of_lt (by omega_using [hv] : status < 2 ^ 64)] at hn
+    · intro he; subst status; rfl) rfl rfl rfl) fun t ⟨⟨hz, hm⟩, hk⟩ => ⟨hz, hm, hk⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # The p search advances exactly one counter and one hash stride -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem searchAdvance_ok {s : State} {B : Addr} {counter stride limit : Nat}
+    (h : SearchControl B counter stride s) (hc : counter < limit) (hl : limit ≤ 12288)
+    (hs : stride ≤ 12) :
+    WP isa (Impl.Dsa.AArch64.Generation.pSearchAdvance limit stride) s fun t =>
+      SearchControl B (counter + 1) stride t ∧
+      word t.mem B 16 = BitVec.ofNat 64 (if counter + 1 < limit then 3 else 2) ∧
+      Outside B 0 24 s.mem t.mem ∧ Keep [.x3, .x4, .x5, .x7] s t := by
+  unfold Impl.Dsa.AArch64.Generation.pSearchAdvance
+  refine WP.seq (WP.mono (searchAdvanceHead_ok h hc hl hs) fun u ⟨hu, hflag, ho, hk⟩ => ?_)
+  refine WP.ite (decide (counter + 1 < limit)) (by
+    by_cases he : counter + 1 < limit
+    · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hflag,
+        ite_eq_right (show ¬ limit ≤ counter + 1 by omega_using [he]), decide_eq_true he]; rfl
+    · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hflag,
+        ite_eq_left (show limit ≤ counter + 1 by omega_using [he]), decide_eq_false he]; rfl) (fun hyes => ?_) (fun hno => ?_)
+  · have hlt : counter + 1 < limit := of_decide_eq_true hyes
+    refine WP.mono (searchStatus_ok hu (by decide : 3 ≤ 3)) fun t ⟨ht, hstat, hot, kt⟩ => ?_
+    exact ⟨ht, by simpa only [hlt, ite_true] using hstat,
+      (ho.mono (by decide) (by decide)).trans (hot.mono (by decide) (by decide)),
+      (hk.trans kt).mono (by decide)⟩
+  · have hge : ¬ counter + 1 < limit := of_decide_eq_false hno
+    refine WP.mono (searchStatus_ok hu (by decide : 2 ≤ 3)) fun t ⟨ht, hstat, hot, kt⟩ => ?_
+    exact ⟨ht, by simpa only [hge, ite_false] using hstat,
+      (ho.mono (by decide) (by decide)).trans (hot.mono (by decide) (by decide)),
+      (hk.trans kt).mono (by decide)⟩
+
+theorem searchInit_ok {s : State} {B : Addr} (h : Scr s B 24) (hdi : s.gpr .x0 = B) (stride : Nat) :
+    WP isa (.block Impl.Dsa.AArch64.Generation.pSearchInit) s fun t =>
+      SearchControl B 0 stride t ∧ Outside B 0 16 s.mem t.mem ∧ Keep [.x3] s t := by
+  let m := (s.mem.writeW (off B 0) (BitVec.ofNat 64 0)).writeW (off B 8) (BitVec.ofNat 64 1)
+  refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = m) (by
+    brun [Impl.Dsa.AArch64.Generation.pSearchInit, hdi,
+      hdr_enc (by decide : 0 < 32), hdr_enc (by decide : 1 < 32),
+      h.st (d := 0) (by decide), h.st (d := 8) (by decide)]; rfl) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
+  have ho : Outside B 0 16 s.mem t.mem := by
+    rw [hm]
+    exact ((writeW_outside _ B _ (d := 0) (by decide)).mono (by decide) (by decide)).trans
+      ((writeW_outside _ B _ (d := 8) (by decide)).mono (by decide) (by decide))
+  refine ⟨⟨h.congr hk.wr, (hk.gpr _ (by decide)).trans hdi, ?_, ?_⟩, ho, hk⟩
+  · rw [hm]
+    dsimp only [m]
+    rw [(writeW_outside _ B _ (d := 8) (by decide)).word (Or.inl (by decide)) (by decide), word_writeW_self]
+  · rw [hm, Nat.zero_mul, Nat.add_zero]; exact word_writeW_self _ _ _ _
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # Total correctness of the bounded native candidate-search loop
+
+The payload invariant describes the candidate and witness tape; the
+controller owns only its three words. Each rejected candidate advances
+exactly once, including the final rejection at the attempt limit.
+-/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+/-- Payload facts survive changes confined to the controller and its two
+volatile registers. The payload must not include the controller words. -/
+def SearchPayload (B : Addr) (P : State → Prop) : Prop :=
+  ∀ {s t}, P s → Outside B 0 24 s.mem t.mem → Keep [.x3, .x4, .x5, .x7] s t → P t
+
+theorem SearchControl.congr {s t : State} {B : Addr} {counter stride : Nat}
+    (h : SearchControl B counter stride s) (hm : t.mem = s.mem) (hk : Keep [.x3] s t) :
+    SearchControl B counter stride t :=
+  ⟨h.scr.congr hk.wr, (hk.gpr _ (by decide)).trans h.x0, hm ▸ h.count, hm ▸ h.offset⟩
+
+/-- One candidate body may finish or request the next attempt. An exhausted
+attempt budget is a distinct terminal outcome handled by `done`. -/
+theorem searchIteration_ok {body : Prog isa} {B : Addr} {limit stride counter : Nat}
+    {I : Nat → State → Prop} {Q : State → Prop}
+    (hl : limit ≤ 12288) (hs : stride ≤ 12)
+    (stable : ∀ c, SearchPayload B (I c)) (finish : SearchPayload B Q)
+    (done : ∀ t, I limit t → SearchControl B limit stride t →
+      word t.mem B 16 = 2 → Q t)
+    (body_ok : ∀ c s, c < limit → I c s → SearchControl B c stride s →
+      WP isa body s fun t => SearchControl B c stride t ∧
+        ∃ status ≤ 3, word t.mem B 16 = BitVec.ofNat 64 status ∧
+          (if status = 3 then I (c + 1) t else Q t))
+    {s : State} (hc : counter < limit) (hi : I counter s) (h : SearchControl B counter stride s) :
+    WP isa (Impl.Dsa.AArch64.Generation.pSearchIteration body limit stride) s fun t =>
+      (eval (.zero .x .x3) t = some false ∧ Q t) ∨
+      (eval (.zero .x .x3) t = some true ∧ I (counter + 1) t ∧
+        SearchControl B (counter + 1) stride t ∧ counter + 1 < limit) := by
+  unfold Impl.Dsa.AArch64.Generation.pSearchIteration
+  simp only [Impl.Bignum.AArch64.seqs]
+  refine WP.seq (WP.mono (body_ok counter s hc hi h) fun u ⟨hu, status, hv, hstat, hp⟩ => ?_)
+  refine WP.seq (WP.mono (searchStatusCmp_ok hu hv hstat) fun v ⟨hz, hm, hk⟩ => ?_)
+  have hvctrl := hu.congr hm hk
+  have hframe : Outside B 0 24 u.mem v.mem := by rw [hm]; exact Outside.refl _ _ _ _
+  by_cases hretry : status = 3
+  · have hiu : I (counter + 1) u := by simpa only [hretry, ite_true] using hp
+    have hiv := stable (counter + 1) hiu hframe (hk.mono (by decide))
+    refine WP.seq (WP.ite true (by simp [hz, hretry]) (fun _ => ?_) (fun he => Bool.noConfusion he))
+    refine WP.mono (searchAdvance_ok hvctrl hc hl hs) fun w ⟨hw, hstatus, hf, kw⟩ => ?_
+    have hiw := stable (counter + 1) hiv hf kw
+    let next := if counter + 1 < limit then 3 else 2
+    have hn : next ≤ 3 := by dsimp [next]; split <;> decide
+    refine WP.mono (searchStatusCmp_ok hw hn hstatus) fun t ⟨hzt, hmt, kt⟩ => ?_
+    have hit := stable (counter + 1) hiw (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide))
+    have ht := hw.congr hmt kt
+    by_cases hlt : counter + 1 < limit
+    · exact Or.inr ⟨by simp [hzt, next, hlt], hit, ht, hlt⟩
+    · have he : counter + 1 = limit := by omega_using [hc, hlt]
+      refine Or.inl ⟨by simp [hzt, next, hlt], ?_⟩
+      apply done t (he ▸ hit) (he ▸ ht)
+      rw [hmt, hstatus, ite_eq_right hlt]
+      rfl
+  · have hqu : Q u := by simpa only [hretry, ite_false] using hp
+    have hqv := finish hqu hframe (hk.mono (by decide))
+    refine WP.seq (WP.ite false (by simp [hz, hretry]) (fun he => Bool.noConfusion he)
+      (fun _ => WP.block_nil ?_))
+    refine WP.mono (searchStatusCmp_ok hvctrl hv (hm ▸ hstat)) fun t ⟨hzt, hmt, kt⟩ => ?_
+    exact Or.inl ⟨by simp [hzt, hretry],
+      finish hqv (by rw [hmt]; exact Outside.refl _ _ _ _) (kt.mono (by decide))⟩
+
+/-- The native loop always terminates within its public attempt budget. -/
+theorem searchLoop_ok {body : Prog isa} {B : Addr} {limit stride : Nat}
+    {I : Nat → State → Prop} {Q : State → Prop}
+    (hl : limit ≤ 12288) (hs : stride ≤ 12)
+    (stable : ∀ c, SearchPayload B (I c)) (finish : SearchPayload B Q)
+    (done : ∀ t, I limit t → SearchControl B limit stride t →
+      word t.mem B 16 = 2 → Q t)
+    (body_ok : ∀ c s, c < limit → I c s → SearchControl B c stride s →
+      WP isa body s fun t => SearchControl B c stride t ∧
+        ∃ status ≤ 3, word t.mem B 16 = BitVec.ofNat 64 status ∧
+          (if status = 3 then I (c + 1) t else Q t))
+    {s : State} {counter : Nat} (hc : counter < limit)
+    (hi : I counter s) (h : SearchControl B counter stride s) :
+    WP isa (.loop (Impl.Dsa.AArch64.Generation.pSearchIteration body limit stride) (.zero .x .x3)) s Q := by
+  exact WP.loop
+    (fun n t => ∃ c, n = limit - c ∧ c < limit ∧ I c t ∧ SearchControl B c stride t)
+    (fun n t ⟨c, hn, hc, hi, hctrl⟩ =>
+      WP.mono (searchIteration_ok hl hs stable finish done body_ok hc hi hctrl)
+        fun t' ht => ht.imp (fun h => h) fun ⟨hz, hi', hc', hlt⟩ =>
+          ⟨hz, limit - (c + 1), by omega_using [hn, hc], c + 1, rfl, hlt, hi', hc'⟩)
+    (limit - counter) s ⟨counter, rfl, hc, hi, h⟩
+
+/-- Initialization and the bounded search compose without any host loop. -/
+theorem pSearch_ok {body : Prog isa} {B : Addr} {limit stride : Nat}
+    {I : Nat → State → Prop} {Q : State → Prop}
+    (hl : limit ≤ 12288) (hpos : 0 < limit) (hs : stride ≤ 12)
+    (stable : ∀ c, SearchPayload B (I c)) (finish : SearchPayload B Q)
+    (done : ∀ t, I limit t → SearchControl B limit stride t →
+      word t.mem B 16 = 2 → Q t)
+    (body_ok : ∀ c s, c < limit → I c s → SearchControl B c stride s →
+      WP isa body s fun t => SearchControl B c stride t ∧
+        ∃ status ≤ 3, word t.mem B 16 = BitVec.ofNat 64 status ∧
+          (if status = 3 then I (c + 1) t else Q t))
+    {s : State} (hi : I 0 s) (h : Scr s B 24) (hdi : s.gpr .x0 = B) :
+    WP isa (Impl.Dsa.AArch64.Generation.pSearch body limit stride) s Q := by
+  unfold Impl.Dsa.AArch64.Generation.pSearch
+  refine WP.seq (WP.mono (searchInit_ok h hdi stride) fun t ⟨ht, hf, hk⟩ => ?_)
+  exact searchLoop_ok hl hs stable finish done body_ok hpos
+    (stable 0 hi (hf.mono (by decide) (by decide)) (hk.mono (by decide))) ht
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # Controller updates preserve the persistent search payload -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+theorem SearchMemory.stable {p : SearchPlan} {W : Nat → BitVec 64} :
+    SearchPayload p.C (SearchMemory p W) := by
+  intro s t h hf hk
+  have ff : Frame [⟨p.C, 24⟩] s.mem t.mem := by
+    intro a ha
+    apply hf a
+    right
+    have hn := ha ⟨p.C, 24⟩ (by simp)
+    change ¬ ofs p.C a < 24 at hn
+    omega_using [hn]
+  obtain ⟨V, R⟩ := h.rep
+  have Rt := rep_of_disjoint_frame R ff
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact p.frameControl)
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact p.hashControl)
+  exact h.frame (lay_of_rep h.layout R Rt rfl hk.sp hk.wr) ⟨V, Rt⟩
+    (fun _ _ => rfl) (ff.mono (by
+      intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [searchWrites])) hk.rd hk.wr
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.HashChoice`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.SeedSubgroup`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.Subgroup`, which only this module used -/
+
+section
+
+/-! # Complete native subgroup-candidate generation and primality testing -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Proof.RsaOaep.AArch64
+
+theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
+    (h1 : Pbkdf2.Md.AArch64.Calls.StreamOK G1.stream) (h256 : Pbkdf2.Md.AArch64.Calls.StreamOK G256.stream)
+    (he1 : ∀ x, Spec.Mgf1.sha1.hash x = h1.SH.H.hash x)
+    (he256 : ∀ x, Spec.Mgf1.sha256.hash x = h256.SH.H.hash x)
+    (hs1 : ∀ x, (Spec.Mgf1.sha1.hash x).length = G1.D)
+    (hs256 : ∀ x, (Spec.Mgf1.sha256.hash x).length = G256.D)
+    (hd1 : G1.D = 20) (hd256 : G256.D = 32) (T : PrimeTest)
+    {p : SubgroupPlan} {used : Nat} {s : State} (h : SubgroupState p used s) :
+    WP isa (Impl.Dsa.AArch64.Generation.subgroup G1 G256 T.run p.prime.len) s fun t =>
+      let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
+      ∃ used' status V', used' ≤ p.prime.rand.length ∧
+        Lay t p.F p.hash ∧
+        Rep t.mem p.F p.hash V' (upd (upd p.W 16 (BitVec.ofNat 64 used')) 19 status) ∧
+        Spec.Rsa.bytesAt t.mem p.output p.prime.len = Spec.Dsa.encodeBE p.prime.len p.prime.N ∧
+        (res = none → status = BitVec.ofNat 64 0) ∧
+        (∀ b rest, res = some (b, rest) → status = BitVec.ofNat 64 (if b then 1 else 3) ∧
+          used' = p.prime.rand.length - rest.length) ∧
+        Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain ⟨V, R⟩ := h.rep
+  have plen : p.prime.len ≤ 32 := by rcases p.width with hh | hh <;> omega_using [hh]
+  unfold Impl.Dsa.AArch64.Generation.subgroup
+  refine WP.seq (WP.mono (qBuild_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 p.width
+    h.layout R h.label p.outputSlot h.outputWrite p.outputFrame.symm p.outputScratch)
+    fun u ⟨uq, stepU, fu, Lu, Vu, Ru⟩ => ?_)
+  have urd := stepU.rd
+  have uwr := stepU.wr
+  have ubytes : Spec.Rsa.bytesAt u.mem p.output p.prime.len = Spec.Dsa.encodeBE p.prime.len p.prime.N := by
+    rw [uq, h.seed, ← p.modulus]
+  have tapeU := source_of_frame h.tape fu p.tapeHash p.prime.randMax urd uwr
+  have hc : Impl.Dsa.AArch64.ProbablePrime.candidate (8 * p.prime.len) = Impl.Dsa.Generation.Layout.q := by
+    unfold Impl.Dsa.AArch64.ProbablePrime.candidate
+    rcases p.width with hh | hh <;> rw [hh] <;> decide
+  have hin : PrimeCallInputs (8 * p.prime.len) p.F p.hash (p.W 5) p.prime.rp p.prime.rand
+      p.prime.N used p.W Vu u := {
+    layout := Lu
+    rep := Ru
+    arena := rfl
+    arenaWrite := h.arena.congr uwr
+    tapePtr := p.tapePtr
+    tapeLength := p.tapeLength
+    usedSlot := h.usedSlot
+    usedBound := h.usedBound
+    tapeSize := p.prime.randMax
+    tapeCover := by rw [urd, uwr]; exact h.tapeCover
+    tapeBytes := bytes_of_src tapeU
+    candidate := by
+      rw [hc, Nat.mul_div_cancel_left _ (by decide)]
+      change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt u.mem (p.W 5 + BitVec.ofNat 64 Impl.Dsa.Generation.Layout.q)
+        p.prime.len) = p.prime.N
+      rw [p.outputPtr, ubytes, VG.Proof.Dsa.decodeBE_os2ip]
+      exact p.encoding
+    odd := by
+      rw [p.modulus]
+      exact (VG.Proof.Dsa.Generation.qCandidate_shape
+        (show 2 ≤ 8 * p.prime.len by rcases p.width with hh | hh <;> omega_using [hh]) p.seed).1
+    bitLen := p.bits }
+  have hch : primeCallChanged (8 * p.prime.len) p.F (p.W 5) =
+      p.primeWrites ++ [⟨p.F, frameBytes⟩] := by
+    rw [SubgroupPlan.primeWrites, ← p.base, ← p.witnessPtr, primeCallChanged,
+      Nat.mul_div_cancel_left _ (by decide)]
+    rfl
+  have hsup : ProbablePrime.Supported (8 * p.prime.len) := by
+    rcases p.width with hh | hh <;> rw [hh] <;> unfold ProbablePrime.Supported <;> decide
+  refine WP.mono (primeCall_ok T hsup hin p.geometry)
+    fun t ⟨used', status, hb, Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_
+  rw [hch] at ft
+  refine ⟨used', status, Vu, hb, Lt, Rt, ?_, he, hr, ?_, rdt.trans urd, wrt.trans uwr⟩
+  · rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
+      intro r hr
+      rcases List.mem_append.mp hr with hr | hr
+      · exact p.outputPrime r hr
+      · rcases List.mem_singleton.mp hr with rfl; exact p.outputFrame) (by omega_using [plen]), ubytes]
+  · exact (fu.mono (by intro r hr; simp only [SubgroupPlan.changed, List.mem_append]; exact Or.inl (Or.inl hr))).trans
+      (ft.mono (by intro r hr; simp only [SubgroupPlan.changed, List.append_assoc]; exact List.mem_append_right _ hr))
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+
+/-! # Complete first phase of a seed attempt, retaining every retry input -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Proof.MillerRabin.AArch64
+
+theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
+    {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
+    (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
+    (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr) {used : Nat}
+    (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
+    WP isa (.seq (.block (Impl.Dsa.AArch64.Generation.seedArguments p.geo.qLen))
+      (Impl.Dsa.AArch64.Generation.subgroup H.sha1 H.sha256 T.run p.geo.qLen)) s fun t =>
+      let res := Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) (p.rand.bytes.drop used)
+      ∃ used' status, used' ≤ p.rand.bytes.length ∧
+        GenerationMemory p (upd (upd (seedWords W p.geo.qLen) 16 (BitVec.ofNat 64 used')) 19 status) t ∧
+        Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen =
+          Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) ∧
+        (res = none → status = BitVec.ofNat 64 0) ∧
+        (∀ b rest, res = some (b, rest) → status = BitVec.ofNat 64 (if b then 1 else 3) ∧
+          used' = p.rand.bytes.length - rest.length) ∧
+        Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  refine WP.seq (WP.mono (prepareSeed_ok h) fun u ⟨huMem, fu, ku⟩ => ?_)
+  have hseedU := hseed.frame fu ku.rd ku.wr
+  have hb : W 5 = p.geo.B := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
+  have h0 : seedWords W p.geo.qLen 0 = VG.Proof.Bignum.off p.geo.B q := by simp [seedWords, upd, hb]
+  have h25 : seedWords W p.geo.qLen 25 = seed.ptr := by simp [seedWords, upd, h1]
+  have h16u : seedWords W p.geo.qLen 16 = BitVec.ofNat 64 used := by simpa [seedWords, upd] using h16
+  have state := huMem.subgroupState seed hlen hseedU h0 h25 h16u hu
+  refine WP.mono (subgroup_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256 H.width1 H.width256 T state)
+    fun t ⟨used', status, Vt, bound, Lt, Rt, bytes, fail, result, ft, rd, wr⟩ => ?_
+  have ff := huMem.subgroup_frame seed hlen h0 ft
+  refine ⟨used', status, bound, huMem.frame Lt ⟨Vt, Rt⟩ ?_ ff rd wr,
+    bytes, fail, result, fu.trans ff, rd.trans ku.rd, wr.trans ku.wr⟩
+  intro k hk
+  simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact (ite_eq_right (by decide)).trans (ite_eq_right (by decide))
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # One hash selection shared by the subgroup and prime searches -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.Proof.Pbkdf2.Md.AArch64
+
+def GenerationHashes.streamOK (H : GenerationHashes) (len : Nat) :
+    Calls.StreamOK (if len = 20 then H.sha1 else H.sha256).stream where
+  SH := if len = 20 then H.h1.SH else H.h256.SH
+  Wb := if len = 20 then H.h1.Wb else H.h256.Wb
+  hS := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hS
+    · simpa [h] using H.h256.hS
+  hD := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hD
+    · simpa [h] using H.h256.hD
+  hB := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hB
+    · simpa [h] using H.h256.hB
+  hDF := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hDF
+    · simpa [h] using H.h256.hDF
+  hF := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hF
+    · simpa [h] using H.h256.hF
+  hD0 := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hD0
+    · simpa [h] using H.h256.hD0
+  hS0 := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hS0
+    · simpa [h] using H.h256.hS0
+  hSB := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hSB
+    · simpa [h] using H.h256.hSB
+  hB0 := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hB0
+    · simpa [h] using H.h256.hB0
+  hBB := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hBB
+    · simpa [h] using H.h256.hBB
+  hWb := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hWb
+    · simpa [h] using H.h256.hWb
+  hW := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.hW
+    · simpa [h] using H.h256.hW
+  repr := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.repr
+    · simpa [h] using H.h256.repr
+  init := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.init
+    · simpa [h] using H.h256.init
+  upd := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.upd
+    · simpa [h] using H.h256.upd
+  fin := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.fin
+    · simpa [h] using H.h256.fin
+  initDepth := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.initDepth
+    · simpa [h] using H.h256.initDepth
+  updDepth := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.updDepth
+    · simpa [h] using H.h256.updDepth
+  finDepth := by
+    by_cases h : len = 20
+    · simpa [h] using H.h1.finDepth
+    · simpa [h] using H.h256.finDepth
+
+def generationHash (len : Nat) : Spec.Mgf1.Hash :=
+  if len = 20 then Spec.Mgf1.sha1 else Spec.Mgf1.sha256
+
+theorem GenerationHashes.hash_matches (H : GenerationHashes) (len : Nat) :
+    ∀ x, (generationHash len).hash x = (H.streamOK len).SH.H.hash x := by
+  intro x
+  by_cases h : len = 20
+  · simpa [generationHash, GenerationHashes.streamOK, h] using H.hash1 x
+  · simpa [generationHash, GenerationHashes.streamOK, h] using H.hash256 x
+
+theorem GenerationHashes.hash_size (H : GenerationHashes) (len : Nat) :
+    ∀ x, ((generationHash len).hash x).length = (if len = 20 then H.sha1 else H.sha256).D := by
+  intro x
+  unfold generationHash
+  split
+  · exact H.size1 x
+  · exact H.size256 x
+
+theorem GenerationHashes.hash_width (H : GenerationHashes) {len : Nat} (hw : len = 20 ∨ len = 32) :
+    (if len = 20 then H.sha1 else H.sha256).D = len := by
+  rcases hw with rfl | rfl
+  · simpa using H.width1
+  · simpa using H.width256
+
+theorem generationHash_seed {len : Nat} (hw : len = 20 ∨ len = 32) (bs : List Byte) :
+    (generationHash len).hash bs = Spec.Dsa.seedHash (8 * len) bs := by
+  rcases hw with rfl | rfl <;> rfl
+
+theorem GenerationHashes.seed_size (H : GenerationHashes) {len : Nat} (hw : len = 20 ∨ len = 32)
+    (bs : List Byte) : 8 * (Spec.Dsa.seedHash (8 * len) bs).length = 8 * len := by
+  rw [← generationHash_seed hw, H.hash_size, H.hash_width hw]
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.GeneratorCall`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.GeneratorStage`, which this module and modules that import it used -/
+
+section
+
+/-! # The generator stages parameter generation calls
+
+`vg_dsa_generator_{bits}` for each width of p: each one's name, its code, its
+proof, and the stack its frames use. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64
+
+structure GeneratorStage where
+  name : Nat → String
+  code : Nat → Prog isa
+  verified : ∀ pLen, Generator.Supported pLen → Verified target (code pLen) (Generator.contract pLen)
+  depth : ∀ pLen, 16 * (code pLen).aarch64Depth ≤ 272
+  /-- It never touches PSTATE.DIT (`ConstantTime.withDit`). -/
+  noDit : ∀ pLen, Generator.Supported pLen → (code pLen).all (fun i => !i.touchesDit) = true
+
+/-- The call of the stage for a p of `pLen` bytes. -/
+def GeneratorStage.run (G : GeneratorStage) (pLen : Nat) : Prog isa := .call (G.name pLen) (G.code pLen)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # Calling the generator stage from the generation frame
+
+The stage runs on the generation's scratch space, with the h tape, and
+returns its end and the octets of the candidates it read
+(`Proof.Dsa.GeneratorStage.result`). -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Impl.Bignum.AArch64 (movi)
+
+theorem GenerationGeometry.supported (p : GenerationGeometry) : Generator.Supported p.pLen := p.width
+
+theorem GenerationGeometry.qLen_eq (p : GenerationGeometry) : Impl.Dsa.AArch64.Generator.qLen p.pLen = p.qLen := by
+  rcases p.lengths with h | h | h <;> simp [h.1, h.2, Impl.Dsa.AArch64.Generator.qLen]
+
+/-- The stage's arguments, from the frame. -/
+theorem generatorCallArgs_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
+    (h : GenerationMemory p W s) :
+    WP isa (.block (Impl.Dsa.AArch64.Generation.generatorCallArgs p.geo.pLen)) s fun u =>
+      u.gpr .x0 = p.geo.B ∧ u.gpr .x1 = BitVec.ofNat 64 (usedBytes p.geo.pLen / 8) ∧
+      u.gpr .x2 = p.hs.ptr ∧ u.gpr .x3 = BitVec.ofNat 64 p.hs.bytes.length ∧ u.mem = s.mem ∧
+      Keep [.x0, .x1, .x2, .x3] s u := by
+  have L := h.layout
+  obtain ⟨V, R⟩ := h.rep
+  have w5 : s.mem.readW (p.geo.F + BitVec.ofNat 64 40) 64 = p.geo.B :=
+    (R.fr 5 (by decide)).trans ((h.slots 5 (by decide)).trans p.baseSlot)
+  have w11 : s.mem.readW (p.geo.F + BitVec.ofNat 64 88) 64 = p.hs.ptr :=
+    (R.fr 11 (by decide)).trans ((h.slots 11 (by decide)).trans p.hSlot)
+  have w13 : s.mem.readW (p.geo.F + BitVec.ofNat 64 104) 64 = BitVec.ofNat 64 p.hs.bytes.length :=
+    (R.fr 13 (by decide)).trans ((h.slots 13 (by decide)).trans p.hLengthSlot)
+  have l40 := L.ld (d := 40) (n := 8) (by decide)
+  have l88 := L.ld (d := 88) (n := 8) (by decide)
+  have l104 := L.ld (d := 104) (n := 8) (by decide)
+  simp only [off] at l40 l88 l104
+  rw [← L.sp] at w5 w11 w13 l40 l88 l104
+  have hu : BitVec.setWidth 64 (BitVec.ofNat 16 (usedBytes p.geo.pLen / 8)) = BitVec.ofNat 64 (usedBytes p.geo.pLen / 8) := by
+    rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide
+  have run : WP isa (.block (Impl.Dsa.AArch64.Generation.generatorCallArgs p.geo.pLen)) s fun u =>
+      u.gpr .x0 = p.geo.B ∧ u.gpr .x1 = BitVec.ofNat 64 (usedBytes p.geo.pLen / 8) ∧
+      u.gpr .x2 = p.hs.ptr ∧ u.gpr .x3 = BitVec.ofNat 64 p.hs.bytes.length ∧ u.mem = s.mem := by
+    unfold Impl.Dsa.AArch64.Generation.generatorCallArgs
+    brun [State.write, exec_ldrSp (off := 40) (by decide), exec_ldrSp (off := 88) (by decide),
+      exec_ldrSp (off := 104) (by decide), l40, l88, l104, w5, w11, w13, hu]
+  exact WP.mono (WP.keep [.x0, .x1, .x2, .x3] run
+    (by rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide) rfl
+    (by rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide +kernel)) fun u ⟨hu, hk⟩ =>
+    ⟨hu.1, hu.2.1, hu.2.2.1, hu.2.2.2.1, hu.2.2.2.2, hk⟩
+
+/-- The stage's regions: the h tape; the scratch space. -/
+def generatorCallRd (p : GenerationContext) : List Region := [⟨p.hs.ptr, p.hs.bytes.length⟩]
+
+def generatorCallWr (p : GenerationContext) : List Region := [⟨p.geo.B, usedBytes p.geo.pLen⟩]
+
+theorem usedBytes_words {pLen : Nat} (h : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
+    (BitVec.ofNat 64 (usedBytes pLen / 8)).toNat * 8 = usedBytes pLen ∧
+      usedBytes pLen ≤ 8 * (BitVec.ofNat 64 (usedBytes pLen / 8)).toNat := by
+  rcases h with rfl | rfl | rfl <;> decide
+
+/-- What the call itself leaves, before its result is stored. -/
+structure GeneratorCalled (p : GenerationContext) (value q : Nat) (s u t : State) : Prop where
+  rd : t.rd = u.rd
+  wr : t.wr = u.wr
+  sp : t.sp = p.geo.F
+  status : t.gpr .x0 = BitVec.ofNat 64 (Proof.Dsa.GeneratorStage.result p.geo.pLen value q
+      ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE))
+  packed : ∀ a, Proof.Dsa.GeneratorStage.stage value q
+      ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) = some a →
+    Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) =
+      Spec.Dsa.encodeParams p.geo.pLen p.geo.qLen a
+  keeps : Proof.Dsa.ModPow.Keeps p.geo.B (usedBytes p.geo.pLen / 8)
+    (Impl.Dsa.AArch64.Generator.layout p.geo.pLen).scratch s.mem t.mem
+  frame : Frame [⟨p.geo.B, usedBytes p.geo.pLen⟩, below p.geo.F 272] s.mem t.mem
+
+/-- What the callee starts from: its precondition, regions of the caller's,
+and the values it reads. -/
+structure GeneratorEntry (p : GenerationContext) (value qval : Nat) (u : State) : Prop where
+  pre : (Generator.contract p.geo.pLen).pre (u.callEntry.withRegions (generatorCallRd p) (generatorCallWr p))
+  reads : Covers (generatorCallRd p ++ generatorCallWr p) (u.rd ++ u.wr)
+  writes : Covers (generatorCallWr p) u.wr
+  pv : Proof.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value
+  qv : Proof.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval
+  tape : Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length = p.hs.bytes
+
+theorem generatorCall_entry {p : GenerationContext} {W : Nat → BitVec 64} {s u : State}
+    (h : GenerationMemory p W s) (value qval : Nat)
+    (domain : VG.Proof.Dsa.Generation.PDomain p.geo.pLen value) (qfit : qval < 256 ^ p.geo.qLen) (qpos : 0 < qval)
+    (bp : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen value)
+    (be : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B exponent) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen ((value - 1) / qval))
+    (bq : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval)
+    (h0 : u.gpr .x0 = p.geo.B) (h1 : u.gpr .x1 = BitVec.ofNat 64 (usedBytes p.geo.pLen / 8))
+    (h2 : u.gpr .x2 = p.hs.ptr) (h3 : u.gpr .x3 = BitVec.ofNat 64 p.hs.bytes.length) (hm : u.mem = s.mem)
+    (hsp : u.sp = p.geo.F) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) :
+    GeneratorEntry p value qval u := by
+  have hb := p.geo.supported
+  have hn := p.hs.size
+  have qq := p.geo.qLen_eq
+  have hw := usedBytes_words p.geo.width
+  have hl : (BitVec.ofNat 64 p.hs.bytes.length).toNat = p.hs.bytes.length := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
+  have pfit : value < 256 ^ p.geo.pLen := by
+    simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using domain.upper
+  have pv : Proof.Dsa.GeneratorStage.pAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = value := by
+    unfold Proof.Dsa.GeneratorStage.pAt Proof.Dsa.GeneratorStage.numberAt
+    rw [hm]
+    exact (congrArg Spec.Dsa.decodeBE bp).trans (VG.Proof.Dsa.decodeBE_encodeBE pfit)
+  have qv : Proof.Dsa.GeneratorStage.qAt (Impl.Dsa.AArch64.Generator.layout p.geo.pLen) u.mem p.geo.B = qval := by
+    unfold Proof.Dsa.GeneratorStage.qAt Proof.Dsa.GeneratorStage.numberAt
+    rw [hm]
+    change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q)
+      (Impl.Dsa.AArch64.Generator.qLen p.geo.pLen)) = qval
+    rw [qq]
+    exact (congrArg Spec.Dsa.decodeBE bq).trans (VG.Proof.Dsa.decodeBE_encodeBE qfit)
+  have tapeV : Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length = p.hs.bytes := by rw [hm]; exact h.hs.bytes
+  -- The callee's regions are the generation's.
+  have cW : Covers (generatorCallWr p) u.wr := by
+    obtain ⟨⟨B₀, o, L₀, hmem, hbase, hle, _⟩, _⟩ := h.scratch
+    rw [hwr]
+    exact Covers.of_sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, hmem, o, hbase, hle⟩
+  have cR : Covers (generatorCallRd p) (u.rd ++ u.wr) := by
+    rw [hrd, hwr]; exact h.hs.cover
+  have frameBelow : Region.Disjoint ⟨p.geo.F, frameBytes⟩ (below p.geo.F 288) :=
+    Offset.base_disjoint_below p.geo.F (by decide)
+  have pre : (Generator.contract p.geo.pLen).pre
+      (u.callEntry.withRegions (generatorCallRd p) (generatorCallWr p)) := by
+    sig_pre [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
+    sig_and_intros
+    all_goals try simp only [h0, h1, h2, h3, hsp, hl, hw.1, generatorCallRd, generatorCallWr]
+    · exact p.geo.callSize
+    · exact p.hs.arena.symm
+    · exact p.geo.callArena
+    · exact p.hs.callStack.symm
+    · exact p.geo.arenaBound
+    · exact p.hs.bound
+    · exact hw.2
+    · rw [pv]; exact domain.odd
+    · rw [pv]
+      exact (VG.Proof.Dsa.bitLength_iff_bounds (by rcases domain.width with h | h | h <;> omega_using [h])).mpr
+        ⟨domain.lower, domain.upper⟩
+    · rw [qv]; exact qpos
+    · rw [pv, qv, hm]; exact be
+  exact ⟨pre, cR.append_left cW.right, cW, pv, qv, tapeV⟩
+
+theorem generatorCall_call_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat → BitVec 64} {s u : State}
+    (h : GenerationMemory p W s) (value qval : Nat)
+    (domain : VG.Proof.Dsa.Generation.PDomain p.geo.pLen value) (qfit : qval < 256 ^ p.geo.qLen) (qpos : 0 < qval)
+    (bp : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen value)
+    (be : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B exponent) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen ((value - 1) / qval))
+    (bq : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen = Spec.Dsa.encodeBE p.geo.qLen qval)
+    (h0 : u.gpr .x0 = p.geo.B) (h1 : u.gpr .x1 = BitVec.ofNat 64 (usedBytes p.geo.pLen / 8))
+    (h2 : u.gpr .x2 = p.hs.ptr) (h3 : u.gpr .x3 = BitVec.ofNat 64 p.hs.bytes.length) (hm : u.mem = s.mem)
+    (hsp : u.sp = p.geo.F) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) :
+    WP isa (G.run p.geo.pLen) u (GeneratorCalled p value qval s u) := by
+  have hb := p.geo.supported
+  have hd := G.depth p.geo.pLen
+  have hn := p.hs.size
+  have qq := p.geo.qLen_eq
+  have hl : (BitVec.ofNat 64 p.hs.bytes.length).toNat = p.hs.bytes.length := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
+  have E := generatorCall_entry h value qval domain qfit qpos bp be bq h0 h1 h2 h3 hm hsp hrd hwr
+  have pv := E.pv
+  have qv := E.qv
+  have tapeV := E.tape
+  refine WP.callF (G.verified p.geo.pLen hb).1 E.pre E.reads E.writes ?_
+    (by have := hd; omega_using [hd])
+  intro t hrd' hwr' hsp' hf _ hpost
+  sig_post [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
+    at hpost
+  simp only [h0, h1, h2, h3, hl] at hpost
+  rw [pv, qv] at hpost
+  obtain ⟨hr, hkeeps, hpk⟩ := hpost
+  have cands : Proof.Dsa.GeneratorStage.candidates p.geo.pLen (Spec.Rsa.bytesAt u.mem p.hs.ptr p.hs.bytes.length) =
+      (Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE := by
+    rw [tapeV]; rfl
+  rw [cands] at hr hpk
+  refine ⟨hrd', hwr', hsp'.trans hsp, hr, fun a ha => ?_, ?_, ?_⟩
+  · have := hpk a ha
+    rw [← qq]
+    exact this
+  · rw [← hm]
+    have := hkeeps
+    rw [show (BitVec.ofNat 64 (usedBytes p.geo.pLen / 8)).toNat = usedBytes p.geo.pLen / 8 by
+      rcases p.geo.width with hw' | hw' | hw' <;> rw [hw'] <;> decide] at this
+    exact this
+  · rw [← hm]
+    refine Frame.sub hf fun r hr => ?_
+    simp only [generatorCallWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · rw [hsp]
+      exact ⟨below p.geo.F 272, by simp, below_sub (by omega_using [hd]) (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.Generation.SeedPrime`, which this module and modules that import it used -/
 

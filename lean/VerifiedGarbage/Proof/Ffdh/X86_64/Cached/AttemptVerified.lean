@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Cached
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.CombCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutputCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -30,7 +30,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Zero
 import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.CombCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -48,9 +47,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Zero
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutputCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Outputs
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
@@ -70,11 +67,9 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutInputs
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutInputs
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Scan
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanRawCT
@@ -83,12 +78,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Comb
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 import VerifiedGarbage.Proof.Ffdh.VettedPolicy
@@ -105,14 +98,11 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Tactic.Push
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.Comb
 meta import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 meta import VerifiedGarbage.Proof.Ffdh.VettedPolicy

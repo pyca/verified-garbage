@@ -17,7 +17,6 @@ meta import Mathlib.Tactic.ToExpr
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
@@ -48,7 +47,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
 meta import VerifiedGarbage.Proof.Framework.Block
@@ -57,7 +56,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! ### `Sha3.AArch64.Scalar.Unrolled`, which this module and modules that import it used -/
 

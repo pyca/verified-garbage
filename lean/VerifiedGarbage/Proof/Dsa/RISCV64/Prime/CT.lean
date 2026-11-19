@@ -72,12 +72,8 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Witness
 meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Witness
-public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Load
-meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Load
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
-public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.RoundCallCT
-meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.RoundCallCT
 
 /-! ### `MillerRabin.RISCV64.Blinded.LoopCT`, which only this module used -/
 

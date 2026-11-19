@@ -1,8 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Divstep.Alg
+
+public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Block

@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import Mathlib.Tactic.Set
 import Mathlib.Data.Int.GCD
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
@@ -39,6 +37,329 @@ public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Spec.RsaPss.Contract
+public import VerifiedGarbage.Spec.RsaPss.MdTable
+
+/-! ### `RsaPss.X86_64.SignCtx`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSASSA-PSS signing on x86-64: the contract on the registers
+
+`signK tsH tsG` states `Spec.RsaPss.signMdTableContract` with the tables
+`tsH` of `MdHash` and `tsG` of `MdHash` (`Abi.withTables`, with the stack the
+frame and the calls use, `signStack`) on the registers and the stack
+(`sign_implies`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64
+
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+
+/-- The stack below the stack pointer: the frame, the return address of
+its calls, and what `vg_rsa_private_checked` uses below that. -/
+def signStack : Nat := 392 + 8 + Proof.Rsa.X86_64.stackBytes
+
+theorem stackArgs_eighteen (s : State) :
+    List.map (stackArg s) (List.range 18) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
+      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15, stackArg s 16,
+      stackArg s 17] := rfl
+
+/-- The functions of the tables `ts`. -/
+def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
+
+variable (tsH tsG : List FnTable)
+
+/-- `sign(out = rdi, out_len = rsi, n = rdx, n_len = rcx, e = r8, e_len = r9,
+p = [rsp + 8], p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len,
+digest = [rsp + 88], digest_len, salt, salt_len, scratch, scratch_len,
+hash = [rsp + 136], mgf1 = [rsp + 144])`, `hash` one of the tables `tsH`
+and `mgf1` one of `tsG`. -/
+def signK : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let n : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
+    let e : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
+    let p : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+    let q : Region := ⟨stackArg s 2, (stackArg s 3).toNat⟩
+    let dp : Region := ⟨stackArg s 4, (stackArg s 5).toNat⟩
+    let dq : Region := ⟨stackArg s 6, (stackArg s 7).toNat⟩
+    let qi : Region := ⟨stackArg s 8, (stackArg s 9).toNat⟩
+    let dg : Region := ⟨stackArg s 10, (stackArg s 11).toNat⟩
+    let sa : Region := ⟨stackArg s 12, (stackArg s 13).toNat⟩
+    let scr : Region := ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
+    let tH : Region := ⟨stackArg s 16, 88⟩
+    let tG : Region := ⟨stackArg s 17, 88⟩
+    let args : Region := ⟨stackArgAddr s 0, 144⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩
+    signStack ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 152 ≤ 2 ^ 64 ∧
+      (∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s T)) ∧
+      (∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
+      (tabFns tsH ++ tabFns tsG).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) ∧
+      s.rd = [n, e, p, q, dp, dq, qi, dg, sa, tH, tG, args] ∧ s.wr = [out, scr] ∧
+      out.Disjoint n ∧ out.Disjoint e ∧ out.Disjoint p ∧ out.Disjoint q ∧ out.Disjoint dp ∧
+      out.Disjoint dq ∧ out.Disjoint qi ∧ out.Disjoint dg ∧ out.Disjoint sa ∧ out.Disjoint scr ∧
+      out.Disjoint tH ∧ out.Disjoint tG ∧ out.Disjoint args ∧
+      n.Disjoint scr ∧ e.Disjoint scr ∧ p.Disjoint scr ∧ q.Disjoint scr ∧ dp.Disjoint scr ∧
+      dq.Disjoint scr ∧ qi.Disjoint scr ∧ dg.Disjoint scr ∧ sa.Disjoint scr ∧ scr.Disjoint tH ∧
+      scr.Disjoint tG ∧ scr.Disjoint args ∧
+      ret.Disjoint out ∧ ret.Disjoint n ∧ ret.Disjoint e ∧ ret.Disjoint p ∧ ret.Disjoint q ∧
+      ret.Disjoint dp ∧ ret.Disjoint dq ∧ ret.Disjoint qi ∧ ret.Disjoint dg ∧ ret.Disjoint sa ∧
+      ret.Disjoint scr ∧ ret.Disjoint tH ∧ ret.Disjoint tG ∧ ret.Disjoint args ∧
+      stk.Disjoint out ∧ stk.Disjoint n ∧ stk.Disjoint e ∧ stk.Disjoint p ∧ stk.Disjoint q ∧
+      stk.Disjoint dp ∧ stk.Disjoint dq ∧ stk.Disjoint qi ∧ stk.Disjoint dg ∧ stk.Disjoint sa ∧
+      stk.Disjoint scr ∧ stk.Disjoint tH ∧ stk.Disjoint tG ∧ stk.Disjoint args ∧
+      (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 2).toNat + (stackArg s 3).toNat ≤ 2 ^ 64 ∧ (stackArg s 4).toNat + (stackArg s 5).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 6).toNat + (stackArg s 7).toNat ≤ 2 ^ 64 ∧ (stackArg s 8).toNat + (stackArg s 9).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 10).toNat + (stackArg s 11).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 12).toNat + (stackArg s 13).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 14).toNat + (stackArg s 15).toNat * 8 ≤ 2 ^ 64 ∧ (stackArg s 16).toNat + 88 ≤ 2 ^ 64 ∧
+      (stackArg s 17).toNat + 88 ≤ 2 ^ 64 ∧
+      Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ (s.gpr .rsi).toNat = (s.gpr .rcx).toNat ∧
+      1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
+      1 ≤ (stackArg s 1).toNat ∧ (stackArg s 1).toNat < (s.gpr .rcx).toNat ∧ 1 ≤ (stackArg s 3).toNat ∧
+      (stackArg s 3).toNat < (s.gpr .rcx).toNat ∧ (stackArg s 5).toNat = (stackArg s 1).toNat ∧
+      (stackArg s 9).toNat = (stackArg s 1).toNat ∧ (stackArg s 7).toNat = (stackArg s 3).toNat ∧
+      Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 15).toNat ∧
+      Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 16) (stackArg s 11)
+  post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+    Spec.Rsa.writtenOutcome s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
+      (Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 10) H.len)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 12) (stackArg s 13).toNat))
+  pub s₁ s₂ :=
+    (∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r) ∧
+      (List.range 18).map (stackArg s₁) = (List.range 18).map (stackArg s₂) ∧
+      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .rdx) (s₁.gpr .rcx).toNat =
+        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat ∧
+      Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9).toNat =
+        Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r8) (s₂.gpr .r9).toNat ∧
+      (∀ f ∈ tabFns tsH ++ tabFns tsG, s₁.syms f = s₂.syms f) ∧
+      (∀ T ∈ tsH, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 16) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 16) (FnTable.words isa s₂ T))) ∧
+      ∀ T ∈ tsG, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 17) (FnTable.words isa s₁ T) ↔
+        Abi.tableHeld 64 s₂.mem (stackArg s₂ 17) (FnTable.words isa s₂ T))
+
+end VG.Proof.RsaPss.X86_64
+
+end
+
+end
+
+/-! ### `RsaPss.X86_64.Safe`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSASSA-PSS on x86-64: no writes to `rsp`, no loads of MXCSR
+
+Every instruction of `ctHash` (and of what it calls) neither writes `rsp`
+(`SpSafe`) nor loads MXCSR (`ctHash_safe`), given that of every function its
+calls through the tables' slots may reach (`MdFnsSafe`, `FnsSafe`), and how
+much stack each piece uses (`ctHash_xd`, `mgfXor_xd`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaPss.X86_64
+
+open VG VG.X86_64 VG.Impl.RsaPss.X86_64
+open VG.Proof.Pbkdf2.Md.X86_64 (HashOK)
+open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
+
+/-- Neither writes `rsp` nor loads MXCSR. -/
+def safeI (i : Instr) : Bool := !isa.writesSp i && !loadsMxcsr i
+
+theorem allInstrs_and (f g : Instr → Bool) (c : Prog isa) :
+    c.allInstrs (fun i => f i && g i) = (c.allInstrs f && c.allInstrs g) := by
+  simp only [Code.allInstrs_eq]
+  induction instrs c with
+  | nil => rfl
+  | cons i is ih =>
+    simp only [List.all_cons, ih]
+    cases f i <;> cases g i <;> simp
+
+theorem safeI_eq : safeI = fun i => !isa.writesSp i && !loadsMxcsr i := rfl
+
+theorem safe_sp {c : Prog isa} (h : c.allInstrs safeI = true) : SpSafe c := by
+  rw [Code.allInstrs_eq] at h
+  intro i hi
+  have := List.all_eq_true.mp h i hi
+  simp only [safeI, Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at this
+  exact this.1
+
+theorem safe_mx {c : Prog isa} (h : c.allInstrs safeI = true) : c.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [safeI_eq, allInstrs_and] at h
+  simp only [Bool.and_eq_true] at h
+  exact h.2
+
+theorem rec_all (p : Instr → Bool) (l : List Instr) :
+    List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) l = l.all p := by
+  induction l with
+  | nil => rfl
+  | cons i is ih => simp only [List.all_cons, ← ih]
+
+/-! ## The calls through the tables' slots -/
+
+/-- Every function of `ts` is `safeI` and uses at most `d` bytes of stack. -/
+def FSafe (ts : List (String × Prog isa)) (d : Nat) : Prop :=
+  ∀ q ∈ ts, q.2.allInstrs safeI = true ∧ q.2.x86_64Depth ≤ d
+
+theorem icalls_safe {d : Nat} : ∀ {ts : List (String × Prog isa)}, FSafe ts d →
+    (Code.icalls (.callr .r11) ts).allInstrs safeI = true ∧ (Code.icalls (.callr .r11) ts).x86_64Depth ≤ d + 8
+  | [], _ => ⟨rfl, Nat.zero_le _⟩
+  | q :: ts, h => by
+    have hq := h q (List.mem_cons_self ..)
+    have ih := icalls_safe (ts := ts) fun r hr => h r (List.mem_cons_of_mem _ hr)
+    refine ⟨?_, ?_⟩
+    · simp only [Code.icalls, Code.allInstrs, hq.1, ih.1, Bool.and_true]; rfl
+    · simp only [Code.icalls, Code.x86_64Depth, Nat.max_le]; omega
+
+theorem scall_safe {d s : Nat} {ts : List (String × Prog isa)} (h : FSafe ts d) :
+    (scall s ts).allInstrs safeI = true ∧ (scall s ts).x86_64Depth ≤ d + 8 := by
+  have := icalls_safe h
+  refine ⟨?_, ?_⟩
+  · simp only [scall, Code.allInstrs, this.1, Bool.and_true]; rfl
+  · simp only [scall, Code.x86_64Depth, Nat.max_le]; omega
+
+/-- The functions the calls through the slots of the table of `MdHash` reach
+use no stack. -/
+structure MdFnsSafe (f : MdFns) : Prop where
+  init : FSafe f.init 0
+  comp : FSafe f.comp 0
+  dig : FSafe f.dig 0
+
+/-- And those through the slots of the table of `MdHash` at most 8 bytes. -/
+structure FnsSafe (g : Impl.Mgf1.X86_64.Table.Fns) : Prop where
+  init : FSafe g.init 8
+  upd : FSafe g.upd 8
+  fin : FSafe g.fin 8
+
+variable {H : Hash} (hH : HashOK H) {f : MdFns} (hf : MdFnsSafe f) {g : Impl.Mgf1.X86_64.Table.Fns}
+  (hg : FnsSafe g)
+
+include hH hf in
+theorem ctHashWith_safe {padding : Prog isa} (hp : padding.allInstrs safeI = true) :
+    (ctHashWith f H padding).allInstrs safeI = true := by
+  have hl : H.P.len.all safeI = true := hH.taints.lenSafe
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, Code.allInstrs, (scall_safe hf.init).1,
+    (scall_safe hf.comp).1, (scall_safe hf.dig).1, rec_all, lenField, digestOut, digestAt, List.all_append, hl,
+    byteLoop, step, Bool.and_true, Bool.true_and]
+  rfl
+
+include hH hf in
+theorem ctHash_safe : (ctHash f H).allInstrs safeI = true := ctHashWith_safe hH hf rfl
+
+include hf in
+theorem ctHashWith_xd {padding : Prog isa} (hp : padding.x86_64Depth = 0) :
+    (ctHashWith f H padding).x86_64Depth ≤ 8 := by
+  have := (scall_safe (s := sIniH) hf.init).2
+  have := (scall_safe (s := sCmpH) hf.comp).2
+  have := (scall_safe (s := sDigH) hf.dig).2
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, digestOut, digestAt, byteLoop,
+    Code.x86_64Depth, Nat.max_le]
+  omega_arith
+
+include hf in
+theorem ctHash_xd : (ctHash f H).x86_64Depth ≤ 8 := ctHashWith_xd hf rfl
+
+theorem copyWords64_safe (src dst : Reg) (so doff n : Nat) :
+    (copyWords64 src dst so doff n).all safeI = true := by
+  simp only [copyWords64, List.all_flatMap]
+  apply List.all_eq_true.mpr
+  intro j _
+  rfl
+
+theorem lenLast_safe : (lenLast H).allInstrs safeI = true := by
+  unfold lenLast
+  split
+  · simp only [Code.allInstrs, rec_all, copyWords64_safe, List.all_append, Bool.and_true]
+    rfl
+  · rfl
+
+theorem lenLast_xd : (lenLast H).x86_64Depth = 0 := by
+  unfold lenLast
+  split <;> rfl
+
+include hH hf in
+theorem fixedHash_safe : (fixedHash f H).allInstrs safeI = true := by
+  have hl : H.P.len.all safeI = true := hH.taints.lenSafe
+  simp only [fixedHash, seqs, ctInit, lenLast_safe (H := H), compAll, Code.allInstrs, (scall_safe hf.init).1,
+    (scall_safe hf.comp).1, (scall_safe hf.dig).1, rec_all, lenField, digestAt, List.all_append, hl, Bool.and_true]
+  rfl
+
+include hf in
+theorem fixedHash_xd : (fixedHash f H).x86_64Depth ≤ 8 := by
+  have := (scall_safe (s := sIniH) hf.init).2
+  have := (scall_safe (s := sCmpH) hf.comp).2
+  have := (scall_safe (s := sDigH) hf.dig).2
+  simp only [fixedHash, seqs, ctInit, lenLast_xd (H := H), compAll, digestAt, Code.x86_64Depth, Nat.max_le]
+  omega_arith
+
+include hg in
+theorem mgfXor_safe : (mgfXor H g).allInstrs safeI = true := by
+  simp only [mgfXor, mgfRound, mgfSeed, seqs, Code.allInstrs, (scall_safe hg.init).1, (scall_safe hg.upd).1,
+    (scall_safe hg.fin).1, Impl.Mgf1.X86_64.Table.xorOut, Impl.Mgf1.X86_64.seqs, Impl.Mgf1.X86_64.byteLoop,
+    rec_all, List.all_append, Bool.and_true, Bool.true_and]
+  rfl
+
+include hg in
+theorem mgfXor_xd : (mgfXor H g).x86_64Depth ≤ 16 := by
+  have := (scall_safe (s := sIniG) hg.init).2
+  have := (scall_safe (s := sUpdG) hg.upd).2
+  have := (scall_safe (s := sFinG) hg.fin).2
+  simp only [mgfXor, mgfRound, seqs, Impl.Mgf1.X86_64.Table.xorOut, Impl.Mgf1.X86_64.seqs,
+    Impl.Mgf1.X86_64.byteLoop, Code.x86_64Depth, Nat.max_le]
+  omega_arith
+
+include hH hf hg in
+theorem signEnc_safe : (signEnc f H g).allInstrs safeI = true := by
+  simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, Code.allInstrs,
+    ctHash_safe hH hf, mgfXor_safe hg, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
+  rfl
+
+include hf hg in
+theorem signEnc_xd : (signEnc f H g).x86_64Depth ≤ 16 := by
+  have := ctHash_xd (H := H) hf
+  have := mgfXor_xd (H := H) hg
+  simp only [signEnc, seqs, clearY, copyDigest, copySaltY, clearEm, putSalt, putH, byteLoop, Code.x86_64Depth,
+    Nat.max_le]
+  omega_arith
+
+/-- Code that is `safeI` and uses at most 16 bytes of stack keeps memory
+outside the writable regions and the 16 bytes below `rsp`. -/
+theorem WP.keepIn {c : Prog isa} (hc : c.allInstrs safeI = true) (hd : c.x86_64Depth ≤ 16) {u : State}
+    {Q : State → Prop} (h : WP isa c u Q) :
+    WP isa c u fun v => Q v ∧ ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 16).Contains a 1 →
+      v.mem a = u.mem a := by
+  refine WP.mono (X86_64.WP.stackFrame (safe_sp hc) (by omega_using [hd]) h) fun v ⟨hq, hf⟩ => ⟨hq, fun a h1 h2 => ?_⟩
+  refine Frame.below_mono hf hd (by decide) a fun r hr => ?_
+  rcases List.mem_append.mp hr with hr | hr
+  · exact h1 r hr
+  · simp only [List.mem_singleton] at hr; subst hr; exact h2
+
+end VG.Proof.RsaPss.X86_64
+
+end
+
+end
 
 /-! ### `RsaPss.X86_64.SignFrame`, which this module and modules that import it used -/
 

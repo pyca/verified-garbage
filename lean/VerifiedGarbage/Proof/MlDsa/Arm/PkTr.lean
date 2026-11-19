@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.PkTr
 public import VerifiedGarbage.Spec.MlDsa.PkTr
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
@@ -20,8 +18,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Impl.MlDsa.Arm.PkTr
 meta import VerifiedGarbage.Spec.MlDsa.PkTr
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT

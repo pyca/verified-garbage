@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.OuterCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.BodyCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body

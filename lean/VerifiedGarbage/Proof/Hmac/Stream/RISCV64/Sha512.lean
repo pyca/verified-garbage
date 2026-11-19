@@ -9,9 +9,7 @@ meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
-meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
-public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Digest
 meta import VerifiedGarbage.Proof.MdStream.RISCV64.Digest
 

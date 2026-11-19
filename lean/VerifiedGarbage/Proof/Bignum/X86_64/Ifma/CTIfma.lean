@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset

@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Double
@@ -26,7 +26,7 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Double

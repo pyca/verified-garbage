@@ -541,7 +541,7 @@ end
 `cipher_run`: `cipher up` takes the halves in the low words of `a3` and
 `a4` to their encryption (`up`) or decryption under the schedule at `a7`,
 changing only `a3`–`a6` and the lookup's temporaries. The structure of
-PPC64LE's (`Proof/Blowfish/PPC64LE/Cipher.lean`).
+PPC64LE's (`Proof/Blowfish/PPC64LE/Ecb.lean`).
 -/
 
 @[expose] public section

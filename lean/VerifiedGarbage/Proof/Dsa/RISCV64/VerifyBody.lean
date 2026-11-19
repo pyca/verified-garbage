@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyQ
-public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyProd
+public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset

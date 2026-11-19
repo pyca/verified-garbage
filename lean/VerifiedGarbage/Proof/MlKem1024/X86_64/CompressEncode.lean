@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Compress1024
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
@@ -12,10 +12,8 @@ meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
 
 /-! ### `MlKem1024.X86_64.Contracts`, which this module and modules that import it used -/
 

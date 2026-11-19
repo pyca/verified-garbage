@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 meta import VerifiedGarbage.Proof.MlKem.Arm.Common
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -17,14 +17,12 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 meta import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 meta import VerifiedGarbage.Proof.Framework.Semantics

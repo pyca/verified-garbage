@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -28,7 +28,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
@@ -42,7 +41,6 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 
 /-! ### `Ffdh.AArch64.Generation.Search.CTCode`, which only this module used -/

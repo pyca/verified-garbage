@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.TCB.Registration
@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Hmac.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 
 /-! ### `Pbkdf2.Md.AArch64.AnyKeyCT`, which only this module used -/
@@ -1027,7 +1028,9 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 function's compression function, which `Generic/MdHash/AArch64/Stream.lean`
 emits, naming it with the variant's suffix: its `Api` (in `Spec/`), and its
 code, verified against the contract the `Api` gives it (`ofApi`, as
-`Artifact.ofApi`) with `stack` bytes of stack. -/
+`Artifact.ofApi`) with `stack` bytes of stack, whose postcondition reads the
+memory on return only within its buffers (`scrubOk`), so that it is
+registered scrubbed whole (`StreamFn.reg`). -/
 structure StreamFn where
   api : Api
   code : Prog AArch64.target.isa
@@ -1039,9 +1042,10 @@ structure StreamFn where
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract AArch64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !AArch64.target.isa.writesSp i) = true
+  scrubOk : AArch64.ScrubAll.ScrubAllOk contract stack (api.sig.retBits AArch64.abi.ptrBits)
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target where
+/-- `f` as a registration of its `Api` (`Api.artifact`), as it is. -/
+def StreamFn.reg₀ (f : StreamFn) : Registration f.api AArch64.target where
   consts := []
   tables := []
   code := f.code
@@ -1051,6 +1055,12 @@ def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target where
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
+
+/-- `f` as a registration of its `Api` (`Api.artifact`), returning with the
+registers it may write cleared and its stack zeroed
+(`AArch64.ScrubAll.withScrubAll`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target :=
+  AArch64.ScrubAll.withScrubAll f.reg₀ f.scrubOk
 
 /-- The bytes of the frame in which HMAC's `init` and `finalize` (of
 instance `I`) keep their working space, for their `_scratch` forms. -/
@@ -1111,10 +1121,30 @@ structure MdHash where
   the code's (its state's representation and its working space): what a
   function generic over the variant that calls HMAC's `_scratch` functions
   needs (deterministic ECDSA's, through a table of `Hmac`,
-  `Proof/Ecdsa/Rfc6979/AArch64/Regs.lean`). -/
+  `Proof/Ecdsa/Rfc6979/AArch64/Hash.lean`). -/
   C : CoreOK (core H)
   hSH : ok.SH = I.S
   hW : H.W = I.scratch
+  /-- The state's representation is determined by its bytes (`Proof.Hmac.ReprLocal`). -/
+  reprLocal : Proof.Hmac.ReprLocal I.S
+  /-- The words of working space HMAC's `init` for a key of at most a block
+  (`initW`) and its `finalize` (`finW`) use, of the `I.scratch` their shared
+  contracts give them: those of the streaming functions they call, then our
+  caller's registers and, for `finalize`, the inner digest
+  (`Impl.Pbkdf2.Md.AArch64.Stream.buf`). -/
+  initW : Nat
+  finW : Nat
+  /-- `init` for a key of at most a block and `finalize`, in frames of those
+  sizes, and `init` for a longer key in its own (`initCode`'s branches). -/
+  hmacShortR : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch (8 * initW) .x4 H.hmacInit)
+    (I.initContract AArch64.abi (16 + 8 * initW))
+  hmacFinR : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch (8 * finW) .x4 H.hmacFin)
+    (I.finalizeContract AArch64.abi (16 + 8 * finW))
+  hmacAnyF : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratchWiped (anyFrame I) .x4 I.initAnyKeyScratch H.hmacInitAny)
+    (I.initAnyKeyContract AArch64.abi (16 + anyFrame I))
   /-- What the names of the functions emitted for it end with (nothing for
   the baseline implementation). -/
   suffix : String
@@ -1231,6 +1261,43 @@ theorem pbkdf2F_of (hsI : ∃ s, (Proof.Hmac.Instance.initScratchContract I AArc
     (by simp only [pbkdf2Frame, Elem.size]; omega_arith)
     (fun vs m m₁ m₂ r hl _ => Proof.Pbkdf2.pbkdf2PostOut_local I.S _ vs m m₁ m₂ r hl) hsat
 
+omit hW in
+/-- HMAC's `init` for a key of at most a block, in a frame of the `w` words
+it uses (`HmacInit.verified`, whose working space may be any that holds its
+buffers). -/
+theorem hmacShortR_of {w : Nat} (hfit : H.stream.buf ≤ 8 * w) (hw : 0 < w ∧ w < 512 ∧ w % 2 = 0)
+    (hR : Proof.Hmac.ReprLocal I.S) (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S w AArch64.abi 16).pre s)
+    (hsat : ∃ s, (I.initContract AArch64.abi (16 + 8 * w)).pre s) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (8 * w) .x4 H.hmacInit)
+      (I.initContract AArch64.abi (16 + 8 * w)) := by
+  have hv : Verified AArch64.target H.hmacInit (Proof.Hmac.initScratchContract I.S w AArch64.abi 16) := by
+    simp only [← hSH] at hsI ⊢
+    exact (HmacInit.verified hH (HmacInit.Checks.of_core C.hinit) hfit (initImp _ _ hsI).sat_left).of_implies
+      (initImp _ _ hsI)
+  exact AArch64.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+    (n := w) (pre := Spec.Hmac.initPre I.S AArch64.abi.ptrBits)
+    (post := Spec.Hmac.initPost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
+    (bytes := 8 * w) hv (by exact (by decide : 4 < 8)) (by simp only [Elem.size]; omega)
+    (fun vs m m₁ m₂ r hl _ => Proof.Hmac.initPostOut_local I.S _ hR (by
+      rw [← hSH, hH.hS]; have := hH.N_le; have := hH.B_le
+      omega_arith) vs m m₁ m₂ r hl) hsat
+
+omit hW in
+/-- HMAC's `finalize`, in a frame of the `w` words it uses (`HmacFin.verified`). -/
+theorem hmacFinR_of {w : Nat} (hfit : H.stream.buf + H.stream.F ≤ 8 * w) (hw : 0 < w ∧ w < 512 ∧ w % 2 = 0)
+    (hsF : ∃ s, (Proof.Hmac.finalizeScratchContract I.S w AArch64.abi 16).pre s)
+    (hsat : ∃ s, (I.finalizeContract AArch64.abi (16 + 8 * w)).pre s) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (8 * w) .x4 H.hmacFin)
+      (I.finalizeContract AArch64.abi (16 + 8 * w)) := by
+  have hv : Verified AArch64.target H.hmacFin (Proof.Hmac.finalizeScratchContract I.S w AArch64.abi 16) := by
+    simp only [← hSH] at hsF ⊢
+    exact (HmacFin.verified hH (HmacFin.Checks.of_core C.hfin) hfit (finImp _ _ hsF).sat_left).of_implies
+      (finImp _ _ hsF)
+  exact AArch64.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
+    (n := w) (post := Spec.Hmac.finalizePost I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
+    (bytes := 8 * w) hv (by exact (by decide : 4 < 8)) (by simp only [Elem.size]; omega)
+    (fun vs m m₁ m₂ r hl _ => Proof.Hmac.finalizePostOut_local I.S _ vs m m₁ m₂ r hl) hsat
+
 end MdHash
 
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
@@ -1250,6 +1317,12 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hsFF : ∃ s, (I.finalizeContract AArch64.abi (16 + hmacFrame I)).pre s)
     (hp : 0 < I.pbkdf2Scratch ∧ I.pbkdf2Scratch < 512 ∧ I.pbkdf2Scratch % 2 = 0)
     (hsPF : ∃ s, (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)).pre s)
+    (initW finW : Nat) (hiw : H.stream.buf ≤ 8 * initW ∧ 0 < initW ∧ initW < 512 ∧ initW % 2 = 0)
+    (hfw : H.stream.buf + H.stream.F ≤ 8 * finW ∧ 0 < finW ∧ finW < 512 ∧ finW % 2 = 0)
+    (hsIR : ∃ s, (Proof.Hmac.initScratchContract I.S initW AArch64.abi 16).pre s)
+    (hsIRF : ∃ s, (I.initContract AArch64.abi (16 + 8 * initW)).pre s)
+    (hsFR : ∃ s, (Proof.Hmac.finalizeScratchContract I.S finW AArch64.abi 16).pre s)
+    (hsFRF : ∃ s, (I.finalizeContract AArch64.abi (16 + 8 * finW)).pre s)
     (suffix : String) (features : List String) (stream : List StreamFn := []) : MdHash where
   H := H
   I := I
@@ -1265,8 +1338,189 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   C := C
   hSH := hSH
   hW := hW
+  reprLocal := hR
+  initW := initW
+  finW := finW
+  hmacShortR := MdHash.hmacShortR_of hH C hSH hiw.1 hiw.2 hR hsIR hsIRF
+  hmacFinR := MdHash.hmacFinR_of hH C hSH hfw.1 hfw.2 hsFR hsFRF
+  hmacAnyF := MdHash.hmacInitAnyF_of hH C hSH hW A hsI hsA ha hR hsAF
   suffix := suffix
   features := features
   stream := stream
+
+namespace MdHash
+
+/-- `vg_pbkdf2_hmac_<hash>`'s postcondition reads the memory on return only
+within `out` (`Proof.Pbkdf2.pbkdf2PostOut_local`). -/
+theorem pbkdf2Ok (I : Spec.Hmac.Instance) :
+    AArch64.ScrubAll.ScrubAllOk (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)) (16 + pbkdf2Frame I)
+      (Spec.Pbkdf2.pbkdf2Sig.retBits AArch64.abi.ptrBits) := by
+  unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract
+  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Pbkdf2.pbkdf2Sig) (W := 16 + pbkdf2Frame I) (by decide)
+    (by omega) (Nat.le_refl _) (Proof.Pbkdf2.pbkdf2PostOut_local I.S _)
+
+/-- `vg_pbkdf2_hmac_<hash>` with `v`, its working space in a frame of its own
+(`pbkdf2F`), as it is. -/
+def pbkdf2Reg₀ (v : MdHash) : Registration v.I.pbkdf2Api AArch64.target where
+  suffix := v.suffix
+  consts := []
+  tables := []
+  code := Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame v.I) .x7 v.H.pbkdf2
+  contract := v.I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame v.I)
+  stack := 16 + pbkdf2Frame v.I
+  verified := v.pbkdf2F
+  ofApi := rfl
+  ofSig := by
+    unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract
+    exact ⟨_, _, _, rfl⟩
+  spSafe := Code.all_of_forall (fun _ => rfl) _
+
+/-- `pbkdf2Reg₀`, returning with the registers it may write cleared and its
+stack zeroed (`AArch64.ScrubAll.withScrubAll`): its many compressions dwarf
+the zeroing of its frame. -/
+def pbkdf2Reg (v : MdHash) : Registration v.I.pbkdf2Api AArch64.target :=
+  AArch64.ScrubAll.withScrubAll v.pbkdf2Reg₀ (pbkdf2Ok v.I)
+
+/-! ## HMAC's functions, scrubbed -/
+
+/-- `vg_hmac_<hash>_finalize`'s postcondition reads the memory on return only
+within `out` (`Proof.Hmac.finalizePostOut_local`). -/
+theorem finOk (I : Spec.Hmac.Instance) (w : Nat) :
+    AArch64.ScrubAll.ScrubAllOk (I.finalizeContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
+      ((Spec.Hmac.finalizeSig I.S).retBits AArch64.abi.ptrBits) := by
+  unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.finalizeSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
+    (by omega) (Nat.le_refl _) (Proof.Hmac.finalizePostOut_local I.S _)
+
+/-- `vg_hmac_<hash>_finalize` with `v`, in a frame of the `finW` words it uses, as it is. -/
+def hmacFinReg₀ (v : MdHash) : Registration v.I.finalizeApi AArch64.target where
+  suffix := v.suffix
+  consts := []
+  tables := []
+  code := Impl.StackScratch.AArch64.withStackScratch (8 * v.finW) .x4 v.H.hmacFin
+  contract := v.I.finalizeContract AArch64.abi (16 + 8 * v.finW)
+  stack := 16 + 8 * v.finW
+  verified := v.hmacFinR
+  ofApi := rfl
+  ofSig := by
+    unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+    exact ⟨_, _, _, rfl⟩
+  spSafe := Code.all_of_forall (fun _ => rfl) _
+
+/-- `hmacFinReg₀`, returning with the registers it may write cleared and its
+stack zeroed (`AArch64.ScrubAll.withScrubAll`). -/
+def hmacFinReg (v : MdHash) : Registration v.I.finalizeApi AArch64.target :=
+  AArch64.ScrubAll.withScrubAll v.hmacFinReg₀ (finOk v.I v.finW)
+
+/-- `vg_hmac_<hash>_init`'s postcondition, under the contract of either
+branch, reads the memory on return only within the two states
+(`Proof.Hmac.initPostOut_local`). -/
+theorem initShortOk (I : Spec.Hmac.Instance) (w : Nat) (hR : Proof.Hmac.ReprLocal I.S)
+    (hS : I.S.stateBytes < 2 ^ 64) :
+    AArch64.ScrubAll.ScrubAllOk (I.initContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
+      ((Spec.Hmac.initSig I.S).retBits AArch64.abi.ptrBits) := by
+  unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
+    (by omega) (Nat.le_refl _) (Proof.Hmac.initPostOut_local I.S _ hR hS)
+
+theorem initLongOk (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64) :
+    AArch64.ScrubAll.ScrubAllOk (I.initAnyKeyContract AArch64.abi (16 + anyFrame I)) (16 + anyFrame I)
+      ((Spec.Hmac.initSig I.S).retBits AArch64.abi.ptrBits) := by
+  unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + anyFrame I) (Nat.le_of_ble_eq_true rfl)
+    (by omega) (Nat.le_refl _) (Proof.Hmac.initPostOut_local I.S _ hR hS)
+
+theorem stateBytes_lt (v : MdHash) : v.I.S.stateBytes < 2 ^ 64 := by
+  rw [← v.hSH, v.ok.hS]; have := v.ok.N_le; have := v.ok.B_le
+  omega_arith
+
+/-- HMAC's `init` for a key of at most a block with `v`, in a frame of the
+`initW` words it uses. -/
+abbrev initShort (v : MdHash) : Prog isa :=
+  Impl.StackScratch.AArch64.withStackScratch (8 * v.initW) .x4 v.H.hmacInit
+
+/-- HMAC's `init` for a longer key with `v`, in its frame, which it wipes. -/
+abbrev initLong (v : MdHash) : Prog isa :=
+  Impl.StackScratch.AArch64.withStackScratchWiped (anyFrame v.I) .x4 v.I.initAnyKeyScratch v.H.hmacInitAny
+
+/-- The result's bits of `vg_hmac_<hash>_init`. -/
+abbrev initRb (v : MdHash) : Nat := (Spec.Hmac.initSig v.I.S).retBits AArch64.abi.ptrBits
+
+/-- `vg_hmac_<hash>_init` with each branch scrubbed on its own
+(`Impl.Residue.AArch64.scrubAll`): a key of at most a block, the common case,
+zeroes only the frame of `initShort`, and a longer one, the frame of
+`initLong`. -/
+def initScrubbed (v : MdHash) : Prog isa :=
+  Impl.Pbkdf2.Md.AArch64.initEntry v.I.S.H.blockSize
+    (VG.Impl.Residue.AArch64.scrubAll (16 + 8 * v.initW) v.initRb (VG.Impl.Residue.AArch64.Clear.of v.initShort)
+      v.initShort)
+    (VG.Impl.Residue.AArch64.scrubAll (16 + anyFrame v.I) v.initRb (VG.Impl.Residue.AArch64.Clear.of v.initLong)
+      v.initLong)
+
+/-- What `hmacInitReg` needs of the code, which the emitter evaluates: as
+`AArch64.ScrubAll.withScrubAll` asks of each branch. -/
+def InitConds (v : MdHash) : Prop :=
+  (0 < 16 + 8 * v.initW ∧ 16 + 8 * v.initW < 4096 ∧ (16 + 8 * v.initW) % 16 = 0) ∧
+  (0 < 16 + anyFrame v.I ∧ 16 + anyFrame v.I < 4096 ∧ (16 + anyFrame v.I) % 16 = 0) ∧
+  16 * v.initShort.aarch64Depth ≤ 16 + 8 * v.initW ∧ 16 * v.initLong.aarch64Depth ≤ 16 + anyFrame v.I ∧
+  v.initShort.all (fun i => !i.writesDit) = true ∧ v.initLong.all (fun i => !i.writesDit) = true ∧
+  AArch64.ScrubAll.noIcall v.initShort = true ∧ AArch64.ScrubAll.noIcall v.initLong = true ∧
+  (v.initRb = 0 ∨ v.initRb = 32 ∨ v.initRb = 64) ∧ 8 * v.initW ≤ anyFrame v.I ∧
+  v.I.S.H.blockSize < 2 ^ 16
+
+instance (v : MdHash) : Decidable v.InitConds := by unfold InitConds; infer_instance
+
+theorem noResidue_branch {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified AArch64.target c k)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hok : AArch64.ScrubAll.ScrubAllOk k W rb)
+    (hd : 16 * c.aarch64Depth ≤ W) (hdit : c.all (fun i => !i.writesDit) = true)
+    (hn : AArch64.ScrubAll.noIcall c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    NoResidue (VG.Impl.Residue.AArch64.scrubAll W rb (VG.Impl.Residue.AArch64.Clear.of c) c) k rb :=
+  AArch64.ScrubAll.noResidue_scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _)
+    (VG.Impl.Residue.AArch64.Clear.of_keeps _) hv hW hok.sp hd hdit
+    (fun _ _ _ n hn' => by rw [AArch64.ScrubAll.inames_of_noIcall hn] at hn'; cases hn') hrb
+
+/-- `vg_hmac_<hash>_init` with `v`, each branch scrubbed (`initScrubbed`), if
+`InitConds` holds; otherwise as it is (`initCode`, `hmacInitF`), without a
+proof that it returns without residue. -/
+def hmacInitReg (v : MdHash) : Registration v.I.initAnyKeyApi AArch64.target :=
+  if h : v.InitConds then
+    { suffix := v.suffix
+      consts := []
+      tables := []
+      code := v.initScrubbed
+      contract := v.I.initAnyKeyContract AArch64.abi (16 + anyFrame v.I)
+      stack := 16 + anyFrame v.I
+      verified := initEntry_verified
+        (AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) v.hmacShortR h.1 h.2.2.2.2.2.2.2.2.1
+          (initShortOk v.I v.initW v.reprLocal v.stateBytes_lt))
+        (AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) v.hmacAnyF h.2.1 h.2.2.2.2.2.2.2.2.1
+          (initLongOk v.I v.reprLocal v.stateBytes_lt))
+        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2 v.hmacAnyF.2.2
+      ofApi := rfl
+      ofSig := by
+        unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+        exact ⟨_, _, _, rfl⟩
+      spSafe := Code.all_of_forall (fun _ => rfl) _
+      residue := some ⟨initEntry_noResidue
+        (noResidue_branch v.hmacShortR h.1 (initShortOk v.I v.initW v.reprLocal v.stateBytes_lt) h.2.2.1
+          h.2.2.2.2.1 h.2.2.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1)
+        (noResidue_branch v.hmacAnyF h.2.1 (initLongOk v.I v.reprLocal v.stateBytes_lt) h.2.2.2.1
+          h.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1)
+        h.1.1 (by have := h.2.2.2.2.2.2.2.2.2.1; omega) h.2.2.2.2.2.2.2.2.2.2⟩ }
+  else
+    { suffix := v.suffix
+      consts := []
+      tables := []
+      code := initCode v.H v.I
+      contract := v.I.initAnyKeyContract AArch64.abi (16 + anyFrame v.I)
+      stack := 16 + anyFrame v.I
+      verified := v.hmacInitF
+      ofApi := rfl
+      ofSig := by
+        unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
+        exact ⟨_, _, _, rfl⟩
+      spSafe := Code.all_of_forall (fun _ => rfl) _ }
+
+end MdHash
 
 end VG.Proof.Pbkdf2.Md.AArch64

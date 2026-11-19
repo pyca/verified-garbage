@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store

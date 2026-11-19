@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 /-!
 # ML-DSA on PPC64LE: two runs in the buffers of a `Site`
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/StepsCT.lean`): two runs in the
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Piece.lean`): two runs in the
 same layout, with the same stack pointer (`Two`): a part that leaks the
 same, and changes only what `Kept` allows, leaves two runs in it
 (`RelCT.two`); and two runs of a part leak the same by taint analysis from

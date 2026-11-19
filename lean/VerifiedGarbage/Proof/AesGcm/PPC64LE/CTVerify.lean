@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.FinTag
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

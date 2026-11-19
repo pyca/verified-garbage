@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Prepared
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
@@ -10,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
@@ -18,19 +16,759 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackPart
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generator
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd -- shake: keep (brun's simp set reads its lemmas)
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CopyBytes
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+
+/-! ### `Dsa.AArch64.Generation.ValidateCore`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generation.ValidateArgs`, which this module and modules that import it used -/
+
+section
+
+/-! # Set the packed-domain checker's arguments from the persistent frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem validateArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {pLen qLen : Nat}
+    (hp : pLen < 2 ^ 16) (hq : qLen < 2 ^ 16) :
+    WP isa (.block (Impl.Dsa.AArch64.Generation.validateArgs pLen qLen)) s fun t =>
+      t.gpr .x0 = VG.Proof.Bignum.off (W 5) packed ∧ t.gpr .x4 = VG.Proof.Bignum.off (W 5) domainCheck ∧
+      t.gpr .x2 = BitVec.ofNat 64 pLen ∧ t.gpr .x3 = BitVec.ofNat 64 qLen ∧
+      t.mem = s.mem ∧ Keep [.x0, .x4, .x2, .x3] s t := by
+  have cast (n : Nat) (hn : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega_using [hn]
+  refine WP.mono (WP.keep [.x0, .x4, .x2, .x3] (Q := fun t =>
+      t.gpr .x0 = VG.Proof.Bignum.off (W 5) packed ∧ t.gpr .x4 = VG.Proof.Bignum.off (W 5) domainCheck ∧
+      t.gpr .x2 = BitVec.ofNat 64 pLen ∧ t.gpr .x3 = BitVec.ofNat 64 qLen ∧ t.mem = s.mem) (by
+    have hw : s.mem.readW (F + BitVec.ofNat 64 40) 64 = W 5 := R.fr 5 (by decide)
+    brun [Impl.Dsa.AArch64.Generation.validateArgs, exec_ldrSp (off := 40) (by decide), L.sp,
+      L.ld (d := 40) (n := 8) (by decide), hw,
+      cast packed (by decide), cast domainCheck (by decide), cast pLen hp, cast qLen hq]) rfl rfl rfl)
+    fun t ⟨⟨hdi, h8, hdx, hcx, hm⟩, hk⟩ => ⟨hdi, h8, hdx, hcx, hm, hk⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! # Reuse the complete verified domain checker inside parameter generation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem validateCore_ok (M : Mont) {s : State} {F S : Addr}
+    {V : Nat → Byte} {W : Nat → BitVec 64} (p : ParametersInput)
+    (L : Lay s F S) (R : Rep s.mem F S V W)
+    (hbase : p.base = VG.Proof.Bignum.off (W 5) domainCheck)
+    (hp : p.pLen < 2 ^ 16) (hq : p.qLen < 2 ^ 16)
+    (hs : Scr s p.base Impl.Dsa.Layout.usedBytes)
+    (src : Src s p.base Impl.Dsa.Layout.usedBytes (VG.Proof.Bignum.off (W 5) packed) p.params)
+    (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩)
+    (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨p.base, Impl.Dsa.Layout.usedBytes⟩) :
+    WP isa (.seq (.block (Impl.Dsa.AArch64.Generation.validateArgs p.pLen p.qLen))
+      (Impl.Dsa.AArch64.Generate.checkParameters M.mm)) s fun t =>
+      t.gpr .x0 = BitVec.ofNat 64 (if Spec.Dsa.checkParametersBytes p.pLen p.qLen p.params then 1 else 0) ∧
+      Lay t F S ∧ Rep t.mem F S V W ∧
+      Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩] s.mem t.mem ∧ Keep coreRegs s t := by
+  refine WP.seq (WP.mono (validateArgs_ok L R hp hq) fun u ⟨hdi, h8, hdx, hcx, hm, ku⟩ => ?_)
+  have pre : ParametersPre p u := ⟨hs.congr ku.wr, h8.trans hbase.symm, hdx, hcx,
+    hdi ▸ src.congrK (fun a _ => by rw [hm]) ku⟩
+  refine WP.mono (parametersMain_ok M pre) fun t ⟨result, ft, kt⟩ => ?_
+  have frame : Frame [⟨p.base, Impl.Dsa.Layout.usedBytes⟩] s.mem t.mem := by
+    intro a ha
+    have hn := ha ⟨p.base, Impl.Dsa.Layout.usedBytes⟩ (by simp)
+    change ¬ ofs p.base a < Impl.Dsa.Layout.usedBytes at hn
+    rw [ft a (by omega_using [hn]), hm]
+  have Rt := rep_of_disjoint_frame R frame
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)
+  have keep := ku.trans kt
+  exact ⟨result, lay_of_rep L R Rt rfl keep.sp keep.wr, Rt, frame, keep.mono (by decide)⟩
+
+theorem validateTest_ok {s : State} {valid : Bool}
+    (hr : s.gpr .x0 = BitVec.ofNat 64 (if valid then 1 else 0)) :
+    eval (.zero .x .x0) s = some (!valid) := by
+  cases valid <;> simp only [eval, State.read, hr, Size.bits, BitVec.setWidth_eq] <;> rfl
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.PackPart`, which this module and modules that import it used -/
+
+section
+
+/-! # Copy one generated domain component while retaining the search frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
+
+theorem packArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {src dst len : Nat}
+    (hs : src < 2 ^ 16) (hd : dst < 2 ^ 16) (hl : len ≤ 1024) :
+    WP isa (.block (Impl.Dsa.AArch64.Generation.packArgs src dst len)) s fun t =>
+      t.gpr .x12 = VG.Proof.Bignum.off (W 5) src ∧ t.gpr .x2 = VG.Proof.Bignum.off (W 5) dst ∧
+      t.gpr .x9 = BitVec.ofNat 64 len ∧
+      t.mem = s.mem ∧ Keep [.x12, .x2, .x9, .x3] s t := by
+  have cast (n : Nat) (hn : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega_using [hn]
+  refine WP.mono (WP.keep [.x12, .x2, .x9, .x3] (Q := fun t =>
+      t.gpr .x12 = VG.Proof.Bignum.off (W 5) src ∧ t.gpr .x2 = VG.Proof.Bignum.off (W 5) dst ∧
+      t.gpr .x9 = BitVec.ofNat 64 len ∧ t.mem = s.mem) (by
+    have hw : s.mem.readW (F + BitVec.ofNat 64 40) 64 = W 5 := R.fr 5 (by decide)
+    brun [Impl.Dsa.AArch64.Generation.packArgs, exec_ldrSp (off := 40) (by decide), L.sp,
+      L.ld (d := 40) (n := 8) (by decide), hw,
+      cast src hs, cast dst hd, cast len (by omega_using [hl])]) rfl rfl rfl)
+    fun t ⟨⟨hsi, hdi, hcx, hm⟩, hk⟩ => ⟨hsi, hdi, hcx, hm, hk⟩
+
+theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
+    (L : Lay s F S) (R : Rep s.mem F S V W) {src dst : Nat} {bs : List Byte}
+    (hs : src < 2 ^ 16) (hd : dst < 2 ^ 16) (hl : 2 ≤ bs.length ∧ bs.length ≤ 1024)
+    (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) src) i) 1)
+    (hwr : ∀ i < bs.length, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) dst) i) 1)
+    (hb : ∀ i < bs.length, s.mem (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) src) i) = bs.getD i 0)
+    (hsep : ∀ i < bs.length, ∀ j < bs.length,
+      VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) src) i ≠ VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) dst) j)
+    (hF : (⟨F, frameBytes⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩)
+    (hS : (⟨S, oRsa⟩ : Region).Disjoint ⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩) :
+    WP isa (Impl.Dsa.AArch64.Generation.packPart src dst bs.length) s fun t =>
+      Spec.Rsa.bytesAt t.mem (VG.Proof.Bignum.off (W 5) dst) bs.length = bs ∧
+      Lay t F S ∧ Rep t.mem F S V W ∧
+      Frame [⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
+  unfold Impl.Dsa.AArch64.Generation.packPart
+  refine WP.seq (WP.mono (packArgs_ok L R hs hd hl.2) fun u ⟨hsi, hdi, hcx, hm, ku⟩ => ?_)
+  refine WP.mono (copyBytes_ok (by omega_using [hl]) hsi hdi hcx
+    (fun i hi => by rw [ku.rd, ku.wr]; exact hrd i hi)
+    (fun i hi => by rw [ku.wr]; exact hwr i hi)
+    (fun i hi => by rw [hm]; exact hb i hi) hsep) fun t ⟨result, ft, kt⟩ => ?_
+  have ff : Frame [⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩] s.mem t.mem := by
+    intro a ha
+    rw [ft a (by
+      intro i hi he
+      apply ha ⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩ (by simp)
+      rw [he]
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])), hm]
+  have Rt := rep_of_disjoint_frame R ff
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
+    (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)
+  have keep := ku.trans kt
+  exact ⟨result, lay_of_rep L R Rt rfl keep.sp keep.wr, Rt, ff, keep.mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generator.Prepared`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generator.Entry`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generator.Geometry`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.AArch64.Generator.Arena`, which only this module used -/
+
+section
+
+/-! # The stage's working space and frame, and the generator search's plan in them
+
+`B` is the working space, laid out as the generation's scratch space, and
+`F` the stage's frame. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generator
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Proof.Dsa.AArch64.Generation (GeneratorPlan GeneratorSearchPlan)
+
+structure Arena where
+  B : Addr
+  F : Addr
+  pLen : Nat
+  width : pLen = 128 ∨ pLen = 256 ∨ pLen = 384
+  arenaBound : B.toNat + usedBytes pLen ≤ 2 ^ 64
+  frameArena : (⟨F, frameBytes⟩ : Region).Disjoint ⟨B, usedBytes pLen⟩
+
+namespace Arena
+variable (a : Arena)
+
+/-- The `n` bytes at offset `d` of the working space. -/
+def part (d n : Nat) : Region := ⟨off a.B d, n⟩
+
+theorem small {d n : Nat} (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) : d + n ≤ usedBytes a.pLen := by
+  rcases a.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
+
+theorem pLe : a.pLen ≤ 384 := by rcases a.width with h | h | h <;> omega_using [h]
+
+theorem parentRoom : Impl.Dsa.Layout.activeBytes ≤ usedBytes a.pLen := by
+  rcases a.width with h | h | h <;> rw [h] <;> decide
+
+theorem part_sub {d n : Nat} (h : d + n ≤ usedBytes a.pLen) : Region.Sub (a.part d n) ⟨a.B, usedBytes a.pLen⟩ :=
+  Offset.sub_base a.B h
+
+theorem parts_disjoint {d n e k : Nat} (hd : d + n ≤ usedBytes a.pLen) (he : e + k ≤ usedBytes a.pLen)
+    (h : d + n ≤ e ∨ e + k ≤ d) : (a.part d n).Disjoint (a.part e k) :=
+  Offset.disjoint a.B h (by have := a.arenaBound; omega_using [hd, this]) (by have := a.arenaBound; omega_using [he, this])
+
+theorem frame_part {d n : Nat} (h : d + n ≤ usedBytes a.pLen) : (⟨a.F, frameBytes⟩ : Region).Disjoint (a.part d n) :=
+  a.frameArena.sub_right (a.part_sub h)
+
+theorem parent_eq : (⟨a.B, Impl.Dsa.Layout.activeBytes⟩ : Region) = a.part 0 Impl.Dsa.Layout.activeBytes := by
+  simp [part, off]
+
+/-- The generator search's regions: the arithmetic workspace, the DSA
+workspace of the exponentiation, g and the frame. -/
+def gWork : List Region :=
+  [a.part arithmetic arithmeticBytes, ⟨a.B, Impl.Dsa.Layout.activeBytes⟩, a.part g a.pLen, ⟨a.F, frameBytes⟩]
+
+theorem gWork_separate {d n : Nat} (hd : q ≤ d) (hn : d + n ≤ g) : ∀ r ∈ a.gWork, (a.part d n).Disjoint r := by
+  have pn := a.pLe
+  have hb : d + n ≤ usedBytes a.pLen := by have := a.small (d := g) (n := 0) (by decide) (by decide); omega_using [hn, this]
+  have ha := a.small (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
+  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  intro r hr
+  simp only [gWork, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact a.parts_disjoint hb ha (Or.inl (by unfold g arithmetic at *; omega_using [hn]))
+  · rw [a.parent_eq]
+    exact a.parts_disjoint hb (by simpa using a.parentRoom) (Or.inr (by unfold q Impl.Dsa.Layout.activeBytes at *; omega_using [hd]))
+  · exact a.parts_disjoint hb hg (Or.inl hn)
+  · exact (a.frame_part hb).symm
+
+/-- The generator search's plan over the bytes `pb` of p and `eb` of the
+exponent (its h input is a placeholder, which each chunk replaces). -/
+def generatorPlan (pb eb : List Byte) (hp : pb.length = a.pLen) (he : eb.length = a.pLen)
+    (positive : 1 < Spec.Dsa.decodeBE pb) (odd : Spec.Dsa.decodeBE pb % 2 = 1) : GeneratorPlan := by
+  have pn := a.pLe
+  have ha := a.small (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
+  have hh := a.small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  have parent : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes a.pLen := by simpa using a.parentRoom
+  have gp : (a.part g a.pLen).Disjoint ⟨a.B, Impl.Dsa.Layout.activeBytes⟩ := by
+    rw [a.parent_eq]; exact a.parts_disjoint hg parent (Or.inr (by decide))
+  have ga := a.parts_disjoint hg ha (Or.inl (by unfold g arithmetic; omega_using [pn]))
+  have ps := a.gWork_separate (d := VG.Impl.Dsa.Generation.Layout.p) (n := a.pLen)
+    (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn])
+  have es := a.gWork_separate (d := exponent) (n := a.pLen) (by decide) (by unfold exponent g; omega_using [pn])
+  have fa := a.frame_part ha
+  refine {
+    B := a.B
+    A := off a.B arithmetic
+    F := a.F
+    S := off a.B VG.Impl.Dsa.Generation.Layout.hash
+    hp := off a.B VG.Impl.Dsa.Generation.Layout.p
+    Z := arithmeticBytes
+    len := a.pLen
+    pb := pb
+    hb := pb
+    eb := eb
+    width := a.width
+    arithmeticBase := rfl
+    workspaceRoom := by rcases a.width with h | h | h <;> rw [h] <;> decide
+    pLength := hp
+    hLength := hp
+    eLength := he
+    pPositive := positive
+    pOdd := odd
+    frameHeaders := fun k hk j hj => fa.sep (Offset.contains_base _ (by unfold frameBytes; omega_using [hk]) (by omega_using [hk]))
+      (Offset.contains_base _ (by unfold arithmeticBytes; omega_using [hj]) (by omega_using [hj]))
+    frameOutside := fun k hk i hi => by
+      rw [off_off]
+      exact out_scr fa (Offset.contains_base _ (by unfold frameBytes; omega_using [hk, hi]) (by omega_using [hk, hi]))
+    frameSeparate := ?_
+    hashSeparate := ?_
+    pSeparate := ps
+    hSeparate := ps
+    eSeparate := es
+    gArithmeticSeparate := ga
+    gParentOutside := fun i hi => out_scr gp (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
+    gArithmeticOutside := fun i hi => out_scr ga (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi])) }
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact fa
+    · rw [a.parent_eq]; exact a.frame_part parent
+    · exact a.frame_part hg
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact a.parts_disjoint hh ha (Or.inl (by decide))
+    · rw [a.parent_eq]; exact a.parts_disjoint hh parent (Or.inr (by decide))
+    · exact a.parts_disjoint hh hg (Or.inl (by decide))
+
+end Arena
+
+end VG.Proof.Dsa.AArch64.Generator
+
+end
+
+end
+
+/-! # The stage's frame and working space, from its arguments
+
+The frame is at `frameBase s`, the stack pointer less 272, and the stage's
+288 bytes of stack hold it and the 16 bytes below it. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generator
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+/-- The frame's base. -/
+abbrev frameBase (s : State) : Addr := s.sp - BitVec.ofNat 64 272
+
+/-- The working space's region. -/
+abbrev wsRegion (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩
+
+/-- The h tape's region. -/
+abbrev tapeRegion (s : State) : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+
+/-- The hash workspace the frame's layout names. -/
+abbrev hashBase (s : State) : Addr := off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.hash
+
+theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ 272) :
+    Region.Sub ⟨off (frameBase s) d, n⟩ (below s.sp stack) := by
+  have e : off (frameBase s) d = s.sp - BitVec.ofNat 64 (272 - d) := by
+    simp only [off, frameBase]
+    rw [Offset.sub_ofNat_eq s.sp (show 272 - d ≤ 272 by omega_using []), Nat.sub_sub_self (by omega_using [h])]
+  rw [e]
+  exact Offset.sub_below s.sp (by unfold stack; omega_using []) (by unfold stack; omega_using [h])
+
+theorem frame_sub0 (s : State) {n : Nat} (h : n ≤ 272) :
+    Region.Sub ⟨frameBase s, n⟩ (below s.sp stack) := by
+  simpa only [off, BitVec.add_zero] using frame_sub s (d := 0) (n := n) (by omega_using [h])
+
+theorem retR_sub (s : State) : Region.Sub (below (frameBase s) 16) (below s.sp stack) := by
+  have e : frameBase s - BitVec.ofNat 64 16 = s.sp - BitVec.ofNat 64 288 := by
+    simp only [frameBase, BitVec.sub_sub]; rfl
+  change Region.Sub ⟨_, 16⟩ ⟨_, 288⟩
+  rw [e]
+  simpa only [off, BitVec.add_zero] using Offset.sub_base (s.sp - BitVec.ofNat 64 288) (d := 0) (n := 16) (k := 288) (by decide)
+
+variable {pLen : Nat} {s : State}
+
+theorem StageABI.base_toNat (A : StageABI pLen s) : (frameBase s).toNat = s.sp.toNat - 272 := by
+  have hl := A.stackLower
+  have hb := s.sp.isLt
+  unfold stack at hl
+  simp only [frameBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  omega_using [hl]
+
+theorem StageABI.used_sub (A : StageABI pLen s) : Region.Sub ⟨s.gpr .x0, usedBytes pLen⟩ (wsRegion s) := by
+  have := A.size
+  simpa only [off, BitVec.add_zero] using Offset.sub_base (s.gpr .x0) (d := 0) (n := usedBytes pLen) (by omega_using [this])
+
+theorem StageABI.part_sub (A : StageABI pLen s) {d n : Nat} (h : d + n ≤ usedBytes pLen) :
+    Region.Sub ⟨off (s.gpr .x0) d, n⟩ (wsRegion s) := fun x hx =>
+  A.used_sub x (Offset.sub_base (s.gpr .x0) h x hx)
+
+/-- The stage's working space and frame. -/
+def arena (hb : Supported pLen) (A : StageABI pLen s) : Arena where
+  B := s.gpr .x0
+  F := frameBase s
+  pLen := pLen
+  width := hb
+  arenaBound := by have := A.wsBound; have := A.size; omega_arith
+  frameArena := (A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega_using []))).sub_right A.used_sub
+
+theorem StageABI.geo (hb : Supported pLen) (A : StageABI pLen s) : VG.Proof.RsaOaep.AArch64.Geo (frameBase s) (hashBase s) where
+  F16 := by rw [A.base_toNat]; have := A.stackLower; unfold stack at this; omega_using [this]
+  Fw := by rw [A.base_toNat]; have := s.sp.isLt; unfold frameBytes; omega_using []
+  Sw := by
+    have ha := (arena hb A).arenaBound
+    have hs := (arena hb A).small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+    simp only [arena] at ha hs
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+    have : VG.Impl.Dsa.Generation.Layout.hash < 2 ^ 64 := by decide
+    rw [Nat.mod_eq_of_lt this]
+    have := Nat.mod_le ((s.gpr .x0).toNat + VG.Impl.Dsa.Generation.Layout.hash) (2 ^ 64)
+    omega_using [ha, hs]
+  dFS := (arena hb A).frame_part ((arena hb A).small (by decide) (by decide))
+  dRS := (A.stackWs.sub_left (retR_sub s)).sub_right
+    (A.part_sub ((arena hb A).small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)))
+  dRF := (Offset.base_disjoint_below (frameBase s) (n := 16) (k := frameBytes) (by decide)).symm
+
+end VG.Proof.Dsa.AArch64.Generator
+
+end
+
+end
+
+/-! # The generator stage's arguments in the generation's frame slots -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generator
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64.Generator
+
+/-- The frame words the entry sets: the working space `B`, the h tape `hp`
+of `n` bytes, the hash workspace, and zero. -/
+def entryWords (B hp n : Addr) (k : Nat) : BitVec 64 :=
+  if k = 5 then B else if k = 11 then hp else if k = 12 then off B Impl.Dsa.Generation.Layout.hash
+  else if k = 13 then n else 0
+
+/-- The memory after the entry's stores. -/
+def entryMem (s : State) (F : Addr) : Mem :=
+  zeroSlots.foldl (fun m k => m.writeW (off F (8 * k)) (0 : BitVec 64))
+    ((((s.mem.writeW (off F 40) (s.gpr .x0)).writeW (off F 88) (s.gpr .x2)).writeW (off F 104) (s.gpr .x3)).writeW
+      (off F 96) (off (s.gpr .x0) Impl.Dsa.Generation.Layout.hash))
+
+theorem word_writeW_frame (m : Mem) (F : Addr) (v : BitVec 64) {d e : Nat}
+    (hd : d % 8 = 0 ∧ d + 8 ≤ 448) (he : e % 8 = 0 ∧ e + 8 ≤ 448) :
+    word (m.writeW (off F d) v) F e = if d = e then v else word m F e := by
+  split
+  · subst e; exact word_writeW_self _ _ _ _
+  · exact (writeW_outside m F v (by omega_using [hd])).word (by omega_arith) (by omega_using [he])
+
+theorem word_foldl_zero (F : Addr) {e : Nat} (he : e < 34) :
+    ∀ (l : List Nat), (∀ k ∈ l, k < 34) → ∀ m : Mem,
+      word (l.foldl (fun m k => m.writeW (off F (8 * k)) (0 : BitVec 64)) m) F (8 * e) =
+        if e ∈ l then 0 else word m F (8 * e)
+  | [], _, m => by simp
+  | k :: l, hl, m => by
+    rw [List.foldl_cons, word_foldl_zero F he l (fun j hj => hl j (List.mem_cons_of_mem _ hj)),
+      word_writeW_frame _ F _ (by have := hl k List.mem_cons_self; omega_using [this]) (by omega_using [he])]
+    by_cases hk : k = e
+    · subst hk; simp
+    · by_cases hel : e ∈ l
+      · simp [hel]
+      · have : 8 * k ≠ 8 * e := by omega_using [hk]
+        simp [hel, this, Ne.symm hk]
+
+/-- The words the entry sets. -/
+theorem entryMem_word (s : State) (F : Addr) {k : Nat}
+    (hk : k = 5 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k ∈ zeroSlots) :
+    word (entryMem s F) F (8 * k) = entryWords (s.gpr .x0) (s.gpr .x2) (s.gpr .x3) k := by
+  have bound : k < 34 := by
+    simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
+  unfold entryMem
+  rw [word_foldl_zero F bound zeroSlots (by decide),
+    word_writeW_frame _ F _ (d := 96) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 104) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 88) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 40) (by decide) (by omega_using [bound])]
+  simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [entryWords, zeroSlots]
+
+theorem foldl_zero_frame (F : Addr) :
+    ∀ (l : List Nat), (∀ k ∈ l, k < 34) → ∀ {m₀ m : Mem}, Frame [⟨F, 272⟩] m₀ m →
+      Frame [⟨F, 272⟩] m₀ (l.foldl (fun m k => m.writeW (off F (8 * k)) (0 : BitVec 64)) m)
+  | [], _, _, _, h => h
+  | k :: l, hl, _, _, h => by
+    rw [List.foldl_cons]
+    exact foldl_zero_frame F l (fun j hj => hl j (List.mem_cons_of_mem _ hj))
+      (h.writeW List.mem_cons_self _ (Offset.contains_base F (n := 8) (by have := hl k List.mem_cons_self; omega_using [this])
+        (by have := hl k List.mem_cons_self; omega_using [this])))
+
+/-- The entry writes only the frame words. -/
+theorem entryMem_frame (s : State) (F : Addr) : Frame [⟨F, 272⟩] s.mem (entryMem s F) := by
+  unfold entryMem
+  have c (d : Nat) (hd : d + 8 ≤ 272) : (⟨F, 272⟩ : Region).Contains (off F d) (64 / 8) :=
+    Offset.contains_base F hd (by omega_using [hd])
+  exact foldl_zero_frame F zeroSlots (by decide)
+    (((((Frame.refl _ _).writeW List.mem_cons_self _ (c 40 (by decide))).writeW List.mem_cons_self _
+      (c 88 (by decide))).writeW List.mem_cons_self _ (c 104 (by decide))).writeW List.mem_cons_self _ (c 96 (by decide)))
+
+theorem entry_ok {s : State} {F : Addr} (hsp : s.sp = F)
+    (hw : ∀ d, d + 8 ≤ 272 → InRegions s.wr (off F d) 8) :
+    WP isa (.block entry) s fun t => t.mem = entryMem s F ∧ Keep [.x4] s t := by
+  have run : WP isa (.block entry) s fun t => t.mem = entryMem s F := by
+    simp only [entry, zeroSlots, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+    have hh : BitVec.setWidth 64 (BitVec.ofNat 16 Impl.Dsa.Generation.Layout.hash) =
+        BitVec.ofNat 64 Impl.Dsa.Generation.Layout.hash := by decide
+    have h0 : BitVec.setWidth 64 (0#16) = (0 : BitVec 64) := by decide
+    brun [State.write, hh, h0, exec_storeSp (off := 40) (by decide), exec_storeSp (off := 88) (by decide),
+      exec_storeSp (off := 104) (by decide), exec_storeSp (off := 96) (by decide),
+      exec_storeSp (off := 8) (by decide), exec_storeSp (off := 24) (by decide), exec_storeSp (off := 32) (by decide),
+      exec_storeSp (off := 48) (by decide), exec_storeSp (off := 56) (by decide), exec_storeSp (off := 64) (by decide),
+      exec_storeSp (off := 72) (by decide), exec_storeSp (off := 80) (by decide), exec_storeSp (off := 112) (by decide),
+      exec_storeSp (off := 120) (by decide), exec_storeSp (off := 128) (by decide), exec_storeSp (off := 136) (by decide),
+      exec_storeSp (off := 144) (by decide), exec_storeSp (off := 208) (by decide),
+      hsp, hw 40 (by decide), hw 88 (by decide), hw 104 (by decide), hw 96 (by decide),
+      hw 8 (by decide), hw 24 (by decide), hw 32 (by decide), hw 48 (by decide), hw 56 (by decide), hw 64 (by decide),
+      hw 72 (by decide), hw 80 (by decide), hw 112 (by decide), hw 120 (by decide), hw 128 (by decide),
+      hw 136 (by decide), hw 144 (by decide), hw 208 (by decide), off]
+    simp only [entryMem, zeroSlots, List.foldl_cons, List.foldl_nil, Nat.reduceMul]
+
+  exact WP.mono (WP.keep [.x4] run (by decide)) fun t ⟨hm, k⟩ => ⟨hm, k⟩
+
+end VG.Proof.Dsa.AArch64.Generator
+
+end
+
+end
+
+/-! # The generator search's plan and memory, once the entry has filled the frame
+
+The plan is the generation's: p and the exponent at their offsets of the
+working space, the h tape, and q; it depends on nothing but the arguments
+and these values, which are public. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generator
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Proof.Dsa.AArch64.Generation (GeneratorSearchPlan GeneratorSearchMemory generatorSlots)
+
+variable {pLen : Nat} {s : State}
+
+/-- p's bytes. -/
+abbrev pBytes (pLen : Nat) (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.p) pLen
+
+/-- q's bytes. -/
+abbrev qBytes (pLen : Nat) (s : State) : List Byte :=
+  Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.q) (Impl.Dsa.AArch64.Generator.qLen pLen)
+
+/-- The exponent's bytes. -/
+abbrev eBytes (pLen : Nat) (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.exponent) pLen
+
+/-- The h tape. -/
+abbrev tape (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat
+
+theorem Supported.pos {pLen : Nat} (hb : Supported pLen) : 0 < 8 * pLen := by
+  rcases hb with rfl | rfl | rfl <;> decide
+
+theorem used_small (hb : Supported pLen) {d n : Nat} (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
+    d + n ≤ usedBytes pLen := by
+  rcases hb with rfl | rfl | rfl <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
+
+theorem used_parent (hb : Supported pLen) : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes pLen := by
+  rcases hb with rfl | rfl | rfl <;> decide
+
+theorem used_lt (hb : Supported pLen) : usedBytes pLen < 2 ^ 64 := by
+  rcases hb with rfl | rfl | rfl <;> decide
+
+theorem pow256 (n : Nat) : 256 ^ n = 2 ^ (8 * n) := by
+  rw [Nat.pow_mul]
+
+theorem StageABI.p_bounds (hb : Supported pLen) (A : StageABI pLen s) :
+    2 ^ (8 * pLen - 1) ≤ pOf pLen s.mem (s.gpr .x0) ∧ pOf pLen s.mem (s.gpr .x0) < 256 ^ pLen := by
+  rw [pow256]
+  exact (bitLength_iff_bounds hb.pos).mp A.bits
+
+theorem StageABI.positive (hb : Supported pLen) (A : StageABI pLen s) : 1 < Spec.Dsa.decodeBE (pBytes pLen s) :=
+  Nat.lt_of_lt_of_le (Nat.one_lt_two_pow (by rcases hb with rfl | rfl | rfl <;> decide)) (A.p_bounds hb).1
+
+theorem StageABI.exponentValue (hb : Supported pLen) (A : StageABI pLen s) :
+    Spec.Dsa.decodeBE (eBytes pLen s) = (Spec.Dsa.decodeBE (pBytes pLen s) - 1) / qOf pLen s.mem (s.gpr .x0) := by
+  have e := A.exponent
+  change Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) VG.Impl.Dsa.Generation.Layout.exponent) pLen = _ at e
+  rw [eBytes, e, VG.Proof.Dsa.decodeBE_encodeBE]
+  · rfl
+  · exact Nat.lt_of_le_of_lt (Nat.le_trans (Nat.div_le_self _ _) (Nat.sub_le _ _)) (A.p_bounds hb).2
+
+/-- The generator search's plan. -/
+def plan (hb : Supported pLen) (A : StageABI pLen s) : GeneratorSearchPlan where
+  core := (arena hb A).generatorPlan (pBytes pLen s) (eBytes pLen s) (bytesAt_length _ _ _) (bytesAt_length _ _ _)
+    (A.positive hb) A.odd
+  saved := entryWords (s.gpr .x0) (s.gpr .x2) (s.gpr .x3)
+  tape := tape s
+  tapePtr := s.gpr .x2
+  tapeFits := by rw [bytesAt_length]; exact (s.gpr .x3).isLt
+  tapeSeparate := by
+    rw [bytesAt_length]
+    have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
+    intro r hr
+    simp only [Generation.GeneratorPlan.changed, Arena.generatorPlan, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact A.wsTape.symm.sub_right (A.part_sub (used_small hb (by decide) (by rfl)))
+    · have h := A.part_sub (used_parent hb)
+      simp only [off, BitVec.add_zero] at h
+      exact A.wsTape.symm.sub_right h
+    · exact A.wsTape.symm.sub_right (A.part_sub (used_small hb (d := VG.Impl.Dsa.Generation.Layout.g) (n := pLen)
+        (by decide) (by unfold arithmeticBytes; omega_using [pn])))
+    · exact A.stackTape.symm.sub_right (frame_sub0 s (by unfold frameBytes; omega_using []))
+  q := qOf pLen s.mem (s.gpr .x0)
+  exponentValue := A.exponentValue hb
+
+/-- The state the entry leaves: the frame words set, the memory changed in
+the frame alone. -/
+structure Entered (pLen : Nat) (s u : State) : Prop where
+  sp : u.sp = frameBase s
+  rd : u.rd = s.rd
+  wr : u.wr = ⟨frameBase s, 272⟩ :: s.wr
+  frame : Frame [⟨frameBase s, 272⟩, ⟨off (s.gpr .x0) Impl.Dsa.AArch64.Generator.spill,
+    Impl.Dsa.AArch64.Generator.spillBytes⟩] s.mem u.mem
+  words : ∀ k, (k = 5 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k ∈ Impl.Dsa.AArch64.Generator.zeroSlots) →
+    word u.mem (frameBase s) (8 * k) = entryWords (s.gpr .x0) (s.gpr .x2) (s.gpr .x3) k
+
+/-- The frame words, as the generation's search reads them. -/
+abbrev frameWords (s u : State) (k : Nat) : BitVec 64 := word u.mem (frameBase s) (8 * k)
+
+theorem StageABI.scr (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
+    Scr u (s.gpr .x0) (usedBytes pLen) := by
+  refine ⟨⟨s.gpr .x0, 0, (s.gpr .x1).toNat * 8, ?_, by simp [off], by have := A.size; omega_using [this], ?_⟩, ?_⟩
+  · rw [E.wr, A.wr]; simp
+  · have := A.wsBound; omega_using [this]
+  · have := A.wsBound; have := A.size; omega_arith
+
+theorem spill_used (hb : Supported pLen) :
+    Impl.Dsa.AArch64.Generator.spill + Impl.Dsa.AArch64.Generator.spillBytes ≤ usedBytes pLen := by
+  rcases hb with rfl | rfl | rfl <;> decide
+
+theorem StageABI.ws_frame (hb : Supported pLen) (A : StageABI pLen s) {d n : Nat}
+    (h : d + n ≤ Impl.Dsa.AArch64.Generator.spill) :
+    ∀ r ∈ [(⟨frameBase s, 272⟩ : Region), ⟨off (s.gpr .x0) Impl.Dsa.AArch64.Generator.spill,
+      Impl.Dsa.AArch64.Generator.spillBytes⟩], Region.Disjoint ⟨off (s.gpr .x0) d, n⟩ r := by
+  have hs := spill_used hb
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact (A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))).symm.sub_left (A.part_sub (by omega_using [h, hs]))
+  · exact (arena hb A).parts_disjoint (d := d) (n := n) (show d + n ≤ usedBytes pLen by omega_using [h, hs]) hs (Or.inl h)
+
+/-- Bytes of the working space below the saved registers are as they were. -/
+theorem StageABI.bytes_entered (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u)
+    {d n : Nat} (h : d + n ≤ Impl.Dsa.AArch64.Generator.spill) :
+    Spec.Rsa.bytesAt u.mem (off (s.gpr .x0) d) n = Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n :=
+  VG.Proof.Dsa.Generation.frame_bytesAt E.frame (A.ws_frame hb h)
+    (by have := spill_used hb; have := A.wsBound; have := A.size; omega_arith)
+
+theorem StageABI.arenaSrc (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u)
+    {d n : Nat} (h : d + n ≤ Impl.Dsa.AArch64.Generator.spill) {work : Addr} {Z : Nat}
+    (sep : (⟨off (s.gpr .x0) d, n⟩ : Region).Disjoint ⟨work, Z⟩) :
+    Src u work Z (off (s.gpr .x0) d) (Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n) := by
+  have hl := bytesAt_length s.mem (off (s.gpr .x0) d) n
+  have hs := spill_used hb
+  apply VG.Proof.Dsa.AArch64.Generation.arena_source (A.scr E) (by rw [hl]; omega_using [h, hs])
+    (by rw [hl]; have := used_lt hb; omega_using [h, hs, this])
+  · rw [hl, A.bytes_entered hb E h]
+  · rw [hl]; exact sep
+
+theorem StageABI.tapeSrc (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) {work : Addr} {Z : Nat}
+    (sep : (tapeRegion s).Disjoint ⟨work, Z⟩) : Src u work Z (s.gpr .x2) (tape s) := by
+  have hl := bytesAt_length s.mem (s.gpr .x2) (s.gpr .x3).toNat
+  have tf : ∀ r ∈ [(⟨frameBase s, 272⟩ : Region), ⟨off (s.gpr .x0) Impl.Dsa.AArch64.Generator.spill,
+      Impl.Dsa.AArch64.Generator.spillBytes⟩], (tapeRegion s).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact (A.stackTape.sub_left (frame_sub0 s (Nat.le_refl _))).symm
+    · exact A.wsTape.symm.sub_right (A.part_sub (spill_used hb))
+  refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
+  · rw [hl] at hi
+    exact ⟨_, List.mem_append_left _ (by rw [E.rd, A.rd]; exact List.mem_singleton_self _),
+      contains_byte _ hi (by have := A.tapeBound; omega_using [])⟩
+  · have hi' : i < (s.gpr .x3).toNat := by rw [hl] at hi; exact hi
+    rw [E.frame.bytes tf (R := tapeRegion s) (by change (s.gpr .x3).toNat ≤ 2 ^ 64; have := A.tapeBound; omega_using []) hi']
+    simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
+  · rw [hl] at hi
+    exact out_scr sep (contains_byte _ hi (by have := A.tapeBound; omega_using []))
+
+/-- The search's memory, once the entry has filled the frame. -/
+theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
+    GeneratorSearchMemory (plan hb A) (frameWords s u) u := by
+  have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
+  have ha := used_small hb (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
+  have hp : VG.Impl.Dsa.Generation.Layout.p + pLen ≤ Impl.Dsa.AArch64.Generator.spill := by
+    unfold VG.Impl.Dsa.Generation.Layout.p Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]
+  have he : VG.Impl.Dsa.Generation.Layout.exponent + pLen ≤ Impl.Dsa.AArch64.Generator.spill := by
+    unfold VG.Impl.Dsa.Generation.Layout.exponent Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]
+  have ps := (plan hb A).core.pSeparate
+  have es := (plan hb A).core.eSeparate
+  have ts := (plan hb A).tapeSeparate
+  simp only [plan, Arena.generatorPlan, arena, bytesAt_length] at ps es ts
+  have w := fun k hk => E.words k hk
+  refine {
+    layout := ⟨E.sp, ?_, ?_, ?_, A.geo hb⟩
+    rep := ⟨fun o => u.mem (off (hashBase s) o), fun o _ => rfl, fun k _ => rfl⟩
+    base := w 5 (by decide)
+    tapeBase := w 11 (by decide)
+    tapeLength := ?_
+    slots := ?_
+    arithmetic := by
+      change Scr u (off (s.gpr .x0) arithmetic) arithmeticBytes
+      exact (A.scr E).sub ha (by decide)
+    parent := by
+      change Scr u (s.gpr .x0) Impl.Dsa.Layout.activeBytes
+      simpa [off] using (A.scr E).sub (used_parent hb) (by decide)
+    pArithmetic := A.arenaSrc hb E hp (ps _ List.mem_cons_self)
+    tapeArithmetic := A.tapeSrc hb E (ts _ List.mem_cons_self)
+    eArithmetic := A.arenaSrc hb E he (es _ List.mem_cons_self)
+    pParent := A.arenaSrc hb E hp (ps _ (List.mem_cons_of_mem _ List.mem_cons_self))
+    tapeParent := A.tapeSrc hb E (ts _ (List.mem_cons_of_mem _ List.mem_cons_self))
+    eParent := A.arenaSrc hb E he (es _ (List.mem_cons_of_mem _ List.mem_cons_self))
+    gWrite := fun i hi => by
+      rw [off_off]
+      have hg := used_small hb (d := VG.Impl.Dsa.Generation.Layout.g) (n := pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+      exact (A.scr E).region (by change i < pLen at hi; omega_using [hg, hi]) (by decide) }
+  · rw [E.wr]
+    exact Covers.of_sub fun r hr => by
+      obtain rfl := List.mem_singleton.mp hr
+      exact ⟨_, List.mem_cons_self, 0, by simp; rfl, by unfold frameBytes; simp⟩
+  · rw [E.wr]
+    show Covers _ ([⟨frameBase s, 272⟩] ++ s.wr)
+    refine Covers.right (Covers.of_sub fun r hr => ?_)
+    obtain rfl := List.mem_singleton.mp hr
+    refine ⟨wsRegion s, by rw [A.wr]; exact List.mem_singleton_self _, Impl.Dsa.Generation.Layout.hash, rfl, ?_⟩
+    have := A.size; have := used_small hb (d := Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
+    simp only; omega_arith
+  · exact w 12 (by decide)
+  · change frameWords s u 13 = BitVec.ofNat 64 (tape s).length
+    rw [bytesAt_length, ofNat_toNat64]; exact w 13 (by decide)
+  · intro k hk
+    apply w k
+    simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
+    simp only [Impl.Dsa.AArch64.Generator.zeroSlots, List.mem_cons, List.not_mem_nil, or_false]
+    omega_using [hk]
+
+end VG.Proof.Dsa.AArch64.Generator
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.Generation.NativeGenerator`, which only this module used -/
 

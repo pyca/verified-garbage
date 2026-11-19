@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
+import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 import VerifiedGarbage.Proof.RsaPss.Params
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase

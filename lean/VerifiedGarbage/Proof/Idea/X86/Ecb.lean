@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Idea.X86.Round
-import VerifiedGarbage.Proof.Idea.X86.Key
+public import VerifiedGarbage.Proof.Idea.X86.Key
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -28,7 +27,6 @@ meta import VerifiedGarbage.Proof.Idea.X86.Key
 meta import VerifiedGarbage.Proof.Idea.Inverse
 meta import VerifiedGarbage.Proof.Idea.Scratch32
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Idea.X86.Round
 meta import VerifiedGarbage.Proof.Idea.Memory32
 meta import VerifiedGarbage.Proof.Idea.Arith32
 meta import VerifiedGarbage.Proof.Idea.KeyBits

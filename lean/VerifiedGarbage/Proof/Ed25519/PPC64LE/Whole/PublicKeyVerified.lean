@@ -39,13 +39,13 @@ meta import VerifiedGarbage.Impl.Ed25519.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchConsts
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 meta import VerifiedGarbage.Proof.Framework.Offset

@@ -7,12 +7,11 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch

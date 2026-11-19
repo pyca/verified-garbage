@@ -95,11 +95,9 @@ import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 meta import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono

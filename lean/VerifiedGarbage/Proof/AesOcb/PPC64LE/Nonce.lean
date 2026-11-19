@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
 public import VerifiedGarbage.Proof.Ocb.Stretch
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 public import VerifiedGarbage.Spec.Ocb
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.PadTo
@@ -300,7 +299,7 @@ nonce copied to the end (`copyLoop`), `TAGLEN mod 128` ORed into the first
 byte, and the last byte split into `bottom` and the rest. The 16 bytes are
 followed as a list through the writes, and compared with `nb`
 (`Proof.Ocb.nonceN_masked_byte`). As on AArch64
-(`Proof/AesOcb/AArch64/NonceBlock.lean`).
+(`Proof/AesOcb/AArch64/LNtz.lean`).
 -/
 
 @[expose] public section

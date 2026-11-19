@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseTail
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
@@ -18,7 +17,7 @@ import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseTail
+meta import VerifiedGarbage.Proof.Rsa.Arm.PrivTail
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT

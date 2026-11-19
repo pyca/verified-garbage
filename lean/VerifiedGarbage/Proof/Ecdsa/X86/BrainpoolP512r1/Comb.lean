@@ -4,9 +4,11 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Comb
+public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 import VerifiedGarbage.Proof.BrainpoolP512r1.Comb7
 import VerifiedGarbage.Proof.BrainpoolP512r1.Comb7Shape
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Lit
@@ -16,9 +18,11 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Comb
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.BrainpoolP512r1.Comb7
 meta import VerifiedGarbage.Proof.BrainpoolP512r1.Comb7Shape
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -67,13 +71,36 @@ theorem brainpoolp512r1W_length : brainpoolp512r1W.length = 75776 :=
 def combStep : Prog isa := (brainpoolp512r1Comb.combCfg brainpoolp512r1d).step
 materialize_code combStep
 
+/-! The field functions modulo `p`, analysed once from what is public on
+entry to their calls from an iteration (`combCallτ`), for each place of the
+working space among the regions, in place of each call. -/
+
+taint_summary mulSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary addSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary subSumF : sseTaint (combCallτ false)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary mulSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary addSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+taint_summary subSumT : sseTaint (combCallτ true)
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp512r1p.k Impl.Weierstrass.Mont.brainpoolp512r1p.m)
+
 /-- The taint checks of the comb's code. -/
 theorem combCT : CombRcbCT brainpoolp512r1Comb brainpoolp512r1d where
   prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
   init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
   step := fun b => by
     change RelCT isa _ combStep _
-    cases b <;> exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
+    cases b
+    · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt false) combStep h).isSome = true := by
+        taint_decide_sum [mulSumF, addSumF, subSumF]
+      exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
+    · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt true) combStep h).isSome = true := by
+        taint_decide_sum [mulSumT, addSumT, subSumT]
+      exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
   sp := by
     change SpOk combStep 20
     exact ⟨NoSp.of_all (by lit_decide), by lit_decide⟩

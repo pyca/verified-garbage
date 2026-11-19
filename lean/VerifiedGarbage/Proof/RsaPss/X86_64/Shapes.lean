@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.TabCall
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

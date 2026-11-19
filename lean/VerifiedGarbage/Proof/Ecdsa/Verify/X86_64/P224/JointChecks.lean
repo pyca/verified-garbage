@@ -18,12 +18,10 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
-meta import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming

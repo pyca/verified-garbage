@@ -1,11 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Divstep.Alg
+
+public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
-
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
-import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks

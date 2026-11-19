@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract

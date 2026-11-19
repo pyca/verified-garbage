@@ -5,12 +5,11 @@ import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.SignCases
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp

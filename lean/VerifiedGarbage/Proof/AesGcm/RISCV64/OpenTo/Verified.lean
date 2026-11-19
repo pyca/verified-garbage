@@ -5,13 +5,12 @@ public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTOpen
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Compare
 import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
@@ -22,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTOpen
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Compare
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
@@ -32,7 +31,6 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Spill
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Open
 public import VerifiedGarbage.Proof.Zeroize.Common
 public import VerifiedGarbage.Impl.AesGcm.RISCV64.OpenTo
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -40,7 +38,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Open
 meta import VerifiedGarbage.Proof.Zeroize.Common
 meta import VerifiedGarbage.Impl.AesGcm.RISCV64.OpenTo
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep

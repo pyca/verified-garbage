@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail

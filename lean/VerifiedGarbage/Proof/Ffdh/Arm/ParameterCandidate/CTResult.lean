@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseMath
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
@@ -21,15 +20,11 @@ import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTStackBlocks
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Room
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessProgress
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontOne
-import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
@@ -40,12 +35,10 @@ import Mathlib.Data.Nat.Basic
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResultContext
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ClearOutput
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.Output
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
@@ -59,16 +52,140 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontStride
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontData
 meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontData
 meta import VerifiedGarbage.Spec.Rsa.Contract
-meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
+meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyOps
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTFinish`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterCandidate.ClearOutput`, which this module and modules that import it used -/
+
+section
+
+/-! Rejected or incomplete candidates use the existing verified FFDH byte-clear loop. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
+
+theorem clearHead_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
+    (h : ResultContext dst usedPtr n consumed s) :
+    WP isa (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]) s fun t =>
+      (t.gpr .r0 = dst ∧ t.gpr .lr = BitVec.ofNat 32 n ∧ t.gpr .r2 = 0 ∧ t.mem = s.mem) ∧
+        Rest [.r0, .r2, .lr] s t := by
+  have out : s.mem.readW (State.addr (s.sp + 4#32)) 32 = dst := by
+    simpa only [resultValues] using h.saved.saved 4 (by simp [resultSlots])
+  have count : s.mem.readW (State.addr (s.sp + 12#32)) 32 = BitVec.ofNat 32 n := by
+    simpa only [resultValues] using h.saved.saved 12 (by simp [resultSlots])
+  refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
+  ffrun [BitVec.add_zero, h.saved.read (d := 4) (by decide), h.saved.read (d := 12) (by decide), out, count]
+
+theorem clearOutput_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
+    (h : ResultContext dst usedPtr n consumed s) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.clearOutput s fun t =>
+      ResultContext dst usedPtr n consumed t ∧ Spec.Rsa.bytesAt t.mem (State.addr dst) n = List.replicate n 0 ∧
+      Frame [⟨State.addr dst, n⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.clearOutput VG.Impl.Ffdh.Arm.Domain.GenerateKey.zeros
+  refine WP.seq (WP.mono (clearHead_ok h) ?_)
+  rintro u ⟨⟨ptr, count, zero, memory⟩, rest⟩
+  have ctx := h.after_memory memory rest
+  refine WP.mono (zeroBuffer_ok false u h.positive h.countFits h.output.fits ctx.output.writable zero rfl ptr count) ?_
+  rintro t ⟨bytes, _, _, changed, restT⟩
+  have finalCtx := ctx.after_output changed restT
+  rw [memory] at changed
+  exact ⟨finalCtx, bytes, changed, (rest.mono (by simp)).trans (restT.mono (by simp))⟩
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! Final output clearing and u64 consumption stores use only public buffer addresses. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint)
+
+structure ResultData where
+  dst : BitVec 32
+  usedPtr : BitVec 32
+  n : Nat
+
+def ResultStart (p : ResultData) (s : State) : Prop := ∃ consumed, ResultContext p.dst p.usedPtr p.n consumed s
+
+theorem ResultStart.after_memory {p : ResultData} {s t : State} {rs : List Reg}
+    (h : ResultStart p s) (memory : t.mem = s.mem) (rest : Rest rs s t) : ResultStart p t := by
+  obtain ⟨consumed, context⟩ := h
+  exact ⟨consumed, context.after_memory memory rest⟩
+
+private def ResultPointer (p : ResultData) (s : State) : Prop := s.gpr .r2 = p.usedPtr
+private def ClearPointers (p : ResultData) (s : State) : Prop := s.gpr .r0 = p.dst ∧ s.gpr .lr = BitVec.ofNat 32 p.n
+
+theorem finish_ct (status : Nat) (bound : status ≤ 2) : RelCT isa (Two ResultStart)
+    (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.finish status)) (fun _ _ => True) := by
+  have head : RelCT isa (Two ResultStart) (.block [.ldrSp .r2 32]) (Two ResultPointer) :=
+    two_post ((loadStack_ct .r2 32).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s ⟨_, h⟩ => by
+      refine wp_loadStack (a := State.addr (s.sp + 32#32)) (by decide) rfl (h.saved.read (by decide)) fun t loaded => WP.block_nil ?_
+      exact loaded.gpr.trans (h.saved.saved 32 (by decide)))
+  obtain ⟨hint, checked⟩ := finishTail_taint status bound
+  have tail : RelCT isa (Two ResultPointer) (.block ((VG.Impl.Ffdh.Arm.ParameterCandidate.finish status).drop 1))
+      (fun _ _ => True) := by
+    refine two_taint [.r2] ?_ checked
+    intro p s t a b r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact a.trans b.symm
+  exact RelCT.block_append (head.seq tail)
+
+theorem clearOutput_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterCandidate.clearOutput (Two ResultStart) := by
+  have head : RelCT isa (Two ResultStart) (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]) (Two ClearPointers) :=
+    two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s ⟨_, h⟩ =>
+      WP.mono (clearHead_ok h) (fun _ ⟨⟨ptr, count, _, _⟩, _⟩ => ⟨ptr, count⟩))
+  obtain ⟨hint, checked⟩ := clearOutputLoop_taint
+  have loop : RelCT isa (Two ClearPointers) VG.Impl.Ffdh.Arm.Domain.GenerateKey.zeros (fun _ _ => True) := by
+    refine two_taint [.r0, .lr] ?_ checked
+    intro p s t a b r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact a.1.trans b.1.symm
+    · exact a.2.trans b.2.symm
+  exact two_post (head.seq loop) (fun _ _ ⟨consumed, h⟩ => WP.mono (clearOutput_ok h) (fun _ ⟨context, _, _, _⟩ => ⟨consumed, context⟩))
+
+private theorem loadConsumed_ct : RelCT isa (Two ResultStart) (.block [.ldrSp .r3 40]) (Two ResultStart) :=
+  two_post ((loadStack_ct .r3 40).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ s ⟨consumed, h⟩ => by
+    refine wp_loadStack (a := State.addr (s.sp + 40#32)) (by decide) rfl (h.saved.read (by decide)) fun t loaded => WP.block_nil ?_
+    exact ⟨consumed, h.after_memory loaded.mem (loaded.rest (by simp : Reg.r3 ∈ [Reg.r3]))⟩)
+
+private theorem zeroConsumed_ct : RelCT isa (Two ResultStart) (.block [.mov .r3 (.imm 0)]) (Two ResultStart) :=
+  two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun _ _ h => by
+    refine wp_mov (op2_imm (by decide)) fun t moved => WP.block_nil ?_
+    exact h.after_memory moved.mem (moved.rest (by simp : Reg.r3 ∈ [Reg.r3])))
+
+theorem finAccepted_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterCandidate.finAccepted (fun _ _ => True) :=
+  RelCT.block_append (loadConsumed_ct.seq (finish_ct 1 (by decide)))
+
+theorem finRejected_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected (fun _ _ => True) :=
+  clearOutput_ct.seq (RelCT.block_append (loadConsumed_ct.seq (finish_ct 2 (by decide))))
+
+theorem finNone_ct : RelCT isa (Two ResultStart) VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (fun _ _ => True) :=
+  clearOutput_ct.seq (RelCT.block_append (zeroConsumed_ct.seq (finish_ct 0 (by decide))))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterCandidate.CTWitnessMaskStore`, which only this module used -/
 

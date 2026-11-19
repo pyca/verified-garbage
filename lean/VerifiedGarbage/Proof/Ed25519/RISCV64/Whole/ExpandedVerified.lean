@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.Expanded
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
@@ -30,7 +30,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarVerified
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym

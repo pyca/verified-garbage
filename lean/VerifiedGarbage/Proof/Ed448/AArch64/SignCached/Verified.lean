@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
@@ -40,7 +39,6 @@ meta import VerifiedGarbage.Proof.Ed448.Signing
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
 import VerifiedGarbage.Proof.Bignum.OddDivision
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Instr
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos

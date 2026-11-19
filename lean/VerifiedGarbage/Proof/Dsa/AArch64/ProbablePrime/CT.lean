@@ -26,28 +26,24 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 meta import VerifiedGarbage.Proof.Bignum.CrtExp
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytesCT
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytesCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 public import VerifiedGarbage.Impl.Dsa.AArch64.ProbablePrime
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
-public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytes
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 meta import VerifiedGarbage.Impl.Dsa.AArch64.ProbablePrime
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 meta import VerifiedGarbage.Proof.Bignum.Words
@@ -57,13 +53,11 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
-meta import VerifiedGarbage.Impl.Dsa.Generation.Layout
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytes
+meta import VerifiedGarbage.Impl.Dsa.Generation.Layout
 meta import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
 
 /-! ### `Dsa.AArch64.ProbablePrime.Body`, which this module and modules that import it used -/
 

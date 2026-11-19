@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices

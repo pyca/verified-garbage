@@ -22,19 +22,17 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DPart
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 meta import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
 

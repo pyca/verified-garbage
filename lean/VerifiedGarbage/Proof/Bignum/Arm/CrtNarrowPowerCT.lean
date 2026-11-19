@@ -6,10 +6,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace

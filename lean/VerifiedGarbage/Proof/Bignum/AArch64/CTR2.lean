@@ -25,10 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
-meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
 meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 
 /-! ### `Bignum.AArch64.R2dCT`, which this module and modules that import it used -/

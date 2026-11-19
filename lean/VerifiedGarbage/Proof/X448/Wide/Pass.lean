@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.X448.AArch64.Tail
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
 public import VerifiedGarbage.Proof.X448.Wide.Word
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Proof.X448.Wide.Memory
@@ -16,6 +14,188 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.X448.AArch64.Step
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.X448.Wide.Product
+
+/-! ### `X448.Wide.CoefficientIO`, which this module and modules that import it used -/
+
+section
+
+/-! Untrusted: coefficient reads and writes inside the X448 scratch buffer. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64
+open VG.Impl.X448.AArch64 (ld st)
+open VG.Proof.X448.AArch64
+
+theorem loadAt_ok {s : State} {base : Addr} (hs : Scr s base) {o k : Nat}
+    (ho : o + 16 * k + 16 ≤ 8192) (ho8 : o % 8 = 0) :
+    WP isa (.block [ld .x4 (o + 16 * k), ld .x5 (o + 16 * k + 8)]) s fun t =>
+      pair (t.gpr .x4) (t.gpr .x5) = coeff s.mem base o k ∧
+      t.mem = s.mem ∧ Keeps [.x4, .x5] s t := by
+  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have al := hs.read (d := o + 16 * k) (n := 8) (by omega_using [ho])
+  have bl := hs.read (d := o + 16 * k + 8) (n := 8) (by omega_using [ho])
+  apply WP.of_runBlock
+  simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
+    ae, be, and_self, State.load, hs.x3, al, bl, ite_true, Option.map_some,
+    Option.bind_some, BitVec.setWidth_eq, read8_eq, RegUpd.gpr_write,
+    ite_false, reduceCtorEq, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, (fun r hr => ?_), rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr, ite_false]
+
+theorem storeAt_ok {s : State} {base : Addr} (hs : Scr s base) {o k : Nat}
+    (ho : o + 16 * k + 16 ≤ 8192) (ho8 : o % 8 = 0)
+    (r0 : Reg := .x4) (r1 : Reg := .x5) :
+    WP isa (.block [st r0 (o + 16 * k), st r1 (o + 16 * k + 8)]) s fun t =>
+      t.mem = putCoeff s.mem base o k (s.gpr r0) (s.gpr r1) ∧ Keeps [] s t := by
+  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have aw := hs.write (d := o + 16 * k) (n := 8) (by omega_using [ho])
+  have bw := hs.write (d := o + 16 * k + 8) (n := 8) (by omega_using [ho])
+  apply WP.of_runBlock
+  simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
+    ae, be, and_self, State.read, State.store, hs.x3, aw, bw, ite_true,
+    Option.bind_some, BitVec.setWidth_eq, write8_eq, Option.some.injEq, exists_eq_left']
+  exact ⟨rfl, (fun _ _ => rfl), rfl, rfl⟩
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+/-! ### `X448.Wide.Column`, which this module and modules that import it used -/
+
+section
+
+/-! ### `X448.Wide.Term`, which this module and modules that import it used -/
+
+section
+
+/-! Untrusted: the register-only multiply-add used by wide X448 columns. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64 VG.Impl.X448.AArch64.Wide VG.Proof.Ed25519.Word64
+open VG.Proof.Ed25519.AArch64 (mulHi read_x)
+open VG.Proof.X448.AArch64 (Keeps)
+
+theorem term_ok (s : State)
+    (h : (s.gpr .x6).toNat * (s.gpr .x9).toNat + pair (s.gpr .x4) (s.gpr .x5) < 2 ^ 128) :
+    WP isa (.block term) s fun t =>
+      pair (t.gpr .x4) (t.gpr .x5) =
+        (s.gpr .x6).toNat * (s.gpr .x9).toNat + pair (s.gpr .x4) (s.gpr .x5) ∧
+      t.mem = s.mem ∧ Keeps [.x4, .x5, .x10, .x11] s t := by
+  apply WP.of_runBlock
+  simp only [term, termFrom, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, rfl, (fun r hr => ?_), rfl, rfl⟩
+  · have hm := madd128 (s.gpr .x6) (s.gpr .x9) (s.gpr .x4) (s.gpr .x5) h
+    dsimp only [addCarry, carryOut, mulHi, Size.bits] at hm ⊢
+    exact hm
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]
+
+theorem termFrom_ok (s : State) (a b : Reg)
+    (ha : a ≠ .x10) (hb : b ≠ .x10)
+    (h : (s.gpr a).toNat * (s.gpr b).toNat + pair (s.gpr .x4) (s.gpr .x5) < 2 ^ 128) :
+    WP isa (.block (termFrom a b)) s fun t =>
+      pair (t.gpr .x4) (t.gpr .x5) =
+        (s.gpr a).toNat * (s.gpr b).toNat + pair (s.gpr .x4) (s.gpr .x5) ∧
+      t.mem = s.mem ∧ Keeps [.x4, .x5, .x10, .x11] s t := by
+  apply WP.of_runBlock
+  simp only [termFrom, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, ha, hb,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, rfl, (fun r hr => ?_), rfl, rfl⟩
+  · have hm := madd128 (s.gpr a) (s.gpr b) (s.gpr .x4) (s.gpr .x5) h
+    dsimp only [addCarry, carryOut, mulHi, Size.bits] at hm ⊢
+    exact hm
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+/-! Untrusted: a diagonal of an eight-by-eight product, accumulated in registers. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64
+open VG.Impl.X448.AArch64 (ld st ACC)
+open VG.Impl.X448.AArch64.Wide VG.Proof.X448.AArch64
+
+/-- Load one pair of operands without changing the coefficient registers. -/
+theorem loadTerm_ok {s : State} {base : Addr} (hs : Scr s base) {a b i j : Nat}
+    (ha : a + 64 ≤ 8192) (hb : b + 64 ≤ 8192)
+    (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hi : i < 8) (hj : j < 8) :
+    WP isa (.block [ld .x6 (a + 8 * i), ld .x9 (b + 8 * j)]) s fun t =>
+      t.gpr .x6 = word s.mem base (a + 8 * i) ∧
+      t.gpr .x9 = word s.mem base (b + 8 * j) ∧
+      t.mem = s.mem ∧ Keeps [.x6, .x9] s t := by
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega_using [ha8], by omega_using [ha, hi]⟩
+  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 32768 := ⟨by omega_using [hb8], by omega_using [hb, hj]⟩
+  have al := hs.read (d := a + 8 * i) (n := 8) (by omega_using [ha, hi])
+  have bl := hs.read (d := b + 8 * j) (n := 8) (by omega_using [hb, hj])
+  apply WP.of_runBlock
+  simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
+    ae, be, and_self, State.load, hs.x3, al, bl, ite_true, Option.map_some,
+    Option.bind_some, BitVec.setWidth_eq, read8_eq, RegUpd.gpr_write,
+    ite_false, reduceCtorEq, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, (fun r hr => ?_), rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr, ite_false]
+
+/-- Initialize a register coefficient to zero. -/
+theorem zero_ok (s : State) :
+    WP isa (.block [.movz .x .x4 0 0, .movz .x .x5 0 0]) s fun t =>
+      pair (t.gpr .x4) (t.gpr .x5) = 0 ∧ t.mem = s.mem ∧ Keeps [.x4, .x5] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.x.bits from by decide, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq, ite_false,
+    reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, (fun r hr => ?_), rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr, ite_false]
+
+/-- Write the two coefficient words. -/
+theorem store_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k < 16) :
+    WP isa (.block [st .x4 (ACC + 16 * k), st .x5 (ACC + 16 * k + 8)]) s fun t =>
+      t.mem = putCoeff s.mem base ACC k (s.gpr .x4) (s.gpr .x5) ∧ Keeps [] s t := by
+  have ae : (ACC + 16 * k) % 8 = 0 ∧ ACC + 16 * k < 32768 := by simp only [ACC]; omega_using [hk]
+  have be : (ACC + 16 * k + 8) % 8 = 0 ∧ ACC + 16 * k + 8 < 32768 := by simp only [ACC]; omega_using [hk]
+  have aw := hs.write (d := ACC + 16 * k) (n := 8) (by simp only [ACC]; omega_using [hk])
+  have bw := hs.write (d := ACC + 16 * k + 8) (n := 8) (by simp only [ACC]; omega_using [hk])
+  apply WP.of_runBlock
+  simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
+    ae, be, and_self, State.read, State.store, hs.x3, aw, bw, ite_true,
+    Option.bind_some, BitVec.setWidth_eq, write8_eq,
+    Option.some.injEq, exists_eq_left']
+  exact ⟨rfl, (fun _ _ => rfl), rfl, rfl⟩
+
+def colRegs : List Reg := [.x4, .x5, .x6, .x9, .x10, .x11]
+
+end VG.Proof.X448.Wide
+
+end
+
+end
 
 /-! ### `X448.Wide.TailStep`, which this module and modules that import it used -/
 

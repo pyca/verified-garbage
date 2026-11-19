@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarMulAdd
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.ScalarBase
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms

@@ -17,6 +17,10 @@ vg_poly1305_init:
 	std %r5, 0(%r3)
 	std %r5, 8(%r3)
 	std %r5, 16(%r3)
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
 	blr
 
 vg_poly1305_update:
@@ -449,6 +453,35 @@ vg_poly1305_update:
 	ld %r20, 48(%r21)
 	ld %r21, 56(%r21)
 	addi %r1, %r1, 160
+	li %r0, 0
+	stdu %r1, -160(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r1, %r1, 160
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr
 
 vg_poly1305_finalize:
@@ -744,4 +777,33 @@ vg_poly1305_finalize:
 	ld %r20, 48(%r21)
 	ld %r21, 56(%r21)
 	addi %r1, %r1, 160
+	li %r0, 0
+	stdu %r1, -160(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r1, %r1, 160
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

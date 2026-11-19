@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
-import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 import VerifiedGarbage.Proof.Md5.Scratch
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE

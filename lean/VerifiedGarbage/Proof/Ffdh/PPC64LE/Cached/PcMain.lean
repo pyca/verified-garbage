@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Cut
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Lead
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset

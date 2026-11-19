@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMainCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -31,7 +31,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import Init.Core
 public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Syms

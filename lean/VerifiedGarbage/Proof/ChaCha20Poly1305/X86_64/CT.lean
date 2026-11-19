@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize

@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
@@ -27,7 +26,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 meta import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe

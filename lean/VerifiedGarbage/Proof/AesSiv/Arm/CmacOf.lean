@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
 public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.AesCcm.Arm.Env
 public import VerifiedGarbage.Spec.Siv
 
 /-! ### `AesSiv.Arm.Env`, which this module and modules that import it used -/

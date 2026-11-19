@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Compress

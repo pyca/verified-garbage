@@ -44,18 +44,20 @@ b 21f
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd10903ff,0x910003e4,0xf81f0ffe,0xf9010093,0xf9010494,0xf9010895,0xf9010c96,0xf9011097
-.inst 0xf9011498,0x91000013,0x91000094,0x91000055,0x91000076,0x91000038,0xd1000717,0xd2800fe9
+        r".inst 0xd101c3ff,0x910003e4,0xf81f0ffe,0xf9001c93,0xf9002094,0xf9002495,0xf9002896,0xf9002c97
+.inst 0xf9003098,0x91000013,0x91000094,0x91000055,0x91000076,0x91000038,0xd1000717,0xd2800fe9
 .inst 0x8a0902f7,0x910006f7
 cbz x24, 20f
 b 21f
@@ -112,8 +114,11 @@ b 216f
 b 23f
 22:
 23:
-.inst 0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910903ff
-.inst 0xd65f03c0
+.inst 0xf9401e93,0xf9402695,0xf9402a96,0xf9402e97,0xf9403298,0xf9402294,0xf84107fe,0x9101c3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0xea01003f,0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -123,6 +128,8 @@ b 23f
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -130,12 +137,12 @@ b 23f
 /// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".inst 0xd10903ff,0x910003e3,0xf81f0ffe,0xf9010073,0xf9010474,0xf9010875,0xf9010c76,0xf9011077
-.inst 0xf9011478,0x91000013,0x91000074,0x91000055,0x91000038,0xd1000717,0xd2800fe9,0x8a0902f7
+        r".inst 0xd101c3ff,0x910003e3,0xf81f0ffe,0xf9001c73,0xf9002074,0xf9002475,0xf9002876,0xf9002c77
+.inst 0xf9003078,0x91000013,0x91000074,0x91000055,0x91000038,0xd1000717,0xd2800fe9,0x8a0902f7
 .inst 0x910006f7
 cbz x24, 20f
 b 21f
@@ -154,8 +161,11 @@ b 23f
 bl {vg_blake2b_compress}
 .inst 0xf9400269,0xf90002a9,0xf9400669,0xf90006a9,0xf9400a69,0xf9000aa9,0xf9400e69,0xf9000ea9
 .inst 0xf9401269,0xf90012a9,0xf9401669,0xf90016a9,0xf9401a69,0xf9001aa9,0xf9401e69,0xf9001ea9
-.inst 0xf9410293,0xf9410a95,0xf9410e96,0xf9411297,0xf9411698,0xf9410694,0xf84107fe,0x910903ff
-.inst 0xd65f03c0
+.inst 0xf9401e93,0xf9402695,0xf9402a96,0xf9402e97,0xf9403298,0xf9402294,0xf84107fe,0x9101c3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0xea01003f,0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )

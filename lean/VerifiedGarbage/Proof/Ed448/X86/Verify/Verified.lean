@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
@@ -52,7 +51,6 @@ import VerifiedGarbage.Proof.X448.X86.Select
 import VerifiedGarbage.Proof.X448.X86.Small
 import VerifiedGarbage.Proof.X448.X86.Step
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 meta import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 meta import VerifiedGarbage.Proof.Ed448.X86.Callee

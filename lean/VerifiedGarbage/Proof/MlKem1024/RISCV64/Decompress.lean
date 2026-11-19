@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.RISCV64.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.RISCV64.Bytes
@@ -23,9 +22,8 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
 meta import VerifiedGarbage.Impl.MlKem1024.RISCV64.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
-meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Add

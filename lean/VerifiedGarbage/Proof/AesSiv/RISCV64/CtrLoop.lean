@@ -41,7 +41,7 @@ same way (`storeBE`; `bump_wp`). `counter` writes `Q` from the IV
 (`counter_wp`), `copy16` copies a block of `W` (`copy16_wp`), and
 `ctrWhole` encrypts the first `⌊L / 16⌋ mod 2³¹` blocks of the data by one
 call of `vg_aes_ctr32` (`ctrWhole_wp`). As on PPC64LE
-(`Proof/AesSiv/PPC64LE/Ctr.lean`), with `byteRev64` for its byte-reversed
+(`Proof/AesSiv/PPC64LE/CtrLoop.lean`), with `byteRev64` for its byte-reversed
 loads and stores.
 
 Untrusted: everything here is checked by Lean. The counter `Q + i` is kept

@@ -21,11 +21,9 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Impl.AesGcmSiv.X86_64

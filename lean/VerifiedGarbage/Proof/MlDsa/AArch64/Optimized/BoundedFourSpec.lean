@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
 
 /-! ### `MlDsa.AArch64.Optimized.BoundedFourShake`, which this module and modules that import it used -/

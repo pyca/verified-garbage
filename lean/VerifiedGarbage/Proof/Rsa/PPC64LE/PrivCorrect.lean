@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 import VerifiedGarbage.Proof.Framework.Covers

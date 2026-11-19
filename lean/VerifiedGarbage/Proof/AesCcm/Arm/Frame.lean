@@ -3,11 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.AesCcm.Arm.Args
-import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+public import VerifiedGarbage.Proof.AesCcm.Arm.Seal
 import VerifiedGarbage.Proof.AesCcm.Bytes
-import VerifiedGarbage.Proof.AesCcm.Arm.Seal
-import VerifiedGarbage.Proof.AesCcm.Arm.Mac
 import VerifiedGarbage.Proof.AesCcm.Arm.Aad
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -18,13 +15,11 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Proof.AesCcm.Arm.Seal
-meta import VerifiedGarbage.Proof.AesCcm.Arm.Mac
 meta import VerifiedGarbage.Proof.AesCcm.Arm.Aad
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
-meta import VerifiedGarbage.Proof.AesCcm.Arm.Args
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 

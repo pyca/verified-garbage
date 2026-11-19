@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import VerifiedGarbage.Proof.Framework.AddrArith

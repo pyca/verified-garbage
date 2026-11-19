@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Derive
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
-import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
+public import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -26,8 +26,6 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
-public import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Ffdh.AArch64.Out
 import VerifiedGarbage.Proof.Framework.Omega
@@ -45,8 +43,7 @@ meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRangeCT
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Derive
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Out

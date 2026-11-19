@@ -29,19 +29,17 @@ meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivCT
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPCT
 public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Calls
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
 public import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256Family
 import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.Dec.Calls
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256Family
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize

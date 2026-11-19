@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -16,12 +16,10 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -43,10 +41,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Cand
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfT
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 

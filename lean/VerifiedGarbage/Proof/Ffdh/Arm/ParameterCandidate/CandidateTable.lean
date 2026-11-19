@@ -4,9 +4,8 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFrame
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveMath
 import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 
 /-! Initialize and run the shared small-prime sieve within candidate buffer bounds. -/
 

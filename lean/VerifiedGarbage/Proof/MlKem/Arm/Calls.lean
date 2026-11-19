@@ -4,10 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Add

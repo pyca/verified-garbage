@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -29,13 +29,11 @@ meta import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyMessage
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyMessage
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit

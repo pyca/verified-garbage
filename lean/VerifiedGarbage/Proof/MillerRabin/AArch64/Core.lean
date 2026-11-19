@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrTab
 import VerifiedGarbage.Proof.Ffdh.MillerRabin

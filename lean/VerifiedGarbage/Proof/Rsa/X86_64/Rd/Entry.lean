@@ -17,7 +17,6 @@ import VerifiedGarbage.Impl.Rsa.X86_64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Spec.Rsa.Contract

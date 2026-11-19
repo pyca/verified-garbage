@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.AArch64.Add
 public import VerifiedGarbage.Impl.Dsa.AArch64.Core
@@ -30,22 +29,325 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
-import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Add
 import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.Setup
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Load
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByte
+public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByte
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
+
+/-! ### `Dsa.AArch64.ReduceByteCT`, which only this module used -/
+
+section
+
+/-! ### `Dsa.AArch64.ReduceStepCT`, which only this module used -/
+
+section
+
+/-! # Timing of the multiply-and-add reduction step -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Impl.Dsa.AArch64
+
+/-- The accumulator is reduced; its value need not agree between runs. -/
+theorem reduceStep_ct (M : Mont) : RelCT isa (Two (Reduced [aY]))
+    (Arithmetic.reduceStep M.mm) (fun _ _ => True) := by
+  unfold Arithmetic.reduceStep
+  refine RelCT.seq (mont_step_ct M (by unfold MmUse; decide) [aY] (by decide) (by decide)) ?_
+  exact two_map (fun p : ProductPublic => p.layout.ws)
+    (fun p _ h => ⟨_, h.1.good, p.fits⟩)
+    (addMod_ct (by decide) (by decide) (by decide) (by taint_decide))
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.ReduceReadCT`, which only this module used -/
+
+section
+
+/-! # Constant-time reads of secret reduction input bytes -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64 VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+structure ReduceReadPublic where
+  layout : Lay
+  pointer : Addr
+
+def ReduceReadPre (p : ReduceReadPublic) (s : State) : Prop :=
+  GoodL p.layout s ∧ word s.mem p.layout.B (8 * Crt.sSrc) = p.pointer ∧
+  InRegions (s.rd ++ s.wr) p.pointer 1
+
+def ReduceReadHead (p : ReduceReadPublic) (s : State) : Prop :=
+  GoodL p.layout s ∧ s.gpr .x1 = p.pointer ∧ InRegions (s.rd ++ s.wr) p.pointer 1
+
+def ReduceReadStore (p : ReduceReadPublic) (s : State) : Prop :=
+  s.gpr .x0 = p.layout.B ∧ s.gpr .x1 = p.pointer ∧
+  s.gpr .x8 = off p.layout.B (slot p.layout.w aX)
+
+theorem reduceRead_ct : RelCT isa (Two ReduceReadPre) (.block Arithmetic.reduceRead)
+    (fun _ _ => True) := by
+  change RelCT isa (Two ReduceReadPre) (.block (
+    ([ldh .x1 Crt.sSrc] : List Instr) ++
+    ([.ldrb .x3 .x1 0, ldh .x8 (sArr aX)] : List Instr) ++
+    [st .x3 .x8, .addImm .x .x1 .x1 1, sth .x1 Crt.sSrc])) _
+  rw [List.append_assoc]
+  apply RelCT.block_append
+  refine RelCT.seq (two_piece (Ψ := ReduceReadHead) [.x0]
+    (fun p s t hs ht => pins_good p.layout s t hs.1 ht.1) (by taint_decide) ?_) ?_
+  · intro p s ⟨hg, hp, hr⟩
+    refine WP.mono (WP.keep [.x1] (Q := fun t => t.gpr .x1 = p.pointer ∧ t.mem = s.mem)
+      ?_ rfl rfl rfl) fun t ⟨⟨hsi, hm⟩, hk⟩ =>
+      ⟨⟨⟨hg.1.scr.congr hk.wr, (hk.gpr .x0 (by decide)).trans hg.1.x0, hm ▸ hg.1.hdr⟩, hg.2⟩,
+        hsi, by simpa only [hk.rd, hk.wr] using hr⟩
+    brun [hg.1.x0, hdr_enc (show Crt.sSrc < 32 by decide), hp,
+      hg.1.scr.ld (show 8 * Crt.sSrc + 8 ≤ p.layout.Z by
+        have := hdr_lt_slot p.layout.w 8 (show Crt.sSrc < 32 by decide); have := hg.2; omega_arith)]
+  apply RelCT.block_append
+  refine RelCT.seq (two_piece (Ψ := ReduceReadStore) [.x0, .x1]
+    (pins_of (fun p r => if r = .x0 then p.layout.B else p.pointer) (by
+      intro p s h r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h.1.1.x0
+      · exact h.2.1)) (by taint_decide) ?_) ?_
+  · intro p s ⟨hg, hsi, hr⟩
+    refine WP.mono (WP.keep [.x3, .x8] (Q := fun t =>
+      t.gpr .x8 = off p.layout.B (slot p.layout.w aX)) ?_ rfl rfl rfl)
+      fun t ⟨hbx, hk⟩ => ⟨(hk.gpr .x0 (by decide)).trans hg.1.x0,
+        (hk.gpr .x1 (by decide)).trans hsi, hbx⟩
+    brun [hsi, hr, hg.1.x0, hdr_enc (show sArr aX < 32 by decide),
+      hg.1.hdr.harr aX (by decide),
+      hg.1.scr.ld (show 8 * sArr aX + 8 ≤ p.layout.Z by
+        have := hdr_lt_slot p.layout.w 8 (show sArr aX < 32 by decide); have := hg.2; omega_arith)]
+  exact two_taint [.x0, .x1, .x8]
+    (pins_of (fun p r => if r = .x0 then p.layout.B else if r = .x1 then p.pointer else
+      off p.layout.B (slot p.layout.w aX)) (by
+        intro p s h r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact h.1
+        · exact h.2.1
+        · exact h.2.2)) (by taint_decide)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! # Constant time of one complete streaming reduction byte -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64 VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+structure ReducePublic extends PowerPublic where
+  greater255 : 255 < modulus
+  lengthBound : bytes.len < 2 ^ 64
+
+/-- Source bytes and the accumulator are secret; only their address and
+length appear in the public descriptor. -/
+def ReduceBytePre (p : ReducePublic) (s : State) : Prop :=
+  ∃ (bs : List Byte) (acc : Nat), bs.length = p.bytes.len ∧ 0 < bs.length ∧
+    ReduceState s p.bytes.x.B p.bytes.x.Z p.bytes.x.o p.bytes.x.w p.bytes.x.wx
+      p.modulus p.minv p.bytes.ptr bs acc
+
+def ReduceArithmeticPre (p : ReducePublic) (s : State) : Prop :=
+  SubCtx s p.bytes.x.B p.bytes.x.Z p.bytes.x.o p.bytes.x.w p.bytes.x.wx p.minv ∧
+  ModCtx s (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx 8) p.bytes.x.wx p.minv p.modulus ∧
+  wv s.mem (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx aY) p.bytes.x.wx < p.modulus ∧
+  wv s.mem (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx aX) p.bytes.x.wx < p.modulus
+
+theorem reduceRead_arithmetic {p : ReducePublic} {s : State} (h : ReduceBytePre p s) :
+    WP isa (.block Arithmetic.reduceRead) s (ReduceArithmeticPre p) := by
+  obtain ⟨bs, acc, hlen, hpos, h⟩ := h
+  have hr := h.source.rd 0 hpos
+  simp only [BitVec.add_zero] at hr
+  refine WP.mono (reduceRead_context h.ctx h.modulus (by have := p.lower; omega_using [this])
+    h.pointer hr h.high) fun t ⟨hc, hm, hbyte, harr, _⟩ => ?_
+  refine ⟨hc, hm, ?_, ?_⟩
+  · rw [harr aY (by decide) (by decide), h.value]
+    exact h.reduced
+  · rw [hbyte]
+    have := (s.mem p.bytes.ptr).isLt
+    have := p.greater255
+    omega_using [this]
+
+theorem reduceArithmetic_ct (M : Mont) : RelCT isa (Two ReduceArithmeticPre)
+    (Arithmetic.reduceStep M.mm) (fun _ _ => True) :=
+  two_map (fun p : ReducePublic => p.toPowerPublic.product) (fun _ _ h =>
+    ⟨h.2.1, fun j hj => by obtain rfl := List.mem_singleton.mp hj; exact h.2.2.1⟩) (reduceStep_ct M)
+
+/-- Only the header address is needed for the counter block's trace.
+The loop proof separately establishes that the resulting flag is public. -/
+theorem reduceByte_ct (M : Mont) : RelCT isa (Two ReduceBytePre)
+    (Arithmetic.reduceByte M.mm) (fun _ _ => True) := by
+  unfold Arithmetic.reduceByte seqs
+  refine RelCT.seq (two_post (Ψ := ReduceArithmeticPre)
+    (two_map (fun p : ReducePublic =>
+      (⟨p.toPowerPublic.product.layout, p.bytes.ptr⟩ : ReduceReadPublic)) ?_ reduceRead_ct)
+    (fun _ _ h => reduceRead_arithmetic h)) ?_
+  · intro p s ⟨bs, acc, hlen, hpos, h⟩
+    refine ⟨⟨h.ctx.good, Nat.le_refl _⟩, h.pointer, ?_⟩
+    simpa using h.source.rd 0 hpos
+  refine RelCT.seq (two_post (Ψ := fun p s => s.gpr .x0 = off p.bytes.x.B p.bytes.x.o)
+    (reduceArithmetic_ct M) ?_) ?_
+  · intro p s ⟨hc, hm, hred, hb⟩
+    unfold Arithmetic.reduceStep
+    refine WP.seq (WP.mono (mont_step M hm (Nat.le_refl _) p.lower
+      (by have := p.fits; have := p.upper; omega_arith) (by unfold MmUse; decide) hred)
+      fun u ⟨hmu, hlt, _, hf, _⟩ => ?_)
+    have hxu := (hf.wv_of_not_mem (show aX < 8 by decide) (by decide) hc.good.scr.nowrap)
+    refine WP.mono (addMod_ok hmu.good.scr hmu.good.x0 hmu.good.hdr (Nat.le_refl _)
+      p.lower (by have := p.fits; have := p.upper; omega_arith)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by rw [hmu.modulus]; exact hlt)
+      (by rw [hmu.modulus, hxu]; exact hb)) fun t ⟨_, _, hk⟩ =>
+        (hk.gpr .x0 (by decide)).trans hmu.good.x0
+  exact two_taint [.x0] (pins_x0B (fun p => off p.bytes.x.B p.bytes.x.o) (fun _ _ h => h))
+    (by taint_decide)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.ProductCallCT`, which this module and modules that import it used -/
+
+section
+
+/-! # Constant time of the complete ordinary modular product -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+/-- Both product inputs fit the workspace. The shared call description
+contains public pointers and lengths, never operand values. -/
+structure ProductCallPublic extends PowerCallPublic where
+  secondFits : (bytes.len + 7) / 8 ≤ bytes.x.wx
+
+/-- Loading either input leaves the public call description and prepared
+Montgomery constants intact. -/
+theorem productCall_load {p : ProductCallPublic} {s : State}
+    {a sp sl : Nat} {ptr : Addr} {bs : List Byte}
+    (ha : a < 8) (han : a ≠ aN) (hao : a ≠ aOne) (har : a ≠ aR2)
+    (hsp : sp < 32) (hsl : sl < 32)
+    (h : PowerCallPrepared p.toPowerCallPublic s)
+    (hp : word s.mem p.x.B (8 * sp) = ptr)
+    (hl : word s.mem p.x.B (8 * sl) = BitVec.ofNat 64 bs.length)
+    (hs : Src s p.x.B p.x.Z ptr bs) (h1 : 1 ≤ bs.length)
+    (hfit : (bs.length + 7) / 8 ≤ p.x.wx) :
+    WP isa (Arithmetic.load a sp sl) s (PowerCallPrepared p.toPowerCallPublic) := by
+  obtain ⟨⟨hc, hm, hb⟩, hone, hr2⟩ := h
+  have hlen : bs.length < 2 ^ 31 := by
+    have hw48 : p.x.wx ≤ 48 := p.width48
+    omega_using [hfit, hw48]
+  refine WP.mono (load_ok hc p.lower p.fits p.upper ha hsp hsl hp hl hs h1 hlen hfit)
+    fun t ⟨hct, _, hf, hk⟩ => ?_
+  have hfa : Arrays (off p.x.B p.x.o) p.x.wx [a] s.mem t.mem :=
+    Arrays.of_outside (List.mem_singleton_self a) hf (Nat.le_refl _) (Nat.le_refl _)
+  have hz := hc.good.scr.nowrap
+  have hmn : aN ∉ [a] := by simpa using Ne.symm han
+  have hmo : aOne ∉ [a] := by simpa using Ne.symm hao
+  have hmr : aR2 ∉ [a] := by simpa using Ne.symm har
+  have hmt : ModCtx t (off p.x.B p.x.o) (slot p.x.wx 8) p.x.wx p.minv p.modulus := by
+    refine ⟨hct.good, (hfa.wv_of_not_mem (by decide) hmn hz).trans hm.modulus, ?_⟩
+    rw [hfa.word0_of_not_mem (by decide) hmn hz (by have := p.lower; omega_using [h1, hfit])]
+    exact hm.inverse
+  exact ⟨⟨hct, hmt, hb.frame hc (arrays_work hfa (by intro j hj; obtain rfl := List.mem_singleton.mp hj; exact ha)) hk⟩,
+    (hfa.wv_of_not_mem (by decide) hmo hz).trans hone,
+    (hfa.wv_of_not_mem (by decide) hmr hz).trans hr2⟩
+
+theorem productCall_ct (M : Mont) :
+    RelCT isa (Two (fun p : ProductCallPublic => PowerCallPre p.toPowerCallPublic))
+      (Arithmetic.product M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
+  unfold Arithmetic.product seqs
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => p.toPowerPublic.product)
+      (fun p _ h => ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct M))
+    (fun _ _ h => powerCall_prepare M h)) ?_
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => (⟨p.x, p.base, p.baseLen⟩ : BPub)) ?_
+      (loadArr_ct (j := aX) (sp := arg) (sl := argLen) (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
+  · intro p s ⟨⟨hc, _, bb, _, hp, hl, _, _, hbl, _, hb, _⟩, _⟩
+    refine ⟨p.minv, bb, hc, p.lower, p.fits, p.upper, by decide, by decide, by decide,
+      hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
+    have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
+    have hw48 : p.x.wx ≤ 48 := p.width48
+    omega_using [hbw, hw48]
+  · intro p s h
+    obtain ⟨bb, _, hp, hl, _, _, hbl, _, hb, _⟩ := h.1.2.2
+    exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      h hp hl hb (hbl ▸ p.basePositive) (hbl ▸ p.baseFits)
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => p.bytes) ?_
+      (loadArr_ct (j := aXm) (sp := arg2) (sl := arg2Len) (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
+  · intro p s ⟨⟨hc, _, _, eb, _, _, hp, hl, _, hel, _, hb⟩, _⟩
+    refine ⟨p.minv, eb, hc, p.lower, p.fits, p.upper, by decide, by decide, by decide,
+      hp, hl, hel, hb, hel ▸ p.expPositive, ?_, hel ▸ p.secondFits⟩
+    have hbw : (eb.length + 7) / 8 ≤ p.x.wx := hel ▸ p.secondFits
+    have hw48 : p.x.wx ≤ 48 := p.width48
+    omega_using [hbw, hw48]
+  · intro p s h
+    obtain ⟨_, eb, _, _, hp, hl, _, hel, _, hb⟩ := h.1.2.2
+    exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      h hp hl hb (hel ▸ p.expPositive) (hel ▸ p.secondFits)
+  exact two_map (fun p : ProductCallPublic => p.toPowerPublic.product) (fun p s ⟨⟨_, hm, _⟩, hone, hr2⟩ => by
+    refine ⟨hm, ?_⟩
+    intro j hj
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl
+    · dsimp only [PowerPublic.product]
+      rw [hr2]
+      exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
+    · dsimp only [PowerPublic.product]
+      rw [hone]
+      exact p.greater) (productCore_ct M)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.AddCallCT`, which only this module used -/
 

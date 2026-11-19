@@ -45,21 +45,19 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.CT
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.CT
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Front
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Front
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
 import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptCorrect
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 meta import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 meta import VerifiedGarbage.Proof.Ffdh.Domain
@@ -86,17 +84,13 @@ meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Loop
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.CTCode
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Live
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Live
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Writes
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Writes
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Writes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Outputs
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.Cached
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Outputs
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 meta import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

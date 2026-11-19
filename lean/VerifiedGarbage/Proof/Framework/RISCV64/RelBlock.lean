@@ -13,7 +13,7 @@ analysis checks from registers on which the runs agree (`taint_block`), a
 block that accesses no memory, which leaks nothing (`relct_noMem`), the empty
 block (`relct_nil`), and a piece whose final states the correctness proofs
 describe (`relct_wp`). As ML-KEM's on PPC64LE (`Proof/MlKem/PPC64LE/SampleCT.lean`,
-`Proof/Ed448/PPC64LE/Whole/HashCT.lean`).
+`Proof/Ed448/PPC64LE/Whole/SignNonce.lean`).
 -/
 
 @[expose] public section

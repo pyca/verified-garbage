@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCallTaint
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Comb
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
@@ -23,6 +25,7 @@ meta import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86
 meta import VerifiedGarbage.Spec.Ecdsa.P384
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCallTaint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -30,6 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -85,6 +89,16 @@ theorem stagesCT : VerifyStagesCT p384Comb where
     change RelCT isa _ vFinalCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
+/-! The field functions modulo `p`, analysed once from what is public on
+entry to their calls from the windows (`τWin`), in place of each call. -/
+
+taint_summary mulSum : sseTaint τWin
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p384p.k Impl.Weierstrass.Mont.p384p.m)
+taint_summary addSum : sseTaint τWin
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p384p.k Impl.Weierstrass.Mont.p384p.m)
+taint_summary subSum : sseTaint τWin
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p384p.k Impl.Weierstrass.Mont.p384p.m)
+
 /-- The taint checks of `[u]G + [v]Q` around the comb. -/
 theorem ladderCT : VerifyLadderCT p384Comb where
   bits := by
@@ -92,7 +106,9 @@ theorem ladderCT : VerifyLadderCT p384Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
+    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false p384Comb.stk) vLadderCode h).isSome = true := by
+      taint_decide_sum [mulSum, addSum, subSum]
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem verify_sp : SpOk verifyP384 p384Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩

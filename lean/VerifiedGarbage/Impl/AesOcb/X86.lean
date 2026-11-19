@@ -24,13 +24,28 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   it to the checksum), encipher or decipher all of them in one call, then
   XOR each with its offset again (and, for `open`, add it to the
   checksum). The offsets are recomputed in the third pass, from `Offset_0`.
-* `L_{ntz(i)}` is `L_0` doubled `ntz(i)` times, computed for each block by
-  a loop on the public `i`; `L_$` and `L_0` are `L_*` doubled once and
-  twice. A doubling reads the four big-endian words of a block, shifts each
-  left by one bit with the top bit of the next, and reduces the last by
-  `{87}` through a mask from the first's top bit (`dbl`).
+  During a pass the offset and the checksum are in `xmm0` and `xmm1`
+  (loaded from `W` before it, stored back after it), and each block goes
+  through `xmm3` (`movdqu`, `pxor`: SSE2, the target's baseline). A pass
+  takes four blocks at a time while it can (`quad`): the first three of
+  them have `ntz(i)` 0, 1 and 0, so their `L_{ntz(i)}` are the table's
+  first two entries, read where they are.
+* `L_$` and `L_0` are `L_*` doubled once and twice. A doubling reads the
+  four big-endian words of a block, shifts each left by one bit with the
+  top bit of the next, and reduces the last by `{87}` through a mask from
+  the first's top bit (`dbl`). The table (`ltable`, before the passes)
+  holds `L_0` to `L_5` at `W + tblO`, each the one before doubled: of
+  these, `L_j` for every `j` with `2^j` at most the number of whole blocks,
+  so every `L_{ntz(i)}` of a block index `i` that is no multiple of 64.
+* For a block of the data, `L_{ntz(i)}` is read where `lAddr` finds it,
+  from the public `i`: in the table, at the entry reached by stepping once
+  for each trailing zero bit of `i`, unless `i` is a multiple of 64, when
+  it is `L_0` doubled `ntz(i)` times at `W + lO` (`lNtz`, with the offset
+  and the checksum kept in `W` meanwhile).
 * `HASH(K, A)` copies up to 8 blocks of the associated data at a time,
-  each XORed with its offset, to `W + bufO`, and enciphers them there.
+  each XORed with its offset, to `W + bufO`, and enciphers them there; for
+  each of its blocks `L_{ntz(i)}` is `L_0` doubled `ntz(i)` times
+  (`lNtz`), by a loop on the public `i`.
 * `Offset_0` takes the bits `bottom … bottom + 127` of `Stretch` (§4.2),
   where `bottom` is the last 6 bits of the nonce, which is secret: the
   192-bit `Stretch`, six words at `W + stO`, is shifted left by 1, 2, 4, 8,
@@ -39,7 +54,8 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
 * `seal` computes the tag at `W` and copies its first `tag_len` bytes to
   `tag` (`tagOut`).
 * `open` copies the received tag from `tag` to `W` (`recv`), compares the
-  tags without a branch and masks the data with `0 − ok`.
+  tags without a branch and masks the data with `0 − ok`, 16 bytes at a time
+  (in `xmm0`) and then the last `len mod 16` one at a time.
 
 The model has no left shift: `x << a` is `ror x, 32 − a` with the `a` low
 bits masked off, and `x << 1` an addition.
@@ -51,14 +67,16 @@ offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, the current
 `L_{ntz(i)}`, a block for one call; `[128, 144)`: our caller's `ebx`,
 `esi`, `edi`, `ebp`; then the computed tag of `open`, the offset of `HASH`,
 the arguments but `work`, `bottom`, `ntz`'s count, `Offset_0`, `Stretch`
-and the variables of the pieces; `[384, 512)`: 8 blocks of the associated
-data; `[512, 2560)`: the working space of the functions called.
+and the variables of the pieces; `[288, 384)`: the table, of `L_0` to
+`L_5` at most; `[384, 512)`: 8 blocks of the associated data;
+`[512, 2560)`: the working space of the functions called.
 
 ## Registers
 
 `ebp` holds `W` throughout; the functions called preserve it, and `ebx`,
 `esi` and `edi`. While on a string, its pointer is in `esi` and `i` in
-`edi`; counts are in `ebx` or in `W`. Everything else is reloaded from `W`.
+`edi`; counts are in `ebx` or in `W`. Everything else is reloaded from `W`
+(the SSE registers hold nothing across a call).
 Each call pushes its arguments in a frame of its own: `vg_aes_*_blocks`
 five, `vg_aes_expand_key_scratch` four, with the return address 24 bytes of stack
 at most. The callee's working space is passed in `ebp`, moved there before
@@ -122,6 +140,8 @@ abbrev restO : Nat := 276
 abbrev nbO : Nat := 280
 /-- `open`'s result. -/
 abbrev okO : Nat := 284
+/-- The table of `L_0` to `L_5`. -/
+abbrev tblO : Nat := 288
 abbrev bufO : Nat := 384
 abbrev scrO : Nat := 512
 
@@ -330,24 +350,83 @@ end
 
 /-! ## The whole blocks -/
 
-/-- The offset of block `i` (in `edi`): `Offset ← Offset ⊕ L_{ntz(i)}`. -/
-def nextOffset : Prog isa := .seq lNtz (.block (xor16 .ebp lO ofsO))
+/-- The table from `L_j` on, with `k` more entries at most:
+`L_{j+1} = double(L_j)`, 16 bytes after it, and so on, while `2^{j+1}` is at
+most the number of whole blocks (at `W + nbO`). -/
+def ltableFrom (j : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | k + 1 =>
+    .seq (.block [.mov .eax (slot nbO), .alu .cmp .eax (imm (2 ^ (j + 1)))])
+      (.ite .b (.block [])
+        (.seq (.block (dbl .ebp (tblO + 16 * j) (tblO + 16 * (j + 1)))) (ltableFrom (j + 1) k)))
 
-/-- `W + ckO ⊕= (esi)`. -/
-def addCk : List Instr := xor16 .esi 0 ckO
+/-- The table at `W + tblO`: `L_0`, copied, then `L_j` for `j` from 1 to 5
+with `2^j` at most the number of whole blocks. -/
+def ltable : Prog isa := .seq (.block (copy16 l0O tblO)) (ltableFrom 0 5)
 
-/-- `(esi) ⊕= W + ofsO`. -/
-def xorOfs : List Instr :=
-  [0, 4, 8, 12].flatMap fun k =>
-    [.mov .eax (.mem (at_ .esi k)), .alu .xor .eax (slot (ofsO + k)), .store (at_ .esi k) .eax]
+/-- `edx ←` the address of `L_{ntz(i)}`, for `i ≥ 1` in `edi`. If `i` is a
+multiple of 64, `W + lO`, where `lNtz` computes it, with the offset and the
+checksum (`xmm0`, `xmm1`) kept at `W + ofsO` and `W + ckO` meanwhile.
+Otherwise its entry in the table, `W + tblO + 16 ntz(i)`: 16 bytes on for
+each time `i` (in `eax`, shifted right each time) is even. -/
+def lAddr : Prog isa :=
+  .seq (.block [.mov .eax (.reg .edi), .alu .test .eax (imm 63)])
+    (.ite .e
+      (.seq (.block [.movdquStore (at_ .ebp ofsO) .xmm0, .movdquStore (at_ .ebp ckO) .xmm1])
+        (.seq lNtz (.block [.movdquLoad .xmm0 (at_ .ebp ofsO), .movdquLoad .xmm1 (at_ .ebp ckO),
+          .mov .edx (.reg .ebp), .alu .add .edx (imm lO)])))
+      (.seq (.block [.mov .edx (.reg .ebp), .alu .add .edx (imm tblO), .alu .test .eax (imm 1)])
+        (.ite .ne (.block [])
+          (.loop (.block [.alu .add .edx (imm 16), .shift .shr .eax 1, .alu .test .eax (imm 1)]) .e))))
 
-/-- On to the next block (ZF set when none are left). -/
-def nextBlock : List Instr := [.alu .add .esi (imm 16), .alu .add .edi (imm 1), .alu .sub .ebx (imm 1)]
+/-- `Offset ← Offset ⊕ L_{ntz(i)}`, the offset in `xmm0` and `L_{ntz(i)}` at
+`edx`. -/
+def ofsDx : List Instr := [.movdquLoad .xmm2 (at_ .edx 0), .xop (.bin .pxor .xmm0 .xmm2)]
+
+/-- The checksum, in `xmm1`, `⊕=` the block in `xmm3`. -/
+def addCk : List Instr := [.xop (.bin .pxor .xmm1 .xmm3)]
+
+/-- The block in `xmm3` `⊕=` the offset in `xmm0`. -/
+def xorOfs : List Instr := [.xop (.bin .pxor .xmm3 .xmm0)]
+
+/-- The block at `esi` loaded to `xmm3`, through `body`, and stored back;
+then on to the next. -/
+def blockOps (body : List Instr) : List Instr :=
+  ([.movdquLoad .xmm3 (at_ .esi 0)] : List Instr) ++ body ++
+  ([.movdquStore (at_ .esi 0) .xmm3, .alu .add .esi (imm 16), .alu .add .edi (imm 1)] : List Instr)
+
+/-- The `ebx` blocks at `esi` (`ebx > 0`), one at a time, `i` in `edi`:
+each through `body` after its offset. -/
+def single (body : List Instr) : Prog isa :=
+  .loop (.seq lAddr (.block (ofsDx ++ blockOps body ++ ([.alu .sub .ebx (imm 1)] : List Instr)))) .ne
+
+/-- `Offset ← Offset ⊕ L_j`, the offset in `xmm0` and `L_j` in the table. -/
+def ofsAt (j : Nat) : List Instr :=
+  [.movdquLoad .xmm2 (at_ .ebp (tblO + 16 * j)), .xop (.bin .pxor .xmm0 .xmm2)]
+
+/-- A block whose `ntz(i)` is `j`: its offset, then the block through
+`body`. -/
+def stepAt (j : Nat) (body : List Instr) : List Instr := ofsAt j ++ blockOps body
+
+/-- The blocks at `esi`, four at a time while four are left (`ebx ≥ 4`),
+from an `i` (in `edi`) that is 1 more than a multiple of 4: `ntz(i)` is 0,
+1 and 0 for the first three, and the fourth's `L_{ntz(i)}` is where `lAddr`
+finds it. -/
+def quad (body : List Instr) : Prog isa :=
+  .loop (.seq (.block (stepAt 0 body ++ stepAt 1 body ++ stepAt 0 body))
+    (.seq lAddr (.block (ofsDx ++ blockOps body ++
+      ([.alu .sub .ebx (imm 4), .alu .cmp .ebx (imm 4)] : List Instr))))) .ae
 
 /-- A pass over the `ebx` whole blocks of the data at `esi` (`ebx > 0`),
-with `i` from 1 in `edi`: each block through `body` after its offset. -/
+with `i` from 1 in `edi`: the offset and the checksum in `xmm0` and `xmm1`,
+from `W` and back; four blocks at a time, then the last three or fewer one
+at a time. -/
 def pass (body : List Instr) : Prog isa :=
-  .loop (.seq nextOffset (.block (body ++ nextBlock))) .ne
+  .seq (.block [.movdquLoad .xmm0 (at_ .ebp ofsO), .movdquLoad .xmm1 (at_ .ebp ckO), .alu .cmp .ebx (imm 4)])
+    (.seq (.ite .b (.block []) (quad body))
+      (.seq (.block [.alu .test .ebx (.reg .ebx)])
+        (.seq (.ite .e (.block []) (single body))
+          (.block [.movdquStore (at_ .ebp ofsO) .xmm0, .movdquStore (at_ .ebp ckO) .xmm1]))))
 
 /-- The start of a pass: `esi` the data, `ebx` its whole blocks, `i = 1`. -/
 def passStart : List Instr := [.mov .esi (slot dataO), .mov .ebx (slot nbO), .mov .edi (imm 1)]
@@ -355,13 +434,16 @@ def passStart : List Instr := [.mov .esi (slot dataO), .mov .ebx (slot nbO), .mo
 section
 variable (c : Callees)
 
-/-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
-third pass, the offsets recomputed from `Offset_0`). -/
-def whole (f : Fn) (pre post : List Instr) : Prog isa :=
+/-- The whole blocks, with the table: `pre` (the first pass), `f` on all of
+them, `post` (the third pass, the offsets recomputed from `Offset_0`). -/
+def wholeIn (f : Fn) (pre post : List Instr) : Prog isa :=
   .seq (.block passStart)
     (.seq (pass pre)
       (.seq (callBlocks f [.mov .edx (slot dataO), .mov .ebx (slot nbO)])
         (.seq (.block (copy16 o0O ofsO ++ passStart)) (pass post))))
+
+/-- The whole blocks: the table, then the passes around `f`. -/
+def whole (f : Fn) (pre post : List Instr) : Prog isa := .seq ltable (wholeIn f pre post)
 
 /-! ## The rest of the data and the tag -/
 
@@ -433,13 +515,26 @@ def cmp : Prog isa :=
         .alu .or .edx (.reg .eax), .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)
       (.block [.alu .sub .edx (imm 1), .shift .shr .edx 31, .store (at_ .ebp okO) .edx]))
 
-/-- The data (`len` bytes) masked with `0 − ok`. -/
+/-- The data's `⌊len / 16⌋` whole blocks (counted down in `eax`) ANDed with
+`0 − ok` (in every word of `xmm0`), 16 bytes at a time. -/
+def maskBlocks : Prog isa :=
+  .loop (.block [.movdquLoad .xmm1 (at_ .edi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .edi 0) .xmm1,
+    .alu .add .edi (imm 16), .alu .sub .eax (imm 1)]) .ne
+
+/-- The data's last `len mod 16` bytes (counted down in `ecx`) ANDed with
+`0 − ok` (in `edx`), one at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .eax (at_ .edi 0), .alu .and .eax (.reg .edx), .store8 (at_ .edi 0) .al,
+    .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne
+
+/-- The data (`len` bytes) masked with `0 − ok`: its whole blocks, then the
+rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .edi (slot dataO), .mov .ecx (slot lenO), .mov .edx (imm 0), .alu .sub .edx (slot okO),
-      .alu .test .ecx (.reg .ecx)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .eax (at_ .edi 0), .alu .and .eax (.reg .edx), .store8 (at_ .edi 0) .al,
-        .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))
+      .xop (.movd .xmm0 .edx), .xop (.pshufd .xmm0 .xmm0 0), .mov .eax (.reg .ecx), .shift .shr .eax 4,
+      .alu .and .ecx (imm 15), .alu .test .eax (.reg .eax)])
+    (.seq (.ite .e (.block []) maskBlocks)
+      (.seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) maskBytes)))
 
 def «open» : Prog isa :=
   .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block (([.mov .eax (slot okO)] : List Instr) ++ restore)))))

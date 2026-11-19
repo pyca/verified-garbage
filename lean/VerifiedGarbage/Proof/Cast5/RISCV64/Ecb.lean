@@ -1246,7 +1246,7 @@ end
 `ecb_wp`: every block becomes its encryption or decryption, one at a time
 (`loop_run`); our caller's `s0`–`s10` are saved in the working space,
 rounded up to a multiple of 8 (`prologue_ok`), and restored. The loop
-writes only the blocks. As on PPC64LE (`Proof/Cast5/PPC64LE/Ecb.lean`).
+writes only the blocks. As on PPC64LE (`Proof/Cast5/PPC64LE/EcbVerified.lean`).
 -/
 
 @[expose] public section

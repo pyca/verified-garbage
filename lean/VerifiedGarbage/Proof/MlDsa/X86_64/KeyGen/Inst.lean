@@ -8,17 +8,14 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

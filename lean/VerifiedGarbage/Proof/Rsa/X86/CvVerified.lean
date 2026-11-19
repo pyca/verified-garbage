@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
@@ -29,16 +29,11 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.Slots
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
-public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
-public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
 public import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
 import VerifiedGarbage.Proof.Rsa.X86.CvRt.Core
@@ -53,12 +48,9 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
 public import Init.Prelude
 public import VerifiedGarbage.TCB.X86.State
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
-import VerifiedGarbage.Proof.Rsa.X86.CvResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -70,13 +62,11 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
+meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Base
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.InvChoice
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcMain
 public import VerifiedGarbage.Impl.Ffdh.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptCorrect
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Ffdh.VettedGroupFacts
 import VerifiedGarbage.Proof.Ffdh.VettedPolicy
@@ -15,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+
 -- separate module: the precompute's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-! # FFDH's context on PPC64LE: with p valid

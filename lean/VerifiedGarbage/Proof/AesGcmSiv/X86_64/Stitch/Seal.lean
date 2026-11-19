@@ -1,13 +1,12 @@
 module
+
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Loops
-
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

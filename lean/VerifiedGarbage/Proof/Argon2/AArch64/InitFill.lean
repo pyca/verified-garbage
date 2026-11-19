@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
-import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
-public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
@@ -19,8 +19,8 @@ meta import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 meta import VerifiedGarbage.Proof.Argon2.MemoryInit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
@@ -44,10 +44,8 @@ meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Impl.Argon2.AArch64.Initial
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 meta import VerifiedGarbage.Proof.Blake2.Stream
 meta import VerifiedGarbage.Impl.Argon2.AArch64.Initial
 

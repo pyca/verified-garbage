@@ -1,9 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 import VerifiedGarbage.Proof.Ed25519.Window
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
@@ -12,9 +10,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Window
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter

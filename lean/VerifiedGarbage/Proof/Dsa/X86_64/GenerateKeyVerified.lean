@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 import VerifiedGarbage.Proof.Bignum.Octets

@@ -11,7 +11,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
-import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec

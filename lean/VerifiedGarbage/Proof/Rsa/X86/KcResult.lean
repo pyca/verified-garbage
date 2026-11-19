@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div

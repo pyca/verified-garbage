@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadPrime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadExponent
@@ -50,7 +48,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.KeyPartTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge

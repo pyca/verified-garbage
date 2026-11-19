@@ -3,10 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 -- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
-
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvB.Batch
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds

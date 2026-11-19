@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Geometry
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Contract
@@ -9,7 +9,6 @@ import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.VettedValidation
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Recognize
 import VerifiedGarbage.Proof.Ffdh.VettedValidation.Facts
 
 /-! ### `Ffdh.PPC64LE.VettedValidation.Timing`, which only this module used -/

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 
 /-!
 # ECDSA on PPC64LE: field operations on numbered slots

@@ -4,23 +4,20 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Entry
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintCT
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.HighLow
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sample.ExpandMask
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Stream
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
@@ -36,9 +33,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.Pro
 meta import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sample.ExpandMask
 meta import VerifiedGarbage.TCB.PPC64LE.Target
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Unpack
+meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Stream
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Sample
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
@@ -68,12 +64,9 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.Arith
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintPack
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintPack
 meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintCT
 meta import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs

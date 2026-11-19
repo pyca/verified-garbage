@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
-import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Encode
@@ -27,16 +26,15 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume

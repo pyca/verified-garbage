@@ -2,16 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCrypt
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTCrypt
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTFn
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTJ0
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Args
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
 meta import VerifiedGarbage.Proof.Cmac.Frame
@@ -26,11 +25,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.TextAbsorb
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.TextAbsorb
 
 /-! ### `Sm4Gcm.Arm.CTText`, which only this module used -/
 

@@ -2,21 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Spec.MlKem.EncapsH
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 public import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
-public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
-public meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+public meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
@@ -38,17 +30,15 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16CT
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsHP16
 public meta import VerifiedGarbage.Impl.MlKem.X86_64.EncapsHP16
-import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Kg16
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgNtt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT

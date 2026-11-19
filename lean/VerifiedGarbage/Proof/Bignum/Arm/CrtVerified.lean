@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtPrecomputed
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPowerCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -75,7 +74,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -88,8 +87,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtPrecomputed
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
+meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 meta import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge

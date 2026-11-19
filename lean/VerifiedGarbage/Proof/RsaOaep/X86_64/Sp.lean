@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
-import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp

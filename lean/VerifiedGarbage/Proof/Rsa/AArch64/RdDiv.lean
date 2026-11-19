@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
 import VerifiedGarbage.Proof.Bignum.WordStepNorm
 import VerifiedGarbage.Proof.Bignum.LongDivision
 

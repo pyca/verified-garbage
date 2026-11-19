@@ -2,10 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search

@@ -8,11 +8,11 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
-import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
-meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Impl.Md5.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

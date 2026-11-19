@@ -14,13 +14,13 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
 meta import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 meta import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
 /-! ### `RsaPkcs1Sig.X86_64.PrecomputedContract`, which only this module used -/

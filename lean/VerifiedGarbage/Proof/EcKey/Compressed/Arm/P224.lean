@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.P224
-import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -17,12 +17,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Logic.Function.Basic
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal

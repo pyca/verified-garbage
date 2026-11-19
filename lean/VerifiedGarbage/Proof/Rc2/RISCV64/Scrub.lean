@@ -47,7 +47,6 @@ import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Io
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Rc2.Contract
 meta import VerifiedGarbage.Proof.Rc2.Contract
@@ -59,7 +58,6 @@ public import VerifiedGarbage.Proof.Rc2.Table
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Rc2.RISCV64.Lookup
 meta import VerifiedGarbage.Proof.Rc2.Expansion
 meta import VerifiedGarbage.Proof.Rc2.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -73,14 +71,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Rc2.RISCV64.Lookup
 meta import VerifiedGarbage.Impl.Rc2.RISCV64.Stream
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Call
 meta import VerifiedGarbage.Proof.Rc2.Stream
 meta import VerifiedGarbage.Proof.Rc2.Memory
 meta import VerifiedGarbage.Proof.Rc2.CbcMemory
 meta import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Io
 meta import VerifiedGarbage.Proof.Rc2.PiLit
 
 /-! ### `Rc2.RISCV64.Stream.Frame`, which only this module used -/

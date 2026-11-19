@@ -27,7 +27,7 @@ with `scratch` as its scratch space; it never writes `x19`–`x24`, so our own
 variables live there (`x19` = `state`, `x20` = `scratch`, `x21` = `data` or
 `out`, `x22` = bytes of `data` left, `x23` = bytes in the buffer, `x24` =
 the byte count), and our caller's values of those registers are saved in
-`scratch[512..560)`. Our return address (`x30`), which each call replaces, is
+`scratch[56..104)`. Our return address (`x30`), which each call replaces, is
 saved in a stack frame around the whole function.
 
 The model has no register-offset addressing, so byte `r` of the buffer is
@@ -60,15 +60,15 @@ end
 
 /-- The callee-saved registers we use, and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
-  [(.x19, 512), (.x20, 520), (.x21, 528), (.x22, 536), (.x23, 544), (.x24, 552)]
+  [(.x19, 56), (.x20, 64), (.x21, 72), (.x22, 80), (.x23, 88), (.x24, 96)]
 
 /-- Save them, with `scratch` in `b`. -/
 def save (b : Reg) : List Instr := saved.map fun (r, d) => .str .x r b d
 
 /-- Restore them from `scratch` in `x20` (`x20`, the base, last). -/
 def restore : List Instr :=
-  [.ldr .x .x19 .x20 512, .ldr .x .x21 .x20 528, .ldr .x .x22 .x20 536,
-    .ldr .x .x23 .x20 544, .ldr .x .x24 .x20 552, .ldr .x .x20 .x20 520]
+  [.ldr .x .x19 .x20 56, .ldr .x .x21 .x20 72, .ldr .x .x22 .x20 80,
+    .ldr .x .x23 .x20 88, .ldr .x .x24 .x20 96, .ldr .x .x20 .x20 64]
 
 section
 variable {w : Nat} (P : Spec.Blake2.Params w)

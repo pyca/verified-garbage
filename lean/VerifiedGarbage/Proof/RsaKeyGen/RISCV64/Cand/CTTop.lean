@@ -37,16 +37,14 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 meta import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.CTBase
-public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.RoundCallCT
+public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.CTBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
-meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.RoundCallCT
+meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.CTBase
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Two
 import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
-import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.CTBase
 import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
-meta import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 meta import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 

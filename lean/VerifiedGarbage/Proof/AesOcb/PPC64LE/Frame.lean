@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.FnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesOcb.PPC64LE
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words

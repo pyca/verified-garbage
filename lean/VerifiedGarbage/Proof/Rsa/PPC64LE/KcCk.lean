@@ -322,7 +322,7 @@ section
 
 /-! # The checks of an RSA key on PPC64LE: the state between the steps
 
-As on ARMv7 (`Proof/Rsa/Arm/KcBase.lean`). `Geo`: the working space (`B`,
+As on ARMv7 (`Proof/Rsa/Arm/KcOps.lean`). `Geo`: the working space (`B`,
 `Z` bytes) and the modulus' length `K`, which two runs share; `Vals`: the
 numbers read, which they may not. `Stg g s₀ A live c s`: from the state `s₀`
 the checks start from, the steps so far wrote only the arrays and the header

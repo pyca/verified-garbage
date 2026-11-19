@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -36,8 +36,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Cand
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 
 /-! ### `Ecdsa.Rfc6979.AArch64.Instrs`, which only this module used -/
 

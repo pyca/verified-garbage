@@ -23,10 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.X25519.X86.Base
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
@@ -37,10 +35,8 @@ import Mathlib.Tactic.Ring
 meta import VerifiedGarbage.Impl.X25519.X86.Base
 meta import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 meta import VerifiedGarbage.Proof.Ed25519.Bytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit

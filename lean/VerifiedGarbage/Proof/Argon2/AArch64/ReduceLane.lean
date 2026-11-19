@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReducePointers
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.Compress
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
@@ -19,7 +18,6 @@ import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillWritePrefix
 public import VerifiedGarbage.Proof.Framework.Covers
 
 /-! ### `Argon2.AArch64.ReduceBlock`, which this module and modules that import it used -/

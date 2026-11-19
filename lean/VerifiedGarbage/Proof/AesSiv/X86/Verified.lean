@@ -17,9 +17,7 @@ meta import VerifiedGarbage.Proof.AesSiv.X86.Finish
 meta import VerifiedGarbage.Proof.AesSiv.X86.Run
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.AesSiv.X86.Ctr
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-meta import VerifiedGarbage.Proof.AesSiv.X86.Ctr
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-! ### `AesSiv.X86.EncCT`, which only this module used -/

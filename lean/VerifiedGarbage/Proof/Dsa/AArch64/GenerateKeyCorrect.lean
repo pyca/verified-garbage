@@ -28,7 +28,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Dsa.Contract
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
 public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
 public import VerifiedGarbage.Spec.Dsa.Generate

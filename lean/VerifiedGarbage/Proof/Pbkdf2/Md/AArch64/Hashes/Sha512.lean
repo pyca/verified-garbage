@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha1.PostOut
+public import VerifiedGarbage.Proof.Sha256.PostOut
+public import VerifiedGarbage.Proof.Sha512.PostOut
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -20,13 +23,11 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
 meta import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -62,6 +63,144 @@ public import VerifiedGarbage.Proof.Sha1.Md
 meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 meta import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Sha1.Md
+public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
+
+/-! ### `Sha1.AArch64.Variant`, which only this module used -/
+
+section
+
+/-!
+# SHA-1 compression backends on AArch64
+
+Each backend supplies its verified compression code and the mechanically
+checked constant-time, register and frame facts for the generic streaming
+wrappers. The functional streaming proofs are shared by every backend.
+HMAC and PBKDF2 consume the resulting streaming functions through `MdHash`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha1.AArch64
+
+open VG.AArch64 VG.Proof.MdStream.AArch64
+open VG.Impl.MdStream.AArch64
+
+/-- The one-shot digest, calling the compression function `code` named
+`name`. -/
+def oneShotWith (name : String) (code : Prog isa) : Prog isa :=
+  Impl.MdStream.AArch64.OneShot.digest Stream.params Impl.Sha1.AArch64.Stream.init name code
+
+/-- The one-shot digest is constant time. -/
+abbrev OneShotCT (name : String) (code : Prog isa) : Prop :=
+  ConstantTime isa (MdStream.AArch64.OneShot.oneK (P := Stream.params) md Spec.Sha1.H0 20).pre
+    (MdStream.AArch64.OneShot.oneK (P := Stream.params) md Spec.Sha1.H0 20).pub (oneShotWith name code)
+
+structure Compress where
+  name : String
+  code : Prog isa
+  verified : Verified AArch64.target code Proof.Sha1.compressAArch64
+  noFrames : code.noFrames = true
+  /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
+  keepsV : code.allInstrs keepsV = true
+  suffix : String
+  features : List String
+  updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
+    (updK (P := Stream.params) md).pub (update Stream.params name code)
+  finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
+    (finK (P := Stream.params) md).pub (finalize Stream.params name code)
+  updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
+  finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
+  /-- The one-shot digest. -/
+  oneShot : OneShotCT name code
+
+/-! ## The one-shot digest's common facts -/
+
+namespace OneShot
+
+open MdStream.AArch64.OneShot (initK Fits)
+
+theorem fits : Fits Stream.params := ⟨by decide⟩
+
+theorem init_ok :
+    ∀ s, (initK (P := Stream.params) md Spec.Sha1.H0).pre s → ∃ t s',
+      Exec isa Impl.Sha1.AArch64.Stream.init s t s' ∧ abiPreserved s s' ∧
+        (initK (P := Stream.params) md Spec.Sha1.H0).post s s' := fun s h => by
+  obtain ⟨t, s', he, h⟩ := Stream.init_correct h
+  exact ⟨t, s', he, h⟩
+
+theorem init_writes :
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs Impl.Sha1.AArch64.Stream.init, clobbers i r = false := by
+  intro r h9 _ i hi
+  simp only [Impl.Sha1.AArch64.Stream.init, instrs, List.mem_flatMap, List.mem_range, List.mem_cons,
+    List.not_mem_nil, or_false] at hi
+  obtain ⟨_, _, rfl | rfl | rfl⟩ := hi <;> simp [clobbers, dstOf, Ne.symm h9]
+
+theorem init_keepsV : Impl.Sha1.AArch64.Stream.init.allInstrs VG.AArch64.keepsV = true := by
+  rw [Code.allInstrs_eq]
+  simp only [Impl.Sha1.AArch64.Stream.init, instrs, List.all_eq_true, List.mem_flatMap, List.mem_range,
+    List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ ⟨_, _, rfl | rfl | rfl⟩ <;> rfl
+
+/-- A state satisfying the precondition: an empty message at `0x1000`, the
+digest at `0x2000` and the stack pointer at `0x10000`. -/
+def sat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x2 => 0x2000 | _ => 0
+  sp := 0x10000
+  mem _ := 0
+  rd := [⟨0x1000, 0⟩]
+  wr := [⟨0x2000, 20⟩]
+
+theorem sat_pre : MdStream.AArch64.OneShot.Pre Stream.params 20 sat where
+  rd := rfl
+  wr := rfl
+  d_o := show Region.Disjoint ⟨0x1000, 0⟩ ⟨0x2000, 20⟩ from
+    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (by decide)
+  sp := show Impl.MdStream.AArch64.OneShot.frameBytes Stream.params ≤ (0x10000 : BitVec 64).toNat by decide
+  f_d := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x1000, 0⟩ from
+    (Offset.disjoint_of_le (by decide) (by decide)).symm
+  f_o := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x2000, 20⟩ from
+    (Offset.disjoint_of_le (by decide) (by decide)).symm
+
+end OneShot
+
+namespace Compress
+
+variable (v : Compress)
+
+def update : Prog isa := Impl.MdStream.AArch64.update Stream.params v.name v.code
+def finalize : Prog isa := Impl.MdStream.AArch64.finalize Stream.params v.name v.code
+
+theorem callee : CalleeOk (P := Stream.params) md v.code := ⟨v.verified.1, v.noFrames, v.keepsV⟩
+
+theorem update_verified : Verified AArch64.target v.update Proof.Sha1.updateAArch64 := by
+  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT
+    (by rw [v.updateDepth]; decide)
+  exact h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr hc,
+    fun _ _ _ _ h => h, h.2.2⟩
+
+theorem finalize_verified : Verified AArch64.target v.finalize Proof.Sha1.finalizeAArch64 := by
+  have h := MdStream.AArch64.Finalize.verified Stream.dims Stream.shape v.callee v.finalizeCT
+    (by rw [v.finalizeDepth]; decide)
+  exact h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr trivial hc,
+    fun _ _ _ _ h => h, h.2.2⟩
+
+/-- The one-shot digest. -/
+theorem oneShot_verified :
+    Verified AArch64.target (oneShotWith v.name v.code)
+      (MdStream.AArch64.OneShot.oneK (P := Stream.params) md Spec.Sha1.H0 20) :=
+  MdStream.AArch64.OneShot.verified OneShot.fits Stream.dims Stream.shape.toD v.callee OneShot.init_ok
+    OneShot.init_writes rfl OneShot.init_keepsV v.oneShot ⟨_, OneShot.sat_pre⟩
+
+end Compress
+end VG.Proof.Sha1.AArch64
+
+end
+
+end
 
 /-! ### `Pbkdf2.Md.AArch64.Hashes.Sha224`, which the modules that import this one used -/
 
@@ -280,6 +419,17 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI : (hash).stream.buf ≤ 8 * 22 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Md5.AArch64.Stream.params]
+  decide
+
+theorem fitF : (hash).stream.buf + (hash).stream.F ≤ 8 * 24 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Md5.AArch64.Stream.params]
+  decide
+
 /-- MD5 with its compression function. -/
 def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
@@ -294,6 +444,17 @@ def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes]
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    22 24 ⟨fitI, by decide, by decide, by decide⟩ ⟨fitF, by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using initSat 80 22)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using finSat 80 16 24)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     "" []
 
 end VG.Proof.Pbkdf2.Md.AArch64.Md5
@@ -471,19 +632,36 @@ def stream : List StreamFn := [
     contract := Spec.Sha1.updateContract AArch64.abi (16 + 160)
     stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.updatePost_out _) },
   { api := Spec.Sha1.finalizeApi
     code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize
     contract := Spec.Sha1.finalizeContract AArch64.abi (16 + 160)
     stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.finalizePost_out _) },
   { api := Spec.Sha1.digestApi
     code := Proof.Sha1.AArch64.oneShotWith v.name v.code
     contract := Spec.Sha1.digestContract AArch64.abi Proof.Sha1.AArch64.OneShot.stack
     stack := Proof.Sha1.AArch64.OneShot.stack
     verified := v.oneShot_verified.of_implies Proof.Sha1.AArch64.OneShot.implies
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.digestSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha1.digestPost_out _) }]
+
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha1.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 30 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha1.AArch64.Stream.params]
+  decide
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
@@ -500,6 +678,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 30 ⟨(fitI v), by decide, by decide, by decide⟩ ⟨(fitF v), by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 30)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha1
@@ -697,11 +886,13 @@ theorem satPF :
 (`Compress.finalize224`). -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.finalize224Api
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize224
-    contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize224
+    contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalize224Sig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.finalize224Post_out _) },
   { api := Spec.Sha256.digest224Api
     code := Proof.Sha256.AArch64.oneShotWith (out32 7 true) Spec.Sha256.H0_224 v.name
       v.code
@@ -709,7 +900,20 @@ def stream : List StreamFn := [
     stack := Proof.Sha256.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape224 v.oneShot224).of_implies
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.sha224_take)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
+
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
@@ -728,6 +932,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 32 ⟨(fitI v), by decide, by decide, by decide⟩ ⟨(fitF v), by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi, AArch64.argRegs] using initSat 96 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha224I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi, AArch64.argRegs] using finSat 96 28 32)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224
@@ -969,20 +1184,26 @@ def stream (v : Compress) : List StreamFn := [
     contract := Spec.Sha512.updateContract AArch64.abi (16 + 688)
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.updatePost_out _) },
   { api := Spec.Sha512.finalizeApi
     code := Impl.StackScratch.AArch64.withStackScratch 688 .x3 v.finalize
     contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 688)
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizePost_out _) },
   { api := Spec.Sha512.digest512Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 8) H0_512 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
         List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m)))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 64)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-384's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream384 (v : Compress) : List StreamFn := [
@@ -993,13 +1214,17 @@ def stream384 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inl rfl)
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape384 v.digest384) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 48)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest384Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 6) H0_384 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 48 Spec.Sha512.sha384 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape384 v.oneShot384).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 48)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_256 (v : Compress) : List StreamFn := [
@@ -1010,14 +1235,18 @@ def stream512_256 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inl rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest512_256Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 4) H0_512_256 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 32 Spec.Sha512.sha512_256
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_256 v.oneShot512_256).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
 def stream512_224 (v : Compress) : List StreamFn := [
@@ -1028,7 +1257,9 @@ def stream512_224 (v : Compress) : List StreamFn := [
     stack := 16 + 688
     verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inr rfl))
       (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224) (fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)) },
   { api := Spec.Sha512.digest512_224Api
     code := Proof.Sha512.AArch64.oneShotWith (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) H0_512_224
       v.suffix v.code
@@ -1036,7 +1267,9 @@ def stream512_224 (v : Compress) : List StreamFn := [
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_224 v.oneShot512_224).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 28)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha512.digestPost_out _ _ _ (by decide)) }]
 
 /-! ## SHA-384 -/
 
@@ -1068,6 +1301,17 @@ theorem sha384_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : (hash v I D initN iv).stream.buf ≤ 8 * 94 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha512.AArch64.Stream.params, Impl.Sha512.AArch64.scratchBytes]
+  decide
+
+theorem fitF (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : (hash v I D initN iv).stream.buf + (hash v I D initN iv).stream.F ≤ 8 * 102 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha512.AArch64.Stream.params, Impl.Sha512.AArch64.scratchBytes]
+  decide
+
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
 theorem sha384_anyOK : Any.AnyOK (coreH 48) := anyOK 48 (Or.inr (Or.inr (Or.inl rfl)))
@@ -1089,6 +1333,17 @@ def sha384 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha384_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi, AArch64.argRegs] using finSat 192 48 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream384 v)
 
 /-! ## SHA-512 -/
@@ -1142,6 +1397,17 @@ def sha512 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi, AArch64.argRegs] using finSat 192 64 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 /-! ## SHA-512/224 -/
@@ -1195,6 +1461,17 @@ def sha512_224 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_224_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi, AArch64.argRegs] using finSat 192 28 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream512_224 v)
 
 /-! ## SHA-512/256 -/
@@ -1248,6 +1525,17 @@ def sha512_256 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_256_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi, AArch64.argRegs] using finSat 192 32 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream512_256 v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

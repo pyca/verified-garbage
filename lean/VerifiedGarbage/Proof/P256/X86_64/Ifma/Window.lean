@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

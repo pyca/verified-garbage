@@ -21,12 +21,10 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 meta import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 meta import VerifiedGarbage.Proof.Framework.AddrArith

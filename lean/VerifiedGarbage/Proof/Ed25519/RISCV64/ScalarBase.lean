@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
-import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Packed
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Covers

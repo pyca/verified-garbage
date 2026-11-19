@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
 import VerifiedGarbage.Proof.MlDsa.DecideAt
@@ -37,31 +37,26 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 public import VerifiedGarbage.Spec.MlDsa
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Seed4
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Seed4
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 import VerifiedGarbage.TCB.Axioms
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 meta import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
@@ -71,9 +66,87 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedDot
 import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+
+/-! ### `MlDsa.AArch64.KeyGen.OptimizedRestState`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Impl.MlDsa.AArch64.Call (Ptr)
+open VG.Spec.MlDsa (Params Poly IPoly toRq ntt bitPack simpleBitPack)
+open VG.Proof.MlDsa (PolyIs)
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.KeyGen (t1K t0K Small)
+open VG.Proof.MlDsa.AArch64.Optimized (PosPolyIs)
+
+/-- Key-generation progress with positive redundant transform values. The
+untransformed secrets and every encoded key byte retain their old meanings. -/
+structure PositiveKR (p : Params) (σ : State) (A : Nat → Poly) (S : Nat → IPoly) (R : BitVec 64) (np nj nr : Nat)
+    (s : State) : Prop where
+  kc : KC p σ s
+  x24 : s.gpr .x24 = R
+  good : Good p σ (p.k * p.ℓ) (p.ℓ + p.k) A S R
+  small : ∀ r < p.ℓ + p.k, Small p.η (S r)
+  aS : ∀ e < p.k * p.ℓ, PolyIs s.mem (pa s (aP e)) (A e)
+  s2 : ∀ i < p.k, PolyIs s.mem (pa s (sP p (p.ℓ + i))) (toRq (S (p.ℓ + i)))
+  s1 : ∀ j < p.ℓ, if j < nj then PosPolyIs s.mem (pa s (sP p j)) (ntt (toRq (S j)))
+    else PolyIs s.mem (pa s (sP p j)) (toRq (S j))
+  pk0 : bytesAt s.mem (pa s (.x26, 0)) 32 = rhoOf p σ
+  sk0 : bytesAt s.mem (pa s (.x27, 0)) 32 = rhoOf p σ
+  sk1 : bytesAt s.mem (pa s (.x27, 32)) 32 = kOf p σ
+  packs : ∀ r < np, bytesAt s.mem (pa s (.x27, 128 + lenS p * r)) (lenS p) = bitPack (S r) p.η p.η
+  rows : ∀ i < nr, bytesAt s.mem (pa s (.x26, 32 + 320 * i)) 320 = simpleBitPack (t1K p A S i) 1023 ∧
+    bytesAt s.mem (pa s (.x27, oT0 p + 416 * i)) 416 = bitPack (t0K p A S i) 4095 4096
+
+theorem PositiveKR.keep {p : Params} (hF : PFacts p) {S' : Nat} {σ : State} (hp : kgPre p S' σ) {A : Nat → Poly}
+    {S : Nat → IPoly} {R : BitVec 64} {np nj nr : Nat} {s s' : State} (h : PositiveKR p σ A S R np nj nr s)
+    {ws : List (Ptr × Nat)} (hP : PPostB S' s s' ws) (h24 : s'.gpr .x24 = s.gpr .x24) (hc : KRChk p np nj nr ws) :
+    PositiveKR p σ A S R np nj nr s' := by
+  have L := h.kc.lay hF hp
+  exact ⟨h.kc.step hF hp hP hc.kc, h24.trans h.x24, h.good, h.small,
+    fun e he => L.keepPoly hP (hc.aS e he) (h.aS e he), fun i hi => L.keepPoly hP (hc.s2 i hi) (h.s2 i hi),
+    fun j hj => by
+      have hv := h.s1 j hj
+      by_cases hjn : j < nj
+      · simp only [ite_eq_left hjn] at hv ⊢
+        exact Sign.keepPosPoly L hP (hc.s1 j hj) hv
+      · simp only [ite_eq_right hjn] at hv ⊢
+        exact L.keepPoly hP (hc.s1 j hj) hv, by rw [L.keepBytes hP hc.pk0]; exact h.pk0,
+    by rw [L.keepBytes hP hc.sk0]; exact h.sk0, by rw [L.keepBytes hP hc.sk1]; exact h.sk1,
+    fun r hr => by rw [L.keepBytes hP (hc.packs r hr)]; exact h.packs r hr,
+    fun i hi => ⟨by rw [L.keepBytes hP (hc.rows i hi).1]; exact (h.rows i hi).1,
+      by rw [L.keepBytes hP (hc.rows i hi).2]; exact (h.rows i hi).2⟩⟩
+
+
+theorem PositiveKR.of_canonical {p : Params} {σ s : State} {A : Nat → Poly}
+    {S : Nat → IPoly} {R : BitVec 64} {np nj nr : Nat}
+    (h : KR p σ A S R np nj nr s) : PositiveKR p σ A S R np nj nr s := by
+  refine ⟨h.kc,h.x24,h.good,h.small,h.aS,h.s2,?_,h.pk0,h.sk0,h.sk1,h.packs,h.rows⟩
+  intro j hj
+  have hv := h.s1 j hj
+  split <;> rename_i hc
+  · rw [ite_eq_left hc] at hv
+    exact PosPolyIs.of_canonical hv
+  · simpa only [ite_eq_right hc] using hv
+
+end VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.KeyGen.OptimizedTimingBase`, which only this module used -/
 

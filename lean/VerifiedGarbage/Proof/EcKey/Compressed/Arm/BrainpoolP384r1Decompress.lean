@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.TCB.Arm.Target

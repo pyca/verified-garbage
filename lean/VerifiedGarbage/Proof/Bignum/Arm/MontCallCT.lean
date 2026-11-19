@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT

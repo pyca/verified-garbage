@@ -9,10 +9,9 @@ import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Data
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves

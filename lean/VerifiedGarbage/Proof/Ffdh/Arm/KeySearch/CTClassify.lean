@@ -12,19 +12,15 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
@@ -35,26 +31,20 @@ import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 meta import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
@@ -65,8 +55,6 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
-meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
@@ -80,6 +68,159 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
+
+/-! ### `Ffdh.Arm.KeySearch.Allocated`, which only this module used -/
+
+section
+
+/-! Geometry of the nested call's allocated argument frame. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem KeyLive.allocated_data {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
+    (h : KeyLive p original used keys scalars s) :
+    Controller p.control (allocated sampling.argumentBytes s) ∧ Workspace (allocated sampling.argumentBytes s) (allocated sampling.argumentBytes s).sp sampling.argumentBytes ∧
+      (rControl p).Disjoint (rArguments p) := by
+  have rootFit : stackUse sampling ≤ p.sp.toNat := h.input.bounds.stackFits
+  have outerFit : sampling.argumentBytes ≤ s.sp.toNat := by
+    have size := argumentBytes_max sampling
+    have total := stackUse_min sampling
+    rw [h.sp, FrameStack.sub_toNat' (by omega_using [rootFit, total] : 24 ≤ p.sp.toNat)]; omega_using [rootFit, size, total]
+  refine ⟨⟨h.input.control_space (fun _ hr => List.mem_cons_of_mem _ (by rw [h.wr]; exact List.mem_cons_of_mem _ hr)), h.pointer⟩,
+    ⟨?_, List.mem_cons_self⟩, ?_⟩
+  · change (s.sp - BitVec.ofNat 32 sampling.argumentBytes).toNat + sampling.argumentBytes ≤ 2 ^ 32
+    rw [FrameStack.sub_toNat' outerFit]
+    have := s.sp.isLt
+    omega_using [outerFit]
+  · exact ((h.input.stack_separate (r := rControl p) (by rw [h.input.write_regions]; simp)).sub_left
+      (arguments_sub h.input.bounds.stackFits)).symm
+
+theorem KeyLive.call_sp {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
+    (h : KeyLive p original used keys scalars s) :
+    (allocated sampling.argumentBytes s).sp = callSp p := by
+  change s.sp - BitVec.ofNat 32 sampling.argumentBytes = callSp p
+  rw [h.sp, BitVec.sub_sub, ← BitVec.ofNat_add]
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.KeySearch.ConstantContract`, which this module and modules that import it used -/
+
+section
+
+/-! The selected controller contract adds exactly its policy's public tables. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+open VG VG.Arm
+
+theorem selected_pre {sampling : GenerationPolicy} {s : State} :
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).pre s ↔
+      (sampling.searchContract abi (stackUse sampling)).pre (stripConsts (KeyConstants.consts sampling) s) ∧
+        ConstsOk (KeyConstants.consts sampling) (stackUse sampling) s := by
+  cases sampling with
+  | full | cached =>
+    simp only [KeyConstants.consts, KeyConstants.abi_full, KeyConstants.abi_cached]
+    have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
+    rw [strip]
+    simp [ConstsOk, Abi.constRegions, Abi.constsHeld]
+  | vetted =>
+    unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+    exact pre_consts
+
+theorem selected_post {sampling : GenerationPolicy} {s t : State} :
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).post s t ↔
+      (sampling.searchContract abi (stackUse sampling)).post s t := by
+  cases sampling with
+  | full | cached => rfl
+  | vetted =>
+    unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+    exact post_consts
+
+theorem selected_pub {sampling : GenerationPolicy} {s t : State} :
+    (sampling.searchContract (KeyConstants.abi sampling) (stackUse sampling)).pub s t ↔
+      (sampling.searchContract abi (stackUse sampling)).pub s t ∧
+        KeyConstants.tablePtr sampling s = KeyConstants.tablePtr sampling t := by
+  cases sampling with
+  | full | cached => simp only [KeyConstants.abi_full, KeyConstants.abi_cached, KeyConstants.tablePtr, and_true]
+  | vetted =>
+    have bridge : (GenerationPolicy.vetted.searchContract (KeyConstants.abi .vetted) (stackUse .vetted)).pub s t ↔
+        (GenerationPolicy.vetted.searchContract abi (stackUse .vetted)).pub s t ∧
+          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := by
+      unfold GenerationPolicy.searchContract GenerationPolicy.legacySearchContract KeyConstants.abi KeyConstants.consts
+      exact pub_consts
+    constructor
+    · intro h
+      have parts := bridge.mp h
+      exact ⟨parts.1, symAddr_eq_iff.mp (parts.2 _ List.mem_cons_self)⟩
+    · rintro ⟨h, table⟩
+      apply bridge.mpr
+      refine ⟨h, ?_⟩
+      intro c member
+      simp only [VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, List.mem_cons, List.not_mem_nil, or_false] at member
+      subst c
+      exact symAddr_eq_iff.mpr table
+
+theorem selected_attempt_pre {sampling : GenerationPolicy} {s : State} :
+    (sampling.attemptContract (KeyConstants.abi sampling) 176).pre s ↔
+      (sampling.attemptContract abi 176).pre (stripConsts (KeyConstants.consts sampling) s) ∧
+        ConstsOk (KeyConstants.consts sampling) 176 s := by
+  cases sampling with
+  | full | cached =>
+    simp only [KeyConstants.consts, KeyConstants.abi_full, KeyConstants.abi_cached]
+    have strip : stripConsts [] s = s := by simp [stripConsts, State.withRegions]
+    rw [strip]
+    simp [ConstsOk, Abi.constRegions, Abi.constsHeld]
+  | vetted =>
+    unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+    exact pre_consts
+
+theorem selected_attempt_post {sampling : GenerationPolicy} {s t : State} :
+    (sampling.attemptContract (KeyConstants.abi sampling) 176).post s t ↔
+      (sampling.attemptContract abi 176).post s t := by
+  cases sampling with
+  | full | cached => rfl
+  | vetted =>
+    unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+    exact post_consts
+
+theorem selected_attempt_pub {sampling : GenerationPolicy} {s t : State} :
+    (sampling.attemptContract (KeyConstants.abi sampling) 176).pub s t ↔
+      (sampling.attemptContract abi 176).pub s t ∧
+        KeyConstants.tablePtr sampling s = KeyConstants.tablePtr sampling t := by
+  cases sampling with
+  | full | cached => simp only [KeyConstants.abi_full, KeyConstants.abi_cached, KeyConstants.tablePtr, and_true]
+  | vetted =>
+    have bridge : (GenerationPolicy.vetted.attemptContract (KeyConstants.abi .vetted) 176).pub s t ↔
+        (GenerationPolicy.vetted.attemptContract abi 176).pub s t ∧
+          ∀ c ∈ VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, symAddr s c.1 = symAddr t c.1 := by
+      unfold GenerationPolicy.attemptContract GenerationPolicy.legacyAttemptContract KeyConstants.abi KeyConstants.consts
+      exact pub_consts
+    constructor
+    · intro h
+      have parts := bridge.mp h
+      exact ⟨parts.1, symAddr_eq_iff.mp (parts.2 _ List.mem_cons_self)⟩
+    · rintro ⟨h, table⟩
+      apply bridge.mpr
+      refine ⟨h, ?_⟩
+      intro c member
+      simp only [VG.Impl.Ffdh.Arm.VettedGroups.tableConsts, List.mem_cons, List.not_mem_nil, or_false] at member
+      subst c
+      exact symAddr_eq_iff.mpr table
+
+end VG.Proof.Ffdh.Arm.KeySearch
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.KeySearch.Classify`, which this module and modules that import it used -/
 

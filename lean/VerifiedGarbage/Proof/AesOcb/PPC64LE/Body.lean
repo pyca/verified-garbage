@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Callee
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd

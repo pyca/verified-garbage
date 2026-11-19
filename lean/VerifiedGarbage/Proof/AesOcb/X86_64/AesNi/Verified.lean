@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Top
-public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
 import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -18,8 +16,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Top
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.WriteBytes

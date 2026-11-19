@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Contract
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.CTCode
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -16,18 +16,14 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 meta import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Loop
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Main
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.TestsFn
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.TestsFn
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Tests
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Tests
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Mr
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Mr
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
 import VerifiedGarbage.Proof.Framework.RelCTChain
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.RoundCallCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -37,7 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Contract
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Base
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Phase
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
@@ -51,7 +47,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Mem
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Contract
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Base
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Phase
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid

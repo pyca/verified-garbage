@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Main
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb.BrainpoolP256r1
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Words
@@ -35,7 +35,7 @@ import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Main
 meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb.BrainpoolP256r1
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.Ladder
 meta import VerifiedGarbage.Proof.Weierstrass.Words

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 `keyP`: the shared contract (`Proof.RsaKeyGen.keyContract`) stated on the
 registers and the stack, as `vg_rsa_crt_values`'s `cvP`
-(`Proof/Rsa/PPC64LE/CvContract.lean`): `(n = r3, n_len = r4, d = r5,
+(`Proof/Rsa/PPC64LE/CvBase.lean`): `(n = r3, n_len = r4, d = r5,
 d_len = r6, p = r7, p_len = r8, q = r9, q_len = r10)` and `dp`, `dp_len`,
 `dq`, `dq_len`, `qinv`, `qinv_len`, `e`, `e_len`, `scratch` and
 `scratch_len` the stack arguments 0–9. Its public data are the arguments

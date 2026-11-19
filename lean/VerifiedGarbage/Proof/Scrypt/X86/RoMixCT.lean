@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
+public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -23,7 +23,6 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Scrypt.X86.Common
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Bswap
@@ -35,7 +34,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.Sse
 meta import VerifiedGarbage.Proof.Framework.X86.SseDword
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-meta import VerifiedGarbage.Proof.Scrypt.X86.Common
 meta import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT

@@ -17,7 +17,6 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Limbs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ZCore
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym

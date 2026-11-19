@@ -1,12 +1,10 @@
 module
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrf
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrf
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrf
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrf
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic

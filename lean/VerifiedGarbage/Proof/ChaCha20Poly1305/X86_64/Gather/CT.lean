@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.Gcm.SealGather
@@ -33,7 +32,6 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 meta import VerifiedGarbage.Proof.AesGcm.ScratchGather
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 meta import VerifiedGarbage.Proof.Gcm.SealGather

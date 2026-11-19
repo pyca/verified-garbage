@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes

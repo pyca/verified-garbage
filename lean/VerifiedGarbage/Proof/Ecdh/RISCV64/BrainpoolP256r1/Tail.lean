@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulFn
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -31,12 +31,10 @@ meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.MulLit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 public import VerifiedGarbage.Proof.Weierstrass.JacDblA
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowAll
 meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.Joint
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowA
 meta import VerifiedGarbage.Proof.Weierstrass.JacDblA
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.WindowAll

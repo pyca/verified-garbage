@@ -30,13 +30,7 @@ namespace VG.Artifacts.HmacSha1.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.AArch64.sha1Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
-    v.I.initAnyKeyApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Proof.Pbkdf2.Md.AArch64.initCode v.H v.I
-      verified := v.hmacInitF },
-    v.I.finalizeApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
-      verified := v.hmacFinF }]
+    v.I.initAnyKeyApi.artifact AArch64.target v.hmacInitReg,
+    v.I.finalizeApi.artifact AArch64.target v.hmacFinReg]
 
 end VG.Artifacts.HmacSha1.AArch64

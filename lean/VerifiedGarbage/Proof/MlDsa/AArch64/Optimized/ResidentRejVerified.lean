@@ -1,26 +1,24 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 public import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 import VerifiedGarbage.Proof.MlKem.Bits
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 meta import VerifiedGarbage.Proof.MlDsa.RejNTT2Contract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 meta import VerifiedGarbage.Proof.MlKem.Bits
 meta import Std.Tactic.BVDecide.Normalize.Prop

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -68,9 +70,17 @@ b 215f
 .base64 "//+EOAAAJCg="
 bne %cr0, 27b
 22:
-.base64 "IACATg==""#,
+.base64 "AAAAOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRIACATg==""#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]

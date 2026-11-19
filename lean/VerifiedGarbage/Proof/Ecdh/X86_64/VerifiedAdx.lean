@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.P256.X86_64.WinJac
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -28,7 +28,6 @@ meta import VerifiedGarbage.Proof.P256.X86_64.WinJac
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -39,8 +38,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-
 import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacOdd
 
 /-!

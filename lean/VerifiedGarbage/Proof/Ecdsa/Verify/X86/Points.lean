@@ -290,7 +290,7 @@ section
 /-!
 # ECDSA verification on x86 (32-bit): `u` and `v`
 
-As on AArch64 (`Proof/Ecdsa/Verify/AArch64/Scalars.lean`).
+As on AArch64 (`Proof/Ecdsa/Verify/AArch64/Points.lean`).
 
 `mid_ok`: from what `front_ok` leaves, `scalars` ands the masks of `r` and
 `s` in `[1, n-1]` into the flag and computes `s R mod n`, the signature's

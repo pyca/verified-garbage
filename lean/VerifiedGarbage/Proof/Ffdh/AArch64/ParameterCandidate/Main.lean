@@ -4,11 +4,10 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Sieve
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Test
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieved
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -23,9 +22,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Test
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-! ### `Ffdh.AArch64.ParameterCandidate.Tests`, which this module and modules that import it used -/

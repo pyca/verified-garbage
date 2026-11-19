@@ -1,25 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Scratch
-import VerifiedGarbage.Proof.AesCcm.X86.SealCT
+public import VerifiedGarbage.Proof.AesCcm.X86.SealCT
 import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.AesCcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-public import VerifiedGarbage.Proof.AesCcm.X86.Seal
 import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
-public import VerifiedGarbage.Proof.AesCcm.X86.TopCT
 public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesCcm.X86.Mac
 import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.AesCcm.X86.TopCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
-meta import VerifiedGarbage.Proof.AesCcm.X86.Seal
 meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

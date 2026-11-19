@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P521.X86_64.JointTiming
 import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Impl.P521.X86_64.Joint
@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Impl.P521.X86_64.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-public import VerifiedGarbage.Proof.P521.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Framework.TaintMap
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
@@ -26,7 +25,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-meta import VerifiedGarbage.Proof.P521.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Framework.TaintMap
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl

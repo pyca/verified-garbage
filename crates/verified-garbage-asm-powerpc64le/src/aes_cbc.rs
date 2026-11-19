@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -24,7 +26,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], r
 bl {vg_aes_cbc_encrypt_unwiped}
 .base64 "eBtrfHj7438AAIA4AACEZIAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAONH/IfggAIE5AAAM+AgADPgwACE4AABgOAAAgDgAAKA4AADAOAAA4DgAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxJxzEiAAgE4=""#,
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -33,6 +35,8 @@ bl {vg_zeroize}
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -51,7 +55,7 @@ pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], r
 bl {vg_aes_cbc_decrypt_unwiped}
 .base64 "eBtrfHj7438AAIA4AACEZIAIhGB4W399"
 bl {vg_zeroize}
-.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8IACATg==""#,
+.base64 "ePvjfygAgTkAAOzrIAAB6DAAITimAwh8AAAAONH/IfggAIE5AAAM+AgADPgwACE4AABgOAAAgDgAAKA4AADAOAAA4DgAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcSccxIgAIBO""#,
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Verified
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.GPart
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm

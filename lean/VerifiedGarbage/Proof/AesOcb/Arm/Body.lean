@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
-public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 public import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
-import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
 import VerifiedGarbage.Proof.Ocb.Stretch32
 public import VerifiedGarbage.Proof.Ocb.Stretch
 import VerifiedGarbage.Proof.Framework.AddrArith

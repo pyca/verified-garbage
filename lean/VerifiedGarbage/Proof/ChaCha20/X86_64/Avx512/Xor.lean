@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

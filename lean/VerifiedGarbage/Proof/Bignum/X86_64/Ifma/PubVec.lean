@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ZCore
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math

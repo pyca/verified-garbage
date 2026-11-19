@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Mont.RangeCover
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Point0Contract
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Point
 public import VerifiedGarbage.Proof.Weierstrass.Env

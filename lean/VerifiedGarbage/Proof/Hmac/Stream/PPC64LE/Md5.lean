@@ -6,12 +6,10 @@ import VerifiedGarbage.Proof.Md5.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.Md5.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Hmac.Contract
-public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.Reloc
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
-meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
 meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Spec.Md5.Contract
 meta import VerifiedGarbage.Proof.Hmac.Stream.Reloc

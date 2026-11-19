@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRound
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
-import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.MontState
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 import VerifiedGarbage.Proof.Framework.PlainSimp

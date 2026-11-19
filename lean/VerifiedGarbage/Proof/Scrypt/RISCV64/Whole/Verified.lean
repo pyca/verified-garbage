@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Shared
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
-public import VerifiedGarbage.Proof.Scrypt.RISCV64.Common
+public import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
 import VerifiedGarbage.Proof.Scrypt.RISCV64.Lit
 import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
@@ -47,7 +47,7 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
-meta import VerifiedGarbage.Proof.Scrypt.RISCV64.Common
+meta import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.Memory

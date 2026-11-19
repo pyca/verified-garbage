@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Linear
 public import VerifiedGarbage.Impl.TripleDes.X86.Permutation
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
 meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -12,6 +10,151 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.X86.Straight
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+
+/-! ### `TripleDes.X86.Linear`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86.Linear
+
+open VG VG.X86 VG.X86.Straight VG.Bitslice
+
+/-! ## Words of atoms (as `Framework/Bitslice/Atoms.lean`, for 32-bit words) -/
+
+/-- Input word `i`: bit `t` is atom `32 i + t`. -/
+def inWord (i : Nat) : Nat × Nat := (0, mk 32 (fun t => [32 * i + t]) 32)
+
+/-- The word whose bit `p` is the XOR of the atoms `g p`. -/
+def outWord (g : Nat → List Nat) : Nat × Nat := (0, mk 32 g 32)
+
+/-- Bit `a % 32` of word `a / 32`. -/
+def bitOf (W : Nat → BitVec 32) (a : Nat) : Bool := (W (a / 32)).getLsbD (a % 32)
+
+/-- The XOR of the bits `l` of the words `W`. -/
+def xorBits (W : Nat → BitVec 32) (l : List Nat) : Bool := l.foldr (fun a b => bitOf W a ^^ b) false
+
+@[simp] theorem xorBits_nil (W : Nat → BitVec 32) : xorBits W [] = false := rfl
+
+@[simp] theorem xorBits_cons (W : Nat → BitVec 32) (a : Nat) (l : List Nat) :
+    xorBits W (a :: l) = (bitOf W a ^^ xorBits W l) := rfl
+
+theorem bitOf_word (W : Nat → BitVec 32) (i t : Nat) (ht : t < 32) :
+    bitOf W (32 * i + t) = (W i).getLsbD t := by
+  simp only [bitOf]
+  rw [Nat.mul_add_div (by decide), Nat.div_eq_of_lt ht, Nat.add_zero, Nat.mul_add_mod,
+    Nat.mod_eq_of_lt ht]
+
+/-- The assignment of the atoms below `N` given by the words `W`. -/
+def assign (W : Nat → BitVec 32) (N : Nat) : Nat := tableOf (bitOf W) N
+
+theorem xorA_assign (W : Nat → BitVec 32) {N : Nat} {l : List Nat} (hl : ∀ a ∈ l, a < N) :
+    xorA (assign W N) l = xorBits W l := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    simp only [xorA, List.foldr_cons, xorBits_cons] at ih ⊢
+    rw [ih fun b hb => hl b (by simp [hb]), assign, testBit_tableOf]
+    simp [hl a (by simp)]
+
+theorem inWord_rel {k : Nat} (W : Nat → BitVec 32) {i : Nat} (hi : 32 * i + 32 ≤ 2 ^ k) :
+    LaneRel k (assign W (2 ^ k)) (inWord i) (W i) := by
+  refine ⟨Nat.two_pow_pos _, fun q hq => ?_⟩
+  simp only [inWord, Nat.zero_testBit, Bool.false_xor]
+  rw [par_mk hq (Nat.le_refl _) _ (fun q' hq' a ha => by simp at ha; omega_using [hi, hq', ha]), xorA_assign W
+    (by intro a ha; simp at ha; omega_using [hi, hq, ha])]
+  simp [hq, bitOf_word W i q hq]
+
+/-- The lanes of `outWord g` hold `x`, given the output word bounded (as
+`Bitslice.outWordW_rel_of_lt`). -/
+theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x : BitVec 32}
+    (hb : mk 32 g 32 < 2 ^ (32 * 2 ^ k)) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
+    ∀ p < 32, x.getLsbD p = xorBits W (g p) := by
+  intro p hp
+  have hM : ∀ q < 32, ∀ a ∈ g q, a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) := by
+    intro q hq a ha
+    have : a ≤ ((List.range 32).flatMap g).sum :=
+      le_sum_of_mem (List.mem_flatMap.mpr ⟨q, List.mem_range.mpr hq, ha⟩)
+    exact Nat.lt_of_le_of_lt this (Nat.lt_add_left _ (Nat.lt_succ_self _))
+  rw [h.2 p hp]
+  simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+  rw [← xorA_assign W (hM p hp), ← (Bool.true_and _ : (true && xorA _ (g p)) = _),
+    ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
+  refine par_congr_assign fun a ha => ?_
+  simp only [assign, testBit_tableOf, ha, decide_true, Bool.true_and,
+    show a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) by omega_using [ha]]
+
+/-- The value `v` is `outWord g`, below `2 ^ (32 2 ^ k)` (`outWord_rel_of_lt`),
+with `g` evaluated once (as `Bitslice.outOkW`). -/
+def outOk (k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool :=
+  match v with
+  | some v => v == outWord g && decide (v.2 < 2 ^ (32 * 2 ^ k))
+  | none => false
+
+theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
+    (h : outOk k v g = true) : v = some (outWord g) ∧ mk 32 g 32 < 2 ^ (32 * 2 ^ k) := by
+  cases v with
+  | none => cases h
+  | some v =>
+    simp only [outOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+    obtain ⟨rfl, h⟩ := h
+    exact ⟨rfl, h⟩
+
+/-! ## The check -/
+
+/-- The registers `ins` hold input words. -/
+def linEnv (ins : List (Reg × Nat)) : Env (Nat × Nat) :=
+  { reg := fun r => (ins.find? (·.1 == r)).map (inWord ·.2), slot := fun _ => none }
+
+/-- External word `j` is input word `xb + j`. -/
+def linExt (xb j : Nat) : Option (Nat × Nat) := some (inWord (xb + j))
+
+/-- Each output register `r` holds `outWord g`, with atoms below `2 ^ k`. -/
+def linPost (k : Nat) (outs : List (Reg × (Nat → List Nat))) (e : Env (Nat × Nat)) : Bool :=
+  outs.all fun o => outOk k (e.reg o.1) o.2
+
+/-- A linear block that the evaluator accepts, on the machine. -/
+theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat)}
+    {outs : List (Reg × (Nat → List Nat))}
+    (hchk : check (lanes 32 k) c (linExt xb) is (linEnv ins) (linPost k outs) = true)
+    {s : State} (hok : Ok c s) (W : Nat → BitVec 32)
+    (hin : ∀ r i, (r, i) ∈ ins → 32 * i + 32 ≤ 2 ^ k ∧ W i = s.gpr r)
+    (hext : ∀ j < c.exts,
+      32 * (xb + j) + 32 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 32) :
+    ∃ s', runBlock isa is s = some s' ∧
+      (∀ r g, (r, g) ∈ outs → ∀ p < 32, (s'.gpr r).getLsbD p = xorBits W (g p)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ 
+      (∀ r, (is.all fun i => i.dst != some r) = true → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion c s] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
+  have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnv ins) s := by
+    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => ?_⟩
+    · simp only [linEnv, Option.map_eq_some_iff] at h
+      obtain ⟨⟨r', i⟩, hf, rfl⟩ := h
+      have hr : r' = r := by simpa using List.find?_some hf
+      subst hr
+      obtain ⟨h1, h2⟩ := hin r' i (List.mem_of_find?_eq_some hf)
+      rw [← h2]; exact inWord_rel W h1
+    · simp only [linExt, Option.some.injEq] at h; subst h
+      obtain ⟨h1, h2⟩ := hext j hj
+      rw [← h2]; exact inWord_rel W h1
+  obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
+  refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, fun r hr => p.other r (by simp [hr]), p.frame⟩
+  obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hpost (r, g) hrg)
+  exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
+
+end VG.Proof.TripleDes.X86.Linear
+
+end
+
+end
 
 /-!
 # Triple DES key expansion on x86 (32-bit): the permutations' code and the working space

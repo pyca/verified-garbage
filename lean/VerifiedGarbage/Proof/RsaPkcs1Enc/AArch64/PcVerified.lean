@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 import Aesop.BuiltinRules
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 meta import VerifiedGarbage.Proof.Framework.Offset

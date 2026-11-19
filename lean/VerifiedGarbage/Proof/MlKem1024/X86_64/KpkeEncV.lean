@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
-import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlKem.X86_64.CompressMul
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
@@ -27,7 +26,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressMul
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
@@ -50,7 +48,7 @@ section
 
 `cm11` and `cm5` (`Impl/MlKem1024/X86_64/CompressAvx2.lean`) meet the contract
 of `vg_mlkem1024_compress_encode` for one width each, as `cm10` and `cm4` do
-that of ML-KEM-768's (`Proof/MlKem/X86_64/CompressMul.lean`, whose words,
+that of ML-KEM-768's (`Proof/MlKem/X86_64/KpkeEncV.lean`, whose words,
 lanes and loads these share): a lane of pairs of eleven bits is the number of
 its 88 bits (`toNat_q11`), and the two lanes' 22 bytes are stored as sixteen,
 four and two (`pack11`); the pairs of two halves of 32 coefficients of five

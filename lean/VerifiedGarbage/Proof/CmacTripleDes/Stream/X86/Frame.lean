@@ -28,12 +28,10 @@ meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Contract
 meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Cmac.Stream
 meta import VerifiedGarbage.Proof.Framework.Mem

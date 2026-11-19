@@ -5,25 +5,164 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Tail
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Tail
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+
+/-! ### `MlKem.AArch64.Rej8Body`, which only this module used -/
+
+section
+
+/-! ### `MlKem.AArch64.Rej8Tail`, which this module and modules that import it used -/
+
+section
+
+/-! # Four scalar chunks at the end of the compacted polynomial -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+open VG.Impl.MlKem.AArch64
+
+def scalarFour (w16 : Bool := false) : Prog isa :=
+  seqs [sampleBody w16,sampleBody w16,sampleBody w16,sampleBody w16]
+
+theorem scalarFour_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte}
+    {bP aP : Addr} {s₀ s : State} (hp : Scalar.LPreW w16 N B bP aP s₀)
+    (h : Scalar.InvW w16 initial N B bP aP s₀ t s) (ht : t+4≤N) :
+    WP isa (scalarFour w16) s fun u => Scalar.InvW w16 initial N B bP aP s₀ (t+4) u ∧ u.v=s.v := by
+  have hw : WP isa (scalarFour w16) s (Scalar.InvW w16 initial N B bP aP s₀ (t+4)) := by
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) h) fun a ⟨ha,_⟩ => ?_)
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) ha) fun b ⟨hb,_⟩ => ?_)
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) hb) fun c ⟨hc,_⟩ => ?_)
+    exact WP.mono (Scalar.body_ok hp (by omega_using [ht]) hc) fun _ ⟨hd,_⟩ => hd
+  obtain ⟨tr,u,he,hu⟩ := hw
+  refine ⟨tr,u,he,hu,?_⟩
+  funext r
+  apply Exec.vec (c := scalarFour w16) (s := s) (s' := u) ?_ he
+  intro i hi
+  have hn : (instrs (scalarFour w16)).all (fun i => decide (vdstOf i=none))=true := by
+    cases w16 <;> decide +kernel
+  have hi' := of_decide_eq_true (List.all_eq_true.mp hn i hi)
+  rw [hi']
+  exact nofun
+
+end VG.Proof.MlKem.AArch64.Rej8
+
+end
+
+end
+
+/-! # One mixed vector/scalar rejection iteration, including early success -/
+
+-- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Rej8Choice.lean`, which only this module imported.
+section
+
+/-! # The public rejection-count branch selects a proved vector or scalar step -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+def choosePrefix : List Instr := [.subImm .x .x6 .x4 8,.lsr .x .x6 .x6 63]
+
+theorem choosePrefix_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ s : State} (h : Scalar.InvW w16 initial N B bP aP s₀ t s) (hc : Constants s) :
+    WP isa (.block choosePrefix) s fun u =>
+      Scalar.InvW w16 initial N B bP aP s₀ t u ∧ Constants u ∧
+        ((u.gpr .x6 == 0)=true ↔ 8≤(u.gpr .x4).toNat) := by
+  have hw : WP isa (.block choosePrefix) s fun u =>
+      Scalar.InvW w16 initial N B bP aP s₀ t u ∧
+        ((u.gpr .x6 == 0)=true ↔ 8≤(u.gpr .x4).toNat) := by
+    refine wp_subImm (by decide) fun a ha ea => wp_lsr (by decide) fun u hu eu => wp_nil ?_
+    have hk := (ha.keep.trans hu.keep).mono (rs' := [.x6]) (by decide)
+    have hm : u.mem=s.mem := hu.mem.trans ha.mem
+    refine ⟨⟨Scalar.acc_keep h.acc hk hm,(h.keep.trans hk).mono (by decide),
+      by rw [hk.get .x2,h.x2],by rw [hk.get .x5,h.x5],by rw [hk.get .x10,h.x10]⟩,?_⟩
+    rw [eu,ea,hu.gpr .x4 (by decide),ha.gpr .x4 (by decide),beq_iff_eq]
+    have hb : (s.gpr .x4).toNat≤256 := by rw [h.acc.x4]; omega_using []
+    bv_omega
+  refine WP.mono (WP.keepV (by decide) hw) fun u ⟨⟨hi,he⟩,hv⟩ => ⟨hi,?_,he⟩
+  exact ⟨by rw [hv]; exact hc.index,by rw [hv]; exact hc.mask,
+    by simpa only [hv] using hc.q,by simpa only [hv] using hc.weights,
+    by simpa only [hv] using hc.zero⟩
+
+end VG.Proof.MlKem.AArch64.Rej8
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+def body (w16 : Bool := false) : Prog isa := .seq (.block choosePrefix)
+  (.ite (.zero .x .x6) (.block (Impl.MlKem.AArch64.Rej8.rejEight w16))
+    (.seq (scalarFour w16) (.ite (.zero .x .x4) (.block [.movz .x .x5 0 0]) (.block []))))
+
+structure ResultW (w16 : Bool) (initial : List Zq) (N : Nat) (B : Nat → Byte) (aP : Addr) (s₀ u : State) :
+    Prop where
+  acc : Scalar.AccW w16 aP s₀ (Scalar.LA initial B N) u
+  keep : Keep Scalar.lRegs s₀ u
+  constants : Constants u
+
+private theorem constants_of_vec {s u : State} (h : Constants s) (hv : u.v=s.v) : Constants u :=
+  ⟨by rw [hv]; exact h.index,by rw [hv]; exact h.mask,
+   by simpa only [hv] using h.q,by simpa only [hv] using h.weights,by simpa only [hv] using h.zero⟩
+
+theorem body_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ s : State} (hp : EnvW w16 N B bP aP s₀) (h : Scalar.InvW w16 initial N B bP aP s₀ t s)
+    (hc : Constants s) (ht : t+4≤N) :
+    WP isa (body w16) s fun u =>
+      (Scalar.InvW w16 initial N B bP aP s₀ (t+4) u ∧ Constants u) ∨
+        (ResultW w16 initial N B aP s₀ u ∧ u.gpr .x5=0) := by
+  refine WP.seq (WP.mono (choosePrefix_ok h hc) fun a ⟨ha,hac,he⟩ => ?_)
+  refine WP.ite (a.gpr .x6 == 0) (eval_zero _ _) (fun hz => ?_) (fun _ => ?_)
+  · exact WP.mono (vector_ok hp ha hac ht (he.mp hz)) fun _ hv => Or.inl hv
+  · refine WP.seq (WP.mono (scalarFour_ok hp.toLPreW ha ht) fun b ⟨hb,hv⟩ => ?_)
+    have hbc := constants_of_vec hac hv
+    refine WP.ite (b.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun _ => ?_)
+    · have hfull : (Scalar.LA initial B (t+4)).length=n := by
+        rw [eq_zero_iff,decide_eq_true_eq,hb.acc.x4] at hz
+        have := hb.acc.len
+        change _=256
+        omega_using [hz, this]
+      have heq := sampleAfter_full hfull N ht
+      have hw : WP isa (.block [.movz .x .x5 0 0]) b fun u =>
+          Scalar.AccW w16 aP s₀ (Scalar.LA initial B N) u ∧
+          Keep Scalar.lRegs s₀ u ∧ u.gpr .x5=0 := by
+        refine wp_movz fun u hu eu => wp_nil ?_
+        refine ⟨?_,(hb.keep.trans hu.keep).mono (by decide),eu⟩
+        rw [show Scalar.LA initial B N=Scalar.LA initial B (t+4) from heq]
+        exact Scalar.acc_keep hb.acc hu.keep hu.mem
+      exact WP.mono (WP.keepV (by decide) hw) fun _ ⟨⟨ac,ke,x5⟩,ve⟩ =>
+        Or.inr ⟨⟨ac,ke,constants_of_vec hbc ve⟩,x5⟩
+    · exact wp_nil (Or.inl ⟨hb,hbc⟩)
+
+end VG.Proof.MlKem.AArch64.Rej8
+
+end
+
+end
 
 /-! ### `MlKem.AArch64.Rej8CT`, which only this module used -/
 

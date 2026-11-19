@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64

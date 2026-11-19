@@ -1,13 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData

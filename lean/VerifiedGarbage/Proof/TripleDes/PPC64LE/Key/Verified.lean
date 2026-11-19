@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

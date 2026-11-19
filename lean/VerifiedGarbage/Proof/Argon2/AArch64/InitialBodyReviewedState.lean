@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.References
 import VerifiedGarbage.Proof.Argon2.IterationsIndices
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -34,8 +32,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Argon2.HPrime
@@ -51,8 +47,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 meta import VerifiedGarbage.Proof.Argon2.Initial
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 meta import VerifiedGarbage.Proof.Argon2.HPrime

@@ -1264,7 +1264,7 @@ structure MdHash where
   function's (`CoreOK`), and that the instance's streaming hash function is
   the code's: what a function generic over the variant that calls HMAC's
   `_scratch` functions needs (deterministic ECDSA's, through a table of
-  `Hmac`, `Proof/Ecdsa/Rfc6979/X86_64/Regs.lean`). -/
+  `Hmac`, `Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`). -/
   C : CoreOK (core H)
   hSH : ok.SH = I.S
   /-- What the names of the functions emitted for it end with (e.g.

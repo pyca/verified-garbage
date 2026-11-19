@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 import VerifiedGarbage.Proof.MlDsa.Round.Mem

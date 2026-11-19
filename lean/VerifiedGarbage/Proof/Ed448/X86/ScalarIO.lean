@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.X448.X86.Decode
-import VerifiedGarbage.Proof.X448.X86.FnContract
+import VerifiedGarbage.Proof.X448.X86.FnVerified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.X448.X86.Instr

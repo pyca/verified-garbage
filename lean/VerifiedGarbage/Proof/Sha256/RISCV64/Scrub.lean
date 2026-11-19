@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Sha256.PostOut
 public import VerifiedGarbage.Proof.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Compress
-import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256Family
 import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Compress
-meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Update
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256Family
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Finalize
 meta import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target

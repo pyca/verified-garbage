@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
@@ -18,9 +18,7 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 meta import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
 meta import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! ### `Ed448.AArch64.Whole.CT`, which this module and modules that import it used -/

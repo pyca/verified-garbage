@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit

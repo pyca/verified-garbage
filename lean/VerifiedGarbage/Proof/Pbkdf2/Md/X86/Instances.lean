@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit

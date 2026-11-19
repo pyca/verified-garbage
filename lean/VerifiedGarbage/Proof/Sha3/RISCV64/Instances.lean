@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Verified
+public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
 public import VerifiedGarbage.Proof.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
 import VerifiedGarbage.Proof.Framework.Prologue
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
 import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.Stream
@@ -18,14 +17,12 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
-
-meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Verified
+meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 meta import VerifiedGarbage.Impl.Sha3.RISCV64.Instances
 meta import VerifiedGarbage.Spec.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.Prologue
-meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Calls
 meta import VerifiedGarbage.Proof.Framework.PostMono
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.Stream

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.Offset
@@ -37,12 +37,9 @@ meta import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Round
 

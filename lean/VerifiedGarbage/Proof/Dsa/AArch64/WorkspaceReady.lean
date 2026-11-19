@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
-import VerifiedGarbage.Proof.Dsa.AArch64.Child
+import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 
 /-! ### `Dsa.AArch64.Workspaces`, which only this module used -/
 

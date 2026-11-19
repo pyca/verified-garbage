@@ -3,12 +3,11 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp

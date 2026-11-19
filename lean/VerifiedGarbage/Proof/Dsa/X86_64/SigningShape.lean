@@ -5,15 +5,14 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.X86_64.Child
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
-import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
@@ -26,7 +25,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
 meta import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 
 /-! ### `Dsa.X86_64.SigningOperands`, which the modules that import this one used -/

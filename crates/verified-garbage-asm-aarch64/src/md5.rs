@@ -26,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -125,7 +127,10 @@ b 21f
 20:
 21:
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011
+.inst 0xea01003f,0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -134,6 +139,8 @@ b 21f
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -181,7 +188,10 @@ bl {vg_md5_compress}
 cbz x24, 20b
 .inst 0xb9400269,0xb90002a9,0xb9400669,0xb90006a9,0xb9400a69,0xb9000aa9,0xb9400e69,0xb9000ea9
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
-.inst 0xd65f03c0
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800009
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0xea01003f
+.inst 0xd2800000,0xd10203ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f
+.inst 0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x910203ff,0xd65f03c0
 .p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )

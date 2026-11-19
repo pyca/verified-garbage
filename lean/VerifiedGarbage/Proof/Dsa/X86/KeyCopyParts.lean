@@ -13,6 +13,267 @@ import VerifiedGarbage.Proof.Dsa.X86.RandomScan
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Dsa.X86.Installed
+import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
+
+/-! ### `Dsa.X86.KeyPartsReady`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.X86.DeriveCompute`, which the modules that import this one used -/
+
+section
+
+/-! # Derivation computes y and accumulates the private and public ranges -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
+
+theorem stageWide_keep_mask {base : Addr} {size pLen qLen p q d : Nat} {s t : State}
+    (F : StageFrame base s t (Layout.field .mask) 4) (M : Moduli base size pLen qLen p q s)
+    (hd : d ∈ Layout.wideValues) :
+    operandValue t base (.local d) pLen = operandValue s base (.local d) pLen := by
+  have H := VG.Proof.Dsa.X86.Layout.wide_bounds hd
+  exact F.local_value_keep M.scr (by have := M.lengths; omega_using [this])
+    (by change 7048 ≤ d; omega_using [H]) (Nat.le_trans (M.wideFit hd) M.extent)
+    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega_using [Hs]) (M.wideFit hd)
+    (.inr (by change 8248 ≤ d; omega_using [H]))
+
+theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : State}
+    (M : Moduli base size pLen qLen p q s0)
+    (G : CallerBuffer s0 base size (.input .g) pLen)
+    (X : CallerBuffer s0 base size (.input .nonce) qLen)
+    (hg : operandValue s0 base (.input .g) pLen = g)
+    (hx : operandValue s0 base (.input .nonce) qLen = x) :
+    WP isa (Generate.deriveCompute pLen qLen) s0 fun sf =>
+      Moduli base size pLen qLen p q sf ∧
+      flagW base (Layout.field .mask) sf = flagW base (Layout.field .mask) s0 &&&
+        mask32 (((1 < g ∧ g < p) ∧ (p - 1) % q = 0 ∧ g ^ q % p = 1) ∧
+          (0 < x ∧ x < q) ∧ (1 < g ^ x % p ∧ g ^ x % p < p)) ∧
+      operandValue sf base (.local t2) pLen = g ^ x % p ∧
+      Execution base s0 sf := by
+  have L := M.lengths
+  have A := M.aligned
+  have np : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have pp : 0 < p := by have := M.pLarge; omega_using [this]
+  unfold Generate.deriveCompute Core.sequence
+  dsimp only [List.foldr]
+  refine WP.seq (WP.mono (generateParameters_ok M G hg) fun s1 ⟨M1, F1, E1⟩ => ?_)
+  have X1 := E1.buffer X (by decide)
+  refine WP.seq (WP.mono (stageRange_ok M1 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
+    M1.qReady (X1.ready (M1.context nq)) false) fun s2 ⟨M2, F2, R2⟩ => ?_)
+  have E2 := R2.execution (.inr ⟨rfl, rfl⟩)
+  have E12 := E1.trans E2
+  refine WP.seq (WP.mono (stagePowerP_ok M2
+    ((E12.buffer G (by decide)).ready (M2.context np))
+    ((E12.buffer X (by decide)).ready (M2.context np))
+    (by decide) (M2.wideFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
+  have E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.wideFit (by decide)⟩)
+  have Y3 : operandValue s3 base (.local t2) pLen = g ^ x % p := by
+    have V := R3.wide_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
+    rw [E12.value G (by decide) M.extent, E12.value X (by decide) M.extent, hg, hx] at V
+    exact V
+  refine WP.seq (WP.mono (stageRange_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
+    M3.pReady (M3.wideReady (by decide) np) true) fun sf ⟨Mf, F4, R4⟩ => ?_)
+  refine WP.block_nil ⟨Mf, ?_, (stageWide_keep_mask R4 M3 (by decide)).trans Y3,
+    (E12.trans E3).trans (R4.execution (.inr ⟨rfl, rfl⟩))⟩
+  rw [F4, R3.toStageFrame.mask_keep (by decide), F2, F1, Y3,
+    E1.value X (by decide) M.extent, hx, M1.qValue, M3.pValue]
+  simp only [Bool.false_eq_true, ite_false, ite_true, BitVec.and_assoc, mask32_and, and_assoc]
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! # Input and workspace components for key serialization -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem CallerBuffer.keyPart {s : State} {base out : Addr} {size len total : Nat} {p : Pointer}
+    (B : CallerBuffer s base size p len) (positive : 0 < len)
+    (apart : Region.Disjoint ⟨(pointerValue base s p).setWidth 64, len⟩ ⟨out, total⟩) :
+    KeyPartReady s base out total (p, len) :=
+  ⟨positive, B.fits, fun i hi => B.read i 1 (by omega_using [hi]), apart⟩
+
+theorem localKeyPart {s : State} {base out : Addr} {size len total offset : Nat}
+    (hs : Scr s base size) (positive : 0 < len) (fits : offset + len ≤ size)
+    (apart : Region.Disjoint ⟨base, size⟩ ⟨out, total⟩) :
+    KeyPartReady s base out total (.local offset, len) := by
+  refine ⟨positive, ?_, ?_, ?_⟩
+  · have nw := hs.nowrap
+    change (s.gpr .edi + BitVec.ofNat 32 offset).toNat + len ≤ 2 ^ 32
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, hs.edi_toNat,
+      Nat.mod_eq_of_lt (by omega_using [positive, fits, nw] : offset < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [positive, fits, nw] : base.toNat + offset < 2 ^ 32)]
+    omega_using [fits, nw]
+  · intro i hi
+    rw [local_pointer hs positive fits]
+    change InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 offset + BitVec.ofNat 64 i) 1
+    rw [Offset.add_add]
+    exact hs.read (by omega_using [fits, hi])
+  · rw [local_pointer hs positive fits]
+    exact apart.sub_left (Offset.sub_base base fits)
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! ### `Dsa.X86.DerivingEntry`, which the modules that import this one used -/
+
+section
+
+/-! ### `Dsa.X86.DerivingABI`, which this module and modules that import it used -/
+
+section
+
+/-! # Key-derivation resources supplied by the shared cdecl contract -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86
+
+structure DerivingABI (s : State) : Prop where
+  stackLow : 108 ≤ (s.gpr .esp).toNat
+  stackBound : (s.gpr .esp).toNat + 40 ≤ 2 ^ 32
+  rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩,
+    ⟨argumentPointer s 5, (arg s 6).toNat⟩]
+  wr : s.wr = [⟨argumentPointer s 0, (arg s 1).toNat⟩, ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩, ⟨argAddr s 0, 36⟩]
+  outScratch : (⟨argumentPointer s 0, (arg s 1).toNat⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  keyOut : (⟨argumentPointer s 2, (arg s 3).toNat⟩ : Region).Disjoint
+    ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  scalarOut : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint
+    ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  retOut : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint
+    ⟨argumentPointer s 0, (arg s 1).toNat⟩
+  outBound : (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 32
+  keyScratch : (⟨argumentPointer s 2, (arg s 3).toNat⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  scalarScratch : (⟨argumentPointer s 5, (arg s 6).toNat⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  scratchArgs : (⟨argumentPointer s 7, (arg s 8).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 36⟩
+  retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
+    ⟨argumentPointer s 7, (arg s 8).toNat * 8⟩
+  belowKey : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
+    ⟨argumentPointer s 2, (arg s 3).toNat⟩
+  belowScalar : (⟨(s.gpr .esp).setWidth 64 - 108#64, 108⟩ : Region).Disjoint
+    ⟨argumentPointer s 5, (arg s 6).toNat⟩
+  keyBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
+  scalarBound : (arg s 5).toNat + (arg s 6).toNat ≤ 2 ^ 32
+  scratchBound : (arg s 7).toNat + (arg s 8).toNat * 8 ≤ 2 ^ 32
+  lengths : Spec.Dsa.lengthsValid (arg s 4).toNat (arg s 6).toNat
+  keyLength : (arg s 3).toNat = 2 * (arg s 4).toNat + (arg s 6).toNat
+  outLength : (arg s 1).toNat = 3 * (arg s 4).toNat + 2 * (arg s 6).toNat
+  scratchLength : Spec.Dsa.scratchWords (arg s 4).toNat ≤ (arg s 8).toNat
+
+theorem derivingABI_of {s : State} (h : (Spec.Dsa.deriveKeyContract abi 108).pre s) : DerivingABI s := by
+  sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes, stackBelow] at h
+  sig_split h
+  constructor <;> first | with_reducible assumption | apply Region.Disjoint.symm; with_reducible assumption
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! ### `Dsa.X86.DerivingResources`, which this module and modules that import it used -/
+
+section
+
+/-! # Stack and workspace resources of key derivation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem DerivingABI.used {s : State} (A : DerivingABI s) : usedBytes ≤ (arg s 8).toNat * 8 := by
+  have L := A.lengths
+  have H := A.scratchLength
+  unfold Spec.Dsa.lengthsValid at L
+  unfold Spec.Dsa.scratchWords at H
+  change 15712 ≤ _
+  omega_using [L, H]
+
+theorem DerivingABI.stackArgument {s : State} (A : DerivingABI s) {i : Nat} (hi : i < 9) :
+    StackArgument s (argumentPointer s 7) ((arg s 8).toNat * 8) i := by
+  apply stackArgument_of (count := 9) (by have := A.stackBound; omega_using [this]) hi
+  · rw [A.rd, A.wr]; simp
+  · exact A.scratchArgs.symm
+
+theorem DerivingABI.stack {s : State} (A : DerivingABI s) :
+    StkOk (s.gpr .esp) (argumentPointer s 7) ((arg s 8).toNat * 8) := by
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 108) A.stackLow
+  · have H := A.scratchBound
+    simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 7).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
+  · have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega_using [H]
+  · exact A.belowScratch
+
+theorem DerivingABI.room {s : State} (A : DerivingABI s) :
+    Pow.Room (s.gpr .esp) (argumentPointer s 7) ((arg s 8).toNat * 8) := by
+  apply room_of A.stackLow
+  · have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega_using [H]
+  · exact A.belowScratch
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
+/-! # Install the domain-deriving cdecl arguments -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem derivingEntry_precise {s : State} (A : DerivingABI s) :
+    WP isa (.block Generate.deriveEntry) s fun t =>
+      Installed (argumentPointer s 7) ((arg s 8).toNat * 8) Generate.deriveArguments 2 4 6 s t ∧ Outside (argumentPointer s 7) 0 8272 s.mem t.mem := by
+  have sz : 8272 ≤ (arg s 8).toNat * 8 := by have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega_using [H]
+  apply WP.mono (installArguments_precise Generate.deriveArguments (scratchArg := 7)
+    (keyArg := 2) (pLenArg := 4) (qLenArg := 6)
+    (A.stackArgument (by decide : 7 < 9)).readSrc rfl A.scratchBound sz
+    (by rw [A.wr]; simp [stackValue_arg]) A.stack (by decide) ?_ (by decide) (by decide) (by decide) (by decide))
+  · intro t ⟨Scr, Saved, Args, Q, G, Y, X, K, O⟩
+    exact ⟨⟨Scr, Saved, Args, Q, G, Y, X, K, O.mono (Nat.le_refl _) (by omega_using [sz])⟩,O⟩
+  · intro a ha
+    apply A.stackArgument
+    simp only [Generate.deriveArguments, List.mem_cons, List.not_mem_nil, or_false] at ha
+    rcases ha with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
 
 /-! ### `Dsa.X86.KeyCopyPart`, which this module and modules that import it used -/
 

@@ -21,7 +21,7 @@ pointer (`Env`); the buffers of the associated data, the nonce and the data
 (`Buf`, `DBuf`). The pieces write the parts of `W` in `mutR` (and the data),
 so our caller's registers saved in `W` at `[128, 248)` stay as the entry
 left them, and so do the addresses of the associated data and the data
-there (`Slots`). As on PPC64LE (`Proof/AesOcb/PPC64LE/Env.lean`).
+there (`Slots`). As on PPC64LE (`Proof/AesOcb/PPC64LE/Args.lean`).
 -/
 
 @[expose] public section

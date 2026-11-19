@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.Arm.Divide
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Impl.Argon2.Arm.Derive

@@ -1,17 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTBase
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Crypt
+public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.CTAbsorb
-import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Fn
 import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Args
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Flush
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
 meta import VerifiedGarbage.Proof.Cmac.Frame

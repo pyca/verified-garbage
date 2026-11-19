@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Spec
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Contract
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 

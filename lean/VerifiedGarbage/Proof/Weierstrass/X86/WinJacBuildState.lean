@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO

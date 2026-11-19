@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
-public import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ocb

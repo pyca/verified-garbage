@@ -18,10 +18,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.RsaKeyGen.FrameOutside
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ReadonlyTrace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rsa.X86.KeyWs
@@ -35,7 +33,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr

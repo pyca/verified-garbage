@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.PostOut
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
@@ -200,24 +201,41 @@ working space in a frame of their own, which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x4 v.update
-    contract := Spec.Sha256.updateContract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x4 v.update
+    contract := Spec.Sha256.updateContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.update_of v.update_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.updateSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.updatePost_out _) },
   { api := Spec.Sha256.finalizeApi
-    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize
-    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 608)
-    stack := 16 + 608
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize
+    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.finalizePost_out _) },
   { api := Spec.Sha256.digest256Api
     code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.out256 Spec.Sha256.H0 v.name v.code
     contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
     stack := Proof.Sha256.AArch64.OneShot.stack
     verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _)
+      (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
+
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
@@ -234,6 +252,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 32 ⟨fitI v, by decide, by decide, by decide⟩ ⟨fitF v, by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using initSat 96 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha256I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using finSat 96 32 32)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256

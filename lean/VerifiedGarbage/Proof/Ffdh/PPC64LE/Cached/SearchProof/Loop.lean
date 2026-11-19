@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Cached
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Live
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Writes
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Writes
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Outputs
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch

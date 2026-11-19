@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.PcCall
-public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Fn
 public import VerifiedGarbage.Proof.Bignum.X86.PrivPre.Time
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract

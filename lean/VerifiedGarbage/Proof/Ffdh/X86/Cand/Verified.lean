@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Base
 meta import VerifiedGarbage.Proof.Ffdh.X86.Stages
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming
@@ -40,7 +40,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.CTBase
-import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoopTiming
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
@@ -58,19 +57,15 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Mont.Words32
 meta import VerifiedGarbage.Proof.Mont.X86.Words
-meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.TrialLoopTiming
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
-import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGen
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Round
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export

@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
 -- separate module: preparation of the CRT modulus is independent of the reduction algorithm
 

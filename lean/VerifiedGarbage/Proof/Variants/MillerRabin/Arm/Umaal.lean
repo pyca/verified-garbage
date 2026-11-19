@@ -45,7 +45,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseEncoding
 public import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
-public import VerifiedGarbage.Proof.Bignum.Arm.Round
+public import VerifiedGarbage.Proof.Bignum.Arm.MontState
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 public import VerifiedGarbage.Proof.Bignum.Arm.Row

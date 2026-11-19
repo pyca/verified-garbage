@@ -10,9 +10,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 public import VerifiedGarbage.Proof.Gcm.Contract
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
@@ -25,9 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 
 -- separate module: isolate the taint checks from the functional seal composition proofs.

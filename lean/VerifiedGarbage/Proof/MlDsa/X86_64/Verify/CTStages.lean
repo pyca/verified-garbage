@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageC
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Contract

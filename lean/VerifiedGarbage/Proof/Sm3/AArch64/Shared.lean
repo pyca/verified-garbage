@@ -7,6 +7,9 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Sm3.PostOut
 import VerifiedGarbage.Proof.Sm3.AArch64.Lit
 
 /-!
@@ -22,6 +25,11 @@ function's 64 bytes, then the registers the streaming code saves) in a frame
 of their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
 run in a frame that allocates it (`Verified.stackScratch`).
+
+`updateReg` and `finalizeReg` register them scrubbed whole
+(`AArch64.ScrubAll.withScrubAll`): their postconditions read the memory on
+return only within their buffers (`Proof/Sm3/PostOut.lean`), so they return with
+the registers they may write cleared and their stack zeroed.
 -/
 
 @[expose] public section
@@ -70,5 +78,38 @@ theorem finalize (v : Compress) : Verified AArch64.target
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch v) (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Sm3.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+
+/-- `update`'s postcondition reads the memory on return only within its buffers. -/
+theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.updateContract AArch64.abi (16 + 112)) (16 + 112)
+    (Spec.Sm3.updateSig.retBits AArch64.abi.ptrBits) :=
+  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.updateSig) (by decide) (by decide) (Nat.le_refl _)
+    (Proof.Sm3.updatePost_out _)
+
+/-- `update` with `v`, as it is. -/
+def updateReg₀ (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target :=
+  { suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
+    verified := update v }
+
+/-- `update` with `v`, scrubbed whole. -/
+def updateReg (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target :=
+  AArch64.ScrubAll.withScrubAll (updateReg₀ v) updateOk
+
+/-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
+theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
+    (Spec.Sm3.finalizeSig.retBits AArch64.abi.ptrBits) :=
+  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+    (Proof.Sm3.finalizePost_out _)
+
+/-- `finalize` with `v`, as it is. -/
+def finalizeReg₀ (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.target :=
+  { suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
+    verified := finalize v }
+
+/-- `finalize` with `v`, scrubbed whole. -/
+def finalizeReg (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.target :=
+  AArch64.ScrubAll.withScrubAll (finalizeReg₀ v) finalizeOk
 
 end VG.Proof.Sm3.AArch64.Shared

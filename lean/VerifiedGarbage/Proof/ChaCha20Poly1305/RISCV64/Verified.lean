@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
+import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64

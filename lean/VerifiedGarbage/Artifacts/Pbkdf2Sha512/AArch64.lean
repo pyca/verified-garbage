@@ -30,9 +30,6 @@ namespace VG.Artifacts.Pbkdf2Sha512.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.AArch64.sha512Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
-    v.I.pbkdf2Api.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
-      verified := v.pbkdf2F }]
+    v.I.pbkdf2Api.artifact AArch64.target v.pbkdf2Reg]
 
 end VG.Artifacts.Pbkdf2Sha512.AArch64

@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.X86_64.Avx

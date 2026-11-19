@@ -8,14 +8,13 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
 public import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -34,7 +33,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 meta import VerifiedGarbage.Proof.EcKey.Arm.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 meta import VerifiedGarbage.Impl.EcKey.P256.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Spec.EcKey.P256

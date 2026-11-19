@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
@@ -32,11 +32,9 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCodeCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
@@ -46,9 +44,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
 public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainTile
 public import VerifiedGarbage.Proof.Bignum.AArch64.Double
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedLoop
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedDispatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedExp
+public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedDispatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFinish
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFixed
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedTest
@@ -92,10 +89,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRow
 public import VerifiedGarbage.Proof.Bignum.AArch64.Store
 public import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseRows
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT

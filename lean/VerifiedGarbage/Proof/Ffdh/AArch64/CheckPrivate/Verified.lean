@@ -24,7 +24,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.Power
@@ -40,7 +39,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
 meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Ffdh.Power

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
@@ -27,11 +27,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
 
 /-! ### `EcKey.X86_64.P224.Contract`, which only this module used -/
 

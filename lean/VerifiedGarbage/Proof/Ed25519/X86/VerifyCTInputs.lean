@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit

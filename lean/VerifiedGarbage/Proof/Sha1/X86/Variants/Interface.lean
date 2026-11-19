@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Md5.X86.Lit

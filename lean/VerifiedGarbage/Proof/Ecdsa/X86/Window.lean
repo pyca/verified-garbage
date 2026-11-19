@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombRcb

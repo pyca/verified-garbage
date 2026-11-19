@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombTaint
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdh.X86.Main

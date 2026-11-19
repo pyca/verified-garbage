@@ -18,9 +18,9 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 
 /-! ### `Ecdsa.Rfc6979.X86_64.P521`, which only this module used -/

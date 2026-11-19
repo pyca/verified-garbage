@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P224
-import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 import VerifiedGarbage.Proof.P224.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Contract
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -26,14 +24,11 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Candidate
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
-import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
@@ -52,18 +47,16 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Weierstrass.Arm
 import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressFront
+meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Candidate
 meta import VerifiedGarbage.Impl.EcKey.Compressed.Root
-meta import VerifiedGarbage.Proof.Weierstrass.RootTonelli
+meta import VerifiedGarbage.Proof.P224.Sqrt
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps

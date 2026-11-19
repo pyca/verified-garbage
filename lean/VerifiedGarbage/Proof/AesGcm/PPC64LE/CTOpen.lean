@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb

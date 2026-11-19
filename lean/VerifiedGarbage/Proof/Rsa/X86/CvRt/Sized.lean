@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
@@ -9,7 +10,6 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs

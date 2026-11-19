@@ -731,8 +731,12 @@ section
 # AES-OCB on x86: the data and the tag in constant time
 
 Untrusted: everything here is checked by Lean. A pass over the whole blocks
-runs for their number, public, each block's offset by `lNtz` (`pass_ct`);
-`whole` is two passes around a call (`whole_ct`); the rest addresses the
+runs for their number, public, four at a time and then one at a time, each
+block's `L_{ntz(i)}` in the table or where `lAddr` finds it from the block's
+index (`lAddr_ct`, `quad_ct`, `single_ct`, `pass_ct`);
+`whole` is the table, as long as the public number of blocks needs
+(`ltable_ct`), then two passes around a call (`wholeIn_ct`, `whole_ct`);
+the rest addresses the
 data's end and `W` (`rest_ct`); `body` branches on the data's length
 (`body_ct`); the tag addresses only `W` (`tag_ct`).
 -/
@@ -767,44 +771,173 @@ def PassI (p : Prm) (fC : Block → Block → Block → Block) (m i : Nat) (t : 
 theorem PassI.start {p : Prm} {fC : Block → Block → Block → Block} {m : Nat} {t : State} (E : Env p t)
     (hsi : t.gpr .esi = p.D + BitVec.ofNat 32 (16 * 0)) (hdi : t.gpr .edi = BitVec.ofNat 32 (0 + 1))
     (hbx : t.gpr .ebx = BitVec.ofNat 32 (m - 0)) {l : Block}
-    (hl0 : blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0) : PassI p fC m 0 t :=
+    (hl0 : blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0) (hT : Tbl p l m t.mem) :
+    PassI p fC m 0 t :=
   ⟨_, l, fun k => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * k)),
     ckRec fC (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) l
       (fun k => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * k))) (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ckO)),
     t, fun _ _ => rfl,
     { env := E, frame := Frame.refl _ _, rd := rfl, wr := rfl, esi := hsi, edi := hdi, ebx := hbx, ofs := rfl,
-      ck := rfl, blk := fun k _ => by simp, l0 := hl0, gpr := fun _ _ _ _ _ _ _ => rfl }⟩
+      ck := rfl, blk := fun k _ => by simp, l0 := hl0, tbl := hT, gpr := fun _ _ _ _ _ _ _ => rfl }⟩
 
-/-- A pass of `body` over the `m` whole blocks; `body ++ nextBlock` is
-constant time from `ebp` and `esi` (`hct`). -/
-theorem pass_ct {p : Prm} (L : Lay p) {body : List Instr} {fC : Block → Block → Block → Block}
-    (hB : BodyOk p body (fun b o => b ^^^ o) fC)
-    (hct : ∀ {J : State → Prop} {B : BitVec 32}, (∀ s, J s → s.gpr .ebp = p.W ∧ s.gpr .esi = B) →
-      CT J (.block (body ++ nextBlock)))
-    {m : Nat} (hm0 : 0 < m) (hmn : 16 * m ≤ p.n) : CT (PassI p fC m 0) (pass body) := by
+/-- A pass's state among its blocks, after `i` of its `m`, with `b` in
+`ebx`. -/
+def XI (p : Prm) (fC : Block → Block → Block → Block) (m i b : Nat) (t : State) : Prop :=
+  ∃ O0 l X ckF t₀, (∀ k < m, ckF (k + 1) = fC (ckF k) (X k) (offAt O0 l (k + 1))) ∧
+    XInv p m O0 l X (fun b o => b ^^^ o) ckF t₀ t i ∧ t.gpr .ebx = BitVec.ofNat 32 b
+
+/-- `lAddr`, for the public `i` in `edi`: it branches on `i`, and addresses
+`W` and the table. -/
+theorem lAddr_ct {I : State → Prop} {p : Prm} (L : Lay p) {i : Nat} (hi : 0 < i) (hi' : i < 2 ^ 32)
+    (hI : ∀ s, I s → Env p s ∧ s.gpr .edi = BitVec.ofNat 32 i ∧
+      ∃ l, blockAtMem s.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0) : CT I lAddr := by
+  unfold lAddr
+  refine CT.seq (J := fun t => Env p t ∧ t.gpr .edi = BitVec.ofNat 32 i ∧ t.gpr .eax = BitVec.ofNat 32 i ∧
+      t.zf = some (decide (i % 64 = 0)) ∧ ∃ l, blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0)
+    (CT.taint [.ebp, .edi] (pin2 fun s h => ⟨(hI s h).1.ebp, (hI s h).2.1⟩) (by taint_decide)) (fun s hs => ?_) ?_
+  · obtain ⟨E, hdi, l, hl0⟩ := hI s hs
+    obtain ⟨s₁, run₁, ax₁, zf₁, g₁, m₁, -, rd₁, wr₁⟩ := lAddrHead_ok hi' hdi
+    exact WP.of_runBlock ⟨s₁, run₁, E.keep (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ m₁,
+      by rw [g₁ _ (by decide), hdi], ax₁, zf₁, l, by rw [m₁, hl0]⟩
+  refine CT.ite (decide (i % 64 = 0)) (fun _ h => eval_e h.2.2.2.1) (fun _ => ?_) (fun _ => ?_)
+  · -- a multiple of 64: `lNtz`
+    refine CT.seq (J := fun t => Env p t ∧ t.gpr .edi = BitVec.ofNat 32 i ∧
+        ∃ l, blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0)
+      (CT.taintS [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t ⟨E, hdi, _, _, l, hl0⟩ => ?_)
+      (CT.seq (J := fun t => t.gpr .ebp = p.W) (lNtz_ct L hi hi' fun t h => ⟨h.1, h.2.1⟩)
+        (fun t ⟨E, hdi, l, hl0⟩ => WP.mono (lNtz_ok L E hi hi' hdi hl0) fun t' P => (P.env L E).ebp)
+        (CT.taintS [.ebp] (pin_ebp fun _ h => h) (by taint_decide)))
+    obtain ⟨t₂, run₂, m₂, g₂, -, rd₂, wr₂⟩ := spill_ok L E
+    have f₂ : Frame (spillR p) t.mem t₂.mem := by rw [m₂]; exact spill_frame p _ _ _
+    refine WP.of_runBlock ⟨t₂, run₂, E.mut L (by rw [g₂, E.ebp]) (by rw [g₂, E.esp]) rd₂ wr₂
+      (frame_toMut f₂ (inMut_spillR p)), by rw [g₂, hdi], l, ?_⟩
+    rw [Proof.Ocb.blockAtMem_frame f₂ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Lay.w_w (by decide) (by decide) (by decide)), hl0]
+  · -- in the table: the walk, on `i` alone
+    exact CT.taint [.ebp, .eax] (pin2 fun _ h => ⟨h.1.ebp, h.2.2.1⟩) (by taint_decide)
+
+/-- The straight-line blocks of a pass with `body`, constant time from the
+addresses they use: the step after `lAddr` of one block (`one`) and of the
+fourth of four (`last`), from the block's address (`esi`) and
+`L_{ntz(i)}`'s (`edx`), and the first three of four (`three`), from `W` and
+the blocks' address. -/
+structure StepCT (p : Prm) (body : List Instr) : Prop where
+  one : ∀ {J : State → Prop} {B X : BitVec 32}, (∀ s, J s → s.gpr .esi = B ∧ s.gpr .edx = X) →
+    CT J (.block (ofsDx ++ blockOps body ++ ([.alu .sub .ebx (imm 1)] : List Instr)))
+  three : ∀ {J : State → Prop} {B : BitVec 32}, (∀ s, J s → s.gpr .ebp = p.W ∧ s.gpr .esi = B) →
+    CT J (.block (stepAt 0 body ++ stepAt 1 body ++ stepAt 0 body))
+  last : ∀ {J : State → Prop} {B X : BitVec 32}, (∀ s, J s → s.gpr .esi = B ∧ s.gpr .edx = X) →
+    CT J (.block (ofsDx ++ blockOps body ++ ([.alu .sub .ebx (imm 4), .alu .cmp .ebx (imm 4)] : List Instr)))
+
+theorem stepCT_xorOfs (p : Prm) : StepCT p xorOfs :=
+  ⟨fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.ebp, .esi] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide)⟩
+
+theorem stepCT_sealPre (p : Prm) : StepCT p (addCk ++ xorOfs) :=
+  ⟨fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.ebp, .esi] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide)⟩
+
+theorem stepCT_openPost (p : Prm) : StepCT p (xorOfs ++ addCk) :=
+  ⟨fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.ebp, .esi] (pin2 h) (by taint_decide),
+    fun h => by exact CT.taintS [.esi, .edx] (pin2 h) (by taint_decide)⟩
+
+/-- `lAddr` for block `i + 1` of a pass, and what it leaves in the registers
+the block's step addresses memory with. -/
+theorem lAddr_xi {p : Prm} (L : Lay p) {fC : Block → Block → Block → Block} {m i b : Nat} (hi : i < m)
+    (hmn : 16 * m ≤ p.n) :
+    CT (XI p fC m i b) lAddr ∧ ∀ t, XI p fC m i b t → WP isa lAddr t fun t' =>
+      t'.gpr .esi = p.D + BitVec.ofNat 32 (16 * i) ∧ t'.gpr .edx = p.W + BitVec.ofNat 32 (lOff (i + 1)) := by
   have hn := L.n32
-  unfold pass
-  refine (CT.loopN (fun n t => 0 < n ∧ n ≤ m ∧ PassI p fC m (m - n) t) (fun n => ?_)
-    (fun n t ⟨hn0, hnm, _, _, _, _, _, hck, P⟩ => WP.mono (pass_step L hB hck hmn (by omega_arith) P) fun t' ⟨P', zf'⟩ =>
+  exact ⟨lAddr_ct L (i := i + 1) (by omega_arith) (by omega_arith)
+      fun t ⟨_, _, _, _, _, _, P, _⟩ => ⟨P.env, P.edi, _, P.l0⟩,
+    fun t ⟨_, _, _, _, _, _, P, _⟩ =>
+      WP.mono (lAddr_ok L P.env (by omega_arith) (by omega_arith) (by omega_arith) P.edi P.l0 P.tbl) fun t₁ P₁ =>
+        ⟨by rw [P₁.gpr _ (by decide) (by decide) (by decide), P.esi], P₁.edx⟩⟩
+
+/-- The blocks from `i₀ + 1` on, one at a time. -/
+theorem single_ct {p : Prm} (L : Lay p) {body : List Instr} {fC : Block → Block → Block → Block}
+    (hB : BodyOk body (fun b o => b ^^^ o) fC) (hct : StepCT p body) {m : Nat} (hmn : 16 * m ≤ p.n) {i₀ : Nat}
+    (hi₀ : i₀ < m) : CT (XI p fC m i₀ (m - i₀)) (single body) := by
+  have hn := L.n32
+  unfold single
+  refine (CT.loopN (fun n t => 0 < n ∧ n ≤ m ∧ XI p fC m (m - n) (m - (m - n)) t) (fun n => ?_)
+    (fun n t ⟨hn0, hnm, _, _, _, _, _, hck, P, bx⟩ =>
+      WP.mono (singleStep_ok L hB hck hmn (by omega_arith) P bx) fun t' ⟨P', bx', zf'⟩ =>
       ⟨hn0, by rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith,
         fun h1 => ⟨by omega_arith, by omega_arith, _, _, _, _, _, hck, by
-          rw [show m - (n - 1) = m - n + 1 by omega_arith]; exact P'⟩⟩) m).mono
-    fun t h => ⟨hm0, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
+          rw [show m - (n - 1) = m - n + 1 by omega_arith]; exact P', by
+          rw [bx']; exact congrArg _ (by omega_arith)⟩⟩) (m - i₀)).mono
+    fun t h => ⟨by omega_arith, by omega_arith, by rw [show m - (m - i₀) = i₀ by omega_arith]; exact h⟩
   by_cases hn : 0 < n ∧ n ≤ m
   swap
   · exact RelCT.of_false fun _ _ h => hn ⟨h.1.1, h.1.2.1⟩
-  unfold nextOffset
-  have hw : ∀ t, (0 < n ∧ n ≤ m ∧ PassI p fC m (m - n) t) → WP isa lNtz t fun t' =>
-      Env p t' ∧ t'.gpr .esi = p.D + BitVec.ofNat 32 (16 * (m - n)) := fun t ⟨_, _, _, _, _, _, _, _, P⟩ =>
-    WP.mono (lNtz_ok L P.env (by omega_arith) (by omega_arith) P.edi P.l0) fun t₁ P₁ =>
-      ⟨P₁.env L P.env, by rw [P₁.gpr _ (by decide) (by decide) (by decide), P.esi]⟩
-  refine CT.seq (J := fun t => t.gpr .ebp = p.W ∧ t.gpr .esi = p.D + BitVec.ofNat 32 (16 * (m - n)))
-    (CT.seq (J := fun t => Env p t ∧ t.gpr .esi = p.D + BitVec.ofNat 32 (16 * (m - n)))
-      (lNtz_ct L (i := m - n + 1) (by omega_arith) (by omega_arith) fun t ⟨_, _, _, _, _, _, _, _, P⟩ => ⟨P.env, P.edi⟩) hw
-      (CT.taint [.ebp] (pin_ebp fun t h => h.1.ebp) (by taint_decide)))
-    (fun t h => WP.seq (WP.mono (hw t h) fun t₁ ⟨E₁, si₁⟩ => ?_)) (hct fun _ h => h)
-  obtain ⟨t₂, run₂, -, g₂, -⟩ := xor16W_ok L E₁ (s := lO) (d := ofsO) (by decide) (by decide) (.inr (by decide))
-  exact WP.of_runBlock ⟨t₂, run₂, by rw [g₂ _ (by decide), E₁.ebp], by rw [g₂ _ (by decide), si₁]⟩
+  obtain ⟨ct, hw⟩ := lAddr_xi L (fC := fC) (i := m - n) (b := m - (m - n)) (by omega_arith) hmn
+  exact CT.seq (ct.mono fun _ h => h.2.2) (fun t h => hw t h.2.2) (hct.one fun _ h => h)
+
+/-- The blocks four at a time, from block `4 k₀ + 1`. -/
+theorem quad_ct {p : Prm} (L : Lay p) {body : List Instr} {fC : Block → Block → Block → Block}
+    (hB : BodyOk body (fun b o => b ^^^ o) fC) (hct : StepCT p body) {m : Nat} (hmn : 16 * m ≤ p.n) {k₀ : Nat}
+    (hk₀ : 4 * k₀ + 4 ≤ m) : CT (XI p fC m (4 * k₀) (m - 4 * k₀)) (quad body) := by
+  have hn := L.n32
+  unfold quad
+  refine (CT.loopN (fun n t => 0 < n ∧ 4 * n ≤ m ∧ XI p fC m (4 * (m / 4 - n)) (m - 4 * (m / 4 - n)) t)
+    (fun n => ?_)
+    (fun n t ⟨hn0, hnm, _, _, _, _, _, hck, P, bx⟩ => by
+      obtain ⟨t₃, run₃, P₃, b₃⟩ := quadHead_ok L hB hck hmn (k := m / 4 - n) (by omega_arith) P
+      refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
+      exact WP.mono (quadTail_ok L hB hck hmn (k := m / 4 - n) (by omega_arith) P₃ (by rw [b₃, bx]))
+        fun t' ⟨P', bx', cf'⟩ =>
+        ⟨hn0, by rw [eval_ae cf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith,
+          fun h1 => ⟨by omega_arith, by omega_arith, _, _, _, _, _, hck, by
+            rw [show m / 4 - (n - 1) = m / 4 - n + 1 by omega_arith]; exact P', by
+            rw [bx']; exact congrArg _ (by omega_arith)⟩⟩) (m / 4 - k₀)).mono
+    fun t h => ⟨by omega_arith, by omega_arith, by rw [show m / 4 - (m / 4 - k₀) = k₀ by omega_arith]; exact h⟩
+  by_cases hn : 0 < n ∧ 4 * n ≤ m
+  swap
+  · exact RelCT.of_false fun _ _ h => hn ⟨h.1.1, h.1.2.1⟩
+  obtain ⟨ct, hw⟩ := lAddr_xi L (fC := fC) (i := 4 * (m / 4 - n) + 1 + 1 + 1) (b := m - 4 * (m / 4 - n))
+    (by omega_arith) hmn
+  refine CT.seq (J := XI p fC m (4 * (m / 4 - n) + 1 + 1 + 1) (m - 4 * (m / 4 - n)))
+    (hct.three fun t ⟨_, _, _, _, _, _, _, _, P, _⟩ => ⟨P.env.ebp, P.esi⟩)
+    (fun t ⟨_, _, _, _, _, _, _, hck, P, bx⟩ => by
+      obtain ⟨t₃, run₃, P₃, b₃⟩ := quadHead_ok L hB hck hmn (k := m / 4 - n) (by omega_arith) P
+      exact WP.of_runBlock ⟨t₃, run₃, _, _, _, _, _, hck, P₃, by rw [b₃, bx]⟩)
+    (CT.seq ct hw (hct.last fun _ h => h))
+
+/-- A pass of `body` over the `m` whole blocks. -/
+theorem pass_ct {p : Prm} (L : Lay p) {body : List Instr} {fC : Block → Block → Block → Block}
+    (hB : BodyOk body (fun b o => b ^^^ o) fC) (hct : StepCT p body)
+    {m : Nat} (hmn : 16 * m ≤ p.n) : CT (PassI p fC m 0) (pass body) := by
+  have hn := L.n32
+  unfold pass
+  refine CT.seq (J := fun t => XI p fC m 0 (m - 0) t ∧ t.cf = some (decide (m - 0 < 4)))
+    (CT.taintS [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P⟩ => P.env.ebp) (by taint_decide))
+    (fun t ⟨_, _, _, _, _, hck, P⟩ => by
+      obtain ⟨t₁, run₁, Q, bx, cf⟩ := passLoad_ok L hmn P
+      exact WP.of_runBlock ⟨t₁, run₁, ⟨_, _, _, _, _, hck, Q, bx⟩, cf⟩) ?_
+  -- four at a time
+  refine CT.seq (J := XI p fC m (4 * (m / 4)) (m - 4 * (m / 4)))
+    (CT.ite (decide (m - 0 < 4)) (fun _ h => eval_b h.2) (fun _ => CT.nil) fun hb =>
+      (quad_ct L hB hct hmn (k₀ := 0) (by have := of_decide_eq_false hb; omega_arith)).mono fun _ h => h.1)
+    (fun t ⟨⟨_, _, _, _, _, hck, P, bx⟩, cf⟩ => WP.mono (quads_ok L hB hck hmn P bx cf) fun t' ⟨P', bx'⟩ =>
+      ⟨_, _, _, _, _, hck, P', bx'⟩) ?_
+  -- the rest, one at a time
+  refine CT.seq (J := fun t => XI p fC m (4 * (m / 4)) (m - 4 * (m / 4)) t ∧
+      t.zf = some (decide (m - 4 * (m / 4) = 0)))
+    (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P, _⟩ => P.env.ebp) (by taint_decide))
+    (fun t ⟨_, _, _, _, _, hck, P, bx⟩ => by
+      obtain ⟨t₁, run₁, Q, bx₁, zf₁⟩ := passTest_ok (by omega_arith) P bx
+      exact WP.of_runBlock ⟨t₁, run₁, ⟨_, _, _, _, _, hck, Q, bx₁⟩, zf₁⟩) ?_
+  exact CT.seq (J := fun t => t.gpr .ebp = p.W)
+    (CT.ite (decide (m - 4 * (m / 4) = 0)) (fun _ h => eval_e h.2) (fun _ => CT.nil) fun hb =>
+      (single_ct L hB hct hmn (i₀ := 4 * (m / 4)) (by have := of_decide_eq_false hb; omega_arith)).mono
+        fun _ h => h.1)
+    (fun t ⟨⟨_, _, _, _, _, hck, P, bx⟩, zf⟩ => WP.mono (tail_ok L hB hck hmn P bx zf) fun t' ⟨P', _⟩ => P'.env.ebp)
+    (CT.taintS [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
 
 /-! ## The whole blocks -/
 
@@ -812,18 +945,20 @@ theorem pass_ct {p : Prm} (L : Lay p) {body : List Instr} {fC : Block → Block 
 def WhI (p : Prm) (m : Nat) (t : State) : Prop :=
   Env p t ∧ slotv t.mem p.W nbO = BitVec.ofNat 32 m ∧ ∃ l, blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0
 
-theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+/-- What its passes need: that, and the table. -/
+def WhT (p : Prm) (m : Nat) (t : State) : Prop :=
+  Env p t ∧ slotv t.mem p.W nbO = BitVec.ofNat 32 m ∧
+    ∃ l, blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0 ∧ Tbl p l m t.mem
+
+theorem wholeIn_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
     (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
       ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
     (ct : ConstantTime isa (Proof.Aes.blocksX86 f).pre (Proof.Aes.blocksX86 f).pub fn.code)
     (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {p : Prm} (L : Lay p) {pre post : List Instr}
     {fC1 fC2 : Block → Block → Block → Block}
-    (hB1 : BodyOk p pre (fun b o => b ^^^ o) fC1) (hB2 : BodyOk p post (fun b o => b ^^^ o) fC2)
-    (hct1 : ∀ {J : State → Prop} {B : BitVec 32}, (∀ s, J s → s.gpr .ebp = p.W ∧ s.gpr .esi = B) →
-      CT J (.block (pre ++ nextBlock)))
-    (hct2 : ∀ {J : State → Prop} {B : BitVec 32}, (∀ s, J s → s.gpr .ebp = p.W ∧ s.gpr .esi = B) →
-      CT J (.block (post ++ nextBlock)))
-    {m : Nat} (hm0 : 0 < m) (hmn : 16 * m ≤ p.n) : CT (WhI p m) (whole fn pre post) := by
+    (hB1 : BodyOk pre (fun b o => b ^^^ o) fC1) (hB2 : BodyOk post (fun b o => b ^^^ o) fC2)
+    (hct1 : StepCT p pre) (hct2 : StepCT p post)
+    {m : Nat} (hmn : 16 * m ≤ p.n) : CT (WhT p m) (wholeIn fn pre post) := by
   have hn := L.n32
   have dW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨w64 p.D, 16 * m⟩ :=
     fun h => ((L.d_w.sub_left (Region.sub_prefix hmn)).sub_right (Lay.wSub h)).symm
@@ -849,11 +984,12 @@ theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     · exact dW (by simp only [scrO] at h; omega_arith)
     · exact Lay.w_w (.inl h) (by simp only [scrO] at h; omega_arith) (by decide)
     · exact (L.bw' (by simp only [scrO] at h; omega_arith)).symm
-  have start : ∀ {fC : Block → Block → Block → Block} t, WhI p m t → ∃ t', runBlock isa passStart t = some t' ∧
-      PassI p fC m 0 t' := fun t ⟨E, nb, l, hl0⟩ => by
+  have start : ∀ {fC : Block → Block → Block → Block} t, WhT p m t → ∃ t', runBlock isa passStart t = some t' ∧
+      PassI p fC m 0 t' := fun t ⟨E, nb, l, hl0, hT⟩ => by
     obtain ⟨t₁, run₁, si₁, bx₁, di₁, g₁, m₁, rd₁, wr₁⟩ := passStart_ok L E nb
     exact ⟨t₁, run₁, PassI.start (E.keep (by rw [g₁ _ (by decide) (by decide) (by decide)])
-      (by rw [g₁ _ (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁) si₁ di₁ bx₁ (by rw [m₁]; exact hl0)⟩
+      (by rw [g₁ _ (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁) si₁ di₁ bx₁ (by rw [m₁]; exact hl0)
+      (by rw [m₁]; exact hT)⟩
   -- `nbO` and `l0O`, across a pass.
   have nbP : ∀ {O0 l : Block} {X : Nat → Block} {ckF : Nat → Block} {t₀ t t' : State} {i i' : Nat},
       PassInv p m O0 l X (fun b o => b ^^^ o) ckF t₀ t i → PassInv p m O0 l X (fun b o => b ^^^ o) ckF t₀ t' i' →
@@ -862,7 +998,7 @@ theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       (kP P' (by decide) (.inr (.inr (.inr (by decide)))) rfl) (by decide),
       P.frame.readW (r := ⟨w64 p.W + BitVec.ofNat 64 nbO, 4⟩) (Region.contains_self _ _)
       (kP P (by decide) (.inr (.inr (.inr (by decide)))) rfl) (by decide)]
-  have hargs : ∀ t, WhI p m t → ∃ s₁, runBlock isa [.mov .edx (slot dataO), .mov .ebx (slot nbO)] t = some s₁ ∧
+  have hargs : ∀ t, WhT p m t → ∃ s₁, runBlock isa [.mov .edx (slot dataO), .mov .ebx (slot nbO)] t = some s₁ ∧
       s₁.gpr .edx = p.D ∧ s₁.gpr .ebx = BitVec.ofNat 32 m ∧
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s₁.gpr r = t.gpr r) ∧ s₁.mem = t.mem ∧
       s₁.rd = t.rd ∧ s₁.wr = t.wr := fun t ⟨E, nb, _⟩ => by
@@ -870,31 +1006,31 @@ theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     simp only [slotv_eq] at hD nb
     exact ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hD, nb], by gregs [hD], by gregs [nb],
       fun r _ h₂ _ h₄ => by gregs [h₂, h₄], by gmems [], by gmems [], by gmems []⟩
-  unfold whole
+  unfold wholeIn
   -- The first pass.
   refine CT.seq (J := fun t => PassI p fC1 m 0 t ∧ slotv t.mem p.W nbO = BitVec.ofNat 32 m)
     (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide))
-    (fun t ⟨E, nb, l, hl0⟩ => by
+    (fun t ⟨E, nb, l, hl0, hT⟩ => by
       obtain ⟨t₁, run₁, si₁, bx₁, di₁, g₁, m₁, rd₁, wr₁⟩ := passStart_ok L E nb
       exact WP.of_runBlock ⟨t₁, run₁, PassI.start (E.keep (by rw [g₁ _ (by decide) (by decide) (by decide)])
-        (by rw [g₁ _ (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁) si₁ di₁ bx₁ (by rw [m₁]; exact hl0),
-        by rw [m₁]; exact nb⟩) ?_
-  refine CT.seq (J := WhI p m) ((pass_ct L hB1 hct1 hm0 hmn).mono fun _ h => h.1)
-    (fun t ⟨⟨_, _, _, _, _, hck, P⟩, nb⟩ => WP.mono (pass_ok L hB1 hck hmn hm0 P) fun t' P' =>
-      ⟨P'.env, by rw [nbP P P', nb], _, P'.l0⟩) ?_
+        (by rw [g₁ _ (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁) si₁ di₁ bx₁ (by rw [m₁]; exact hl0)
+        (by rw [m₁]; exact hT), by rw [m₁]; exact nb⟩) ?_
+  refine CT.seq (J := WhT p m) ((pass_ct L hB1 hct1 hmn).mono fun _ h => h.1)
+    (fun t ⟨⟨_, _, _, _, _, hck, P⟩, nb⟩ => WP.mono (pass_ok L hB1 hck hmn P) fun t' P' =>
+      ⟨P'.env, by rw [nbP P P', nb], _, P'.l0, P'.tbl⟩) ?_
   -- The call.
-  refine CT.seq (J := WhI p m) (callBlocks_ct ok ct nosp stack L
+  refine CT.seq (J := WhT p m) (callBlocks_ct ok ct nosp stack L
       (fun t h => ⟨h.1, DReg.d L h.1 hmn, hargs t h⟩) fun hJ => by exact CT.taint [.ebp] (pin_ebp hJ) (by taint_decide))
     (fun t h => WP.mono (callBlocks_ok ok nosp stack L h.1 (hargs t h) (DReg.d L h.1 hmn)) fun t' P => ?_) ?_
-  · obtain ⟨E, nb, l, hl0⟩ := h
-    refine ⟨P.env, ?_, l, ?_⟩
+  · obtain ⟨E, nb, l, hl0, hT⟩ := h
+    refine ⟨P.env, ?_, l, ?_, hT.frame P.frame (kC (by decide))⟩
     · rw [← nb]
       exact P.frame.readW (r := ⟨w64 p.W + BitVec.ofNat 64 nbO, 4⟩) (Region.contains_self _ _) (kC (by decide))
         (by decide)
     · rw [Proof.Ocb.blockAtMem_frame P.frame (kC (by decide)), hl0]
   -- `Offset_0` again, and the second pass.
   refine CT.seq (J := PassI p fC2 m 0) (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide))
-    (fun t ⟨E, nb, l, hl0⟩ => ?_) ((pass_ct L hB2 hct2 hm0 hmn))
+    (fun t ⟨E, nb, l, hl0, hT⟩ => ?_) ((pass_ct L hB2 hct2 hmn))
   obtain ⟨t₁, run₁, m₁, g₁, rd₁, wr₁⟩ := copy16_ok L E (s := o0O) (d := ofsO) (by decide) (by decide)
     (.inr (by decide))
   have f₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩] t.mem t₁.mem := by
@@ -911,8 +1047,95 @@ theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       (k₁ (.inr (by decide)) (by decide)) (by decide)
   have l0₁ : blockAtMem t₁.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0 := by
     rw [Proof.Ocb.blockAtMem_frame f₁ (k₁ (.inr (by decide)) (by decide)), hl0]
-  obtain ⟨t', run', P⟩ := start (fC := fC2) t₁ ⟨E₁, nb₁, l, l0₁⟩
+  have hT₁ : Tbl p l m t₁.mem := hT.frame f₁ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact tblR_w (.inl (by decide)) (by decide)
+  obtain ⟨t', run', P⟩ := start (fC := fC2) t₁ ⟨E₁, nb₁, l, l0₁, hT₁⟩
   exact WP.of_runBlock ⟨t', runBlock_app_of run₁ run', P⟩
+
+/-- What `ltable`'s levels need: the number of blocks, kept in `W`. -/
+def LtI (p : Prm) (m : Nat) (t : State) : Prop := Env p t ∧ slotv t.mem p.W nbO = BitVec.ofNat 32 m
+
+/-- A part of `W` written, the number of blocks kept. -/
+theorem LtI.mut {p : Prm} (L : Lay p) {m : Nat} {t t' : State} (h : LtI p m t) {d k : Nat}
+    (hd : 288 ≤ d ∧ d + k ≤ 384) (f : Frame [⟨w64 p.W + BitVec.ofNat 64 d, k⟩] t.mem t'.mem)
+    (g : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r) (rd : t'.rd = t.rd) (wr : t'.wr = t.wr) :
+    LtI p m t' := by
+  refine ⟨h.1.mut L (by rw [g _ (by decide) (by decide) (by decide), h.1.ebp])
+    (by rw [g _ (by decide) (by decide) (by decide), h.1.esp]) rd wr (frame_toMut f fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact inMut_w p (.inr (.inr (.inl ⟨by omega_arith, by omega_arith⟩)))), ?_⟩
+  rw [← h.2]
+  exact f.readW (r := ⟨w64 p.W + BitVec.ofNat 64 nbO, 4⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact Lay.w_w (.inl (by simp only [nbO]; omega_arith)) (by decide) (by omega_arith)) (by decide)
+
+/-- One level of `ltableFrom`: it branches on the number of blocks, and
+addresses `W`. -/
+theorem ltLevel_ct {p : Prm} (L : Lay p) {m j : Nat} (hm : m < 2 ^ 32) (hj : j < 5) {rest : Prog isa}
+    (h₁ : CT (fun t => t.gpr .ebp = p.W) (.block [.mov .eax (slot nbO), .alu .cmp .eax (imm (2 ^ (j + 1)))]))
+    (h₂ : CT (fun t => t.gpr .ebp = p.W) (.block (dbl .ebp (tblO + 16 * j) (tblO + 16 * (j + 1)))))
+    (hr : CT (LtI p m) rest) :
+    CT (LtI p m) (.seq (.block [.mov .eax (slot nbO), .alu .cmp .eax (imm (2 ^ (j + 1)))])
+      (.ite .b (.block []) (.seq (.block (dbl .ebp (tblO + 16 * j) (tblO + 16 * (j + 1)))) rest))) := by
+  have h288 : tblO = 288 := rfl
+  refine CT.seq (J := fun t => LtI p m t ∧ t.cf = some (decide (m < 2 ^ (j + 1)))) (h₁.mono fun _ h => h.1.ebp)
+    (fun t ⟨E, nb⟩ => ?_)
+    (CT.ite _ (fun _ h => eval_b h.2) (fun _ => CT.nil) fun _ =>
+      (CT.seq (J := LtI p m) (h₂.mono fun _ h => h.1.ebp) (fun t h => ?_) hr).mono fun _ h => h.1)
+  · obtain ⟨t₁, run₁, cf₁, g₁, m₁, rd₁, wr₁⟩ := ltHead_ok L E hm hj nb
+    exact WP.of_runBlock ⟨t₁, run₁, ⟨E.keep (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ m₁, by rw [m₁]; exact nb⟩,
+      cf₁⟩
+  · obtain ⟨t₂, run₂, m₂, g₂, rd₂, wr₂⟩ := dblW_ok L h.1 (s := tblO + 16 * j) (d := tblO + 16 * (j + 1))
+      (by omega_arith) (by omega_arith) (.inr (.inl (by omega_arith)))
+    exact WP.of_runBlock ⟨t₂, run₂, h.mut L (d := tblO + 16 * (j + 1)) (k := 16) ⟨by omega_arith, by omega_arith⟩
+      (by rw [m₂]; exact dblMem_frame _ _ _ _ _) g₂ rd₂ wr₂⟩
+
+/-- `ltable`: its levels, for the public number of blocks. -/
+theorem ltable_ct {p : Prm} (L : Lay p) {m : Nat} (hm : m < 2 ^ 32) : CT (LtI p m) ltable := by
+  have lvl : ∀ {j : Nat}, CT (fun t => t.gpr .ebp = p.W)
+      (.block (dbl .ebp (tblO + 16 * j) (tblO + 16 * (j + 1)))) →
+      CT (fun t => t.gpr .ebp = p.W) (.block [.mov .eax (slot nbO), .alu .cmp .eax (imm (2 ^ (j + 1)))]) →
+      j < 5 → ∀ {rest : Prog isa}, CT (LtI p m) rest →
+      CT (LtI p m) (.seq (.block [.mov .eax (slot nbO), .alu .cmp .eax (imm (2 ^ (j + 1)))])
+        (.ite .b (.block []) (.seq (.block (dbl .ebp (tblO + 16 * j) (tblO + 16 * (j + 1)))) rest))) :=
+    fun h₂ h₁ hj _ hr => ltLevel_ct L hm hj h₁ h₂ hr
+  unfold ltable
+  refine CT.seq (J := LtI p m) (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t h => ?_) ?_
+  · obtain ⟨t₁, run₁, m₁, g₁, rd₁, wr₁⟩ := copy16_ok L h.1 (s := l0O) (d := tblO) (by decide) (by decide)
+      (.inl (by decide))
+    exact WP.of_runBlock ⟨t₁, run₁, h.mut L (d := tblO) (k := 16) ⟨by decide, by decide⟩
+      (by rw [m₁]; exact copyMem16_frame _ _ _ _ _) (fun r h₁ _ _ => g₁ r h₁) rd₁ wr₁⟩
+  simp only [ltableFrom]
+  exact lvl (j := 0) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+    (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) (by decide)
+    (lvl (j := 1) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+      (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) (by decide)
+      (lvl (j := 2) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+        (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) (by decide)
+        (lvl (j := 3) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+          (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) (by decide)
+          (lvl (j := 4) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+            (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) (by decide) CT.nil))))
+
+/-- `whole`: the table, then the passes around the call. -/
+theorem whole_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86 f).pre (Proof.Aes.blocksX86 f).pub fn.code)
+    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {p : Prm} (L : Lay p) {pre post : List Instr}
+    {fC1 fC2 : Block → Block → Block → Block}
+    (hB1 : BodyOk pre (fun b o => b ^^^ o) fC1) (hB2 : BodyOk post (fun b o => b ^^^ o) fC2)
+    (hct1 : StepCT p pre) (hct2 : StepCT p post)
+    {m : Nat} (hmn : 16 * m ≤ p.n) : CT (WhI p m) (whole fn pre post) := by
+  have hn := L.n32
+  have hm : m < 2 ^ 32 := by omega_arith
+  unfold whole
+  refine CT.seq (J := WhT p m) ((ltable_ct L hm).mono fun _ h => ⟨h.1, h.2.1⟩)
+    (fun t ⟨E, nb, l, hl0⟩ => WP.mono (ltable_ok L E hm nb hl0) fun t₁ ⟨T₁, K₁⟩ => ?_)
+    (wholeIn_ct ok ct nosp stack L hB1 hB2 hct1 hct2 hmn)
+  refine ⟨K₁.env L E, by rw [K₁.nb, nb], l, ?_, T₁⟩
+  rw [Proof.Ocb.blockAtMem_frame K₁.frame (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact (tblR_w (.inl (by decide)) (by decide)).symm), hl0]
 
 /-! ## The rest -/
 
@@ -1054,17 +1277,15 @@ theorem bodySeal_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (ca
   simp only [body, ↓reduceIte]
   refine RelCT.assoc (CT.seq (J := Env p) (CT.seq (J := fun t => WhI p (p.n / 16) t ∧ t.zf = some (decide (p.n / 16 = 0)))
       (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t ⟨E, _, _, hl0⟩ => bodyHead_whi L E hl0)
-      (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun hb => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
+      (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun _ => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
     (bodyRest_ct v true L))
-  · exact (whole_ct v.encOk v.encCt v.encNosp v.encStack L (sealPre_ok L) (xorOfs_ok L)
-      (fun h => by exact CT.taint [.ebp, .esi] (pin2 h) (by taint_decide))
-      (fun h => by exact CT.taint [.ebp, .esi] (pin2 h) (by taint_decide))
-      (by have := of_decide_eq_false hb; omega_arith) (Nat.mul_div_le _ _)).mono fun _ h => h.1
+  · exact (whole_ct v.encOk v.encCt v.encNosp v.encStack L sealPre_ok xorOfs_ok (stepCT_sealPre p) (stepCT_xorOfs p)
+      (Nat.mul_div_le _ _)).mono fun _ h => h.1
   · exact WP.mono (wholeIte_ok (O0 := blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO))
       (l := ctxLstar t.mem (w64 p.K)) (G := fun m => ctxCiph m (w64 p.K) p.R)
       (ckF1 := ckOf fun i => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i))) (p.n / 16))
-      v.encOk v.encNosp v.encStack (fun P _ hi => P.enc hi) (fun h => ctxCiph_mut L h) (sealPre_ok L) (xorOfs_ok L)
+      v.encOk v.encNosp v.encStack (fun P _ hi => P.enc hi) (fun h => ctxCiph_mut L h) sealPre_ok xorOfs_ok
       L E rfl ho0 hck hl0 (fun _ _ => rfl) rfl (fun _ _ => rfl)) fun _ Pw => Pw.env
 
 theorem bodyOpen_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (callees v) false) := by
@@ -1072,19 +1293,17 @@ theorem bodyOpen_ct (v : BlocksImpl) {p : Prm} (L : Lay p) : CT (BI p) (body (ca
   simp only [body, Bool.false_eq_true, ↓reduceIte]
   refine RelCT.assoc (CT.seq (J := Env p) (CT.seq (J := fun t => WhI p (p.n / 16) t ∧ t.zf = some (decide (p.n / 16 = 0)))
       (CT.taint [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)) (fun t ⟨E, _, _, hl0⟩ => bodyHead_whi L E hl0)
-      (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun hb => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
+      (CT.ite _ (fun _ h => eval_e h.2) (fun _ => CT.nil) fun _ => ?_)) (fun t ⟨E, ho0, hck, hl0⟩ => ?_)
     (bodyRest_ct v false L))
-  · exact (whole_ct v.decOk v.decCt v.decNosp v.decStack L (xorOfs_ok L) (openPost_ok L)
-      (fun h => by exact CT.taint [.ebp, .esi] (pin2 h) (by taint_decide))
-      (fun h => by exact CT.taint [.ebp, .esi] (pin2 h) (by taint_decide))
-      (by have := of_decide_eq_false hb; omega_arith) (Nat.mul_div_le _ _)).mono fun _ h => h.1
+  · exact (whole_ct v.decOk v.decCt v.decNosp v.decStack L xorOfs_ok openPost_ok (stepCT_xorOfs p) (stepCT_openPost p)
+      (Nat.mul_div_le _ _)).mono fun _ h => h.1
   · exact WP.mono (wholeIte_ok (O0 := blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO))
       (l := ctxLstar t.mem (w64 p.K)) (G := fun m => ctxInv m (w64 p.K) p.R) (ckF1 := fun _ => 0)
       (ckF2 := ckOf fun i => ctxInv t.mem (w64 p.K) p.R
         (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)) ^^^
           offAt (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) (ctxLstar t.mem (w64 p.K)) (i + 1)) ^^^
         offAt (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO)) (ctxLstar t.mem (w64 p.K)) (i + 1))
-      v.decOk v.decNosp v.decStack (fun P _ hi => P.dec hi) (fun h => ctxInv_mut L h) (xorOfs_ok L) (openPost_ok L)
+      v.decOk v.decNosp v.decStack (fun P _ hi => P.dec hi) (fun h => ctxInv_mut L h) xorOfs_ok openPost_ok
       L E rfl ho0 hck hl0 (fun _ _ => rfl) rfl (fun _ _ => rfl)) fun _ Pw => Pw.env
 
 /-! ## The tag -/
@@ -1333,6 +1552,18 @@ theorem mask_byte32 (b : Byte) (c : Bool) :
       show (0 : BitVec 32) - 1 = BitVec.allOnes 32 by decide, BitVec.and_allOnes]
     simp
 
+/-- `0 − ok` in every word of an SSE register. -/
+def maskX (c : Bool) : BitVec 128 := if c then BitVec.allOnes 128 else 0
+
+theorem mask_xmm (c : Bool) :
+    shufDwords ((0 : BitVec 96) ++ ((0 : BitVec 32) - (if c then 1 else 0))) 0 = maskX c := by
+  cases c <;> decide
+
+theorem mask_block (v : BitVec 128) (c : Bool) : v &&& maskX c = if c then v else 0 := by
+  cases c
+  · simp [maskX]
+  · simp only [maskX, ite_true, BitVec.and_allOnes]
+
 theorem length_mask (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
     (if c then bytesAt m P j else zeros j).length = j := by
   cases c <;> simp [zeros, length_bytesAt]
@@ -1342,86 +1573,246 @@ theorem mask_succ (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
       (if c then bytesAt m P j else zeros j) ++ [if c then m (P + BitVec.ofNat 64 j) else 0] := by
   cases c <;> simp [zeros, bytesAt_succ, List.replicate_succ']
 
-/-- One step of `mask`. -/
-theorem maskStep_ok {p : Prm} (L : Lay p) {u : State} {j : Nat} {c : Bool} (hj : j < p.n)
-    (hdi : u.gpr .edi = p.D + BitVec.ofNat 32 j) (hcx : u.gpr .ecx = BitVec.ofNat 32 (p.n - j))
+theorem mask_add (m : Mem) (P : Addr) (c : Bool) (a b : Nat) :
+    (if c then bytesAt m P (a + b) else zeros (a + b)) =
+      (if c then bytesAt m P a else zeros a) ++
+        (if c then bytesAt m (P + BitVec.ofNat 64 a) b else zeros b) := by
+  cases c <;> simp [zeros, Proof.Ocb.bytesAt_append, ← List.replicate_append_replicate]
+
+/-- A block written is its 16 bytes written. -/
+theorem writeW_eq_writeBytes (m : Mem) (a : Addr) (v : BitVec 128) :
+    m.writeW a v = writeBytes m a ((List.range 16).map fun k => v.extractLsb' (8 * k) 8) :=
+  write_eq_writeBytes m a 16 v
+
+/-- The block at `a`, or zero, written back: the 16 bytes at `a` masked. -/
+theorem writeW_mask (m m' : Mem) (a : Addr) (c : Bool) :
+    m'.writeW a (if c then m.readW a 128 else (0 : BitVec 128)) =
+      writeBytes m' a (if c then bytesAt m a 16 else zeros 16) := by
+  rw [writeW_eq_writeBytes]
+  refine congrArg (writeBytes m' a) ?_
+  cases c
+  · simp [zeros]; decide
+  · simp only [ite_true, bytesAt]
+    refine List.map_congr_left fun k hk => ?_
+    rw [List.mem_range] at hk
+    rw [← Mem.extractLsb'_read m a (n := 16) hk]
+    rfl
+
+/-- What both loops keep: `edi` after the first `j` bytes of the data, which
+are masked, and the mask in `edx` and `xmm0`. -/
+structure MInv (p : Prm) (s s₁ t : State) (c : Bool) (j : Nat) : Prop where
+  edi : t.gpr .edi = p.D + BitVec.ofNat 32 j
+  mem : t.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) j else zeros j)
+  keep : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edi → t.gpr r = s₁.gpr r
+  xmm0 : t.xmm .xmm0 = s₁.xmm .xmm0
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+theorem MInv.frame {p : Prm} {s s₁ t : State} {c : Bool} {j : Nat} (h : MInv p s s₁ t c j) :
+    Frame [⟨w64 p.D, j⟩] s.mem t.mem := by
+  rw [h.mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
+
+/-- The bytes from `j` on are as they were. -/
+theorem MInv.at {p : Prm} {s s₁ t : State} {c : Bool} {j i : Nat} (h : MInv p s s₁ t c j) (hi : j ≤ i)
+    (hi' : i < 2 ^ 64) : t.mem (w64 p.D + BitVec.ofNat 64 i) = s.mem (w64 p.D + BitVec.ofNat 64 i) :=
+  h.frame (w64 p.D + BitVec.ofNat 64 i) fun r hr hcon => by
+    simp only [List.mem_singleton] at hr; subst hr
+    simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) hi'] at hcon; omega_arith
+
+theorem MInv.readW {p : Prm} {s s₁ t : State} {c : Bool} {j : Nat} (h : MInv p s s₁ t c j)
+    (hj : j + 16 < 2 ^ 64) :
+    t.mem.readW (w64 p.D + BitVec.ofNat 64 j) 128 = s.mem.readW (w64 p.D + BitVec.ofNat 64 j) 128 := by
+  refine Mem.readW_congr fun k hk => ?_
+  rw [add_ofNat_assoc]
+  exact h.at (by omega_arith) (by omega_arith)
+
+/-- One step of `maskBlocks`. -/
+theorem maskBlock_ok {p : Prm} (L : Lay p) {u : State} {j w : Nat} {c : Bool} (hj : j + 16 ≤ p.n) (hw : 0 < w)
+    (hw' : w < 2 ^ 32) (hdi : u.gpr .edi = p.D + BitVec.ofNat 32 j) (hax : u.gpr .eax = BitVec.ofNat 32 w)
+    (hx0 : u.xmm .xmm0 = maskX c)
+    (r : InRegions (u.rd ++ u.wr) (w64 p.D + BitVec.ofNat 64 j) 16)
+    (w16 : InRegions u.wr (w64 p.D + BitVec.ofNat 64 j) 16) :
+    ∃ u', runBlock isa [.movdquLoad .xmm1 (at_ .edi 0), .xop (.bin .pand .xmm1 .xmm0),
+        .movdquStore (at_ .edi 0) .xmm1, .alu .add .edi (imm 16), .alu .sub .eax (imm 1)] u = some u' ∧
+      u'.mem = u.mem.writeW (w64 p.D + BitVec.ofNat 64 j)
+        (if c then u.mem.readW (w64 p.D + BitVec.ofNat 64 j) 128 else (0 : BitVec 128)) ∧
+      u'.gpr .edi = p.D + BitVec.ofNat 32 (j + 16) ∧ u'.gpr .eax = BitVec.ofNat 32 (w - 1) ∧
+      u'.zf = some (decide (w = 1)) ∧ u'.xmm .xmm0 = u.xmm .xmm0 ∧
+      (∀ r, r ≠ .eax → r ≠ .edi → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
+  have hn := L.n32
+  have a0 : w64 (p.D + BitVec.ofNat 32 j + BitVec.ofNat 32 0) = w64 p.D + BitVec.ofNat 64 j := by
+    rw [add_ofNat_assoc32, Nat.add_zero]; exact w64_add (by have := L.dw; omega_arith)
+  refine ⟨_, by srun [hdi, a0, r, w16], by smems [hdi, a0, hx0, eval_pand, mask_block], ?_, ?_, ?_, by smems [],
+    fun r h₁ h₂ => by sregs [h₁, h₂], by smems [], by smems []⟩
+  · sregs [hdi]; rw [add_ofNat_assoc32]
+  · sregs [hax]; rw [sub1_32 (by omega_arith) (by omega_arith)]
+  · smems [hax]
+    rw [sub1_32 (by omega_arith) (by omega_arith), beq_zero32 (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
+
+/-- One step of `maskBytes`. -/
+theorem maskStep_ok {p : Prm} (L : Lay p) {u : State} {j w : Nat} {c : Bool} (hj : j < p.n) (hw : 0 < w)
+    (hw' : w < 2 ^ 32) (hdi : u.gpr .edi = p.D + BitVec.ofNat 32 j) (hcx : u.gpr .ecx = BitVec.ofNat 32 w)
     (hdx : u.gpr .edx = 0 - (if c then 1 else 0))
-    (r : InRegions (u.rd ++ u.wr) (w64 p.D + BitVec.ofNat 64 j) 1) (w : InRegions u.wr (w64 p.D + BitVec.ofNat 64 j) 1) :
+    (r : InRegions (u.rd ++ u.wr) (w64 p.D + BitVec.ofNat 64 j) 1) (w1 : InRegions u.wr (w64 p.D + BitVec.ofNat 64 j) 1) :
     ∃ u', runBlock isa [.movzx8 .eax (at_ .edi 0), .alu .and .eax (.reg .edx), .store8 (at_ .edi 0) .al,
         .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)] u = some u' ∧
       u'.mem = u.mem.writeW (w64 p.D + BitVec.ofNat 64 j)
         ((if c then u.mem (w64 p.D + BitVec.ofNat 64 j) else 0 : Byte)) ∧
-      u'.gpr .edi = p.D + BitVec.ofNat 32 (j + 1) ∧ u'.gpr .ecx = BitVec.ofNat 32 (p.n - (j + 1)) ∧
-      u'.zf = some (decide (j + 1 = p.n)) ∧
+      u'.gpr .edi = p.D + BitVec.ofNat 32 (j + 1) ∧ u'.gpr .ecx = BitVec.ofNat 32 (w - 1) ∧
+      u'.zf = some (decide (w = 1)) ∧ u'.xmm = u.xmm ∧
       (∀ r, r ≠ .eax → r ≠ .edi → r ≠ .ecx → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
   have hn := L.n32
   have a0 : w64 (p.D + BitVec.ofNat 32 j + BitVec.ofNat 32 0) = w64 p.D + BitVec.ofNat 64 j := by
     rw [add_ofNat_assoc32, Nat.add_zero]; exact w64_add (by have := L.dw; omega_arith)
-  refine ⟨_, by grun [hdi, a0, r, w], by gmems [hdx, mask_byte32], ?_, ?_, ?_,
+  refine ⟨_, by grun [hdi, a0, r, w1], by gmems [hdx, mask_byte32], ?_, ?_, ?_, by smems [],
     fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems []⟩
   · gregs [hdi]; rw [add_ofNat_assoc32]
-  · gregs [hcx]; rw [sub1_32 (by omega_arith) (by omega_arith), show p.n - j - 1 = p.n - (j + 1) by omega_arith]
+  · gregs [hcx]; rw [sub1_32 (by omega_arith) (by omega_arith)]
   · gmems [hcx]
     rw [sub1_32 (by omega_arith) (by omega_arith), beq_zero32 (by omega_arith)]
     exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
-/-- Every byte of the data ANDed with `0 − ok`, for `ok` (at `W + okO`) 1 or 0. -/
+/-- The blocks: from `j = 16 i`, with `n / 16 − i` blocks left in `eax`, to
+`16 (n / 16)`. -/
+theorem maskBlocks_wp {p : Prm} (L : Lay p) {s s₁ t : State} {c : Bool} {i : Nat}
+    (hD : Covers [⟨w64 p.D, p.n⟩] (s.rd ++ s.wr)) (hDw : Covers [⟨w64 p.D, p.n⟩] s.wr)
+    (hx0 : s₁.xmm .xmm0 = maskX c) (hi : i < p.n / 16) (ht : MInv p s s₁ t c (16 * i))
+    (hax : t.gpr .eax = BitVec.ofNat 32 (p.n / 16 - i)) (hcx : t.gpr .ecx = s₁.gpr .ecx) :
+    WP isa maskBlocks t fun t' => MInv p s s₁ t' c (16 * (p.n / 16)) ∧ t'.gpr .ecx = s₁.gpr .ecx := by
+  have hn := L.n32
+  have hd := L.dw
+  refine WP.loop (M := isa) (c := .ne)
+    (fun (k : Nat) (t : State) => ∃ i, k = p.n / 16 - i ∧ i < p.n / 16 ∧ MInv p s s₁ t c (16 * i) ∧
+      t.gpr .eax = BitVec.ofNat 32 (p.n / 16 - i) ∧ t.gpr .ecx = s₁.gpr .ecx) ?_ (p.n / 16 - i) t
+    ⟨i, rfl, hi, ht, hax, hcx⟩
+  rintro k t ⟨i, rfl, hi, ht, hax, hcx⟩
+  have hin : 16 * i + 16 ≤ p.n := by omega_arith
+  obtain ⟨t', run', mem', di', ax', zf', x0', g', rd', wr'⟩ := maskBlock_ok L (c := c) hin
+    (show 0 < p.n / 16 - i by omega_arith) (by omega_arith) ht.edi hax (by rw [ht.xmm0, hx0])
+    (by rw [ht.rd, ht.wr]; exact in_off hD (by omega_arith) (by omega_arith))
+    (by rw [ht.wr]; exact in_off hDw (by omega_arith) (by omega_arith))
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  have hmem : t'.mem = writeBytes s.mem (w64 p.D)
+      (if c then bytesAt s.mem (w64 p.D) (16 * (i + 1)) else zeros (16 * (i + 1))) := by
+    rw [mem', ht.readW (by omega_arith), ht.mem, writeW_mask, show 16 * (i + 1) = 16 * i + 16 by omega_arith, mask_add,
+      ← writeBytes_append _ _ _ _ (by rw [length_mask, length_mask]; omega_arith), length_mask]
+  have e1 : p.n / 16 - i - 1 = p.n / 16 - (i + 1) := by omega_arith
+  have hz : t'.zf = some (decide (i + 1 = p.n / 16)) := by
+    rw [zf']; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
+  have ht' : MInv p s s₁ t' c (16 * (i + 1)) :=
+    ⟨by rw [di', show 16 * (i + 1) = 16 * i + 16 by omega_arith], hmem,
+      fun r h₁ h₂ h₃ => by rw [g' r h₁ h₃, ht.keep r h₁ h₂ h₃], by rw [x0', ht.xmm0], by rw [rd', ht.rd],
+      by rw [wr', ht.wr]⟩
+  have hcx' : t'.gpr .ecx = s₁.gpr .ecx := by rw [g' _ (by decide) (by decide), hcx]
+  by_cases he : i + 1 = p.n / 16
+  · left
+    exact ⟨(eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht', hcx'⟩
+  · right
+    exact ⟨(eval_ne hz).trans (by simp [he]), p.n / 16 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, ht',
+      by rw [ax', e1], hcx'⟩
+
+/-- The last bytes: from `j < n` to `n`, with `n − j` left in `ecx`. -/
+theorem maskBytes_wp {p : Prm} (L : Lay p) {s s₁ t : State} {c : Bool} {j : Nat}
+    (hD : Covers [⟨w64 p.D, p.n⟩] (s.rd ++ s.wr)) (hDw : Covers [⟨w64 p.D, p.n⟩] s.wr)
+    (hdx : s₁.gpr .edx = 0 - (if c then 1 else 0)) (hj : j < p.n) (ht : MInv p s s₁ t c j)
+    (hcx : t.gpr .ecx = BitVec.ofNat 32 (p.n - j)) :
+    WP isa maskBytes t fun t' => MInv p s s₁ t' c p.n := by
+  have hn := L.n32
+  have hd := L.dw
+  refine WP.loop (M := isa) (c := .ne)
+    (fun (k : Nat) (t : State) => ∃ j, k = p.n - j ∧ j < p.n ∧ MInv p s s₁ t c j ∧
+      t.gpr .ecx = BitVec.ofNat 32 (p.n - j)) ?_ (p.n - j) t ⟨j, rfl, hj, ht, hcx⟩
+  rintro k t ⟨j, rfl, hj, ht, hcx⟩
+  obtain ⟨t', run', mem', di', cx', zf', x', g', rd', wr'⟩ := maskStep_ok L (c := c) hj
+    (show 0 < p.n - j by omega_arith) (by omega_arith) ht.edi hcx
+    (by rw [ht.keep _ (by decide) (by decide) (by decide), hdx])
+    (by rw [ht.rd, ht.wr]; exact in_off hD (by omega_arith) (by omega_arith))
+    (by rw [ht.wr]; exact in_off hDw (by omega_arith) (by omega_arith))
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  have hmem : t'.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) (j + 1) else zeros (j + 1)) := by
+    rw [mem', ht.at (Nat.le_refl _) (by omega_arith), ht.mem, mask_succ,
+      writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
+  have hz : t'.zf = some (decide (j + 1 = p.n)) := by
+    rw [zf']; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
+  have ht' : MInv p s s₁ t' c (j + 1) :=
+    ⟨di', hmem, fun r h₁ h₂ h₃ => by rw [g' r h₁ h₃ h₂, ht.keep r h₁ h₂ h₃], by rw [x', ht.xmm0], by rw [rd', ht.rd],
+      by rw [wr', ht.wr]⟩
+  by_cases he : j + 1 = p.n
+  · left
+    exact ⟨(eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht'⟩
+  · right
+    exact ⟨(eval_ne hz).trans (by simp [he]), p.n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, ht',
+      by rw [cx', show p.n - j - 1 = p.n - (j + 1) by omega_arith]⟩
+
+/-- The head of `mask`: the data in `edi`, `0 − ok` in `edx` and in every
+word of `xmm0`, the whole blocks in `eax` and the bytes after them in `ecx`. -/
+theorem maskHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
+    (hok : slotv s.mem p.W okO = if c then BitVec.ofNat 32 1 else BitVec.ofNat 32 0) :
+    ∃ s₁, runBlock isa [.mov .edi (slot dataO), .mov .ecx (slot lenO), .mov .edx (imm 0),
+        .alu .sub .edx (slot okO), .xop (.movd .xmm0 .edx), .xop (.pshufd .xmm0 .xmm0 0), .mov .eax (.reg .ecx),
+        .shift .shr .eax 4, .alu .and .ecx (imm 15), .alu .test .eax (.reg .eax)] s = some s₁ ∧
+      s₁.gpr .edi = p.D + BitVec.ofNat 32 0 ∧ s₁.gpr .ecx = BitVec.ofNat 32 (p.n % 16) ∧
+      s₁.gpr .edx = 0 - (if c then 1 else 0) ∧ s₁.gpr .eax = BitVec.ofNat 32 (p.n / 16 - 0) ∧
+      s₁.zf = some (decide (p.n / 16 = 0)) ∧ s₁.xmm .xmm0 = maskX c ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr := by
+  have hn := L.n32
+  have hD := E.slots.data
+  have hl := E.slots.len
+  simp only [slotv_eq] at hD hl hok
+  have hdx : (0 : BitVec 32) - (if c then BitVec.ofNat 32 1 else BitVec.ofNat 32 0) = 0 - (if c then 1 else 0) := by
+    cases c <;> rfl
+  refine ⟨_, by srun [E.ebp, L.aW, E.perm.wR, hD, hl, hok], by sregs [hD]; exact (BitVec.add_zero _).symm,
+    ?_, by sregs [hok]; exact hdx, by sregs [hl, Proof.AesGcm.X86.shr4 hn, Nat.sub_zero], ?_, ?_,
+    fun r h₁ h₂ h₃ h₄ => by sregs [h₁, h₂, h₃, h₄], by smems [], by smems [], by smems []⟩
+  · sregs [hl]
+    exact (Proof.AesGcm.X86.and15 _).trans (by rw [toNat_ofNat32 hn])
+  · smems [hl, Proof.AesGcm.X86.shr4 hn, BitVec.and_self, beq_zero32 (show p.n / 16 < 2 ^ 32 by omega_arith)]
+  · smems [hok, hdx]; exact mask_xmm c
+
+/-- Every byte of the data ANDed with `0 − ok`, for `ok` (at `W + okO`) 1 or
+0: its whole blocks, then the rest. -/
 theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
     (hok : slotv s.mem p.W okO = if c then BitVec.ofNat 32 1 else BitVec.ofNat 32 0) :
     WP isa mask s fun s' => s'.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) p.n else zeros p.n) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hn := L.n32
-  have hd := L.dw
-  have hD := E.slots.data
-  have hl := E.slots.len
-  simp only [slotv_eq] at hD hl hok
-  obtain ⟨s₁, run₁, di₁, cx₁, dx₁, zf₁, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.mov .edi (slot dataO),
-      .mov .ecx (slot lenO), .mov .edx (imm 0), .alu .sub .edx (slot okO), .alu .test .ecx (.reg .ecx)] s = some s₁ ∧
-      s₁.gpr .edi = p.D + BitVec.ofNat 32 0 ∧ s₁.gpr .ecx = BitVec.ofNat 32 (p.n - 0) ∧
-      s₁.gpr .edx = 0 - (if c then 1 else 0) ∧ s₁.zf = some (decide (p.n = 0)) ∧
-      (∀ r, r ≠ .ecx → r ≠ .edx → r ≠ .edi → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
-      s₁.wr = s.wr := by
-    refine ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hD, hl, hok], by gregs [hD]; exact (BitVec.add_zero _).symm,
-      by gregs [hl, Nat.sub_zero], ?_, ?_, fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems [],
-      by gmems []⟩
-    · gregs [hok]; cases c <;> rfl
-    · gmems [hl, BitVec.and_self, beq_zero32 hn]
+  obtain ⟨s₁, run₁, di₁, cx₁, dx₁, ax₁, zf₁, x0₁, g₁, m₁, rd₁, wr₁⟩ := maskHead_ok L E hok
+  have hD : Covers [⟨w64 p.D, p.n⟩] (s.rd ++ s.wr) := covers_left E.perm.d
+  have inv₀ : MInv p s s₁ s₁ c (16 * 0) :=
+    ⟨di₁, by rw [m₁]; cases c <;> simp [bytesAt, zeros, writeBytes_nil], fun _ _ _ _ => rfl, rfl, rd₁, wr₁⟩
+  have fin : ∀ {t : State}, MInv p s s₁ t c p.n →
+      t.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) p.n else zeros p.n) ∧
+        (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr :=
+    fun ht => ⟨ht.mem, fun r h₁ h₂ h₃ h₄ => by rw [ht.keep r h₁ h₂ h₄, g₁ r h₁ h₂ h₃ h₄], ht.rd, ht.wr⟩
+  -- The blocks.
+  have words : WP isa (.ite .e (.block []) maskBlocks) s₁ fun t =>
+      MInv p s s₁ t c (16 * (p.n / 16)) ∧ t.gpr .ecx = s₁.gpr .ecx := by
+    refine WP.ite (decide (p.n / 16 = 0)) (eval_e zf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+    · rw [of_decide_eq_true hb]; exact ⟨inv₀, rfl⟩
+    · exact maskBlocks_wp L hD E.perm.d x0₁ (Nat.pos_of_ne_zero (of_decide_eq_false hb)) inv₀ ax₁ rfl
   unfold mask
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite (decide (p.n = 0)) (eval_e zf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
-  · have hn0 : p.n = 0 := of_decide_eq_true hb
-    refine ⟨?_, fun r h₁ h₂ h₃ h₄ => g₁ r h₂ h₃ h₄, rd₁, wr₁⟩
-    rw [m₁, hn0]
-    cases c <;> simp [bytesAt, zeros, writeBytes_nil]
-  have hn0 : 0 < p.n := Nat.pos_of_ne_zero (of_decide_eq_false hb)
-  refine WP.loop (M := isa) (c := .ne)
-    (fun (k : Nat) (t : State) => ∃ j, k = p.n - j ∧ j < p.n ∧ t.gpr .edi = p.D + BitVec.ofNat 32 j ∧
-      t.gpr .ecx = BitVec.ofNat 32 (p.n - j) ∧ t.gpr .edx = 0 - (if c then 1 else 0) ∧
-      t.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) j else zeros j) ∧
-      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_
-    (p.n - 0) _ ⟨0, rfl, hn0, di₁, cx₁, dx₁, by rw [m₁]; cases c <;> simp [bytesAt, zeros, writeBytes_nil],
-      fun r _ h₂ h₃ h₄ => g₁ r h₂ h₃ h₄, rd₁, wr₁⟩
-  rintro k t ⟨j, rfl, hj, di, cx, dx, mem, g, rd, wr⟩
-  obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok L (c := c) hj di cx dx
-    (by rw [rd, wr]; exact in_left (in_off E.perm.d (by omega_arith) (by omega_arith)))
-    (by rw [wr]; exact in_off E.perm.d (by omega_arith) (by omega_arith))
-  refine WP.of_runBlock ⟨t', run', ?_⟩
-  have fr : Frame [⟨w64 p.D, j⟩] s.mem t.mem := by
-    rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
-  have hq : t.mem (w64 p.D + BitVec.ofNat 64 j) = s.mem (w64 p.D + BitVec.ofNat 64 j) :=
-    fr _ fun r hr hcon => by
-      simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
-  have hmem : t'.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) (j + 1) else zeros (j + 1)) := by
-    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
-  have gg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
-    rw [g' r h₁ h₄ h₂, g r h₁ h₂ h₃ h₄]
-  by_cases he : j + 1 = p.n
-  · left
-    exact ⟨(eval_ne zf').trans (by simp [he]), by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
-  · right
-    exact ⟨(eval_ne zf').trans (by simp [he]), p.n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, di', cx',
-      by rw [g' _ (by decide) (by decide) (by decide), dx], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
+  refine WP.seq (WP.mono words fun t ⟨ht, hcx⟩ => ?_)
+  -- The rest.
+  have cx : t.gpr .ecx = BitVec.ofNat 32 (p.n - 16 * (p.n / 16)) := by
+    rw [hcx, cx₁]; exact congrArg _ (by omega_arith)
+  obtain ⟨t₁, run₂, zf₂, g₂, m₂, x₂, rd₂, wr₂⟩ : ∃ t₁, runBlock isa [.alu .test .ecx (.reg .ecx)] t = some t₁ ∧
+      t₁.zf = some (decide (16 * (p.n / 16) = p.n)) ∧ t₁.gpr = t.gpr ∧ t₁.mem = t.mem ∧ t₁.xmm = t.xmm ∧
+      t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by grun [], ?_, by gmems [], by gmems [], by smems [], by gmems [], by gmems []⟩
+    gmems [cx, BitVec.and_self, beq_zero32 (show p.n - 16 * (p.n / 16) < 2 ^ 32 by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
+  have ht₁ : MInv p s s₁ t₁ c (16 * (p.n / 16)) :=
+    ⟨by rw [g₂, ht.edi], by rw [m₂, ht.mem], fun r h₁ h₂ h₃ => by rw [g₂, ht.keep r h₁ h₂ h₃],
+      by rw [x₂, ht.xmm0], by rw [rd₂, ht.rd], by rw [wr₂, ht.wr]⟩
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₂, ?_⟩)
+  refine WP.ite (decide (16 * (p.n / 16) = p.n)) (eval_e zf₂) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · have e := of_decide_eq_true hb
+    rw [e] at ht₁; exact fin ht₁
+  · exact WP.mono (maskBytes_wp L hD E.perm.d dx₁ (by have := of_decide_eq_false hb; omega_arith) ht₁
+      (by rw [g₂, cx])) fun t' ht' => fin ht'
 
 end VG.Proof.AesOcb.X86
 
@@ -1537,7 +1928,7 @@ theorem mask_ct {p : Prm} (L : Lay p) : CT (Env p) mask := by
   refine load_ct L (r := .ecx) (o := lenO) (by decide)
     (fun t h => ⟨Ld.env (by decide) (by decide) (fun _ h => h) t h, (Ld.env (by decide) (by decide) (fun _ h => h) t h).slots.len⟩)
     (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)) ?_
-  exact CT.taint [.ebp, .edi, .ecx] (pin3 fun t h => ⟨Ld.reg (by decide) (fun s h =>
+  exact CT.taintS [.ebp, .edi, .ecx] (pin3 fun t h => ⟨Ld.reg (by decide) (fun s h =>
       Ld.reg (by decide) (fun s (h : Env p s) => h.ebp) s h) t h,
     Ld.reg (by decide) (fun s h => by obtain ⟨_, _, hv, _⟩ := h; exact hv) t h,
     by obtain ⟨_, _, hv, _⟩ := h; exact hv⟩) (by taint_decide)
@@ -1951,14 +2342,14 @@ variable (v : BlocksImpl)
 
 theorem seal_noEsp : («seal» (callees v)).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, Code.allInstrs,
     noEsp_of v.encNosp, noEsp_of v.decNosp, ↓reduceIte]
   decide +kernel
 
 theorem open_noEsp : («open» (callees v)).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, Code.allInstrs,
     noEsp_of v.encNosp, noEsp_of v.decNosp, Bool.false_eq_true, ↓reduceIte]
   decide +kernel
@@ -1970,14 +2361,14 @@ theorem init_noEsp : (init (callees v)).allInstrs (fun i => !Taint.clobbers i .e
 
 theorem seal_stackUse : stackUse («seal» (callees v)) ≤ 24 := by
   simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, stackUse, v.encStack,
     v.decStack, ↓reduceIte]
   decide +kernel
 
 theorem open_stackUse : stackUse («open» (callees v)) ≤ 24 := by
   simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, stackUse,
     v.encStack, v.decStack, Bool.false_eq_true, ↓reduceIte]
   decide +kernel
@@ -1988,14 +2379,14 @@ theorem init_stackUse : stackUse (init (callees v)) ≤ 24 := by
 
 theorem seal_spSafe : («seal» (callees v)).all (fun i => !isa.writesSp i) = true := by
   simp only [«seal», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, tagOut, callBlocks, blocksFrame, callees, Code.all, v.encSpSafe,
     v.decSpSafe, Bool.and_true, ↓reduceIte]
   decide +kernel
 
 theorem open_spSafe : («open» (callees v)).all (fun i => !isa.writesSp i) = true := by
   simp only [«open», front, ocbEntry, Impl.AesGcm.X86.entry, nonce, nonceBlock, Impl.AesGcm.X86.copyLoop,
-    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, pass, nextOffset, rest,
+    Impl.AesOcb.X86.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body, whole, wholeIn, pass, quad, single, lAddr, rest,
     padCk, xorPad, Impl.AesGcm.X86.xorLoop, tag, recv, cmp, mask, callBlocks, blocksFrame, callees, Code.all,
     v.encSpSafe, v.decSpSafe, Bool.false_eq_true, Bool.and_true, ↓reduceIte]
   decide +kernel

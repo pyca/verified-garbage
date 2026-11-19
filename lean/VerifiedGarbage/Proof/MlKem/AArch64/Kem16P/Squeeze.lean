@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Squeeze
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
-public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load

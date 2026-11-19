@@ -32,11 +32,11 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseAddress
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseAddress
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
@@ -48,16 +48,12 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBody
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarPair
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarPair
 import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 

@@ -14,9 +14,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
 public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
@@ -25,15 +23,13 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 meta import VerifiedGarbage.Proof.MlKem.Arith
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -43,7 +39,6 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 
 /-! ### `MlKem.AArch64.Paired.FinishTiming`, which this module and modules that import it used -/

@@ -20,15 +20,15 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombLit
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.P224.ArmComb
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

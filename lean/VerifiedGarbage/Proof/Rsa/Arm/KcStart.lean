@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
-public import VerifiedGarbage.Proof.Rsa.Arm.KcBase
-import VerifiedGarbage.Proof.Rsa.Arm.KcOps
+public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import Mathlib.Order.RelClasses

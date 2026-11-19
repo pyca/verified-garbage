@@ -49,7 +49,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedLookupTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild

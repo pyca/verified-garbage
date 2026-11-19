@@ -6,20 +6,20 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.X86.Common
+public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
-meta import VerifiedGarbage.Proof.Scrypt.X86.Common
+meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.Scrypt.X86.Scrypt
 import VerifiedGarbage.Proof.Framework.Offset
@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Impl.Scrypt.X86.Scrypt

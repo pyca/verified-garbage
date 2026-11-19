@@ -13,14 +13,12 @@ public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Checks
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.Entry
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.PrivPCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny

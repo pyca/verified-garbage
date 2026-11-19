@@ -16,10 +16,8 @@ public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push

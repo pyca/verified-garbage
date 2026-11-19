@@ -34,10 +34,8 @@ meta import VerifiedGarbage.Proof.MlKem.X86.Table
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
 meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 meta import VerifiedGarbage.Proof.Sha512.Spec
-public import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
 public import VerifiedGarbage.Impl.MlKem.X86.Decaps
 public import VerifiedGarbage.Proof.MlKem.X86.TopKem
-meta import VerifiedGarbage.Proof.MlKem.X86.DecapsPre
 meta import VerifiedGarbage.Impl.MlKem.X86.Decaps
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 

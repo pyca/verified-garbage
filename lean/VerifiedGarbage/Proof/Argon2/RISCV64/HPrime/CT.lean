@@ -11,8 +11,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Setup
-public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Setup
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
 public import VerifiedGarbage.Proof.Framework.RelCT

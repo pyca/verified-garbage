@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.SimpleBitPack
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.Contract

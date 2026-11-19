@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
-public import VerifiedGarbage.Proof.Dsa.X86.SignatureTiming
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
@@ -10,9 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
-import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
-import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation

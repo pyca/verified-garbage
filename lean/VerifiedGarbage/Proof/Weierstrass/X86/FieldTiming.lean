@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 
 /-! Equal public field values determine branches; addresses and call frames are public. -/
 

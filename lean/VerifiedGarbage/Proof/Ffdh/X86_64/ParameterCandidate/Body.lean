@@ -2,15 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract

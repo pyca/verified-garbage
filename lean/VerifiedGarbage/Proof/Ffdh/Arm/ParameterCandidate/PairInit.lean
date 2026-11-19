@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 
 /-! Initialize the paired sieve with the existing table cursor and rejection flag. -/
 

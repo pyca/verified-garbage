@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.StreamFinish
-meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Entry
+meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Args
 meta import VerifiedGarbage.Proof.Sm4Gcm.Arm.Open
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem

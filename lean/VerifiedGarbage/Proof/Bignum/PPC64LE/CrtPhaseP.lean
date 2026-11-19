@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
+import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow

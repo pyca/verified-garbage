@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Classify
-import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Entry
+import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Frame
 import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The key search's loop (x86)

@@ -10,7 +10,6 @@ public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Algebra.Group.Nat.Defs

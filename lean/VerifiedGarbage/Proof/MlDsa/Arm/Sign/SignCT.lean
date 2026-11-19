@@ -17,10 +17,10 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 

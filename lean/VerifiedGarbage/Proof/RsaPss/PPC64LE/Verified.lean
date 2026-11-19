@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
-public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Sha1.PPC64LE.Compress
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
-meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Md
+meta import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
 meta import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Md
@@ -39,8 +39,6 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelSplit
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Hash

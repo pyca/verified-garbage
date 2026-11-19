@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
-public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoad
 public import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
 public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Time
@@ -11,8 +11,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.KcStart
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-import VerifiedGarbage.Proof.Rsa.X86.KcLoad
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop

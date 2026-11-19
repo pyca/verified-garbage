@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
 /-!
 # SHA-3 and SHAKE on ARMv7: the functions of each instance
@@ -50,6 +51,13 @@ def update (rate : Nat) : Prog isa :=
     (.seq (.block (updateArgs rate)) <|
      .seq (.call "vg_keccak_absorb_scratch" Stream.absorb) (.block [.ldrSp .lr 8]))
     (.free 16)
+
+/-- `absorb rate (state = r0, pos = r1, data = r2, len = r3)`: `update`, with
+its working space `scratch` in a frame of 648 bytes on the stack, passed as
+its stack argument (`withStackScratch`), so that it is left in no memory of
+the caller's. -/
+def absorb (rate : Nat) : Prog isa :=
+  Impl.StackScratch.Arm.withStackScratch 648 0 (update rate)
 
 /-- `pad`'s arguments, from SHAKE's `finalize`'s, in a frame of 648 bytes:
 `scratch = sp + 8` at `sp`, `lr` at `sp + 4`, the working space at `sp + 8`. -/

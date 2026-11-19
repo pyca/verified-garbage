@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Impl.CmacAes.Stream.Arm
-public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.RelCT

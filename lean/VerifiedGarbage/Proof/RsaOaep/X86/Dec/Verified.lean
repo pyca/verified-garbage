@@ -813,7 +813,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: `*msg_len` and the result
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecEnd.lean`): the message's length ANDed
+As on ARMv7 (`Proof/RsaOaep/Arm/DecVerified.lean`): the message's length ANDed
 with `ok` to `*msg_len` as a 64-bit word, and the result
 `(ok ∧ 1) ∨ ((r = 2) ? 2 : 0)` (`end_vp`): what `decrypt` says
 (`Proof.RsaOaep.decrypt_eq`, `decOut_eq`).

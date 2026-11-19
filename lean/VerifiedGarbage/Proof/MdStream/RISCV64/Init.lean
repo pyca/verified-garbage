@@ -725,7 +725,7 @@ section
 # Streaming Merkle–Damgård hash functions on RISC-V: `update`
 
 Untrusted: everything here is checked by Lean. SHA-256's RISC-V proof
-(`Proof/Sha256/RISCV64/Stream/Update.lean`), for any hash function with
+(`Proof/Hmac/Stream/RISCV64/Sha256Family.lean`), for any hash function with
 64-byte blocks (`Md 64 N 8`) and any compression function verified against
 `compressK` (`CalleeOk`). The loop runs while data is left, so every
 iteration consumes at least one byte. The body runs in a frame on the stack

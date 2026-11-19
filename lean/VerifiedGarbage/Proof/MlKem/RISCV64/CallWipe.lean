@@ -23,14 +23,14 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
-import VerifiedGarbage.Proof.MlKem.RISCV64.RowCT
+public import VerifiedGarbage.Proof.MlKem.RISCV64.EncryptCT
 import VerifiedGarbage.Proof.MlKem.RISCV64.HashCT
-public import VerifiedGarbage.Proof.MlKem.RISCV64.CallsCT
+public import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.RowCT
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.EncryptCT
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.HashCT
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
@@ -41,7 +41,6 @@ public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.RISCV64.KemLay
 public import VerifiedGarbage.Proof.MlKem.RISCV64.Lay
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 public import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
 import VerifiedGarbage.Proof.MlKem.RISCV64.Loops
@@ -51,7 +50,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.WriteBytes
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Loops

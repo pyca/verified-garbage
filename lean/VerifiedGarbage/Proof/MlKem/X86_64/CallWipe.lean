@@ -7,9 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
-import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+public import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
@@ -23,8 +21,6 @@ import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 
 /-! ### `MlKem1024.X86_64.Written`, which only this module used -/
 

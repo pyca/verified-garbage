@@ -5,14 +5,13 @@ public import VerifiedGarbage.Proof.Blowfish.FbScratch
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Core
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE.Modes
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
-import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Cipher
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics

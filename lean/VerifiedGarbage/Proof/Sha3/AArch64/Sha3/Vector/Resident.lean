@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import VerifiedGarbage.Proof.Sha3.Arith
@@ -19,7 +18,6 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.Sha3.Arith

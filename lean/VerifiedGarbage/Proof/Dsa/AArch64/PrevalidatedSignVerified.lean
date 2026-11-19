@@ -14,36 +14,27 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
-import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 public import Mathlib.Algebra.Group.Nat.Defs
-meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
-meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
-meta import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import Mathlib.Algebra.Group.Nat.Defs
@@ -53,7 +44,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.DomainWidths
-public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Dsa.Layout
@@ -67,7 +58,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 meta import VerifiedGarbage.Proof.Dsa.DomainWidths
 meta import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 meta import VerifiedGarbage.Proof.Dsa.Layout
@@ -76,6 +67,128 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignBody
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
+meta import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SignBody
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
+meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
+
+/-! ### `Dsa.AArch64.SigningInitialize`, which only this module used -/
+
+section
+
+/-! # Establishing all signing operands after public domain acceptance -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/SigningShape.lean`, which only this module imported.
+section
+
+/-! # Argument capture and public-domain validation for a complete signing attempt -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+structure SigningShapePost (p : SigningInput) (original : State)
+    (hp : original.gpr .x4 = BitVec.ofNat 64 p.pLen) (s : State) : Prop where
+  scratch : Scr s p.base usedBytes
+  x0 : s.gpr .x0 = p.base
+  fields : ∀ f, word s.mem p.base f.offset = (p.layout original hp).fields f
+  branch : (s.gpr .x3 == (0#64)) = !p.accepted
+  frame : InScr p.base usedBytes original.mem s.mem
+  keep : Keep coreRegs original s
+
+theorem signingShape_ok {p : SigningInput} {s0 : State} (h : SigningPre p s0) :
+    WP isa (.seq (.block SignVerify.signEntry) Checks.domainShape) s0 (SigningShapePost p s0 h.pLength) := by
+  refine WP.seq (WP.mono (signEntry_ok h.scratch rfl (by decide) h.stackRead h.stackSeparate
+    h.qLength h.digestPointer h.digestLength h.base) fun s1 he => ?_)
+  have hinside : InScr p.base usedBytes s0.mem s1.mem := InScr.of_outside he.frame (by decide)
+  have hkey := h.keySource.congrK hinside he.keep
+  have hps : Src s1 p.base usedBytes (s0.gpr .x2) p.components.p := source_take hkey
+  have hqs : Src s1 p.base usedBytes (s0.gpr .x2 + BitVec.ofNat 64 p.pLen) p.components.q :=
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
+  have hp1 : 0 < p.components.p.length := by
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
+  have hq1 : 0 < p.components.q.length := by
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
+  have hp64 : p.components.p.length < 2 ^ 64 := by
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
+  have hq64 : p.components.q.length < 2 ^ 64 := by
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
+  refine WP.mono (domainShape_ok (h.scratch.congr he.keep.wr) he.base (by decide) he.p
+    (by rw [he.q, h.pLength]) (by rw [he.pLen, h.pLength, p.components.pLength])
+    (by rw [he.qLen, p.components.qLength]) hps hqs hp1 hp64 hq1 hq64 rfl rfl
+    p.digestBound he.digestLen) fun s2 ⟨hprefix, hmask, hbranch, hf, hk⟩ => ?_
+  have hall := he.keep.trans hk
+  have hft : InScr p.base usedBytes s1.mem s2.mem := by
+    apply InScr.of_frm hf
+    intro range hr
+    simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide
+  exact ⟨h.scratch.congr hall.wr, (hk.gpr .x0 (by decide)).trans he.base,
+    he.shapeFields hf hprefix hmask, hbranch,
+    hinside.trans hft,
+    hall.mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64
+end
+
+end
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+
+theorem SigningInput.shapeFacts {p : SigningInput} (ha : p.accepted = true) :
+    Spec.Dsa.supportedSizes (Spec.Dsa.bitLength (Spec.Dsa.decodeBE p.components.p))
+      (Spec.Dsa.bitLength (Spec.Dsa.decodeBE p.components.q)) ∧
+    Spec.Dsa.decodeBE p.components.p % 2 = 1 ∧ Spec.Dsa.decodeBE p.components.q % 2 = 1 := by
+  rw [SigningInput.accepted, shapeAccepted_spec] at ha
+  exact of_decide_eq_true ha
+
+def SigningInitialized (p : SigningInput) (original : State)
+    (hp : original.gpr .x4 = BitVec.ofNat 64 p.pLen) (s : State) : Prop :=
+  ∃ pi qi,
+    Ready ((p.layout original hp).withInverses pi qi) s ∧
+    SigningOperands ((p.layout original hp).withInverses pi qi) p.values p.components.y p.components.q s ∧
+    word s.mem p.base Field.mask.offset = mask true ∧
+    InScr p.base usedBytes original.mem s.mem ∧ Keep coreRegs original s
+
+theorem signingInitialize_ok {p : SigningInput} {original s : State} (h : SigningPre p original)
+    (hs : SigningShapePost p original h.pLength s) (ha : p.accepted = true) :
+    WP isa SignVerify.workspaces s (SigningInitialized p original h.pLength) := by
+  let L := p.layout original h.pLength
+  have hkey := h.keySource.congrK hs.frame hs.keep
+  have hps : Src s L.base usedBytes (L.fields .p) p.components.p := source_take hkey
+  have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
+    change Src s p.base usedBytes (original.gpr .x2 + original.gpr .x4) p.components.q
+    rw [h.pLength]
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
+  obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
+  refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.x0 hs.fields hps hqs p.components.pLength p.components.qLength
+    rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_
+  have hframe : InScr p.base usedBytes s.mem t.mem := InScr.of_outside hf (by decide)
+  have hfull := hs.frame.trans hframe
+  have hkeep := hs.keep.trans hk
+  refine ⟨pi, qi, hr, signingOperands hr (h.keySource.congrK hfull hkeep)
+    (h.nonceSource.congrK hfull hkeep) (h.digestSource.congrK hfull hkeep), ?_, hfull, hkeep.mono (by decide)⟩
+  · exact hm.trans ((hs.fields .mask).trans (congrArg mask ha))
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.PrevalidatedSignCT`, which only this module used -/
 

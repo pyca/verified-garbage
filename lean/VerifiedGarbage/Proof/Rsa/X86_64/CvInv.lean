@@ -3,7 +3,7 @@ module
 -- separate module: the inverse's proofs import algebra, and `CvCheck` is imported by many modules
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 public import VerifiedGarbage.Proof.Rsa.X86_64.WordGuard

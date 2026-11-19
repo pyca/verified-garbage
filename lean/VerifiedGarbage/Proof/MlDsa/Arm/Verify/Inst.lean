@@ -6,9 +6,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hint
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -17,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlKem.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore

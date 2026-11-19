@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Seal
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Open
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
@@ -38,33 +38,29 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneShot
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.OneShot
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 public import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 meta import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 meta import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE

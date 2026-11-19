@@ -40,13 +40,11 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.AesGcm.X86.Tag
 import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 meta import VerifiedGarbage.Proof.Gcm.Be64
 
 /-! ### `AesGcm.X86.StreamVerify`, which only this module used -/

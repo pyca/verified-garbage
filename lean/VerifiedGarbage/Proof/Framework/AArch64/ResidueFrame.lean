@@ -275,6 +275,13 @@ theorem lose_out {m : Mem} {a x : Addr} {n : Nat} {u : Nat → BitVec 64} (h : �
 
 def stepF (τ : T) (i : Instr) : Option T := (RTaintB.step τ.1 i).map (·, τ.2)
 
+/-- `stepF`, with `RTaintB.stepK`, the step with its cases closed. -/
+def stepFK (τ : T) (i : Instr) : Option T := (RTaintB.stepK τ.1 i).map (·, τ.2)
+
+theorem stepFK_eq (τ : T) (i : Instr) : stepFK τ i = stepF τ i := by
+  rw [stepFK, RTaintB.stepK_eq]
+  rfl
+
 def pushF (W : Nat) (τ : T) (i : Instr) : Option T :=
   match τ.2, i with
   | some d, .alloc b => if d + b ≤ W then some (τ.1, some (d + b)) else none
@@ -484,8 +491,8 @@ open RTaintF in
 def rtaintF (W : Nat) : VG.TaintCT isa where
   T := RTaintF.T
   Agree := RTaintF.Agree W
-  step := stepF
-  step_sound ha hs e₁ e₂ hadr := stepF_sound ha hs e₁ e₂ hadr
+  step := stepFK
+  step_sound ha hs e₁ e₂ hadr := stepF_sound ha ((stepFK_eq _ _).symm.trans hs) e₁ e₂ hadr
   addrs_length := RTaintCT.addrs_length
   meet := meetF
   meet_left := meetF_left

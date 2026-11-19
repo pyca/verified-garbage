@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

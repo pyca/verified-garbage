@@ -10,10 +10,181 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
-import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByte
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+
+/-! ### `Dsa.AArch64.ReduceSetup`, which this module and modules that import it used -/
+
+section
+
+/-! # Preparing the ordinary accumulator for streaming byte reduction -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+/-- Clearing an operand preserves the linked workspace and modulus. -/
+theorem clear_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
+    (hc : SubCtx s B Z o w wx minv) (hm : ModCtx s (off B o) (slot wx 8) wx minv m)
+    (hw : 2 ≤ wx) (hw' : wx < 2 ^ 31) {j : Nat} (hj : j < 8) (hjn : j ≠ aN) :
+    WP isa (Arithmetic.zero j) s fun t =>
+      SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
+      wv t.mem (off B o) (slot wx j) wx = 0 ∧
+      Arrays (off B o) wx [j] s.mem t.mem ∧ Keep mmRegs s t := by
+  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) hw' hj)
+    fun t ⟨hv, hf, hk⟩ => ?_
+  have ha : Arrays (off B o) wx [j] s.mem t.mem :=
+    Arrays.of_outside (List.mem_singleton_self j) hf (Nat.le_refl _) (Nat.le_refl _)
+  have ht := arrays_context hc ha (by simpa using hj) hk
+  have hnZ := hc.good.scr.nowrap
+  have hnot : aN ∉ [j] := by simpa using Ne.symm hjn
+  refine ⟨ht, ⟨ht.good, (ha.wv_of_not_mem (by decide) hnot hnZ).trans hm.modulus, ?_⟩, (wv_eq_zero_iff _ _ _ _).mpr (fun i hi =>
+      (wv_eq_zero_iff _ _ _ _).mp hv i (by omega_using [hi])), ha, hk⟩
+  rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega_using [hw])]
+  exact hm.inverse
+
+/-- Reduction starts with ordinary zero and multiplier 256R, even for
+composite moduli with zero high limbs. -/
+theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
+    {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
+    (hw : 2 ≤ wx) (hw48 : wx ≤ 48) (hm : 1 < m) (hodd : m % 2 = 1)
+    (hn : wv s.mem (off B o) (slot wx aN) wx = m)
+    (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) :
+    WP isa (Arithmetic.reduceSetup M.mm) s fun t =>
+      SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
+      wv t.mem (off B o) (slot wx aXm) wx = 256 * 2 ^ (64 * wx) % m ∧
+      wv t.mem (off B o) (slot wx aY) wx = 0 ∧
+      wv t.mem (off B o) (slot wx aX) wx = 0 ∧
+      Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hw' : wx < 2 ^ 31 := by omega_using [hw48]
+  have hz := hc.good.scr.nowrap
+  unfold Arithmetic.reduceSetup seqs
+  refine WP.seq (WP.mono (prepare_ok M hc hw hw48 hm hodd hn hinv)
+    fun u ⟨hcu, hmu, huone, hur2, hfu, hku⟩ => ?_)
+  refine WP.seq (WP.mono (small_ok hcu.good (Nat.le_refl _) hw hw' (by decide)
+    (value := 256) (by decide)) fun v ⟨hgv, hv, hfv, hkv⟩ => ?_)
+  have hcv := arrays_context hcu hfv (by decide) hkv
+  have hmv : ModCtx v (off B o) (slot wx 8) wx minv m := ⟨hgv,
+    (hfv.wv_of_not_mem (by decide) (by decide) hz).trans hmu.modulus, by
+      rw [hfv.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw])]; exact hmu.inverse⟩
+  have vr2 := (hfv.wv_of_not_mem (show aR2 < 8 by decide) (by decide) hz).trans hur2
+  refine WP.seq (WP.mono (mont_step M hmv (Nat.le_refl _) hw hw'
+    (by unfold MmUse; decide) (by rw [vr2]; exact Nat.mod_lt _ (by omega_using [hm])))
+    fun a ⟨hma, hlt, ha, hfa, hka⟩ => ?_)
+  rw [hv, vr2, show 128 * wx = 64 * wx + 64 * wx by omega_using [], Nat.pow_add] at ha
+  have hscale := VG.Proof.Dsa.mont_scale (coprime_pow2 hodd (64 * wx)) ha
+  rw [Nat.mod_eq_of_lt hlt] at hscale
+  have hca := arrays_context hcv hfa (by decide) hka
+  have hfw := hfu.trans (arrays_work hfv (by decide))
+  have hkw := (hku.trans hkv).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
+  refine WP.seq (WP.mono (clear_mod_ok hca hma hw hw' (by decide) (by decide))
+    fun b ⟨hcb, hmb, hb, hfb, hkb⟩ => ?_)
+  have bR := (hfb.wv_of_not_mem (show aXm < 8 by decide) (by decide) hz).trans hscale
+  refine WP.mono (clear_mod_ok hcb hmb hw hw' (by decide) (by decide))
+    fun t ⟨hct, hmt, ht, hft, hkt⟩ => ?_
+  exact ⟨hct, hmt,
+    (hft.wv_of_not_mem (by decide) (by decide) hz).trans bR,
+    (hft.wv_of_not_mem (by decide) (by decide) hz).trans hb, ht,
+    ((hfw.trans (arrays_work hfa (by decide))).trans (arrays_work hfb (by decide))).trans (arrays_work hft (by decide)),
+    (((hkw.trans hka).trans hkb).trans hkt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.ReduceInit`, which this module and modules that import it used -/
+
+section
+
+/-! # Initial source and count for DSA modular reduction -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
+open VG.Impl.Rsa.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+/-- A temporary header slot lies entirely in the mutable child region. -/
+theorem header_work {B : Addr} {w i : Nat} {mem mem' : Mem}
+    (hi : 17 ≤ i) (hi' : i < 32) (h : Outside B (8 * i) 8 mem mem') :
+    Frm B (workRanges w) mem mem' := by
+  intro x hx
+  apply h x
+  have hb := hx (136, slot w 8 + tabBytes w - 136) (List.mem_singleton_self _)
+  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  omega
+
+/-- Initialize source and count without touching the prepared arrays. -/
+theorem reduceInit_ok {s : State} {B p : Addr} {Z o w wx m : Nat} {minv : BitVec 64}
+    {bytes : List Byte} {sp sl : Nat}
+    (hc : SubCtx s B Z o w wx minv) (hm : ModCtx s (off B o) (slot wx 8) wx minv m)
+    (hsp : sp < 32) (hsl : sl < 32)
+    (hp : word s.mem B (8 * sp) = p)
+    (hl : word s.mem B (8 * sl) = BitVec.ofNat 64 bytes.length)
+    (_h64 : bytes.length < 2 ^ 64) :
+    WP isa (.block (Arithmetic.reduceInit sp sl)) s fun t =>
+      SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
+      (∀ j < 8, wv t.mem (off B o) (slot wx j) wx = wv s.mem (off B o) (slot wx j) wx) ∧
+      word t.mem (off B o) (8 * Crt.sSrc) = p ∧
+      word t.mem (off B o) (8 * Crt.sRem) = BitVec.ofNat 64 bytes.length ∧
+      t.gpr .x3 = BitVec.ofNat 64 bytes.length ∧
+      Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hlo := hc.lo
+  have hhi := hc.hi
+  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  have hcl := hdr_lt_slot wx 8 (show Crt.sLink < 32 by decide)
+  have hcs := hdr_lt_slot wx 8 (show Crt.sSrc < 32 by decide)
+  have hcr := hdr_lt_slot wx 8 (show Crt.sRem < 32 by decide)
+  refine WP.mono (WP.keep [.x5, .x1, .x3] (Q := fun t =>
+    t.mem = (s.mem.writeW (off (off B o) (8 * Crt.sSrc)) p).writeW
+      (off (off B o) (8 * Crt.sRem)) (BitVec.ofNat 64 bytes.length) ∧
+    t.gpr .x3 = BitVec.ofNat 64 bytes.length) ?_ rfl rfl rfl) fun t ⟨⟨hmem, hz⟩, hk⟩ => ?_
+  · unfold Arithmetic.reduceInit
+    drun [Crt.ldw, hc.x0, hdr_enc hsp, hdr_enc hsl, hdr_enc (show Crt.sLink < 32 by decide),
+      hdr_enc (show Crt.sSrc < 32 by decide), hdr_enc (show Crt.sRem < 32 by decide), hc.link, hp, hl,
+      hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot wx 8 by omega_using [hcl]),
+      hc.scr.ld (show 8 * sp + 8 ≤ Z by omega_using [hsp, hlo, hhi, hslot]),
+      hc.scr.ld (show 8 * sl + 8 ≤ Z by omega_using [hsl, hlo, hhi, hslot]),
+      hc.good.scr.st (show 8 * Crt.sSrc + 8 ≤ slot wx 8 by omega_using [hcs]),
+      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hcr])]
+  have hs : Outside (off B o) (8 * Crt.sSrc) 8 s.mem
+      (s.mem.writeW (off (off B o) (8 * Crt.sSrc)) p) := writeW_outside _ _ _ (by decide)
+  have hr : Outside (off B o) (8 * Crt.sRem) 8
+      (s.mem.writeW (off (off B o) (8 * Crt.sSrc)) p) t.mem := by
+    rw [hmem]; exact writeW_outside _ _ _ (by decide)
+  have hf := (header_work (by decide) (by decide) hs).trans (header_work (w := wx) (by decide) (by decide) hr)
+  have ht := hc.of_frmT hf (workRanges_ok wx) hk.wr (hk.gpr .x0 (by decide))
+  have hn := hc.good.scr.nowrap
+  have harr : ∀ j < 8, wv t.mem (off B o) (slot wx j) wx = wv s.mem (off B o) (slot wx j) wx := by
+    intro j hj
+    rw [hmem, hdrStore_wv _ _ _ (by decide) hj hn, hdrStore_wv _ _ _ (by decide) hj hn]
+  refine ⟨ht, ⟨ht.good, (harr aN (by decide)).trans hm.modulus, ?_⟩, harr, ?_, ?_, hz,
+    hf, hk.mono (by decide)⟩
+  · rw [hmem, hdrStore_word _ _ _ (by decide) (by decide) hn,
+      hdrStore_word _ _ _ (by decide) (by decide) hn]
+    exact hm.inverse
+  · rw [hmem, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
+  · rw [hmem, word_writeW_self]
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
 
 /-! ### `Dsa.AArch64.Reduce`, which the modules that import this one used -/
 

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Impl.Ed25519.AArch64.KeyPair
 public import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+import VerifiedGarbage.Proof.Sha512.PostOut
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Sig
@@ -17,6 +19,8 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 meta import VerifiedGarbage.Spec.Ed25519.KeyPair
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.KeyPair
 meta import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
+meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+meta import VerifiedGarbage.Proof.Sha512.PostOut
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -28,12 +32,12 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
@@ -50,7 +54,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
@@ -66,7 +69,6 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
@@ -723,7 +725,7 @@ end
 # Ed25519 key-pair derivation on AArch64
 
 `keyPair` calls the one-shot SHA-512 digest of an implementation `v` of the
-compression function, which writes the seed's digest to `expanded`, and then
+compression function, as it is emitted, scrubbed whole (`dgCode`), which writes the seed's digest to `expanded`, and then
 `vg_ed25519_public_key_expanded`, which derives the public key from it. Its
 proof uses only the two callees' contracts.
 
@@ -1004,27 +1006,54 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
 
 variable (v : Proof.Sha512.AArch64.Compress)
 
-abbrev dgCode : Prog isa :=
+/-- The one-shot digest, as `vg_sha512_digest` runs it before it is scrubbed. -/
+abbrev dgRaw : Prog isa :=
   Proof.Sha512.AArch64.oneShotWith (Impl.MdStream.AArch64.out64 8) Spec.Sha512.H0_512 v.suffix v.code
+
+/-- `vg_sha512_digest` as it is emitted (`AArch64.ScrubAll.withScrubAll`): the
+digest, then the registers it may write cleared and its frame zeroed. -/
+abbrev dgCode : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll Proof.Sha512.AArch64.OneShot.stack 0
+    (VG.Impl.Residue.AArch64.Clear.of (dgRaw v)) (dgRaw v)
 
 abbrev dgK : Contract isa :=
   Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
 
+/-- The digest's postcondition reads the memory on return only within its output. -/
+theorem dgOk : AArch64.ScrubAll.ScrubAllOk dgK Proof.Sha512.AArch64.OneShot.stack 0 :=
+  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.digestSig 64) (by decide) (by decide) (Nat.le_refl _)
+    (Proof.Sha512.digestPost_out _ _ _ (by decide))
+
 /-- The digest never writes PSTATE.DIT: its own code does not, and `v`'s
 compression function does not (`Compress.noDit`). -/
-theorem dg_noDit : (dgCode v).all (fun i => !i.writesDit) = true := by
-  simp only [dgCode, Proof.Sha512.AArch64.oneShotWith, Impl.MdStream.AArch64.OneShot.digest,
+theorem dgRaw_noDit : (dgRaw v).all (fun i => !i.writesDit) = true := by
+  simp only [dgRaw, Proof.Sha512.AArch64.oneShotWith, Impl.MdStream.AArch64.OneShot.digest,
     Impl.MdStream.AArch64.OneShot.body, Impl.MdStream.AArch64.OneShot.tail, Impl.MdStream.AArch64.OneShot.whole,
     Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith, Code.all, v.noDit,
     Bool.and_true]
   decide
 
-theorem dg_verified : Verified AArch64.target (dgCode v) dgK :=
+/-- Nor does the scrubbing after it. -/
+theorem dg_noDit : (dgCode v).all (fun i => !i.writesDit) = true := by
+  have hn := dgRaw_noDit v
+  show Code.all (fun i => !i.writesDit) (.seq (VG.Impl.Residue.AArch64.withRet 0
+    (.seq (dgRaw v) (.block (VG.Impl.Residue.AArch64.clearsOf _))))
+    (VG.Impl.Residue.AArch64.scrubTailG 896 (List.range 56))) = true
+  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn,
+    Bool.true_and, VG.Impl.Residue.AArch64.clearsOf, List.all_append, List.all_map, Function.comp_def]
+  simp [Instr.writesDit]
+  decide
+
+theorem dgRaw_verified : Verified AArch64.target (dgRaw v) dgK :=
   (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies
     (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
       List.take_of_length_le (Nat.le_of_eq (VG.Proof.Hmac.Generic.Common.finalHash_length _ m)))
 
-theorem dg_depth : (dgCode v).aarch64Depth ≤ 56 := by
+theorem dg_verified : Verified AArch64.target (dgCode v) dgK :=
+  AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) (dgRaw_verified v)
+    (by decide) (.inl rfl) dgOk
+
+theorem dgRaw_depth : (dgRaw v).aarch64Depth ≤ 56 := by
   have h0 := Proof.Ed25519.AArch64.Whole.depth_zero_of_noFrames v.noFrames
   simp only [Proof.Sha512.AArch64.oneShotWith, Impl.MdStream.AArch64.OneShot.digest,
     Impl.MdStream.AArch64.OneShot.body, Impl.MdStream.AArch64.OneShot.whole,
@@ -1034,6 +1063,16 @@ theorem dg_depth : (dgCode v).aarch64Depth ≤ 56 := by
     Code.aarch64Depth, h0, Proof.Sha512.AArch64.OneShot.frameBytes_out, Nat.max_self,
     AArch64.Instr.frameUnits, Nat.zero_add]
   decide
+
+/-- The scrubbing's frame is the digest's: 56 units. -/
+theorem dg_depth : (dgCode v).aarch64Depth ≤ 56 := by
+  have hl := dgRaw_depth v
+  show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 0
+    (.seq (dgRaw v) (.block (VG.Impl.Residue.AArch64.clearsOf _))))
+    (VG.Impl.Residue.AArch64.scrubTailG 896 (List.range 56))) ≤ 56
+  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+    AArch64.Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
+  exact hl
 
 theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := State.callEntry_gpr t h

@@ -49,6 +49,50 @@ b 21f
     )
 }
 
+/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 144.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_224_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4kACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
+beq %cr0, 20f
+22:
+.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
+beq %cr0, 23f
+.base64 "AAA+iRTqWn0AAGqJeFopfQAAKpkBAN47AQC9O////ztQ6Dx9"
+b 24f
+23:
+.base64 "AAA+6RTqWn0AAGrpeFopfQAAKvkIAN47CAC9O/j//ztQ6Dx9"
+24:
+.base64 "AAApKA=="
+beq %cr0, 25f
+b 26f
+25:
+.base64 "AACgOwAAejgAAJs4"
+bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
+26:
+.base64 "AAA/KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITgAAAA4Mf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+NACITgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
 /// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -118,6 +162,50 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfAAAADjR/yH4IACBOQAADPgIAAz4MAAhOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 136.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4iACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
+beq %cr0, 20f
+22:
+.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
+beq %cr0, 23f
+.base64 "AAA+iRTqWn0AAGqJeFopfQAAKpkBAN47AQC9O////ztQ6Dx9"
+b 24f
+23:
+.base64 "AAA+6RTqWn0AAGrpeFopfQAAKvkIAN47CAC9O/j//ztQ6Dx9"
+24:
+.base64 "AAApKA=="
+beq %cr0, 25f
+b 26f
+25:
+.base64 "AACgOwAAejgAAJs4"
+bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
+26:
+.base64 "AAA/KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITgAAAA4Mf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+NACITgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -195,6 +283,50 @@ b 21f
     )
 }
 
+/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 104.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4aACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
+beq %cr0, 20f
+22:
+.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
+beq %cr0, 23f
+.base64 "AAA+iRTqWn0AAGqJeFopfQAAKpkBAN47AQC9O////ztQ6Dx9"
+b 24f
+23:
+.base64 "AAA+6RTqWn0AAGrpeFopfQAAKvkIAN47CAC9O/j//ztQ6Dx9"
+24:
+.base64 "AAApKA=="
+beq %cr0, 25f
+b 26f
+25:
+.base64 "AACgOwAAejgAAJs4"
+bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
+26:
+.base64 "AAA/KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITgAAAA4Mf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+NACITgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
 /// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -268,6 +400,50 @@ b 21f
     )
 }
 
+/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 72.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4SACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
+beq %cr0, 20f
+22:
+.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
+beq %cr0, 23f
+.base64 "AAA+iRTqWn0AAGqJeFopfQAAKpkBAN47AQC9O////ztQ6Dx9"
+b 24f
+23:
+.base64 "AAA+6RTqWn0AAGrpeFopfQAAKvkIAN47CAC9O/j//ztQ6Dx9"
+24:
+.base64 "AAApKA=="
+beq %cr0, 25f
+b 26f
+25:
+.base64 "AACgOwAAejgAAJs4"
+bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
+26:
+.base64 "AAA/KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITgAAAA4Mf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+NACITgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
 /// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -337,6 +513,50 @@ b 21f
 20:
 21:
 .base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfAAAADjR/yH4IACBOQAADPgIAAz4MAAhOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
+        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
+    )
+}
+
+/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 168.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "Yf0h+CAA4TgAAAc5AADmOAAAxTgAAKQ4qACAOKYCCHzR/yH4IAAB+AACSPsIAmj7EAKI+xgCqPsgAsj7KALo+wAAQzsAAGg7AACEOwAApTsAAMY7AADnOwAAPyg="
+beq %cr0, 20f
+22:
+.base64 "BwBAOThQqn/4/3854A9reXhbSn0AACoo"
+beq %cr0, 23f
+.base64 "AAA+iRTqWn0AAGqJeFopfQAAKpkBAN47AQC9O////ztQ6Dx9"
+b 24f
+23:
+.base64 "AAA+6RTqWn0AAGrpeFopfQAAKvkIAN47CAC9O/j//ztQ6Dx9"
+24:
+.base64 "AAApKA=="
+beq %cr0, 25f
+b 26f
+25:
+.base64 "AACgOwAAejgAAJs4"
+bl {vg_keccak_f1600}
+.base64 "AABDOwAAZDs="
+26:
+.base64 "AAA/KA=="
+bne %cr0, 22b
+b 21f
+20:
+21:
+.base64 "AAB9OAACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfKACITgAAAA4Mf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+CACDPgoAgz4MAIM+DgCDPhAAgz4SAIM+FACDPhYAgz4YAIM+GgCDPhwAgz4eAIM+IACDPiIAgz4kAIM+JgCDPigAgz4qAIM+NACITgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

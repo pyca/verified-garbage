@@ -14,8 +14,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine

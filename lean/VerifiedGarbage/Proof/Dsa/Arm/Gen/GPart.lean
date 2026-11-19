@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Rsa.Arm.CvStore
 import VerifiedGarbage.Proof.Bignum.ByteWords
-public import VerifiedGarbage.Proof.Dsa.Arm.Gen.KSLoad
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Rsa.BoolNat

@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.X86.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86.Contract
-public import VerifiedGarbage.Proof.MdStream.X86.Finalize
-meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
 meta import VerifiedGarbage.Proof.MdStream.X86.Update
 import VerifiedGarbage.Proof.MdStream.X86.Words

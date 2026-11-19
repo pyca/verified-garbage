@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient

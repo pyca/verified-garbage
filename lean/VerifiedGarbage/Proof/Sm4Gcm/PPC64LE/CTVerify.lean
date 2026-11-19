@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -16,8 +14,6 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm

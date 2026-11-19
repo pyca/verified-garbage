@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
 public import VerifiedGarbage.Proof.Framework.Omega

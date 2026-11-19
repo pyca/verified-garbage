@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
 import VerifiedGarbage.Proof.RsaPss.SignEncode

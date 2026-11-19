@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 import VerifiedGarbage.Proof.Weierstrass.Words

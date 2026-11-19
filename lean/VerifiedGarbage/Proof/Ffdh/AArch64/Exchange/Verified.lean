@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
+public import VerifiedGarbage.Proof.Ffdh.AArch64.OutMaskCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.CT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -26,7 +26,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-public import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
 import VerifiedGarbage.Proof.Framework.Omega
@@ -43,7 +42,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Store
 meta import VerifiedGarbage.Proof.Framework.Omega

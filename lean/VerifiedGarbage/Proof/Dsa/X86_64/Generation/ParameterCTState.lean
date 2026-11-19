@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeIteration
@@ -28,7 +28,6 @@ public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 public import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -72,7 +71,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
@@ -82,15 +81,11 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallBody
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCall
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallBody
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptBlocksCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptBlocksCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
@@ -109,38 +104,29 @@ import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Algebra.NeZero
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToAdditive
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashShape
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Tactic.Push
 meta import Mathlib.Tactic.Attr.Core
 meta import Mathlib.Tactic.ToAdditive
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
 public import VerifiedGarbage.Spec.Dsa
@@ -149,12 +135,64 @@ meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
 meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
 meta import Mathlib.Algebra.GroupWithZero.Nat
 meta import Mathlib.Algebra.NeZero
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 meta import Mathlib.Algebra.Group.Nat.Defs
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+
+/-! ### `Dsa.X86_64.Generation.AttemptBlocksCT`, which only this module used -/
+
+section
+
+/-! # Public addressing on p-attempt entry and return to the search controller -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Proof.RsaOaep.X86_64 VG.Impl.Dsa.X86_64.Generation
+
+structure AttemptReturnPublic where
+  F : Addr
+  S : Addr
+  arena : Addr
+
+def AttemptReturnBefore (p : AttemptReturnPublic) (s : State) : Prop :=
+  Lay s p.F p.S ∧ ∃ V W, Rep s.mem p.F p.S V W ∧ W 5 = p.arena
+
+def AttemptReturnReady (p : AttemptReturnPublic) (s : State) : Prop :=
+  s.gpr .rdi = off p.arena Impl.Dsa.Generation.Layout.control ∧ s.gpr .rsp = p.F
+
+theorem controlBase_ready {p : AttemptReturnPublic} {s : State} (h : AttemptReturnBefore p s) :
+    WP isa (.block controlBase) s (AttemptReturnReady p) := by
+  obtain ⟨V, W, R, hw⟩ := h.2
+  exact WP.mono (controlBase_ok h.1 R (by rw [hw])) fun _ ⟨hb, _, hk⟩ =>
+    ⟨hb, (hk.gpr (by decide)).trans h.1.rsp⟩
+
+theorem controlBase_ct : RelCT isa (Two AttemptReturnBefore) (.block controlBase) (Two AttemptReturnReady) := by
+  refine two_post (two_taint [.rsp] ?_ (by taint_decide)) (fun _ _ h => controlBase_ready h)
+  intro p s t hs ht r hr
+  simp only [List.mem_singleton] at hr; subst r
+  exact hs.1.rsp.trans ht.1.rsp.symm
+
+theorem searchReturn_ct : RelCT isa (Two AttemptReturnBefore) (.block searchReturn) (fun _ _ => True) := by
+  apply RelCT.block_append (M := isa) (l₁ := controlBase)
+    (l₂ := [.mov .rax (.mem (Impl.Mgf1.X86_64.sp 152)), .store (VG.Impl.Bignum.X86_64.hdr 2) .rax])
+  refine RelCT.seq controlBase_ct (two_taint [.rdi, .rsp] ?_ (by taint_decide))
+  intro p s t hs ht r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hs.1.trans ht.1.symm
+  · exact hs.2.trans ht.2.symm
+
+theorem pAttemptArgs_ct : RelCT isa (Two ArgumentRegisters) (.block pAttemptArgs) (fun _ _ => True) :=
+  two_taint [.rdi, .rsp] argumentRegisters_pins (by taint_decide)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.Generation.SearchIterationCT`, which only this module used -/
 

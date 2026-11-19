@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop

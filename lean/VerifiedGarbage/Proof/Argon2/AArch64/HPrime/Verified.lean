@@ -13,22 +13,14 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 

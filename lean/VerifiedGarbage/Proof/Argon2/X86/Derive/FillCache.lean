@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.FillStep
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.FillPositions
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
-import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.AddressInput

@@ -4,16 +4,13 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Entry
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.NormLt
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintCT
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Unpack
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -27,11 +24,9 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintPack
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.Framework.Offset

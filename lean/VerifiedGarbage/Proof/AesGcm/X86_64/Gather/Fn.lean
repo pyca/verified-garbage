@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run

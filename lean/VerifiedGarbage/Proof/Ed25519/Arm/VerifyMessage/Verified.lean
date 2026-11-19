@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -12,21 +12,19 @@ meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 meta import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 meta import VerifiedGarbage.Proof.MlKem.KpkeMulContract
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 
 /-! ### `MlDsa.X86_64.KeyGen.Inv`, which only this module used -/
 

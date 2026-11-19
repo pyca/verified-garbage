@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Guards
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.AttemptRun
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Layout
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Classify

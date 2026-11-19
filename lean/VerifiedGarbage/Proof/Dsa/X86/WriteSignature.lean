@@ -17,7 +17,6 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 public import VerifiedGarbage.Proof.Dsa.X86.OutputCall
-import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 

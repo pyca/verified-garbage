@@ -140,9 +140,8 @@ theorem ecbOut (direction : Spec.Camellia.Direction) (stack : Nat) :
     dsimp only [Curry.apply, ArgWord.ofRaw, Spec.Camellia.ecbPost] at h ⊢
     have := Nat.mod_le n.toNat (2 ^ 64)
     intro key hk
-    erw [Proof.Camellia.blocksAt_congr (n := (n.setWidth 64).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega_arith)]
-    exact h key hk
+    exact (Proof.Camellia.blocksAt_congr (n := (n.setWidth 64).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega_arith)).trans (h key hk)
 
 /-- CFB128 encryption's postcondition reads the memory on return only within
 the data and the IV. -/

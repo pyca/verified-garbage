@@ -438,7 +438,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: the check of `k`, and when it fails
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecChk.lean`, `Proof/RsaOaep/Arm/DecFail.lean`):
+As on ARMv7 (`Proof/RsaOaep/Arm/DecChk.lean`, `Proof/RsaOaep/Arm/DecOut.lean`):
 `chk_vp`: the private-key operation's result to its slot, and the flags of
 `k < 2 hLen + 2`. `fail_vp`: then zeros to `out` and to `*msg_len`, and the
 result `(r = 2) ? 2 : 0`, as `decrypt` says (`Proof.RsaOaep.decOut_short`).
@@ -663,7 +663,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: `EM` unmasked
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecScan.lean`): the label's hash to
+As on ARMv7 (`Proof/RsaOaep/Arm/DecOut.lean`): the label's hash to
 `scratch + oLh` (`labT_vp`, with the label's hash function that of its
 table, our argument 23), then the seed unmasked with MGF1 of
 `maskedDB` and `DB` with MGF1 of the seed, in place (`mgf_vp`, with the
@@ -1050,7 +1050,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: `EM`'s first byte and `lHash`
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecScan.lean`): `lHash'` compared with
+As on ARMv7 (`Proof/RsaOaep/Arm/DecOut.lean`): `lHash'` compared with
 `lHash` (`cmpLoop_vp`, of RSASSA-PSS), then the accumulator `acc` (in its
 slot) zero exactly when `EM`'s first byte is zero and `lHash' = lHash`
 (`acc_vp`).
@@ -1153,7 +1153,7 @@ end
 /-!
 # RSAES-OAEP decryption on x86: the scan of `T`
 
-As on ARMv7 (`Proof/RsaOaep/Arm/DecScan.lean`): `scan_vp`: the scan of `n`
+As on ARMv7 (`Proof/RsaOaep/Arm/DecOut.lean`): `scan_vp`: the scan of `n`
 bytes of our part of `scratch` finds the index (`pzS`) and the value (`vzS`)
 of their first byte that is not zero, if any (`nfS`), without a branch. As
 in RSASSA-PSS (`Proof/RsaPss/X86/VfScan.lean`), the index and the value are

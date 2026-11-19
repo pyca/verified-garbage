@@ -1,23 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
@@ -32,14 +26,8 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
@@ -48,12 +36,10 @@ meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
@@ -62,13 +48,11 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 meta import VerifiedGarbage.Proof.Bignum.Layout
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 
 /-! ### `Bignum.X86_64.AdxTiledChoiceCT`, which only this module used -/

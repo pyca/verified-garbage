@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 /-!
 # Tables of the interface `Hmac` on PPC64LE
 
-As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Regs.lean`), for the hash functions with
+As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`), for the hash functions with
 HMAC on PPC64LE, MD5, SHA-1 and the SHA-2 family, one implementation of each
 (`vars`, `PPC64LE/Vars.lean`): the table of a hash function (`tableOf`, `VG_HMAC_<HASH>`) holds
 the addresses of HMAC's `init` and `finalize` and of the streaming `update`,

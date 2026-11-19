@@ -24,14 +24,13 @@ public import VerifiedGarbage.Impl.Ed448.RISCV64.Whole
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSteps
+public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSteps
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.HashCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
-public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSetup
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSteps
@@ -41,7 +40,6 @@ meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
-meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSetup
 meta import VerifiedGarbage.Proof.Ed448.Ref
 meta import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 

@@ -81,7 +81,7 @@ vg_chacha20_poly1305_seal:
 	bl {vg_chacha20_xor}
 	addi %r3, %r24, 0
 	addi %r4, %r24, 384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	addi %r4, %r25, 0
 	rldicl %r5, %r26, 60, 4
 	addi %r3, %r24, 0
@@ -331,7 +331,7 @@ vg_chacha20_poly1305_open:
 	std %r12, 408(%r24)
 	addi %r3, %r24, 0
 	addi %r4, %r24, 384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	addi %r4, %r25, 0
 	rldicl %r5, %r26, 60, 4
 	addi %r3, %r24, 0
@@ -627,7 +627,7 @@ vg_chacha20_poly1305_open_to:
 	std %r12, 408(%r24)
 	addi %r3, %r24, 0
 	addi %r4, %r24, 384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	addi %r4, %r25, 0
 	rldicl %r5, %r26, 60, 4
 	addi %r3, %r24, 0

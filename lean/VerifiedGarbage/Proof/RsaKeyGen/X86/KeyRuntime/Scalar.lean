@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyScalar
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
-import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
 import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -27,40 +26,33 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 public import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
-import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
-meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+meta import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
 meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Result
-meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Save
 meta import VerifiedGarbage.Proof.Dsa.Layout

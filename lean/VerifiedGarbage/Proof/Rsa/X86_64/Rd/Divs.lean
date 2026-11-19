@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Stages
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.TwoStages
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.QDiv
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Prod
-import VerifiedGarbage.Proof.Rsa.X86_64.Rd.WordLoops
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
 import VerifiedGarbage.Proof.Rsa.X86_64.WordInit
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.LongDivision
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

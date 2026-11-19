@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 meta import VerifiedGarbage.Proof.MlKem.Arm.Loops
@@ -31,10 +31,10 @@ meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 
 /-! ### `MlDsa.Arm.Verify.Call`, which only this module used -/

@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
 meta import VerifiedGarbage.Spec.X25519.Contract
@@ -17,9 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 public import VerifiedGarbage.Impl.X25519.PPC64LE.Base
 public import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
@@ -36,9 +34,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBase
 meta import VerifiedGarbage.Impl.X25519.PPC64LE.Base
 meta import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Comb
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Encode
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointMul
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers

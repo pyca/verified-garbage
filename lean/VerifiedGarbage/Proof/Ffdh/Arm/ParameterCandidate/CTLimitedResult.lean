@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentLoop
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ShapeOdd
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFrame
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SavedProject
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.CallLay

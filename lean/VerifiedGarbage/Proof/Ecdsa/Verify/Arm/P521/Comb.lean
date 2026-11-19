@@ -29,7 +29,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -54,7 +54,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Umaal
 meta import VerifiedGarbage.Proof.Framework.Contract

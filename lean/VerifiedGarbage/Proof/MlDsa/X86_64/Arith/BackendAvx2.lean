@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YDot
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
@@ -17,14 +16,13 @@ public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
 meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
@@ -32,12 +30,12 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.DotCore
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 meta import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.DotCore
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul

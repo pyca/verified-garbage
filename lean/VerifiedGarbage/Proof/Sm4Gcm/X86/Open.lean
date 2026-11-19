@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Sm4Gcm.X86.Crypt
+public import VerifiedGarbage.Proof.Sm4Gcm.X86.CryptTail
 public import VerifiedGarbage.Proof.Gcm.Compose
 meta import VerifiedGarbage.Impl.Sm4Gcm.X86
 meta import VerifiedGarbage.Proof.Cmac.Spec
@@ -18,23 +18,19 @@ meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.State
 meta import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.Proof.Sm4Gcm.X86.Crypt
-meta import VerifiedGarbage.Proof.Gcm.Compose
-public import VerifiedGarbage.Proof.Sm4Gcm.X86.Tag
-meta import VerifiedGarbage.Proof.Sm4Gcm.X86.Tag
-meta import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Sm4Gcm.X86.CryptTail
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86.CryptTail
+meta import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Sm4Gcm.X86.Contract
+meta import VerifiedGarbage.Proof.Sm4Gcm.X86.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.AesGcm.X86.J0
 meta import VerifiedGarbage.Proof.AesGcm.X86.J0
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.Sm4Gcm.X86.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.CtrCall
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.Sm4Gcm.X86.Contract
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86.CtrCall
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.Framework.AddrArith

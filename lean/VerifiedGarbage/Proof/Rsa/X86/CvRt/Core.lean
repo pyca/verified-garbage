@@ -5,13 +5,10 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop

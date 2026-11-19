@@ -1,23 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 public import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.X25519.X86.Lit
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Impl.Ed25519.X86.RecoverSign
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

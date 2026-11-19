@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 import VerifiedGarbage.Proof.Framework.Omega
 

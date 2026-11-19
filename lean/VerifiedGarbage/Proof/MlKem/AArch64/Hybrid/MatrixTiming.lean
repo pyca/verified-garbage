@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!

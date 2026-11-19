@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
 import VerifiedGarbage.Proof.Framework.Omega
 

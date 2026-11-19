@@ -4,8 +4,7 @@ import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig

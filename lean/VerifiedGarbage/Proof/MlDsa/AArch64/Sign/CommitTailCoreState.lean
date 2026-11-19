@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! ### `MlDsa.AArch64.Sign.CommitTailModel`, which this module and modules that import it used -/
 

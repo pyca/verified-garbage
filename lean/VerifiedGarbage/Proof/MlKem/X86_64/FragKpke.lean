@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
-import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.PolyW
 
 /-!

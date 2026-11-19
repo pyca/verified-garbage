@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkFrame

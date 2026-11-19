@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stage
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint5
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals

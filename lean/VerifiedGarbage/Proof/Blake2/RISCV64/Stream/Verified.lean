@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Common
+public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -10,17 +10,15 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 meta import VerifiedGarbage.Proof.Blake2.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Common
+meta import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 meta import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Contract
 public import VerifiedGarbage.Impl.Blake2.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
@@ -28,7 +26,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Blake2.RISCV64.Contract
 meta import VerifiedGarbage.Impl.Blake2.RISCV64
 
 /-! ### `Blake2.RISCV64.Stream.CT`, which this module and modules that import it used -/

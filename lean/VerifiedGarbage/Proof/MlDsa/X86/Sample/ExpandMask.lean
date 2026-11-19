@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.Sample.Word
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlKem.X86.Common
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.MlDsa.Sample.Word
 meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -20,8 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem

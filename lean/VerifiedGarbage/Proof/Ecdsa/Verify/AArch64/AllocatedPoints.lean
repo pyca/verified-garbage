@@ -1,16 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-public import VerifiedGarbage.Proof.P256.VerifyTable.Build
+public import VerifiedGarbage.Proof.P256.VerifyTable.Env
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import VerifiedGarbage.Proof.P256.VerifyTable.Env
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
@@ -42,11 +39,167 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Mont.AArch64.Words
+meta import VerifiedGarbage.Proof.Weierstrass.Unch
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+meta import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+meta import VerifiedGarbage.Proof.Weierstrass.InverseContract
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
+
+/-! ### `Weierstrass.AArch64.JointFinish`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.AArch64
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
+open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
+
+/-- A final canonical homogeneous representative, including infinity. -/
+theorem jointFinish_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
+    {External : State → Prop}
+    (hL : JacWinLay c.K size) (hJ : c.K.J=52) (hAl : Aligned c.K.M (· ∈ jacWinSlots c.K))
+    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (hOne : c.K.one<C.p)
+    (hone : toM C.p (2^(64*c.K.M.n)) c.K.one=1) (hBits : c.K.bits+5≤4096)
+    {P A : Point C} {s : State} (h : JointCore c C base size P u v External A s) :
+    WP isa (Jacobian.jacFinish c.K) s fun t =>
+      KeepRegs (tcombClob c.K.M.n) s t ∧ Unch base (jacLoopWrites c.K) s.mem t.mem ∧
+      ModOkA c.K.M size C.p t.mem base ∧
+      (∀ x ∈ [c.K.R.x,c.K.R.y,c.K.R.z], wordsVal t.mem base x c.K.M.n<C.p) ∧
+      Rep C (tmv C c.K.M.n base t c.K.R.x) (tmv C c.K.M.n base t c.K.R.y)
+        (tmv C c.K.M.n base t c.K.R.z) A := by
+  have lay := jacFinishLayout hL hJ hBits
+  have al : CombA (jacFinishCfg c.K).toComb := ⟨fun x hx => hAl.sl x (by
+    apply hL.old_slots x
+    simp only [combSlots,jacFinishCfg,TCombCfg.toComb,winSlots,winRo,winOther,rcbW,
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
+    grind),hAl.mod,fun _ _ h => nomatch (callOf_small (M := c.K.M) (Nat.le_of_eq hL.n)).symm.trans h⟩
+  have pn := wordsVal_lt s.mem base c.K.M.mo c.K.M.n
+  rw [h.field.mod.val] at pn
+  have hl : ∀ x ∈ rcbR c.K.S c.K.R ⟨c.K.zero,c.K.zero,c.K.zero⟩, wordsVal s.mem base x c.K.M.n<C.p := by
+    intro x hx
+    apply h.field.lt x
+    apply List.mem_append_left
+    simp only [rcbR,nafLive,winRo,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
+    grind
+  exact jacComb_finish_ok lay al hC hm hL.n hOne hone pn h.field.scr h.field.mod hl h.stable.peer.zero h.point
+
+end VG.Proof.Weierstrass.AArch64
+
+end
+
+end
+
+/-! ### `Weierstrass.AArch64.InvEarlyExtra`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.AArch64
+open VG VG.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass
+open VG.Impl.Ecdsa.Verify.AArch64.P256Allocated (extra saveExtra restoreExtra)
+open VG.Proof.Ed25519.AArch64 (Keeps)
+
+/-- The four additional callee-saved registers used by allocated arithmetic. -/
+def allocatedExtraRegs : List Reg := extra.map Prod.fst
+
+theorem allocatedSave_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hsize : 7832≤size) : WP isa (.block saveExtra) s fun t =>
+      KeepRegs [] s t ∧ Outside base 7800 32 s.mem t.mem ∧ Spill.Saved base s.gpr extra t.mem := by
+  refine WP.mono (Spill.save_wp (b:=.x0) (l:=extra) (by decide) (fun p hp => hs.st (by
+    have h : ∀ p∈extra,p.2+8≤7832 := by decide
+    exact Nat.le_trans (h p hp) hsize))) fun t h => ⟨⟨?_,h.rd,h.wr,h.sp⟩,?_,?_⟩
+  · intro r _; exact congrFun h.gpr r
+  · rw [h.mem,hs.x0]
+    intro x hx
+    change (((s.mem.writeW (off base 7800) (s.gpr .x26)).writeW (off base 7808) (s.gpr .x27)).writeW
+      (off base 7816) (s.gpr .x28)).writeW (off base 7824) (s.gpr .x30) x=s.mem x
+    rw [(writeW_outside _ base (d:=7824) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7816) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7808) _ (by decide)) x (by omega_using [hx]),
+      (writeW_outside _ base (d:=7800) _ (by decide)) x (by omega_using [hx])]
+  · rw [h.mem,hs.x0]; exact Spill.saveMem_saved (by decide) _ _ _
+
+/-- A body's write frame preserves the saved extra registers. -/
+theorem allocatedSaved_keep {base : Addr} {g : Reg → BitVec 64} {s t : State}
+    {W : List (Nat × Nat)} (h : Spill.Saved base g extra s.mem)
+    (hu : Unch base W s.mem t.mem)
+    (hw : ∀ w∈W,w.1+w.2≤7800 ∨ 7832≤w.1) : Spill.Saved base g extra t.mem := by
+  intro p hp
+  have hb : ∀ p∈extra,7800≤p.2 ∧ p.2+8≤7832 := by decide
+  change word t.mem base p.2=_
+  rw [hu.word (fun w hm => by have := hw w hm; have := hb p hp; omega_arith) (by have := hb p hp; omega_using [this])]
+  exact h p hp
+
+ theorem allocatedRestore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitVec 64}
+    (hs : Scr s base size) (hsize : 7832≤size) (hsv : Spill.Saved base g extra s.mem) :
+    WP isa (.block restoreExtra) s fun t =>
+      VG.Proof.Ed25519.AArch64.Keeps allocatedExtraRegs s t ∧ ∀ r∈allocatedExtraRegs,t.gpr r=g r := by
+  refine WP.mono (Spill.restore_wp hs.x0 (l:=extra) (by decide) (by decide)
+    (fun p hp => by
+      rw [←hs.x0]
+      apply hs.ld
+      have hh : ∀ p∈extra,p.2+8≤7832 := by decide
+      exact Nat.le_trans (hh p hp) hsize) hsv) fun t h => ⟨⟨h.other,h.mem,h.rd,h.wr,h.sp⟩,?_⟩
+  intro r hr
+  obtain ⟨p,hp,rfl⟩ := List.mem_map.mp hr
+  exact h.gpr p hp
+
+/-- Restoring the saved registers removes them from the enclosing register frame. -/
+theorem allocatedRestore_frame {s a b t : State} {rs : List Reg}
+    (hs : KeepRegs [] s a) (hb : KeepRegs rs a b)
+    (ht : Keeps allocatedExtraRegs b t) (hv : ∀ r∈allocatedExtraRegs,t.gpr r=s.gpr r) :
+    KeepRegs (rs.filter fun r => r∉allocatedExtraRegs) s t := by
+  refine ⟨?_,ht.rd.trans (hb.rd.trans hs.rd),ht.wr.trans (hb.wr.trans hs.wr),ht.sp.trans (hb.sp.trans hs.sp)⟩
+  intro r hr
+  by_cases he : r∈allocatedExtraRegs
+  · exact hv r he
+  · have hnot : r∉rs := by simpa only [List.mem_filter,decide_eq_true_eq,he,not_false_eq_true,and_true] using hr
+    rw [ht.gpr r he,hb.gpr r hnot,hs.gpr r (by simp)]
+
+ theorem invAllocated_save_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block saveExtra) := by
+  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+ theorem invAllocated_restore_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block restoreExtra) := by
+  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+
+end VG.Proof.Weierstrass.AArch64
+
+end
+
+end
 
 /-! ### `Ecdsa.Verify.AArch64.JointPoints`, which this module and modules that import it used -/
 

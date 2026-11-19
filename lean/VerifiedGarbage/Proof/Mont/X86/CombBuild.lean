@@ -4,10 +4,9 @@ public import VerifiedGarbage.Proof.Mont.X86.CombColumns
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
-public import VerifiedGarbage.Proof.Mont.X86.CombFrame
+public import VerifiedGarbage.Proof.Mont.X86.CombAccess
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Proof.Mont.X86.CombTableState
-import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextMul
 import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame

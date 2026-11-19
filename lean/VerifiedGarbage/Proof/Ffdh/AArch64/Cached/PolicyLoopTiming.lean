@@ -12,7 +12,6 @@ meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyCompareArgs
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 
 /-! ### `Ffdh.AArch64.Cached.PolicyRecordTiming`, which only this module used -/

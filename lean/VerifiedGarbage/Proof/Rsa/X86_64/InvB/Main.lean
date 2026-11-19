@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Divstep.TcSBounds
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
 import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 
 /-!

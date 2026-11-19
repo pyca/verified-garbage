@@ -9,9 +9,8 @@ import VerifiedGarbage.Proof.Framework.ModArith
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
 public import VerifiedGarbage.Proof.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCodeCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Block
@@ -35,9 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -45,7 +42,6 @@ meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
@@ -53,7 +49,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
@@ -62,10 +57,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtRow
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowArithmetic
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
@@ -81,8 +74,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCtContext
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparsePadding
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
@@ -90,33 +81,170 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCtContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparsePadding
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WideZero
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 meta import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
 meta import VerifiedGarbage.Impl.Bignum.AArch64.WindowSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseRows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.PlainSimp
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+meta import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop
+
+/-! ### `Bignum.AArch64.WindowSparseCtContext`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowSparse
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep eval_nonzero ne_zero_iff)
+open VG.Proof.Bignum.AArch64.BlockedRedc (FastW blocks)
+open VG.Proof.Bignum.AArch64.ProductEight (productBase)
+
+structure LoopCtx (a : Nat) (L : Ws) (j : Nat) (s : State) : Prop where
+  fast : FastW L s
+  ptr : s.gpr .x8 = off L.B (slot (8 * blocks L) a + 64 * j)
+  count : s.gpr .x12 = BitVec.ofNat 64 (blocks L - j)
+  zero : s.gpr .x7 = 0
+  value : wv s.mem L.B (productBase (blocks L)) (16 * j) =
+    Square.crossValue s.mem L.B (slot (8 * blocks L) a) (8 * j)
+
+open VG.Proof.Bignum.AArch64.ProductEight (productBase fast_width input_separation)
+
+def rowBody (a : Nat) : Prog isa :=
+ .seq (.block (VG.Impl.Bignum.AArch64.WindowSparse.rowHead a))
+  (.seq (.ite (.nonzero .x .x15) (countLoop .x15 VG.Impl.Bignum.AArch64.ProductEight.offBlock) (.block []))
+    (.block (SquareEightRaw.rowTail a)))
+
+theorem row_ctx_next {a : Nat} (ha : a < 8)
+    (ha1 : a ≠ Public.aAcc) (ha2 : a ≠ Public.aTmp)
+    {L : Ws} {j : Nat} {s : State} (hj : j < blocks L) (h : LoopCtx a L j s) :
+    WP isa (rowBody a) s fun t => LoopCtx a L (j + 1) t ∧
+      isa.eval (.nonzero .x .x12) t = some (decide (j + 1 < blocks L)) := by
+  obtain ⟨he, _, hk⟩ := fast_width h.fast
+  obtain ⟨mi, hg, hz⟩ := h.fast.1
+  have hh : Hdr s.mem L.B (8 * blocks L) mi := he.symm ▸ hg.hdr
+  have hsize : slot (8 * blocks L) 8 ≤ L.Z := he.symm ▸ hz
+  have hA := input_separation h.fast ha1 ha2
+  have hI : RowsInv s L.B L.Z (blocks L) a j s :=
+    ⟨hg.scr, Keep.refl _ _, h.ptr, Outside.refl _ _ _ _, h.value⟩
+  refine WP.mono (row_ok hg.x0 h.zero hh hsize ha hk hj hA hI h.count)
+    fun t ⟨ht, ht12⟩ => ?_
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
+  have hframe := Square.scratch_arrays (s := s) (t := t) (B := L.B) (w := 8 * blocks L) (by simpa only [productBase, hlen] using ht.frame.mono (o' := productBase (blocks L)) (n' := 8*(16*blocks L+2)) (by omega_using []) (by omega_using [hj]))
+  have hHt : Hdr t.mem L.B L.w mi := he ▸ hframe.hdr hh
+  have hCount : t.gpr .x12 = BitVec.ofNat 64 (blocks L - (j + 1)) := by
+    exact (ht12.trans (congrArg (· - BitVec.ofNat 64 1) h.count)).trans
+      ((BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj])).trans
+        (congrArg (BitVec.ofNat 64) (by omega_using [])))
+  refine ⟨⟨⟨⟨mi, ⟨ht.scr, (ht.keep.gpr .x0 (by decide)).trans hg.x0, hHt⟩, hz⟩, h.fast.2⟩,
+    ht.ptr, hCount, (ht.keep.gpr .x7 (by decide)).trans h.zero, ?_⟩, ?_⟩
+  · have hn := hg.scr.nowrap
+    have hAZ := slot_le (w := 8 * blocks L) ha
+    have hc : Square.crossValue t.mem L.B (slot (8*blocks L) a) (8*(j+1)) =
+        Square.crossValue s.mem L.B (slot (8*blocks L) a) (8*(j+1)) := by
+      apply Square.crossValue_congr
+      intro i hi
+      exact ht.frame.word (by omega_using [hj, hA, hi]) (by omega_using [hj, hsize, hn, hAZ, hi])
+    rw [hc]
+    exact ht.value
+  · rw [eval_nonzero, hCount, ne_zero_iff, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (show blocks L - (j + 1) < 2 ^ 64 by omega_using [hk])]
+    simp only [Option.some.injEq, decide_eq_decide]
+    omega_using []
+
+end VG.Proof.Bignum.AArch64.WindowSparse
+
+end
+
+end
+
+/-! ### `Bignum.AArch64.WindowSharedSave`, which this module and modules that import it used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Bignum.AArch64.WindowShared
+open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
+open VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Rsa.AArch64.WindowShared
+
+abbrev savedLanes : List (Reg × VReg × Nat) :=
+  (BlockedRedc.saved.zip vecs).map fun (r,v) => (r,v,0)
+
+theorem save_ok (s : State) : WP isa (.block save) s fun t =>
+    (t.mem = s.mem ∧ ∀ k ∈ savedLanes, laneOf t k.2.1 k.2.2 = s.gpr k.1) ∧ Keep [] s t := by
+  refine WP.keep [] ?_ rfl rfl (by decide +kernel)
+  change WP isa (.block (insOf savedLanes)) s _
+  exact WP.mono (insOf_ok savedLanes s (by decide) (by decide))
+    fun _ ⟨_,hm,_,_,_,hl,_⟩ => ⟨hm,hl⟩
+
+theorem restore_ok (s : State) : WP isa (.block restore) s fun t =>
+    (t.mem = s.mem ∧ ∀ k ∈ savedLanes, t.gpr k.1 = laneOf s k.2.1 k.2.2) ∧
+      Keep BlockedRedc.saved s t := by
+  refine WP.keep BlockedRedc.saved ?_ rfl rfl (by decide +kernel)
+  change WP isa (.block (umovOf savedLanes)) s _
+  exact WP.mono (umovOf_ok savedLanes s (by decide) (by decide))
+    fun _ ⟨hm,_,_,_,hl,_⟩ => ⟨hm,hl⟩
+
+theorem saved_lane_exists : ∀ r ∈ BlockedRedc.saved, ∃ v, (r,v,0) ∈ savedLanes := by
+  intro r hr
+  cases r <;> simp_all only [BlockedRedc.saved, BlockedRedc.aa,
+    List.mem_append, List.mem_cons, List.mem_nil_iff, reduceCtorEq, or_false, false_or]
+  all_goals first
+    | exact ⟨.v0, by decide⟩
+    | exact ⟨.v1, by decide⟩
+    | exact ⟨.v2, by decide⟩
+    | exact ⟨.v3, by decide⟩
+    | exact ⟨.v4, by decide⟩
+    | exact ⟨.v5, by decide⟩
+    | exact ⟨.v6, by decide⟩
+    | exact ⟨.v27, by decide⟩
+    | exact ⟨.v28, by decide⟩
+    | exact ⟨.v29, by decide⟩
+    | exact ⟨.v30, by decide⟩
+
+theorem work_keeps_vectors : ∀ k ∈ savedLanes, ∀ i ∈ instrs work, vdstOf i ≠ some k.2.1 := by
+  have h : work.allInstrs (fun i => savedLanes.all fun k => vdstOf i != some k.2.1) = true := by
+    decide +kernel
+  rw [Code.allInstrs_eq,List.all_eq_true] at h
+  intro k hk i hi
+  exact bne_iff_ne.mp ((List.all_eq_true.mp (h i hi)) k hk)
+
+end VG.Proof.Bignum.AArch64.WindowShared
+
+end
+
+end
 
 /-! ### `Bignum.AArch64.WindowSharedCT`, which this module and modules that import it used -/
 

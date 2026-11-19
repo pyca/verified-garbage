@@ -1,14 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.References
+import VerifiedGarbage.Proof.Argon2.IterationsIndices
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Argon2.References
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
-meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
@@ -17,23 +17,17 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
 public import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Proof.Argon2.IterationsIndices
 import VerifiedGarbage.Proof.Argon2.SegmentIndices
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
 meta import VerifiedGarbage.Proof.Argon2.FillStep
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
 meta import VerifiedGarbage.Proof.Argon2.Slices
-meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.FillPositions
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
-meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Argon2.Dimensions

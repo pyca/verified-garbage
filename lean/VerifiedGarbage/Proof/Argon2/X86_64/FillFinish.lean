@@ -9,15 +9,13 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
 public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
 import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
 import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
-public import VerifiedGarbage.Proof.Argon2.Lanes
+public import VerifiedGarbage.Proof.Argon2.Slices
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Argon2.Slices
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.Iterations
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -39,14 +37,12 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Impl.Argon2.X86_64.FinalOutput
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
 meta import VerifiedGarbage.Impl.Argon2.X86_64.FinalOutput
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

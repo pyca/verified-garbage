@@ -44,12 +44,10 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 
 /-! ### `Sha3.AArch64.Neon.Pair`, which this module and modules that import it used -/
 

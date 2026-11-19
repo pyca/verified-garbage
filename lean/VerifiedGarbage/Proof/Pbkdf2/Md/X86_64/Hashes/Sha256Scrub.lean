@@ -13,13 +13,12 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-meta import VerifiedGarbage.Proof.Sha256.X86_64.OneShot
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

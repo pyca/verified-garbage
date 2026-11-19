@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Rel
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 

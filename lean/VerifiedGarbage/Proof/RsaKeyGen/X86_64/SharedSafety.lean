@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Caller
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

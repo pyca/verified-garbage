@@ -5,14 +5,13 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Finish
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
+public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.Exchange
-public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 public import VerifiedGarbage.Proof.Weierstrass.MulContract

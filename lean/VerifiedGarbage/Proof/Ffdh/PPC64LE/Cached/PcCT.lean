@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Cut
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.ScalarEq
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptCorrect
@@ -24,14 +24,12 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcBody
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Recognize
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Geometry
 import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -49,17 +47,14 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.VettedValidation
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcBody
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Recognize
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 meta import VerifiedGarbage.Proof.Mont.Words
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainCT
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Geometry
 meta import VerifiedGarbage.Proof.Ffdh.VettedTableFacts
 meta import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 meta import VerifiedGarbage.Proof.Ffdh.Domain
@@ -71,7 +66,6 @@ meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.Cached
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Ffdh.CachedSat
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.ScanTiming
 
 /-! ### `Ffdh.PPC64LE.Cached.PcCorrect`, which only this module used -/
 

@@ -1,17 +1,410 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+/-! ### `Bignum.X86_64.AdxRect8Setup`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxRect8Frame`, which the modules that import this one used -/
+
+section
+
+/-! ## AdxRect8Counter -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxRect8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+
+theorem nextColumn_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hj : j+8 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
+    WP isa (.block AdxRect8.nextColumn) s fun t =>
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8)) ∧
+      t.zf = some (decide (j+8=w)) ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  have hiZ : 8*sFn 13+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega_using [hZ, this]
+  have hwZ : 8*sW+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]
+  unfold AdxRect8.nextColumn
+  rw [show ([.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 13)) .rax, .alu .cmp .rax (.mem (hdr sW))] : List Instr) =
+      [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8), .store (hdr (sFn 13)) .rax] ++
+      [.alu .cmp .rax (.mem (hdr sW))] from rfl, WP.block_append_iff]
+  have first : WP isa (.block [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 13)) .rax]) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8)) ∧ Keep [.rax] s t := by
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8))) ?_ rfl)
+      fun t ⟨⟨a,b⟩,k⟩ => ⟨a,b,k⟩
+    xrun [State.ea,hdr,hd,hdrOff,hs.ld hiZ,hs.st hiZ,hidx,
+      show (8 : BitVec 32).signExtend 64 = 8 from rfl,BitVec.ofNat_add]
+    exact ⟨rfl,rfl⟩
+  refine WP.mono first fun a ⟨ra,ma,ka⟩ => ?_
+  have sa := hs.congr ka.2.2
+  have wa : word a.mem B (8*sW) = BitVec.ofNat 64 w := by
+    rw [ma,(writeW_outside s.mem B (BitVec.ofNat 64 (j+8)) (by omega_using [hn, hiZ] : 8*sFn 13+8 ≤ 2^64)).word
+      (by decide : 8*sW+8 ≤ 8*sFn 13 ∨ 8*sFn 13+8 ≤ 8*sW) (by omega_using [hn, hwZ]),hh.hw]
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = a.mem ∧ t.zf = some (decide (j+8=w))) ?_ rfl)
+    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt.trans ma,zt,(ka.trans kt).mono (by simp)⟩
+  xrun [State.ea,hdr,(ka.gpr (by decide)).trans hd,hdrOff,sa.ld hwZ,wa,ra,ofNat_sub_beq hj hw]
+
+end VG.Proof.Bignum.X86_64.AdxRect8
+
+end
+
+/-! ## AdxRect8Frame -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxRect8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
+
+/-- The tile's temporary header words do not overlap the Montgomery header. -/
+theorem frame_hdr {m m' : Mem} {B : Addr} {w e n : Nat} {mi : BitVec 64}
+    (hh : Hdr m B w mi) (he : hdrBytes ≤ e)
+    (hf : Frm B [(e,n),(carryOffset,8),(8*sFn 13,8)] m m') : Hdr m' B w mi := by
+  have low (k : Nat) (hk : k < 16) : word m' B (8*k) = word m B (8*k) := by
+    apply hf.word_eq
+    · intro r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp only [] <;>
+        unfold carryOffset sFn hdrBytes at * <;> omega_arith
+    · omega_using [hk]
+  exact ⟨(low sW (by decide)).trans hh.hw,(low sMinv (by decide)).trans hh.hminv,
+    fun k hk => (low (sArr k) (by unfold sArr; omega_using [hk])).trans (hh.harr k hk)⟩
+
+/-- Nor the slots of the operands' bases. -/
+theorem frame_ops {m m' : Mem} {B : Addr} {w e n : Nat} {ps : List (Nat × Nat)}
+    (hv : Ops m B w ps) (he : hdrBytes ≤ e)
+    (hf : Frm B [(e,n),(carryOffset,8),(8*sFn 13,8)] m m') : Ops m' B w ps :=
+  hv.of_frm hf fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;> unfold carryOffset sFn hdrBytes at * <;> omega_arith
+
+/-- Two adjacent scratch arrays contain every rectangular tile. -/
+theorem tile_ranges {w i j a : Nat} (hi : i+8 ≤ w) (hj : j+8 ≤ w)
+    (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
+    slot w a+8*i+64 ≤ slot w 8 ∧
+    slot w aAcc+16+8*(i+j)+128 ≤ slot w 8 ∧
+    (slot w a+8*i+64 ≤ slot w aAcc+16+8*(i+j) ∨
+      slot w aAcc+16+8*(i+j)+128 ≤ slot w a+8*i) := by
+  have sa := slot_le (w := w) ha
+  have st := slot_le (w := w) (show aTmp < 8 by decide)
+  have s1 := slot_sep (w := w) ha1
+  have s2 := slot_sep (w := w) ha2
+  unfold slot aAcc aTmp at *
+  omega_using [hi, hj, sa, s1, s2]
+
+end VG.Proof.Bignum.X86_64.AdxRect8
+
+end
+
+end
+
+end
+
+/-! ### `Bignum.X86_64.AdxDualAddInput`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxDualAdd
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxRotate8 (cols number cols_keep number_words)
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem xorRax_ok (s : State) :
+    WP isa (.block [.alu32 .xor .rax (.reg .rax)]) s fun t =>
+      t.gpr .rax = 0 ∧ t.cf = some false ∧ t.of = some false ∧ Keeps [.rax] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, Option.bind_some,
+    State.setReg32, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [RegUpd.gpr_setReg_self, BitVec.xor_self]; rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+
+theorem addInput_ok {s : State} {B : Addr} {Z e : Nat}
+    (hs : Scr s B Z) (hp : s.gpr .rsi = off B e) (he : e + 64 ≤ Z) :
+    WP isa (.block AdxDualAdd.addInput) s fun t =>
+      cols t + 2^512 * (t.gpr .rax).toNat =
+        cols s + wv s.mem B e 8 + (s.gpr .rdx).toNat ∧
+      (t.gpr .rax).toNat ≤ 2 ∧ t.cf = some false ∧ t.of = some false ∧
+      Keeps [.rax,.rdx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+  unfold AdxDualAdd.addInput
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (xorRax_ok s) fun a ⟨za,hca,hoa,ka⟩ => ?_
+  rw [WP.block_append_iff]
+  have srcA : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs a t →
+      readSrc t (.mem (at_ .rsi (8*k))) = some (word s.mem B (e+8*k)) := by
+    intro k hk t kt
+    rw [kt.readMem (by simp [AdxDualAdd.regs, at_]) (by intro r h; nomatch h),
+      ka.readMem (by simp [at_]) (by intro r h; nomatch h)]
+    exact readSrc_word hs (AdxRotate8.ea_at hp (8*k)) (by omega_using [he, hk])
+  have srcB : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs a t →
+      readSrc t (.reg (if k = 0 then .rdx else .rax)) =
+        some (if k = 0 then s.gpr .rdx else 0) := by
+    intro k _ t kt
+    by_cases hk : k = 0
+    · simp only [hk, ↓reduceIte, readSrc,
+        kt.gpr (r := .rdx) (by decide), ka.gpr (r := .rdx) (by decide)]
+    · simp only [hk, ↓reduceIte, readSrc, kt.gpr (r := .rax) (by decide), za]
+  refine WP.mono (chain_ok a _ _ _ _ hca hoa srcA srcB
+    (fun _ _ _ h => nomatch h) (fun _ _ _ h => nomatch h))
+    fun b ⟨cb,ob,hcb,hob,eb,kb⟩ => ?_
+  refine WP.mono (close_ok b hcb hob ((kb.gpr (by decide)).trans za))
+    fun t ⟨et,hct,hot,kt⟩ => ?_
+  rw [number_words, cols_keep ka.keep (by decide)] at eb
+  simp only [number, Nat.reduceEqDiff, ↓reduceIte,
+    show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero,
+    Bool.toNat_false] at eb
+  refine ⟨?_,?_,hct,hot,(ka.trans (kb.trans kt)).mono (by simp [AdxDualAdd.regs])⟩
+  · rw [cols_keep kt.keep (by decide), et]
+    exact eb
+  · rw [et]; have bc := Bool.toNat_le cb; have bo := Bool.toNat_le ob; omega_using [bc, bo]
+
+end VG.Proof.Bignum.X86_64.AdxDualAdd
+
+end
+
+end
+
+
+/-! ## AdxRect8Product -/
+
+@[expose] public section
+
+section
+
+/-! Register products with either ordering of the disjoint input and output buffers. -/
+namespace VG.Proof.Bignum.X86_64.AdxRotate8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep)
+
+theorem productN_disjoint_ok {s : State} {B : Addr} {Z eU eO eN n : Nat}
+    (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)
+    (ho : s.gpr .rsi = off B eO) (huZ : eU + 8 * n ≤ Z)
+    (hoZ : eO + 8 * n ≤ Z) (hnZ : eN + 64 ≤ Z)
+    (hsepU : eU + 8 * n ≤ eO ∨ eO + 8 * n ≤ eU)
+    (hsepN : eN + 64 ≤ eO ∨ eO + 8 * n ≤ eN) :
+    WP isa (AdxRotate8.productN n) s fun t =>
+      wv t.mem B eO n + 2 ^ (64 * n) * cols t =
+        cols s + wv s.mem B eU n * wv s.mem B eN 8 ∧
+      Outside B eO (8 * n) s.mem t.mem ∧
+      Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
+  induction n with
+  | zero =>
+    apply WP.block_nil
+    exact ⟨by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.zero_add],
+      Outside.refl _ _ _ _, Keep.refl _ _⟩
+  | succ n ih =>
+    unfold AdxRotate8.productN
+    refine WP.seq (WP.mono (ih (by omega_using [huZ]) (by omega_using [hoZ]) (by omega_using [hsepU]) (by omega_using [hsepN])) fun a ⟨va, oa, ka⟩ => ?_)
+    have sa := hs.congr ka.2.2
+    have hna := sa.nowrap
+    refine WP.mono (productStep_ok sa ((ka.gpr (by decide)).trans hc)
+      ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho)
+      (by omega_using [huZ]) (by omega_using [hoZ]) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
+    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_using [hsepN]) (by omega_using [hnZ, hna])
+    have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega_using [hsepU]) (by omega_using [huZ, hna])
+    have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega_using []) (by omega_using [hoZ, hna])
+    refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])).trans
+      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])), (ka.trans kt).mono (by decide)⟩
+    rw [mn, mu] at vt
+    rw [wv, wv, lo, pow64_succ]
+    grind
+end VG.Proof.Bignum.X86_64.AdxRotate8
+
+end
+
+/-! ## AdxRect8Tile -/
+section
+
+/-! A rectangular tile adds an 8-by-8 product, keeping its upper words in the columns. -/
+namespace VG.Proof.Bignum.X86_64.AdxRect8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxRotate8
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
+
+theorem upper_ok {s : State} {B : Addr} {Z e : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hp : s.gpr .rsi = off B e)
+    (he : carryOffset + 8 ≤ Z) :
+    WP isa (.block AdxRect8.upper) s fun t =>
+      t.gpr .rdx = word s.mem B carryOffset ∧ t.gpr .rsi = off B (e+64) ∧
+      t.mem = s.mem ∧ Keep [.rdx,.rsi] s t := by
+  refine WP.mono (WP.keep [.rdx,.rsi] (Q := fun t =>
+    t.gpr .rdx = word s.mem B carryOffset ∧ t.gpr .rsi = off B (e+64) ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨a,b,c⟩,k⟩ => ⟨a,b,c,k⟩
+  unfold AdxRect8.upper
+  have load := hs.ld he
+  change InRegions (s.rd ++ s.wr) (off B (8*sFn 14)) 8 at load
+  xrun [State.ea,hdr,hd,hdrOff,hp,load,
+    show (64 : BitVec 32).signExtend 64 = 64 from rfl]
+  simp only [carryOffset,off,BitVec.ofNat_add,BitVec.add_assoc]
+  exact ⟨True.intro,rfl⟩
+
+/-- The end of `streamTile`: the carry into its header slot and `rbp` to the
+next column block. -/
+theorem streamEnd_ok {s : State} {B : Addr} {Z eB : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hb : s.gpr .rbp = off B eB)
+    (he : carryOffset + 8 ≤ Z) :
+    WP isa (.block [.store (hdr (sFn 14)) .rax, .alu .add .rbp (.imm 64)]) s fun t =>
+      word t.mem B carryOffset = s.gpr .rax ∧ Outside B carryOffset 8 s.mem t.mem ∧
+      t.gpr .rbp = off B (eB+64) ∧ Keep [.rbp] s t := by
+  rw [show ([.store (hdr (sFn 14)) .rax, .alu .add .rbp (.imm 64)] : List Instr) =
+    [.store (hdr (sFn 14)) .rax] ++ [.alu .add .rbp (.imm 64)] from rfl, WP.block_append_iff]
+  have address : s.ea (hdr (sFn 14)) = off B carryOffset := by
+    simp only [State.ea,hdr,hd,hdrOff,carryOffset]
+  refine WP.mono (storeMem_ok hs address he) fun a ⟨wa,oa,ka⟩ => ?_
+  have pa : a.gpr .rbp = off B eB := (ka.gpr (by simp)).trans hb
+  refine WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = off B (eB+64) ∧ t.mem = a.mem) ?_ rfl)
+    fun t ⟨⟨pt,mt⟩,kt⟩ => ?_
+  · xrun [pa, show (64 : BitVec 32).signExtend 64 = 64 from rfl]
+    simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
+    rfl
+  · rw [mt]
+    exact ⟨wa,oa,pt,(ka.trans kt).mono (by simp)⟩
+
+/-- A tile whose upper words stay in the columns: the eight products, with
+the columns as the tile's low words, into eight output words, and the next
+eight output words and the carry added to the columns. -/
+theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (ha : s.gpr .rcx = off B eA)
+    (hb : s.gpr .rbp = off B eB) (ho : s.gpr .rsi = off B eO)
+    (hA : eA + 64 ≤ Z) (hB : eB + 64 ≤ Z) (hO : eO + 128 ≤ Z)
+    (sepA : eA + 64 ≤ eO ∨ eO + 128 ≤ eA)
+    (sepB : eB + 64 ≤ eO ∨ eO + 128 ≤ eB)
+    (sepC : carryOffset + 8 ≤ eO) :
+    WP isa AdxRect8.streamTile s fun t =>
+      wv t.mem B eO 8 + 2^512 * cols t + 2^512 * 2^512 * (word t.mem B carryOffset).toNat =
+        cols s + 2^512 * wv s.mem B (eO+64) 8 + wv s.mem B eA 8 * wv s.mem B eB 8 +
+          2^512 * (word s.mem B carryOffset).toNat ∧
+      (word t.mem B carryOffset).toNat ≤ 2 ∧
+      ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
+      Frm B [(eO,64),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
+      t.gpr .rbp = off B (eB+64) ∧
+      Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+  have nowrap := hs.nowrap
+  unfold AdxRect8.streamTile
+  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega_using [hA]) (by omega_using [hO]) hB
+    (by omega_using [sepA]) (by omega_using [sepB])) fun a ⟨ea,oa,ka⟩ => ?_)
+  refine WP.seq (WP.mono (upper_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hd)
+    ((ka.gpr (by decide)).trans ho) (by omega_using [hO, sepC])) fun b ⟨db,pb,mb,kb⟩ => ?_)
+  have kab := ka.trans kb
+  refine WP.seq (WP.mono (AdxDualAdd.addInput_ok (hs.congr kab.2.2) pb (by omega_using [hO]))
+    fun c ⟨ec,bc,_,_,kc⟩ => ?_)
+  have kabc := kab.trans kc.keep
+  refine WP.mono (streamEnd_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hd)
+    ((kabc.gpr (by decide)).trans hb) (by omega_using [hO, sepC])) fun t ⟨wt,ot,pt,kt⟩ => ?_
+  have carryA : word a.mem B carryOffset = word s.mem B carryOffset :=
+    oa.word (by omega_using [sepC]) (by omega_using [hO, sepC, nowrap])
+  have upperA : wv a.mem B (eO+64) 8 = wv s.mem B (eO+64) 8 :=
+    oa.wv (by omega_using []) (by omega_using [hO, nowrap])
+  have lowT : wv t.mem B eO 8 = wv a.mem B eO 8 := by
+    rw [ot.wv (by omega_using [sepC]) (by omega_using [hO, nowrap]),kc.2.1,mb]
+  have colsT : cols t = cols c := cols_keep kt (by decide)
+  rw [cols_keep kb (by decide),mb,db,carryA,upperA] at ec
+  simp only [Nat.reduceMul] at ea
+  refine ⟨?_,?_,?_,?_,(kt.gpr (by simp)).trans ((kc.1 .rsi (by decide)).trans pb),pt,
+    (kabc.trans kt).mono (by decide)⟩
+  · rw [wt,lowT,colsT]
+    omega_using [ea,ec]
+  · rw [wt]; exact bc
+  · intro cin
+    rw [wt]
+    have ca := cols_lt a
+    have cc := cols_lt c
+    have hi := wv_lt s.mem B (eO+64) 8
+    simp only [Nat.reduceMul] at hi
+    omega_using [ec,ca,cc,hi,cin]
+  · have ab : Outside B eO 64 s.mem c.mem := by
+      rw [kc.2.1,mb]; exact oa
+    exact (Frm.of_outside ab (by simp)).trans (Frm.of_outside ot (by simp))
+
+end VG.Proof.Bignum.X86_64.AdxRect8
+
+end
+
+/-! ## AdxRect8Setup -/
+section
+
+/-! Tile addresses depend only on the public word indices and array layout. -/
+namespace VG.Proof.Bignum.X86_64.AdxRect8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+
+theorem shift3 (n : Nat) : (BitVec.ofNat 64 n) <<< (3 : Nat) = BitVec.ofNat 64 (8*n) := by
+  rw [BitVec.shiftLeft_eq_mul_twoPow]
+  change BitVec.ofNat 64 n * BitVec.ofNat 64 8 = BitVec.ofNat 64 (8*n)
+  rw [← BitVec.ofNat_mul,Nat.mul_comm]
+
+theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb a b : Nat}
+    (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (hi : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
+    (hj : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
+    WP isa (.block (AdxRect8.setup ca cb)) s fun t =>
+      t.gpr .rcx = off B (slot w a+8*i) ∧
+      t.gpr .rbp = off B (slot w b+8*j) ∧
+      t.gpr .rsi = off B (slot w aAcc+16+8*(i+j)) ∧
+      t.mem = s.mem ∧ Keep [.rax,.rdx,.rcx,.rbp,.rsi] s t := by
+  have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off B (8*k)) 8 := fun k hk =>
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
+  refine WP.mono (WP.keep [.rax,.rdx,.rcx,.rbp,.rsi] (Q := fun t =>
+    t.gpr .rcx = off B (slot w a+8*i) ∧
+    t.gpr .rbp = off B (slot w b+8*j) ∧
+    t.gpr .rsi = off B (slot w aAcc+16+8*(i+j)) ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨hc,hp,ho,hm⟩,k⟩ => ⟨hc,hp,ho,hm,k⟩
+  unfold AdxRect8.setup
+  xrun [State.ea,hdr,hd,hdrOff,hl (sFn 12) (by decide),hl (sFn 13) (by decide),
+    hl (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),hl (sArr cb) (by have := hv.lt pb; unfold sArr; omega_using [this]),
+    hl (sArr aAcc) (by decide),hi,hj,show word s.mem B (8*sArr ca) = _ from hv.at pa,
+    show word s.mem B (8*sArr cb) = _ from hv.at pb,hh.harr aAcc (by decide),
+    shift3,show (16 : BitVec 32).signExtend 64 = 16 from rfl]
+  simp only [off,BitVec.ofNat_add,Nat.mul_add,BitVec.add_assoc, true_and]
+  have commute (x y z : BitVec 64) : x+(y+z)=z+(x+y) := by
+    rw [← BitVec.add_assoc,BitVec.add_comm]
+  exact congrArg (fun x : BitVec 64 => B+(BitVec.ofNat 64 (slot w aAcc)+x))
+    (commute _ _ _)
+
+end VG.Proof.Bignum.X86_64.AdxRect8
+
+end
+
+end
+
+end
 
 /-! ### `Bignum.Rectangular`, which this module and modules that import it used -/
 

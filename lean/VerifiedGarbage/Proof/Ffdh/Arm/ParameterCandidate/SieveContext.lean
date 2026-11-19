@@ -2,13 +2,53 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ReadContext
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
+import VerifiedGarbage.Proof.Framework.PowLit
+
+/-! ### `Ffdh.Arm.ParameterCandidate.SievePolicy`, which this module and modules that import it used -/
+
+section
+
+/-! Public requested-width bounds for RSA's trial table. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
+
+theorem trialCount_positive (n : Nat) : 0 < trialCount n := by
+  unfold trialCount; split <;> omega_using []
+
+theorem trialCount_bound (n : Nat) : trialCount n ≤ 1024 := by
+  unfold trialCount; split <;> omega_using []
+
+theorem trialCount_lower (n : Nat) : 53 ≤ trialCount n := by
+  unfold trialCount; split <;> omega_using []
+
+theorem trialCount_word {n : Nat} (bound : n ≤ 1024) :
+    (((if decide (129 ≤ (BitVec.ofNat 32 n).toNat) = true then (1 : BitVec 32) else 0) <<< 9) + 512) =
+      BitVec.ofNat 32 (trialCount n) := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : n < 2^32)]
+  unfold trialCount
+  by_cases small : n ≤ 128
+  · have flag : ¬129 ≤ n := by omega_using [small]
+    simp only [flag, decide_false, Bool.false_eq_true, ite_false, small, ite_true]
+    rfl
+  · have flag : 129 ≤ n := by omega_using [small]
+    simp only [flag, decide_true, ite_true, small, ite_false]
+    rfl
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! The sieve reads the candidate and RSA table and writes only local word 64. -/
 

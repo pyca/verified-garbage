@@ -7,7 +7,6 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.CT

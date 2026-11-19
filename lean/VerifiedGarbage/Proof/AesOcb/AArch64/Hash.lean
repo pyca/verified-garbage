@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 public import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 

@@ -8,10 +8,9 @@ public import VerifiedGarbage.Impl.Argon2.RISCV64.HPrime
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
-public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Common
+public import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
-import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Finalize
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit

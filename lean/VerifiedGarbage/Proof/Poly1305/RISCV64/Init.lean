@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.State
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -10,10 +8,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.State
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -24,22 +20,1086 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
 meta import VerifiedGarbage.Proof.Poly1305.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Poly1305.RISCV64.Reduce
-meta import VerifiedGarbage.Proof.Poly1305.RISCV64.Reduce
 import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Loops
+import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.Poly1305.RISCV64
+public import VerifiedGarbage.Proof.Framework.RISCV64.Wide
+public import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Impl.Poly1305.RISCV64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Wide
+meta import VerifiedGarbage.Spec.Poly1305
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.TCB.Artifact
+meta import VerifiedGarbage.TCB.RISCV64.Isa
+meta import VerifiedGarbage.TCB.Artifact
+
+/-! ### `Poly1305.RISCV64.Buffer`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Poly1305.RISCV64.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Poly1305: the RISC-V contracts
+
+The contracts the proofs are written against; the artifacts are emitted with
+the shared contracts (`Spec/Poly1305/Contract.lean`), which imply these
+(`Contract.Implies`). No function uses the stack or a working space.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305
+
+open Spec.Poly1305
+
+open RISCV64 in
+/-- `vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32])`. -/
+def initRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 128⟩
+    let key : Region := ⟨s.gpr .a1, 32⟩
+    s.rd = [key] ∧ s.wr = [state] ∧ state.Disjoint key
+  post s s' := Repr s'.mem (s.gpr .a0) (bytesAt s.mem (s.gpr .a1) 32) []
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.sp = s₂.sp
+
+open RISCV64 in
+/-- `vg_poly1305_update(state = a0, count = a1, data = a2, len = a3)`: only
+`count mod 16`, the number of bytes buffered, matters. -/
+def updateRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 128⟩
+    let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+    s.rd = [data] ∧ s.wr = [state] ∧ state.Disjoint data ∧ (s.gpr .a0).toNat % 8 = 0
+  post s s' := ∀ key msg, Buffered s.mem (s.gpr .a0) key msg →
+    (s.gpr .a1).toNat % 16 = msg.length % 16 →
+    Buffered s'.mem (s.gpr .a0) key (msg ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+open RISCV64 in
+/-- `vg_poly1305_finalize(state = a0, count = a1, out = a2)`: only `count mod
+16`, the number of bytes buffered, matters. -/
+def finalizeRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 128⟩
+    let out : Region := ⟨s.gpr .a2, 16⟩
+    s.rd = [] ∧ s.wr = [state, out] ∧ state.Disjoint out ∧ (s.gpr .a0).toNat % 8 = 0
+  post s s' := ∀ key msg, Buffered s.mem (s.gpr .a0) key msg →
+    (s.gpr .a1).toNat % 16 = msg.length % 16 → bytesAt s'.mem (s.gpr .a2) 16 = mac key msg
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.sp = s₂.sp
+
+end VG.Proof.Poly1305
+
+end
+
+end
+
+/-! ### `Poly1305.RISCV64.State`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Poly1305.RISCV64.Reduce`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Poly1305.RISCV64.Absorb`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Poly1305 on RISC-V: absorbing a block
+
+The arithmetic in radix `2⁶⁴` of `Proof/Poly1305/Limbs64.lean` (as on AArch64,
+`Proof/Poly1305/AArch64/Radix64/Absorb.lean`), with the sums of
+`Proof/Framework/RISCV64/Wide.lean`: `absorb_ok` says that absorbing a block
+multiplies the accumulator plus the block by the clamped `r`, modulo `p`,
+keeping its top word at most 4.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Wide VG.Impl.Poly1305.RISCV64
+open VG.Proof.Poly1305.Limbs64
+open VG.Spec.Poly1305 (P)
+
+/-- The accumulator in `t0`–`t2`. -/
+abbrev hv (s : State) : Nat := val3 s H0 H1 H2
+
+/-- The key in the registers: `r0`, `r1 = 4 q` and `s1 = 5 q`, the clamped `r`
+being `R`. -/
+def Keys (R : Nat) (s : State) : Prop :=
+  ∃ q, (s.gpr R0).toNat < 2 ^ 60 ∧ (s.gpr R1).toNat = 4 * q ∧ q < 2 ^ 58 ∧
+    (s.gpr S1).toNat = 5 * q ∧ (s.gpr R0).toNat + 2 ^ 64 * (s.gpr R1).toNat = R
+
+/-- The bound on the accumulator between blocks. -/
+def Bounds (s : State) : Prop := (s.gpr H2).toNat ≤ 4
+
+/-- The registers absorbing a block writes. -/
+abbrev absorbRegs : List Reg := [H0, H1, H2, X0, X1, Y0, Y1, T1, T2]
+
+/-- The little-endian doubleword at `off(b)`, as a number. -/
+abbrev word (m : Mem) (p : Addr) (d : Nat) : Nat := (m.readW (p + BitVec.ofNat 64 d) 64).toNat
+
+theorem Keys.of_regs {R : Nat} {s s' : State} (hk : Keys R s)
+    (h : ∀ r ∈ [R0, R1, S1], s'.gpr r = s.gpr r) : Keys R s' := by
+  simpa only [Keys, h R0 (by simp), h R1 (by simp), h S1 (by simp)] using hk
+
+theorem Keeps.keys {rs : List Reg} {R : Nat} {s s' : State} (hk : Keys R s) (h : Keeps rs s s')
+    (hr : R0 ∉ rs ∧ R1 ∉ rs ∧ S1 ∉ rs := by decide) : Keys R s' :=
+  hk.of_regs fun r hm => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+    rcases hm with rfl | rfl | rfl
+    exacts [h.1 _ hr.1, h.1 _ hr.2.1, h.1 _ hr.2.2]
+
+/-! ## Adding the block -/
+
+/-- `h2 += pad`. -/
+def padI (pad : Bool) : List Instr := if pad then [.addi H2 H2 1] else []
+
+theorem addBlock_eq (b : Reg) (off : Nat) (pad : Bool) : addBlock b off pad false =
+    Impl.Words64.RISCV64.loadLE64 X0 T1 T2 b off ++
+      (Impl.Words64.RISCV64.loadLE64 X1 T1 T2 b (off + 8) ++
+      (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad)) := by
+  simp only [addBlock, padI, List.append_assoc, Bool.false_eq_true, ite_false]
+
+theorem addBlock_eq_wide (b : Reg) (off : Nat) (pad : Bool) : addBlock b off pad true =
+    .load .d X0 b off :: .load .d X1 b (off + 8) ::
+      (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad) := by
+  simp only [addBlock, padI, ite_true, List.cons_append, List.nil_append]
+
+theorem padI_ok (s : State) (pad : Bool) :
+    WP isa (.block (padI pad)) s fun s' =>
+      ((s.gpr H2).toNat + pad.toNat < 2 ^ 64 → (s'.gpr H2).toNat = (s.gpr H2).toNat + pad.toNat) ∧
+      Keeps [H2] s s' := by
+  cases pad
+  · exact WP.block_nil ⟨fun _ => rfl, Keeps.refl _ _⟩
+  · apply WP.of_runBlock
+    simp only [padI, ite_true, runBlock_cons, runStep_some, runBlock_nil,
+      exec_addi (show imm12 1 by decide), Option.some.injEq, exists_eq_left']
+    refine ⟨fun h => ?_, (Keeps.refl [H2] s).write _ (by decide)⟩
+    rw [RegUpd.gpr_write_self, BitVec.toNat_add, show (BitVec.ofInt 64 1).toNat = 1 from rfl]
+    exact Nat.mod_eq_of_lt h
+
+theorem upd3_keeps {s s' : State} {d t₁ t₂ : Reg} {v : BitVec 64} (h : Words64.Upd3 s s' d t₁ t₂ v) :
+    Keeps [d, t₁, t₂] s s' :=
+  ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    exact h.other r hr.1 hr.2.1 hr.2.2, h.mem, h.rd, h.wr, h.sp⟩
+
+/-- A register write keeps everything else. -/
+theorem upd_keeps {s s' : State} {d : Reg} {v : BitVec 64} (h : VG.RISCV64.Steps.Upd s s' d v) : Keeps [d] s s' :=
+  ⟨fun r hr => h.other r (by simpa using hr), h.mem, h.rd, h.wr, h.sp⟩
+
+/-- The sum and the pad, after the block's words are in `X0` and `X1`. -/
+theorem addTail_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) {s₂ : State}
+    (x₀ : (s₂.gpr X0).toNat = word s.mem (s.gpr b) off)
+    (x₁ : (s₂.gpr X1).toNat = word s.mem (s.gpr b) (off + 8)) (k₂ : Keeps [X0, X1, T1, T2] s s₂) :
+    WP isa (.block (Impl.Words.RISCV64.add3 H0 H1 H2 X0 X1 ++ padI pad)) s₂ fun s' =>
+      (hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat) < 2 ^ 192 →
+        hv s' = hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat)) ∧
+      Keeps [H0, H1, H2, X0, X1, T1, T2] s s' := by
+  refine WP.block_append (WP.mono add3_ok fun s₃ ⟨e₃, k₃⟩ => ?_)
+  refine WP.mono (padI_ok s₃ pad) fun s₄ ⟨e₄, k₄⟩ => ?_
+  refine ⟨fun hlt => ?_, ((k₂.trans k₃).trans k₄).mono⟩
+  have hv₂ : val3 s₂ H0 H1 H2 = hv s := by
+    simp only [val3, hv, k₂.gpr' (r := H0), k₂.gpr' (r := H1), k₂.gpr' (r := H2)]
+  rw [hv₂, x₀, x₁] at e₃
+  have hp := Bool.toNat_le pad
+  have w₀ := (s₃.gpr H0).isLt; have w₁ := (s₃.gpr H1).isLt
+  have m₀ := (s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 64).isLt
+  have m₁ := (s.mem.readW (s.gpr b + BitVec.ofNat 64 (off + 8)) 64).isLt
+  have hh := (s.gpr H0).isLt; have hh1 := (s.gpr H1).isLt
+  rw [Nat.mod_eq_of_lt (by omega_using [hlt, hp])] at e₃
+  have e₄ := e₄ (by simp only [val3, word, hv] at e₃ hlt; omega_using [e₃, hlt, hp, w₀, w₁])
+  simp only [hv, val3, k₄.gpr' (r := H0), k₄.gpr' (r := H1), e₄]
+  simp only [val3] at e₃
+  have hvs : hv s = (s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat + 2 ^ 128 * (s.gpr H2).toNat := rfl
+  omega_using [e₃, hp, hvs]
+
+theorem addBlock_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) (ho : off + 15 < 2048)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
+    (hb : b ∉ absorbRegs := by decide) :
+    WP isa (.block (addBlock b off pad wide)) s fun s' =>
+      (hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat) < 2 ^ 192 →
+        hv s' = hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat)) ∧
+      Keeps [H0, H1, H2, X0, X1, T1, T2] s s' := by
+  simp only [absorbRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hb
+  obtain ⟨b0, b1, b2, b3, b4, b5, b6, b7, b8⟩ := hb
+  cases wide
+  · rw [addBlock_eq]
+    refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b3) (Ne.symm b7) (by decide)
+      (Ne.symm b8) (by decide) (by decide) (by omega_using [ho]) h0) fun s₁ u₁ => ?_)
+    have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3 b7 b8
+    refine WP.block_append (WP.mono (Words64.loadLE64_ok (Ne.symm b4) (Ne.symm b7) (by decide)
+      (Ne.symm b8) (by decide) (by decide) (by omega_using [ho])
+      (by rw [hb₁, u₁.rd, u₁.wr]; exact h8)) fun s₂ u₂ => ?_)
+    exact addTail_ok s b off pad (by rw [u₂.other _ (by decide) (by decide) (by decide), u₁.gpr])
+      (by rw [u₂.gpr, u₁.mem, hb₁]) ((upd3_keeps u₁).trans (upd3_keeps u₂)).mono
+  · have a0 := hal rfl
+    have a8 : (s.gpr b + BitVec.ofNat 64 (off + 8)).toNat % 8 = 0 := by
+      rw [← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, BitVec.toNat_add, BitVec.toNat_ofNat]
+      have := (s.gpr b + BitVec.ofNat 64 off).isLt
+      omega_using [a0]
+    rw [addBlock_eq_wide]
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 off) (by omega_using [ho]) rfl a0 h0 fun s₁ u₁ => ?_
+    have hb₁ : s₁.gpr b = s.gpr b := u₁.other b b3
+    refine VG.RISCV64.Steps.wp_ld (a := s.gpr b + BitVec.ofNat 64 (off + 8)) (by omega_using [ho]) (by rw [hb₁]) a8
+      (by rw [u₁.rd, u₁.wr]; exact h8) fun s₂ u₂ => ?_
+    exact addTail_ok s b off pad (by rw [u₂.other _ (by decide), u₁.gpr])
+      (by rw [u₂.gpr, u₁.mem]) ((upd_keeps (d := X0) u₁).trans (upd_keeps (d := X1) u₂)).mono
+
+/-! ## The products, folded -/
+
+theorem notFour_bits : ∀ i : Fin 64, (BitVec.ofInt 64 (-4)).getLsbD i.val = decide (2 ≤ i.val) := by
+  decide
+
+/-- `andi` with `-4` clears the two low bits. -/
+theorem andm4_toNat (x : BitVec 64) :
+    (x &&& BitVec.ofInt 64 (-4)).toNat = x.toNat - x.toNat % 4 := by
+  have e : x &&& BitVec.ofInt 64 (-4) = (x >>> 2) <<< 2 := by
+    ext i hi
+    have hb := notFour_bits ⟨i, hi⟩
+    rw [BitVec.getLsbD_eq_getElem hi] at hb
+    simp only [BitVec.getElem_and, BitVec.getElem_shiftLeft, BitVec.getElem_ushiftRight, hb]
+    by_cases h : i < 2
+    · simp [h]
+    · simp [h]
+      rw [show 2 + (i - 2) = i by omega_using [h], BitVec.getLsbD_eq_getElem hi]
+      simp; omega_using [h]
+  rw [e, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow]
+  have := x.isLt
+  rw [Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using []
+
+theorem and3_toNat' (x : BitVec 64) : (x &&& BitVec.ofInt 64 3).toNat = x.toNat % 4 := by
+  rw [BitVec.toNat_and, show (BitVec.ofInt 64 3).toNat = 2 ^ 2 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod]
+
+/-- The first four instructions of `fold`: `t mod 4` and `5 ⌊t / 4⌋`. -/
+def foldA : List Instr :=
+  [.logicImm .and H2 Y1 3, .logicImm .and T1 Y1 (-4), .shift .srl .d T2 Y1 2, .add T1 T1 T2]
+
+theorem foldA_ok (s : State) :
+    WP isa (.block foldA) s fun s' =>
+      (s'.gpr H2).toNat = (s.gpr Y1).toNat % 4 ∧
+      ((s.gpr Y1).toNat < 2 ^ 63 → (s'.gpr T1).toNat = 5 * ((s.gpr Y1).toNat / 4)) ∧
+      Keeps [H2, T1, T2] s s' := by
+  apply WP.of_runBlock
+  simp only [foldA, runBlock_cons, runStep_some, runBlock_nil, exec_logicImm (show imm12 3 by decide),
+    exec_logicImm (show imm12 (-4) by decide), exec_shift_d (show 2 < 64 by decide), exec_add,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun h => ?_, ?_⟩
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, and3_toNat']
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+    rw [BitVec.toNat_add, andm4_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    omega_using [h]
+  · exact ((((Keeps.refl [H2, T1, T2] s).write _ (by decide)).write _ (by decide)).write _
+      (by decide)).write _ (by decide)
+
+theorem mulSmall_ok (s : State) :
+    WP isa (.block [.mul T2 H2 R0]) s fun s' =>
+      ((s.gpr H2).toNat * (s.gpr R0).toNat < 2 ^ 64 →
+        (s'.gpr T2).toNat = (s.gpr H2).toNat * (s.gpr R0).toNat) ∧ Keeps [T2] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_mul, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨fun h => ?_, (Keeps.refl _ _).write _ (by decide)⟩
+  rw [RegUpd.gpr_write_self, BitVec.toNat_mul, Nat.mod_eq_of_lt h]
+
+theorem mul_eq : products ++ combine ++ fold =
+    Impl.Words.RISCV64.mulWide X0 X1 H0 R0 ++ (Impl.Words.RISCV64.mulWide Y0 Y1 H0 R1 ++
+    (Impl.Words.RISCV64.mulAdd X0 X1 T1 T2 H1 S1 ++ (Impl.Words.RISCV64.mulAdd Y0 Y1 T1 T2 H1 R0 ++
+    (Impl.Words.RISCV64.mulAddSmall Y0 Y1 T1 H2 S1 ++ (([.mul T2 H2 R0] : List Instr) ++
+    (Impl.Words.RISCV64.add2 Y0 Y1 X1 T2 ++ (foldA ++
+    Impl.Words.RISCV64.addW3 H0 H1 H2 X0 Y0 H2 T1))))))) := by
+  simp only [products, combine, fold, foldA, List.append_assoc, List.cons_append, List.nil_append]
+
+theorem mul_ok (s₁ : State) {q : Nat}
+    (hr0 : (s₁.gpr R0).toNat < 2 ^ 60) (hr1 : (s₁.gpr R1).toNat = 4 * q) (hq : q < 2 ^ 58)
+    (hs1 : (s₁.gpr S1).toNat = 5 * q) :
+    WP isa (.block (products ++ combine ++ fold)) s₁ fun s' =>
+      ((s₁.gpr H2).toNat ≤ 6 →
+        hv s' % P = (hv s₁ * ((s₁.gpr R0).toNat + 2 ^ 64 * (s₁.gpr R1).toNat)) % P ∧
+        (s'.gpr H2).toNat ≤ 4) ∧ Keeps absorbRegs s₁ s' := by
+  rw [mul_eq]
+  refine WP.block_append (WP.mono mulWide_ok fun s₂ ⟨e₂, k₂⟩ => ?_)
+  refine WP.block_append (WP.mono mulWide_ok fun s₃ ⟨e₃, k₃⟩ => ?_)
+  refine WP.block_append (WP.mono mulAdd_ok fun s₄ ⟨e₄, k₄⟩ => ?_)
+  refine WP.block_append (WP.mono mulAdd_ok fun s₅ ⟨e₅, k₅⟩ => ?_)
+  refine WP.block_append (WP.mono mulAddSmall_ok fun s₆ ⟨e₆, k₆⟩ => ?_)
+  refine WP.block_append (WP.mono (mulSmall_ok s₆) fun s₇ ⟨e₇, k₇⟩ => ?_)
+  refine WP.block_append (WP.mono add2_ok fun s₈ ⟨e₈, k₈⟩ => ?_)
+  refine WP.block_append (WP.mono (foldA_ok s₈) fun s₉ ⟨f₁, f₂, k₉⟩ => ?_)
+  refine WP.mono addW3_ok fun s₁₀ ⟨e₁₀, k₁₀⟩ => ?_
+  refine ⟨fun a2 => ?_, (((((((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans
+    k₈).trans k₉).trans k₁₀)).mono⟩
+  have a0 := (s₁.gpr H0).isLt; have a1 := (s₁.gpr H1).isLt
+  obtain ⟨b1, b2, b3, b4, b5, b6⟩ := absorb_bounds a0 a1 a2 hr0 hq
+  -- x = h0 r0, y = h0 r1
+  have k₂₃ := k₂.trans k₃
+  rw [k₂.gpr' (r := H0), k₂.gpr' (r := R1), hr1] at e₃
+  -- x += h1 s1
+  rw [k₃.gpr' (r := X0), k₃.gpr' (r := X1), e₂, k₂₃.gpr' (r := H1), k₂₃.gpr' (r := S1), hs1,
+    Nat.mod_eq_of_lt (by omega_using [b1, b2])] at e₄
+  have k₂₄ := k₂₃.trans k₄
+  -- y += h1 r0
+  rw [k₄.gpr' (r := Y0), k₄.gpr' (r := Y1), e₃, k₂₄.gpr' (r := H1), k₂₄.gpr' (r := R0),
+    Nat.mod_eq_of_lt (by omega_using [b3, b4])] at e₅
+  have k₂₅ := k₂₄.trans k₅
+  -- y += h2 s1
+  rw [e₅, k₂₅.gpr' (r := H2), k₂₅.gpr' (r := S1), hs1, Nat.mod_eq_of_lt (by omega_using [b3, b4, b5])] at e₆
+  have e₆ := e₆ b5
+  have k₂₆ := k₂₅.trans k₆
+  -- h2 r0
+  rw [k₂₆.gpr' (r := H2), k₂₆.gpr' (r := R0)] at e₇
+  have e₇ := e₇ (by omega_using [hr0, b6])
+  -- the top word
+  have x0 := (s₄.gpr X0).isLt; have x1 := (s₄.gpr X1).isLt
+  have y0 := (s₆.gpr Y0).isLt; have y1 := (s₆.gpr Y1).isLt
+  have r14 : s₇.gpr Y0 = s₆.gpr Y0 := k₇.gpr'
+  have r15 : s₇.gpr Y1 = s₆.gpr Y1 := k₇.gpr'
+  have r13 : s₇.gpr X1 = s₄.gpr X1 := ((k₅.trans k₆).trans k₇).gpr'
+  rw [r14, r15, r13, e₇, Nat.mod_eq_of_lt (by omega_using [hr0, e₄, e₆, b1, b2, b3, b4, b5, b6])] at e₈
+  have u0 := (s₈.gpr Y0).isLt
+  have ht : (s₈.gpr Y1).toNat < 2 ^ 63 := by
+    omega_using [hr0, e₄, e₆, b1, b2, b3, b4, b5, b6, e₈, u0]
+  have f₂ := f₂ ht
+  have hX0 : s₉.gpr X0 = s₄.gpr X0 := ((((k₅.trans k₆).trans k₇).trans k₈).trans k₉).gpr'
+  have hY0 : s₉.gpr Y0 = s₈.gpr Y0 := k₉.gpr'
+  simp only [val3] at e₁₀
+  rw [hX0, hY0, f₁, f₂, Nat.mod_eq_of_lt (by omega_using [hr0, e₄, e₆, b1, b2, b3, b4, b5, b6, e₈, u0, x0])] at e₁₀
+  have w0 := (s₁₀.gpr H0).isLt; have w1 := (s₁₀.gpr H1).isLt
+  have hu : (s₈.gpr Y0).toNat + 2 ^ 64 * (((s₆.gpr Y0).toNat + (s₄.gpr X1).toNat) / 2 ^ 64) =
+      (s₆.gpr Y0).toNat + (s₄.gpr X1).toNat := by
+    omega_using [e₈, u0, y0, x1]
+  have ht' : (s₈.gpr Y1).toNat = (s₆.gpr Y1).toNat + (s₁.gpr H2).toNat * (s₁.gpr R0).toNat +
+      ((s₆.gpr Y0).toNat + (s₄.gpr X1).toNat) / 2 ^ 64 := by
+    omega_using [e₈, hu, u0]
+  rw [ht'] at e₁₀
+  obtain ⟨m, hb⟩ := absorb_arith (q := q)
+    (w0 := (s₁₀.gpr H0).toNat) (w1 := (s₁₀.gpr H1).toNat) (w2 := (s₁₀.gpr H2).toNat)
+    (x0 := (s₄.gpr X0).toNat) (x1 := (s₄.gpr X1).toNat)
+    (y0 := (s₆.gpr Y0).toNat) (y1 := (s₆.gpr Y1).toNat) (u0 := (s₈.gpr Y0).toNat)
+    (c1 := ((s₆.gpr Y0).toNat + (s₄.gpr X1).toNat) / 2 ^ 64)
+    a0 a1 a2 hr0 hq e₄ x0 e₆ hu u0 (by omega_using [e₁₀]) w0 w1
+  refine ⟨?_, hb⟩
+  rw [hv, val3, m, hr1]
+
+theorem absorb_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) {q : Nat}
+    (hr0 : (s.gpr R0).toNat < 2 ^ 60) (hr1 : (s.gpr R1).toNat = 4 * q) (hq : q < 2 ^ 58)
+    (hs1 : (s.gpr S1).toNat = 5 * q) (ho : off + 15 < 2048)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
+    (hb : b ∉ absorbRegs := by decide) :
+    WP isa (.block (absorb b off pad wide)) s fun s' =>
+      ((s.gpr H2).toNat ≤ 4 →
+        hv s' % P = ((hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat)) * ((s.gpr R0).toNat + 2 ^ 64 * (s.gpr R1).toNat)) % P ∧
+        (s'.gpr H2).toNat ≤ 4) ∧ Keeps absorbRegs s s' := by
+  rw [show absorb b off pad wide = addBlock b off pad wide ++ (products ++ combine ++ fold) by
+    simp only [absorb, List.append_assoc]]
+  refine WP.block_append (WP.mono (addBlock_ok s b off pad wide ho h0 h8 hal hb) fun s₁ ⟨e₁, k₁⟩ => ?_)
+  have r0₁ : s₁.gpr R0 = s.gpr R0 := k₁.gpr'
+  have r1₁ : s₁.gpr R1 = s.gpr R1 := k₁.gpr'
+  have s1₁ : s₁.gpr S1 = s.gpr S1 := k₁.gpr'
+  refine WP.mono (mul_ok s₁ (by rw [r0₁]; exact hr0) (by rw [r1₁]; exact hr1) hq (by rw [s1₁]; exact hs1))
+    fun s' ⟨hm, k⟩ => ⟨fun hh2 => ?_, (k₁.trans k).mono⟩
+  have hp1 : pad.toNat ≤ 1 := Bool.toNat_le pad
+  have hw0 := (s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 64).isLt
+  have hw8 := (s.mem.readW (s.gpr b + BitVec.ofNat 64 (off + 8)) 64).isLt
+  have g0 := (s.gpr H0).isLt; have g1 := (s.gpr H1).isLt
+  have e₁ := e₁ (by simp only [word, hv, val3]; omega_using [hh2, hp1, hw0, hw8, g0, g1])
+  have a0 := (s₁.gpr H0).isLt; have a1 := (s₁.gpr H1).isLt
+  obtain ⟨hv', hb'⟩ := hm (add_arith g0 g1 hh2 hw0 hw8 hp1 e₁ a0 a1)
+  refine ⟨?_, hb'⟩
+  rw [hv', show hv s₁ = _ from e₁, r0₁, r1₁]
+
+end VG.Proof.Poly1305.RISCV64
+
+end
+
+end
+
+/-!
+# Poly1305 on RISC-V: the final reduction
+
+`reduce_ok`: `reduce` leaves the accumulator modulo `p`, as on AArch64
+(`Proof/Poly1305/AArch64/Radix64/Reduce.lean`): `g = h + 5` is selected if it
+reaches `2¹³⁰`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Wide VG.Impl.Poly1305.RISCV64
+open VG.Spec.Poly1305 (P)
+
+theorem select_keep (x y : BitVec 64) : y ^^^ ((x ^^^ y) &&& ((0 : BitVec 64) + BitVec.ofInt 64 (-1))) = x := by
+  rw [show (0 : BitVec 64) + BitVec.ofInt 64 (-1) = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
+    ← BitVec.xor_assoc, BitVec.xor_comm y x, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+theorem select_take (x y : BitVec 64) : y ^^^ ((x ^^^ y) &&& ((1 : BitVec 64) + BitVec.ofInt 64 (-1))) = y := by
+  rw [show (1 : BitVec 64) + BitVec.ofInt 64 (-1) = 0 by decide]
+  simp
+
+theorem reduce_eq : reduce = plus5 ++ (mask ++
+    (selectLimb H0 X0 ++ selectLimb H1 X1 ++ selectLimb H2 Y0)) := by
+  simp only [reduce, List.append_assoc]
+
+theorem plus5_ok (s : State) :
+    WP isa (.block plus5) s fun s' =>
+      val3 s' X0 X1 Y0 = (hv s + 5) % 2 ^ 192 ∧ Keeps [T1, X0, X1, Y0, T1] s s' := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_li (show imm12 5 by decide), ?_⟩
+  refine WP.mono addW3_ok fun s' ⟨e, k⟩ => ⟨?_, ((Keeps.refl [T1] s).write _ (by decide)).trans k⟩
+  rw [e]
+  simp only [val3, hv, RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  rfl
+
+theorem mask_ok (s : State) :
+    WP isa (.block mask) s fun s' =>
+      s'.gpr T1 = (s.gpr Y0 >>> 2) + BitVec.ofInt 64 (-1) ∧
+      s'.gpr Y0 = s.gpr Y0 &&& BitVec.ofInt 64 3 ∧ Keeps [T1, Y0] s s' := by
+  apply WP.of_runBlock
+  simp only [mask, runBlock_cons, runStep_some, runBlock_nil, exec_shift_d (show 2 < 64 by decide),
+    exec_addi (show imm12 (-1) by decide), exec_logicImm (show imm12 3 by decide),
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_, (((Keeps.refl _ s).write _ (by decide)).write _ (by decide)).write _ (by decide)⟩
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+
+theorem select_ok (s : State) :
+    WP isa (.block (selectLimb H0 X0 ++ selectLimb H1 X1 ++ selectLimb H2 Y0)) s fun s' =>
+      s'.gpr H0 = s.gpr X0 ^^^ ((s.gpr H0 ^^^ s.gpr X0) &&& s.gpr T1) ∧
+      s'.gpr H1 = s.gpr X1 ^^^ ((s.gpr H1 ^^^ s.gpr X1) &&& s.gpr T1) ∧
+      s'.gpr H2 = s.gpr Y0 ^^^ ((s.gpr H2 ^^^ s.gpr Y0) &&& s.gpr T1) ∧
+      Keeps [H0, H1, H2, T2] s s' := by
+  apply WP.of_runBlock
+  simp only [selectLimb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+    runBlock_nil, exec_logic, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · exact (((((((((Keeps.refl _ s).write _ (by decide)).write _ (by decide)).write _
+      (by decide)).write _ (by decide)).write _ (by decide)).write _ (by decide)).write _
+      (by decide)).write _ (by decide)).write _ (by decide)
+
+theorem reduce_ok (s : State) :
+    WP isa (.block reduce) s fun s' =>
+      ((s.gpr H2).toNat ≤ 4 → hv s' = hv s % P) ∧
+      Keeps [H0, H1, H2, X0, X1, Y0, T1, T2] s s' := by
+  have g0 := (s.gpr H0).isLt; have g1 := (s.gpr H1).isLt
+  rw [reduce_eq]
+  refine WP.block_append (WP.mono (plus5_ok s) fun s₁ ⟨e₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (mask_ok s₁) fun s₂ ⟨m₁, m₂, k₂⟩ => ?_)
+  refine WP.mono (select_ok s₂) fun s₃ ⟨c₁, c₂, c₃, k₃⟩ => ?_
+  refine ⟨fun hh2 => ?_, ((k₁.trans k₂).trans k₃).mono⟩
+  have hv5 : hv s + 5 < 2 ^ 192 := by simp only [hv, val3]; omega_using [g0, g1, hh2]
+  rw [Nat.mod_eq_of_lt hv5] at e₁
+  simp only [val3] at e₁
+  have ga := (s₁.gpr X0).isLt; have gd := (s₁.gpr X1).isLt
+  have hg2 : (s₁.gpr Y0).toNat ≤ 5 := by simp only [hv, val3] at e₁; omega_using [g0, g1, hh2, e₁, ga, gd]
+  have k₁₂ := k₁.trans k₂
+  rw [k₁₂.gpr' (r := H0), k₂.gpr' (r := X0), m₁] at c₁
+  rw [k₁₂.gpr' (r := H1), k₂.gpr' (r := X1), m₁] at c₂
+  rw [k₁₂.gpr' (r := H2), m₂, m₁] at c₃
+  have ht : (s₁.gpr Y0 >>> 2).toNat = (s₁.gpr Y0).toNat / 4 := by
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  simp only [hv, val3, c₁, c₂, c₃]
+  simp only [hv, val3] at e₁
+  have hP : P = 2 ^ 130 - 5 := rfl
+  by_cases hge : 4 ≤ (s₁.gpr Y0).toNat
+  · have h1 : s₁.gpr Y0 >>> 2 = 1 := BitVec.eq_of_toNat_eq (by
+      rw [ht]; show _ = 1; omega_using [hg2, hge])
+    rw [h1, select_take, select_take, select_take, and3_toNat']
+    have ge : P ≤ (s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat + 2 ^ 128 * (s.gpr H2).toNat := by
+      omega_using [e₁, hg2, hP, hge, ga, gd]
+    have lt : (s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat + 2 ^ 128 * (s.gpr H2).toNat - P <
+        P := by omega_using [g0, g1, hh2, e₁, hP, ge]
+    rw [Nat.mod_eq_sub_mod ge, Nat.mod_eq_of_lt lt]
+    omega_using [g0, g1, hh2, e₁, hP, ge, lt, ga, gd, hge, hg2]
+  · have h0 : s₁.gpr Y0 >>> 2 = 0 := BitVec.eq_of_toNat_eq (by
+      rw [ht]; show _ = 0; omega_using [hg2, hge])
+    have lt : (s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat + 2 ^ 128 * (s.gpr H2).toNat <
+        P := by omega_using [e₁, hg2, hP, hge, ga, gd]
+    rw [h0, select_keep, select_keep, select_keep, Nat.mod_eq_of_lt lt]
+
+end VG.Proof.Poly1305.RISCV64
+
+end
+
+end
+
+/-!
+# Poly1305 on RISC-V: the state
+
+The regions of the state (as on PPC64LE, `Proof/Poly1305/PPC64LE/Setup.lean`),
+the key and the accumulator as numbers, and the code that reads and writes
+them a byte at a time: `setup_ok` (the clamped `r` and the accumulator on
+entry), `storeH_ok`, `addS_ok` and `storeTag_ok`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Wide VG.Impl.Poly1305.RISCV64
+open VG.Spec.Poly1305 (P clamp leNum bytesAt accumulate Repr)
+
+theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
+
+/-- The address `p + d`, as the code computes it. -/
+abbrev off (p : Addr) (d : Nat) : Addr := p + BitVec.ofNat 64 d
+
+theorem contains_off {base : Addr} {len d n : Nat} (h : d + n ≤ len) (hd : d < 2 ^ 64) :
+    (⟨base, len⟩ : Region).Contains (off base d) n := Offset.contains_base base h hd
+
+theorem readW_writeW_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
+    (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
+    (m.writeW (off p e) v).readW (off p d) 64 = m.readW (off p d) 64 :=
+  Mem.readW_writeW_sep (Offset.sep p h (by omega_using [hd]) (by omega_using [he])) (by decide)
+
+/-! ## The regions of the state -/
+
+section
+variable (st : Addr)
+/-- The accumulator. -/
+abbrev hR : Region := ⟨st, 24⟩
+/-- The key. -/
+abbrev kR : Region := ⟨off st 24, 32⟩
+/-- The buffer and the rest. -/
+abbrev wR : Region := ⟨off st 56, 72⟩
+/-- The whole state. -/
+abbrev sR : Region := ⟨st, 128⟩
+end
+
+theorem sub_sR (st : Addr) {d n : Nat} (h : d + n ≤ 128) : Region.Sub ⟨off st d, n⟩ (sR st) :=
+  Offset.sub_base st h
+
+theorem kR_disjoint (st : Addr) : ∀ r ∈ [hR st, wR st], (kR st).Disjoint r := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact Offset.disjoint_base st (by decide) (by decide)
+  · exact Offset.disjoint st (by decide) (by decide) (by decide)
+
+/-- The key is unchanged by writes to the accumulator and the working space. -/
+theorem key_frame {st : Addr} {m m' : Mem} (hf : Frame [hR st, wR st] m m') :
+    bytesAt m' (off st 24) 32 = bytesAt m (off st 24) 32 := by
+  simp only [bytesAt]
+  apply List.map_congr_left
+  intro i hi
+  exact hf.bytes (R := kR st) (kR_disjoint st) (by simp only [Nat.reducePow, Nat.reduceLeDiff])
+    (List.mem_range.mp hi)
+
+/-- A word of the key, unchanged by writes to the accumulator and the working space. -/
+theorem key_word {st : Addr} {m m' : Mem} (hf : Frame [hR st, wR st] m m') {d : Nat}
+    (h₁ : 24 ≤ d) (h₂ : d + 8 ≤ 56) : m'.readW (off st d) 64 = m.readW (off st d) 64 := by
+  refine hf.readW (r := ⟨off st d, 8⟩) (a := off st d) (w := 64) (Region.contains_self _ _) ?_
+    (by omega_using [])
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact Offset.disjoint_base st (n := 8) (k := 24) (by omega_using [h₁]) (by omega_using [h₂])
+  · exact Offset.disjoint st (n := 8) (e := 56) (k := 72) (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])
+
+/-! ## The accumulator and the key as numbers -/
+
+theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
+
+/-- The accumulator stored in the state. -/
+theorem leNum_acc (m : Mem) (st : Addr) :
+    leNum (bytesAt m st 24) = word m st 0 + 2 ^ 64 * word m st 8 + 2 ^ 128 * word m st 16 := by
+  rw [Poly1305.leNum_bytesAt_24, word, add_ofNat_zero]
+  rfl
+
+theorem key_take (m : Mem) (st : Addr) :
+    (bytesAt m (off st 24) 32).take 16 = bytesAt m (off st 24) 16 := by
+  rw [show 32 = 16 + 16 from rfl, Poly1305.bytesAt_add,
+    List.take_left' (Poly1305.length_bytesAt _ _ _)]
+
+theorem key_drop (m : Mem) (st : Addr) :
+    ((bytesAt m (off st 24) 32).drop 16).take 16 = bytesAt m (off st 40) 16 := by
+  rw [show 32 = 16 + 16 from rfl, Poly1305.bytesAt_add,
+    List.drop_left' (Poly1305.length_bytesAt _ _ _),
+    List.take_of_length_le (by rw [Poly1305.length_bytesAt])]
+  congr 1
+  simp only [off]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+
+theorem leNum_key (m : Mem) (p : Addr) :
+    leNum (bytesAt m p 16) = word m p 0 + 2 ^ 64 * word m p 8 := by
+  rw [Poly1305.leNum_bytesAt_16, word, add_ofNat_zero]
+  rfl
+
+theorem off_24 (p : Addr) : off p 24 = p + 24 := rfl
+
+/-- The clamping mask of `r1`. -/
+abbrev M1 : BitVec 64 := 0x0ffffffc0ffffffc
+
+/-- The clamped `r` of the key in the state. -/
+abbrev Rk (m : Mem) (st : Addr) : Nat :=
+  (m.readW (off st 24) 64 &&& M0).toNat + 2 ^ 64 * (m.readW (off st 32) 64 &&& M1).toNat
+
+theorem clamp_key (m : Mem) (st : Addr) :
+    clamp (leNum ((bytesAt m (off st 24) 32).take 16)) = Rk m st := by
+  rw [key_take, leNum_key, word, word, off, add_ofNat_zero, BitVec.add_assoc, ← BitVec.ofNat_add,
+    Poly1305.clamp_words]
+  rfl
+
+/-! ## The state on entry -/
+
+section
+variable (s₀ : State)
+/-- The state, on entry. -/
+abbrev st : Addr := s₀.gpr .a0
+/-- The clamped `r`. -/
+abbrev Rn : Nat := Rk s₀.mem (st s₀)
+/-- The accumulator on entry. -/
+abbrev A0 : Nat := leNum (bytesAt s₀.mem (st s₀) 24)
+end
+
+/-- The accumulator on entry is less than `p` if the state represents a message. -/
+theorem A0_lt {s₀ : State} {key msg : List Byte} (h : Repr s₀.mem (st s₀) key msg) : A0 s₀ < P := by
+  have := Poly1305.accumulate_lt (clamp (leNum (key.take 16))) msg
+  rw [← h.2.2] at this
+  exact this
+
+theorem repr_key {s₀ : State} {key msg : List Byte} (h : Repr s₀.mem (st s₀) key msg) :
+    bytesAt s₀.mem (off (st s₀) 24) 32 = key := h.2.1
+
+theorem repr_acc {s₀ : State} {key msg : List Byte} (h : Repr s₀.mem (st s₀) key msg) :
+    accumulate (Rn s₀) msg = A0 s₀ := by
+  rw [A0, h.2.2, ← repr_key h, clamp_key]
+
+theorem mod_step {h X M R : Nat} (hv : h % P = X % P) :
+    ((h + M) * R) % P = (R * (X + M)) % P % P := by
+  rw [Nat.mod_mod, Nat.mul_comm R, Nat.mul_mod, Nat.add_mod, hv, ← Nat.add_mod, ← Nat.mul_mod]
+
+/-! ## Storing the accumulator -/
+
+/-- The words of `h` stored. -/
+def storeHm (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) : Mem :=
+  ((m.writeW (off st 0) w0).writeW (off st 8) w1).writeW (off st 16) w2
+
+theorem storeHm_frame {st : Addr} {r : Region} {m m' : Mem} (hf : Frame [hR st, r] m m')
+    (w0 w1 w2 : BitVec 64) : Frame [hR st, r] m (storeHm m' st w0 w1 w2) := by
+  have c : ∀ d, d + 8 ≤ 24 → (hR st).Contains (off st d) (64 / 8) := fun d hd =>
+    contains_off hd (by omega_using [hd])
+  exact ((hf.writeW List.mem_cons_self _ (c 0 (by decide))).writeW List.mem_cons_self _
+    (c 8 (by decide))).writeW List.mem_cons_self _ (c 16 (by decide))
+
+theorem storeHm_acc (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) :
+    leNum (bytesAt (storeHm m st w0 w1 w2) st 24) = w0.toNat + 2 ^ 64 * w1.toNat + 2 ^ 128 * w2.toNat := by
+  rw [leNum_acc]
+  simp only [word, storeHm]
+  rw [show st + BitVec.ofNat 64 0 = off st 0 from rfl, show st + BitVec.ofNat 64 8 = off st 8 from rfl,
+    show st + BitVec.ofNat 64 16 = off st 16 from rfl,
+    readW_writeW_off _ _ _ (by decide) (by decide) (by decide),
+    readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64,
+    readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64,
+    Mem.readW_writeW_self64]
+
+theorem in_st {s : State} {p : Addr} (hw : sR p ∈ s.wr) {d n : Nat} (h : d + n ≤ 128) :
+    InRegions s.wr (p + BitVec.ofNat 64 d) n :=
+  ⟨_, hw, contains_off h (by omega_using [h])⟩
+
+theorem in_st' {s : State} {p : Addr} (hw : sR p ∈ s.rd ++ s.wr) {d n : Nat} (h : d + n ≤ 128) :
+    InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 d) n :=
+  ⟨_, hw, contains_off h (by omega_using [h])⟩
+
+/-- The state plus a multiple of 8 is 8-byte aligned. -/
+theorem st_al8 {p : Addr} (ha : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
+    (p + BitVec.ofNat 64 d).toNat % 8 = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have := p.isLt
+  omega_using [ha, hd]
+
+theorem storeH_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
+    WP isa (.block storeH) s fun s' =>
+      s'.mem = storeHm s.mem (s.gpr .a0) (s.gpr H0) (s.gpr H1) (s.gpr H2) ∧
+      (∀ r, r ≠ T1 → r ≠ T2 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  rw [storeH]
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 0) (by decide) rfl (st_al8 ha (by decide))
+    (in_st hw (by decide)) fun s₁ g₁ => ?_
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 8) (by decide) (by rw [g₁.gpr])
+    (st_al8 ha (by decide)) (by rw [g₁.wr]; exact in_st hw (by decide)) fun s₂ g₂ => ?_
+  refine VG.RISCV64.Steps.wp_sd (a := off (s.gpr .a0) 16) (by decide) (by rw [g₂.gpr, g₁.gpr])
+    (st_al8 ha (by decide)) (by rw [g₂.wr, g₁.wr]; exact in_st hw (by decide)) fun s₃ g₃ =>
+    WP.block_nil ⟨?_, fun r _ _ => by rw [g₃.gpr, g₂.gpr, g₁.gpr], by rw [g₃.rd, g₂.rd, g₁.rd],
+      by rw [g₃.wr, g₂.wr, g₁.wr], by rw [g₃.sp, g₂.sp, g₁.sp]⟩
+  rw [g₃.mem, g₂.mem, g₁.mem, g₂.gpr, g₁.gpr]
+  rfl
+
+/-! ## Loading the state -/
+
+/-- A doubleword of the state at `a0`, loaded into `d`. -/
+theorem ldSt_ok (s : State) (d : Reg) {off : Nat} (ho : off + 8 ≤ 128) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr)
+    (ha : (s.gpr .a0).toNat % 8 = 0) (h8 : off % 8 = 0 := by decide) :
+    WP isa (.block [.load .d d .a0 off]) s fun s' =>
+      Words64.Upd3 s s' d T1 T2 (s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 off) 64) :=
+  VG.RISCV64.Steps.wp_ld (by omega_using [ho]) rfl (st_al8 ha h8) (in_st' hw ho) fun s' u =>
+    WP.block_nil ⟨u.gpr, fun r h _ _ => u.other r h, u.mem, u.rd, u.wr, u.sp⟩
+
+theorem upd3_regs {s s' : State} {d t₁ t₂ : Reg} {v : BitVec 64} (h : Words64.Upd3 s s' d t₁ t₂ v) :
+    Keeps [d, t₁, t₂] s s' :=
+  ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    exact h.other r hr.1 hr.2.1 hr.2.2, h.mem, h.rd, h.wr, h.sp⟩
+
+theorem M0_M1 : M0 &&& BitVec.ofInt 64 (-4) = M1 := by decide
+
+theorem key0_lt (k : BitVec 64) : (k &&& M0).toNat < 2 ^ 60 := by
+  rw [BitVec.toNat_and]
+  exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
+
+theorem key1_lt (k : BitVec 64) : (k &&& M1).toNat < 2 ^ 60 := by
+  rw [BitVec.toNat_and]
+  exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
+
+theorem key1_mod (k : BitVec 64) : (k &&& M1).toNat % 4 = 0 := by
+  rw [BitVec.toNat_and, show (4 : Nat) = 2 ^ 2 from rfl,
+    ← Nat.and_two_pow_sub_one_eq_mod, Nat.and_assoc,
+    show M1.toNat &&& 2 ^ 2 - 1 = 0 by decide, Nat.and_zero]
+
+theorem s1_toNat (k : BitVec 64) :
+    (((k &&& M1) >>> 2) + (k &&& M1)).toNat = 5 * ((k &&& M1).toNat / 4) := by
+  have h1 := key1_lt k
+  have h2 := key1_mod k
+  rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  omega_using [h1, h2]
+
+/-- The clamping and `s1`. -/
+def clampI : List Instr :=
+  [.logic .and R0 R0 T1, .logicImm .and T1 T1 (-4), .logic .and R1 R1 T1, .shift .srl .d S1 R1 2,
+    .add S1 S1 R1]
+
+theorem clampI_ok (s : State) :
+    WP isa (.block clampI) s fun s' =>
+      s'.gpr R0 = s.gpr R0 &&& s.gpr T1 ∧ s'.gpr R1 = s.gpr R1 &&& (s.gpr T1 &&& BitVec.ofInt 64 (-4)) ∧
+      s'.gpr S1 = ((s.gpr R1 &&& (s.gpr T1 &&& BitVec.ofInt 64 (-4))) >>> 2) +
+        (s.gpr R1 &&& (s.gpr T1 &&& BitVec.ofInt 64 (-4))) ∧
+      Keeps [R0, T1, R1, S1] s s' := by
+  apply WP.of_runBlock
+  simp only [clampI, runBlock_cons, runStep_some, runBlock_nil, exec_logic,
+    exec_logicImm (show imm12 (-4) by decide), exec_shift_d (show 2 < 64 by decide), exec_add,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+  · exact (((((Keeps.refl _ s).write _ (by decide)).write _ (by decide)).write _
+      (by decide)).write _ (by decide)).write _ (by decide)
+
+theorem setup_eq : setup =
+    ([.load .d R0 .a0 24] : List Instr) ++ (([.load .d R1 .a0 32] : List Instr) ++
+    (Impl.Words64.RISCV64.movImm64 T1 T2 M0 ++ (clampI ++
+    (([.load .d H0 .a0 0] : List Instr) ++ (([.load .d H1 .a0 8] : List Instr) ++
+      ([.load .d H2 .a0 16] : List Instr)))))) := by
+  simp only [setup, clampI, List.append_assoc, List.cons_append, List.nil_append]
+
+/-- The registers `setup` writes. -/
+abbrev setupRegs : List Reg := [R0, T1, T2, R1, S1, H0, H1, H2]
+
+theorem setup_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
+    WP isa (.block setup) s fun s' =>
+      Keys (Rk s.mem (s.gpr .a0)) s' ∧ (A0 s < P → hv s' = A0 s ∧ Bounds s') ∧
+      Keeps setupRegs s s' := by
+  rw [setup_eq]
+  refine WP.block_append (WP.mono (ldSt_ok s R0 (by decide) hw ha) fun s₁ u₁ => ?_)
+  have k₁ := upd3_regs u₁
+  have a₁ : s₁.gpr .a0 = s.gpr .a0 := k₁.gpr'
+  have hw₁ : sR (s₁.gpr .a0) ∈ s₁.rd ++ s₁.wr := by rw [a₁, k₁.2.2.1, k₁.2.2.2.1]; exact hw
+  refine WP.block_append (WP.mono (ldSt_ok s₁ R1 (by decide) hw₁ (by rw [a₁]; exact ha)) fun s₂ u₂ => ?_)
+  have k₂ := k₁.trans (upd3_regs u₂)
+  refine WP.block_append (WP.mono (Words64.movImm64_ok (d := T1) (tmp := T2) (s := s₂) (by decide) M0)
+    fun s₃ ⟨t₃, o₃, m₃, rd₃, wr₃, sp₃⟩ => ?_)
+  have k₃ : Keeps [T1, T2] s₂ s₃ := ⟨fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    exact o₃ r hr.1 hr.2, m₃, rd₃, wr₃, sp₃⟩
+  refine WP.block_append (WP.mono (clampI_ok s₃) fun s₄ ⟨c₀, c₁, c₂, k₄⟩ => ?_)
+  have k₁₄ := (k₂.trans k₃).trans k₄
+  have a₄ : s₄.gpr .a0 = s.gpr .a0 := k₁₄.gpr'
+  have hw₄ : sR (s₄.gpr .a0) ∈ s₄.rd ++ s₄.wr := by rw [a₄, k₁₄.2.2.1, k₁₄.2.2.2.1]; exact hw
+  refine WP.block_append (WP.mono (ldSt_ok s₄ H0 (by decide) hw₄ (by rw [a₄]; exact ha)) fun s₅ u₅ => ?_)
+  have k₅ := upd3_regs u₅
+  have hw₅ : sR (s₅.gpr .a0) ∈ s₅.rd ++ s₅.wr := by
+    rw [k₅.gpr' (r := .a0), k₅.2.2.1, k₅.2.2.2.1]; exact hw₄
+  refine WP.block_append (WP.mono (ldSt_ok s₅ H1 (by decide) hw₅
+    (by rw [k₅.gpr' (r := .a0), a₄]; exact ha)) fun s₆ u₆ => ?_)
+  have k₆ := upd3_regs u₆
+  have hw₆ : sR (s₆.gpr .a0) ∈ s₆.rd ++ s₆.wr := by
+    rw [k₆.gpr' (r := .a0), k₆.2.2.1, k₆.2.2.2.1]; exact hw₅
+  refine WP.mono (ldSt_ok s₆ H2 (by decide) hw₆
+    (by rw [k₆.gpr' (r := .a0), k₅.gpr' (r := .a0), a₄]; exact ha)) fun s₇ u₇ => ?_
+  have k₇ := upd3_regs u₇
+  have k₅₇ := (k₅.trans k₆).trans k₇
+  have K := k₁₄.trans k₅₇
+  -- The memory and the base are those on entry.
+  have mm : ∀ {t : State}, t.mem = s.mem → t.gpr .a0 = s.gpr .a0 → ∀ d,
+      t.mem.readW (t.gpr .a0 + BitVec.ofNat 64 d) 64 = s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 d) 64 :=
+    fun hm ha _ => by rw [hm, ha]
+  have r0 : s₇.gpr R0 = s.mem.readW (off (s.gpr .a0) 24) 64 &&& M0 := by
+    rw [k₅₇.gpr' (r := R0), c₀, k₃.gpr' (r := R0), t₃, (upd3_regs u₂).gpr' (r := R0), u₁.gpr]
+  have r1 : s₇.gpr R1 = s.mem.readW (off (s.gpr .a0) 32) 64 &&& M1 := by
+    rw [k₅₇.gpr' (r := R1), c₁, k₃.gpr' (r := R1), t₃, u₂.gpr, M0_M1, mm k₁.2.1 a₁]
+  have s1 : s₇.gpr S1 = ((s.mem.readW (off (s.gpr .a0) 32) 64 &&& M1) >>> 2) +
+      (s.mem.readW (off (s.gpr .a0) 32) 64 &&& M1) := by
+    rw [k₅₇.gpr' (r := S1), c₂, k₃.gpr' (r := R1), t₃, u₂.gpr, M0_M1, mm k₁.2.1 a₁]
+  refine ⟨⟨(s₇.gpr R1).toNat / 4, ?_, ?_, ?_, ?_, ?_⟩, fun hA => ?_, K.mono⟩
+  · rw [r0]; exact key0_lt _
+  · have e := key1_mod (s.mem.readW (off (s.gpr .a0) 32) 64)
+    rw [← r1] at e
+    omega_using [e]
+  · have e := key1_lt (s.mem.readW (off (s.gpr .a0) 32) 64)
+    rw [← r1] at e
+    omega_using [e]
+  · rw [s1, s1_toNat, r1]
+  · rw [r0, r1]
+  · have m₄ : s₄.mem = s.mem := k₁₄.2.1
+    have h0 : s₇.gpr H0 = s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 0) 64 := by
+      rw [((upd3_regs u₆).trans k₇).gpr' (r := H0), u₅.gpr, mm m₄ a₄]
+    have h1 : s₇.gpr H1 = s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 8) 64 := by
+      rw [k₇.gpr' (r := H1), u₆.gpr, mm (k₅.2.1.trans m₄) (k₅.gpr'.trans a₄)]
+    have h2 : s₇.gpr H2 = s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 16) 64 := by
+      rw [u₇.gpr, mm ((k₅.trans (upd3_regs u₆)).2.1.trans m₄)
+        ((k₅.trans (upd3_regs u₆)).gpr'.trans a₄)]
+    have e : hv s₇ = A0 s := by
+      simp only [hv, val3, h0, h1, h2, A0, st, leNum_acc, word]
+    refine ⟨e, ?_⟩
+    have a0 := (s₇.gpr H0).isLt
+    have a1 := (s₇.gpr H1).isLt
+    simp only [Bounds, hv, val3, P] at e hA ⊢
+    omega_using [e, hA, a0, a1]
+
+/-! ## The tag -/
+
+theorem addS_eq : addS = ([.load .d X0 .a0 40] : List Instr) ++
+    (([.load .d X1 .a0 48] : List Instr) ++ Impl.Words.RISCV64.add2 H0 H1 X0 X1) := by
+  simp only [addS, List.cons_append, List.nil_append]
+
+theorem addS_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.rd ++ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
+    WP isa (.block addS) s fun s' =>
+      (s'.gpr H0).toNat + 2 ^ 64 * (s'.gpr H1).toNat =
+        ((s.gpr H0).toNat + 2 ^ 64 * (s.gpr H1).toNat +
+          (word s.mem (s.gpr .a0) 40 + 2 ^ 64 * word s.mem (s.gpr .a0) 48)) % 2 ^ 128 ∧
+      Keeps [X0, T1, T2, X1, T1, T2, H0, H1, X0] s s' := by
+  rw [addS_eq]
+  refine WP.block_append (WP.mono (ldSt_ok s X0 (by decide) hw ha) fun s₁ u₁ => ?_)
+  have k₁ := upd3_regs u₁
+  have hw₁ : sR (s₁.gpr .a0) ∈ s₁.rd ++ s₁.wr := by
+    rw [k₁.gpr' (r := .a0), k₁.2.2.1, k₁.2.2.2.1]; exact hw
+  refine WP.block_append (WP.mono (ldSt_ok s₁ X1 (by decide) hw₁
+    (by rw [k₁.gpr' (r := .a0)]; exact ha)) fun s₂ u₂ => ?_)
+  have k₂ := upd3_regs u₂
+  refine WP.mono add2_ok fun s₃ ⟨e₃, k₃⟩ => ⟨?_, (k₁.trans k₂).trans k₃⟩
+  rw [e₃, (k₁.trans k₂).gpr' (r := H0), (k₁.trans k₂).gpr' (r := H1),
+    k₂.gpr' (r := X0), u₁.gpr, u₂.gpr, k₁.2.1, k₁.gpr' (r := .a0)]
+
+/-- The tag. -/
+abbrev outR (p : Addr) : Region := ⟨p, 16⟩
+
+theorem storeTag_ok (s : State) (ho : outR (s.gpr .a2) ∈ s.wr) :
+    WP isa (.block storeTag) s fun s' =>
+      s'.mem = (s.mem.writeW (s.gpr .a2) (s.gpr H0)).writeW
+        (s.gpr .a2 + BitVec.ofNat 64 8) (s.gpr H1) := by
+  rw [storeTag]
+  refine WP.block_append (WP.mono (Words64.storeLE64_ok (v := H0) (n := .a2) (off := 0)
+    (by decide) (by decide) (by decide) (by decide) (by decide)
+    ⟨_, ho, contains_off (by decide) (by decide)⟩) fun s₁ ⟨g₁, m₁, r₁, w₁, p₁⟩ => ?_)
+  have a₁ : s₁.gpr .a2 = s.gpr .a2 := g₁ _ (by decide) (by decide)
+  have i₁ : InRegions s₁.wr (s₁.gpr .a2 + BitVec.ofNat 64 8) 8 := by
+    rw [w₁, a₁]; exact ⟨_, ho, contains_off (by decide) (by decide)⟩
+  refine WP.mono (Words64.storeLE64_ok (v := H1) (n := .a2) (off := 8)
+    (by decide) (by decide) (by decide) (by decide) (by decide) i₁)
+    fun s₂ ⟨_, m₂, _, _, _⟩ => ?_
+  rw [m₂, m₁, a₁, g₁ _ (by decide) (by decide), add_ofNat_zero]
+
+/-- The tag stored: the low 128 bits of `x`. -/
+theorem tag_bytes (m : Mem) (p : Addr) (h0 h1 : BitVec 64) (x : Nat)
+    (hx : h0.toNat + 2 ^ 64 * h1.toNat = x % 2 ^ 128) :
+    bytesAt ((m.writeW p h0).writeW (p + BitVec.ofNat 64 8) h1) p 16 =
+      Spec.Poly1305.leBytes 16 x := by
+  have q0 : ((m.writeW p h0).writeW (p + BitVec.ofNat 64 8) h1).readW p 64 = h0 := by
+    rw [Mem.readW_writeW_sep (Offset.sep_base p (n := 8) (by decide) (by decide)) (by decide),
+      Mem.readW_writeW_self64]
+  have q1 : ((m.writeW p h0).writeW (p + BitVec.ofNat 64 8) h1).readW
+      (p + BitVec.ofNat 64 8) 64 = h1 := Mem.readW_writeW_self64 _ _ _
+  have a0 := h0.isLt; have a1 := h1.isLt
+  refine Poly1305.bytesAt_leBytes_16 _ _ _ ?_ ?_
+  · rw [q0]; omega_using [hx, a0, a1]
+  · rw [q1]; omega_using [hx, a0, a1]
+
+end VG.Proof.Poly1305.RISCV64
+
+end
+
+end
+
+/-! ### `Poly1305.RISCV64.Blocks`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Poly1305 on RISC-V: `blocks`
+
+As on AArch64 (`Proof/Poly1305/AArch64/Radix64/Blocks.lean`): the loop
+invariant says that the accumulator in the registers is that of the message
+on entry followed by the blocks absorbed so far, modulo `p`; the epilogue
+reduces and stores it. The code writes only temporaries and argument
+registers, and the memory only in the state's accumulator.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Wide VG.Impl.Poly1305.RISCV64
+open VG.Spec.Poly1305 (P clamp leNum bytesAt accumulate Repr)
+
+/-- The registers the code writes: no preserved register, nor `ra`. -/
+def written : List Reg :=
+  [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a1, .a2, .a3, .a4, .a5, .a6, .a7]
+
+/-- The absorbing of a block, with the key from `Keys`. -/
+theorem absorb_key_ok (s : State) (b : Reg) (off : Nat) (pad : Bool) (wide : Bool) {R : Nat}
+    (hk : Keys R s)
+    (ho : off + 15 < 2048)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 (off + 8)) 8)
+    (hal : wide = true → (s.gpr b + BitVec.ofNat 64 off).toNat % 8 = 0)
+    (hb : b ∉ absorbRegs := by decide) :
+    WP isa (.block (absorb b off pad wide)) s fun s' =>
+      (Bounds s → hv s' % P =
+        ((hv s + (word s.mem (s.gpr b) off + 2 ^ 64 * word s.mem (s.gpr b) (off + 8) +
+          2 ^ 128 * pad.toNat)) * R) % P ∧ Bounds s') ∧ Keeps absorbRegs s s' := by
+  obtain ⟨q, hr0, hr1, hq, hs1, hr⟩ := hk
+  simpa only [← hr, Bounds] using absorb_ok s b off pad wide hr0 hr1 hq hs1 ho h0 h8 hal hb
+
+/-! ## The precondition -/
+
+/-- The value of block `i`, with the `0x01` byte appended: its two words and `2¹²⁸`. -/
+theorem block_value (m : Mem) (p : Addr) :
+    word m p 0 + 2 ^ 64 * word m p (0 + 8) + 2 ^ 128 * true.toNat =
+      leNum (bytesAt m p 16 ++ [0x01]) := by
+  rw [Poly1305.leNum_append, Poly1305.length_bytesAt, leNum_key]
+  have h1 : leNum [(0x01 : Byte)] = 1 := rfl
+  rw [h1, Bool.toNat_true, show (256 : Nat) ^ 16 = 2 ^ 128 from rfl]
+
+end VG.Proof.Poly1305.RISCV64
+
+end
+
+end
+
+/-!
+# Poly1305 on RISC-V: the buffer
+
+The buffer (bytes 56–71 of the state) as `update` and `finalize` fill it, and
+absorbing it as a block, as on PPC64LE (`Proof/Poly1305/PPC64LE/Buffer.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Poly1305.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Wide VG.Impl.Poly1305.RISCV64
+open VG.Spec.Poly1305 (P leNum bytesAt Repr Buffered)
+
+theorem off_56 (p : Addr) : off p 56 = p + 56 := rfl
+
+/-- `x &&& 15`. -/
+theorem and15 (x : BitVec 64) : x &&& BitVec.ofInt 64 15 = BitVec.ofNat 64 (x.toNat % 16) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, show (BitVec.ofInt 64 15).toNat = 2 ^ 4 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := x.toNat % 16) (by omega_using [])]
+
+/-- The buffer. -/
+abbrev bfR (st : Addr) : Region := ⟨off st 56, 16⟩
+
+theorem bfR_sub_wR (st : Addr) : Region.Sub (bfR st) (wR st) :=
+  Offset.sub st (by decide) (by decide)
+
+/-- The two words of the buffer, as a number. -/
+theorem leNum_buf (m : Mem) (st : Addr) :
+    word m st 56 + 2 ^ 64 * word m st (56 + 8) = leNum (bytesAt m (off st 56) 16) := by
+  rw [leNum_key, word, word, word, word, add_ofNat_zero, off, Offset.add_add]
+
+/-- Absorbing the buffer: its 16 bytes, and `pad · 2¹²⁸`. -/
+theorem absorbBuf_ok (s : State) (pad : Bool) {R : Nat} (hk : Keys R s)
+    (hw : sR (s.gpr .a0) ∈ s.wr) :
+    WP isa (.block (absorb .a0 56 pad)) s fun s' =>
+      (Bounds s → hv s' % P = ((hv s + (leNum (bytesAt s.mem (off (s.gpr .a0) 56) 16) +
+        2 ^ 128 * pad.toNat)) * R) % P ∧ Bounds s') ∧ Keeps absorbRegs s s' := by
+  have hin : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (s.gpr .a0 + BitVec.ofNat 64 d) 8 :=
+    fun d hd => in_st' (List.mem_append_right _ hw) hd
+  refine WP.mono (absorb_key_ok s .a0 56 pad false hk (by decide) (hin 56 (by decide))
+    (hin (56 + 8) (by decide)) (fun h => by cases h)) fun s' ⟨ha, k⟩ => ⟨fun hb => ?_, k⟩
+  obtain ⟨hv', hb'⟩ := ha hb
+  refine ⟨?_, hb'⟩
+  rw [hv', leNum_buf]
+
+/-- The `k + n` bytes at `base` after `n` bytes are written from `base + k` on. -/
+theorem bytesAt_after {m m' : Mem} {base : Addr} {k n : Nat} (hkn : k + n ≤ 16)
+    (hf : Frame [⟨base + BitVec.ofNat 64 k, n⟩] m m') (src : Nat → Byte)
+    (hc : ∀ i < n, m' (base + BitVec.ofNat 64 k + BitVec.ofNat 64 i) = src i) :
+    bytesAt m' base (k + n) = bytesAt m base k ++ (List.range n).map src := by
+  rw [Poly1305.bytesAt_add]
+  congr 1
+  · refine Poly1305.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hkn])
+    simp only [List.mem_singleton] at hr
+    subst hr
+    exact Offset.base_disjoint base (by omega_using []) (by omega_using [hkn])
+  · simp only [bytesAt]
+    exact List.map_congr_left fun i hi => hc i (List.mem_range.mp hi)
+
+/-- The proof contracts of `update` and `finalize` only need the length
+of the message modulo 16. -/
+theorem count_mod {count : BitVec 64} {n : Nat} (h : count = BitVec.ofNat 64 n) :
+    count.toNat % 16 = n % 16 := by
+  rw [h, BitVec.toNat_ofNat]; omega_using []
+
+end VG.Proof.Poly1305.RISCV64
+
+end
+
+end
 
 /-! ### `Poly1305.RISCV64.Update`, which the modules that import this one used -/
 

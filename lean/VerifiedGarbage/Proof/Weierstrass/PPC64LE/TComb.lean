@@ -7,8 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.PPC64LE.Csub
 import VerifiedGarbage.Proof.Mont.Words32

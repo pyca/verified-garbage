@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombI
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.TCB.Arm.Target

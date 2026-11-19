@@ -18,15 +18,11 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
@@ -69,7 +65,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
 import VerifiedGarbage.Proof.Gcm.Split
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Gcm.Ctr
@@ -81,7 +77,7 @@ meta import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksToDec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
 meta import VerifiedGarbage.Proof.Gcm.Split
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee

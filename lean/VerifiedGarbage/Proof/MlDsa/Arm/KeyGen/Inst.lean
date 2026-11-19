@@ -8,8 +8,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestRow
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 import VerifiedGarbage.Proof.Framework.NativeTaintCore

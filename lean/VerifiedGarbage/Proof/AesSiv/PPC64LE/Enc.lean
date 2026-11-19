@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Entry
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.Long
-import VerifiedGarbage.Proof.AesSiv.PPC64LE.CtrLoop
+public import VerifiedGarbage.Proof.AesSiv.PPC64LE.CtrLoop
 import VerifiedGarbage.Proof.AesSiv.PPC64LE.Fn
 public import VerifiedGarbage.Spec.Siv.Contract
 import VerifiedGarbage.Proof.AesSiv.Scratch
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 public import VerifiedGarbage.Impl.AesSiv.PPC64LE
-public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Ctr
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Short
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step

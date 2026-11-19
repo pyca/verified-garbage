@@ -3,19 +3,15 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.WordFast
 meta import VerifiedGarbage.Proof.Rsa.X86_64.WordFast
 public import VerifiedGarbage.Proof.Rsa.X86_64.WordInit
-import VerifiedGarbage.Proof.Rsa.X86_64.WordNormalize
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 meta import VerifiedGarbage.Proof.Rsa.X86_64.WordInit
-meta import VerifiedGarbage.Proof.Rsa.X86_64.WordNormalize
-meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-public import VerifiedGarbage.Proof.Rsa.X86_64.WordLoop
 public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Rsa.X86_64.WordLoop
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 

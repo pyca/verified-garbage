@@ -1,12 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
+public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Impl.NatPairs
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 public import VerifiedGarbage.Impl.Ecdsa.P384.ArmComb
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 public import VerifiedGarbage.Proof.Framework.ConstMem

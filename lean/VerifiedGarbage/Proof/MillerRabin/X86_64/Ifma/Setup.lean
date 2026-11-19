@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ZCore
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
 

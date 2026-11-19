@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec

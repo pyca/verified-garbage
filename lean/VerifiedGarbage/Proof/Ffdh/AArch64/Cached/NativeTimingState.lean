@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 public import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SetLowBit
 public import VerifiedGarbage.Proof.Ffdh.VettedPolicy
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Proof.Bignum.Octets
@@ -45,8 +44,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LessTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CopyTiming
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LoadTiming
 
 /-! ### `Ffdh.AArch64.Cached.PublicRangeTiming`, which only this module used -/
 

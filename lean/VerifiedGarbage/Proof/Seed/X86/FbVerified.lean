@@ -27,10 +27,10 @@ meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Seed.X86.FbLit
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Seed.X86.Prologue
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
+meta import VerifiedGarbage.Proof.Seed.X86.Prologue
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.ModeBytes
 public import VerifiedGarbage.Proof.Modes.X86.Core

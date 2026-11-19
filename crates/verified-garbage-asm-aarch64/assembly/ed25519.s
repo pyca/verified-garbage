@@ -174,6 +174,7 @@ vg_ed25519_key_pair:
 	movi v20.2d, #0
 	movi v21.2d, #0
 	movi v22.2d, #0
+	movi v31.2d, #0
 	tst x1, x1
 	movz x0, #0, lsl #0
 	sub sp, sp, #944

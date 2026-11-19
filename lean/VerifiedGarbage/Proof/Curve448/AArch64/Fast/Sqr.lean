@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 public import VerifiedGarbage.Proof.X448.Wide.Product
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.JointIfma
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointErased
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
@@ -21,11 +21,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-public import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
@@ -43,9 +41,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -68,20 +64,17 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MxcsrInline
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.P256.X86_64.JointLoop
 public import VerifiedGarbage.Proof.P256.X86_64.JacTimingAdx
-meta import VerifiedGarbage.Proof.P256.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.P256.X86_64.JacTimingAdx
 public import VerifiedGarbage.Proof.P256.X86_64.Ifma.Window
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
@@ -90,7 +83,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.P256.X86_64.Ifma.Window
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
@@ -99,18 +92,17 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 meta import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 meta import VerifiedGarbage.Proof.Framework.AddrArith

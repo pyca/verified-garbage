@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
@@ -25,11 +25,9 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
 meta import VerifiedGarbage.Spec.EcKey.P521
 meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
 
 /-! ### `EcKey.X86_64.P521.Contract`, which this module and modules that import it used -/
 

@@ -8,9 +8,338 @@ public import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
+public import VerifiedGarbage.Proof.Bignum.CrtPRanges
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+
+/-! ### `Bignum.AArch64.CrtWindowP`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.AArch64.CrtWindowQ`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.AArch64.CrtWindowPow`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.CrtWindowFrameWide`, which this module and modules that import it used -/
+
+section
+
+/-! Frames for prime workspaces with 32-entry exponentiation tables. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.CrtWindowFive
+open VG VG.Impl.Bignum VG.Proof.Bignum
+
+/-- What code in a prime's workspace may change, at `B`: all but its link,
+`w_X`, `-X⁻¹` and its arrays' bases. -/
+def xRange32 (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 + tabBytes32 wx - 8 * 17)
+
+theorem to_x32 {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
+    {rs' : List (Nat × Nat)} (hx : xRange32 o wx ∈ rs') : Frm B rs' m m' := by
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  refine (Frm.rebase h (by omega_using [ho, h256]) fun r hr' => by have := hr r hr'; omega_using [ho, this]).widen fun r hr' => ⟨_, hx, ?_⟩
+  obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
+  have := hr r₀ hr₀
+  simp only [xRange32]
+  omega_using [this]
+
+/-- `to_x32` for changes that reach the table. -/
+theorem to_xT32 {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes32 wx) (ho : o + (slot wx 8 + tabBytes32 wx) ≤ 2 ^ 64)
+    {rs' : List (Nat × Nat)} (hx : xRange32 o wx ∈ rs') : Frm B rs' m m' := by
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  refine (Frm.rebase h (by omega_using [ho, h256]) fun r hr' => by have := hr r hr'; omega_using [ho, this]).widen fun r hr' => ⟨_, hx, ?_⟩
+  obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
+  have := hr r₀ hr₀
+  simp only [xRange32]
+  omega_using [this]
+
+/-- The words of the modulus' header and arrays, below `o`, past code in
+the prime's workspace. -/
+theorem x_below32 {B : Addr} {o wx : Nat} {m m' : Mem} (h : Frm B [xRange32 o wx] m m') {d : Nat}
+    (hd : d + 8 ≤ o) (ho : o < 2 ^ 64) : word m' B d = word m B d :=
+  h.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange32]; omega_using [hd]) (by omega_using [hd, ho])
+
+
+end VG.Proof.Bignum.CrtWindowFive
+
+end
+
+end
+
+/-!
+# RSA with the CRT on AArch64: `c^d mod X`
+
+In a prime's phase, from `c G mod n` in the modulus' `Y` and `R_X mod X` in
+the prime's: `c R_X mod X` by `redc`, then `Y := Y^d` (`powPhase_ok`):
+`c^d R_X mod X` if `X` divides `n`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.AArch64.WindowFive
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.Bignum
+open VG.Proof.Bignum.CrtWindowFive (xRange32 tabBytes32 to_x32 to_xT32 x_below32)
+open VG.Proof.MlKem.AArch64 (Keep)
+
+/-- The prime's `-X⁻¹`, `X` and 1 past a change within `CrtWindowFive.crtExpRanges`. -/
+theorem XVals.of_exp {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X : Nat}
+    (h : XVals s B o wx mx X) (hf : Frm (off B o) (CrtWindowFive.crtExpRanges wx) s.mem t.mem)
+    (hz : (off B o).toNat + slot wx 8 ≤ 2 ^ 64) : XVals t B o wx mx X := by
+  have rN := CrtWindowFive.crtExpRanges_arr wx (j := Public.aN) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have rO := CrtWindowFive.crtExpRanges_arr wx (j := Public.aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have lN := slot_le (w := wx) (show Public.aN < 8 by decide)
+  have lO := slot_le (w := wx) (show Public.aOne < 8 by decide)
+  exact ⟨by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact h.n,
+    by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact h.inv,
+    by rw [hf.wv_eq (fun r hr => by have := rO r hr; omega_arith) (by omega_arith)]; exact h.one⟩
+
+/-- From the modulus' workspace, `c G mod N` in its `Y` and `R_X mod X` in
+the prime's: the prime's `Y := c^d R_X mod X` if `X` divides `N`, `d` the
+bytes whose pointer and length are in the modulus' header slots `sd` and
+`slen`. Ends in the prime's workspace. -/
+theorem powPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
+    {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes32 wx ≤ Z)
+    (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
+    (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
+    (hnY : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
+    (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
+    (hyc : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
+    (hsd : sd < 32) (hsln : slen < 32) (hep : word s.mem B (8 * sd) = ep)
+    (hel : word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
+    (he : Src s B Z ep eb) :
+    WP isa (seqs (([.block [ldh .x0 sl]] : List (Prog isa)) ++ redc M.mm Public.aY ++ [VG.Impl.Rsa.AArch64.WindowFive.expLoop W.code M.mm S.code sd slen])) s
+      fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
+        wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
+        (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+        word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
+        Frm B [xRange32 o wx] s.mem t.mem ∧ Keep (mmRegs ++ ([.x0] : List Reg)) s t := by
+  have hs := hg.scr
+  have hn := hs.nowrap
+  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  have ho64 : o < 2 ^ 64 := by omega_arith
+  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega_arith
+  simp only [List.append_assoc]
+  refine wp_seqs_append (by simp) (by simp [redc]) ?_
+  refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off B o ∧ t.mem = s.mem)
+    (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega_arith), hslv]) rfl rfl rfl)
+    fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
+  have hc₁ : SubCtx s₁ B Z o w wx mx :=
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by
+      have ht : tabBytes wx ≤ tabBytes32 wx := by unfold tabBytes tabBytes32; omega_arith
+      omega_arith)
+  have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
+  refine wp_seqs_append (by simp [redc]) (by simp) ?_
+  refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega_arith) hX1 (j := Public.aY) (by decide))
+    fun s₂ ⟨hc₂, hX₂, hlt₂, hv₂, f₂, k₂⟩ => ?_
+  have fx₂ : Frm B [xRange32 o wx] s₁.mem s₂.mem := to_x32 f₂ (redcRanges_ok wx) hoL (List.mem_singleton_self _)
+  have hb₂ : ∀ d, d + 8 ≤ o → word s₂.mem B d = word s.mem B d := fun d hd => by
+    rw [x_below32 fx₂ hd ho64, hm₁]
+  have hY₂ : wv s₂.mem (off B o) (slot wx Public.aY) wx = wv s.mem (off B o) (slot wx Public.aY) wx := by
+    have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)
+    have := slot_le (w := wx) (show Public.aY < 8 by decide)
+    have := hc₁.good.scr.nowrap
+    rw [f₂.wv_eq (fun r hr => by have := rY r hr; omega_arith) (by omega_arith), hm₁]
+  have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
+  have hsrc₂ : Src s₂ B Z ep eb := he.congrK (rs := mmRegs ++ [.x0]) (by
+    rw [← hm₁] at *
+    exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange32]; omega_arith)
+    ((k₁.trans k₂).mono (by decide))
+  -- The exponent's base and the start, in Montgomery form if `X` divides `N`.
+  have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
+    apply VG.Proof.Bignum.redc_cancel hR
+    rw [Nat.pow_mul] at hv₂
+    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
+  change WP isa (VG.Impl.Rsa.AArch64.WindowFive.expLoop W.code M.mm S.code sd slen) s₂ _
+  refine WP.mono (expLoop_ok W M S (Q := X ∣ N) hc₂ hhi hwx2 hwx (by omega_arith) hX₂.n hX₂.inv hXodd hlt₂ hxc
+    (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega_arith)]; exact hep)
+    (by rw [hb₂ _ (by omega_arith)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
+  refine ⟨hc, XVals.of_exp hX₂ f₃ (by have := hc₂.good.scr.nowrap; omega_arith), hlt, fun hd => ?_, ?_, ?_,
+    ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  · exact hv hd
+  · rw [f₃.word_eq (fun r hr => by
+      simp only [CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+      have := hdr_lt_slot wx Public.aAcc (show 31 < 32 by decide)
+      have := hdr_lt_slot wx Public.aTmp (show 31 < 32 by decide)
+      have := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
+      have := hdr_lt_slot wx aT (show 31 < 32 by decide)
+      have := hdr_lt_slot wx 8 (show 31 < 32 by decide)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [sMaskX, sExp, sExpLen, sI, sTab, sV, sBit, sNib, sEnt, sJ, sFn] <;> omega_arith)
+      (by unfold sMaskX sFn; omega_arith), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega_arith), hm₁]
+  · rw [← hm₁]
+    exact fx₂.trans (to_xT32 f₃ (CrtWindowFive.crtExpRanges_ok wx) (by omega_arith) (List.mem_singleton_self _))
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
+
+/-!
+# RSA with the CRT on AArch64: `q`'s phase
+
+`qPhase`: `m_q = c^dQ mod q` into `q`'s `Y`, if `q` divides
+`n` and the modulus' `X_m ≡ c R`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.AArch64.WindowFive
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.Bignum
+open VG.Proof.Bignum.CrtWindowFive (xRange32 tabBytes32 to_x32 x_below32)
+open VG.Proof.MlKem.AArch64 (Keep)
+
+/-- The start of a prime's phase (`unitPhase_ok`). -/
+def unitSteps (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
+  gPow mul sl ++ [.block [ldh .x0 sl]] ++ redc mul Public.aY ++ copyArr Public.aY aXc ++
+    [.block [leave]]
+
+/-- The power in a prime's phase (`powPhase_ok`). -/
+def powSteps (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (sl sd slen : Nat) : List (Prog isa) :=
+  [.block [ldh .x0 sl]] ++ redc mul Public.aY ++ [VG.Impl.Rsa.AArch64.WindowFive.expLoop window mul select sd slen]
+
+theorem qPhase_eq (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : VG.Impl.Rsa.AArch64.WindowFive.qPhase window mul select =
+    unitSteps mul sWsQ ++ ([mul Public.aY Public.aXm Public.aY] ++
+      (powSteps window select mul sWsQ sDq sQlen ++ [mul Public.aY Public.aY Public.aOne, .block [leave]])) := by
+  simp only [VG.Impl.Rsa.AArch64.WindowFive.qPhase, unitSteps, powSteps, enterQ, List.append_assoc, List.cons_append, List.nil_append]
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
+
+/-! ### `Bignum.CrtWindowPRanges`, which this module and modules that import it used -/
+
+section
+
+/-!
+# RSA with the CRT: what `p`'s phase changes
+
+`p`'s phase changes, in the modulus' workspace, `gPow`'s ranges and `X`
+(`pRanges`), and the prime's workspace (`xRange32`); these are the words and
+numbers it keeps.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.CrtWindowFive
+
+open VG VG.Impl.Bignum
+
+theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
+    ∀ r ∈ pRanges w ++ [xRange32 o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 + tabBytes32 wx := by
+  have := hdr_lt_slot w Public.aAcc (show 31 < 32 by decide)
+  have := hdr_lt_slot w Public.aTmp (show 31 < 32 by decide)
+  have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
+  have := hdr_lt_slot w Public.aX (show 31 < 32 by decide)
+  have := slot_le (w := w) (show Public.aAcc < 8 by decide)
+  have := slot_le (w := w) (show Public.aTmp < 8 by decide)
+  have := slot_le (w := w) (show Public.aY < 8 by decide)
+  have := slot_le (w := w) (show Public.aX < 8 by decide)
+  have : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  intro r hr
+  simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
+
+theorem px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
+    (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
+    word m' B (8 * i) = word m B (8 * i) := hf.word_eq (fun r hr => by
+  have hb := pxR_bound hlo r hr
+  have := hdr_lt_slot w Public.aAcc (show i < 32 from hi)
+  have := hdr_lt_slot w Public.aTmp (show i < 32 from hi)
+  have := hdr_lt_slot w Public.aY (show i < 32 from hi)
+  have := hdr_lt_slot w Public.aX (show i < 32 from hi)
+  have := slot_le (w := w) (show Public.aX < 8 by decide)
+  simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
+  · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
+    unfold Crt.sD sFn at h1 ⊢; omega_using [h1]
+  · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
+    unfold Public.sCnt sFn at h2 ⊢; omega_using [h2]
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by simp only at hb ⊢; omega_arith)) (by omega_using [hi])
+
+theorem px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
+    (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + tabBytes32 wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
+    word m' B d = word m B d :=
+  hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega_using [hd, this])) hd'
+
+theorem px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
+    (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)
+    (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) (h4 : j ≠ Public.aX) : wv m' B (slot w j) w = wv m B (slot w j) w := by
+  have := slot_le (w := w) hj
+  have := hdr_lt_slot w j (show 31 < 32 by decide)
+  have s1 := slot_sep (w := w) h1
+  have s2 := slot_sep (w := w) h2
+  have s3 := slot_sep (w := w) h3
+  have s4 := slot_sep (w := w) h4
+  refine hf.wv_eq (fun r hr => ?_) (by omega_arith)
+  have hb := pxR_bound hlo r hr
+  simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at hb ⊢ <;> omega_arith
+
+end VG.Proof.Bignum.CrtWindowFive
+
+end
+
+end
+
+/-!
+# RSA with the CRT on AArch64: `p`'s phase
+
+`pPhase`: `m_p = c^dP mod p` as `pPhase`'s `qPhase` computes `m_q`, then
+`m_q R_p mod p` (from `m_q G mod n`, `mqPart_ok`), and
+`h = (m_p - m_q) qInv mod p` into `p`'s `Y` (`hPart_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.AArch64.WindowFive
+
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64.Crt
+open VG.Proof.Bignum
+open VG.Proof.Bignum.CrtWindowFive (xRange32 tabBytes32 px_hdr px_above px_wv x_below32 pxR_bound)
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem pPhase_eq (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : VG.Impl.Rsa.AArch64.WindowFive.pPhase window select mul =
+    unitSteps mul sWsP ++ (mqSteps mul ++ ([mul Public.aY Public.aXm Public.aY] ++
+      (powSteps window select mul sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps mul)))) := by
+  simp only [VG.Impl.Rsa.AArch64.WindowFive.pPhase, unitSteps, powSteps, mqSteps, hSteps, enterP, List.append_assoc, List.cons_append,
+    List.nil_append]
+
+end VG.Proof.Bignum.AArch64.WindowFive
+
+end
+
+end
 
 /-! ### `Bignum.AArch64.CrtWindowBack`, which this module and modules that import it used -/
 

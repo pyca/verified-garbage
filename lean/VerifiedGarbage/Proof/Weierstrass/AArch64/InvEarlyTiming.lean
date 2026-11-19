@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Divstep.Iter
 meta import VerifiedGarbage.Proof.Divstep.WordBasic
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-meta import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 meta import VerifiedGarbage.Proof.Weierstrass.Pow
@@ -67,7 +67,6 @@ meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
@@ -91,8 +90,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 meta import VerifiedGarbage.Proof.Weierstrass.JacMul
 meta import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.Proof.Divstep.Alg
-meta import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Divstep.Tc
 import Mathlib.Algebra.GroupWithZero.Nat
 meta import Mathlib.Algebra.GroupWithZero.Nat
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -120,7 +118,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
-import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem

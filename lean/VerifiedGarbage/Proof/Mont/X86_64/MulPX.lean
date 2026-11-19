@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Mont.X86_64.MulS
 public import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub

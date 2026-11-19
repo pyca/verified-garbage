@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import Mathlib.Tactic.NormNum.Pow
@@ -8,9 +8,7 @@ import Mathlib.Tactic.NormNum.Inv
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 
 /-! ### `Poly1305.X86_64.Avx2.Variant`, which only this module used -/

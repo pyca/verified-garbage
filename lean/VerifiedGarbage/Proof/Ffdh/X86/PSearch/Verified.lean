@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
+public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
@@ -15,7 +15,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
-import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
@@ -28,7 +27,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Mont.X86.Words
-meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Steps
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
