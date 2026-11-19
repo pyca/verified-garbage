@@ -256,13 +256,14 @@ def swinTop (px py : Nat) : Prog isa :=
   .seq (fprog c.SP (c.winAddM c.rcbSlots (c.pt DX DY DZ) (c.pt px py ONEP) (c.pt TX TY TZ)))
     (.block (([.mov .esi (.imm 0)] : List Instr) ++ c.winStore))
 
-/-- `R = P` if the scalar's top bit is set, else `O`; and the counter. -/
+/-- `R = P` if the scalar's top bit is set, else `O` (`R = P`, and `O` under
+the comb's mask of the top window's top bit being clear); and the counter. -/
 def swinInit (px py : Nat) : List Instr :=
-  copyPt c.n (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO) ++
-  ([.movzx8 .edx (at_ .edi (bitsAt c.n 0 + (8 * c.C.len - 1))), .mov .ecx (.imm 0),
-    .alu .sub .ecx (.reg .edx)] : List Instr) ++
-  selPt c.n (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt px py ONEP) ++
-  ([.mov .esi (.imm (BitVec.ofNat 32 c.swinJ))] : List Instr)
+  copyPt c.n (c.pt RX RY RZ) (c.pt px py ONEP) ++
+  (([.mov .esi (.imm (BitVec.ofNat 32 (c.swinJ - 1)))] : List Instr) ++
+    (c.winScan.signMask ++
+      (selPt c.n (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO) ++
+        ([.mov .esi (.imm (BitVec.ofNat 32 c.swinJ))] : List Instr))))
 
 /-- `R = [k]P` by signed windows of four bits. -/
 def swinMul (px py : Nat) : Prog isa :=

@@ -1941,7 +1941,6 @@ structure SWinInv (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s₀ s : St
   lt : ∀ i ∈ [RX, RY, RZ], sv c base s i < c.C.p
   rep : Rep c.C (fv c base s RX) (fv c base s RY) (fv c base s RZ) (mul (swPre k j) P)
 
-/-! SW6-BEGIN -/
 /-- A signed window. -/
 theorem swinStep_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {base : Addr} {P : Point c.C}
     (hP : onCurve c.C P = true) {k : Nat} (hk : k < 2 ^ (8 * c.C.len)) {s₀ s : State} {j : Nat}
@@ -2175,8 +2174,265 @@ theorem swinStep_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {base : Addr
     rw [f₁₂.mem]
     show Rep _ (toM _ _ (sv c base s₁₁ RX)) (toM _ _ (sv c base s₁₁ RY)) (toM _ _ (sv c base s₁₁ RZ)) _
     rw [ex₁₁, ey₁₁, ez₁₁]; exact repD₁₀
-/-! SW6-END -/
 
-/-! SWIN-END -/
+/-- `8P`, as entry 0 of the table. -/
+theorem swinTop_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {px py : Nat} (hpx : PtSlot px)
+    (hpy : PtSlot py) {base : Addr} {P : Point c.C} (hP : onCurve c.C P = true) {k : Nat} {s : State}
+    (ctx : WinCtx c base k s) (hqx : sv c base s px < c.C.p) (hqy : sv c base s py < c.C.p)
+    (hG : Rep c.C (fv c base s px) (fv c base s py) 1 P) (tbl : TblOk c base P s.mem (2 ^ c.winW)) :
+    WP isa (c.swinTop px py) s fun s' => WinCtx c base k s' ∧ Keeps powClob s s' ∧
+      Unch base (winTW c) s.mem s'.mem ∧ STblOk c base P s'.mem := by
+  have h7 := hc.n10
+  have hn := ctx.scr.nowrap
+  have hfit := winTbl_fit (c := c) hc.n10
+  have hp := winPc_le (c := c) h7
+  have h8 : 2 ^ c.winW = 8 := by rw [h3]; rfl
+  have below : ∀ {l : List Nat}, (∀ i ∈ l, i < 45) → ∀ w ∈ pW c l,
+      w.1 + w.2 ≤ c.winTbl ∨ c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ w.1 :=
+    fun hl => pW_tbl h7 hl hfit
+  have sub9 : ∀ i ∈ [T0, T1, T2, T3, T4, T5, TX, TY, TZ], i ∈ winWr := by decide
+  rw [Cfg.swinTop]
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  -- `T = 7P`, from the table, and `D = T`.
+  refine WP.seq (wp_movS rfl fun s₁ u₁ _ => ?_)
+  obtain ctx₁ := ctx.same hc u₁.keeps (by decide) (by decide) u₁.mem
+  refine WP.block_append (WP.mono (winSel_ok hc ctx₁.scr (a := 7) (by rw [h8]; decide) u₁.gpr)
+    fun s₂ ⟨V₂, k₂, O₂⟩ => ?_)
+  obtain ctx₂ := ctx₁.next hc k₂ (by decide) (by decide) O₂.unch (winW_sel h7)
+  rw [u₁.mem] at V₂ O₂
+  obtain U₂ : Unch base (pW c winWr) s.mem s₂.mem := unch_winWr_sel h7 O₂
+  obtain ⟨tl, tr⟩ := tbl 7 (by rw [h8]; decide)
+  refine WP.mono (copySlots_ok hc ctx₂.scr (o₁ := DX) (o₂ := DY) (o₃ := DZ) (a₁ := TX) (a₂ := TY)
+    (a₃ := TZ) (by decide) (by decide) (by decide)) fun s₃ ⟨dx, dy, dz, k₃, U₃⟩ => ?_
+  obtain ctx₃ := ctx₂.next hc k₃ (by decide) (by decide) U₃ (winW_slW h7 (by decide))
+  obtain vx : sv c base s₂ TX = _ := V₂ 0 (by decide)
+  obtain vy : sv c base s₂ TY = _ := V₂ 1 (by decide)
+  obtain vz : sv c base s₂ TZ = _ := V₂ 2 (by decide)
+  obtain ltD : ∀ i ∈ [DX, DY, DZ], sv c base s₃ i < c.C.p := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl
+    · rw [dx, vx]; exact tl 0 (by decide)
+    · rw [dy, vy]; exact tl 1 (by decide)
+    · rw [dz, vz]; exact tl 2 (by decide)
+  obtain repD : Rep c.C (fv c base s₃ DX) (fv c base s₃ DY) (fv c base s₃ DZ) (mul 7 P) := by
+    show Rep _ (toM _ _ (sv c base s₃ DX)) (toM _ _ (sv c base s₃ DY)) (toM _ _ (sv c base s₃ DZ)) _
+    rw [dx, dy, dz, vx, vy, vz]; exact tr
+  obtain U₂₃ : Unch base (pW c winWr) s.mem s₃.mem := unch_winWr_trans U₂ (unch_winWr_slW (by decide) U₃)
+  obtain q : ∀ i, PtSlot i → sv c base s₃ i = sv c base s i := fun i hi => sv_pW U₂₃ h7 hn hi.1 hi.2.2
+  obtain ltQ : ∀ i ∈ [px, py, ONEP], sv c base s₃ i < c.C.p := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl
+    · rw [q _ hpx]; exact hqx
+    · rw [q _ hpy]; exact hqy
+    · exact ctx₃.lt hc _ (by decide)
+  obtain repQ : Rep c.C (fv c base s₃ px) (fv c base s₃ py) (fv c base s₃ ONEP) P := by
+    rw [ctx₃.fv_onep hc]
+    show Rep _ (toM _ _ (sv c base s₃ px)) (toM _ _ (sv c base s₃ py)) _ _
+    rw [q _ hpx, q _ hpy]; exact hG
+  -- `T = D + P`.
+  obtain ⟨N, hN, eN, hadd⟩ := winAddM_ok (c := c) hC
+  rw [eN]
+  refine WP.seq (WP.mono (ptOp_ok hc hN (p₁ := DX) (p₂ := DY) (p₃ := DZ) (q₁ := px) (q₂ := py)
+    (q₃ := ONEP) (o₁ := TX) (o₂ := TY) (o₃ := TZ) (by decide)
+    (by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      all_goals first | decide | exact fun h => hpx.2.2 (sub9 _ h) | exact fun h => hpy.2.2 (sub9 _ h))
+    (by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      all_goals first | decide | exact hpx.ok | exact hpy.ok)
+    ctx₃.scr ctx₃.mp (ctx₃.lt8 hc ltD ltQ)) fun s₄ ⟨K₄, U₄, L₄, V₄⟩ => ?_)
+  obtain ctx₄ := ctx₃.next hc K₄ edi_clob esp_clob U₄ (winW_pW h7 (by decide))
+  obtain repT₄ : Rep c.C (fv c base s₄ TX) (fv c base s₄ TY) (fv c base s₄ TZ) (mul (7 + 1) P) := by
+    rw [← mul_succ_pt hC hP 7]
+    have := hadd (fun y => tmv c.C c.n base s₃ (rcbσ c.rcbSlots (c.pt DX DY DZ) (c.pt px py ONEP)
+      (c.pt TX TY TZ) y)) (hC.onCurve_mul hP _) hP (ctx₃.fv_ap hc) (ctx₃.fv_b3p hc)
+      (fun _ => ctx₃.fv_onep hc) repD repQ
+    simp only [Prod.mk.injEq] at V₄
+    rw [V₄.1, V₄.2.1, V₄.2.2]; exact this
+  -- Stored as entry 0.
+  refine wp_movS rfl fun s₅ u₅ _ => ?_
+  obtain ctx₅ := ctx₄.same hc u₅.keeps (by decide) (by decide) u₅.mem
+  refine WP.mono (winStore_ok hc ctx₅.scr (e := 0) (by rw [h8]; decide) u₅.gpr) fun s₆ ⟨V₆, k₆, O₆⟩ => ?_
+  obtain ctx₆ := ctx₅.next hc k₆ (by decide) (by decide) O₆.unch
+    (winW_tbl (show c.winTbl ≤ tblAt c 0 0 by simp only [tblAt]; omega_arith))
+  rw [u₅.mem] at O₆
+  have e₅ : ∀ i, sv c base s₅ i = sv c base s₄ i := fun i => by show wordsVal s₅.mem _ _ _ = _; rw [u₅.mem]
+  obtain U₄' := unch_winWr_pW (c := c) (base := base) (by decide) U₄
+  obtain tbl₄ : TblOk c base P s₄.mem (2 ^ c.winW) :=
+    (tbl.unch h7 U₂₃ hfit (below (by decide))).unch h7 U₄' hfit (below (by decide))
+  refine ⟨ctx₆, ?_, ?_, ?_⟩
+  · exact (((((u₁.keeps.mono (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide))).trans
+      (K₄.mono esi_powClob)).trans (u₅.keeps.mono (by decide))).trans (k₆.mono (by decide))
+  · exact unch_winTW_trans (unch_winTW (unch_winWr_trans U₂₃ U₄'))
+      (unch_winTW_entry (e := 0) (by rw [h8]; decide) O₆)
+  · intro e he
+    by_cases h0 : e = 0
+    · subst h0
+      simp only [↓reduceIte]
+      refine ⟨fun j hj => ?_, ?_⟩
+      · rw [V₆ j hj, e₅]
+        rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> exact L₄ _ (by decide)
+      · rw [V₆ 0 (by decide), V₆ 1 (by decide), V₆ 2 (by decide), e₅, e₅, e₅, h8]
+        exact repT₄
+    · obtain ⟨hl, hr⟩ := tbl₄ e he
+      have hmul := Nat.mul_le_mul_left (16 * c.winPc) (show 1 ≤ e by omega_arith)
+      have hmul2 := Nat.mul_le_mul_left (16 * c.winPc) (Nat.succ_le_of_lt he)
+      rw [Nat.mul_succ] at hmul2
+      rw [Nat.mul_one] at hmul
+      have hcn : ∀ j < 3, c.n * j ≤ 2 * c.n := fun j hj => by
+        rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> omega_arith
+      have ew : ∀ j < 3, wordsVal s₆.mem base (tblAt c e (c.n * j)) c.n =
+          wordsVal s₄.mem base (tblAt c e (c.n * j)) c.n := fun j hj =>
+        O₆.wordsVal (Or.inr (by simp only [tblAt]; omega_using [hmul]))
+          (by have := hcn j hj; simp only [tblAt]; omega_using [hmul2, hfit, hp, this])
+      simp only [h0, ↓reduceIte]
+      refine ⟨fun j hj => by rw [ew j hj]; exact hl j hj, ?_⟩
+      rw [ew 0 (by decide), ew 1 (by decide), ew 2 (by decide)]
+      exact hr
+
+/-- `R = [k]P` by signed windows of four bits: `winMul_ok`'s statement. -/
+theorem swinMul_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {px py : Nat} (hpx : PtSlot px)
+    (hpy : PtSlot py) {base : Addr} {s : State} (hs : Scr s base size)
+    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
+    (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hzero : sv c base s ZERO = 0)
+    (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p) (hqx : sv c base s px < c.C.p)
+    (hqy : sv c base s py < c.C.p) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (fv c base s px) (fv c base s py) 1 P) {k : Nat} (hk : k < 2 ^ (8 * c.C.len))
+    (hbits : ∀ t < 8 * c.C.len, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
+    WP isa (c.swinMul px py) s fun s' => Keeps powClob s s' ∧ Unch base (winTW c) s.mem s'.mem ∧
+      (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (mul k P) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hlen := hc.len_hi
+  have hlen8 := hc.len8
+  have hJ : c.swinJ = 2 * c.C.len := rfl
+  have hbit0 := bitsAt_le c h7 (j := 0) (by decide)
+  have hfit := winTbl_fit (c := c) hc.n10
+  have mul0 : mul 0 P = .infinity := by rw [Spec.Weierstrass.mul]; simp
+  obtain ctx : WinCtx c base k s := ⟨hs, hmp, hap, hb3, hzero, hone, hbits⟩
+  rw [Cfg.swinMul]
+  -- The table of the point's multiples, and `8P`.
+  refine WP.seq (WP.mono (winBuild_ok hc hC hpx hpy hP ctx hqx hqy hG) fun s₂ ⟨ctx₂, K₂, U₂, tbl₂⟩ => ?_)
+  obtain q₂ : ∀ i, PtSlot i → sv c base s₂ i = sv c base s i := fun i hi => sv_winTW U₂ h7 hn hi.1 hi.2.2
+  refine WP.seq (WP.mono (swinTop_ok hc hC h3 hpx hpy hP ctx₂ (by rw [q₂ _ hpx]; exact hqx)
+    (by rw [q₂ _ hpy]; exact hqy)
+    (by show Rep _ (toM _ _ (sv c base s₂ px)) (toM _ _ (sv c base s₂ py)) _ _
+        rw [q₂ _ hpx, q₂ _ hpy]; exact hG) tbl₂) fun s₃ ⟨ctx₃, K₃, U₃, st₃⟩ => ?_)
+  obtain q₃ : ∀ i, PtSlot i → sv c base s₃ i = sv c base s i := fun i hi =>
+    (sv_winTW U₃ h7 hn hi.1 hi.2.2).trans (q₂ i hi)
+  -- `R = P`, or `O` where the top bit is clear.
+  rw [Cfg.swinInit]
+  refine WP.seq ?_
+  refine WP.block_append (WP.mono (copySlots_ok hc ctx₃.scr (o₁ := RX) (o₂ := RY) (o₃ := RZ)
+    (a₁ := px) (a₂ := py) (a₃ := ONEP)
+    (by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl
+      all_goals first | decide | exact hpx.1 | exact hpy.1)
+    (by decide) (fun i hi => pt_not hpx hpy i ((by decide : ∀ i ∈ [RX, RY, RZ], i ∈ winWr) i hi)))
+    fun s₄ ⟨rx, ry, rz, k₄, U₄⟩ => ?_)
+  obtain ctx₄ := ctx₃.next hc k₄ (by decide) (by decide) U₄ (winW_slW h7 (by decide))
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movi fun s₅ u₅ => ?_
+  obtain ctx₅ := ctx₄.same hc u₅.keeps (by decide) (by decide) u₅.mem
+  have hw4 : c.winScan.w = 4 := by show c.winW + 1 = 4; rw [h3]
+  refine WP.block_append (WP.mono (signMask_ok c.winScan ctx₅.scr (k := k) (j := c.swinJ - 1)
+    (N := 8 * c.C.len) (by rw [hw4]; decide) (by rw [hw4]; decide) (by rw [hw4]; omega_using [hJ, hlen8])
+    (by show bitsAt c.n 0 + _ ≤ _; omega_using [hbit0, hlen]) u₅.gpr ctx₅.bits) fun s₆ ⟨c₆, k₆⟩ => ?_)
+  rw [hw4] at c₆
+  obtain m₆ : s₆.mem = s₅.mem := k₆.2.1
+  obtain ctx₆ := ctx₅.same hc k₆.keeps (by decide) (by decide) m₆
+  refine WP.block_append (WP.mono (selSelf3_ok hc ctx₆.scr (decide (combWin 4 k (c.swinJ - 1) < 8)) c₆
+    (o₁ := RX) (o₂ := RY) (o₃ := RZ) (x₁ := ZERO) (x₂ := ONEP) (x₃ := ZERO) (by decide) (by decide)
+    (by decide)) fun s₇ ⟨ex, ey, ez, k₇, U₇⟩ => ?_)
+  obtain ctx₇ := ctx₆.next hc k₇ (by decide) (by decide) U₇ (winW_slW h7 (by decide))
+  refine wp_movi fun s₈ u₈ => WP.block_nil ?_
+  obtain ctx₈ := ctx₇.same hc u₈.keeps (by decide) (by decide) u₈.mem
+  have e46 : ∀ {i : Nat}, sv c base s₆ i = sv c base s₄ i := fun {i} => by
+    show wordsVal s₆.mem _ _ _ = _; rw [m₆, u₅.mem]
+  have e78 : ∀ {i : Nat}, sv c base s₈ i = sv c base s₇ i := fun {i} => by
+    show wordsVal s₈.mem _ _ _ = _; rw [u₈.mem]
+  obtain U₄₈ : Unch base (pW c winWr) s₃.mem s₈.mem := by
+    rw [u₈.mem]
+    refine unch_winWr_trans (unch_winWr_slW (by decide) U₄) ?_
+    rw [← u₅.mem, ← m₆]
+    exact unch_winWr_slW (by decide) U₇
+  obtain k₄₈ : Keeps powClob s₃ s₈ := ((((k₄.mono (by decide)).trans (u₅.keeps.mono (by decide))).trans
+    (k₆.keeps.mono (by decide))).trans (k₇.mono (by decide))).trans (u₈.keeps.mono (by decide))
+  have below : ∀ {l : List Nat}, (∀ i ∈ l, i < 45) → ∀ w ∈ pW c l,
+      w.1 + w.2 ≤ c.winTbl ∨ c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ w.1 :=
+    fun hl => pW_tbl h7 hl hfit
+  -- The windows.
+  refine countLoop_ok (Inv := fun j t => SWinInv c base P k s₈ t j) (n := c.swinJ)
+    (fun j t h1 h2 I => swinStep_ok hc hC h3 hP hk h1 h2 I) (fun t I => ⟨?_, ?_, I.lt, ?_⟩)
+    (by omega_using [hJ, hlen8]) ?_
+  · have hpre : swPre k c.swinJ = if 8 ≤ combWin 4 k (c.swinJ - 1) then 1 else 0 := by
+      have h1 : c.swinJ = c.swinJ - 1 + 1 := by omega_using [hJ, hlen8]
+      rw [h1, swPre_succ, ← h1, show 4 * c.swinJ = 8 * c.C.len by omega_using [hJ], Nat.div_eq_of_lt hk,
+        Nat.zero_add]
+    refine ⟨ctx₈, u₈.gpr, Keeps.refl _ _, Unch.refl _ _ _, st₃.unch h7 U₄₈ hfit (below (by decide)),
+      fun i hi => ?_, ?_⟩
+    · rw [e78]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl | rfl
+      · rw [ex]; split
+        · exact ctx₆.lt hc _ (by decide)
+        · rw [e46, rx, q₃ _ hpx]; exact hqx
+      · rw [ey]; split
+        · exact ctx₆.lt hc _ (by decide)
+        · rw [e46, ry, q₃ _ hpy]; exact hqy
+      · rw [ez]; split
+        · exact ctx₆.lt hc _ (by decide)
+        · rw [e46, rz]; exact ctx₃.lt hc _ (by decide)
+    · show Rep _ (toM _ _ (sv c base s₈ RX)) (toM _ _ (sv c base s₈ RY)) (toM _ _ (sv c base s₈ RZ)) _
+      rw [e78, e78, e78, ex, ey, ez, hpre]
+      by_cases hb : combWin 4 k (c.swinJ - 1) < 8
+      · have hb' : ¬8 ≤ combWin 4 k (c.swinJ - 1) := by omega_arith
+        simp only [hb, hb', decide_true, ↓reduceIte]
+        rw [mul0]
+        exact ⟨ctx₆.fv_zero, by
+          rw [show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₆ ONEP) = fv c base s₆ ONEP from rfl,
+            ctx₆.fv_onep hc]
+          exact hC.one_ne_zero, ctx₆.fv_zero⟩
+      · have hb' : 8 ≤ combWin 4 k (c.swinJ - 1) := by omega_arith
+        simp only [hb, hb', decide_false, Bool.false_eq_true, ↓reduceIte]
+        rw [e46, e46, e46, rx, ry, rz, q₃ _ hpx, q₃ _ hpy, mul_one_pt,
+          show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₃ ONEP) = fv c base s₃ ONEP from rfl,
+          ctx₃.fv_onep hc]
+        exact hG
+  · exact ((K₂.trans K₃).trans k₄₈).trans I.keep
+  · exact unch_winTW_trans U₂ (unch_winTW_trans U₃ (unch_winTW (unch_winWr_trans U₄₈ I.unch)))
+  · have := I.rep
+    have h0 : swPre k 0 = k := by
+      unfold swPre
+      simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.lt_irrefl, false_and, ↓reduceIte, Nat.add_zero]
+    rwa [h0] at this
+
+/-- ECDH's multiplication: `winMul_ok`'s statement. -/
+theorem ecdhMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px) (hpy : PtSlot py)
+    {base : Addr} {s : State} (hs : Scr s base size)
+    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
+    (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hzero : sv c base s ZERO = 0)
+    (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p) (hqx : sv c base s px < c.C.p)
+    (hqy : sv c base s py < c.C.p) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (fv c base s px) (fv c base s py) 1 P) {k : Nat} (hk : k < 2 ^ (8 * c.C.len))
+    (hbits : ∀ t < 8 * c.C.len, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
+    WP isa (c.ecdhMul px py) s fun s' => Keeps powClob s s' ∧ Unch base (winTW c) s.mem s'.mem ∧
+      (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (mul k P) := by
+  unfold Cfg.ecdhMul
+  split
+  next h6 =>
+    have h3 : c.winW = 3 := by
+      unfold Cfg.winW
+      simp only [show ¬c.n ≤ 6 by omega_arith, ↓reduceIte]
+    exact swinMul_ok hc hC h3 hpx hpy hs hmp hap hb3 hzero hone hqx hqy hP hG hk hbits
+  next _ => exact winMul_ok hc hC hpx hpy hs hmp hap hb3 hzero hone hqx hqy hP hG hk hbits
 
 end VG.Proof.Ecdsa.X86
