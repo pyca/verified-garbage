@@ -146,13 +146,16 @@ def winDbls : Nat → Pt → Pt → Prog isa
   | 0, p, _ => fprog c.SP (fromJ c.rcbSlots p c.zeroPt (c.pt RX RY RZ))
   | k + 1, p, q => .seq (fprog c.SP (c.winDbl c.rcbSlots p q)) (winDbls k q p)
 
-/-- `R = 2^winW R`: to Jacobian coordinates in `D`, the doublings between `D`
+/-- `R = 2^w R`: to Jacobian coordinates in `D`, the doublings between `D`
 and `T`, back to `R`, then `Y = 1` where `Z` is zero. -/
-def winQuad : Prog isa :=
+def winQuadN (w : Nat) : Prog isa :=
   .seq (fprog c.SP (toJ c.rcbSlots (c.pt RX RY RZ) c.zeroPt (c.pt DX DY DZ))) <|
-  .seq (c.winDbls c.winW (c.pt DX DY DZ) (c.pt TX TY TZ))
+  .seq (c.winDbls w (c.pt DX DY DZ) (c.pt TX TY TZ))
     (.block (c.nonzero (c.sl RZ) ++ ([.mov .ecx (.reg .edx)] : List Instr) ++
       sel (2 * c.n) (c.sl RY) (c.sl ONEP) (c.sl RY)))
+
+/-- `R = 2^winW R`. -/
+def winQuad : Prog isa := c.winQuadN c.winW
 
 /-- One window: `esi -= 1`, `R = 2^winW R`, the entry `T` of the window, and
 `R = R + T`. -/
@@ -185,6 +188,92 @@ def winMul (px py : Nat) : Prog isa :=
   .seq (.block (copyPt c.n (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO) ++
     ([.mov .esi (.imm (BitVec.ofNat 32 c.winJ))] : List Instr)))
     (.loop c.winStep .ne)
+
+/-! ## Signed windows of four bits, for coordinates of more than six words
+
+`Cfg.swinMul px py`: `R = [k]P` as `winMul`, in the same working space, for
+the curves whose table has eight entries (`winW = 3`), by `2 len` windows of
+four bits with Booth's digits `d_j = w_j + b_{4j-1} - 16 b_{4j+3}` in
+`[-8, 8]`, `w_j` the window and `b` the scalar's bits (so that
+`∑ 16^j d_j = k - 2^(8 len) b_{8 len - 1}`):
+
+1. `winBuild`'s table `O, P, …, 7P`, then `8P = 7P + P` stored as its entry 0
+   (`swinTop`): entry `m mod 8` is `[m]P` for `1 ≤ m ≤ 8`;
+2. `R = P` if the scalar's top bit is set, else `O` (`swinInit`); then for
+   each window from the top (`swinStep`): `R = 16 R` (`winQuadN 4`); the
+   magnitude `m = |d_j|` and the entry's number `m mod 8 + 1` (`swinDigit`:
+   `|v - 16|` for `v = (w_j xor 8) + 8 + b_{4j-1}`, without `b_{-1}` for
+   window 0, a public test); its entry, into `T`; `T = O` where `m = 0`
+   (`swinZero`); `T = -T` where bit `4j + 3` is set (`swinNeg`); and
+   `R = R + T` by the complete addition.
+
+The digits are secret: every entry of the table is read, under a mask, and
+the zero and the negation are selections under masks. -/
+
+/-- The windows of four bits of an encoded scalar. -/
+def swinJ : Nat := 2 * c.C.len
+
+/-- Window `esi`'s magnitude `|d|` into `eax`, and the number of its entry,
+`|d| mod 8 + 1`, into `ebx`: the bit below the window into `ebx` (none for
+window 0, `low`), the window into `eax`, and `|v - 16|`. -/
+def swinDigitB (low : Bool) : List Instr :=
+  (if low then ([.mov .ebx (.imm 0)] : List Instr)
+    else winIndex 4 ++ ([.movzx8 .ebx (winByte (bitsAt c.n 0 - 1))] : List Instr)) ++
+  ((winIndex 4 ++ hornerBits (bitsAt c.n 0) 4) ++
+    (([.alu .xor .eax (.imm 8), .alu .add .eax (.imm 8), .alu .add .eax (.reg .ebx)] : List Instr) ++
+      (magnitudeH 16 ++ ([.alu .and .ebx (.imm 7), .alu .add .ebx (.imm 1)] : List Instr))))
+
+/-- The digit of window `esi` (the test of the counter is public). -/
+def swinDigit : Prog isa :=
+  .seq (.block [.alu .test .esi (.reg .esi)])
+    (.ite .e (.block (c.swinDigitB true)) (.block (c.swinDigitB false)))
+
+/-- `T = O` where the magnitude in `eax` is zero. -/
+def swinZero : List Instr :=
+  ([.mov .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx)] : List Instr) ++
+    selPt c.n (c.pt TX TY TZ) (c.pt TX TY TZ) (c.pt ZERO ONEP ZERO)
+
+/-- `T = -T` where window `esi`'s digit is negative, that is where bit
+`4 esi + 3` is set: `-T` into `D`, and `T`'s `y` kept under the comb's mask
+of the window's top bit being clear, else `D`'s. -/
+def swinNeg : Prog isa :=
+  .seq (fprog c.SP [.add (c.sl DX) (c.sl TX) (c.sl ZERO), .sub (c.sl DY) (c.sl ZERO) (c.sl TY),
+    .add (c.sl DZ) (c.sl TZ) (c.sl ZERO)])
+    (.block (c.winScan.signMask ++ sel (2 * c.n) (c.sl TY) (c.sl DY) (c.sl TY)))
+
+/-- One window: `esi -= 1`, `R = 16 R`, the window's signed entry `T`, and
+`R = R + T`. -/
+def swinStep : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (c.winQuadN 4) <| .seq c.swinDigit <|
+  .seq (.block c.winSel) <| .seq (.block c.swinZero) <| .seq c.swinNeg <|
+  .seq (fprog c.SP (c.winAdd c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ)))
+    (.block (copyPt c.n (c.pt RX RY RZ) (c.pt DX DY DZ) ++ [testCounter]))
+
+/-- `8P = 7P + P`, stored as entry 0 of the table. -/
+def swinTop (px py : Nat) : Prog isa :=
+  .seq (.block (([.mov .ebx (.imm 8)] : List Instr) ++ c.winSel ++
+    copyPt c.n (c.pt DX DY DZ) (c.pt TX TY TZ))) <|
+  .seq (fprog c.SP (c.winAddM c.rcbSlots (c.pt DX DY DZ) (c.pt px py ONEP) (c.pt TX TY TZ)))
+    (.block (([.mov .esi (.imm 0)] : List Instr) ++ c.winStore))
+
+/-- `R = P` if the scalar's top bit is set, else `O` (`R = P`, and `O` under
+the comb's mask of the top window's top bit being clear); and the counter. -/
+def swinInit (px py : Nat) : List Instr :=
+  copyPt c.n (c.pt RX RY RZ) (c.pt px py ONEP) ++
+  (([.mov .esi (.imm (BitVec.ofNat 32 (c.swinJ - 1)))] : List Instr) ++
+    (c.winScan.signMask ++
+      (selPt c.n (c.pt RX RY RZ) (c.pt RX RY RZ) (c.pt ZERO ONEP ZERO) ++
+        ([.mov .esi (.imm (BitVec.ofNat 32 c.swinJ))] : List Instr))))
+
+/-- `R = [k]P` by signed windows of four bits. -/
+def swinMul (px py : Nat) : Prog isa :=
+  .seq (c.winBuild px py) <| .seq (c.swinTop px py) <|
+  .seq (.block (c.swinInit px py)) (.loop c.swinStep .ne)
+
+/-- ECDH's multiplication: signed windows of four bits where the table has
+eight entries, else `winMul`. -/
+def ecdhMul (px py : Nat) : Prog isa :=
+  if 6 < c.n then c.swinMul px py else c.winMul px py
 
 end Cfg
 
