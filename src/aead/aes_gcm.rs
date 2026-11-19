@@ -36,6 +36,12 @@ use crate::arch::dispatch::gcm::{
 // it is created, which the functions below read; elsewhere the functions
 // read the key context alone.
 use crate::align::CacheAligned;
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "riscv64"
+)))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_auto;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 #[cfg(not(any(
@@ -45,7 +51,7 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-use crate::arch::dispatch::gcm::{vg_aes_gcm_open_auto, vg_aes_gcm_seal_gather_auto};
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
@@ -63,11 +69,11 @@ use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stre
 #[cfg(not(target_arch = "riscv64"))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_stream_verify_auto};
 // On RISC-V, a key computes the bitsliced form of its key context when it is
-// created, which the streaming functions and `seal` read instead of computing
-// it at every call.
+// created, which the streaming functions, `seal` and `open` read instead of
+// computing it at every call.
 #[cfg(target_arch = "riscv64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_bitslice_auto, vg_aes_gcm_seal_bitsliced_auto,
+    vg_aes_gcm_bitslice_auto, vg_aes_gcm_open_bitsliced_auto, vg_aes_gcm_seal_bitsliced_auto,
     vg_aes_gcm_stream_decrypt_bitsliced_auto, vg_aes_gcm_stream_encrypt_bitsliced_auto,
     vg_aes_gcm_stream_finish_bitsliced_auto, vg_aes_gcm_stream_verify_bitsliced_auto,
 };
@@ -491,7 +497,26 @@ impl AesGcm {
                 tag.len(),
                 &self.powers.0,
             );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(target_arch = "riscv64")]
+            let ok = vg_aes_gcm_open_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.bk.0,
+            );
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )))]
             let ok = vg_aes_gcm_open_auto(
                 dit,
                 self.key(),
