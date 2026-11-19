@@ -122,7 +122,7 @@ theorem sealShort_rel {tb : List Instr} {k₁ k₂ : Reg → BitVec 64} {H₁ H�
   obtain j0W : ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W, ∃ r' ∈ [workR Wn W, (⟨D, n⟩ : Region)], Region.Sub r r' := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by have := L.hWn; omega)⟩
   unfold Impl.AesGcm.AArch64.Stitch.sealShort Impl.AesGcm.AArch64.Stitch.shortPre
   refine RelCT.assoc' (rel_seq (rel_taint [.x4, .x5, .x6, .x7, .x19, .x20, .x21, .x23]
       (by rw [hJ₁.env.sp, hJ₂.env.sp])
@@ -191,7 +191,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   obtain h₁ := hpre _ p₁
@@ -252,7 +252,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
     rw [← qsp] at i₂
     rw [hc.2] at i₁ i₂
     have ol := f₁.ol
-    obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by decide)
+    obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by have := L.hWn; omega)
     obtain hn := (σ₁.gpr .x7).isLt
     obtain mkD : ∀ {σ u : State}, OneFacts Wn σ σ₁ (w + 1) w → u.wr = σ.wr →
         DataW Wn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
@@ -260,7 +260,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
         by rw [wr]; exact f.dataW, ol.cd⟩
     obtain hf : ∀ {σ u : State}, Frame [entryR (stackArg σ₁ w)] σ.mem u.mem →
         Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ.mem u.mem :=
-      fun f => f.sub fun r hr => ⟨_, List.mem_cons_self .., entryR_work _ r hr⟩
+      fun f => f.sub fun r hr => ⟨_, List.mem_cons_self .., entryR_work _ (hWn := hWn) r hr⟩
     obtain hgh₂ := @hgh σ₂
     rw [f₂.hW, ← q0, ← q6, ← q7] at hgh₂
     obtain htb := fun {σ} (p : pre σ) => (htbP p).tbFor
@@ -399,7 +399,7 @@ theorem sealWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (g
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) :=
   sealWithShX_ct v cl hMK gh hw hpre (ex := fun _ => []) (fun _ => by simp) (fun _ => by simp) (fun _ => rfl)
     (fun p c y z r w sp f _ => hgh p c y z r w sp f)
