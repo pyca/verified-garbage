@@ -24,7 +24,7 @@ bl {vg_chacha20_block}
 .base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkBAIA5cAGYkUABeDgAAJs4AAC8OAAA2DgAAP84"
 bl {vg_chacha20_xor}
 .base64 "AAB4OIABmDg="
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 .base64 "AACZOALhRXsAAHg4"
 bl {vg_poly1305_blocks}
 .base64 "DwCAOThgTH8AACwo"
@@ -58,7 +58,7 @@ bl {vg_poly1305_finalize_scratch}
 .base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+bACITggAIBO""#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )
@@ -83,7 +83,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
         r#".base64 "Uf0h+CAAQTkAAGc50AEK+9gBKvvgAUr76AFq+/ABivv4Aar7AALq+6YCCHwIAgr4AAAKOwAAJTsAAEY7AABnOwAAiDsAAKk7AADrO3BhgD1leIxhQAGYkSAzgD1uZIxhRAGYkWJ5gD0yLYxhSAGYkSBrgD10ZYxhTAGYkQAAg4FQAZiRBACDgVQBmJEIAIOBWAGYkQwAg4FcAZiREACDgWABmJEUAIOBZAGYkRgAg4FoAZiRHACDgWwBmJEAAIA5cAGYkQAAhIF0AZiRBACEgXgBmJEIAISBfAGYkUABeDgAAJg4"
 bl {vg_chacha20_block}
 .base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkAAHg4gAGYOA=="
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 .base64 "AACZOALhRXsAAHg4"
 bl {vg_poly1305_blocks}
 .base64 "DwCAOThgTH8AACwo"
@@ -131,7 +131,7 @@ b 29f
 27:
 .base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+bACITggAIBO""#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
@@ -160,7 +160,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32
         r#".base64 "Af0h+AAAgTlgAwzoYAAM+HAADDhoAAz4AABpOQAAgTlgACzpaABM6dABCvvYASr74AFK++gBavvwAYr7+AGq+wAC6vumAgh8CAIK+AAACjsAACU7AABGOwAAZzsAAIg7AACpOwAA6ztwYYA9ZXiMYUABmJEgM4A9bmSMYUQBmJFieYA9Mi2MYUgBmJEga4A9dGWMYUwBmJEAAIOBUAGYkQQAg4FUAZiRCACDgVgBmJEMAIOBXAGYkRAAg4FgAZiRFACDgWQBmJEYAIOBaAGYkRwAg4FsAZiRAACAOXABmJEAAISBdAGYkQQAhIF4AZiRCACEgXwBmJFAAXg4AACYOA=="
 bl {vg_chacha20_block}
 .base64 "AACY6YABmPkIAJjpiAGY+RAAmOmQAZj5GACY6ZgBmPkAAHg4gAGYOA=="
-bl {vg_poly1305_init}
+bl {vg_poly1305_init_core}
 .base64 "AACZOALhRXsAAHg4"
 bl {vg_poly1305_blocks}
 .base64 "DwCAOThgTH8AACwo"
@@ -208,7 +208,7 @@ b 29f
 27:
 .base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs63AAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+QADITggAIBO""#,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
