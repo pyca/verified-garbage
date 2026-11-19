@@ -60,7 +60,7 @@ theorem openRunWithS_postX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof
   have L := o.lay
   have ow := o.outW
   have F₀ : Frame [workR Wn W, ⟨O, n⟩] s₀.mem t.mem :=
-    o.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
+    o.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W (hWn := hWn) r hr⟩
   obtain ⟨hc₃, hH₃, hN₃, hA₃, hD₃⟩ := o.vals
   refine (openRunWithS_split v.callees cl tb to).symm.wp (WP.seq (WP.mono (openRunASX_ok cl v hMK gh
     o h4 h5 h6 h7 hal hok hexW hexD hexO hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR Wn W, List.mem_cons_self .., by
@@ -76,7 +76,7 @@ theorem openRunWithS_postX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
     · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
-    · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩)
+    · exact ⟨_, List.mem_cons_self .., Lay.wSub (by omega)⟩)
   obtain ⟨he₄, x0₄, d₄⟩ := hpost
   have F₄ := (mo.frame.mono fun r hr => List.mem_append_left _ hr).trans
     (f₈.mono fun r hr => List.mem_append_right (⟨O, n⟩ :: (fastFrame Wn W ++ ex)) hr)
@@ -84,10 +84,10 @@ theorem openRunWithS_postX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof
   · rcases List.mem_append.mp hr with hr | hr
     · rcases List.mem_cons.mp hr with h | hr
       · subst h
-        exact (ow.ok.w.sub_right (Lay.wSub (by decide))).symm
+        exact (ow.ok.w.sub_right (Lay.wSub (by omega))).symm
       rcases List.mem_append.mp hr with hr | hr
-      · exact saved_fastFrame W r hr
-      · exact (hexW r hr).sub_left (Lay.wSub (by decide))
+      · exact saved_fastFrame W (hWn := hWn) r hr
+      · exact (hexW r hr).sub_left (Lay.wSub (by omega))
     · exact saved_crFrame L ow r hr
   · have hCs : bytesAt t.mem D (Stitch.pre n) ++
         bytesAt t.mem (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n) = bytesAt t.mem D n := by

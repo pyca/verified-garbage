@@ -329,7 +329,7 @@ variable {Wn : Nat} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂
 /-- The arguments of `failS`'s `cryptAl`, in place: the first `P` bytes, from
 the kept counter block. -/
 theorem failCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
+    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
@@ -381,7 +381,7 @@ theorem omBS_rel (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVec.ofNat 64 
     {s s' m₁ m₂ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s m₁)
     (mo₂ : MidSG Wn to fr' Ctx W SP D O Np A R nl al n tl P C₁' C₂' s' m₂)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     RelCT isa (Eq2 m₁ m₂) (omBS v.callees to) TT := by
   obtain hWn := L.hWn
   obtain hP16 : P % 16 = 0 := by rw [mo₁.hP]; omega_using []
@@ -506,7 +506,7 @@ theorem openRunWithS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey
       (to = true → v₁.gpr .x15 = v₂.gpr .x15) →
       v₁.rd = s₀₁.rd → v₁.wr = s₀₁.wr → Frame [workR Wn W, ⟨O, n⟩] s₀₁.mem v₁.mem →
       v₂.rd = s₀₂.rd → v₂.wr = s₀₂.wr → Frame [workR Wn W, ⟨O, n⟩] s₀₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Stitch.openRunWithSG v.callees to tb cl) TT := by
   subst h12
   have L := o₁.lay
