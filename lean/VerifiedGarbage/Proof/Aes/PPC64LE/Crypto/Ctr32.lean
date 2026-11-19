@@ -111,4 +111,10 @@ theorem ctr32_ok (s : State) (hs : Proof.Aes.ctr32PPC64LE.pre s) :
   exact ctr32_wp s (by rw [hrd]; simp) (by rw [hwr]; simp) (by rw [hwr]; simp)
     (by rw [hrd, hwr]; simp) hsep hcd (by omega_using [hbound]) hnr
 
+theorem ctr32_okF (s : State) (hs : Proof.Aes.ctr32PPC64LEF.pre s) :
+    WP isa Impl.Aes.PPC64LE.Crypto.ctr32 s fun t => Keep ctrGprs s t ∧ Proof.Aes.ctr32PPC64LEF.post s t := by
+  obtain ⟨hrd, hwr, _, hsep, hcd, hbound, hnr⟩ := hs
+  exact ctr32_wp s (by rw [hrd]; simp) (by rw [hwr]; simp) (by rw [hwr]; simp)
+    (by rw [hrd, hwr]; simp) hsep hcd (by omega_using [hbound]) hnr
+
 end VG.Proof.Aes.PPC64LE.Crypto

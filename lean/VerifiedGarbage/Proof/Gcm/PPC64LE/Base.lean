@@ -44,6 +44,22 @@ def ghashPPC64LE : Contract PPC64LE.isa where
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.sp = s₂.sp
 
+open VG.PPC64LE in
+/-- `ghashPPC64LE` for callers that give `vg_ghash` no working space: the code
+never touches `scratch` (`r7`), so the contract does not mention it. The
+code may read `h` (16 bytes) and `data` (`16 * n` bytes), and read and write
+`y` (16 bytes), which may not overlap the others. -/
+def ghashPPC64LEF : Contract PPC64LE.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .r3, 16⟩
+    let y : Region := ⟨s.gpr .r4, 16⟩
+    let data : Region := ⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩
+    s.rd = [h, data] ∧ s.wr = [y] ∧ h.Disjoint y ∧ y.Disjoint data
+  post := ghashPPC64LE.post
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
+
 end VG.Proof.Gcm
 
 namespace VG.Proof.Gcm.PPC64LE
@@ -107,18 +123,21 @@ abbrev blkAddr (i : Nat) : Addr := dp s₀ + BitVec.ofNat 64 (16 * i)
 
 end
 
+/-- What the proofs of `vg_ghash` use of its precondition: `h` and the data
+readable, `y` writable, and `y` apart from the data. Both contracts give it
+(`pre_of`, `pre_ofF`). -/
 structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = [hR s₀, dR s₀]
-  wr : s₀.wr = [yR s₀, scrR s₀]
-  h_y : (hR s₀).Disjoint (yR s₀)
-  h_scr : (hR s₀).Disjoint (scrR s₀)
+  rd : hR s₀ ∈ s₀.rd ∧ dR s₀ ∈ s₀.rd
+  wr : yR s₀ ∈ s₀.wr
   y_d : (yR s₀).Disjoint (dR s₀)
-  y_scr : (yR s₀).Disjoint (scrR s₀)
-  d_scr : (dR s₀).Disjoint (scrR s₀)
 
 theorem pre_of (s₀ : State) (h : Proof.Gcm.ghashPPC64LE.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨h1, h2, -, -, h5, -, -⟩ := h
+  exact ⟨by rw [h1]; simp, by rw [h2]; simp, h5⟩
+
+theorem pre_ofF (s₀ : State) (h : Proof.Gcm.ghashPPC64LEF.pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, -, h4⟩ := h
+  exact ⟨by rw [h1]; simp, by rw [h2]; simp, h4⟩
 
 namespace Pre
 variable {s₀ : State} (h : Pre s₀)

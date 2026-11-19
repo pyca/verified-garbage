@@ -578,6 +578,22 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashPPC64LE.pre Proof.Gcm.ghashPP
   simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem ghashF_correct (s : State) (hs : Proof.Gcm.ghashPPC64LEF.pre s) :
+    ∃ t s', Exec isa Impl.Gcm.PPC64LE.Vpmsum.ghash s t s' ∧ abiPreserved s s' ∧
+      Proof.Gcm.ghashPPC64LEF.post s s' := by
+  obtain ⟨t, s', he, hq, hk⟩ := WP.keep written (correct (pre_ofF s hs)) (by lit_decide) (by lit_decide)
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hq⟩
+
+theorem ghashF_ct : ConstantTime isa Proof.Gcm.ghashPPC64LEF.pre Proof.Gcm.ghashPPC64LEF.pub
+    Impl.Gcm.PPC64LE.Vpmsum.ghash := by
+  refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_
+    (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
 end VG.Proof.Gcm.PPC64LE.Vpmsum
 
 end
@@ -589,5 +605,5 @@ end
 @[expose] public section
 namespace VG.Proof.Gcm.PPC64LE
 instance : Vpmsum.FoldLaw := ⟨Vpmsum.folded_correct⟩
-instance : GhashLaw := ⟨Vpmsum.ghash_correct, Vpmsum.ghash_ct⟩
+instance : GhashLaw := ⟨Vpmsum.ghash_correct, Vpmsum.ghash_ct, Vpmsum.ghashF_correct, Vpmsum.ghashF_ct⟩
 end VG.Proof.Gcm.PPC64LE

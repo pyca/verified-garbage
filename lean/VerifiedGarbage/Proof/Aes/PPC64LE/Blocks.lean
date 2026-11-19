@@ -51,6 +51,36 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksPPC64LE Spec.Aes.in
   simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem encryptBlocksF_correct (s : State) (hs : (Proof.Aes.blocksPPC64LEF Spec.Aes.cipher).pre s) :
+    ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksPPC64LEF Spec.Aes.cipher).post s s' := by
+  obtain ⟨t, s', he, hk, -, hp⟩ := Crypto.blocks_okF false s hs
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hp⟩
+
+theorem encryptBlocksF_ct : ConstantTime isa (Proof.Aes.blocksPPC64LEF Spec.Aes.cipher).pre
+    (Proof.Aes.blocksPPC64LEF Spec.Aes.cipher).pub encryptBlocks := by
+  refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem decryptBlocksF_correct (s : State) (hs : (Proof.Aes.blocksPPC64LEF Spec.Aes.invCipher).pre s) :
+    ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksPPC64LEF Spec.Aes.invCipher).post s s' := by
+  obtain ⟨t, s', he, hk, -, hp⟩ := Crypto.blocks_okF true s hs
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hp⟩
+
+theorem decryptBlocksF_ct : ConstantTime isa (Proof.Aes.blocksPPC64LEF Spec.Aes.invCipher).pre
+    (Proof.Aes.blocksPPC64LEF Spec.Aes.invCipher).pub decryptBlocks := by
+  refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
 /-- A state satisfying the precondition (one block). -/
 def blocksSat : State where
   gpr r := match r with

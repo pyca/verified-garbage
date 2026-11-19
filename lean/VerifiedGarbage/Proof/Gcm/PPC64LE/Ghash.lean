@@ -20,6 +20,10 @@ class GhashLaw : Prop where
     ∃ t s', Exec isa Impl.Gcm.PPC64LE.ghash s t s' ∧ abiPreserved s s' ∧
       Proof.Gcm.ghashPPC64LE.post s s'
   ct : ConstantTime isa Proof.Gcm.ghashPPC64LE.pre Proof.Gcm.ghashPPC64LE.pub Impl.Gcm.PPC64LE.ghash
+  correctF : ∀ s, Proof.Gcm.ghashPPC64LEF.pre s →
+    ∃ t s', Exec isa Impl.Gcm.PPC64LE.ghash s t s' ∧ abiPreserved s s' ∧
+      Proof.Gcm.ghashPPC64LEF.post s s'
+  ctF : ConstantTime isa Proof.Gcm.ghashPPC64LEF.pre Proof.Gcm.ghashPPC64LEF.pub Impl.Gcm.PPC64LE.ghash
 
 theorem ghash_correct [GhashLaw] (s : State) (h : Proof.Gcm.ghashPPC64LE.pre s) :
     ∃ t s', Exec isa Impl.Gcm.PPC64LE.ghash s t s' ∧ abiPreserved s s' ∧
@@ -28,5 +32,13 @@ theorem ghash_correct [GhashLaw] (s : State) (h : Proof.Gcm.ghashPPC64LE.pre s) 
 theorem ghash_ct [GhashLaw] :
     ConstantTime isa Proof.Gcm.ghashPPC64LE.pre Proof.Gcm.ghashPPC64LE.pub Impl.Gcm.PPC64LE.ghash :=
   GhashLaw.ct
+
+theorem ghashF_correct [GhashLaw] (s : State) (h : Proof.Gcm.ghashPPC64LEF.pre s) :
+    ∃ t s', Exec isa Impl.Gcm.PPC64LE.ghash s t s' ∧ abiPreserved s s' ∧
+      Proof.Gcm.ghashPPC64LEF.post s s' := GhashLaw.correctF s h
+
+theorem ghashF_ct [GhashLaw] :
+    ConstantTime isa Proof.Gcm.ghashPPC64LEF.pre Proof.Gcm.ghashPPC64LEF.pub Impl.Gcm.PPC64LE.ghash :=
+  GhashLaw.ctF
 
 end VG.Proof.Gcm.PPC64LE
