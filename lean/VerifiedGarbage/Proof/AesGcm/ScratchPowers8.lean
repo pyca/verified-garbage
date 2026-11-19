@@ -51,33 +51,33 @@ theorem powers8Repr_of_zeroMem {m : Mem} {p : Addr} {H : Block} (hH : H = 0)
   subst hH
   exact powers8Repr_congr (m₁ := fun _ => 0) h (powers8Repr_zeroMem p)
 
-/-- `vg_aes_gcm_seal_with_powers` with `work: *mut [u64; 320]`. -/
-def sealWithPowersScratchSig : Sig where
+/-- `vg_aes_gcm_seal_with_powers` with `work: *mut [u64; n]`. -/
+def sealWithPowersScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .array true .u8 16), ("pw", .array false .u64 16),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
 
 /-- `sealWithPowersRoundsContract`, whatever `work` is. -/
-def sealWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealWithPowersScratchSig.contract A
+def sealWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (sealWithPowersScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag pw _work =>
       sealWithPowersPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag pw)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag pw _work =>
       sealWithPowersRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag pw)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_gcm_open_with_powers` with `work: *mut [u64; 320]`. -/
-def openWithPowersScratchSig : Sig where
+/-- `vg_aes_gcm_open_with_powers` with `work: *mut [u64; n]`. -/
+def openWithPowersScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"), ("pw", .array false .u64 16),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openWithPowersRoundsContract`, whatever `work` is. -/
-def openWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openWithPowersScratchSig.contract A
+def openWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openWithPowersScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen pw _work =>
       openWithPowersPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen pw)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen pw _work =>
