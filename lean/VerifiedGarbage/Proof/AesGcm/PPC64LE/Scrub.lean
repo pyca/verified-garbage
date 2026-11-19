@@ -209,10 +209,10 @@ theorem openToOut (stack : Nat) :
 
 /-! ## The registrations
 
-Over the law of `vg_ghash` (`Gcm.PPC64LE.GhashLaw`), which the registration
-file gives, so that this module does not import its algebra. -/
+Over the laws of `vg_ghash` (`Gcm.PPC64LE.GhashLaw`, `Gcm.PPC64LE.Vpmsum.FoldLaw`), which the registration
+file gives, so that this module does not import their algebra. -/
 
-variable [VG.Proof.Gcm.PPC64LE.GhashLaw]
+variable [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
 
 /-- The volatile registers all but CA: what every function here may write. -/
 def clearAll : Impl.Scrub.PPC64LE.Clear :=
