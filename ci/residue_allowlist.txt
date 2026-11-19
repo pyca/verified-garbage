@@ -184,9 +184,6 @@ arm vg_cast5_ecb_encrypt
 arm vg_cast5_expand_key
 arm vg_cast5_ofb
 arm vg_cast5_ofb_final
-arm vg_chacha20_apply
-arm vg_chacha20_init
-arm vg_chacha20_set_nonce
 arm vg_cmac_aes_absorb
 arm vg_cmac_aes_finish
 arm vg_cmac_aes_init
