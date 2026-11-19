@@ -565,17 +565,6 @@ x86 vg_hmac_sha512_256_finalize
 x86 vg_hmac_sha512_256_init
 x86 vg_hmac_sha512_finalize
 x86 vg_hmac_sha512_init
-x86 vg_idea_cbc_decrypt_chained
-x86 vg_idea_cbc_encrypt_chained
-x86 vg_idea_cfb64_decrypt
-x86 vg_idea_cfb64_decrypt_final
-x86 vg_idea_cfb64_encrypt
-x86 vg_idea_cfb64_encrypt_final
-x86 vg_idea_ecb
-x86 vg_idea_expand_key
-x86 vg_idea_invert_key
-x86 vg_idea_ofb
-x86 vg_idea_ofb_final
 x86 vg_mldsa44_keygen
 x86 vg_mldsa44_pk_tr
 x86 vg_mldsa44_prepare_signing_key

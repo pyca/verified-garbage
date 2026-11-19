@@ -401,6 +401,17 @@ vg_idea_expand_key:
 	and edx, 1069547520
 	xor edx, DWORD PTR [ecx+100]
 	mov DWORD PTR [ecx+100], edx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -1497,6 +1508,22 @@ vg_idea_invert_key:
 	mov ebp, DWORD PTR [eax+12]
 	mov esi, DWORD PTR [eax+4]
 	lea esp, [esp+32]
+	pxor xmm0, xmm0
+	lea esp, [esp-32]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	lea esp, [esp+32]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -2427,5 +2454,31 @@ vg_idea_ecb:
 	mov DWORD PTR [esp+120], ecx
 	mov DWORD PTR [esp+124], ecx
 	lea esp, [esp+152]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-152]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	movdqu XMMWORD PTR [esp+96], xmm0
+	movdqu XMMWORD PTR [esp+112], xmm0
+	movdqu XMMWORD PTR [esp+128], xmm0
+	mov DWORD PTR [esp+144], ecx
+	mov DWORD PTR [esp+148], ecx
+	lea esp, [esp+152]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
