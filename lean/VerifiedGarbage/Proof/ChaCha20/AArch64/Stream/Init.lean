@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Residue.AArch64
 meta import VerifiedGarbage.Impl.Residue.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
+public import VerifiedGarbage.TCB.Registration
+meta import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
@@ -343,27 +345,18 @@ theorem init_verified : Verified AArch64.target init (Spec.ChaCha20.initContract
 /-! ## Returning without secret residue
 
 `init` and `setNonce` leave words of the key or nonce in `x9`–`x11` and
-`x13`: their cleared versions zero them before returning, which the residue
-analysis then proves leaves nothing secret (`RTaint.noResidue_of_check`). -/
+`x13`: the functions as emitted (`Impl.ChaCha20.AArch64.Fn`) zero them before
+returning, which the residue analysis then proves leaves nothing secret
+(`RTaint.noResidue_of_check`). -/
 
-/-- `init`, then `x9`–`x11` and `x13` cleared. -/
-abbrev initCleared : Prog isa := Impl.Residue.AArch64.withClears [.x9, .x10, .x11, .x13] [] none init
+theorem init_scrubbed : VerifiedScrubbed AArch64.target Impl.ChaCha20.AArch64.Fn.init
+    (Spec.ChaCha20.initContract AArch64.abi) 0 :=
+  ⟨Clears.Verified.withClears init_verified (by decide),
+    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _⟩
 
-/-- `setNonce`, then `x9`–`x11` and `x13` cleared. -/
-abbrev setNonceCleared : Prog isa :=
-  Impl.Residue.AArch64.withClears [.x9, .x10, .x11, .x13] [] none setNonce
-
-theorem initCleared_verified : Verified AArch64.target initCleared (Spec.ChaCha20.initContract AArch64.abi) :=
-  Clears.Verified.withClears init_verified (by decide)
-
-theorem setNonceCleared_verified :
-    Verified AArch64.target setNonceCleared (Spec.ChaCha20.setNonceContract AArch64.abi) :=
-  Clears.Verified.withClears setNonce_verified (by decide)
-
-theorem initCleared_noResidue (k : Contract isa) : NoResidue initCleared k 0 :=
-  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
-
-theorem setNonceCleared_noResidue (k : Contract isa) : NoResidue setNonceCleared k 0 :=
-  RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+theorem setNonce_scrubbed : VerifiedScrubbed AArch64.target Impl.ChaCha20.AArch64.Fn.setNonce
+    (Spec.ChaCha20.setNonceContract AArch64.abi) 0 :=
+  ⟨Clears.Verified.withClears setNonce_verified (by decide),
+    RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _⟩
 
 end VG.Proof.ChaCha20.AArch64.Stream

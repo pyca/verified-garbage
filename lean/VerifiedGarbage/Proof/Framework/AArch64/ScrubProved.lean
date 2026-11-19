@@ -225,6 +225,26 @@ theorem scrubSide_union {c : Prog isa} {W rb : Nat} {own cl : Clear}
       rw [List.contains_iff_mem.mpr (keptG_union_left (List.contains_iff_mem.mp hm))] at h1
       exact absurd h1 (by decide)
 
+/-- `scrubSide_union` for code that uses no stack (so calls nothing through
+a table): from `calleeSide` of all of it with `own` and `cl` together, and
+`own` having the link registers. -/
+theorem scrubSide_union0 {c : Prog isa} {rb : Nat} {own cl : Clear}
+    (hd : c.aarch64Depth = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64)
+    (hc : calleeSide c (own.union cl) = true)
+    (hl : (linkRegs.all fun q => !(keptG own).contains q) = true) :
+    scrubSide c 0 rb (own.union cl) [] = true := by
+  simp only [scrubSide, ↓reduceIte, Bool.and_eq_true, beq_iff_eq, Bool.or_eq_true]
+  refine ⟨⟨⟨⟨hd, or_assoc.mpr hrb⟩, wfB_union _ _⟩, allInstrs_of_sideAll hc⟩, .inr ?_⟩
+  rw [List.all_eq_true] at hl ⊢
+  intro q hq
+  have h1 := hl q hq
+  rw [Bool.not_eq_true'] at h1 ⊢
+  cases hm : (keptG (own.union cl)).contains q with
+  | false => rfl
+  | true =>
+    rw [List.contains_iff_mem.mpr (keptG_union_left (List.contains_iff_mem.mp hm))] at h1
+    exact absurd h1 (by decide)
+
 /-- `r`'s code with its cleanup (`scrubAll`, over its whole stack, the
 registers `cl` cleared) meets `r`'s contract in constant time and returns
 without secret residue: what `scrubAllOf` registers, as the theorem about

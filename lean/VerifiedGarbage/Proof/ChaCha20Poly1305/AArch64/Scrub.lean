@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Instances
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.AArch64
-import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.GatherOut
@@ -15,9 +15,10 @@ The postconditions of `vg_chacha20_poly1305_seal`, `vg_chacha20_poly1305_open`,
 `vg_chacha20_poly1305_open_to` and `vg_chacha20_poly1305_seal_gather` read
 the memory on return only within their buffers (`Proof/ChaCha20Poly1305/Scratch.lean`,
 `Proof/ChaCha20Poly1305/OpenToScratch.lean`, which RISC-V uses too; given
-the precondition for `open_to`): each, over any implementation of ChaCha20's
+the precondition for `open_to`): each as it is emitted
+(`Impl.ChaCha20Poly1305.AArch64.Fn`), over any implementation of ChaCha20's
 keystream, returns with every register it may leave secret cleared and its
-whole stack zeroed (`ScrubAll.scrubAllOf`). Their code wipes only the first
+whole stack zeroed (`Fn`, below). Their code wipes only the first
 768 bytes of its working space, and keeps keystream above them.
 
 `seal_gather` calls `seal`'s code as an internal function of its own,
@@ -56,66 +57,99 @@ own scrubbing zeroes again. -/
 def sealFnCore (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn :=
   { sealFn v with name := "vg_chacha20_poly1305_seal_core" ++ v.callee.suffix }
 
-/-! ## What the tails clear
+/-! ## What the cleanup needs of the code
 
-Each function's tail clears the registers its own code writes with those its
-backend writes (`XorImpl.clear`); `scrubAllOf` needs `scrubSide` of each,
-evaluated here with each backend. -/
+Of `seal`, `open` and `open_to` in their frames with the stream `v`, it is
+what `v` proves where it is defined (`XorImpl.sealSide`, `openSide`,
+`openToSide`); of `seal_gather`, its own instructions' and `seal`'s. -/
 
-/-- The registers `seal` and `seal_gather` write themselves. -/
-def sealOwn : Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-    .v27, .v30, .v31],
-   []⟩
+theorem seal_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody v.callee v.stitched) 1280 0
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
+  have h := v.sealSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  exact scrubSide_union (by decide) h.2 (by decide) h.1 (by decide)
 
-/-- The registers `open` and `open_to` write themselves. -/
-def openOwn : Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-    .v27, .v28, .v29, .v30, .v31],
-   [.v8, .v9]⟩
+theorem open_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.openBody v.callee v.stitched) 1312 32
+      (Impl.ChaCha20Poly1305.AArch64.Fn.openOwn.union v.callee.clear) [] = true := by
+  have h := v.openSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  exact scrubSide_union (by decide) h.2 (by decide) h.1 (by decide)
 
-/-- Of `vg_chacha20_poly1305_seal`. -/
-theorem sealSide (v : Proof.ChaCha20.AArch64.XorImpl) (hv : v ∈ Proof.Variants.ChaCha20Xor.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96
-        (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)) 1280
-      (sealSig.retBits abi.ptrBits) (clearUnion sealOwn v.clear) [] = true := by
-  have e : (Proof.Variants.ChaCha20Xor.AArch64.variants.all fun v =>
-      scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96
-        (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)) 1280
-        (sealSig.retBits abi.ptrBits) (clearUnion sealOwn v.clear) []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+theorem openTo_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.openToBody v.callee v.stitched) 1328 32
+      (Impl.ChaCha20Poly1305.AArch64.Fn.openOwn.union v.callee.clear) [] = true := by
+  have h := v.openToSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  exact scrubSide_union (by decide) h.2 (by decide) h.1 (by decide)
 
-/-- Of `vg_chacha20_poly1305_open`. -/
-theorem openSide (v : Proof.ChaCha20.AArch64.XorImpl) (hv : v ∈ Proof.Variants.ChaCha20Xor.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 1312 .x7 96
-        (Impl.ChaCha20Poly1305.AArch64.openInPlace v.callee v.stitched)) 1312
-      (openSig.retBits abi.ptrBits) (clearUnion openOwn v.clear) [] = true := by
-  have e : (Proof.Variants.ChaCha20Xor.AArch64.variants.all fun v =>
-      scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 1312 .x7 96
-        (Impl.ChaCha20Poly1305.AArch64.openInPlace v.callee v.stitched)) 1312
-        (openSig.retBits abi.ptrBits) (clearUnion openOwn v.clear) []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `seal_gather`'s own instructions, with nothing in `seal`'s place, write
+only the registers `Impl/` states (`Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn`). -/
+private theorem gather_own :
+    calleeSide (Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather "" (.block []))
+      Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
+  kernel_rfl
 
-/-- Of `vg_chacha20_poly1305_open_to`. -/
-theorem openToSide (v : Proof.ChaCha20.AArch64.XorImpl) (hv : v ∈ Proof.Variants.ChaCha20Xor.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackArgScratchWiped 1328 1 96
-        (Impl.ChaCha20Poly1305.AArch64.openTo v.callee v.stitched)) 1328
-      (openToSig.retBits abi.ptrBits) (clearUnion openOwn v.clear) [] = true := by
-  have e : (Proof.Variants.ChaCha20Xor.AArch64.variants.all fun v =>
-      scrubSide (Impl.StackScratch.AArch64.withStackArgScratchWiped 1328 1 96
-        (Impl.ChaCha20Poly1305.AArch64.openTo v.callee v.stitched)) 1328
-        (openToSig.retBits abi.ptrBits) (clearUnion openOwn v.clear) []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
-
-/-- Of `vg_chacha20_poly1305_seal_gather`. -/
-theorem gatherSide (v : Proof.ChaCha20.AArch64.XorImpl) (hv : v ∈ Proof.Variants.ChaCha20Xor.AArch64.variants) :
-    scrubSide (Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (sealFnCore v).name (sealFnCore v).code) 1296
-      (sealGatherSig.retBits abi.ptrBits) (clearUnion sealOwn v.clear) [] = true := by
-  have e : (Proof.Variants.ChaCha20Xor.AArch64.variants.all fun v =>
-      scrubSide (Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (sealFnCore v).name (sealFnCore v).code) 1296
-        (sealGatherSig.retBits abi.ptrBits) (clearUnion sealOwn v.clear) []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+theorem gather_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched) 1296 0
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
+  have h := v.sealSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  have h0 := sideAll_union_left (b := v.callee.clear) gather_own
+  refine scrubSide_union (by decide) ?_ (by decide) ?_ (by decide)
+  · have hg : Impl.AesGcm.AArch64.SealGather.gather.aarch64Depth = 0 := by decide
+    simp only [Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
+      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, Code.aarch64Depth, Instr.frameUnits, hg,
+      Nat.zero_max, Nat.max_zero, Nat.reduceDiv]
+    exact Nat.le_trans (Nat.mul_add 16 _ 1 ▸ Nat.add_le_add_right h.2 16) (by decide)
+  · simp only [calleeSide, Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
+      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, sideAll, Bool.and_eq_true] at h0 h ⊢
+    simp only [h0, h.1, and_self]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Scrub
+
+/-! ## The functions
+
+Of each function `Artifacts/ChaCha20Poly1305/AArch64.lean` registers, with
+the stream `v`: the code that is emitted (`Impl.ChaCha20Poly1305.AArch64.Fn`)
+meets the function's contract in constant time and returns without secret
+residue. -/
+
+namespace VG.Proof.ChaCha20Poly1305.AArch64.Fn
+
+open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.ChaCha20Poly1305
+
+theorem sealWhole (v : Proof.ChaCha20.AArch64.XorImpl) :
+    VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched)
+      (sealContract abi 1280) 0 :=
+  verifiedScrubbed (api := sealApi)
+    { code := Impl.ChaCha20Poly1305.AArch64.Fn.sealBody v.callee v.stitched,
+      verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v }
+    _ (Scrub.sealOk 1280) (Scrub.seal_side v)
+
+theorem openZero (v : Proof.ChaCha20.AArch64.XorImpl) :
+    VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.openZero v.callee v.stitched)
+      (openZeroContract abi 1312) 32 :=
+  verifiedScrubbed (api := openZeroApi)
+    { code := Impl.ChaCha20Poly1305.AArch64.Fn.openBody v.callee v.stitched,
+      verified := Proof.ChaCha20Poly1305.AArch64.open_framed v }
+    _ (Scrub.openOk 1312) (Scrub.open_side v)
+
+theorem openTo (v : Proof.ChaCha20.AArch64.XorImpl) :
+    VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.openTo v.callee v.stitched)
+      (openToContract abi 1328) 32 :=
+  verifiedScrubbed (api := openToApi)
+    { code := Impl.ChaCha20Poly1305.AArch64.Fn.openToBody v.callee v.stitched,
+      verified := Proof.ChaCha20Poly1305.AArch64.openTo_framed v }
+    _ (Scrub.openToOk 1328) (Scrub.openTo_side v)
+
+theorem sealGather (v : Proof.ChaCha20.AArch64.XorImpl) :
+    VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.sealGather v.callee v.stitched)
+      (sealGatherContract abi 1296) 0 :=
+  verifiedScrubbed (api := sealGatherApi)
+    { code := Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched,
+      verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Scrub.sealFnCore v) }
+    _ (Scrub.gatherOk 1296) (Scrub.gather_side v)
+
+end VG.Proof.ChaCha20Poly1305.AArch64.Fn
