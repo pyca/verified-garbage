@@ -69,6 +69,7 @@ differential!(p521, P521, 66, SECP521R1);
 differential!(secp256k1, Secp256k1, 32, SECP256K1);
 differential!(brainpoolp256r1, BrainpoolP256r1, 32, BRAINPOOL_P256R1);
 #[cfg(any(
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "powerpc64",

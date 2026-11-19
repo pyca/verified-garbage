@@ -9,6 +9,7 @@ pub const USES: &[&str] = &[
 ];
 
 #[cfg(any(
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "powerpc64",
@@ -94,6 +95,7 @@ pub fn bench(c: &mut Criterion) {
 }
 
 #[cfg(not(any(
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "powerpc64",

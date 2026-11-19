@@ -2,6 +2,7 @@
 //! ECDSA and ECDH share.
 
 #![cfg(any(
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "powerpc64",
