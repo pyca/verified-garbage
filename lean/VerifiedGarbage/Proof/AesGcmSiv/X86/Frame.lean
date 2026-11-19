@@ -56,21 +56,27 @@ theorem blocks_spSafe : (blocks v.callees).all (fun i => !isa.writesSp i) = true
       Bool.and_true]
     decide +kernel
 
+theorem rev_spSafe : (rev v.callees).all (fun i => !isa.writesSp i) = true := by
+  unfold rev
+  split <;> decide +kernel
+
 theorem seal_spSafe : («seal» v.callees).all (fun i => !isa.writesSp i) = true := by
   have hb := blocks_spSafe v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_spSafe v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«seal», sivEntry, tagOut, Impl.AesGcm.X86.entry, keys, derive, deriveBlock, derivePost, expand, hkey, polyval,
-    absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey, callGh,
-    Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees, Code.all, hb, v.ctr.spSafe, v.ctr.expandSpSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey, callGh,
+    Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees, Code.all, hb, hr, v.ctr.spSafe, v.ctr.expandSpSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem open_spSafe : («open» v.callees).all (fun i => !isa.writesSp i) = true := by
   have hb := blocks_spSafe v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_spSafe v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«open», sivEntry, recvTag, Impl.AesGcm.X86.entry, keys, derive, deriveBlock, derivePost, expand, hkey, polyval,
-    absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr, callKey,
+    absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr, callKey,
     callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees, Code.all,
-    hb, v.ctr.spSafe, v.ctr.expandSpSafe, v.gh.spSafe, Bool.true_and,
+    hb, hr, v.ctr.spSafe, v.ctr.expandSpSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
@@ -217,44 +223,56 @@ theorem blocks_stackUse : stackUse (blocks v.callees) ≤ 32 := by
   · simp only [cryptBlock, callCtr, Impl.AesGcm.X86.ctrCall, GcmImpl.callees, stackUse, v.ctr.stack]
     decide +kernel
 
+theorem rev_noEsp : (rev v.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  unfold rev
+  split <;> decide +kernel
+
+theorem rev_stackUse : stackUse (rev v.callees) = 0 := by
+  unfold rev
+  split <;> decide +kernel
+
 theorem seal_noEsp : («seal» v.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   have hb := blocks_noEsp v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_noEsp v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«seal», sivEntry, Impl.AesGcm.X86.entry, tagOut, keys, derive, deriveBlock, derivePost, expand, hkey,
-    polyval, absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
     callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
-    Code.allInstrs, hb, noEsp_of v.ctr.nosp, noEsp_of v.ctr.expandNosp, noEsp_of v.gh.nosp, Bool.true_and,
+    Code.allInstrs, hb, hr, noEsp_of v.ctr.nosp, noEsp_of v.ctr.expandNosp, noEsp_of v.gh.nosp, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem open_noEsp : («open» v.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   have hb := blocks_noEsp v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_noEsp v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«open», sivEntry, Impl.AesGcm.X86.entry, recvTag, keys, derive, deriveBlock, derivePost, expand, hkey,
-    polyval, absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
     callKey, callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
-    Code.allInstrs, hb, noEsp_of v.ctr.nosp, noEsp_of v.ctr.expandNosp, noEsp_of v.gh.nosp, Bool.true_and,
+    Code.allInstrs, hb, hr, noEsp_of v.ctr.nosp, noEsp_of v.ctr.expandNosp, noEsp_of v.gh.nosp, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem seal_stackUse : stackUse («seal» v.callees) ≤ 32 := by
   have hb := blocks_stackUse v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_stackUse v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«seal», sivEntry, Impl.AesGcm.X86.entry, tagOut, keys, derive, deriveBlock, derivePost, expand, hkey,
-    polyval, absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
     callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees, stackUse,
-    v.ctr.stack, v.ctr.expandStack, v.gh.stack]
+    hr, v.ctr.stack, v.ctr.expandStack, v.gh.stack]
   generalize stackUse (blocks _) = x at hb ⊢
   revert x
   decide +kernel
 
 theorem open_stackUse : stackUse («open» v.callees) ≤ 32 := by
   have hb := blocks_stackUse v
-  simp only [GcmImpl.callees] at hb
+  have hr := rev_stackUse v
+  simp only [GcmImpl.callees] at hb hr
   simp only [«open», sivEntry, Impl.AesGcm.X86.entry, recvTag, keys, derive, deriveBlock, derivePost, expand, hkey,
-    polyval, absorb, chunk, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
     callKey, callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
-    stackUse, v.ctr.stack, v.ctr.expandStack, v.gh.stack]
+    stackUse, hr, v.ctr.stack, v.ctr.expandStack, v.gh.stack]
   generalize stackUse (blocks _) = x at hb ⊢
   revert x
   decide +kernel

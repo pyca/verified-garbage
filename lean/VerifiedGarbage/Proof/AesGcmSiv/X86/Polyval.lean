@@ -15,6 +15,13 @@ public import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
+import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86.Rev
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-! ### `AesGcmSiv.X86.Absorb`, which this module and modules that import it used -/
 
@@ -26,7 +33,8 @@ section
 Untrusted: everything here is checked by Lean. POLYVAL is GHASH with the
 key `H · x` on the same bits (`Proof.GcmSiv.Polyval`): `revLoop` copies up
 to 64 blocks to `W + 768` with the bytes of each reversed, so that GHASH
-reads each copy as POLYVAL reads the original (`revLoop_ok`), and `vg_ghash`
+reads each copy as POLYVAL reads the original (`revLoop_ok`; `revShuf_ok`
+for the copies made with `pshufb`, `rev_ok` for either), and `vg_ghash`
 absorbs them (`chunk_ok`); chunks follow each other until fewer than 16
 bytes are left (`chunks_ok`). The pointer is in `esi`, the number of bytes
 left at `W + nO` and the number of blocks of the chunk at `W + iO`.
@@ -268,6 +276,156 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
     exact ⟨ev.trans (by simp; omega_arith), c - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
 
 
+/-! ### The copies with `pshufb` -/
+
+/-- 16 bytes as two quadwords. -/
+theorem readW128_q (m : Mem) (a : Addr) : m.readW a 128 = m.readW (a + BitVec.ofNat 64 8) 64 ++ m.readW a 64 := by
+  obtain e1 := readW_extract m a (w := 128) (k := 8) (n := 8) (by omega_arith)
+  obtain e0 := readW_extract m a (w := 128) (k := 0) (n := 8) (by omega_arith)
+  rw [BitVec.add_zero] at e0
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  rw [BitVec.getLsbD_append]
+  by_cases h : j < 64
+  · simp only [h, decide_true, Bool.cond_true]
+    rw [← e0]; simp only [BitVec.getLsbD_extractLsb', h, decide_true, Bool.true_and]
+    exact congrArg _ (by omega_arith)
+  · simp only [h, decide_false, Bool.cond_false]
+    rw [← e1]; simp only [BitVec.getLsbD_extractLsb', show j - 64 < 64 by omega_arith, decide_true, Bool.true_and]
+    exact congrArg _ (by omega_arith)
+
+/-- The block one step of `revShuf` stores (GHASH's block of the source, as
+`pshufb` gives it), as GHASH reads it: POLYVAL's field element of the
+source. -/
+theorem shuf_block (m : Mem) (S P : Addr) :
+    Spec.Gcm.blockAt (m.writeW P (Spec.Gcm.blockAt m S)) P = Spec.GcmSiv.ofBytes (bytesAt m S 16) := by
+  rw [Proof.Gcm.X86.blockAt_eq m S, Proof.Gcm.X86.blockAt_store, GcmSiv.ofBytes_bytesAt, readW128_q]
+
+theorem shufStep_ok {t : State} {S P : BitVec 32} {j : Nat} (hj : j + 1 < 2 ^ 32)
+    (hsi : t.gpr .esi = S) (hdx : t.gpr .edx = P) (hcx : t.gpr .ecx = BitVec.ofNat 32 (j + 1))
+    (h0 : t.xmm .xmm0 = Proof.Gcm.X86.revMask)
+    (hr : InRegions (t.rd ++ t.wr) (w64 S) 16) (hw : InRegions t.wr (w64 P) 16) :
+    WP isa (.block shufBody) t fun t' =>
+      t'.mem = t.mem.writeW (w64 P) (Spec.Gcm.blockAt t.mem (w64 S)) ∧
+      t'.gpr .esi = S + BitVec.ofNat 32 16 ∧ t'.gpr .edx = P + BitVec.ofNat 32 16 ∧
+      t'.gpr .ecx = BitVec.ofNat 32 j ∧ t'.zf = some (decide (j = 0)) ∧ t'.gpr .ebp = t.gpr .ebp ∧
+      t'.gpr .esp = t.gpr .esp ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.xmm .xmm0 = Proof.Gcm.X86.revMask := by
+  obtain eS : t.ea (Impl.Gcm.X86.Pclmul.at_ .esi 0) = w64 S := by
+    show w64 (t.gpr .esi + BitVec.ofNat 32 0) = _
+    rw [hsi, BitVec.add_zero]
+  show WP isa (.block (([.movdquLoad .xmm7 (Impl.Gcm.X86.Pclmul.at_ .esi 0),
+    .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ ([.movdquStore (at_ .edx 0) .xmm7, .alu .add .esi (imm 16),
+    .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)] : List Instr))) t _
+  rw [WP.block_append_iff]
+  refine WP.mono (Proof.Gcm.X86.Pclmul.ldrev_ok .xmm7 .esi 0 t (by decide) h0 (by rw [eS]; exact hr))
+    fun t₁ ⟨x₁, o₁⟩ => ?_
+  rw [eS] at x₁
+  obtain eP : t₁.ea (at_ .edx 0) = w64 P := by
+    show w64 (t₁.gpr .edx + BitVec.ofNat 32 0) = _
+    rw [o₁.gpr, hdx, BitVec.add_zero]
+  obtain ⟨t₂, ht₂⟩ : ∃ t₂ : State, { t₁ with mem := t₁.mem.writeW (w64 P) (t₁.xmm .xmm7) } = t₂ := ⟨_, rfl⟩
+  obtain g₂ : t₂.gpr = t.gpr := by rw [← ht₂]; exact o₁.gpr
+  obtain m₂ : t₂.mem = t.mem.writeW (w64 P) (Spec.Gcm.blockAt t.mem (w64 S)) := by rw [← ht₂, ← x₁, ← o₁.mem]
+  obtain rd₂ : t₂.rd = t.rd := by rw [← ht₂]; exact o₁.rd
+  obtain wr₂ : t₂.wr = t.wr := by rw [← ht₂]; exact o₁.wr
+  obtain x₂ : t₂.xmm .xmm0 = Proof.Gcm.X86.revMask := by rw [← ht₂]; exact (o₁.xmm _ (by decide)).trans h0
+  rw [WP.block_cons_iff]
+  refine ⟨t₂, by rw [← ht₂]; simp only [isa, reduceExec, State.store128, eP, o₁.wr, hw, ite_true], ?_⟩
+  obtain ⟨t₃, run₃, m₃, si₃, dx₃, cx₃, z₃, bp₃, sp₃, rd₃, wr₃, x₃⟩ : ∃ t₃ : State, runBlock isa
+      [.alu .add .esi (imm 16), .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)] t₂ = some t₃ ∧ t₃.mem = t₂.mem ∧
+      t₃.gpr .esi = S + BitVec.ofNat 32 16 ∧ t₃.gpr .edx = P + BitVec.ofNat 32 16 ∧
+      t₃.gpr .ecx = BitVec.ofNat 32 j ∧ t₃.zf = some (decide (j = 0)) ∧ t₃.gpr .ebp = t₂.gpr .ebp ∧
+      t₃.gpr .esp = t₂.gpr .esp ∧ t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr ∧ t₃.xmm = t₂.xmm := by
+    refine ⟨_, by grun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · gmems []
+    · gregs [g₂, hsi]
+    · gregs [g₂, hdx]
+    · gregs [g₂, hcx, ofNat_sub1 hj]
+    · gmems [g₂, hcx, ofNat_sub1 hj]
+      rw [show BitVec.ofNat 32 j = BitVec.ofNat 32 j - BitVec.ofNat 32 0 by simp, sub_beq32 (by omega_arith) (by decide)]
+    · gregs []
+    · gregs []
+    · gmems []
+    · gmems []
+    · simp only [xmm_setReg, xmm_arithFlags, xmm_setFlags]
+  exact WP.of_runBlock ⟨t₃, run₃, by rw [m₃, m₂], si₃, dx₃, cx₃, z₃, by rw [bp₃, g₂], by rw [sp₃, g₂], by rw [rd₃, rd₂],
+    by rw [wr₃, wr₂], by rw [x₃, x₂]⟩
+
+/-- `revShuf`: as `revLoop_ok`. -/
+theorem revShuf_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : BitVec 32} {c : Nat}
+    (hc1 : 1 ≤ c) (hc : c ≤ 64) (hQ : Src p t₀ Q (16 * c)) (hsi : t₀.gpr .esi = Q)
+    (hdx : t₀.gpr .edx = p.W + BitVec.ofNat 32 768) (hcx : t₀.gpr .ecx = BitVec.ofNat 32 c) :
+    WP isa revShuf t₀ fun t => Frame [⟨w64 p.W + BitVec.ofNat 64 768, 16 * c⟩] t₀.mem t.mem ∧
+      Spec.Gcm.blocksAt t.mem (w64 p.W + BitVec.ofNat 64 768) c = elemsAt t₀.mem (w64 Q) c ∧
+      t.gpr .esi = Q + BitVec.ofNat 32 (16 * c) ∧ t.gpr .ebp = t₀.gpr .ebp ∧ t.gpr .esp = t₀.gpr .esp ∧
+      t.rd = t₀.rd ∧ t.wr = t₀.wr := by
+  have hw := L.ww
+  refine WP.seq (WP.mono (Proof.Gcm.X86.Pclmul.const_ok .xmm0 Impl.Gcm.X86.Pclmul.revMask t₀ (by decide))
+    fun t₁ ⟨x₁, f₁⟩ => ?_)
+  obtain I₀ : RInv p Q c 0 t₀ t₁ := ⟨by rw [f₁.gpr _ (by decide), hsi, Nat.mul_zero, BitVec.add_zero],
+    by rw [f₁.gpr _ (by decide), hdx], by rw [f₁.gpr _ (by decide), hcx, Nat.sub_zero],
+    by rw [f₁.mem]; exact Frame.refl _ _,
+    by simp only [Spec.Gcm.blocksAt, elemsAt, List.range_zero, List.map_nil],
+    f₁.gpr _ (by decide), f₁.gpr _ (by decide), f₁.rd, f₁.wr⟩
+  refine WP.loop (M := isa) (body := .block shufBody) (c := .ne)
+    (fun (m : Nat) (t : State) => ∃ j, m = c - j ∧ j < c ∧ RInv p Q c j t₀ t ∧
+      t.xmm .xmm0 = Proof.Gcm.X86.revMask) ?_ (c - 0) t₁ ⟨0, rfl, hc1, I₀, x₁⟩
+  rintro m t ⟨j, rfl, hj, I, h0⟩
+  obtain eS : w64 (Q + BitVec.ofNat 32 (16 * j)) = w64 Q + BitVec.ofNat 64 (16 * j) := hQ.addr (by omega_arith)
+  obtain eP : w64 (p.W + BitVec.ofNat 32 (768 + 16 * j)) = w64 p.W + BitVec.ofNat 64 (768 + 16 * j) :=
+    L.aW (by omega_arith)
+  obtain hr : Covers [⟨w64 (Q + BitVec.ofNat 32 (16 * j)), 16⟩] (t.rd ++ t.wr) := by
+    rw [I.rd, I.wr, eS]; exact covers_off hQ.rd (by omega_arith) hQ.lt
+  obtain hwr : Covers [⟨w64 (p.W + BitVec.ofNat 32 (768 + 16 * j)), 16⟩] t.wr := by
+    rw [I.wr, eP]; exact E.perm.wC (by omega_arith)
+  refine WP.mono (shufStep_ok (j := c - j - 1) (by omega_arith) I.esi I.edx (by rw [I.ecx]; congr 1; omega_arith) h0
+    (hr _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+    (hwr _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩))
+    fun t' ⟨hm', si', dx', cx', z', bp', sp', rd', wr', x'⟩ => ?_
+  rw [eS, eP] at hm'
+  -- The source is outside the copies.
+  obtain src : bytesAt t.mem (w64 Q + BitVec.ofNat 64 (16 * j)) 16 =
+      bytesAt t₀.mem (w64 Q + BitVec.ofNat 64 (16 * j)) 16 :=
+    Proof.AesGcm.X86.bytesAt_frame I.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hQ.rev.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub _ (by omega_arith) (by omega_arith)))
+      (by decide)
+  obtain fr : Frame [⟨w64 p.W + BitVec.ofNat 64 (768 + 16 * j), 16⟩] t.mem t'.mem := by
+    rw [hm']
+    exact (Frame.refl _ _).writeW (r := ⟨w64 p.W + BitVec.ofNat 64 (768 + 16 * j), 16⟩) List.mem_cons_self _
+      (Region.contains_self _ _)
+  obtain I' : RInv p Q c (j + 1) t₀ t' := by
+    refine ⟨by rw [si', add32_ofNat_assoc, Nat.mul_succ], by rw [dx', add32_ofNat_assoc, Nat.mul_succ,
+      Nat.add_assoc], by rw [cx', Nat.sub_sub], ?_, ?_, by rw [bp', I.ebp], by rw [sp', I.esp], by rw [rd', I.rd],
+      by rw [wr', I.wr]⟩
+    · exact I.frame.trans (fr.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_arith) (by omega_arith)⟩)
+    · rw [blocksAt_succ, Proof.AesGcm.X86.blocksAt_frame fr (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith), I.out]
+      simp only [elemsAt, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+      rw [add_ofNat_assoc, hm', shuf_block, src]
+  obtain ev := eval_ne z'
+  by_cases he : j + 1 = c
+  · left
+    refine ⟨ev.trans (by simp [show c - j - 1 = 0 by omega_arith]), ?_⟩
+    exact ⟨I'.frame, he ▸ I'.out, he ▸ I'.esi, I'.ebp, I'.esp, I'.rd, I'.wr⟩
+  · right
+    exact ⟨ev.trans (by simp; omega_arith), c - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I', x'⟩
+
+/-- The copies, by either code. -/
+theorem rev_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : BitVec 32} {c : Nat}
+    (hc1 : 1 ≤ c) (hc : c ≤ 64) (hQ : Src p t₀ Q (16 * c)) (hsi : t₀.gpr .esi = Q)
+    (hdx : t₀.gpr .edx = p.W + BitVec.ofNat 32 768) (hcx : t₀.gpr .ecx = BitVec.ofNat 32 c) :
+    WP isa (rev v.callees) t₀ fun t => Frame [⟨w64 p.W + BitVec.ofNat 64 768, 16 * c⟩] t₀.mem t.mem ∧
+      Spec.Gcm.blocksAt t.mem (w64 p.W + BitVec.ofNat 64 768) c = elemsAt t₀.mem (w64 Q) c ∧
+      t.gpr .esi = Q + BitVec.ofNat 32 (16 * c) ∧ t.gpr .ebp = t₀.gpr .ebp ∧ t.gpr .esp = t₀.gpr .esp ∧
+      t.rd = t₀.rd ∧ t.wr = t₀.wr := by
+  unfold rev
+  split
+  · exact revShuf_ok L E hc1 hc hQ hsi hdx hcx
+  · exact revLoop_ok L E hc1 hc hQ hsi hdx hcx
+
 /-! ## A chunk -/
 
 /-- What a chunk writes: GHASH's accumulator, the variables, the reversed
@@ -386,10 +544,10 @@ structure ChunkPre (p : Prm) (Q : BitVec 32) (m k : Nat) (t t₅ : State) : Prop
   out : Spec.Gcm.blocksAt t₅.mem (w64 p.W + BitVec.ofNat 64 768) k = elemsAt t.mem (w64 Q) k
 
 /-- The pieces of a chunk before its call. -/
-theorem chunkPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
-    (h16 : 16 ≤ m) (hQ : Src p t Q (16 * (m / 16))) (hsi : t.gpr .esi = Q)
+theorem chunkPre_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
+    (hm : m < 2 ^ 32) (h16 : 16 ≤ m) (hQ : Src p t Q (16 * (m / 16))) (hsi : t.gpr .esi = Q)
     (hn : slotv t.mem p.W nO = BitVec.ofNat 32 m) :
-    WP isa chunkPre t (ChunkPre p Q m (min (m / 16) 64) t) := by
+    WP isa (chunkPre v.callees) t (ChunkPre p Q m (min (m / 16) 64) t) := by
   have hw := L.ww
   refine WP.seq (WP.mono (chunkLen_ok L E hm hn) fun t₁ ⟨E₁, cx₁, ix₁, n₁, si₁, rd₁, wr₁, f₁⟩ => ?_)
   obtain ⟨t₂, run₂, dx₂, cx₂, si₂, bp₂, sp₂, rd₂, wr₂, m₂⟩ : ∃ t₂, runBlock isa
@@ -407,7 +565,7 @@ theorem chunkPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 
     exact (hQ.v.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub _ (by decide) (by decide))
   obtain hQ₂ : Src p t₂ Q (16 * min (m / 16) 64) :=
     (hQ.take (by omega_arith)).of_eq (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
-  refine WP.seq (WP.mono (revLoop_ok L E₂ hk1 (by omega_arith) hQ₂ si₂ dx₂ cx₂)
+  refine WP.seq (WP.mono (rev_ok v L E₂ hk1 (by omega_arith) hQ₂ si₂ dx₂ cx₂)
     fun t₃ ⟨fr₃, out₃, si₃, bp₃, sp₃, rd₃, wr₃⟩ => ?_)
   obtain dV : ∀ {d k : Nat}, 176 ≤ d → d + k ≤ 184 →
       ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 768, 16 * min (m / 16) 64⟩ : Region)],
@@ -473,7 +631,7 @@ theorem chunk_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {
     WP isa (chunk v.callees) t (ChunkPost p Q m (min (m / 16) 64) t) := by
   have hw := L.ww
   obtain hk : min (m / 16) 64 ≤ 64 := by omega_arith
-  refine WP.seq (WP.mono (chunkPre_ok L E hm h16 hQ hsi hn) fun t₅ Pr => ?_)
+  refine WP.seq (WP.mono (chunkPre_ok v L E hm h16 hQ hsi hn) fun t₅ Pr => ?_)
   refine WP.seq (WP.mono (callGh_ok v L Pr.env hk Pr.eax Pr.edx Pr.ebx Pr.edi) fun t₆ P => ?_)
   obtain dH : ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 176, 8⟩ : Region), ⟨w64 p.W + BitVec.ofNat 64 768,
       16 * min (m / 16) 64⟩], (⟨w64 p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := fun r hr => by
