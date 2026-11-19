@@ -41,9 +41,10 @@ namespace VG.Artifacts.AesOcb.AArch64
 open VG.Proof.AesOcb.AArch64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
-    Spec.Ocb.initApi.artifact AArch64.target (initReg v),
-    Spec.Ocb.sealApi.artifact AArch64.target (sealReg v),
-    Spec.Ocb.openApi.artifact AArch64.target (openReg v)]
+  VG.Proof.Variants.AesBlocks.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.Aes.AArch64.BlocksImpl // v ∈ VG.Proof.Variants.AesBlocks.AArch64.variants }) => [
+    Spec.Ocb.initApi.artifact AArch64.target (initReg v.1 v.2),
+    Spec.Ocb.sealApi.artifact AArch64.target (sealReg v.1 v.2),
+    Spec.Ocb.openApi.artifact AArch64.target (openReg v.1 v.2)]
 
 end VG.Artifacts.AesOcb.AArch64

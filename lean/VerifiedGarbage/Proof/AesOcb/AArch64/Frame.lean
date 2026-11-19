@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.Aes.ScrubLocal
@@ -1827,7 +1829,7 @@ space and the working space, at the next 16-byte boundary
 the return address in `x30`. `open`'s leak, whether it succeeds, reads only
 its buffers (`openLeak_local`). Each postcondition reads the memory on
 return only within the function's buffers, so the whole frame is zeroed on
-return (`ScrubAll.withScrubAll`: `initReg`, `sealReg`, `openReg`).
+return (`ScrubAll.scrubAllOf`: `initReg`, `sealReg`, `openReg`).
 -/
 
 @[expose] public section
@@ -2008,33 +2010,90 @@ theorem openOk (W : Nat) :
       rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
+/-- The registers `initReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def initOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `initReg`'s code with each
+implementation: evaluated here. -/
+theorem initSide (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))) (initT v)
+      (Spec.Ocb.initSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion initOwn v.expandClear) [] = true := by
+  have e : (Proof.Variants.AesBlocks.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))) (initT v)
+        (Spec.Ocb.initSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion initOwn v.expandClear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `vg_aes_ocb_init` over `v` in its frame (`init_framed`), scrubbed whole:
 1024 bytes over implementations that need no working space, else 2560. -/
-def initReg (v : BlocksImpl) : Registration Spec.Ocb.initApi AArch64.target :=
-  ScrubAll.withScrubAll
+def initReg (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) : Registration Spec.Ocb.initApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))
       verified := init_framed v
       consts := []
-      stack := initT v } (initOk _ (by rcases initT_cases v with h | h <;> rw [h] <;> decide))
+      stack := initT v } (ScrubAll.clearUnion initOwn v.expandClear) (initOk _ (by rcases initT_cases v with h | h <;> rw [h] <;> decide))
+    (initSide v hv)
+
+/-- The registers `sealReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def sealOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `sealReg`'s code with each
+implementation: evaluated here. -/
+theorem sealSide (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))) (sealT v + 32)
+      (Spec.Ocb.sealSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion sealOwn v.encClear) [] = true := by
+  have e : (Proof.Variants.AesBlocks.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))) (sealT v + 32)
+        (Spec.Ocb.sealSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion sealOwn v.encClear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 /-- `vg_aes_ocb_seal` over `v` in its frame (`seal_framed`), scrubbed whole:
 544 bytes over implementations that need no working space, else 2592. -/
-def sealReg (v : BlocksImpl) : Registration Spec.Ocb.sealApi AArch64.target :=
-  ScrubAll.withScrubAll
+def sealReg (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) : Registration Spec.Ocb.sealApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))
       verified := Proof.AesOcb.seal_keyed (seal_framed v)
       consts := []
-      stack := sealT v + 32 } (sealOk _)
+      stack := sealT v + 32 } (ScrubAll.clearUnion sealOwn v.encClear) (sealOk _)
+    (sealSide v hv)
+
+/-- The registers `openReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def openOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `openReg`'s code with each
+implementation: evaluated here. -/
+theorem openSide (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))) (sealT v + 32)
+      (Spec.Ocb.openSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion (ScrubAll.clearUnion openOwn v.encClear) v.decClear) [] = true := by
+  have e : (Proof.Variants.AesBlocks.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))) (sealT v + 32)
+        (Spec.Ocb.openSig.retBits AArch64.abi.ptrBits) (ScrubAll.clearUnion (ScrubAll.clearUnion openOwn v.encClear) v.decClear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 /-- `vg_aes_ocb_open` over `v`, as `sealReg`. -/
-def openReg (v : BlocksImpl) : Registration Spec.Ocb.openApi AArch64.target :=
-  ScrubAll.withScrubAll
+def openReg (v : BlocksImpl) (hv : v ∈ Proof.Variants.AesBlocks.AArch64.variants) : Registration Spec.Ocb.openApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))
       verified := Proof.AesOcb.open_keyed (open_framed v)
       consts := []
-      stack := sealT v + 32 } (openOk _)
+      stack := sealT v + 32 } (ScrubAll.clearUnion (ScrubAll.clearUnion openOwn v.encClear) v.decClear) (openOk _)
+    (openSide v hv)
 
 end VG.Proof.AesOcb.AArch64

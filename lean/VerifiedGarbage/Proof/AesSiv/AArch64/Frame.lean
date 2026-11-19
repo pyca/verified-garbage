@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 public import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -511,7 +515,7 @@ last argument (in `x7`), in a frame of `272 + sivNw v` bytes that allocates
 it, the same way: the frame leaves the memory as it is, so the list of
 slices they take needs nothing more. Each returns with its whole frame
 zeroed and the registers it may leave secret cleared
-(`ScrubAll.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`).
+(`ScrubAll.scrubAllOf`: `initReg`, `encryptReg`, `decryptReg`).
 -/
 
 @[expose] public section
@@ -629,7 +633,7 @@ theorem keyRepr_local {m₁ m₂ : Mem} {p : Addr} {key : List Byte}
 
 /-- `vg_aes_siv_init`'s postcondition reads the memory on return only within
 the context, so it returns with its whole frame zeroed
-(`ScrubAll.withScrubAll`). -/
+(`ScrubAll.scrubAllOf`). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
     ScrubAll.ScrubAllOk (Spec.Siv.initContract abi W) W (Spec.Siv.initSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Siv.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
@@ -680,36 +684,97 @@ theorem decryptOk (W : Nat) (hW : 0 < W) :
       rw [e]
       exact h key hk
 
+/-- The registers `initReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def initOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `initReg`'s code with each
+implementation: evaluated here. -/
+theorem initSide (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)) (48 + sivInitW v)
+      (Spec.Siv.initSig.retBits abi.ptrBits) (ScrubAll.clearUnion initOwn v.clear) [] = true := by
+  have e : (Proof.Variants.AesCtr32.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)) (48 + sivInitW v)
+        (Spec.Siv.initSig.retBits abi.ptrBits) (ScrubAll.clearUnion initOwn v.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `vg_aes_siv_init` over `v` in its frame (`init_framed`), scrubbed whole:
 560 bytes over an implementation that needs no working space, else 2224. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Siv.initApi AArch64.target :=
-  ScrubAll.withScrubAll
+def initReg (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) : Registration Spec.Siv.initApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
-      stack := 48 + sivInitW v } (initOk _ (by omega_using []))
+      stack := 48 + sivInitW v } (ScrubAll.clearUnion initOwn v.clear) (initOk _ (by omega_using []))
+    (initSide v hv)
+
+/-- The registers `encryptReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def encryptOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `encryptReg`'s code with each
+implementation: evaluated here. -/
+theorem encryptSide (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
+        (encrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v)
+      (Spec.Siv.encryptSig.retBits abi.ptrBits) (ScrubAll.clearUnion encryptOwn v.ctr.clear) [] = true := by
+  have e : (Proof.Variants.CmacAesUpdate.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
+        (encrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v)
+        (Spec.Siv.encryptSig.retBits abi.ptrBits) (ScrubAll.clearUnion encryptOwn v.ctr.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 /-- `vg_aes_siv_encrypt` over `v` in its frame (`encrypt_framed`), scrubbed
 whole: 400 bytes over implementations that need no working space, else
 2448. -/
-def encryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Siv.encryptApi AArch64.target :=
-  ScrubAll.withScrubAll
+def encryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) : Registration Spec.Siv.encryptApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
         (encrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
       consts := []
-      stack := 272 + sivNw v } (encryptOk _ (by omega_using []))
+      stack := 272 + sivNw v } (ScrubAll.clearUnion encryptOwn v.ctr.clear) (encryptOk _ (by omega_using []))
+    (encryptSide v hv)
+
+/-- The registers `decryptReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def decryptOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `decryptReg`'s code with each
+implementation: evaluated here. -/
+theorem decryptSide (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
+        (decrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v)
+      (Spec.Siv.decryptSig.retBits abi.ptrBits) (ScrubAll.clearUnion decryptOwn v.ctr.clear) [] = true := by
+  have e : (Proof.Variants.CmacAesUpdate.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
+        (decrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v)
+        (Spec.Siv.decryptSig.retBits abi.ptrBits) (ScrubAll.clearUnion decryptOwn v.ctr.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 /-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
-def decryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Siv.decryptApi AArch64.target :=
-  ScrubAll.withScrubAll
+def decryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) : Registration Spec.Siv.decryptApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
         (decrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
       consts := []
-      stack := 272 + sivNw v } (decryptOk _ (by omega_using []))
+      stack := 272 + sivNw v } (ScrubAll.clearUnion decryptOwn v.ctr.clear) (decryptOk _ (by omega_using []))
+    (decryptSide v hv)
 
 end VG.Proof.AesSiv.AArch64

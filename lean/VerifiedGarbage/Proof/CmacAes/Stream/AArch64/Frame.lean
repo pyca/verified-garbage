@@ -4,6 +4,10 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
@@ -1479,7 +1483,7 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {L n : Nat} (h : ∀ a, Region.Con
 within the state's 304 bytes (`repr_congr_304`, as x86-64's
 `Stream/X86_64/Scrub.lean` proves it), so it returns with every register it
 may leave secret cleared and its whole frame zeroed
-(`ScrubAll.withScrubAll`). -/
+(`ScrubAll.scrubAllOf`). -/
 theorem absorbOk (W : Nat) (hW : 0 < W := by decide) :
     ScrubAll.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi W) W (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesAbsorbSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
@@ -1496,22 +1500,42 @@ theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
   absorbOk _ (by omega_using [])
 
+/-- The registers `vg_cmac_aes_absorb`'s code writes itself: its tail clears
+them with those its chaining implementation writes (`UpdateImpl.clear`). -/
+def absorbOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x16, .x17],
+   [.v0, .v1, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30,
+    .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `vg_cmac_aes_absorb` with each
+chaining implementation: evaluated here. -/
+theorem absorbSide (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)) (64 + v.scratch)
+      (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) (ScrubAll.clearUnion absorbOwn v.clear) [] = true := by
+  have e : (Proof.Variants.CmacAesUpdate.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)) (64 + v.scratch)
+        (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) (ScrubAll.clearUnion absorbOwn v.clear) []) = true := by
+    lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `vg_cmac_aes_absorb` in its frame (`absorb_framed`), scrubbed whole
-(`ScrubAll.withScrubAll`): 64 bytes with a chaining implementation that needs
+(`ScrubAll.scrubAllOf`): 64 bytes with a chaining implementation that needs
 no working space, and 2240 with one that does, whose working space holds its
 secrets (the cost of zeroing them is accepted). -/
-def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
-  let r : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
+def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)
       verified := absorb_framed v
       consts := []
-      stack := 64 + v.scratch }
-  ScrubAll.withScrubAll r (absorbOk_framed v)
+      stack := 64 + v.scratch } (ScrubAll.clearUnion absorbOwn v.clear) (absorbOk_framed v)
+    (absorbSide v hv)
 
 /-- `vg_cmac_aes_init`'s postcondition reads the memory on return only within
 the state (`initPostOut_local`), so it returns with every register it may
-leave secret cleared and its whole frame zeroed (`ScrubAll.withScrubAll`). -/
+leave secret cleared and its whole frame zeroed (`ScrubAll.scrubAllOf`). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
     ScrubAll.ScrubAllOk (Spec.Cmac.aesInitContract abi W) W (Spec.Cmac.aesInitSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesInitSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
@@ -1524,26 +1548,64 @@ theorem finishOk (W : Nat) (hW : 0 < W) :
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesFinishSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     (Proof.CmacAes.Stream.finishPostOut_local _)
 
+/-- The registers `initReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def initOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `initReg`'s code with each
+implementation: evaluated here. -/
+theorem initSide (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)) (32 + initW v)
+      (Spec.Cmac.aesInitSig.retBits abi.ptrBits) (ScrubAll.clearUnion initOwn v.clear) [] = true := by
+  have e : (Proof.Variants.AesCtr32.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)) (32 + initW v)
+        (Spec.Cmac.aesInitSig.retBits abi.ptrBits) (ScrubAll.clearUnion initOwn v.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `vg_cmac_aes_init` over `v` in its frame (`init_framed`), scrubbed whole
-(`ScrubAll.withScrubAll`): 544 bytes over an implementation that needs no
+(`ScrubAll.scrubAllOf`): 544 bytes over an implementation that needs no
 working space, else 2208. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi AArch64.target :=
-  ScrubAll.withScrubAll
+def initReg (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) : Registration Spec.Cmac.aesInitApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
-      stack := 32 + initW v } (initOk _ (by omega_using []))
+      stack := 32 + initW v } (ScrubAll.clearUnion initOwn v.clear) (initOk _ (by omega_using []))
+    (initSide v hv)
+
+/-- The registers `finishReg`'s code writes itself: its tail clears them with
+those the implementation it calls writes. -/
+def finishOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of `finishReg`'s code with each
+implementation: evaluated here. -/
+theorem finishSide (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) :
+    ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)) (16 + finW v)
+      (Spec.Cmac.aesFinishSig.retBits abi.ptrBits) (ScrubAll.clearUnion finishOwn v.clear) [] = true := by
+  have e : (Proof.Variants.AesCtr32.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)) (16 + finW v)
+        (Spec.Cmac.aesFinishSig.retBits abi.ptrBits) (ScrubAll.clearUnion finishOwn v.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 /-- `vg_cmac_aes_finish` over `v` in its frame (`finish_framed`), scrubbed
-whole (`ScrubAll.withScrubAll`): 144 bytes over an implementation that needs
+whole (`ScrubAll.scrubAllOf`): 144 bytes over an implementation that needs
 no working space, else 2192. -/
-def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi AArch64.target :=
-  ScrubAll.withScrubAll
+def finishReg (v : Ctr32Impl) (hv : v ∈ Proof.Variants.AesCtr32.AArch64.variants) : Registration Spec.Cmac.aesFinishApi AArch64.target :=
+  ScrubAll.scrubAllOf
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)
       verified := finish_framed v
       consts := []
-      stack := 16 + finW v } (finishOk _ (by omega_using []))
+      stack := 16 + finW v } (ScrubAll.clearUnion finishOwn v.clear) (finishOk _ (by omega_using []))
+    (finishSide v hv)
 
 end VG.Proof.CmacAes.Stream.AArch64

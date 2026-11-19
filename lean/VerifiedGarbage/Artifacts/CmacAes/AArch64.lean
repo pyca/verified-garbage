@@ -24,10 +24,11 @@ public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 
 -- Streaming CMAC absorb on AArch64, for each CMAC update
 namespace VG.Artifacts.CmacAes.AArch64.Absorb
-def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
-  Spec.Cmac.aesAbsorbApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.absorbReg v)]
+def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl)
+    (hv : v ∈ VG.Proof.Variants.CmacAesUpdate.AArch64.variants) : List Artifact := [
+  Spec.Cmac.aesAbsorbApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.absorbReg v hv)]
 def artifacts : List Artifact :=
-  VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.CmacAesUpdate.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.CmacAes.AArch64.Absorb
 
@@ -37,8 +38,9 @@ open VG.Proof.CmacAes.AArch64
 
 def artifacts : List Artifact :=
   Absorb.artifacts ++
-  (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Cmac.aesInitApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.initReg v),
-    Spec.Cmac.aesFinishApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.finishReg v)])
+  (VG.Proof.Variants.AesCtr32.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.Aes.AArch64.Ctr32Impl // v ∈ VG.Proof.Variants.AesCtr32.AArch64.variants }) => [
+    Spec.Cmac.aesInitApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.initReg v.1 v.2),
+    Spec.Cmac.aesFinishApi.artifact AArch64.target (Proof.CmacAes.Stream.AArch64.finishReg v.1 v.2)])
 
 end VG.Artifacts.CmacAes.AArch64
