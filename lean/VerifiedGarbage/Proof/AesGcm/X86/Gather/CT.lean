@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+import VerifiedGarbage.Proof.Framework.X86.Rel2
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee

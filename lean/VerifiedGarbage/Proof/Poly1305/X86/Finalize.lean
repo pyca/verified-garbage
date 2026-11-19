@@ -621,8 +621,7 @@ theorem lastBlock_ok {s₀ : State} (hp : FPre s₀) {F : Nat → Nat} (hF : Set
   refine WP.mono (absorbAtFull_ok hc (bp := stp s₀ + BitVec.ofNat 32 56) (absorbBuf_okList 0)
     (fun h => absurd h (by decide)) (by decide) (fun k _ => by rw [hc.edi, buf_ea])
     (fun k hk => by rw [← buf_ea]; exact hc.inRW (by omega_using [hk]) (by decide))
-    (fun k hk => .inr ⟨14 + k, by omega_arith, by omega_using [hk], by rw [← buf_ea]; congr 1; omega_using []⟩)
-    (by decide) (C := A0 s₀ < P)
+    (fun k _ => .inr (by rw [← buf_ea]; congr 1; omega_using [])) (by decide) (C := A0 s₀ < P)
     (fun hA => ⟨hF.coefs.congr fun k h₁' h₂' => hU₄.keep k (by omega_using [h₁', h₂']) (not_hS (.inl ⟨by omega_using [h₁', h₂'], h₂'⟩))
       (.inr h₁'), (hacc₄ hA).1⟩))
     fun s' ⟨S, ha⟩ => ?_
