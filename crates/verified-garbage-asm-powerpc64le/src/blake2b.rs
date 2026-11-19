@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blake2.initBContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -26,13 +28,15 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "IACATg==""#,
+.base64 "AACgOAAAwDgAACA5AABAOQAAgDkgAIBO""#,
     )
 }
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -104,7 +108,7 @@ b 216f
 b 23f
 22:
 23:
-.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOCAAgE4=""#,
+.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8YAIhOAAAADhx/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPiQAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4=""#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
@@ -112,6 +116,8 @@ b 23f
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -140,7 +146,7 @@ b 23f
 23:
 .base64 "AAB6OEAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2b_compress}
-.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+QACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfGACITggAIBO""#,
+.base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+QACW+sQApvrGAK76yAC2+soAvvrCAJ76yAAAegwACE4pgMIfGACITgAAAA4cf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz4kAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
@@ -152,6 +158,10 @@ pub(crate) mod vg_blake2b_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_finalize_scratch.rs"]
 pub(crate) mod vg_blake2b_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_init_core.rs"]
+pub(crate) mod vg_blake2b_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_update_scratch.rs"]
