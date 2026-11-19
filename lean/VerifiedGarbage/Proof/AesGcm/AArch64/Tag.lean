@@ -76,8 +76,8 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
   have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ Wn) := by omega_arith
   have r₁ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₁ := he.perm.wW (show o + 8 ≤ Wn by omega_arith)
-  have w₂ := he.perm.wW (show o + 8 + 8 ≤ Wn by omega_arith)
+  have w₁ := he.perm.wWn (show o + 8 ≤ Wn by omega_arith)
+  have w₂ := he.perm.wWn (show o + 8 + 8 ≤ Wn by omega_arith)
   have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega_arith
   have ho0 : o % 8 = 0 ∧ o < 32768 := by omega_arith
   have ho' : o < 4096 := by omega_arith
@@ -110,36 +110,36 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
     show St + BitVec.ofNat 64 24 = St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8 by rw [add_ofNat_assoc]] at m₁
   have f₁ : Frame [⟨W + BitVec.ofNat 64 o, 16⟩] s.mem s₁.mem := by rw [m₁]; exact Proof.Cmac.frame_store2 _ _ _
   have dJo : (⟨St, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 o, 16⟩ := by
-    simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
+    simpa using L.st_wn (a := 0) (n := 16) (by decide) hoW
   refine ⟨he₁, hk.of_others og, ?_, ?_, ?_, f₁⟩
   · refine ⟨x0₁, x1₁, x2₁, x3₁, x4₁, x5₁, hR,
       by have := L.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith, by decide,
       by simpa using (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith)),
-      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)),
-      dJo, by simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := Wn - 512) (by decide) (.inr ⟨by decide, by decide⟩),
-      L.w_w (by omega_arith) (by omega_arith) (by decide), ?_, ?_⟩
+      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by have := he.perm.hWn; omega)),
+      dJo, by simpa using L.st_wn (a := 0) (n := 16) (d := 512) (k := Wn - 512) (by decide) (.inr ⟨by decide, by have := he.perm.hWn; omega⟩),
+      L.w_wn (by omega_arith) (by omega_arith) (by have := he.perm.hWn; omega), ?_, ?_⟩
     · refine covers_cons ?_ (covers_cons ?_ (covers_cons (covers_left (he₁.perm.wC (by omega_arith)))
-        (covers_left (he₁.perm.wC (by decide)))))
+        (covers_left (he₁.perm.wCn (by have := he.perm.hWn; omega)))))
       · exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
           exact he₁.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_arith⟩
       · simpa using covers_left (he₁.perm.stC (d := 0) (n := 16) (by decide))
     · exact covers_cons (by simpa using he₁.perm.stC (d := 0) (n := 16) (by decide))
-        (covers_cons (he₁.perm.wC (by omega_arith)) (he₁.perm.wC (by decide)))
+        (covers_cons (he₁.perm.wC (by omega_arith)) (he₁.perm.wCn (by have := he.perm.hWn; omega)))
   · rw [blockAt, m₁, bytesAt_copy2 _ dsep]; rfl
   · exact blockAt_frame f₁ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo
 
 /-- The call of `tag o`: `CIPH_K(J)` XORed into the copy. -/
 theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
-    {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) :
+    {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (ctrCall v.callees) s (TagOut Wn Ctx St W SP k o R Y J m₀) := by
   refine WP.mono (ctr_callLe v.ctr hv h.call) fun s₃ g => ?_
   have gout := g.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
   have hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
     ciph_frame h.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))) h.call.rounds
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by have := L.hWn; omega))) h.call.rounds
   refine ⟨h.env.of_saved g.saved g.sp g.rd g.wr, h.kept.of_saved g.saved, ?_, ?_⟩
   · rw [Proof.Cmac.bytesAt_blockAt, gout.1, h.hJ, h.cp,
       show Spec.Gcm.aesWith R (bytesAt s.mem Ctx (16 * (R + 1))) = ciphOf s.mem Ctx R from rfl, hc]
@@ -154,7 +154,7 @@ theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0
 /-- `tag o`, for `o` of 0 or 112. -/
 theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 ∨ o = 112) {s : State}
     (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (h25 : s.gpr .x25 = BitVec.ofNat 64 o') :
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (h25 : s.gpr .x25 = BitVec.ofNat 64 o') (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (tag v.callees o) s (TagOut Wn Ctx St W SP k o R
       (ghashFrom (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blockAt s.mem (St + BitVec.ofNat 64 16))
         [ofBytes (lensBlock (s.gpr .x26).toNat (s.gpr .x27).toNat)]) (blockAt s.mem St) s.mem) := by
@@ -167,14 +167,14 @@ theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 
     rcases hr with rfl | rfl | rfl
     · simpa using L.st_st (a := 0) (n := 16) (d := 16) (k := 16) (.inl (by decide)) (by decide) (by decide)
     · simpa using L.st_w (a := 0) (n := 16) (d := 96) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)
-    · simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
+    · simpa using L.st_wn (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by have := he.perm.hWn; omega⟩)
   have hJ₂ : blockAt s₂.mem St = blockAt s.mem St := blockAt_frame h₂.frame dJ
   have hc₂ : ciphOf s₂.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame h₂.frame (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))) hR
+    · exact L.cw'.sub_right (Lay.wSub (by have := he.perm.hWn; omega))
+    · exact L.cw'.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) hR
   have hk₂ := h₂.kept
   refine WP.seq (WP.mono (tagSeg_ok L ho h₂.env h₂.kept (by rw [hk₂ .x22 (by decide), ← hk .x22 (by decide), h22]) hR)
     fun s₃ h₃ => WP.mono (tagCall_ok L v ho h₃) fun s₄ h₄ => ?_)
@@ -185,7 +185,7 @@ theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base St (show 16 + 16 ≤ 32 by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 512, Wn - 512⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 512, Wn - 512⟩, by simp, Offset.sub _ (by decide) (by have := he.perm.hWn; omega)⟩
 
 end
 
