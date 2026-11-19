@@ -27,13 +27,13 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.MlKem.PPC64LE.EncryptCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Decaps
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.EncryptCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
-meta import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract

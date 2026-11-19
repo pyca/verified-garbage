@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.Encode1024
-import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
@@ -21,9 +20,8 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
 meta import VerifiedGarbage.Impl.MlKem1024.PPC64LE.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
-meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Add

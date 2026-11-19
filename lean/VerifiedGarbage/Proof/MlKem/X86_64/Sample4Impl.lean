@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -64,17 +63,15 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
-meta import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-meta import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Permute

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 

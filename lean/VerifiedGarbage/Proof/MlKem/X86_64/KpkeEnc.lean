@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith16
 import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16

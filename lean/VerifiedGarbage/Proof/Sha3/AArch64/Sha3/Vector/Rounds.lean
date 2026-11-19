@@ -1,9 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Chi
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract

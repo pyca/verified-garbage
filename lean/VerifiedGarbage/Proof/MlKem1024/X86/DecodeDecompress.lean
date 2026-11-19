@@ -18,14 +18,14 @@ public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 public import VerifiedGarbage.Proof.MlKem.X86.Pack
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.MlKem.X86.Unpack
 meta import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 meta import VerifiedGarbage.Proof.MlKem.X86.Pack
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 

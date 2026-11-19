@@ -15,8 +15,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

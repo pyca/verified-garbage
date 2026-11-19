@@ -1,32 +1,27 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
-public import VerifiedGarbage.Proof.MlDsa.PairedResponseContract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Order.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
@@ -53,7 +48,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith

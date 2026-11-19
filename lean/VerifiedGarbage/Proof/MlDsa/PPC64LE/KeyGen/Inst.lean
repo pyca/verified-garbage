@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Top
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Samp
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT

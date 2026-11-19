@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Frame
@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.PreparedKey
 public import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Frame

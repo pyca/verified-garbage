@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.HashCT
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.HashCT
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Sha3.PPC64LE.Stream.Lit
@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 meta import VerifiedGarbage.Proof.Ed448.Ref
-public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 import VerifiedGarbage.Proof.Ed448.Signing
@@ -34,7 +33,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
-meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 meta import VerifiedGarbage.Proof.X448.PPC64LE.Invert
 meta import VerifiedGarbage.Spec.Ed448
 meta import VerifiedGarbage.Proof.Framework.Block

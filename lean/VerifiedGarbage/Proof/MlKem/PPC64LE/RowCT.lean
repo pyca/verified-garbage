@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Loops
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
@@ -9,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
-meta import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.Loops
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT

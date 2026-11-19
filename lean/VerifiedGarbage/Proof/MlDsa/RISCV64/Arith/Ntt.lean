@@ -47,7 +47,7 @@ to `barv` of it, in `[0, 2q)` (`Common.lean`), and store the sum and the
 difference as they are: the coefficients between layers are words
 (`Proof/MlDsa/Arith/Lazy.lean`'s `Word`) congruent to the specification's,
 and bounded by a multiple of `q` that grows with each layer, as on x86-64
-(`Proof/MlDsa/X86_64/Arith/LazyInvariant.lean`).
+(`Proof/MlDsa/X86_64/Arith/LazyNtt.lean`).
 
 * `opB` is what the forward butterfly stores, `(x + t, x − t + 2q)` for the
   reduced product `t` of `y` and the zeta, computed on 64 bits and stored as

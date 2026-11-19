@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 

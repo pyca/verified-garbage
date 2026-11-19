@@ -10,12 +10,10 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
 meta import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec

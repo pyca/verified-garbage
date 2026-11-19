@@ -7,11 +7,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 public import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
-public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
@@ -19,11 +15,7 @@ meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!

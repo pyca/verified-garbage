@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 The group bodies of `Impl/MlDsa/RISCV64/Pack/Stream.lean`, for any width `d`,
 group of `c` fields and `nb` bytes, and any code `ld` that loads a field's
 value (`LdOk`) or `fin` that stores a coefficient from it (`FinOk`), as on
-PPC64LE (`Proof/MlDsa/PPC64LE/Pack/Stream.lean`):
+PPC64LE (`Proof/MlDsa/PPC64LE/Pack/BitPack.lean`):
 
 * `packBody_ok`: the `nb` bytes stored are those of the number `G` whose
   base-`2ᵈ` digits are the values of the group's coefficients;

@@ -2,23 +2,20 @@ module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.MlKem1024.Contract
-import VerifiedGarbage.Proof.MlKem.Compress1024
+public import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Proof.MlKem1024.Contract
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
-meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
@@ -27,17 +24,14 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
-meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
 meta import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
 
 /-! ### `MlKem1024.AArch64.CodecV.Dd11Step`, which only this module used -/
 

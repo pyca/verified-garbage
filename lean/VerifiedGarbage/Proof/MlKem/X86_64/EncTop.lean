@@ -1,16 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgA
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
 
 /-! ### `MlKem.X86_64.KgTop`, which this module and modules that import it used -/
 

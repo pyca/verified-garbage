@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits

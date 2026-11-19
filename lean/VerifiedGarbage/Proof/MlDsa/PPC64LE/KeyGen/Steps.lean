@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 /-!
 # ML-DSA on PPC64LE: bytes, copies and the sponge in the buffers of a `Site`
 
-As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Steps.lean`): a byte stored
+As on 32-bit ARM (`Proof/MlDsa/Arm/KeyGen/Piece.lean`): a byte stored
 (`setB_ok`), bytes copied (`copyS`, from ML-KEM's `copyL`), and the sponge
 (`hashS`, from ML-KEM's `hash_ok`), with what they change as triples of the
 layout.

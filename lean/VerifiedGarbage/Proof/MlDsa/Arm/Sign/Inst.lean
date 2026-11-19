@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
@@ -24,14 +23,13 @@ import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
-public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Spec.Sha3
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Hb
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
 import VerifiedGarbage.Proof.MlKem.Arm.Common
@@ -41,7 +39,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Hb
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
@@ -53,23 +51,21 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.MlKem.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 meta import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 meta import VerifiedGarbage.Proof.Framework.Arm.Frame
@@ -77,7 +73,6 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack

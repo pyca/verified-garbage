@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttSetup
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.X86.Red
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttSetup
-meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86.Red
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract

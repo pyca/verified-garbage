@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
@@ -36,7 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Samp
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 meta import VerifiedGarbage.Proof.MlKem.Arm.Loops

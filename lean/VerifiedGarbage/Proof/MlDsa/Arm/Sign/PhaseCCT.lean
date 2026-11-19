@@ -1,7 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds

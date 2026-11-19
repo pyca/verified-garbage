@@ -32,9 +32,8 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Args
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Rel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit

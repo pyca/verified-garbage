@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
 import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.Contracts
-import VerifiedGarbage.Proof.MlDsa.Sample.Ball
 import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -36,7 +35,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 meta import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 meta import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
 meta import VerifiedGarbage.Proof.MlDsa.RISCV64.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.Sample.Ball
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.SigEval
@@ -46,7 +44,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_sample_in_ball`
 
-As on PPC64LE (`Proof/MlDsa/PPC64LE/Round/NormLt.lean`, `Ball.lean`,
+As on PPC64LE (`Proof/MlDsa/PPC64LE/Pack/HintCT.lean`, `Ball.lean`,
 `BallCT.lean`). A call is described by `spOf σ` (`c̃`, its length, `scratch`
 and `c`), `τ` is the low 32 bits of `a2`, and the XOF output is `X σ`,
 `H(c̃, 272)`. The function runs in pieces: the prologue (`J0`, with `s7` =

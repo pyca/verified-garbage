@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Spec.Sha3.Contract
 meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash

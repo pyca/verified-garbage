@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
-
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

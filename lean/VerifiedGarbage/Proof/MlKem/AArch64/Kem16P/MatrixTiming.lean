@@ -4,15 +4,12 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Last
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
@@ -22,12 +19,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Last
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.SlotTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover

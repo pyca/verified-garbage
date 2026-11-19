@@ -8,14 +8,13 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseOCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Copy

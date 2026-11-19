@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
@@ -31,7 +30,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
@@ -43,6 +41,41 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+
+/-! ### `MlDsa.AArch64.Optimized.DotTiming`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Optimized.DotInverse
+
+/-- Dot accumulation and both inverse passes depend only on public addresses. -/
+theorem dot4Inverse_ct : ConstantTime isa (fun _ => True)
+    (Taint.AgreeS ["VG_MLDSA_INV_FOLDED"] (Taint.ofRegs [.x0,.x1,.x2])) (staticCode 4) :=
+  VG.Taint.constantTime (A:=taintS ["VG_MLDSA_INV_FOLDED"]) (Taint.ofRegs [.x0,.x1,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem dot5Inverse_ct : ConstantTime isa (fun _ => True)
+    (Taint.AgreeS ["VG_MLDSA_INV_FOLDED"] (Taint.ofRegs [.x0,.x1,.x2])) (staticCode 5) :=
+  VG.Taint.constantTime (A:=taintS ["VG_MLDSA_INV_FOLDED"]) (Taint.ofRegs [.x0,.x1,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem dot7Inverse_ct : ConstantTime isa (fun _ => True)
+    (Taint.AgreeS ["VG_MLDSA_INV_FOLDED"] (Taint.ofRegs [.x0,.x1,.x2])) (staticCode 7) :=
+  VG.Taint.constantTime (A:=taintS ["VG_MLDSA_INV_FOLDED"]) (Taint.ofRegs [.x0,.x1,.x2])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.MlDsa.AArch64.Optimized
+
+end
+
+end
 
 /-! ### `MlDsa.AArch64.Optimized.DotContract`, which only this module used -/
 

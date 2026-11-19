@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
 import Std.Tactic.BVDecide.Normalize.Prop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms

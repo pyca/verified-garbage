@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
@@ -12,14 +12,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 
 /-! ### `MlDsa.X86_64.Round.YNorm`, which this module and modules that import it used -/
 

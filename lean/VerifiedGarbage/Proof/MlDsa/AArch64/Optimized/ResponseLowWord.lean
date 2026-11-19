@@ -8,10 +8,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly

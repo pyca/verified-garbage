@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -47,8 +45,6 @@ meta import VerifiedGarbage.Spec.MlDsa.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
 meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
-meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Piece
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Good
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlKem.Arm.KemLay

@@ -2,24 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 public import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -28,8 +25,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
@@ -37,7 +34,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
@@ -45,8 +41,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid

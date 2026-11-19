@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 public import VerifiedGarbage.Impl.MlKem.AArch64.DotW
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 

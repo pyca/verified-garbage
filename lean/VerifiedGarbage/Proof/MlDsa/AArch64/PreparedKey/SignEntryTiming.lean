@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignRest
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
@@ -13,7 +12,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
@@ -29,7 +27,6 @@ import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 import VerifiedGarbage.Proof.Framework.Covers
@@ -101,15 +98,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
-import VerifiedGarbage.Proof.MlKem.RISCV64.EncryptCT
+public import VerifiedGarbage.Proof.MlKem.RISCV64.EncryptCT
 public import VerifiedGarbage.Proof.MlKem.RISCV64.HashCT
-import VerifiedGarbage.Proof.MlKem.RISCV64.RowCT
-import VerifiedGarbage.Proof.MlKem.RISCV64.CallsCT
+import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -12,15 +11,13 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.EncryptCT
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.HashCT
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.RowCT
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 public import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
@@ -28,18 +25,15 @@ import VerifiedGarbage.Proof.MlKem.RISCV64.CmpSel
 import VerifiedGarbage.Proof.MlKem.RISCV64.Loops
 import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
-import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.Encrypt
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.HashTop
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.TopSave
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.CmpSel
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Loops
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Common
 meta import VerifiedGarbage.Proof.MlKem.RISCV64.Sample
-meta import VerifiedGarbage.Proof.MlKem.RISCV64.RowSum
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec

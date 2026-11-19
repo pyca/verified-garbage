@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
-import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
+import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.RowCT
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.HashCT
-meta import VerifiedGarbage.Proof.MlKem.PPC64LE.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.PPC64LE.RowSum
 meta import VerifiedGarbage.Proof.MlKem.PPC64LE.SampleCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
