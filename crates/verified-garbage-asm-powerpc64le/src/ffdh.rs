@@ -63,6 +63,8 @@ b 23f
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -521,7 +523,7 @@ b 218f
 .base64 "AABgOA=="
 218:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }
@@ -529,6 +531,8 @@ b 218f
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1335,7 +1339,7 @@ b 251f
 250:
 .base64 "AQBgOA=="
 251:
-.base64 "IACATg==""#,
+.base64 "AAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
         VG_FFDH_VETTED_GROUPS_PPC = sym super::consts::VG_FFDH_VETTED_GROUPS_PPC,
     )
@@ -1344,6 +1348,8 @@ b 251f
 /// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1783,7 +1789,7 @@ bne %cr0, 2116b
 bne %cr0, 2117b
 .base64 "AQBgODjQY3w="
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }
@@ -1791,6 +1797,8 @@ bne %cr0, 2117b
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2280,7 +2288,7 @@ bne %cr0, 2131b
 .base64 "AQBgODjQY3wCAGA4"
 220:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }
@@ -2288,6 +2296,8 @@ bne %cr0, 2131b
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2781,12 +2791,14 @@ b 220f
 .base64 "AgBgOA=="
 220:
 27:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3156,13 +3168,15 @@ bne %cr0, 283b
 bne %cr0, 280b
 .base64 "AQBgOA=="
 257:
-.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqIACATg==""#,
+.base64 "cADX6XgA9+mAABfqiAA36pAAV+qYAHfqoACX6qgAt+qwANfquAAX68AAN+vIAFfr0AB369gAl+vgALfr6ADX6/AA9+v4APfqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRIACATg==""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
         VG_FFDH_VETTED_GROUPS_PPC = sym super::consts::VG_FFDH_VETTED_GROUPS_PPC,
     )
 }
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3258,12 +3272,14 @@ bne %cr0, 220b
 22:
 .base64 "cAA/6fz/KTkAACko"
 beq %cr0, 20b
-.base64 "IAAB6DAAITimAwh8eACf6FgAv+hwAH/oAACk+CAA/+sgAIBO""#,
+.base64 "IAAB6DAAITimAwh8eACf6FgAv+hwAH/oAACk+CAA/+sAAAA4Qf8h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+MAAITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKESAAgE4=""#,
         vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached::vg_ffdh_generate_key_cached,
     )
 }
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3318,7 +3334,7 @@ bne %cr0, 210b
 22:
 .base64 "cAA/6fz/KTkAACko"
 beq %cr0, 20b
-.base64 "IAAB6DAAITimAwh8OACf6GAAv+hwAH/oAACk+CAA/+sgAIBO""#,
+.base64 "IAAB6DAAITimAwh8OACf6GAAv+hwAH/oAACk+CAA/+sAAAA4sf4h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+FABITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKESAAgE4=""#,
         vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )
 }
