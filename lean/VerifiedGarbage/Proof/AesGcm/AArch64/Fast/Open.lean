@@ -79,7 +79,7 @@ theorem fast_lo' {W : Addr} {d k : Nat} (h₂ : 16 + d + k ≤ 128) :
   rw [add_ofNat_assoc]; exact fast_lo (by omega_using []) (by omega_using [h₂])
 
 /-- A region at `W + d` above `W + 256`. -/
-theorem fast_hi {Wn : Nat} {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ Wn) :
+theorem fast_hi {Wn : Nat} {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ Wn) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ r' ∈ fastFrame W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub W h₁ (by omega_using [h₂])⟩
 
@@ -193,7 +193,7 @@ theorem openRunAX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {to : Bool} {O : Ad
       Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = t.rd → s'.wr = t.wr → s'.sp = SP → Frame [workR Wn W] t.mem s'.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
+      WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (openRunA v.callees cl) t fun u =>
       (MidOG Wn to (fastFrame W ++ ex) Ctx W SP D O Np A R 12 al n tl t u ∧ u.gpr .x26 = BitVec.ofNat 64 n) ∧
         I u.mem := by
@@ -594,7 +594,7 @@ theorem omBXTG_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s s₇)
     (h26 : s₇.gpr .x26 = BitVec.ofNat 64 n) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
-    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (omBWithG to (crT v.callees to)) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -633,7 +633,7 @@ theorem openRunWithG_postX {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {to : Bool} {
       Region.Sub ⟨Y, 16⟩ (workR Wn W) → Region.Sub ⟨S, 256⟩ (workR Wn W) →
       s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR Wn W] s₀.mem s'.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
+      WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.openRunWithPG v.callees to cl) t fun u =>
       OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl (bytesAt s₀.mem D n)
         (fun m => bytesAt m O n = cond to (List.replicate n 0) (bytesAt s₀.mem D n)) s₀ u ∧ I u.mem := by
@@ -767,7 +767,7 @@ theorem openWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w =
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) s fun s' =>
       GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   unfold Impl.AesGcm.AArch64.Fast.openWithE
@@ -815,7 +815,7 @@ theorem openToWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame [workR Wn (stackArg s w)] s.mem s'.mem →
-      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
+      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.openWithEG v.callees true w cl) s fun s' =>
       GprAbi s s' ∧ openToPostOf s s' := by
   unfold Impl.AesGcm.AArch64.Fast.openWithEG
