@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.Init
@@ -1816,7 +1817,7 @@ end
 # ChaCha20 on RISC-V, without secret residue
 
 `vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within the streaming state and the data (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/ChaCha20/X86_64/Scrub.lean`).
 -/
@@ -1867,21 +1868,21 @@ theorem applyOut (stack : Nat) : PostOut (applyContract RISCV64.abi stack) (appl
 
 /-- `Spec.ChaCha20.initApi`. -/
 def initReg : Registration Spec.ChaCha20.initApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.ChaCha20.RISCV64.Stream.init
       verified := Proof.ChaCha20.RISCV64.Stream.init_verified }
     (initOut)
 
 /-- `Spec.ChaCha20.setNonceApi`. -/
 def setNonceReg : Registration Spec.ChaCha20.setNonceApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.ChaCha20.RISCV64.Stream.setNonce
       verified := Proof.ChaCha20.RISCV64.Stream.setNonce_verified }
     (setNonceOut)
 
 /-- `Spec.ChaCha20.applyApi`. -/
 def applyReg : Registration Spec.ChaCha20.applyApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.ChaCha20.RISCV64.Stream.apply
       verified := Proof.ChaCha20.RISCV64.Stream.apply_verified }
     (applyOut _)
