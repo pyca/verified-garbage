@@ -1167,8 +1167,8 @@ theorem sealShort_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {w : Nat} {extra 
     (hs : sealPreXW w extra s extraW) (htb : TbForP Wn tb w s)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16)
-    (hlo : 17 ≤ (s.gpr .x7).toNat) (hhi : (s.gpr .x7).toNat ≤ 96) :
-    WP isa (Impl.AesGcm.AArch64.Stitch.sealShort tb) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
+    (hlo : 17 ≤ (s.gpr .x7).toNat) (hhi : (s.gpr .x7).toNat ≤ 96) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (Impl.AesGcm.AArch64.Stitch.sealShort tb) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain hx4 := hx .x4 (by simp)
   obtain hx5 := hx .x5 (by simp)

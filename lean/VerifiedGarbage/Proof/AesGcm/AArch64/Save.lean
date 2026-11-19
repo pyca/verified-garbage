@@ -144,7 +144,7 @@ theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) {k : Nat} (hr :
 
 /-- The end of every function: our caller's registers restored. -/
 theorem exit_ok {s s₀ : State} {W : Addr} (h19 : s.gpr .x19 = W) (hsp : s.sp = s₀.sp)
-    {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) (hk : 256 ≤ k := by decide) :
+    {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) (hk : 256 ≤ k := by omega) :
     WP isa (.block restore) s fun s' => GprAbi s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .x0 = s.gpr .x0 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s', run, hsv, hother, sp', hm, rd', wr'⟩ := restore_ok s h19 hr hk

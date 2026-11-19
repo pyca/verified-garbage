@@ -507,7 +507,7 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
   · exact q6.symm
   · exact q7.symm
 
-theorem open_ct_of {X : Prog isa} {pre : State → Prop} {extra : State → List Region}
+theorem open_ct_of {Wn : Nat} {X : Prog isa} {pre : State → Prop} {extra : State → List Region}
     (hpre : ∀ s, pre s → openPreX (extra s) s)
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub 3 σ₁ σ₂ →
       OpenIn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
@@ -524,11 +524,11 @@ theorem open_ct_of {X : Prog isa} {pre : State → Prop} {extra : State → List
           (stackArg σ₁ 1).toNat (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat)
           (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat) (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat)
           (bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat)).isSome →
-      RelCT isa (Eq2 s₁ s₂) X TT) :
-    ConstantTime isa pre openAArch64.pub (.seq (.block openEntry) X) :=
+      RelCT isa (Eq2 s₁ s₂) X TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa pre (openAArch64 Wn).pub (.seq (.block openEntry) X) :=
   open_ct_ofW (w := 2) (.inl rfl) (fun s h => openPreX_W (hpre s h)) hX
 
-theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) :=
+theorem open_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (openAArch64 Wn).pre (openAArch64 Wn).pub («open» v.callees) :=
   open_ct_of (extra := fun _ => []) (fun _ h => h) fun _ _ _ o₁ o₂ x12₁ x12₂ _ _ hb =>
     openRestWith_rel o₁ o₂ x12₁ x12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁' rt₂' hok _ _ =>

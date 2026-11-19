@@ -878,9 +878,9 @@ theorem openWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (htb : TbForOP Wn tb (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x6) (s.gpr .x7).toNat s) :
+    (htb : TbForOP Wn tb (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x6) (s.gpr .x7).toNat s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees false w tb cl true) s fun s' =>
-      GprAbi s s' ∧ openAArch64.post s s' := by
+      GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   rw [openWithSG_eq, show openEntryG false w = oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr) by
     simp only [openEntryG, Bool.cond_false, List.append_nil]]
   refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)

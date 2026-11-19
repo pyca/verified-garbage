@@ -53,8 +53,8 @@ theorem siEntry_ok {Wn : Nat} {s : State} {Ctx Np St W : Addr} {n : Nat} (hCtx :
   exact ⟨⟨x19₂, x20₂, x21₂, by rw [sp₂, sp₁], hperm.of_eq (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])⟩,
     fun _ _ => rfl, x23₂, x24₂, x26₂, x27₂, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
-theorem streamInit_wp (v : GcmImpl) {s : State} (hs : streamInitAArch64.pre s) :
-    WP isa (streamInit v.callees) s fun s' => GprAbi s s' ∧ streamInitAArch64.post s s' := by
+theorem streamInit_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (streamInit v.callees) s fun s' => GprAbi s s' ∧ (streamInitAArch64 Wn).post s s' := by
   simp only [streamInitAArch64] at hs ⊢
   obtain ⟨hrd, hwr, dcs, dcw, dns, dnw, dsw, wc, wn, ws, ww⟩ := hs
   generalize hCtx : s.gpr .x0 = Ctx at *
@@ -64,7 +64,7 @@ theorem streamInit_wp (v : GcmImpl) {s : State} (hs : streamInitAArch64.pre s) :
   generalize hW : s.gpr .x4 = W at *
   have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x2).isLt
   refine WP.seq (WP.mono (siEntry_ok hCtx hNp hn hSt hW perm)
     fun s₁ ⟨he₁, hk₁, x23₁, x24₁, x26₁, x27₁, m₁, rd₁, wr₁⟩ => ?_)

@@ -101,8 +101,8 @@ theorem aadEntry_ok {Wn : Nat} {s : State} {Ctx St D W : Addr} {n : Nat} (hCtx :
 abbrev aadFrame (St W : Addr) : List Region := savedR W :: absFrame St W 16
 
 /-- One run of `stream_aad`, for additional data `x` so far of `o` bytes modulo 16. -/
-theorem aad_run (v : GcmImpl) {s : State} (hs : streamAadAArch64.pre s) {x : List Byte}
-    (hx : x.length % 16 = (s.gpr .x2).toNat % 16) :
+theorem aad_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn).pre s) {x : List Byte}
+    (hx : x.length % 16 = (s.gpr .x2).toNat % 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (streamAad v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x1 + BitVec.ofNat 64 16) (s.gpr .x1 + BitVec.ofNat 64 32)
           (Spec.Gcm.ctxH s.mem (s.gpr .x0)) x →
@@ -118,7 +118,7 @@ theorem aad_run (v : GcmImpl) {s : State} (hs : streamAadAArch64.pre s) {x : Lis
   generalize hW : s.gpr .x5 = W at *
   have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x4).isLt
   refine WP.seq (WP.mono (aadEntry_ok hCtx hSt hD hn hW perm)
     fun s₁ ⟨he₁, hk₁, x23₁, x24₁, x25₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -156,8 +156,8 @@ theorem aad_run (v : GcmImpl) {s : State} (hs : streamAadAArch64.pre s) {x : Lis
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
       (h₂.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
 
-theorem streamAad_wp (v : GcmImpl) {s : State} (hs : streamAadAArch64.pre s) :
-    WP isa (streamAad v.callees) s fun s' => GprAbi s s' ∧ streamAadAArch64.post s s' := by
+theorem streamAad_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (streamAad v.callees) s fun s' => GprAbi s s' ∧ (streamAadAArch64 Wn).post s s' := by
   have hz : (Spec.Gcm.zeros ((s.gpr .x2).toNat % 16)).length % 16 = (s.gpr .x2).toNat % 16 := by
     rw [Proof.Gcm.length_zeros, Nat.mod_mod]
   refine WP.mono (WP.forall_det (P := fun (i : (Block → Block) × List Byte × List Byte) =>
@@ -217,8 +217,8 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem streamAad_ct (v : GcmImpl) :
-    ConstantTime isa streamAadAArch64.pre streamAadAArch64.pub (streamAad v.callees) := by
+theorem streamAad_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamAadAArch64 Wn).pre (streamAadAArch64 Wn).pub (streamAad v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, qsp⟩ := hq
   simp only [streamAadAArch64] at h₁ h₂
@@ -236,7 +236,7 @@ theorem streamAad_ct (v : GcmImpl) :
   have ho₂ : (σ₂.gpr .x2).toNat % 16 = o := by rw [← q2, ho]
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨D, n⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨W, Wn⟩]) :
       Perm Wn Ctx St W σ :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have hz : (Spec.Gcm.zeros o).length % 16 = o := by
     rw [Proof.Gcm.length_zeros]; exact Nat.mod_eq_of_lt (ho ▸ Nat.mod_lt _ (by decide))
   have mk (σ σ' : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨D, n⟩]) (hσ : (σ.gpr .x2).toNat % 16 = o)
@@ -287,8 +287,8 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem streamInit_ct (v : GcmImpl) :
-    ConstantTime isa streamInitAArch64.pre streamInitAArch64.pub (streamInit v.callees) := by
+theorem streamInit_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamInitAArch64 Wn).pre (streamInitAArch64 Wn).pub (streamInit v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, qsp⟩ := hq
   simp only [streamInitAArch64] at h₁ h₂
@@ -304,7 +304,7 @@ theorem streamInit_ct (v : GcmImpl) :
   have hlt : n < 2 ^ 64 := hn ▸ (σ₁.gpr .x2).isLt
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨Np, n⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨W, Wn⟩]) :
       Perm Wn Ctx St W σ :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have mk (σ σ' : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨Np, n⟩])
       (h : Env Wn Ctx St W σ.sp σ' ∧ Kept σ'.gpr σ' ∧ σ'.gpr .x23 = Np ∧ σ'.gpr .x24 = BitVec.ofNat 64 n ∧
         σ'.gpr .x26 = BitVec.ofNat 64 n ∧ σ'.gpr .x27 = 0 ∧ σ'.mem = savedMem σ.mem W σ.gpr ∧ σ'.rd = σ.rd ∧
@@ -451,8 +451,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
       (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧
       (⟨s.gpr .x2, cl⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧ (s.gpr .x2).toNat + 256 ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 16 ∨ (s.gpr .x1).toNat = 24 ∨ (s.gpr .x1).toNat = 32))
-    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) :
-    ConstantTime isa pre initAArch64.pub (initWith v.callees fin) := by
+    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa pre (initAArch64 Wn).pub (initWith v.callees fin) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
   replace h₁ := hpre _ h₁
@@ -497,7 +497,7 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
     (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
       e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) hT
 
-theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub (init v.callees) :=
+theorem init_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (initAArch64 Wn).pre (initAArch64 Wn).pub (init v.callees) :=
   initWith_ct v _ (Nat.le_refl _) (fun s h => by
       simp only [initAArch64] at h
       obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, -, hL⟩ := h
@@ -579,40 +579,40 @@ theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true
 
 /-! ## Correctness -/
 
-theorem init_correct (v : GcmImpl) (s : State) (hs : initAArch64.pre s) :
-    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
+theorem init_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ (initAArch64 Wn).post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
-theorem streamInit_correct (v : GcmImpl) (s : State) (hs : streamInitAArch64.pre s) :
-    ∃ t s', Exec isa (streamInit v.callees) s t s' ∧ abiPreserved s s' ∧ streamInitAArch64.post s s' :=
+theorem streamInit_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamInit v.callees) s t s' ∧ abiPreserved s s' ∧ (streamInitAArch64 Wn).post s s' :=
   WP.withPreservedV (streamInit_wp v hs) (streamInit_keepsV v)
 
-theorem streamAad_correct (v : GcmImpl) (s : State) (hs : streamAadAArch64.pre s) :
-    ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ streamAadAArch64.post s s' :=
+theorem streamAad_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ (streamAadAArch64 Wn).post s s' :=
   WP.withPreservedV (streamAad_wp v hs) (streamAad_keepsV v)
 
-theorem streamEncrypt_correct (v : GcmImpl) (s : State) (hs : streamEncryptAArch64.pre s) :
-    ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ streamEncryptAArch64.post s s' :=
+theorem streamEncrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamEncryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamEncrypt_wp v hs) (streamEncrypt_keepsV v)
 
-theorem streamDecrypt_correct (v : GcmImpl) (s : State) (hs : streamDecryptAArch64.pre s) :
-    ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ streamDecryptAArch64.post s s' :=
+theorem streamDecrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamDecryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamDecrypt_wp v hs) (streamDecrypt_keepsV v)
 
-theorem streamFinish_correct (v : GcmImpl) (s : State) (hs : streamFinishAArch64.pre s) :
-    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ streamFinishAArch64.post s s' :=
+theorem streamFinish_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ (streamFinishAArch64 Wn).post s s' :=
   WP.withPreservedV (streamFinish_wp v hs) (streamFinish_keepsV v)
 
-theorem streamVerify_correct (v : GcmImpl) (s : State) (hs : streamVerifyAArch64.pre s) :
-    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ streamVerifyAArch64.post s s' :=
+theorem streamVerify_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ (streamVerifyAArch64 Wn).post s s' :=
   WP.withPreservedV (streamVerify_wp v hs) (streamVerify_keepsV v)
 
-theorem seal_correct (v : GcmImpl) (s : State) (hs : sealAArch64.pre s) :
-    ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ sealAArch64.post s s' :=
+theorem seal_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct (v : GcmImpl) (s : State) (hs : openAArch64.pre s) :
-    ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ openAArch64.post s s' :=
+theorem open_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ (openAArch64 Wn).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 
 /-! ## States satisfying the preconditions (with empty buffers) -/

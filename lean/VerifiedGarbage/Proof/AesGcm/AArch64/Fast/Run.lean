@@ -713,9 +713,9 @@ theorem runWithPX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' =>
-      (GprAbi s s' ∧ sealAArch64.post s s') ∧ I s'.mem := by
+      (GprAbi s s' ∧ (sealAArch64 Wn).post s s') ∧ I s'.mem := by
   -- Facts are stated with `obtain`, not `have`: `have` keeps its proof in the context (a `let` nothing
   -- unfolds), and every `(by …)` in a term first instantiates and shares the whole context (`Term.runTactic`).
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
@@ -1162,8 +1162,8 @@ theorem runWithP_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w :
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
-    WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.mono (runWithPX_ok v cl hMK (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
     (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
       WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) h₁ hx h12 h16) fun _ q => q.1

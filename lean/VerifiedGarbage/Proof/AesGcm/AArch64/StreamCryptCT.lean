@@ -144,7 +144,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre s) 
   generalize hP : (s.gpr .x4).toNat = P at *
   have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x6).isLt
   have hPlt : P < 2 ^ 64 := hP ▸ (s.gpr .x4).isLt
   refine WP.seq (WP.mono (crEntry_ok hCtx hSt hD hn hW perm)
@@ -244,8 +244,8 @@ theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre s) : Lay Wn (s.
   obtain ⟨-, -, dcs, -, dcw, dsd, dsw, -, wc, ws, -, ww, -⟩ := hs
   exact ⟨Lay.of wc ws ww dcs dcw dsw hWn, dsd.symm⟩
 
-theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hs : streamEncryptAArch64.pre s) :
-    WP isa (streamEncrypt v.callees) s fun s' => GprAbi s s' ∧ streamEncryptAArch64.post s s' := by
+theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (streamEncrypt v.callees) s fun s' => GprAbi s s' ∧ (streamEncryptAArch64 Wn).post s s' := by
   have hs' : streamCryptPre s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
       c.length = (s.gpr .x4).toNat → WP isa (streamEncrypt v.callees) s (CrRun s a c icb
@@ -297,8 +297,8 @@ theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hs : streamEncryptAArch64.pr
   · rw [List.length_append, hlen, Proof.Gcm.length_xorKs, length_bytesAt]; exact o₂
   · rw [List.drop_left' (by rw [hlen, hp]), o₃]
 
-theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hs : streamDecryptAArch64.pre s) :
-    WP isa (streamDecrypt v.callees) s fun s' => GprAbi s s' ∧ streamDecryptAArch64.post s s' := by
+theorem streamDecrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (streamDecrypt v.callees) s fun s' => GprAbi s s' ∧ (streamDecryptAArch64 Wn).post s s' := by
   have hs' : streamCryptPre s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
       c.length = (s.gpr .x4).toNat → WP isa (streamDecrypt v.callees) s (CrRun s a c icb
@@ -437,7 +437,7 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
   have hlt : n < 2 ^ 64 := hn ▸ (σ₁.gpr .x6).isLt
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨D, n⟩, ⟨W, Wn⟩]) :
       Perm Wn Ctx St W σ :=
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩
   have mk (σ σ' : State) (hwr : σ.wr = [⟨St, 80⟩, ⟨D, n⟩, ⟨W, Wn⟩]) (hR : rounds (σ.gpr .x1))
       (h : Env Wn Ctx St W σ.sp σ' ∧ Kept σ'.gpr σ' ∧ σ'.gpr .x22 = BitVec.ofNat 64 (σ.gpr .x1).toNat ∧
         σ'.gpr .x25 = BitVec.ofNat 64 ((σ.gpr .x3).toNat % 16) ∧ σ'.gpr .x26 = BitVec.ofNat 64 n ∧
@@ -463,13 +463,13 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
     (hw L b₁) (hw L b₂) fun τ₁ τ₂ e₁ e₂ => ?_
   exact rel_taint [.x19] (by rw [e₁.sp, e₂.sp]) (by agree_tac [e₁.x19, e₂.x19]) ⟨_, by taint_decide⟩
 
-theorem streamEncrypt_ct (v : GcmImpl) :
-    ConstantTime isa streamEncryptAArch64.pre streamEncryptAArch64.pub (streamEncrypt v.callees) :=
+theorem streamEncrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamEncryptAArch64 Wn).pre (streamEncryptAArch64 Wn).pub (streamEncrypt v.callees) :=
   ct_of fun _ _ h₁ h₂ hq => cr_rel h₁ h₂ hq (fun L b₁ b₂ hq => encBody_rel L v b₁ b₂ hq)
     (fun L b => WP.mono (encBody_ok L v b 0) fun _ h => h.env)
 
-theorem streamDecrypt_ct (v : GcmImpl) :
-    ConstantTime isa streamDecryptAArch64.pre streamDecryptAArch64.pub (streamDecrypt v.callees) :=
+theorem streamDecrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamDecryptAArch64 Wn).pre (streamDecryptAArch64 Wn).pub (streamDecrypt v.callees) :=
   ct_of fun _ _ h₁ h₂ hq => cr_rel h₁ h₂ hq (fun L b₁ b₂ hq => decBody_rel L v b₁ b₂ hq)
     (fun L b => WP.mono (decBody_ok L v b 0) fun _ h => h.env)
 

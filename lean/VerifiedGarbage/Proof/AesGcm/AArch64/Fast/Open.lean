@@ -767,9 +767,9 @@ theorem openWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w =
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
+      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) s fun s' =>
-      GprAbi s s' ∧ openAArch64.post s s' := by
+      GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   unfold Impl.AesGcm.AArch64.Fast.openWithE
   refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntry_ok hw hs)
     (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
@@ -799,8 +799,8 @@ theorem openWith_wp {Wn : Nat} (gh : Fn) (v : GcmImpl) (hMK : MulKey) {extra : L
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s 2)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s 2)) →
       s'.rd = s.rd → s'.wr = s.wr → Frame [workR Wn (stackArg s 2), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
-    WP isa (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) s fun s' => GprAbi s s' ∧ openAArch64.post s s' :=
+      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) s fun s' => GprAbi s s' ∧ (openAArch64 Wn).post s s' :=
   openWithE_wp (w := 2) (.call gh.name gh.code) v hMK (.inl rfl) (openPreX_W hs)
     fun s' _ _ _ _ c y z r w _ f => hgh s' c y z r w f
 

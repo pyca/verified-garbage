@@ -61,9 +61,9 @@ theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
 theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.callees).allInstrs keepsV = true :=
   fastSealWith_keepsV v v.gh.keepsV
 
-theorem fastSeal_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : sealAArch64.pre s) :
+theorem fastSeal_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (Fast.seal_wp v hMK hs) (fastSeal_keepsV v)
 
 theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
@@ -188,7 +188,7 @@ def sealPwW (Wn : Nat) (s : State) : Prop :=
 /-- `vg_aes_gcm_seal_with_powers`. -/
 def sealPwAArch64 : Contract isa where
   pre := sealPwW
-  post := sealAArch64.post
+  post := (sealAArch64 Wn).post
   pub := onePub 3
 
 /-! ## The call of `vg_ghash_with_powers` -/
@@ -244,16 +244,16 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem sealPw_wp {Wn : Nat} {s : State} (hs : sealPwN Wn s) :
+theorem sealPw_wp {Wn : Nat} {s : State} (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s fun s' =>
-      GprAbi s s' ∧ sealAArch64.post s s' :=
+      GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   sealWithE_wp (w := 2) v _ hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
     have q := gwCall_of hs sY sS hrd hwr hsp hf
     pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2
 
-theorem sealPw_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) :
+theorem sealPw_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (sealPw_wp v g hMK hs) (fastSealWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inl rfl)))
 
 theorem sealPw_ctN {Wn : Nat} :

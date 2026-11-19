@@ -1349,9 +1349,9 @@ theorem openRestWith_wp {Wn : Nat} {m : Prog isa} {w : Nat} {s s₂ : State}
       Spec.Gcm.tagLenOk (stackArg s 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
       WP isa m t (OpenPost Wn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
-        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s)) :
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
-      fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
+      fun s' => GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   refine WP.seq (WP.mono (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun s₃ ⟨x9₃, r₃⟩ => ?_)
   refine WP.seq (WP.mono (oiteWith_ok (o₂.of_regs r₃) (by rw [r₃.others _ (by decide), x12₂]) x9₃
     fun o' hT hok og => hm o' hT hok fun r hr => by
@@ -1364,8 +1364,8 @@ theorem openRestWith_wp {Wn : Nat} {m : Prog isa} {w : Nat} {s s₂ : State}
   rw [hm, hx0]
   exact post₄
 
-theorem open_wp (v : GcmImpl) {s : State} (hs : openAArch64.pre s) :
-    WP isa («open» v.callees) s fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
+theorem open_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa («open» v.callees) s fun s' => GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   refine WP.seq (WP.mono (openEntry_ok (.inl rfl) (openPreX_W hs)) fun s₂ ⟨o₂, x12₂⟩ => ?_)
   exact openRestWith_wp o₂ x12₂ fun o' hT hok _ => openMain_post v o' hT hok
 

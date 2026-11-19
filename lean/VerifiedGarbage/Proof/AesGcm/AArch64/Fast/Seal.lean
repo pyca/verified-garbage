@@ -104,9 +104,9 @@ theorem sealWithE_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.A
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
+      WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) s fun s' =>
-      GprAbi s s' ∧ sealAArch64.post s s' := by
+      GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   refine WP.seq (WP.mono (fastEntry_ok hw hs) fun s₁ ⟨h₁, hx⟩ => ?_)
   refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
     (by rw [hx .x5 (by simp), ofNat_toNat']) (s.gpr .x5).isLt (by rw [h₁.x24, ofNat_toNat']) (s.gpr .x3).isLt)
@@ -129,13 +129,13 @@ theorem sealWith_wp {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : Proof.Gcm.AArch64.
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s 1)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s 1)) →
       s'.rd = s.rd → s'.wr = s.wr →
       Frame [workR Wn (stackArg s 1), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
-      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) :
-    WP isa (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) s fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   sealWithE_wp (w := 1) v _ hMK (.inl rfl) (sealPreX_W hs) fun s' _ _ _ _ c y z r w _ f => hgh s' c y z r w f
 
 /-- `vg_aes_gcm_seal` with the path for TLS records. -/
-theorem seal_wp (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {s : State} (hs : sealAArch64.pre s) :
-    WP isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+theorem seal_wp {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {s : State} (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   sealWith_wp (extra := []) v v.gh.fn hMK hs fun _ _ _ _ _ hc _ _ _ _ _ => gh_call v.gh hc
 
 end VG.Proof.AesGcm.AArch64.Fast

@@ -631,7 +631,7 @@ theorem sealWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : S
       s.rd = σ.rd → s.wr = σ.wr →
       Frame [workR Wn (stackArg σ 1), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
       WP isa (.call gh.name gh.code) s (GhPost s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (hrel : ∀ {σ₁ σ₂ s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, pre σ₁ → pre σ₂ → sealAArch64.pub σ₁ σ₂ →
+    (hrel : ∀ {σ₁ σ₂ s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, pre σ₁ → pre σ₂ → (sealAArch64 Wn).pub σ₁ σ₂ →
       GhCall s₁ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       GhCall s₂ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ₁ 1)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ₁ 1)) → s₁.sp = s₂.sp →
@@ -639,15 +639,15 @@ theorem sealWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : S
       Frame [workR Wn (stackArg σ₁ 1), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ 1), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) :
-    ConstantTime isa pre sealAArch64.pub (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) :=
+      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa pre (sealAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) :=
   sealWithE_ct (w := 1) v _ hMK (.inl rfl) (fun s h => sealPreX_W (hpre s h))
     (fun p c y z r w _ f => hgh p c y z r w f)
     (fun p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => hrel p₁ p₂ hq c₁ c₂ y z (sp₁.trans sp₂.symm) r₁ w₁ f₁ r₂ w₂ f₂)
 
 /-- `vg_aes_gcm_seal` with the path for TLS records is constant time. -/
-theorem seal_ct (v : GcmImpl) (hMK : MulKey) :
-    ConstantTime isa sealAArch64.pre sealAArch64.pub (Impl.AesGcm.AArch64.Fast.«seal» v.callees) :=
+theorem seal_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.«seal» v.callees) :=
   sealWith_ct (extra := fun _ => []) v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fun _ _ _ c₁ c₂ _ _ sp _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ sp)
 

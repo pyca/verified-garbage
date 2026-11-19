@@ -481,16 +481,16 @@ theorem openWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : Sta
       Frame [workR Wn (stackArg σ₁ 2), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ 2), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) :
-    ConstantTime isa pre openAArch64.pub (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) :=
+      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa pre (openAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openWith v.callees gh) :=
   openWithE_ct (w := 2) v _ hMK (.inl rfl) (fun s h => openPreX_W (hpre s h))
     (fun p c y z r w _ f => hgh p c y z r w f)
     (fun p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ =>
       hrel p₁ p₂ hq c₁ c₂ y z (sp₁.trans sp₂.symm) r₁ w₁ f₁ r₂ w₂ f₂)
 
 /-- `vg_aes_gcm_open` with the path for TLS records is constant time. -/
-theorem open_fast_ct (v : GcmImpl) (hMK : MulKey) :
-    ConstantTime isa openAArch64.pre openAArch64.pub (Impl.AesGcm.AArch64.Fast.«open» v.callees) :=
+theorem open_fast_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (openAArch64 Wn).pre (openAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.«open» v.callees) :=
   openWith_ct (extra := fun _ => []) v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fun _ _ _ c₁ c₂ _ _ sp _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ sp)
 

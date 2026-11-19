@@ -380,8 +380,8 @@ theorem sealEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW :
 
 /-- `seal` after its entry. -/
 theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁ : State}
-    (hs : sealPreXW w extra s extraW) (h₁ : SealEntry Wn w s s₁) :
-    WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
+    (hs : sealPreXW w extra s extraW) (h₁ : SealEntry Wn w s s₁) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
   simp only [sealAArch64]
@@ -498,8 +498,8 @@ theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Regi
     List.take_of_length_le (by rw [Proof.Cmac.toBytes_length])]
   rfl
 
-theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
-    WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+theorem seal_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.seq (WP.mono (sealEntry_ok (.inl rfl) (sealPreX_W hs)) fun _ h₁ => sealRest_ok v (sealPreX_W hs) h₁)
 
 end VG.Proof.AesGcm.AArch64

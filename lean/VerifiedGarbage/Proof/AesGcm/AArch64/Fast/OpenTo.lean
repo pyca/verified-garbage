@@ -233,15 +233,15 @@ section
 variable (v : GcmImpl) (hMK : MulKey)
 include hMK
 
-theorem fastOpenTo_correct (s : State) (hs : openToAArch64.pre s) :
+theorem fastOpenTo_correct {Wn : Nat} (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openTo v.callees) s t s' ∧ abiPreserved s s' ∧
-      openToAArch64.post s s' :=
+      (openToAArch64 Wn).post s s' :=
   WP.withPreservedV (openToWithE_wp (w := 4) _ v hMK (.inl rfl) hs
       fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc)
     (fastOpenToWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, GcmImpl.callees, v.gh.keepsV]))
 
-theorem fastOpenTo_ct :
-    ConstantTime isa openToAArch64.pre openToAArch64.pub (Impl.AesGcm.AArch64.Fast.openTo v.callees) :=
+theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openTo v.callees) :=
   openToWithE_ct (w := 4) v _ hMK (.inl rfl) (extra := fun _ => []) (extraW := fun _ => []) (fun _ h => h)
     (fun _ hc _ _ _ _ _ _ => gh_call v.gh hc)
     fun _ _ _ c₁ c₂ _ _ sp₁ sp₂ _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ (sp₁.trans sp₂.symm)

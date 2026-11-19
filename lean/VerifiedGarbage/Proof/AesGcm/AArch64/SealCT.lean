@@ -92,8 +92,8 @@ theorem finBody_env {Wn : Nat} (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Wn Ct
     (by rw [Proof.Gcm.length_zeros]; exact h26) (by rw [Proof.Gcm.length_zeros]; exact h27)
     (by rw [Proof.Gcm.length_zeros]; exact hP) rfl) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
-theorem streamFinish_ct (v : GcmImpl) :
-    ConstantTime isa streamFinishAArch64.pre streamFinishAArch64.pub (streamFinish v.callees) := by
+theorem streamFinish_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamFinishAArch64 Wn).pre (streamFinishAArch64 Wn).pub (streamFinish v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, qsp⟩ := hq
   have p₁ : finPre σ₁ := h₁
@@ -124,8 +124,8 @@ theorem streamFinish_ct (v : GcmImpl) :
   exact rel_taint [.x19, .x28] (by rw [f₁.1.sp, f₂.1.sp])
     (by agree_tac [f₁.1.x19, f₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem streamVerify_ct (v : GcmImpl) :
-    ConstantTime isa streamVerifyAArch64.pre streamVerifyAArch64.pub (streamVerify v.callees) := by
+theorem streamVerify_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ConstantTime isa (streamVerifyAArch64 Wn).pre (streamVerifyAArch64 Wn).pub (streamVerify v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩ := hq
   have p₁ : verPre σ₁ := h₁
@@ -631,7 +631,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» v.callees) := by
+theorem seal_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub («seal» v.callees) := by
   unfold «seal»
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq

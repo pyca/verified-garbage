@@ -198,8 +198,8 @@ theorem initWith_wp {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
     simp
 
 /-- `vg_aes_gcm_init`. -/
-theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
-    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
+theorem init_wp {Wn : Nat} (v : GcmImpl) {s : State} (hp : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ (initAArch64 Wn).post s s' := by
   simp only [initAArch64] at hp ⊢
   obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, ws, hL⟩ := hp
   refine initWith_wp v _ (Nat.le_refl _) rfl rfl rfl rfl hrd hwr d_kc d_ks d_cs wc hL

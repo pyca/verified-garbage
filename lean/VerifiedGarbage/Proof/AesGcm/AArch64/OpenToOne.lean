@@ -151,7 +151,7 @@ theorem openTo_ctW (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {pre : State �
     (fun o' hT hok _ => openMainG_post v true o' hT hok)
     fun p₁ p₂ rt₁ rt₂ hok _ _ => openMainG_rel v true p₁ p₂ rt₁ rt₂ hok hb
 
-theorem openTo_ct (v : GcmImpl) : ConstantTime isa openToAArch64.pre openToAArch64.pub (openG v.callees true 4) :=
+theorem openTo_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (openG v.callees true 4) :=
   openTo_ctW v (.inl rfl) (extra := fun _ => []) (extraW := fun _ => []) fun _ h => h
 
 /-! ## `Verified` -/
@@ -164,8 +164,8 @@ theorem openTo_keepsV (v : GcmImpl) : (openG v.callees true 4).allInstrs keepsV 
     v.ctr.toKeepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel
 
-theorem openTo_correct (v : GcmImpl) (s : State) (hs : openToAArch64.pre s) :
-    ∃ t s', Exec isa (openG v.callees true 4) s t s' ∧ abiPreserved s s' ∧ openToAArch64.post s s' :=
+theorem openTo_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    ∃ t s', Exec isa (openG v.callees true 4) s t s' ∧ abiPreserved s s' ∧ (openToAArch64 Wn).post s s' :=
   WP.withPreservedV (openTo_wp v (.inl rfl) hs) (openTo_keepsV v)
 
 /-- `dst` and `tag` at 0 and empty, and `work` at `0x5000` (`[sp + 32]`). -/

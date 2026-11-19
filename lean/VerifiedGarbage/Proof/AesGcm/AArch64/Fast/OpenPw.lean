@@ -119,9 +119,9 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) :
+theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      openAArch64.post s s' :=
+      (openAArch64 Wn).post s s' :=
   WP.withPreservedV (openWithE_wp (w := 3) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of hs sY sS hrd hwr hsp hf
       pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)

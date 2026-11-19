@@ -74,9 +74,9 @@ theorem runWithSX_ok' {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem)
     (htb : TbFor Wn tb w s)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) s₁ fun s' =>
-      (GprAbi s s' ∧ sealAArch64.post s s') ∧ I s'.mem :=
+      (GprAbi s s' ∧ (sealAArch64 Wn).post s s') ∧ I s'.mem :=
   runWithSX_ok v cl hMK gh hs hexW hexD hexC hI hgh (fun u he hrd hwr hf key => htb u he hrd hwr hf key) h₁ hx
     h12 h16
 
@@ -90,9 +90,9 @@ theorem sealWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (htb : TbForP Wn tb w s) :
+    (htb : TbForP Wn tb w s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) s fun s' =>
-      GprAbi s s' ∧ sealAArch64.post s s' := by
+      GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   have hnb : (s.gpr .x7).toNat + Wn ≤ 2 ^ 64 := len_of_disjoint ol.data ol.dw ol.lay.ww
   refine WP.seq (WP.mono (fastEntry_ok hw hs) fun s₁ ⟨h₁, hx⟩ => ?_)

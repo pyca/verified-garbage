@@ -116,9 +116,9 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
 include hMK gh
 
-theorem sealPwS_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) :
+theorem sealPwS_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (sealWithSh_wp (w := 2) v _ hMK gh (.inr rfl) hs.1
       (fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
         have q := gwCall_of hs sY sS hrd hwr hsp hf
