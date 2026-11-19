@@ -471,7 +471,7 @@ theorem upd_entry {rate : Nat} {s t : State} (hI : UpdAt rate s t) :
 
 theorem upd_call {rate : Nat} (hr : rate ∈ rates) {s t : State} (hs : (updateArm rate).pre s)
     (hI : UpdAt rate s t) :
-    WP isa (.call "vg_keccak_update_scratch" Impl.Sha3.Arm.Stream.absorb) t
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) t
       fun v => v.sp = s.sp - BitVec.ofNat 32 16 := by
   obtain ⟨hpre, hc, hw⟩ := upd_pre hr hs hI
   exact FrameStack.WP.callF (k := Proof.Sha3.absorbArm) Stream.Absorb.absorb_verified.1 hpre hc hw

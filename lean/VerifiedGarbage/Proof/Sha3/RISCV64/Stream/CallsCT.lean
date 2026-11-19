@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 # The SHA-3 sponge on RISC-V: its calls in constant time
 
 As PPC64LE's (`Proof/Ed448/PPC64LE/Whole/SignNonce.lean`): two runs that call
-`vg_keccak_update`, `vg_keccak_pad` or `vg_keccak_squeeze` on the same
+`vg_keccak_absorb`, `vg_keccak_pad` or `vg_keccak_squeeze` on the same
 arguments leak the same trace (`absorbCall_ct`, `padCall_ct`,
 `squeezeCall_ct`), by the callee's own constant-time proof (`RelCT.call`).
 The sponge functions save and restore registers in their working space,
@@ -30,7 +30,7 @@ theorem absorbCall_ct {P : State → State → Prop}
     (hP : ∀ a b, P a b → a.sp = b.sp ∧ AbsorbArgs a st pa rate pos pl ∧ AbsorbArgs b st pa rate pos pl ∧
       Covers ([⟨pa, pl⟩] ++ [⟨st, 200⟩]) (a.rd ++ a.wr) ∧ Covers [⟨st, 200⟩] a.wr ∧
       Covers ([⟨pa, pl⟩] ++ [⟨st, 200⟩]) (b.rd ++ b.wr) ∧ Covers [⟨st, 200⟩] b.wr) :
-    RelCT isa P (.call "vg_keccak_update" Impl.Sha3.RISCV64.Stream.absorb) fun _ _ => True := by
+    RelCT isa P (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb) fun _ _ => True := by
   refine RelCT.call (k := Proof.Sha3.absorbRISCV64) absorb_verified'.1 absorb_ct [⟨pa, pl⟩] [⟨st, 200⟩]
     fun a b hab => ?_
   obtain ⟨hsp, ha, hb, ca, wa, cb, wb⟩ := hP a b hab

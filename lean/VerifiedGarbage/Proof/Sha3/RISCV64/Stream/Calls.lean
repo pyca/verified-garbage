@@ -869,7 +869,7 @@ end
 # The SHA-3 sponge on RISC-V: calling it
 
 As PPC64LE's (`Proof/MlKem/PPC64LE/KCall.lean`): calls of
-`vg_keccak_update`, `vg_keccak_pad` and `vg_keccak_squeeze` from their
+`vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` from their
 callers' proofs (`WP.callAny`, their frames and the permutation's using the
 1168 bytes below the stack pointer): the callee's precondition on entry
 (`absorb_pre`, `pad_pre`, `squeeze_pre`), and what holds when it returns
@@ -959,12 +959,12 @@ theorem call1168 {n : String} {c : Prog isa} {k : Contract isa}
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub hd (by decide)⟩) hcs hpost)
     (by omega_using [hd])
 
-/-! ## `vg_keccak_update` -/
+/-! ## `vg_keccak_absorb` -/
 
 section
 variable {s : State} {st dp : Addr} {rate pos len : Nat}
 
-/-- The facts a call of `vg_keccak_update(st, rate, pos, dp, len)` needs. -/
+/-- The facts a call of `vg_keccak_absorb(st, rate, pos, dp, len)` needs. -/
 structure AbsorbArgs (s : State) (st dp : Addr) (rate pos len : Nat) : Prop where
   a0 : s.gpr .a0 = st
   a1 : s.gpr .a1 = BitVec.ofNat 64 rate
@@ -998,7 +998,7 @@ theorem absorb_call (h : AbsorbArgs s st dp rate pos len)
       (∀ msg, Spec.Sha3.Repr s.mem st rate msg → pos = msg.length % rate →
         Spec.Sha3.Repr s'.mem st rate (msg ++ bytesAt s.mem dp len)) →
       (s'.gpr .a0).toNat = (pos + len) % rate → Q s') :
-    WP isa (.call "vg_keccak_update" Impl.Sha3.RISCV64.Stream.absorb) s Q := by
+    WP isa (.call "vg_keccak_absorb" Impl.Sha3.RISCV64.Stream.absorb) s Q := by
   have hr := rate_lt h.hrate
   refine call1168 (k := Proof.Sha3.absorbRISCV64) absorb_verified'.1 absorb_sdepth
     (absorb_pre h) hc hw fun s' hrd hwr hsp hf hcs hpost => ?_

@@ -48,7 +48,7 @@ def absorbArgs (sc : Reg) (first : Bool) (p : Piece) : List Instr :=
   [if first then .li .r5 0 else mov .r5 .r3, mov .r3 sc, .li .r4 136, .addi .r6 p.base p.off, p.len.set,
     .addi .r8 sc KW]
 
-def callAbsorb : Prog isa := .call "vg_keccak_update_scratch" Impl.Sha3.PPC64LE.Stream.absorb
+def callAbsorb : Prog isa := .call "vg_keccak_absorb_scratch" Impl.Sha3.PPC64LE.Stream.absorb
 def callPad : Prog isa := .call "vg_keccak_pad_scratch" Impl.Sha3.PPC64LE.Stream.pad
 def callSqueeze : Prog isa := .call "vg_keccak_squeeze_scratch" Impl.Sha3.PPC64LE.Stream.squeeze
 

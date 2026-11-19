@@ -324,7 +324,7 @@ def permuteRISCV64 : Contract RISCV64.isa where
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.sp = s₂.sp
 
 open VG.RISCV64 in
-/-- RISC-V contract for `vg_keccak_update(state = a0, rate = a1, pos = a2,
+/-- RISC-V contract for `vg_keccak_absorb(state = a0, rate = a1, pos = a2,
 data = a3, len = a4) -> a0`: absorbs `data` into the streaming state
 (`Repr`) and returns the new position in the block.
 

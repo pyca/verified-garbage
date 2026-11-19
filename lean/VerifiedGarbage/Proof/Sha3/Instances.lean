@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3.Instances
+public import VerifiedGarbage.Spec.Zeroize
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -59,6 +60,19 @@ def updateScratchPost (rate pb : Nat) : updateScratchSig.Post pb :=
 def updateScratchContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
   updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
     (post := updateScratchPost rate A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `updateScratchPost`, and each byte of `scratch` on return is unchanged or
+zero (`Spec.Zeroize.scrubbed`): what RISC-V's `update` proves. -/
+def updateScratchScrubbedPost (rate pb : Nat) : updateScratchSig.Post pb :=
+  fun state pos data len scratch m m' ret =>
+    updateScratchPost rate pb state pos data len scratch m m' ret ∧
+      Spec.Zeroize.scrubbed m m' scratch 640
+
+/-- `updateScratchPre` and `updateScratchScrubbedPost`, for the rate `rate`. -/
+def updateScratchScrubbedContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) :
+    Contract M :=
+  updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
+    (post := updateScratchScrubbedPost rate A.ptrBits) (writeArgs := true) (stack := stack)
 
 end VG.Proof.Sha3
 

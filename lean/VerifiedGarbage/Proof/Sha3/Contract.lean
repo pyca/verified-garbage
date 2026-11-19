@@ -10,13 +10,13 @@ Not trusted: the contracts that the proofs of internal functions (`Rust.Internal
 which only verified code calls, are of, and that the proofs of their callers
 compose. Only the callers' contracts, in `Spec/`, are trusted.
 
-The streaming sponge, `vg_keccak_update_scratch`, `vg_keccak_pad` and
+The streaming sponge, `vg_keccak_absorb_scratch`, `vg_keccak_pad` and
 `vg_keccak_squeeze` (on the representation `Repr`), in terms of
 `Spec/Sha3.lean`, for any target: `A` is the target's calling convention,
 and `stack` the number of bytes of stack below the stack pointer that an
 implementation's calls and frames use (`Sig.contract`). A hash is computed
 from the all-zero state (which represents the empty message) by
-`vg_keccak_update_scratch` on each piece of the message, `vg_keccak_pad`,
+`vg_keccak_absorb_scratch` on each piece of the message, `vg_keccak_pad`,
 and `vg_keccak_squeeze` from position 0: by the definitions, the output is
 then `sponge rate suffix msg outlen`. Further calls of `vg_keccak_squeeze`,
 each from the state and position the previous one left, output the bytes
@@ -29,7 +29,7 @@ functions and the functions that run a sponge of their own call; and
 `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch`, `vg_keccak_pad`
 and `vg_keccak_squeeze` with their working space passed in `scratch`, for
 functions that call them with their own (the instances', ML-KEM's, ML-DSA's,
-Ed448's), as `vg_keccak_update_scratch` is `vg_keccak_update`'s. The state
+Ed448's), as `vg_keccak_absorb_scratch` is `vg_keccak_absorb`'s. The state
 is secret; the rate, the position within the block and the
 domain-separation suffix are public.
 -/

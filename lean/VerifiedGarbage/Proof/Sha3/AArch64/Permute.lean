@@ -618,7 +618,7 @@ def permuteAArch64 : Contract AArch64.isa where
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.sp = s₂.sp
 
 open VG.AArch64 in
-/-- AArch64 contract for `vg_keccak_update(state = x0, rate = x1, pos = x2,
+/-- AArch64 contract for `vg_keccak_absorb(state = x0, rate = x1, pos = x2,
 data = x3, len = x4, scratch = x5) -> x0`: absorbs `data` into the streaming
 state (`Repr`) and returns the new position in the block.
 

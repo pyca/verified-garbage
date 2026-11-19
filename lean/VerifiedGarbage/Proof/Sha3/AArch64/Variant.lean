@@ -59,7 +59,7 @@ open VG VG.AArch64
 /-- The calls of the sponge's functions of the backend `c`, as its summaries
 state them (`sponge_taint_summaries`). -/
 abbrev absorbCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
-  .call ("vg_keccak_update_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)
+  .call ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)
 abbrev padCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)
 abbrev squeezeCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
