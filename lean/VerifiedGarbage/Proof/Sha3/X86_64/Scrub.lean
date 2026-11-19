@@ -25,7 +25,7 @@ meta import VerifiedGarbage.Proof.Sha3.PostOut
 /-!
 # SHA-3 and SHAKE's functions on x86-64, without secret residue
 
-Each instance's `update`, and SHAKE's `finalize` and `squeeze`, followed by
+Each instance's `absorb`, and SHAKE's `finalize` and `squeeze`, followed by
 `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
 registers and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
@@ -41,10 +41,6 @@ the 680-byte stack with aligned stores after writing the digest.
 namespace VG.Proof.Sha3.X86_64.Scrub
 
 open VG.Spec.Sha3 VG.X86_64 VG.X86_64.Scrub
-
-theorem updateOut (rate stack : Nat) :
-    PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.updatePost_out rate 64)
 
 /-- A fixed digest's postcondition reads only its output buffer. -/
 theorem finalizeOut (H : HashFn) (stack : Nat) (hlen : H.len < 2 ^ 64) :
@@ -132,81 +128,6 @@ theorem absorb_shake128 :
     (by lit_decide) (by lit_decide)
 
 /-! ## The registrations -/
-def updateSha3_224Ks : List Nat := keep_for% Spec.Sha3.updateSha3_224Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate) []
-
-theorem updateSha3_224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_224Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_224Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_224Ks (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `updateSha3_224Api`'s function. -/
-def updateSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_224.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_224 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_224Ks, updateSha3_224Ok⟩)
-def updateSha3_256Ks : List Nat := keep_for% Spec.Sha3.updateSha3_256Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate) []
-
-theorem updateSha3_256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_256Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_256Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_256Ks (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `updateSha3_256Api`'s function. -/
-def updateSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_256.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_256 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_256Ks, updateSha3_256Ok⟩)
-def updateSha3_384Ks : List Nat := keep_for% Spec.Sha3.updateSha3_384Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate) []
-
-theorem updateSha3_384Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_384Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_384Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_384Ks (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `updateSha3_384Api`'s function. -/
-def updateSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_384.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_384 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_384Ks, updateSha3_384Ok⟩)
-def updateSha3_512Ks : List Nat := keep_for% Spec.Sha3.updateSha3_512Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate) []
-
-theorem updateSha3_512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateSha3_512Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate)
-      h).any (RScrub.resOkB · 8 updateSha3_512Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateSha3_512Ks (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `updateSha3_512Api`'s function. -/
-def updateSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.hashSha3_512.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_sha3_512 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateSha3_512Ks, updateSha3_512Ok⟩)
-def updateShake128Ks : List Nat := keep_for% Spec.Sha3.updateShake128Api.sig 8 (Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate) []
-
-theorem updateShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha3.updateShake128Api.sig 8 []) (Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate)
-      h).any (RScrub.resOkB · 8 updateShake128Ks (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of updateShake128Ks (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `updateShake128Api`'s function. -/
-def updateShake128Reg : Registration Spec.Sha3.updateShake128Api X86_64.target :=
-  withScrub {
-    code := Impl.Sha3.X86_64.Instances.update Spec.Sha3.xofShake128.rate
-    stack := 8
-    verified := Proof.Sha3.X86_64.Instances.update_shake128 } (updateOut _ _) [] (pubOk_nil _)
-    (some ⟨updateShake128Ks, updateShake128Ok⟩)
 def finalizeShake128Ks : List Nat := keep_for% Spec.Sha3.finalizeShake128Api.sig 656 (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate) []
 
 theorem finalizeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,

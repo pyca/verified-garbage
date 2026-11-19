@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Verifie
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP512r1
@@ -28,10 +29,8 @@ open VG.Proof.HmacTable.PPC64LE (vars tables names)
 open VG.Proof.BrainpoolP512r1.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact PPC64LE.target {
-    code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
-      Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP512r1
-    verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.verifyHash_verified hasLaw.law }] ++
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact PPC64LE.target
+    (Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp512r1Verify hasLaw.law)] ++
   (if hv : OK vars ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
