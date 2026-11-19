@@ -54,7 +54,11 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "riscv64"
+)))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
@@ -73,14 +77,14 @@ use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stre
 #[cfg(not(target_arch = "riscv64"))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_stream_verify_auto};
 // On RISC-V, a key computes the bitsliced form of its key context when it is
-// created, which the streaming functions, `seal`, `open` and `open_to` read
-// instead of computing it at every call.
+// created, which the streaming functions, `seal`, `seal_gather`, `open` and
+// `open_to` read instead of computing it at every call.
 #[cfg(target_arch = "riscv64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_bitslice_auto, vg_aes_gcm_open_bitsliced_auto, vg_aes_gcm_open_to_bitsliced_auto,
-    vg_aes_gcm_seal_bitsliced_auto, vg_aes_gcm_stream_decrypt_bitsliced_auto,
-    vg_aes_gcm_stream_encrypt_bitsliced_auto, vg_aes_gcm_stream_finish_bitsliced_auto,
-    vg_aes_gcm_stream_verify_bitsliced_auto,
+    vg_aes_gcm_seal_bitsliced_auto, vg_aes_gcm_seal_gather_bitsliced_auto,
+    vg_aes_gcm_stream_decrypt_bitsliced_auto, vg_aes_gcm_stream_encrypt_bitsliced_auto,
+    vg_aes_gcm_stream_finish_bitsliced_auto, vg_aes_gcm_stream_verify_bitsliced_auto,
 };
 use crate::error::InvalidKeyLength;
 #[cfg(not(target_arch = "x86_64"))]
@@ -726,7 +730,8 @@ impl AesGcm {
     }
 
     /// `encrypt` elsewhere, by `vg_aes_gcm_seal_gather` (on x86-64,
-    /// `vg_aes_gcm_seal_gather_prepared`).
+    /// `vg_aes_gcm_seal_gather_prepared`; on RISC-V,
+    /// `vg_aes_gcm_seal_gather_bitsliced`).
     #[cfg(not(target_arch = "aarch64"))]
     #[inline(always)]
     fn seal_pieces(
@@ -769,7 +774,23 @@ impl AesGcm {
                 out.len(),
                 &mut tag,
             );
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "riscv64")]
+            vg_aes_gcm_seal_gather_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src,
+                plaintext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                &mut tag,
+                &self.bk.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
             vg_aes_gcm_seal_gather_auto(
                 dit,
                 self.key(),
