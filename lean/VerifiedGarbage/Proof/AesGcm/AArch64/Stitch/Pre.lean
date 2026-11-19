@@ -56,7 +56,7 @@ structure SIn (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb :
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   x23 : s.gpr .x23 = D
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
-  data : DataW Ctx St W s D n
+  data : DataW Wn Ctx St W s D n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   cb : blockAt s.mem (St + BitVec.ofNat 64 48) = icb
   y : blockAt s.mem (St + BitVec.ofNat 64 16) = ghash H (blocks x)
@@ -81,7 +81,7 @@ structure SInM (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (x : List Byte) (icb 
   x23 : s.gpr .x23 = D
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
   src : DataOk Wn St W s D n
-  out : DataW Ctx St W s O n
+  out : DataW Wn Ctx St W s O n
   mode : cond to (s.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D)
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   cb : blockAt s.mem (St + BitVec.ofNat 64 48) = icb
@@ -120,7 +120,7 @@ include L
 theorem kpre_of {t : State} {R : Nat} {D O : Addr} {n : Nat} {to : Bool} (he : Env Wn Ctx St W SP t)
     (h22 : t.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h23 : t.gpr .x23 = D)
     (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataOk Wn St W t D n)
-    (ho : DataW Ctx St W t O n) (hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D))
+    (ho : DataW Wn Ctx St W t O n) (hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D))
     (h1 : 128 ≤ n) (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) : KPreM t to := by
   obtain hWn := he.perm.hWn
   have hn := hd.lt

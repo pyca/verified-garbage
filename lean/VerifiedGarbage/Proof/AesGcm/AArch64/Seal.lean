@@ -419,7 +419,7 @@ theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Regi
     (by rw [x26₁, ← h3]) x27₁ hnon haad hH₁ sl₁ sl₂ sl₃ sl₄ fun s₂ h₂ => ?_
   rw [iv₁, a₁] at h₂
   obtain x22₂ : s₂.gpr .x22 = BitVec.ofNat 64 R := by rw [h₂.x22, x22₁, ← hRR, ofNat_toNat']
-  obtain hdat₂ : DataW Ctx (W + BitVec.ofNat 64 16) W s₂ D n :=
+  obtain hdat₂ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₂ D n :=
     ⟨⟨covers_left (by rw [h₂.wr, wr₁]; exact dW), hnlt, wd, ddW.sub_right sub16, ddW⟩,
       by rw [h₂.wr, wr₁]; exact dW, dcd⟩
   obtain hB : BodyIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₂.gpr R n 0 D (bytesAt s.mem A al) [] (ctxH s.mem Ctx) s₂ :=

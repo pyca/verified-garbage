@@ -129,7 +129,7 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
   obtain hx₁0 : x₁.length % 16 = 0 := by
     rw [← hx₁, List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   obtain x22₂ : s₂.gpr .x22 = BitVec.ofNat 64 R := by rw [h₂.x22, x22₁, ← hRR, ofNat_toNat']
-  obtain hdat₂ : DataW Ctx (W + BitVec.ofNat 64 16) W s₂ D n :=
+  obtain hdat₂ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₂ D n :=
     ⟨⟨covers_left (by rw [h₂.wr, wr₁]; exact dW), hnlt, wd, ddW.sub_right sub16, ddW⟩,
       by rw [h₂.wr, wr₁]; exact dW, dcd⟩
   -- The first `P` bytes, by the interleaved loop.
@@ -178,11 +178,11 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
   obtain x22₃ : s₃.gpr .x22 = BitVec.ofNat 64 R := by rw [r₃.others _ (by decide), g₂' _ (by decide), x22₂]
   obtain x26₃ : s₃.gpr .x26 = BitVec.ofNat 64 n := by rw [r₃.others _ (by decide), g₂' _ (by decide), h₂.x26]
   obtain x28₃ : s₃.gpr .x28 = Tg := by rw [r₃.others _ (by decide), g₂' _ (by decide), h₂.x28, x28₁]
-  obtain hdat₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D' (n - P) :=
+  obtain hdat₃ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₃ D' (n - P) :=
     hD' ▸ (hdat₂.drop hPn).of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
-  obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R P D' (n - P) s₃ :=
+  obtain hCr : CrIn Wn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R P D' (n - P) s₃ :=
     ⟨he₃, hk₃, x22₃, hRb, x23₃, x24₃, x25₃, hdat₃, rfl⟩
-  obtain hfull₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
+  obtain hfull₃ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
     hdat₂.of_eq (by rw [r₃.rd, hm₂.rd]) (by rw [r₃.wr, hm₂.wr])
   refine WP.seq (WP.mono (WP.with_rdwr (cryptAlT_ok L v (icb := inc32 J0) hCr hP16 x26₃ hnlt
       (tail_big hfull₃.wr hnlt hD'.symm (by omega_arith))))

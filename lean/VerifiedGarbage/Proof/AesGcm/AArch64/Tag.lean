@@ -42,7 +42,7 @@ structure Tag1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o R : Na
     Prop where
   env : Env Wn Ctx St W SP s
   kept : Kept k s
-  call : CtrCall s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1
+  call : CtrCall s Ctx St (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 512) R 1 (Wn - 512)
   cp : blockAt s.mem (W + BitVec.ofNat 64 o) = Y
   hJ : blockAt s.mem St = J
   frame : Frame [⟨W + BitVec.ofNat 64 o, 16⟩] m₀ s.mem
@@ -134,7 +134,7 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
 theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
     {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) :
     WP isa (ctrCall v.callees) s (TagOut Wn Ctx St W SP k o R Y J m₀) := by
-  refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
+  refine WP.mono (ctr_callLe v.ctr hv h.call) fun s₃ g => ?_
   have gout := g.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
   have hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=

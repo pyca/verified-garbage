@@ -144,7 +144,7 @@ theorem initWith_wp {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
         (by rcases hL with rfl | rfl | rfl <;> decide)]
   obtain pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄']; exact pC
   obtain pW' : Covers [⟨W, Wn⟩] s₄.wr := by rw [wr₄']; exact pW
-  obtain cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 := by
+  obtain cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 (Wn - 512) := by
     refine ⟨x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, hR', ?_, by decide, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
     · simpa using dCW 0 240 (by decide) 96 16 (by decide)
@@ -157,7 +157,7 @@ theorem initWith_wp {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
         (covers_left (covers_off pC' (by decide) (by decide))) (covers_left (covers_off pW' (by decide) (by decide)))))
     · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_cons (covers_off pC' (by decide) (by decide))
         (covers_off pW' (by decide) (by decide)))
-  refine WP.seq (WP.mono (ctr_call v.ctr cc) fun s₅ c => ?_)
+  refine WP.seq (WP.mono (ctr_callLe v.ctr hv cc) fun s₅ c => ?_)
   have gout := c.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq, hT₄, hD₄, hk₄] at gout
   obtain c19 : s₅.gpr .x19 = W := by rw [c.saved .x19 (by decide) (by decide), og₄ _ (by decide), g19]

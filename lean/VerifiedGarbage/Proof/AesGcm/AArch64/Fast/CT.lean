@@ -84,10 +84,10 @@ include L
 
 /-- `cryptAlT`: `cryptAl_rel`, with the same length of the text in `x26`. -/
 theorem cryptAlT_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0)
+    (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0)
     (h26 : k₁ .x26 = k₂ .x26) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptAlT v.callees) TT := by
-  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k R P D n σ) {m' : Mem},
+  have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Wn Ctx St W SP k R P D n σ) {m' : Mem},
       Frame (crFrame Wn St W D n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
     fun h _ hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
   have m₁ := h₁.mid (icb := 0) hP
@@ -96,13 +96,13 @@ theorem cryptAlT_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x22, h₂.x22,
         h₁.x23, h₂.x23, h₁.x24, h₂.x24]) ⟨_, by taint_decide⟩)
     (crArgs_ok L m₁) (crArgs_ok L m₂) fun τ₁ τ₂ a₁ a₂ => ?_
-  refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
+  refine rel_seq (rel_ctrLe v.ctr hv a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
     (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x22, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
         b₁.1.x22, b₂.1.x22, b₁.1.x23, b₂.1.x23, b₁.1.x24, b₂.1.x24, b₁.1.x25, b₂.1.x25]) ⟨_, by taint_decide⟩)
     (crSeg2T_ok L b₁.1 b₁.2) (crSeg2T_ok L b₂.1 b₂.2) fun τ₁ τ₂ c₁ c₂ => ?_
-  refine rel_seq (rel_ctr v.ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
+  refine rel_seq (rel_ctrLe v.ctr hv c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
     (ctrCall2_ok L v c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L v c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
   have e₁ := d₁.kept .x26 (by decide)
   have e₂ := d₂.kept .x26 (by decide)
@@ -200,7 +200,7 @@ structure MidG (Wn : Nat) (to : Bool) (Ctx W SP : Addr) (H : Block) (R n : Nat) 
   x28 : s.gpr .x28 = Tg
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   key : KeyAt H s.mem W
-  data : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s D n)
+  data : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s D n) (DataW Wn Ctx (W + BitVec.ofNat 64 16) W s D n)
   fr : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s.mem
   rd : s.rd = ρ.rd
   wr : s.wr = ρ.wr
@@ -215,7 +215,7 @@ include L
 
 /-- `Mid` after `cryptAl`. -/
 theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb : Block}
-    (h : Mid Ctx W SP H R n D Tg X ρ s) (o : CrOut Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
+    (h : Mid Ctx W SP H R n D Tg X ρ s) (o : CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
   obtain dWK : ∀ r ∈ crFrame Wn (W + BitVec.ofNat 64 16) W D n, (keyR W).Disjoint r := by
     intro r hr
@@ -255,11 +255,11 @@ theorem MidG.absorbX {to : Bool} {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s
 theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : Addr} {al n R : Nat} {ρ s₁ : State}
     (hJ : J0In Wn Ctx (W + BitVec.ofNat 64 16) W SP k H Np 12 s₁) (haad : DataOk Wn (W + BitVec.ofNat 64 16) W s₁ A al)
     (hal : al ≤ 16) (h4 : s₁.gpr .x4 = A) (h5 : s₁.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₁.gpr .x6 = D)
-    (h7 : s₁.gpr .x7 = BitVec.ofNat 64 n) (hdat : DataW Ctx (W + BitVec.ofNat 64 16) W s₁ D n)
+    (h7 : s₁.gpr .x7 = BitVec.ofNat 64 n) (hdat : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₁ D n)
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg)
     (hf : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₁.mem) (hrd : s₁.rd = ρ.rd) (hwr : s₁.wr = ρ.wr) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])) s₁
-      fun s₃ => Mid Ctx W SP H R n D Tg D ρ s₃ ∧ CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
+      fun s₃ => Mid Ctx W SP H R n D Tg D ρ s₃ ∧ CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
   refine WP.seq (WP.mono (front_ok L hMK hJ haad hal h4 h5 h6 h7) fun s₂ h₂ => ?_)
   obtain ⟨s₃, run₃, x27₃, x24₃, x25₃, r₃⟩ : ∃ s₃, runBlock isa [mov .x27 .x23, mov .x24 .x26, imm .x25 0] s₂ =
       some s₃ ∧ s₃.gpr .x27 = D ∧ s₃.gpr .x24 = BitVec.ofNat 64 n ∧
@@ -269,7 +269,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
       ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   obtain he₃ := h₂.env.of_regs r₃
-  obtain hd₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n := hdat.of_eq (by rw [r₃.rd, h₂.rd]) (by rw [r₃.wr, h₂.wr])
+  obtain hd₃ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₃ D n := hdat.of_eq (by rw [r₃.rd, h₂.rd]) (by rw [r₃.wr, h₂.wr])
   obtain x22₃ : s₃.gpr .x22 = BitVec.ofNat 64 R := by rw [r₃.others _ (by decide), h₂.x22, h22]
   obtain fr₃ : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₃.mem := by
     rw [r₃.mem]
@@ -394,7 +394,7 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
     (hal : al ≤ 16)
     (hx₁ : σ₁.gpr .x4 = A ∧ σ₁.gpr .x5 = BitVec.ofNat 64 al ∧ σ₁.gpr .x6 = D ∧ σ₁.gpr .x7 = BitVec.ofNat 64 n)
     (hx₂ : σ₂.gpr .x4 = A ∧ σ₂.gpr .x5 = BitVec.ofNat 64 al ∧ σ₂.gpr .x6 = D ∧ σ₂.gpr .x7 = BitVec.ofNat 64 n)
-    (hd₁ : DataW Ctx (W + BitVec.ofNat 64 16) W σ₁ D n) (hd₂ : DataW Ctx (W + BitVec.ofNat 64 16) W σ₂ D n)
+    (hd₁ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W σ₁ D n) (hd₂ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W σ₂ D n)
     (h22₁ : σ₁.gpr .x22 = BitVec.ofNat 64 R) (h22₂ : σ₂.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h28₁ : σ₁.gpr .x28 = Tg) (h28₂ : σ₂.gpr .x28 = Tg)
     (hf₁ : Frame [workR Wn W, ⟨D, n⟩] ρ₁.mem σ₁.mem) (hrd₁ : σ₁.rd = ρ₁.rd) (hwr₁ : σ₁.wr = ρ₁.wr)
@@ -465,7 +465,7 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
     (ctE_ok L hMK (.inl rfl) N₁ b₁ l₁) (ctE_ok L hMK (.inl rfl) N₂ b₂ l₂) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
-  refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
+  refine rel_seq (rel_ctrLe v.ctr hv T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inl rfl) T₁) (tagCall_ok L v (.inl rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])
     (by agree_tac [O₁.env.x19, O₂.env.x19, O₁.kept .x28 (by decide), O₂.kept .x28 (by decide), k28₁, k28₂])
@@ -567,7 +567,7 @@ theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
     · exact q6.symm
     · exact q7.symm
   obtain mkD : ∀ {σ u : State}, OneFacts Wn σ σ₁ (w + 1) w → u.wr = σ.wr →
-      DataW (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
+      DataW Wn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
     fun f wr => ⟨⟨covers_left (by rw [wr]; exact f.dataW), hn, ol.dw, ol.data.sub_right sub16, ol.data⟩,
       by rw [wr]; exact f.dataW, ol.cd⟩
   obtain hf : ∀ {σ u : State}, Frame [entryR (stackArg σ₁ w)] σ.mem u.mem →

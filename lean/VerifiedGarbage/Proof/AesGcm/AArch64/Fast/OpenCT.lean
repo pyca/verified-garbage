@@ -93,9 +93,9 @@ theorem omB_relDT {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n t
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
   have hcr : ∀ {m : State} {σ : State} (mo : MidO fr Ctx W SP D Np A R nl al n tl σ m),
-      m.gpr .x26 = BitVec.ofNat 64 n → ∀ {s₈ : State}, CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D n s₈ →
+      m.gpr .x26 = BitVec.ofNat 64 n → ∀ {s₈ : State}, CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D n s₈ →
       s₈.gpr .x26 = m.gpr .x26 → s₈.wr = m.wr → ∀ icb, WP isa (Impl.AesGcm.AArch64.Tail.cryptAlT v.callees) s₈
-        (CrOut Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D n s₈.mem) :=
+        (CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R icb 0 D n s₈.mem) :=
     fun mo h26 _ h e26 hwr icb => cryptAlT_ok L v (icb := icb) h rfl (by rw [e26, h26])
       mo.data.ok.lt (tail_big (by rw [hwr]; exact mo.data.wr) mo.data.ok.lt (by simp) (Nat.zero_add n))
   refine rel_seq ?_ (omIteWith_ok _ hR mo₁ dD dC (hcr mo₁ x26₁)) (omIteWith_ok _ hR mo₂ dD dC (hcr mo₂ x26₂))
@@ -222,7 +222,7 @@ theorem openRunA_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {t
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
     (ctE_ok L hMK (.inr rfl) N₁ b₁ l₁) (ctE_ok L hMK (.inr rfl) N₂ b₂ l₂)
     fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
-  refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
+  refine rel_seq (rel_ctrLe v.ctr hv T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inr rfl) T₁) (tagCall_ok L v (.inr rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])
     (by agree_tac [O₁.env.x19, O₂.env.x19, O₁.kept .x28 (by decide), O₂.kept .x28 (by decide), k28₁, k28₂])

@@ -403,7 +403,7 @@ theorem init2_ok {Wn : Nat} {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x
     (pC : Covers [⟨Ctx, 256⟩] s.wr) (pW : Covers [⟨W, Wn⟩] s.wr) (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩)
     (wc : Ctx.toNat + 256 ≤ 2 ^ 64) :
     WP isa (.block initSeg2) s fun s₄ =>
-      CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 ∧
+      CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 (Wn - 512) ∧
       s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = s.sp := by
   have w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
   have w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
@@ -478,7 +478,7 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
       KeyPost τ K Ctx (W + BitVec.ofNat 64 512) L τ' → τ.gpr .x19 = W → τ.gpr .x21 = Ctx →
       τ.gpr .x22 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) →
       WP isa (.block initSeg2) τ' fun s₄ => CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240)
-        (W + BitVec.ofNat 64 512) (Spec.Aes.rounds (L / 4)) 1 ∧ s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧
+        (W + BitVec.ofNat 64 512) (Spec.Aes.rounds (L / 4)) 1 (Wn - 512) ∧ s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧
         s₄.sp = τ'.sp :=
     fun hwr wr g h19 h21 h22 => init2_ok (by rw [g.saved .x19 (by decide) (by decide), h19])
       (by rw [g.saved .x21 (by decide) (by decide), h21]) (by rw [g.saved .x22 (by decide) (by decide), h22]) hR'
@@ -491,8 +491,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
         x22₁, x22₂]) ⟨_, by taint_decide⟩)
     (pv hwr₁ wr₁ g₁ x19₁ x21₁ x22₁) (pv hwr₂ wr₂ g₂ x19₂ x21₂ x22₂)
     fun τ₁ τ₂ ⟨c₁, y₁, z₁, s₁'⟩ ⟨c₂, y₂, z₂, s₂'⟩ => ?_
-  refine rel_seq (rel_ctr v.ctr c₁ c₂ (by rw [s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp]))
-    (ctr_call v.ctr c₁) (ctr_call v.ctr c₂) fun τ₁ τ₂ e₁ e₂ => ?_
+  refine rel_seq (rel_ctrLe v.ctr hv c₁ c₂ (by rw [s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp]))
+    (ctr_callLe v.ctr hv c₁) (ctr_callLe v.ctr hv c₂) fun τ₁ τ₂ e₁ e₂ => ?_
   exact rel_taint [.x19, .x21] (by rw [e₁.sp, e₂.sp, s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp])
     (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
       e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) hT

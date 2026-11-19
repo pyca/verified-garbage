@@ -224,7 +224,7 @@ structure BodyInG (Wn : Nat) (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVe
   x28 : s.gpr .x28 = D
   hc : c.length = P
   hP : P < 2 ^ 64
-  data : cond to (DataOk Wn St W s D n) (DataW Ctx St W s D n)
+  data : cond to (DataOk Wn St W s D n) (DataW Wn Ctx St W s D n)
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
 /-- Before a body, in place. -/
@@ -281,7 +281,7 @@ theorem ctr_absFrame : ∀ r ∈ absFrame St W 16, (⟨St + BitVec.ofNat 64 48, 
   · exact st_st' L (.inr (by decide)) (by decide) (by decide)
   · exact st_wpart L (by decide) ⟨by decide, by decide⟩
 
-theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
+theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Wn Ctx St W s D n) :
     ∀ r ∈ crFrame Wn St W D n, (⟨St + BitVec.ofNat 64 16, 32⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -301,11 +301,11 @@ theorem dataOk_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk Wn St W s D 
   · exact hd.w.sub_right (Lay.wSub (by decide))
 
 omit L in
-theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
+theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Wn Ctx St W s D n) :
     ∀ r ∈ tFrame St W 16, (⟨D, n⟩ : Region).Disjoint r :=
   dataOk_tFrame hd.ok
 
-theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) {m m' : Mem}
+theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Wn Ctx St W s D n) {m m' : Mem}
     (hf : Frame (crFrame Wn St W D n) m m') :
     blockAt m' (Ctx + BitVec.ofNat 64 240) = blockAt m (Ctx + BitVec.ofNat 64 240) :=
   blockAt_frame hf fun r hr => (ctx_crFrame L hd r hr).sub_left (Lay.ctxSub (by decide))
@@ -383,8 +383,8 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   refine WP.seq (WP.mono (textArgs_ok hk₂ k26 k27 k28 h.hP) fun s₃ ⟨x25₃, x23₃, x24₃, r₃⟩ => ?_)
   have he₃ := he₂.of_regs r₃
   have hk₃ := hk₂.of_others r₃.others
-  have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
-  have hCr : CrIn Ctx St W SP k R P D n s₃ :=
+  have hd₃ : DataW Wn Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
+  have hCr : CrIn Wn Ctx St W SP k R P D n s₃ :=
     ⟨he₃, hk₃, (hk₃ .x22 (by decide)).trans k22, h.rounds, x23₃, x24₃, x25₃, hd₃, rfl⟩
   refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L v (icb := icb) hCr)) fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
   refine WP.seq (WP.mono (textPiece_ok h₄.kept k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
@@ -448,7 +448,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   have m₃ : s₃.mem = s₂.mem := r₃.mem
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
     rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
-  have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
+  have hd₃ : DataW Wn Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   -- After the text is absorbed.
   have mid : WP isa (textAbs v.callees) s₃ fun s₄ => Env Wn Ctx St W SP s₄ ∧ Kept k s₄ ∧
       s₄.gpr .x25 = BitVec.ofNat 64 (P % 16) ∧ Frame (tFrame St W 16 ++ absFrame St W 16) s.mem s₄.mem ∧
@@ -478,8 +478,8 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
   refine WP.seq (WP.mono (textPiece_ok hk₄ k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
   have he₅ := he₄.of_regs r₅
   have hk₅ := hk₄.of_others r₅.others
-  have hd₅ : DataW Ctx St W s₅ D n := h.data.of_eq (by rw [r₅.rd, rd₄]) (by rw [r₅.wr, wr₄])
-  have hCr : CrIn Ctx St W SP k R P D n s₅ :=
+  have hd₅ : DataW Wn Ctx St W s₅ D n := h.data.of_eq (by rw [r₅.rd, rd₄]) (by rw [r₅.wr, wr₄])
+  have hCr : CrIn Wn Ctx St W SP k R P D n s₅ :=
     ⟨he₅, hk₅, (hk₅ .x22 (by decide)).trans k22, h.rounds, x23₅, x24₅,
       by rw [r₅.others _ (by decide), x25₄], hd₅, rfl⟩
   have ctxF : ∀ r ∈ tFrame St W 16 ++ absFrame St W 16, (⟨Ctx, 256⟩ : Region).Disjoint r := by

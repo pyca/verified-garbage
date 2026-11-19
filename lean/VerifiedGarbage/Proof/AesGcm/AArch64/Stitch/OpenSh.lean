@@ -109,7 +109,7 @@ structure ShortMid (Wn : Nat) (to : Bool) (Ctx W SP Np A D O Tg : Addr) (R al n 
     gctr (ctxCiph s₀.mem Ctx R) (inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12))) (bytesAt s₀.mem D n)
   dat : bytesAt u.mem D n = bytesAt s₀.mem D n
   out : cond to (OutIn Ctx W D O n u) (O = D)
-  ow : DataW Ctx (W + BitVec.ofNat 64 16) W u O n
+  ow : DataW Wn Ctx (W + BitVec.ofNat 64 16) W u O n
   sN : u.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
 
 /-- `openShortA`, from the state `open` leaves once the received tag is at

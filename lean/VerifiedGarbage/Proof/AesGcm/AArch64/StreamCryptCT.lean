@@ -156,7 +156,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre s) 
   have hH : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (dcw.sub_left (Lay.ctxSub (by decide))).sub_right sW)
-  have hdat : DataW Ctx St W s₁ D n :=
+  have hdat : DataW Wn Ctx St W s₁ D n :=
     ⟨⟨covers_left (by rw [wr₁, hwr]; exact covers_of_mem (by simp)), hlt, wd, dsd.symm, ddw⟩,
       by rw [wr₁, hwr]; exact covers_of_mem (by simp), dcd⟩
   have hIn : BodyIn Ctx St W s.sp s₁.gpr R n P D a c (Spec.Gcm.ctxH s.mem Ctx) s₁ :=

@@ -86,7 +86,7 @@ theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
-theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
+theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Wn Ctx St W s D n) :
     ∀ r ∈ crFrame Wn St W D n, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

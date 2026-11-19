@@ -290,8 +290,8 @@ include L
 
 /-- `crSeg2T`: `crSeg2`, the keystream block zeroed by one store. -/
 theorem crSeg2T_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Ctx St W SP k R icb P D n m₀ j s) (hj : n - j < 16) :
-    WP isa crSeg2T s (Cr2 Ctx St W SP k R icb P D n m₀ j) := by
+    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Wn Ctx St W SP k R icb P D n m₀ j s) (hj : n - j < 16) :
+    WP isa crSeg2T s (Cr2 Wn Ctx St W SP k R icb P D n m₀ j) := by
   have hn' := h.data.ok.lt
   have hle := h.le
   have he := h.env
@@ -400,9 +400,9 @@ theorem ksTail_run {E : Addr} {r : Nat} (hr : r < 16) {s : State} (he : Env Wn C
 omit L in
 /-- `Cr3` depends on no register but those it names. -/
 theorem Cr3.keep {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s s' : State} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s)
+    {m₀ : Mem} {j : Nat} {s s' : State} (h : Cr3 Wn Ctx St W SP k R icb P D n m₀ j s)
     (hg : Others [.x9] s s') (hm : s'.mem = s.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Cr3 Ctx St W SP k R icb P D n m₀ j s' :=
+    (hwr : s'.wr = s.wr) : Cr3 Wn Ctx St W SP k R icb P D n m₀ j s' :=
   { env := h.env.keep (fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
@@ -424,11 +424,11 @@ omit L in
 /-- `crTailT`: `crTail`, or, for a text of `N` (at least 16) bytes whose last
 16 end the piece and may be written, `ksTail`. -/
 theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} {N : Nat} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s)
+    {m₀ : Mem} {j : Nat} {s : State} {N : Nat} (h : Cr3 Wn Ctx St W SP k R icb P D n m₀ j s)
     (h26 : s.gpr .x26 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
     (hbig : 16 ≤ N → n - j ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - (n - j)) = D + BitVec.ofNat 64 j ∧
       InRegions s.wr E 16) :
-    WP isa crTailT s (CrOut Ctx St W SP k R icb P D n m₀) := by
+    WP isa crTailT s (CrOut Wn Ctx St W SP k R icb P D n m₀) := by
   have hj := h.lt16
   refine WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by have := h.data.ok.lt; omega_arith)) (fun ht => ?_)
     (fun hf' => ?_)
@@ -457,11 +457,11 @@ theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
 `N` bytes (in `x26`) whose last 16 bytes, if it is at least a block long and
 the piece ends in a partial block, end the piece and may be written. -/
 theorem cryptAlT_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat}
-    {s : State} (h : CrIn Ctx St W SP k R P D n s) (hP : P % 16 = 0) {N : Nat}
+    {s : State} (h : CrIn Wn Ctx St W SP k R P D n s) (hP : P % 16 = 0) {N : Nat}
     (h26 : k .x26 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
     (hbig : 16 ≤ N → n % 16 ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - n % 16) = D + BitVec.ofNat 64 (n - n % 16) ∧
       InRegions s.wr E 16) :
-    WP isa (cryptAlT v.callees) s (CrOut Ctx St W SP k R icb P D n s.mem) := by
+    WP isa (cryptAlT v.callees) s (CrOut Wn Ctx St W SP k R icb P D n s.mem) := by
   have hc : ∀ {m' : Mem}, Frame (crFrame Wn St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
   have hj : 0 + 16 * ((n - 0) / 16) = n - n % 16 := by omega_arith
@@ -778,10 +778,10 @@ theorem runWithPX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
     rw [r₃.others _ (by decide), h₂.x22, x22₁, ← hRR, ofNat_toNat']
   obtain x26₃ : s₃.gpr .x26 = BitVec.ofNat 64 n := by rw [r₃.others _ (by decide), h₂.x26]
   obtain x28₃ : s₃.gpr .x28 = Tg := by rw [r₃.others _ (by decide), h₂.x28, x28₁]
-  obtain hdat₃ : DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
+  obtain hdat₃ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₃ D n :=
     ⟨⟨covers_left (by rw [r₃.wr, h₂.wr, wr₁]; exact dW), hnlt, wd, ddW.sub_right sub16, ddW⟩,
       by rw [r₃.wr, h₂.wr, wr₁]; exact dW, dcd⟩
-  obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R 0 D n s₃ :=
+  obtain hCr : CrIn Wn Ctx (W + BitVec.ofNat 64 16) W s.sp s₃.gpr R 0 D n s₃ :=
     ⟨he₃, hk₃, x22₃, hRb, by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hdat₃, rfl⟩
   obtain cb₃ : blockAt s₃.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
       inc32 (Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np 12)) := by rw [r₃.mem]; exact h₂.cb

@@ -117,7 +117,7 @@ structure MidSG (Wn : Nat) (to : Bool) (fr : List Region) (Ctx W SP D O Np A : A
   x27 : s₇.gpr .x27 = BitVec.ofNat 64 (if decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R)
     (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl) (bytesAt s.mem A al)
     (C₁ ++ C₂)).take tl = bytesAt s.mem W tl) then 1 else 0)
-  data : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s₇ D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n)
+  data : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s₇ D n) (DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ D n)
   sD : s₇.mem.readW (W + BitVec.ofNat 64 232) 64 = D
   sN : s₇.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n
   hP : P = 128 * (n / 128)
@@ -138,7 +138,7 @@ theorem MidSG.dataOk {Wn : Nat} {to : Bool} {fr : List Region} {Ctx W SP D O Np 
 
 theorem MidSG.outW {Wn : Nat} {to : Bool} {fr : List Region} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat}
     {C₁ C₂ : List Byte} {s s₇ : State} (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) :
-    DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := outG_dataW mo.out mo.data
+    DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ O n := outG_dataW mo.out mo.data
 
 section
 variable {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂ : List Byte}
@@ -304,7 +304,7 @@ theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ 
       | false =>
         have eO : O = D := mo.out
         subst eO
-        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
+        have hdw : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
         simp only [Impl.AesGcm.AArch64.Stitch.failS, Bool.cond_false]
         obtain ⟨s₈, run₈, m₈, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
         refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
@@ -318,7 +318,7 @@ theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ 
           fun hE r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact (hdw.ok.st.sub_left hE).sub_right (Lay.stSub (by decide))
-        obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 O P s₈ :=
+        obtain hCr : CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 O P s₈ :=
           ⟨he₈, fun _ _ => rfl, by rw [og₈ _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
             (hdw.take hPn).of_eq rd₈ wr₈, rfl⟩
         obtain hcb₈ : blockAt s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = J := by
@@ -371,9 +371,9 @@ theorem omBS_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ 
       | false =>
         have eO : O = D := mo.out
         subst eO
-        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
+        have hdw : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ O n := mo.data
         have x26f : s₈.gpr .x26 = BitVec.ofNat 64 n := x26₈
-        obtain hCr : CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (O + BitVec.ofNat 64 P) (n - P) s₈ :=
+        obtain hCr : CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R P (O + BitVec.ofNat 64 P) (n - P) s₈ :=
           ⟨he₈, fun _ _ => rfl, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈, x25₈,
             (hdw.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩
         simp only [Bool.cond_false]
@@ -662,7 +662,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
     · exact o.out
     · exact ⟨x15₂c, (o.out : OutIn Ctx W D O n t).dd⟩
   obtain hsrc₂c : DataOk Wn (W + BitVec.ofNat 64 16) W s₂c D n := hdk.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
-  obtain hout₂c : DataW Ctx (W + BitVec.ofNat 64 16) W s₂c O n := ow.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
+  obtain hout₂c : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₂c O n := ow.of_eq (by rw [rd₂c, h₂.rd]) (by rw [wr₂c, h₂.wr])
   refine WP.seq (WP.mono (Stitch.stitchDM_ok L gh hTb ⟨he₂c, by rw [g₂c _ (by decide), h₂.x22, o.x22], hRb,
     by rw [g₂c _ (by decide), h₂.x23], by rw [g₂c _ (by decide), h₂.x26], hsrc₂c, hout₂c, hmode, hH₂c,
     by rw [blockAt_frame fcb (cbF_disj (L.st_w (a := 48) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩))),

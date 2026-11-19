@@ -125,7 +125,7 @@ theorem openBlk_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
     (by rw [g₂' _ (by simp), h₂.x23]) (by rw [g₂' _ (by simp), h₂.x26]) hn
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   obtain he₃ := hm.env.of_regs r₃
-  obtain hd₃ : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s₃ D n) (DataW Ctx (W + BitVec.ofNat 64 16) W s₃ D n) :=
+  obtain hd₃ : cond to (DataOk Wn (W + BitVec.ofNat 64 16) W s₃ D n) (DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₃ D n) :=
     data_of_eq o.dat (by rw [r₃.rd, hm.rd, rd₂c, h₂.rd]) (by rw [r₃.wr, hm.wr, wr₂c, h₂.wr])
   obtain dOP : (⟨O, Stitch.pre n⟩ : Region).Disjoint (workR Wn W) := ow.ok.w.sub_left (Region.sub_prefix hpn)
   obtain dS : ∀ {R' : Region}, R'.Disjoint ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ →
@@ -315,7 +315,7 @@ theorem openRunAS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
     (ctE'_ok L hMK (.inr rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using []))
     (ctE'_ok L hMK (.inr rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using []))
     fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
-  refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
+  refine rel_seq (rel_ctrLe v.ctr hv T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inr rfl) T₁) (tagCall_ok L v (.inr rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])
     (by agree_tac [O₁.env.x19, O₂.env.x19, O₁.kept .x28 (by decide), O₂.kept .x28 (by decide), k28₁, k28₂])
@@ -333,10 +333,10 @@ theorem failCr_ok {Wn : Nat} {fr : List Region} {s s₇ : State} (hR : R = 10 �
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
-      CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
+      CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈.gpr R 0 D P s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
         s₈.gpr .x26 = BitVec.ofNat 64 n := by
   obtain hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
-  have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n := mo.data
+  have hdw : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ D n := mo.data
   obtain ⟨s₈, run₈, _, x23₈, x24₈, x25₈, x26₈, og₈, sp₈, rd₈, wr₈⟩ := failArgs_ok mo
   obtain he₈ : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈ := mo.env.keep (fun r hr => og₈ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -363,7 +363,7 @@ theorem okCrG_ok {Wn : Nat} (to : Bool) {fr : List Region} {s s₇ : State} (hR 
     · exact fun _ _ => rfl
     · exact (fun _ _ => rfl : KeptTo s₈.gpr s₈)
   · cases to
-    · exact (show DataW Ctx (W + BitVec.ofNat 64 16) W s₇ D n from mo.data).drop hPn
+    · exact (show DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₇ D n from mo.data).drop hPn
     · exact (show DataOk Wn (W + BitVec.ofNat 64 16) W s₇ D n from mo.data).drop hPn
   · cases to
     · have e : O = D := mo.out
@@ -395,7 +395,7 @@ theorem omBS_rel {Wn : Nat} (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVe
     refine WP.ite _ (eval_zero mo.x27 (hlt _)) (fun _ => ?_) (fun _ => ?_)
     · cases to with
       | false =>
-        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W m D n := mo.data
+        have hdw : DataW Wn Ctx (W + BitVec.ofNat 64 16) W m D n := mo.data
         obtain ⟨s₈, run₈, hc, k27, k26⟩ := failCr_ok hR mo
         exact WP.seq (WP.of_runBlock ⟨s₈, run₈, WP.mono (cryptAlT_ok L v (icb := 0) hc rfl k26 hn
           fun _ h => absurd hP16 h) fun s₉ h₉ =>
@@ -409,7 +409,7 @@ theorem omBS_rel {Wn : Nat} (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVe
       refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
       cases to with
       | false =>
-        have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W m D n := mo.data
+        have hdw : DataW Wn Ctx (W + BitVec.ofNat 64 16) W m D n := mo.data
         have eO : O = D := mo.out
         subst eO
         exact WP.mono (cryptAlT_ok L v (icb := 0) hc hP16 (k26 rfl) hn

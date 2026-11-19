@@ -74,7 +74,7 @@ theorem padArgs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {
     (hr : ∀ τ₁ τ₂, Env Wn Ctx St W SP τ₁ → Env Wn Ctx St W SP τ₂ → Kept k₁ τ₁ → Kept k₂ τ₂ →
       τ₁.gpr .x23 = D → τ₂.gpr .x23 = D → τ₁.gpr .x24 = BitVec.ofNat 64 n → τ₂.gpr .x24 = BitVec.ofNat 64 n →
       τ₁.gpr .x25 = BitVec.ofNat 64 (P % 16) → τ₂.gpr .x25 = BitVec.ofNat 64 (P % 16) →
-      cond to (DataOk Wn St W τ₁ D n) (DataW Ctx St W τ₁ D n) → cond to (DataOk Wn St W τ₂ D n) (DataW Ctx St W τ₂ D n) →
+      cond to (DataOk Wn St W τ₁ D n) (DataW Wn Ctx St W τ₁ D n) → cond to (DataOk Wn St W τ₂ D n) (DataW Wn Ctx St W τ₂ D n) →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
   have hn := (dataOk_of h₁.data).lt
@@ -117,7 +117,7 @@ theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
     {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
     (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
     {rest : Prog isa}
-    (hr : ∀ τ₁ τ₂, CrIn Ctx St W SP k₁ R P D n τ₁ → CrIn Ctx St W SP k₂ R P D n τ₂ →
+    (hr : ∀ τ₁ τ₂, CrIn Wn Ctx St W SP k₁ R P D n τ₁ → CrIn Wn Ctx St W SP k₂ R P D n τ₂ →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq fo (.seq (flush v.callees 16) (.seq (.block textArgs) rest))) TT := by
   have k22₁ : k₁ .x22 = BitVec.ofNat 64 R := (h₁.kept .x22 (by decide)).symm.trans h₁.x22
