@@ -666,14 +666,6 @@ powerpc64le vg_ed25519_verify
 powerpc64le vg_ed448_public_key
 powerpc64le vg_ed448_sign_cached
 powerpc64le vg_ed448_verify
-powerpc64le vg_ffdh_check_domain
-powerpc64le vg_ffdh_check_private
-powerpc64le vg_ffdh_check_public
-powerpc64le vg_ffdh_derive_public
-powerpc64le vg_ffdh_exchange
-powerpc64le vg_ffdh_generate_key_precompute
-powerpc64le vg_ffdh_generate_key_search_cached
-powerpc64le vg_ffdh_generate_parameters
 powerpc64le vg_hmac_md5_finalize
 powerpc64le vg_hmac_md5_init
 powerpc64le vg_hmac_sha1_finalize
