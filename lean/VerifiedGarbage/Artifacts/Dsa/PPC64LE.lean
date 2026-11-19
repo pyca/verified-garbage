@@ -1,16 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # DSA (FIPS 186-4) on PPC64LE -/
@@ -19,35 +12,20 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 namespace VG.Artifacts.Dsa.PPC64LE
 
-open VG Proof.Dsa.PPC64LE.Gen
+open VG Proof.Dsa.PPC64LE.Scrub
 
 def artifacts : List Artifact := [
-  Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Derive.derive
-    verified := Proof.Dsa.PPC64LE.deriveKey_verified },
-  Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.RandomSign.code
-    verified := Proof.Dsa.PPC64LE.randomSign_verified },
-  Spec.Dsa.generateKeyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Generate.code
-    verified := Proof.Dsa.PPC64LE.generate_verified },
-  Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Prevalidated.validate
-    verified := Proof.Dsa.PPC64LE.validate_verified },
-  Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.PrevalidatedSign.validate
-    verified := Proof.Dsa.PPC64LE.validatePrivate_verified },
-  Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
-    code := Impl.Dsa.PPC64LE.Prevalidated.verify
-    verified := Proof.Dsa.PPC64LE.prevalidated_verified },
+  Spec.Dsa.deriveKeyApi.artifact PPC64LE.target deriveKeyReg,
+  Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target randomSignPrevalidatedReg,
+  Spec.Dsa.generateKeyApi.artifact PPC64LE.target generateKeyReg,
+  Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target validatePublicKeyReg,
+  Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target validatePrivateKeyReg,
+  Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target verifyPrevalidatedReg,
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
     verified := Proof.Dsa.PPC64LE.Gen.init_verified
     residue := some ⟨Proof.Dsa.PPC64LE.Gen.init_noResidue _ _⟩ }] ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
-    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
-      suffix := v.suffix
-      code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
-      verified := search_params v }])
+    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target (parameterSearchReg v)])
 
 end VG.Artifacts.Dsa.PPC64LE
