@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
-import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamInit
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
@@ -44,7 +44,7 @@ theorem tagLenOk_bounds {tl : Nat} (h : Spec.Gcm.tagLenOk tl = true) : 1 ≤ tl 
   omega_using [h]
 
 section
-variable {s₀ : State} (h : verPre s₀)
+variable {ex : List Region} {s₀ : State} (h : verPreX ex s₀)
 include h
 
 theorem verLay : Lay (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a7) := by
@@ -94,8 +94,33 @@ theorem ver1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr) 
   refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp [h31]
 
+/-- `verEntry`, then `s7 := t2`. -/
+theorem ver1B_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr) (hal : (s₀.gpr .a7).toNat % 8 = 0) :
+    WP isa (.block (verEntry ++ [mov .s7 .t2])) s₀ fun s₁ => SV1 s₀ s₁ ∧ s₁.gpr .s7 = s₀.gpr .t2 := by
+  simp only [verEntry, List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.block_append (WP.mono (save_ok (b := .a7) hW hal) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
+  obtain e3 : s₁.gpr .a0 = s₀.gpr .a0 := hg _ (by decide)
+  obtain e4 : s₁.gpr .a1 = s₀.gpr .a1 := hg _ (by decide)
+  obtain e5 : s₁.gpr .a2 = s₀.gpr .a2 := hg _ (by decide)
+  obtain e6 : s₁.gpr .a3 = s₀.gpr .a3 := hg _ (by decide)
+  obtain e7 : s₁.gpr .a4 = s₀.gpr .a4 := hg _ (by decide)
+  obtain e8 : s₁.gpr .a5 = s₀.gpr .a5 := hg _ (by decide)
+  obtain e9 : s₁.gpr .a6 = s₀.gpr .a6 := hg _ (by decide)
+  obtain e10 : s₁.gpr .t2 = s₀.gpr .t2 := hg _ (by decide)
+  crun [Int.reduceNatCast', mov, e3, e4, e5, e6, e7, e8, e9, e10, h31]
+  refine ⟨⟨⟨hk.rd, hk.wr, hk.sp⟩, hsv, hf⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals simp [h31]
+
+/-- The entry of `verify`, and with the round keys bitsliced `s7 := t2`. -/
+theorem ver1B_wp' {bs : Bool} {s₀ : State} (hW : Covers [⟨s₀.gpr .a7, 2560⟩] s₀.wr)
+    (hal : (s₀.gpr .a7).toNat % 8 = 0) :
+    WP isa (.block (verEntryB bs)) s₀ fun s₁ => SV1 s₀ s₁ ∧ (bs = true → s₁.gpr .s7 = s₀.gpr .t2) := by
+  cases bs
+  · exact WP.mono (ver1_wp hW hal) fun _ h => ⟨h, Bool.noConfusion⟩
+  · exact WP.mono (ver1B_wp hW hal) fun _ h => ⟨h.1, fun _ => h.2⟩
+
 /-- The environment after the entry. -/
-theorem ver_env {s₀ s₁ : State} (h : verPre s₀) (h1 : SV1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
+theorem ver_env {ex : List Region} {s₀ s₁ : State} (h : verPreX ex s₀) (h1 : SV1 s₀ s₁) : Env s₁.gpr s₀.sp s₁ := by
   obtain hk := ver_stk h
   obtain ⟨hrd, hwr, -⟩ := h
   obtain perm : Perm (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr .a7) s₁ :=
@@ -113,9 +138,10 @@ def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
         (s₀.gpr .a6).toNat then s.gpr .a0 = 1
     else s.gpr .a0 = 0
 
-theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16)
+theorem ver_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State} (h : verPreX ex s₀)
+    (hbs : bs = true → BsAtW s₀ .a7) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16)
     (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
+    WP isa (streamVerifyB bs) s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' := by
   obtain L₀ := verLay h
   obtain hR := ver_R h
   obtain hk₀ := ver_stk h
@@ -126,7 +152,7 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
     covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   obtain dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨s₀.gpr .a5, (s₀.gpr .a6).toNat⟩ : Region).Disjoint
       ⟨s₀.gpr .a7 + BitVec.ofNat 64 d, k⟩ := fun hd => dtw.sub_right (Lay.wSub hd)
-  refine WP.seq (WP.mono (ver1_wp (ver_W h) hal) fun s₁ h1 => ?_)
+  refine WP.seq (WP.mono (ver1B_wp' (bs := bs) (ver_W h) hal) fun s₁ ⟨h1, h17⟩ => ?_)
   obtain he₁ := ver_env h h1
   obtain L := L₀.v h1.s2 h1.s1 h1.s0
   obtain tl19 : s₁.gpr .s8 = BitVec.ofNat 64 (s₀.gpr .a6).toNat := by
@@ -134,7 +160,7 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
   refine WP.seq (WP.mono (tagLenOk_ok tl19 (s₀.gpr .a6).isLt) fun s₃ ⟨h25, g₃, k₃⟩ => ?_)
   obtain he₃ := he₁.keep (fun r hr => g₃ r (by revert r; decide) (by revert r; decide)) k₃.sp k₃.rd k₃.wr
   obtain sv₃ : SavedAt s₃.mem (s₀.gpr .a7) s₀ := k₃.mem ▸ h1.en.saved
-  obtain mid : WP isa (.ite (.zero .s5) (.block [.li .a0 0]) (.seq recv (.seq (finTag 0) (cmp 0)))) s₃
+  obtain mid : WP isa (.ite (.zero .s5) (.block [.li .a0 0]) (.seq recv (.seq (finTagB bs 0) (cmp 0)))) s₃
       fun s' => Env s₁.gpr s₀.sp s' ∧ SavedAt s'.mem (s₀.gpr .a7) s₀ ∧ VerPost s₀ a ct s' := by
     refine WP.ite _ (eval_zero h25 (by split <;> decide)) (fun ht => ?_) (fun hf => ?_)
     · have hbad : Spec.Gcm.tagLenOk (s₀.gpr .a6).toNat = false := by
@@ -180,9 +206,19 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
       · exact dsw.sub_right (Lay.wSub (by decide))
     obtain hH₄ : blockAt s₄.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .a0) := by
       rw [h1.s2]; exact ctxH_keep f₀₄ dc₀₄
-    refine WP.seq (WP.mono (WP.with_rdwr (finTag_ok L (o := 0) (.inl rfl) (a := a) (ct := ct) he₄
+    refine WP.seq (WP.mono (WP.with_rdwr (finTagB_ok L (o := 0) (.inl rfl) (a := a) (ct := ct) he₄
       (by rw [h1.s3, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hR hH₄ (by rw [h1.s10]; exact ha)
-      (by rw [h1.s11]; exact hP))) fun s₅ ⟨fo, rd₅, wr₅, _⟩ => ?_)
+      (by rw [h1.s11]; exact hP) (S := s₁.gpr .s0) (D := s₁.gpr .s0) (n := 16) (fun hb => by
+        obtain hb₀ := hbs hb
+        rw [h17 hb, h1.s2, h1.s1, h1.s0]
+        refine ⟨covers_mem (List.mem_append_left _ (by rw [k₄.rd, k₃.rd, h1.en.keeps.rd]; exact hb₀.rd)), hb₀.al,
+          hb₀.st, hb₀.w, hb₀.sk, hb₀.w.sub_right (Region.sub_prefix (by decide)),
+          hb₀.w.sub_right (Region.sub_prefix (by decide)), ?_⟩
+        refine keysAt_ctx_frame hR f₀₄ (fun r hr => ?_) dc₀₄ hb₀.keys
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hb₀.w.sub_right (Lay.wSub (by decide))
+        · exact hb₀.w.sub_right (Lay.wSub (by decide))))) fun s₅ ⟨fo, rd₅, wr₅, _⟩ => ?_)
     refine WP.mono (cmp_ok fo.env (by rw [h1.s0]; exact hal) (o := 0) (.inl rfl) tl19 t1 t16) fun s₇ ⟨h3₇, hf₇, g₇, k₇⟩ => ?_
     have fof := fo.frame
     rw [h1.s1, h1.s0] at fof
@@ -232,18 +268,27 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
   have := vp iv hs hl
   rw [h3]; exact this
 
-theorem streamVerify_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamVerifyRISCV64.pre s₀) :
-    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' := by
-  have h' : verPre s₀ := h
-  obtain h₀ := ver_run h' (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
+theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16)
+    (hP : (s₀.gpr .a4).toNat = ct.length) :
+    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' :=
+  ver_runB (bs := false) h Bool.noConfusion ha hP
+
+theorem streamVerifyB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
+    (h' : verPreX ex s₀) (hbs : bs = true → BsAtW s₀ .a7) :
+    WP isa (streamVerifyB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' := by
+  obtain h₀ := ver_runB h' hbs (a := List.replicate ((s₀.gpr .a3).toNat % 16) 0)
     (ct := List.replicate (s₀.gpr .a4).toNat 0) (by simp) (by simp)
   refine WP.mono (WP.forall_det (WP.mono h₀ fun _ hh => hh.1)
     (P := fun i : List Byte × List Byte =>
       s₀.gpr .a3 = BitVec.ofNat 64 i.1.length ∧ (s₀.gpr .a4).toNat = i.2.length)
-    fun i hi => WP.mono (ver_run h' (a := i.1) (ct := i.2) (by rw [hi.1, toNat_mod16]) hi.2) fun _ hh => hh.2)
+    fun i hi => WP.mono (ver_runB h' hbs (a := i.1) (ct := i.2) (by rw [hi.1, toNat_mod16]) hi.2) fun _ hh => hh.2)
     fun s' hh => ⟨hh.1, fun iv a c hs hl hp => by
       have := hh.2 ⟨a, c⟩ ⟨hl, hp⟩ iv hs hl
       simp only at this ⊢
       split <;> simp_all⟩
+
+theorem streamVerify_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamVerifyRISCV64.pre s₀) :
+    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' :=
+  streamVerifyB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

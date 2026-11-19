@@ -493,6 +493,17 @@ def tagOut : List Instr := copyBytes .t0 .s0 .s9 0 0 16
 def streamFinish : Prog isa :=
   .seq (.block finEntry) (.seq (finTag 0) (.seq (.block tagOut) (.block restore)))
 
+/-- `finEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def finEntryB (bs : Bool) : List Instr := if bs then finEntry ++ [mov .s7 .t2] else finEntry
+
+/-- `streamFinish`, with the round keys bitsliced if `bs`. -/
+def streamFinishB (bs : Bool) : Prog isa :=
+  .seq (.block (finEntryB bs)) (.seq (finTagB bs 0) (.seq (.block tagOut) (.block restore)))
+
+/-- `vg_aes_gcm_stream_finish_bitsliced`, with `bk = a6` and `scratch = a7`:
+`t2 := bk`, `a6 := scratch`, where `finEntry` takes it. -/
+def streamFinishBs : Prog isa := .seq (.block [mov .t2 .a6, mov .a6 .a7]) (streamFinishB true)
+
 /-- The entry of `verify`: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
 text_len = a4, tag = a5, tag_len = a6, scratch = a7)`, kept in `s2`, `s3`,
 `s1`, `s10`, `s11`, `s9` and `s8`. -/
@@ -507,6 +518,20 @@ def streamVerify : Prog isa :=
   (.seq (.ite (.zero .s5) (.block [.li .a0 0])
       (.seq recv (.seq (finTag 0) (cmp 0))))
     (.block restore)))
+
+/-- `verEntry`, and with the round keys bitsliced, `s7 := bk` (`t2`). -/
+def verEntryB (bs : Bool) : List Instr := if bs then verEntry ++ [mov .s7 .t2] else verEntry
+
+/-- `streamVerify`, with the round keys bitsliced if `bs`. -/
+def streamVerifyB (bs : Bool) : Prog isa :=
+  .seq (.block (verEntryB bs))
+  (.seq tagLenOk
+  (.seq (.ite (.zero .s5) (.block [.li .a0 0])
+      (.seq recv (.seq (finTagB bs 0) (cmp 0))))
+    (.block restore)))
+
+/-- `vg_aes_gcm_stream_verify_bitsliced`, with `bk = a7` and `scratch = [sp]`. -/
+def streamVerifyBs : Prog isa := .seq (.block bsPre) (streamVerifyB true)
 
 /-! ## One shot -/
 

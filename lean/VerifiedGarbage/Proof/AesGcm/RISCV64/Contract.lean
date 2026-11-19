@@ -144,18 +144,21 @@ def streamDecryptRISCV64 : Contract isa where
   pub := streamCryptPub
 
 /-- What `vg_aes_gcm_stream_finish` needs: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
-text_len = a4, tag = a5, scratch = a6)`. -/
-def finPre (s : State) : Prop :=
+text_len = a4, tag = a5, scratch = a6)`, the code reading the regions `ex` too. -/
+def finPreX (ex : List Region) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .a0, 256⟩
   let st : Region := ⟨s.gpr .a2, 80⟩
   let tag : Region := ⟨s.gpr .a5, 16⟩
   let scr : Region := ⟨s.gpr .a6, 2560⟩
-  s.rd = [ctx] ∧ s.wr = [st, tag, scr] ∧
+  s.rd = ctx :: ex ∧ s.wr = [st, tag, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧
     tag.Disjoint scr ∧
     (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .a5).toNat + 16 ≤ 2 ^ 64 ∧
     (s.gpr .a6).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .a1) ∧ stkOk s [ctx, st, tag, scr] ∧
     (s.gpr .a0).toNat % 8 = 0 ∧ (s.gpr .a2).toNat % 8 = 0 ∧ (s.gpr .a6).toNat % 8 = 0
+
+/-- What `vg_aes_gcm_stream_finish` needs. -/
+def finPre (s : State) : Prop := finPreX [] s
 
 /-- `vg_aes_gcm_stream_finish`. -/
 def streamFinishRISCV64 : Contract isa where
@@ -171,18 +174,21 @@ def streamFinishRISCV64 : Contract isa where
     s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.sp = s₂.sp
 
 /-- What `vg_aes_gcm_stream_verify` needs: `(ctx = a0, rounds = a1, state = a2, aad_len = a3,
-text_len = a4, tag = a5, tag_len = a6, scratch = a7)`. -/
-def verPre (s : State) : Prop :=
+text_len = a4, tag = a5, tag_len = a6, scratch = a7)`, the code reading the regions `ex` too. -/
+def verPreX (ex : List Region) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .a0, 256⟩
   let st : Region := ⟨s.gpr .a2, 80⟩
   let tag : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
   let scr : Region := ⟨s.gpr .a7, 2560⟩
-  s.rd = [ctx, tag] ∧ s.wr = [st, scr] ∧
+  s.rd = ctx :: tag :: ex ∧ s.wr = [st, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧ tag.Disjoint scr ∧
     (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧ (s.gpr .a7).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .a1) ∧
     stkOk s [ctx, tag, st, scr] ∧ (s.gpr .a0).toNat % 8 = 0 ∧ (s.gpr .a2).toNat % 8 = 0 ∧
     (s.gpr .a7).toNat % 8 = 0
+
+/-- What `vg_aes_gcm_stream_verify` needs. -/
+def verPre (s : State) : Prop := verPreX [] s
 
 /-- `vg_aes_gcm_stream_verify`. -/
 def streamVerifyRISCV64 : Contract isa where

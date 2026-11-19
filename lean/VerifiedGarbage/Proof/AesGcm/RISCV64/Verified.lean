@@ -1947,14 +1947,14 @@ theorem streamFinish_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamFinish (Proof.AesGcm.streamFinishScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
-      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishRISCV64, finPre, rounds, RISCV64.abi,
+      Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishRISCV64, finPre, finPreX, rounds, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [finSat] using finSat)
 
 theorem streamVerify_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Verified RISCV64.target streamVerify (Proof.AesGcm.streamVerifyScratchContract RISCV64.abi 2048) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
-      Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyRISCV64, verPre, rounds, RISCV64.abi,
+      Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyRISCV64, verPre, verPreX, rounds, RISCV64.abi,
       RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true] [verSat] using verSat)
 
 /-- `tag` at `0x5000` and the working space at `0x6000`, the stack arguments. -/
