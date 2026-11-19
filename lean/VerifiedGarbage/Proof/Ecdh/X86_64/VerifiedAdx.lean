@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -111,12 +112,13 @@ theorem scrubOkAdx : ∃ h : VG.Taint.Hint RTaint.FT,
 def scrubRegAdx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
     Registration Spec.Ecdh.P256.exchangeApi X86_64.target :=
-  RScrub.withScrub {
+  RScrub.scrubOf {
     suffix := "_adx"
     code := exchangeP256Adx
     stack := 8
-    verified := ecdh_verified_adx hL hI hO hK }
+    verified := ecdh_verified_adx hL hI hO hK } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
     (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    (some ⟨scrubKsAdx, scrubOkAdx⟩)
+    ⟨scrubKsAdx, scrubOkAdx⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Ecdh.X86_64

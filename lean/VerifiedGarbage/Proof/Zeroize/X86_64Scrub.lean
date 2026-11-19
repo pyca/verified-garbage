@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -63,13 +65,15 @@ theorem zeroizeAvxOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_zeroize`. -/
 def zeroizeReg : Registration Spec.Zeroize.zeroizeApi X86_64.target :=
-  withScrub { code := Impl.Zeroize.X86_64.zeroize, verified := verified } zeroizeOut []
-    (pubOk_nil _) (some ⟨zeroizeKs, zeroizeOk⟩)
+  scrubOf { code := Impl.Zeroize.X86_64.zeroize, verified := verified } .sse false [.rdx, .rdi] zeroizeOut []
+    (pubOk_nil _) ⟨zeroizeKs, zeroizeOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_zeroize_avx`. -/
 def zeroizeAvxReg : Registration Spec.Zeroize.zeroizeApi X86_64.target :=
-  withScrub { suffix := "_avx", code := Impl.Zeroize.X86_64.zeroizeAvx, verified := verifiedAvx }
-    zeroizeOut [] (pubOk_nil _) (some ⟨zeroizeAvxKs, zeroizeAvxOk⟩)
+  scrubOf { suffix := "_avx", code := Impl.Zeroize.X86_64.zeroizeAvx, verified := verifiedAvx } .avx true [.rdx, .rdi]
+    zeroizeOut [] (pubOk_nil _) ⟨zeroizeAvxKs, zeroizeAvxOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Zeroize.X86_64

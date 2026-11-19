@@ -145,6 +145,25 @@ def blocksAArch64 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) 
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
+/-- `blocksAArch64` with `n` bytes of `scratch`: for the implementations that
+need less of it (`BlocksImpl.scratch`), so that their callers allocate only
+that. -/
+def blocksAArch64With (n : Nat) (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) :
+    Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, n⟩
+    s.rd = [sched] ∧ s.wr = [data, scratch] ∧
+    sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
+    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post := (blocksAArch64 f).post
+  pub := (blocksAArch64 f).pub
+
+theorem blocksAArch64With_2048 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) :
+    blocksAArch64With 2048 f = blocksAArch64 f := rfl
+
 end VG.Proof.Aes
 
 namespace VG.Proof.Aes.AArch64
@@ -492,21 +511,22 @@ abbrev bsch : List Byte := Spec.Aes.bytesAt s₀.mem (bkp s₀) (16 * (bnr s₀ 
 
 end
 
-structure BPre (s₀ : State) : Prop where
+/-- The precondition, with `n` bytes of `scratch`. -/
+structure BPre (s₀ : State) (n : Nat := 2048) : Prop where
   rd : s₀.rd = [⟨bkp s₀, 240⟩]
-  wr : s₀.wr = [bdR s₀, ⟨s₀.gpr .x4, 2048⟩]
+  wr : s₀.wr = [bdR s₀, ⟨s₀.gpr .x4, n⟩]
   s_d : Region.Disjoint ⟨bkp s₀, 240⟩ (bdR s₀)
-  d_s : Region.Disjoint (bdR s₀) ⟨s₀.gpr .x4, 2048⟩
+  d_s : Region.Disjoint (bdR s₀) ⟨s₀.gpr .x4, n⟩
   wrap : (bdp s₀).toNat + 16 * bnb s₀ ≤ 2 ^ 64
   rounds : bnr s₀ = 10 ∨ bnr s₀ = 12 ∨ bnr s₀ = 14
 
-theorem bpre_of {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ : State}
-    (h : (Proof.Aes.blocksAArch64 f).pre s₀) : BPre s₀ := by
+theorem bpre_of {n : Nat} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ : State}
+    (h : (Proof.Aes.blocksAArch64With n f).pre s₀) : BPre s₀ n := by
   obtain ⟨h1, h2, h3, _, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h5, h6, h7⟩
 
 namespace BPre
-variable {s₀ : State} (hp : BPre s₀)
+variable {s₀ : State} {n : Nat} (hp : BPre s₀ n)
 include hp
 
 theorem nb16 : 16 * bnb s₀ ≤ 2 ^ 64 := by have := hp.wrap; omega_using [this]
@@ -514,9 +534,9 @@ theorem nb16 : 16 * bnb s₀ ≤ 2 ^ 64 := by have := hp.wrap; omega_using [this
 theorem dat : bdR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
 
 theorem n16 : 16 * bnb s₀ < 2 ^ 64 := by
-  refine Nat.lt_of_not_le fun hc => hp.d_s (s₀.gpr .x4) ?_ (by simp [Region.Contains])
+  refine Nat.lt_of_not_le fun hc => hp.s_d (bkp s₀) (by simp [Region.Contains]) ?_
   simp only [Region.Contains]
-  have := (s₀.gpr .x4 - bdp s₀).isLt
+  have := (bkp s₀ - bdp s₀).isLt
   omega_using [hc]
 
 theorem key_in {o : Nat} (h : o + 16 ≤ 240) :
@@ -635,7 +655,7 @@ theorem bregs_ok (rs : List VReg) (h : rs = regs8 ∨ rs = [.v0]) : BlockRegs rs
 
 /-- Load, transform and store the blocks `c … c + N − 1` (`N` the number of
 registers). -/
-theorem group_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) (rs : List VReg) (hrs : rs = regs8 ∨ rs = [.v0])
+theorem group_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) (rs : List VReg) (hrs : rs = regs8 ∨ rs = [.v0])
     (tail : List Instr) {Q : State → Prop} {c : Nat} (hc : c + rs.length ≤ bnb s₀) {s : State}
     (hI : BInv B s₀ c c s) (hQ : ∀ s', BInv B s₀ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
     WP isa (.seq (.block (ldData rs 0)) (.seq (B.f rs) (.block (stData rs 0 ++ tail)))) s Q := by
@@ -671,7 +691,7 @@ theorem group_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) (rs : List VReg) 
   exact B.of_v (B.of_v hK₁ hbr f₂.v (by rw [f₂.gpr]) (by rw [f₂.gpr])) hbr
     (fun r _ => by rw [v₃]) (by rw [g₃]) (by rw [g₃])
 
-theorem btail8_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : c + 8 ≤ bnb s₀) {s : State}
+theorem btail8_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) {c : Nat} (hc : c + 8 ≤ bnb s₀) {s : State}
     (hI : BInv B s₀ (c + 8) c s) :
     WP isa (.block [.addImm .x .x2 .x2 128, .subImm .x .x3 .x3 8, .lsr .x .x13 .x3 3]) s fun s' =>
       BInv B s₀ (c + 8) (c + 8) s' ∧ s'.gpr .x13 = BitVec.ofNat 64 ((bnb s₀ - (c + 8)) / 8) := by
@@ -690,7 +710,7 @@ theorem btail8_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : 
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, hI.x3]
     rw [h4, ushr3 (by omega_using [hn])]
 
-theorem btail1_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : c + 1 ≤ bnb s₀) {s : State}
+theorem btail1_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) {c : Nat} (hc : c + 1 ≤ bnb s₀) {s : State}
     (hI : BInv B s₀ (c + 1) c s) :
     WP isa (.block [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1]) s (BInv B s₀ (c + 1) (c + 1)) := by
   have hn := hp.nb16
@@ -703,18 +723,18 @@ theorem btail1_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : 
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, hI.x3]
     rw [Offset.ofNat_sub_ofNat (by omega_using [hc]), show bnb s₀ - c - 1 = bnb s₀ - (c + 1) by omega_using []]
 
-theorem blk8_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : c + 8 ≤ bnb s₀) {s : State}
+theorem blk8_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) {c : Nat} (hc : c + 8 ≤ bnb s₀) {s : State}
     (hI : BInv B s₀ c c s) :
     WP isa (blk8 B.f) s fun s' =>
       BInv B s₀ (c + 8) (c + 8) s' ∧ s'.gpr .x13 = BitVec.ofNat 64 ((bnb s₀ - (c + 8)) / 8) :=
   group_ok B hp regs8 (.inl rfl) _ hc hI fun _ hI' => btail8_ok B hp hc hI'
 
-theorem blk1_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {c : Nat} (hc : c + 1 ≤ bnb s₀) {s : State}
+theorem blk1_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) {c : Nat} (hc : c + 1 ≤ bnb s₀) {s : State}
     (hI : BInv B s₀ c c s) : WP isa (blk1 B.f) s (BInv B s₀ (c + 1) (c + 1)) :=
   group_ok B hp [.v0] (.inr rfl) _ hc hI fun _ hI' => btail1_ok B hp hc hI'
 
 /-- The loops, from the state after the setup. -/
-theorem loops_ok (B : BlockFn) {s₀ : State} (hp : BPre s₀) {s₁ : State} (hI₁ : BInv B s₀ 0 0 s₁)
+theorem loops_ok (B : BlockFn) {s₀ : State} {n : Nat} (hp : BPre s₀ n) {s₁ : State} (hI₁ : BInv B s₀ 0 0 s₁)
     (h13 : s₁.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8)) :
     WP isa (.seq (.ite (.zero .x .x13) (.block []) (.loop (blk8 B.f) (.nonzero .x .x13)))
       (.ite (.zero .x .x3) (.block []) (.loop (blk1 B.f) (.nonzero .x .x3)))) s₁
@@ -767,7 +787,7 @@ structure Common (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem common_ok {s₀ : State} (hp : BPre s₀) : WP isa (.block keysCommon) s₀ (Common s₀) := by
+theorem common_ok {s₀ : State} {n : Nat} (hp : BPre s₀ n) : WP isa (.block keysCommon) s₀ (Common s₀) := by
   have hR := hp.rounds
   have hn := hp.nb16
   have hx1 : s₀.gpr .x1 = BitVec.ofNat 64 (bnr s₀) := by simp [bnr]
@@ -805,7 +825,7 @@ theorem common_ok {s₀ : State} (hp : BPre s₀) : WP isa (.block keysCommon) s
   · simp only [State.setV, State.write, h1, h2, h3, h4, ite_false, g]
   · exact f₁.mem
 
-theorem encSetup_ok {s₀ : State} (hp : BPre s₀) :
+theorem encSetup_ok {s₀ : State} {n : Nat} (hp : BPre s₀ n) :
     WP isa (.block encSetup) s₀ fun s => BInv encFn s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8) := by
   have hR := hp.rounds
   rw [encSetup, WP.block_append_iff]
@@ -870,7 +890,7 @@ theorem imcs_ok (s : State) :
 
 theorem dreg_ne : ∀ j < 13, dreg (j + 1) ≠ .v30 ∧ dreg (j + 1) ≠ .v16 := by decide
 
-theorem decSetup_ok {s₀ : State} (hp : BPre s₀) :
+theorem decSetup_ok {s₀ : State} {n : Nat} (hp : BPre s₀ n) :
     WP isa (.block decSetup) s₀ fun s => BInv decFn s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8) := by
   have hR := hp.rounds
   rw [decSetup, WP.block_append_iff, WP.block_append_iff]
@@ -930,27 +950,27 @@ theorem post_of (B : BlockFn) {s₀ : State} {s : State} (hI : BInv B s₀ (bnb 
   simp only [Spec.Aes.statesAt, List.map_map]
   rfl
 
-theorem bcorrect (B : BlockFn) {setup : List Instr} {s₀ : State} (hp : BPre s₀)
+theorem bcorrect (B : BlockFn) {setup : List Instr} {s₀ : State} {n : Nat} (hp : BPre s₀ n)
     (hs : WP isa (.block setup) s₀ fun s => BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8)) :
     WP isa (blocks setup B.f) s₀ ((Proof.Aes.blocksAArch64 B.F).post s₀) :=
   WP.seq (WP.mono hs fun _ ⟨hI₁, h13⟩ => WP.mono (loops_ok B hp hI₁ h13) fun _ hI => post_of B hI)
 
-theorem blocks_correct (B : BlockFn) {setup : List Instr}
-    (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
+theorem blocks_correct (B : BlockFn) {n : Nat} {setup : List Instr}
+    (hs : ∀ s₀, BPre s₀ n → WP isa (.block setup) s₀ fun s =>
       BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
     (hg : (blocks setup B.f).allInstrs (fun i => preserved.all fun r => !clobbers i r) = true)
     (hnc : (blocks setup B.f).noCalls = true) (hv : (blocks setup B.f).allInstrs keepsV = true)
-    (s : State) (hp : (Proof.Aes.blocksAArch64 B.F).pre s) :
+    (s : State) (hp : (Proof.Aes.blocksAArch64With n B.F).pre s) :
     ∃ t s', Exec isa (blocks setup B.f) s t s' ∧ abiPreserved s s' ∧
-      (Proof.Aes.blocksAArch64 B.F).post s s' := by
+      (Proof.Aes.blocksAArch64With n B.F).post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ := WP.gprs (rs := preserved) (bcorrect B (bpre_of hp) (hs s (bpre_of hp))) hg hnc
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
 
 /-- A run of the functions changes no byte outside the data. -/
-theorem blocks_frame (B : BlockFn) {setup : List Instr}
-    (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
+theorem blocks_frame (B : BlockFn) {n : Nat} {setup : List Instr}
+    (hs : ∀ s₀, BPre s₀ n → WP isa (.block setup) s₀ fun s =>
       BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
-    {s : State} (hp : BPre s) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s') :
+    {s : State} (hp : BPre s n) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s') :
     Frame [bdR s] s.mem s'.mem := by
   obtain ⟨t', s'', he', hf⟩ : WP isa (blocks setup B.f) s fun s' => Frame [bdR s] s.mem s'.mem :=
     WP.seq (WP.mono (hs s hp) fun _ ⟨hI₁, h13⟩ => WP.mono (loops_ok B hp hI₁ h13) fun _ hI => hI.frame)
@@ -958,31 +978,58 @@ theorem blocks_frame (B : BlockFn) {setup : List Instr}
   exact hf
 
 /-- So they write none of `scratch` (`Artifact.written`). -/
-theorem blocks_scratch (B : BlockFn) {setup : List Instr}
-    (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
+theorem blocks_scratch (B : BlockFn) {n : Nat} {setup : List Instr}
+    (hs : ∀ s₀, BPre s₀ n → WP isa (.block setup) s₀ fun s =>
       BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
-    {s : State} (hp : BPre s) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s')
-    {i : Nat} (hi : i < 2048) :
+    {s : State} (hp : BPre s n) {t : List Leak} {s' : State} (he : Exec isa (blocks setup B.f) s t s')
+    {i : Nat} (hi : i < n) (hn : n ≤ 2048 := by decide) :
     s'.mem (s.gpr .x4 + BitVec.ofNat 64 i) = s.mem (s.gpr .x4 + BitVec.ofNat 64 i) :=
   blocks_frame B hs hp he _ fun r hr hc => by
     rw [List.mem_singleton] at hr
     subst hr
-    exact hp.d_s _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
+    exact hp.d_s _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hn]))
+
+/-- `vg_aes_encrypt_blocks_aes`, with any `n` bytes of `scratch`, which it
+does not touch. -/
+theorem encryptBlocks_correctW (n : Nat) (s : State)
+    (hs : (Proof.Aes.blocksAArch64With n Spec.Aes.cipher).pre s) :
+    ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksAArch64With n Spec.Aes.cipher).post s s' :=
+  blocks_correct encFn (fun _ hp => encSetup_ok hp) (by lit_decide) (by lit_decide)
+    (by lit_decide) s hs
+
+theorem decryptBlocks_correctW (n : Nat) (s : State)
+    (hs : (Proof.Aes.blocksAArch64With n Spec.Aes.invCipher).pre s) :
+    ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksAArch64With n Spec.Aes.invCipher).post s s' :=
+  blocks_correct decFn (fun _ hp => decSetup_ok hp) (by lit_decide) (by lit_decide)
+    (by lit_decide) s hs
 
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' :=
-  blocks_correct encFn (fun _ hp => encSetup_ok hp) (by lit_decide) (by lit_decide)
-    (by lit_decide) s hs
+  encryptBlocks_correctW 2048 s hs
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' :=
-  blocks_correct decFn (fun _ hp => decSetup_ok hp) (by lit_decide) (by lit_decide)
-    (by lit_decide) s hs
+  decryptBlocks_correctW 2048 s hs
+
+theorem encryptBlocks_ctW (n : Nat) : ConstantTime isa (Proof.Aes.blocksAArch64With n Spec.Aes.cipher).pre
+    (Proof.Aes.blocksAArch64With n Spec.Aes.cipher).pub encryptBlocks := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
-    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks := by
+    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks :=
+  encryptBlocks_ctW 2048
+
+theorem decryptBlocks_ctW (n : Nat) : ConstantTime isa (Proof.Aes.blocksAArch64With n Spec.Aes.invCipher).pre
+    (Proof.Aes.blocksAArch64With n Spec.Aes.invCipher).pub decryptBlocks := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
@@ -991,13 +1038,8 @@ theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.ci
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre
-    (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pub decryptBlocks := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+    (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pub decryptBlocks :=
+  decryptBlocks_ctW 2048
 
 theorem encryptBlocks_implies :
     (Proof.Aes.blocksAArch64 Spec.Aes.cipher).Implies (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) := by

@@ -51,6 +51,7 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t₁ : State, runBlock isa expandArgs t = some t₁ ∧
       KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 1760)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ ∧ t₁.mem = t.mem := by
+  obtain hWn := L.hWn
   have hl : Spec.GcmSiv.keyLen p.R = 16 ∨ Spec.GcmSiv.keyLen p.R = 32 := by
     unfold Spec.GcmSiv.keyLen; rcases L.rounds with h | h <;> rw [h] <;> decide
   have hl' := L.rounds
@@ -69,15 +70,16 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   case x3 => simp [gpr_write]
   case len => omega_using [hl]
   case kc => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
-  case ks => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
-  case cs => exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  case ks => exact L.w_wn (.inl (by omega_using [hl])) (by have := L.hWn; omega_using [hl, this]) (by have := L.hWn; omega)
+  case cs => exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
   case rd =>
     exact covers_append (covers_cons (E.perm.wCR (by omega_using [hl])) covers_nil)
-      (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by decide)) covers_nil))
-  case wr => exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
+      (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCRn (by have := L.hWn; omega)) covers_nil))
+  case wr => exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wCn (by have := L.hWn; omega)) covers_nil)
 
 theorem expand_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (expand v.callees) t (ExpPost p t) := by
+  obtain hWn := L.hWn
   obtain ⟨t₁, run₁, kc, E₁, hm₁⟩ := expArgs_ok L E
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (key_call v.key kc) fun t₂ P => ?_
@@ -137,12 +139,13 @@ theorem hkeyMem_acc (m : Mem) (W : Addr) : Spec.Gcm.blockAt (hkeyMem m W) (W + B
 theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa hkey t = some t' ∧ t'.mem = hkeyMem t.mem p.W ∧
       Others [.x9, .x10, .x11, .x12, .x13] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₁ := E.perm.wR (show 16 + 8 ≤ 3808 by decide)
-  have r₂ := E.perm.wR (show 24 + 8 ≤ 3808 by decide)
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 3808 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 3808 by decide)
-  have w₃ := E.perm.wW (show 80 + 8 ≤ 3808 by decide)
-  have w₄ := E.perm.wW (show 88 + 8 ≤ 3808 by decide)
+  obtain hWn := E.perm.hWn
+  have r₁ := E.perm.wR (show 16 + 8 ≤ 1760 by decide)
+  have r₂ := E.perm.wR (show 24 + 8 ≤ 1760 by decide)
+  have w₁ := E.perm.wW (show 64 + 8 ≤ 1760 by decide)
+  have w₂ := E.perm.wW (show 72 + 8 ≤ 1760 by decide)
+  have w₃ := E.perm.wW (show 80 + 8 ≤ 1760 by decide)
+  have w₄ := E.perm.wW (show 88 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [hkey, zero16]; grun [E.x19, r₁, r₂, w₁, w₂, w₃, w₄], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_write, gpr_write, ite_true, ite_false, reduceCtorEq, hkeyMem, Mem.writeW, BitVec.setWidth_eq,
       read8_readW]
@@ -154,13 +157,13 @@ theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
 
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
-abbrev keyR (W : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 240, 3568⟩]
+abbrev keyR (Wn : Nat) (W : Addr) : List Region :=
+  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 240, Wn - 240⟩]
 
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (p : Prm) (σ t : State) : Prop where
   env : Env p t
-  frame : Frame (keyR p.W) σ.mem t.mem
+  frame : Frame (keyR p.Wn p.W) σ.mem t.mem
   auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem p.K p.R) (Spec.GcmSiv.keyLen p.R)
     (bytesAt σ.mem p.N 12)).1 = bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16
   ciph : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = Spec.GcmSiv.aes
@@ -169,31 +172,33 @@ structure KeysPost (p : Prm) (σ t : State) : Prop where
     hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16))
   acc : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0
 
-theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) :
+theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (keys v.callees) σ (KeysPost p σ) := by
+  obtain hWn := L.hWn
   have hR := L.rounds
   refine WP.seq (WP.mono (derive_ok v L E) fun t₂ I => ?_)
-  have k0 : (⟨p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR p.W := List.mem_cons_self
-  have k1 : (⟨p.W + BitVec.ofNat 64 224, 16⟩ : Region) ∈ keyR p.W := List.mem_cons_of_mem _ List.mem_cons_self
-  have k2 : (⟨p.W + BitVec.ofNat 64 240, 3568⟩ : Region) ∈ keyR p.W :=
+  have k0 : (⟨p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR p.Wn p.W := List.mem_cons_self
+  have k1 : (⟨p.W + BitVec.ofNat 64 224, 16⟩ : Region) ∈ keyR p.Wn p.W := List.mem_cons_of_mem _ List.mem_cons_self
+  have k2 : (⟨p.W + BitVec.ofNat 64 240, p.Wn - 240⟩ : Region) ∈ keyR p.Wn p.W :=
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
-  have f₂ : Frame (keyR p.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
+  have f₂ : Frame (keyR p.Wn p.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩
     · exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩
     · exact ⟨_, k1, fun _ h => h⟩
-    · exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
+    · exact ⟨_, k2, Offset.sub p.W (by decide) (by omega)⟩
   refine WP.seq (WP.mono (expand_ok v L I.env) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hm₄, ho₄, sp₄, rd₄, wr₄⟩ := hkey_ok X.env
   have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region),
       ⟨p.W + BitVec.ofNat 64 1760, 512⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
-  have f₃ : Frame (keyR p.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
+    rcases hr with rfl | rfl <;> exact L.w_wn (.inl (by omega_using [h₁])) (by have := L.hWn; omega_using [h₁, this]) (by have := L.hWn; omega)
+  have f₃ : Frame (keyR p.Wn p.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
-  have f₄ : Frame (keyR p.W) t₃.mem t₄.mem := by
+    rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub p.W (by decide) (by omega)⟩
+  have f₄ : Frame (keyR p.Wn p.W) t₃.mem t₄.mem := by
     rw [hm₄]; exact (hkeyMem_frame _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩

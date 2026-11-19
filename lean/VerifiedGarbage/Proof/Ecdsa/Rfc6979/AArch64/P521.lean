@@ -14,6 +14,19 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on AArch64: P-521
@@ -64,5 +77,38 @@ theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p521) h.1 Proof.Ecdsa.AArch64.P521.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.P521.p521_combWords_length]; decide) Proof.Ecdsa.AArch64.P521.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_p521_sign` and `vg_ecdsa_p521_verify`
+clear, and what `ScrubAll.scrubAllOf` needs of their code
+(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- The registers the tail of `vg_ecdsa_p521_sign` clears: those its code,
+with the HMAC implementations of its table, may write. -/
+def p521SignClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
+   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+   .v27, .v28, .v29, .v30, .v31], []⟩
+
+theorem p521SignSide (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    AArch64.ScrubAll.scrubSide
+      (signCodeT (p521 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p521.tries Proof.Variants.MdHash.AArch64.variants)
+      stackT
+      (Spec.Ecdsa.Rfc6979.Curves.p521.signSig.retBits
+        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p521.signSig
+          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
+      p521SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
+
+/-- The registers the tail of `vg_ecdsa_p521_verify` clears: those its code may write. -/
+def p521VerifyClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16,
+   .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26, .v28, .v29], []⟩
+
+theorem p521VerifySide :
+    AArch64.ScrubAll.scrubSide
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.AArch64.verifyP521)
+      80 (Spec.Ecdsa.P521.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p521VerifyClear [] = true := by lit_decide
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

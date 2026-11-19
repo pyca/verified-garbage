@@ -30,8 +30,7 @@
 ))]
 
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_auto, vg_aes_gcm_stream_finish_auto,
-    vg_aes_gcm_stream_init_auto, vg_aes_gcm_stream_verify_auto,
+    vg_aes_gcm_init_auto, vg_aes_gcm_stream_aad_auto, vg_aes_gcm_stream_init_auto,
 };
 // On AArch64 and x86-64, a key computes the powers of its hash subkey when
 // it is created, which the functions below read; elsewhere the functions
@@ -55,8 +54,19 @@ use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
     vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
+#[cfg(not(target_arch = "riscv64"))]
+use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_stream_verify_auto};
+// On RISC-V, a key computes the bitsliced form of its key context when it is
+// created, which the streaming functions read instead of computing it at
+// every call.
+#[cfg(target_arch = "riscv64")]
+use crate::arch::dispatch::gcm::{
+    vg_aes_gcm_bitslice_auto, vg_aes_gcm_stream_decrypt_bitsliced_auto,
+    vg_aes_gcm_stream_encrypt_bitsliced_auto, vg_aes_gcm_stream_finish_bitsliced_auto,
+    vg_aes_gcm_stream_verify_bitsliced_auto,
+};
 use crate::error::InvalidKeyLength;
 #[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize;
@@ -79,6 +89,11 @@ type KeyCtx = [u64; 32];
 /// functions read next to the key context (`VG.Spec.Gcm.Powers8Repr`).
 #[cfg(target_arch = "aarch64")]
 type Powers = [u64; 16];
+
+/// On RISC-V, the bitsliced form of the key context that the `_bitsliced`
+/// functions read next to it (`VG.Spec.Gcm.CtxSlicedRepr`).
+#[cfg(target_arch = "riscv64")]
+type Bitsliced = [u64; 156];
 
 /// The largest plaintext (and ciphertext), in bytes: `2^39 − 256` bits
 /// (SP 800-38D §5.2.1.1).
@@ -178,6 +193,10 @@ pub struct AesGcm {
     /// (`VG.Spec.Gcm.Powers8Repr`).
     #[cfg(target_arch = "aarch64")]
     powers: CacheAligned<Powers>,
+    /// On RISC-V, the bitsliced form of the key context that `new` stores
+    /// (`VG.Spec.Gcm.CtxSlicedRepr`).
+    #[cfg(target_arch = "riscv64")]
+    bk: CacheAligned<Bitsliced>,
 }
 
 impl Drop for AesGcm {
@@ -198,6 +217,8 @@ impl Drop for AesGcm {
         zeroize(core::slice::from_mut(&mut self.ctx));
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers.0);
+        #[cfg(target_arch = "riscv64")]
+        zeroize(&mut self.bk.0);
     }
 }
 
@@ -217,6 +238,8 @@ impl AesGcm {
             rounds: key.len() / 4 + 6,
             #[cfg(target_arch = "aarch64")]
             powers: CacheAligned([0; size_of::<Powers>() / 8]),
+            #[cfg(target_arch = "riscv64")]
+            bk: CacheAligned([0; size_of::<Bitsliced>() / 8]),
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`init`
         // reads it); on x86-64 `prepare` writes the rest.
@@ -245,6 +268,16 @@ impl AesGcm {
         #[cfg(target_arch = "aarch64")]
         unsafe {
             vg_aes_gcm_store_powers_auto(dit, k.ctx.0.as_ptr().cast(), &mut k.powers.0)
+        };
+        // SAFETY: the key context, valid for reads of 256 bytes (written
+        // above), and `k.bk`, for writes of 1248, are distinct fields, so they
+        // do not overlap each other or anything on the stack, or wrap around
+        // the end of the address space. `vg_aes_gcm_bitslice` writes the
+        // bitsliced form of the context (`CtxSlicedRepr`), which the
+        // `_bitsliced` functions require.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            vg_aes_gcm_bitslice_auto(dit, k.ctx.0.as_ptr().cast(), &mut k.bk.0)
         };
         Ok(k)
     }
@@ -780,17 +813,39 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             vg_aes_gcm_stream_encrypt_prepared_auto,
             vg_aes_gcm_stream_decrypt_prepared_auto,
         );
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
         let (ctx, encrypt, decrypt) = (
             self.key.key(),
             vg_aes_gcm_stream_encrypt_auto,
             vg_aes_gcm_stream_decrypt_auto,
         );
+        // SAFETY: as below, with `self.key.bk` the bitsliced form of the key
+        // context (`new`), valid for reads of 1248 bytes, which nothing
+        // writable overlaps.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            (if DECRYPT {
+                vg_aes_gcm_stream_decrypt_bitsliced_auto
+            } else {
+                vg_aes_gcm_stream_encrypt_bitsliced_auto
+            })(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                data.as_mut_ptr(),
+                data.len(),
+                &self.key.bk.0,
+            )
+        };
         // SAFETY: as in `new`, with the key context as in `AesGcm::seal` and
         // `data` valid for reads and writes of `data.len()` bytes (a unique
         // borrow, so it overlaps nothing else); `self.state` represents a
         // message with `self.aad_len` bytes of additional data and
         // `self.text_len` of text.
+        #[cfg(not(target_arch = "riscv64"))]
         unsafe {
             (if DECRYPT { decrypt } else { encrypt })(
                 dit,
@@ -815,6 +870,7 @@ impl Stream<'_, false> {
         // SAFETY: as in `update`, with `tag` (a local) valid for reads and
         // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
+        #[cfg(not(target_arch = "riscv64"))]
         unsafe {
             vg_aes_gcm_stream_finish_auto(
                 dit,
@@ -824,6 +880,20 @@ impl Stream<'_, false> {
                 self.aad_len,
                 self.text_len,
                 &mut tag,
+            )
+        };
+        // SAFETY: as above, with `self.key.bk` as in `update`.
+        #[cfg(target_arch = "riscv64")]
+        unsafe {
+            vg_aes_gcm_stream_finish_bitsliced_auto(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                &mut tag,
+                &self.key.bk.0,
             )
         };
         tag
@@ -836,6 +906,7 @@ impl Stream<'_, true> {
     fn verify(mut self, dit: crate::dit::Dit<'_>, tag: &[u8]) -> Result<(), Error> {
         // SAFETY: as in `finish`, with the received tag `tag` valid for
         // reads of its length.
+        #[cfg(not(target_arch = "riscv64"))]
         let ok = unsafe {
             vg_aes_gcm_stream_verify_auto(
                 dit,
@@ -846,6 +917,21 @@ impl Stream<'_, true> {
                 self.text_len,
                 tag.as_ptr(),
                 tag.len(),
+            )
+        };
+        // SAFETY: as above, with `self.key.bk` as in `update`.
+        #[cfg(target_arch = "riscv64")]
+        let ok = unsafe {
+            vg_aes_gcm_stream_verify_bitsliced_auto(
+                dit,
+                self.key.key(),
+                self.key.rounds,
+                &mut self.state.0,
+                self.aad_len,
+                self.text_len,
+                tag.as_ptr(),
+                tag.len(),
+                &self.key.bk.0,
             )
         };
         if ok == 1 {

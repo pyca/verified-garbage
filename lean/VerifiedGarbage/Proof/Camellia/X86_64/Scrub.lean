@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Camellia.Contract
 public import VerifiedGarbage.Spec.Camellia.Cbc
 public import VerifiedGarbage.Spec.Camellia.Cfb
@@ -235,10 +237,11 @@ theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_expand_key`. -/
 def expandKeyReg : Registration Spec.Camellia.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 3216
-    verified := Proof.Camellia.X86_64.expandKey_framed } expandKeyOut [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.Camellia.X86_64.expandKey_framed } .sse false [.rcx, .rsi, .rdi, .r8, .r9, .r10, .r11] expandKeyOut [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
@@ -254,10 +257,11 @@ theorem ecbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_ecb_encrypt`. -/
 def ecbEncryptReg : Registration Spec.Camellia.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbEncryptCode
     stack := 3216
-    verified := Proof.Camellia.X86_64.ecb_framed .encrypt } (ecbOut .encrypt _) [] (pubOk_nil _) (some ⟨ecbEncryptKs, ecbEncryptOk⟩)
+    verified := Proof.Camellia.X86_64.ecb_framed .encrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .encrypt _) [] (pubOk_nil _) ⟨ecbEncryptKs, ecbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
@@ -273,10 +277,11 @@ theorem ecbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_ecb_decrypt`. -/
 def ecbDecryptReg : Registration Spec.Camellia.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbDecryptCode
     stack := 3216
-    verified := Proof.Camellia.X86_64.ecb_framed .decrypt } (ecbOut .decrypt _) [] (pubOk_nil _) (some ⟨ecbDecryptKs, ecbDecryptOk⟩)
+    verified := Proof.Camellia.X86_64.ecb_framed .decrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .decrypt _) [] (pubOk_nil _) ⟨ecbDecryptKs, ecbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -292,10 +297,11 @@ theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 def cbcEncryptReg : Registration Spec.Camellia.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cbcEncryptChained_framed } (cbcEncryptOut _) [] (pubOk_nil _) (some ⟨cbcEncryptKs, cbcEncryptOk⟩)
+    verified := Proof.Camellia.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cbcEncryptOut _) [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
@@ -311,10 +317,11 @@ theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cbc_decrypt_chained`. -/
 def cbcDecryptReg : Registration Spec.Camellia.cbcDecryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcDecryptCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cbcDecryptChained_framed } (cbcDecryptOut _) [] (pubOk_nil _) (some ⟨cbcDecryptKs, cbcDecryptOk⟩)
+    verified := Proof.Camellia.X86_64.cbcDecryptChained_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cbcDecryptOut _) [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cfb128_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
@@ -330,10 +337,11 @@ theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cfb128_encrypt`. -/
 def cfbEncryptReg : Registration Spec.Camellia.cfbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cfbEncrypt_framed } (cfbEncryptOut _) [] (pubOk_nil _) (some ⟨cfbEncryptKs, cfbEncryptOk⟩)
+    verified := Proof.Camellia.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbEncryptOut _) [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cfb128_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
@@ -349,10 +357,11 @@ theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cfb128_encrypt_final`. -/
 def cfbEncryptFinalReg : Registration Spec.Camellia.cfbEncryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptFinalCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cfbEncryptFinal_framed } (cfbEncryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩)
+    verified := Proof.Camellia.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbEncryptFinalOut _) [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cfb128_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
@@ -368,10 +377,11 @@ theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cfb128_decrypt`. -/
 def cfbDecryptReg : Registration Spec.Camellia.cfbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cfbDecrypt_framed } (cfbDecryptOut _) [] (pubOk_nil _) (some ⟨cfbDecryptKs, cfbDecryptOk⟩)
+    verified := Proof.Camellia.X86_64.cfbDecrypt_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbDecryptOut _) [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_cfb128_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
@@ -387,10 +397,11 @@ theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_cfb128_decrypt_final`. -/
 def cfbDecryptFinalReg : Registration Spec.Camellia.cfbDecryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptFinalCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.cfbDecryptFinal_framed } (cfbDecryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩)
+    verified := Proof.Camellia.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbDecryptFinalOut _) [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
@@ -406,10 +417,11 @@ theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_ofb`. -/
 def ofbReg : Registration Spec.Camellia.ofbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.ofb_framed } (ofbOut _) [] (pubOk_nil _) (some ⟨ofbKs, ofbOk⟩)
+    verified := Proof.Camellia.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ofbOut _) [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
@@ -425,10 +437,11 @@ theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_ofb_final`. -/
 def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbFinalCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.ofbFinal_framed } (ofbFinalOut _) [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+    verified := Proof.Camellia.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ofbFinalOut _) [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ctr`'s code. -/
 abbrev ctrCode : Prog isa :=
@@ -444,16 +457,18 @@ theorem ctrOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_camellia_ctr`. -/
 def ctrReg : Registration Spec.Camellia.ctrApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ctrCode
     stack := 3288
-    verified := Proof.Camellia.X86_64.ctr_framed } (ctrOut _) [] (pubOk_nil _) (some ⟨ctrKs, ctrOk⟩)
+    verified := Proof.Camellia.X86_64.ctr_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ctrOut _) [] (pubOk_nil _) ⟨ctrKs, ctrOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_camellia_ctr_final`, its whole stack wiped on return. -/
 def ctrFinalReg : Registration Spec.Camellia.ctrFinalApi X86_64.target :=
-  withScrubAll {
+  scrubAllOf {
     code := Impl.StackScratch.X86_64.withStackScratchWiped 72 .r9 8 Impl.Camellia.X86_64.ctrFinal
     stack := 3368
-    verified := Proof.Camellia.X86_64.ctrFinal_framed } (ctrFinalOut _)
+    verified := Proof.Camellia.X86_64.ctrFinal_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ctrFinalOut _)
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Camellia.X86_64.Scrub

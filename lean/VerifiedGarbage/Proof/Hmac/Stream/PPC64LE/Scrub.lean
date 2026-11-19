@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
@@ -15,12 +15,13 @@ public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # HMAC on PPC64LE, without secret residue
 
 Each hash's HMAC `init` and `finalize`, followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
 volatile registers and the stack its frames used: both keep their working
 space in a frame they do not wipe themselves (`withStackScratch`), and
 `init` calls the hash's compression function, which pushes frames of its own.
@@ -66,125 +67,170 @@ theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (sta
 
 /-- `Spec.Hmac.md5I.initAnyKeyApi`. -/
 def md5InitAnyKeyReg : Registration Spec.Hmac.md5I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Md5.hash Spec.Hmac.md5I 6
       verified := Md5.initAny }
+    512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (hmacInitAnyOut Spec.Hmac.md5I Proof.Hmac.md5_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.md5I.finalizeApi`. -/
 def md5FinalizeReg : Registration Spec.Hmac.md5I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 Md5.hash.finalize
       verified := Md5.finalize }
+    512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (hmacFinOut Spec.Hmac.md5I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha1I.initAnyKeyApi`. -/
 def sha1InitAnyKeyReg : Registration Spec.Hmac.sha1I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha1.hash Spec.Hmac.sha1I 6
       verified := Sha1.initAny }
+    576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (hmacInitAnyOut Spec.Hmac.sha1I Proof.Hmac.sha1_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha1I.finalizeApi`. -/
 def sha1FinalizeReg : Registration Spec.Hmac.sha1I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha1I) .r7 Sha1.hash.finalize
       verified := Sha1.finalize }
+    576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (hmacFinOut Spec.Hmac.sha1I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha224I.initAnyKeyApi`. -/
 def sha224InitAnyKeyReg : Registration Spec.Hmac.sha224I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha224.hash Spec.Hmac.sha224I 6
       verified := Sha224.initAny }
+    960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha224I Proof.Hmac.sha224_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha224I.finalizeApi`. -/
 def sha224FinalizeReg : Registration Spec.Hmac.sha224I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha224I) .r7 Sha224.hash.finalize
       verified := Sha224.finalize }
+    960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha224I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha256I.initAnyKeyApi`. -/
 def sha256InitAnyKeyReg : Registration Spec.Hmac.sha256I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha256.hash Spec.Hmac.sha256I 6
       verified := Sha256.initAny }
+    960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha256I Proof.Hmac.sha256_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha256I.finalizeApi`. -/
 def sha256FinalizeReg : Registration Spec.Hmac.sha256I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha256I) .r7 Sha256.hash.finalize
       verified := Sha256.finalize }
+    960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha256I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha384I.initAnyKeyApi`. -/
 def sha384InitAnyKeyReg : Registration Spec.Hmac.sha384I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha384.hash Spec.Hmac.sha384I 7
       verified := Sha384.initAny }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha384I Proof.Hmac.sha384_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha384I.finalizeApi`. -/
 def sha384FinalizeReg : Registration Spec.Hmac.sha384I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha384I) .r7 Sha384.hash.finalize
       verified := Sha384.finalize }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha384I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512I.initAnyKeyApi`. -/
 def sha512InitAnyKeyReg : Registration Spec.Hmac.sha512I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha512.hash Spec.Hmac.sha512I 7
       verified := Sha512.initAny }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha512I Proof.Hmac.sha512_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512I.finalizeApi`. -/
 def sha512FinalizeReg : Registration Spec.Hmac.sha512I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512I) .r7 Sha512.hash.finalize
       verified := Sha512.finalize }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha512I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512_224I.initAnyKeyApi`. -/
 def sha512_224InitAnyKeyReg : Registration Spec.Hmac.sha512_224I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha512_224.hash Spec.Hmac.sha512_224I 7
       verified := Sha512_224.initAny }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha512_224I Proof.Hmac.sha512_224_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512_224I.finalizeApi`. -/
 def sha512_224FinalizeReg : Registration Spec.Hmac.sha512_224I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512_224I) .r7 Sha512_224.hash.finalize
       verified := Sha512_224.finalize }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha512_224I (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512_256I.initAnyKeyApi`. -/
 def sha512_256InitAnyKeyReg : Registration Spec.Hmac.sha512_256I.initAnyKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := initCode Sha512_256.hash Spec.Hmac.sha512_256I 7
       verified := Sha512_256.initAny }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacInitAnyOut Spec.Hmac.sha512_256I Proof.Hmac.sha512_256_local (by decide) _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Hmac.sha512_256I.finalizeApi`. -/
 def sha512_256FinalizeReg : Registration Spec.Hmac.sha512_256I.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512_256I) .r7 Sha512_256.hash.finalize
       verified := Sha512_256.finalize }
+    1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (hmacFinOut Spec.Hmac.sha512_256I (by decide) _)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. MD5's and
-SHA-1's code is too long for `decide` (it reaches the recursion limit): the
-emitter checks theirs, refusing a function `ci/residue_allowlist.txt` does not
-list whose registration has no `residue`. -/
-example : sha224InitAnyKeyReg.residue.isSome ∧ sha224FinalizeReg.residue.isSome := by decide
-example : sha256InitAnyKeyReg.residue.isSome ∧ sha256FinalizeReg.residue.isSome := by decide
-example : sha384InitAnyKeyReg.residue.isSome ∧ sha384FinalizeReg.residue.isSome := by decide
-example : sha512InitAnyKeyReg.residue.isSome ∧ sha512FinalizeReg.residue.isSome := by decide
-example : sha512_224InitAnyKeyReg.residue.isSome ∧ sha512_224FinalizeReg.residue.isSome := by decide
-example : sha512_256InitAnyKeyReg.residue.isSome ∧ sha512_256FinalizeReg.residue.isSome := by decide
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Hmac.Stream.PPC64LE.Scrub

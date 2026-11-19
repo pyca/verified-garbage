@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Instances
 public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Verified
@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -24,7 +25,7 @@ not read the memory on return, and that of
 (`wordsAt_of`; `ScrubAll.ScrubAllOk`, as x86-64's
 `Proof/Ffdh/X86_64/Scrub.lean` proves them): each implementation returns with
 every register it may leave secret cleared, and its whole stack zeroed, if it
-has one (`ScrubAll.withScrubAll`).
+has one (`ScrubAll.scrubAllOf`).
 -/
 
 @[expose] public section
@@ -184,21 +185,34 @@ theorem cachedKeySearchOk (stack : Nat) :
 
 /-! ## The registrations with tables of constants -/
 
+/-- The registers the tails of the functions that only multiply clear: those
+their code may write. -/
+def clearMul : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v31], []⟩
+
+/-- The registers the tails of the functions that select from a window with
+vector instructions clear: those their code may write. -/
+def clearWindow : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31], []⟩
+
 /-- `vg_ffdh_generate_key_precompute`, scrubbed. -/
 def precomputeReg : Registration Spec.Ffdh.generationPrecomputeApi AArch64.target :=
-  ScrubAll.withScrubAll {
+  ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.precompute_verified _
     consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    stack := 0 } (generationPrecomputeOk _ _ _)
+    stack := 0 } clearMul (generationPrecomputeOk _ _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
 
 /-- `vg_ffdh_check_domain`, scrubbed. -/
 def checkDomainReg : Registration Spec.Ffdh.checkDomainApi AArch64.target :=
-  ScrubAll.withScrubAll {
+  ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _
     consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    stack := 0 } (checkDomainOk _ _ _)
+    stack := 0 } clearWindow (checkDomainOk _ _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
 
 end VG.Proof.Ffdh.AArch64.Scrub

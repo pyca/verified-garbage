@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
@@ -138,9 +142,11 @@ theorem blocksFrom_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {
     {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = p.n) {b₀ : Nat} (hb : b₀ < p.n / 16)
     (h27 : t.gpr .x27 = p.D + BitVec.ofNat 64 (16 * b₀)) (h28 : t.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * b₀))
     (C : CtrSt p.W icb b₀ t.mem) (hx : bytesAt t.mem p.D p.n = GcmSiv.ctrPart ciph icb x (16 * b₀))
-    (hc : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = ciph) :
+    (hc : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = ciph)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (.loop (Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (.nonzero .x .x9)) t
       (BlocksPost p ciph icb x (p.n / 16) t) := by
+  obtain hWn := L.hWn
   refine WP.loop (M := isa) (body := Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (c := .nonzero .x .x9)
     (fun (k : Nat) (t' : State) => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BlocksPost p ciph icb x j t t') ?_
     (p.n / 16 - b₀) t ⟨b₀, rfl, hb, ⟨E, rfl, rfl, h27, h28, C, hx, Frame.refl _ _⟩⟩
@@ -167,7 +173,7 @@ structure BatchPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (t
   wr : t'.wr = t.wr
   ctr : CtrSt p.W icb (8 * (p.n / 128)) t'.mem
   data : bytesAt t'.mem p.D p.n = GcmSiv.ctrPart ciph icb x (128 * (p.n / 128))
-  frame : Frame (cryR p.W p.D p.n) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n) t.mem t'.mem
 
 /-- `ctrSetup ++ batches`: the counter's word, the key schedule and the batches. -/
 theorem ctrSetup_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
@@ -176,7 +182,8 @@ theorem ctrSetup_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
       t₁.gpr .x15 = p.W + BitVec.ofNat 64 240 ∧ t₁.gpr .x9 = p.D + BitVec.ofNat 64 (128 * 0) ∧
       t₁.gpr .x11 = BitVec.ofNat 64 (p.n / 128 - 0) ∧
       Others [.x9, .x10, .x11, .x15] t t₁ ∧ t₁.mem = t.mem ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 3808 by decide)
+  obtain hWn := L.hWn
+  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 1760 by decide)
   refine ⟨_, by simp only [ctrSetup, batches, List.cons_append, List.nil_append]; grun [E.x19, c₀], ?_, ?_, ?_, ?_,
     by others_tac, (by rfl), (by rfl), (by rfl), (by rfl)⟩
   · simp [State.read, gpr_write, E.x19, setWidth_rt32, read4_readW]; rfl
@@ -193,19 +200,20 @@ theorem ctrFinish_ok {p : Prm} (L : Lay p) {H : Spec.Gcm.Block} {m₀ : Mem} {rd
       CtrSt p.W icb (8 * (p.n / 128)) t₃.mem ∧
       bytesAt t₃.mem p.D p.n = GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph m₀ (p.W + BitVec.ofNat 64 240) p.R) icb
         (bytesAt m₀ p.D p.n) (128 * (p.n / 128)) ∧
-      Frame (VG.Proof.AesGcmSiv.AArch64.cryR p.W p.D p.n) m₀ t₃.mem ∧
+      Frame (VG.Proof.AesGcmSiv.AArch64.cryR p.Wn p.W p.D p.n) m₀ t₃.mem ∧
       Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem t₃.mem := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   have hww := L.ww
   let σ : Ctx := ⟨p.W, p.W + BitVec.ofNat 64 240, p.D, p.R, p.n / 128, H, m₀, rd, wr⟩
-  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
+  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 1760 by decide)
   have hf₂ : Frame [σ.dR] m₀ t₂.mem := I.frame
-  obtain dDR : ∀ {d k : Nat}, d + k ≤ 3808 → ∀ q ∈ [σ.dR], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
+  obtain dDR : ∀ {d k : Nat}, d + k ≤ p.Wn → ∀ q ∈ [σ.dR], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      exact ((L.d_w' h).sub_left (Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega_arith))).symm
+      exact ((L.d_w'n h).sub_left (Region.sub_prefix (by show 128 * (p.n / 128) ≤ p.n; omega_arith))).symm
   obtain r₂ : bytesAt t₂.mem (p.W + BitVec.ofNat 64 100) 12 = bytesAt m₀ (p.W + BitVec.ofNat 64 100) 12 :=
-    Proof.AesGcm.AArch64.bytesAt_frame hf₂ (dDR (by decide)) (by decide)
+    Proof.AesGcm.AArch64.bytesAt_frame hf₂ (dDR (by omega)) (by decide)
   obtain fw : ∀ v : BitVec 32, Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem
       (t₂.mem.writeW (p.W + BitVec.ofNat 64 96) v) :=
     fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -252,6 +260,7 @@ theorem ctrBatch_ok (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
     (C : CtrSt p.W icb 0 t.mem) (hnb : 1 ≤ p.n / 128) :
     WP isa (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish))) t
       (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   have hww := L.ww
   obtain ⟨t₁, run₁, x10₁, x15₁, x9₁, x11₁, o₁, m₁, sp₁, rd₁, wr₁⟩ := ctrSetup_ok L E
@@ -281,7 +290,7 @@ theorem ctrBatch_ok (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
     wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega_arith
     wrap_k := by
       show (p.W + BitVec.ofNat 64 240).toNat + 16 * (p.R + 1) ≤ 2 ^ 64
-      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith }
+      rw [L.toNat_W (by omega)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith }
   obtain hI : CInv σ t₁ 0 0 t₁ := {
     le := Nat.zero_le _
     x9 := x9₁
@@ -310,6 +319,7 @@ theorem ctrBatches_ok (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t
     (C : CtrSt p.W icb 0 t.mem) :
     WP isa (ifBatch (.seq (.block (ctrSetup ++ batches)) (.seq (byRounds (ctrLoop e3)) (.block ctrFinish)))) t
       (BatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   unfold ifBatch
   refine WP.seq (WP.mono (batchHead_ok L E) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
@@ -347,8 +357,10 @@ theorem cryptRest_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t
     {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} (hxl : x.length = p.n)
     (C : CtrSt p.W icb (8 * (p.n / 128)) t.mem)
     (hx : bytesAt t.mem p.D p.n = GcmSiv.ctrPart ciph icb x (128 * (p.n / 128)))
-    (hc : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = ciph) :
+    (hc : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = ciph)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (cryptRest v.callees) t (TailPost p ciph icb x t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   obtain hcl : ∀ y, (ciph y).length = 16 := fun y => by rw [← hc]; exact GcmSiv.ctxCiph_length _ _ _ _
   rw [cryptRest, WP.seq_iff, WP.block_append_iff]
@@ -395,8 +407,10 @@ theorem cryptRest_ok (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t
 /-! ## Counter mode -/
 
 open VG.Proof.AesGcmSiv.AArch64 (CryptPost cryptHead_ok headMem cryR) in
-theorem crypt_ok (e3 : Bool) (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+theorem crypt_ok (e3 : Bool) (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (crypt e3 v.callees) t (CryptPost p t) := by
+  obtain hWn := L.hWn
   have hw := L.ww
   have hn := L.n_lt
   obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
@@ -423,7 +437,7 @@ theorem crypt_ok (e3 : Bool) (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : L
   obtain E₁ : Env p t₁ := E.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
-  obtain fC : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR p.W p.D p.n, Region.Sub q q' :=
+  obtain fC : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR p.Wn p.W p.D p.n, Region.Sub q q' :=
     fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
@@ -487,7 +501,8 @@ theorem ctrSet_ok {p : Prm} {t : State} (E : Env p t) :
       t₁.read .w .x10 = t.mem.readW (p.W + BitVec.ofNat 64 Impl.AesGcmSiv.AArch64.cbO) 32 ∧
       t₁.gpr .x15 = p.W + BitVec.ofNat 64 240 ∧
       Others [.x10, .x15] t t₁ ∧ t₁.mem = t.mem ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 3808 by decide)
+  obtain hWn := E.perm.hWn
+  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 1760 by decide)
   refine ⟨_, by simp only [ctrSetup]; grun [E.x19, c₀], ?_, ?_, by others_tac, (by rfl), (by rfl), (by rfl), (by rfl)⟩
   · simp [State.read, gpr_write, E.x19, VG.Proof.AesGcmSiv.AArch64.setWidth_rt32,
       VG.Proof.AesGcmSiv.AArch64.read4_readW]; rfl
@@ -502,7 +517,7 @@ structure OBatchPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (
   wr : t'.wr = t.wr
   ctr : CtrSt p.W icb (8 * (p.n / 128)) t'.mem
   data : bytesAt t'.mem p.D p.n = GcmSiv.ctrPart ciph icb x (128 * (p.n / 128))
-  frame : Frame (cryR p.W p.D p.n ++ absR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) t.mem t'.mem
   out : blockAt t'.mem (p.W + BitVec.ofNat 64 80) =
     ghashFrom (blockAt t.mem (p.W + BitVec.ofNat 64 64)) (blockAt t.mem (p.W + BitVec.ofNat 64 80))
       (elemsAt t'.mem p.D (8 * (p.n / 128)))
@@ -512,6 +527,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     WP isa (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
       (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish)))) t
       (OBatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   have hww := L.ww
   rw [List.append_assoc, List.append_assoc, WP.seq_iff, WP.block_append_iff]
@@ -579,7 +595,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega_arith
     wrap_k := by
       show (p.W + BitVec.ofNat 64 240).toNat + 16 * (p.R + 1) ≤ 2 ^ 64
-      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
+      rw [L.toNat_W (by omega)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
     tbl := by show TblOk s₃.mem p.W _; rw [m₁₃]; exact tok₁ }
   obtain hI : CInv σ s₃ 0 0 s₃ := {
     le := Nat.zero_le _
@@ -611,24 +627,24 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
   refine WP.mono (ctrFinish_ok L C₃ O.ci E₄) fun s₅ ⟨E₅, rd₅, wr₅, v₅, C₅, d₅, f₅, fw₅⟩ => ?_
   refine WP.mono (ghFinish_ok (p := p) (s := s₅) E₅.x19 (by rw [wr₅, O.ci.wr, wr₃, wr₂, wr₁]; exact E.perm.wW (by decide)))
     fun s₆ ⟨b₆, f₆, g₆, sp₆, rd₆, wr₆⟩ => ?_
-  obtain dY : ∀ {d k : Nat}, (96 ≤ d ∨ d + k ≤ 80) → d + k ≤ 3808 →
+  obtain dY : ∀ {d k : Nat}, (96 ≤ d ∨ d + k ≤ 80) → d + k ≤ p.Wn →
       ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 80, 16⟩ : Region)], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rcases h₁ with h | h
-      · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+      · exact L.w_wn (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   obtain dYD : ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 80, 16⟩ : Region)], (⟨p.D, p.n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)
   refine ⟨E₅.keep (fun r _ => by rw [g₆]) sp₆ rd₆ wr₆, by rw [rd₆, rd₅, O.ci.rd, rd₃, rd₂, rd₁],
-    by rw [wr₆, wr₅, O.ci.wr, wr₃, wr₂, wr₁], ctrSt_frame C₅ f₆ (dY (.inl (by decide)) (by decide)), ?_, ?_, ?_⟩
+    by rw [wr₆, wr₅, O.ci.wr, wr₃, wr₂, wr₁], ctrSt_frame C₅ f₆ (dY (.inl (by decide)) (by omega)), ?_, ?_, ?_⟩
   · rw [Proof.AesGcm.AArch64.bytesAt_frame f₆ dYD (Nat.le_of_lt hn), d₅, hc₃, hx₃]
-  · have fA : Frame (cryR p.W p.D p.n ++ absR p.W) t.mem s₁.mem := f₁.sub fun r hr => by
+  · have fA : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) t.mem s₁.mem := f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨p.W + BitVec.ofNat 64 480, 1280⟩, by simp [absR], Region.sub_prefix (by decide)⟩
-    obtain fB : Frame (cryR p.W p.D p.n ++ absR p.W) s₃.mem s₅.mem :=
+    obtain fB : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) s₃.mem s₅.mem :=
       f₅.mono fun r hr => List.mem_append_left _ hr
-    obtain fC : Frame (cryR p.W p.D p.n ++ absR p.W) s₅.mem s₆.mem := f₆.mono fun r hr => by
+    obtain fC : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) s₅.mem s₆.mem := f₆.mono fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; simp [absR]
     rw [← m₁₃] at fA
     exact (fA.trans fB).trans fC
@@ -651,6 +667,7 @@ theorem openBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : La
     WP isa (ifBatch (.seq (.block (tblBuild ++ ctrSetup ++ batches ++ ghSetup))
       (.seq (byRounds (openLoop e3)) (.block (ctrFinish ++ ghFinish))))) t
       (OBatchPost p (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R) icb (bytesAt t.mem p.D p.n) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   unfold ifBatch
   refine WP.seq (WP.mono (batchHead_ok L E) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
@@ -685,7 +702,7 @@ structure OpenPost (p : Prm) (t t' : State) : Prop where
   env : Env p t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
-  frame : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t.mem t'.mem
   data : bytesAt t'.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n)
   out : blockAt t'.mem (p.W + BitVec.ofNat 64 80) =
@@ -693,8 +710,10 @@ structure OpenPost (p : Prm) (t t' : State) : Prop where
       (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t'.mem p.D p.n)))
 
 open VG.Proof.AesGcmSiv.AArch64 (cryptHead_ok headMem TailPost key_cryR) in
-theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (openData e3 v.callees) t (OpenPost p t) := by
+  obtain hWn := L.hWn
   have hw := L.ww
   have hn := L.n_lt
   obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
@@ -702,13 +721,13 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     GcmSiv.ctxCiph_length _ _ _
   obtain hxl : (bytesAt t.mem p.D p.n).length = p.n := Proof.Cmac.bytesAt_length _ _ _
   -- What the parts miss.
-  obtain dCry : ∀ {d k : Nat}, d + k ≤ 96 → ∀ r ∈ cryR p.W p.D p.n, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
+  obtain dCry : ∀ {d k : Nat}, d + k ≤ 96 → ∀ r ∈ cryR p.Wn p.W p.D p.n, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_wn (.inl (by omega_arith)) (by omega_arith) (by omega)
       · exact (L.d_w' (by omega_arith)).symm
   obtain dAbs : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ absR p.W, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h r hr => by
@@ -716,7 +735,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
       rcases hr with rfl | rfl
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-  obtain dKey : ∀ r ∈ cryR p.W p.D p.n ++ absR p.W,
+  obtain dKey : ∀ r ∈ cryR p.Wn p.W p.D p.n ++ absR p.W,
       (⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩ : Region).Disjoint r := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact (key_cryR L r hr).sub_left (Region.sub_prefix L.rounds_le)
@@ -768,7 +787,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   obtain hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₄.rd ++ t₄.wr) := by
     rw [rd₄, wr₄, T.rd, T.wr, B.rd, B.wr, rd₁, wr₁]
     exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
-  obtain dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  obtain dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   refine WP.mono (absorb_ok v L E₄ hc (by omega_arith) (by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]
@@ -780,16 +799,16 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
       (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n) := by
     rw [d₅, T.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
   refine ⟨P₅.env, by rw [P₅.rd, rd₄, T.rd, B.rd, rd₁], by rw [P₅.wr, wr₄, T.wr, B.wr, wr₁], ?_, hd₅, ?_⟩
-  · have g₁ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t₁.mem := f₁.sub fun r hr => by
+  · have g₁ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t.mem t₁.mem := f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
-    obtain g₂ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₁.mem t₂.mem := B.frame.mono fun r hr => by
+    obtain g₂ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₁.mem t₂.mem := B.frame.mono fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact List.mem_append_left _ hr
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
-    obtain g₃ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₂.mem t₄.mem := by
+    obtain g₃ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₂.mem t₄.mem := by
       rw [m₄]; exact T.frame.mono fun r hr => List.mem_append_left _ hr
-    obtain g₄ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₄.mem t₅.mem :=
+    obtain g₄ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₄.mem t₅.mem :=
       P₅.frame.mono fun r hr => List.mem_append_right _ hr
     exact ((g₁.trans g₂).trans g₃).trans g₄
   · have hH₄ : blockAt t₄.mem (p.W + BitVec.ofNat 64 64) = blockAt t.mem (p.W + BitVec.ofNat 64 64) := by
@@ -848,10 +867,11 @@ theorem forall_app {l₁ l₂ : List Region} {P : Region → Prop} (h₁ : ∀ r
 
 /-! ## `seal` -/
 
-theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre s) :
+theorem seal_wp {Wn : Nat} (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre Wn s)
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by assumption) (hv : v.ctr.scratch ≤ Wn - 1760 := by assumption) :
     WP isa (Impl.AesGcmSiv.AArch64.Stitch.«seal» e3 v.callees) s fun s' =>
-      GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.sealAArch64.post s s' := by
-  obtain ⟨L, P, hTw, hA⟩ := args_of_seal h
+      GprAbi s s' ∧ (Proof.AesGcmSiv.AArch64.sealAArch64 Wn).post s s' := by
+  obtain ⟨L, P, hTw, hA⟩ := args_of_seal h hWn
   have hRb := L.rounds_le
   have hn := L.n_lt
   refine WP.seq (WP.mono (entry_ok P hA) fun s₁ ⟨E₁, sv₁, f₁, sl₁, rd₁, wr₁⟩ => ?_)
@@ -864,46 +884,46 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   -- Counter mode.
   refine WP.seq (WP.mono (crypt_ok e3 v L Tg.env) fun s₅ Cr => ?_)
   -- The copy of the tag, and `restore`.
-  obtain sl₅ : TagSlot (prmOf s) s₅.mem :=
+  obtain sl₅ : TagSlot (prmOf Wn s) s₅.mem :=
     (((sl₁.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
       Cr.frame (by disj_tac L)
   obtain w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, Po.wr, kw, wr₁]
   obtain ⟨s₆, run₆, fT, hT₆, -, ho₆, sp₆, rd₆, wr₆⟩ := tagOut_ok L Cr.env sl₅ (by rw [w₅]; exact hTw)
-  obtain E₆ : Env (prmOf s) s₆ := Cr.env.keep (fun r hr => ho₆ r (by
+  obtain E₆ : Env (prmOf Wn s) s₆ := Cr.env.keep (fun r hr => ho₆ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₆ rd₆ wr₆
-  obtain sv₆ : SavedAt s₆.mem (prmOf s).W s :=
+  obtain sv₆ : SavedAt s₆.mem (prmOf Wn s).W s :=
     (((((sv₁.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
       Cr.frame (by disj_tac L))).frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (L.t_w' (show 128 + 88 ≤ 3808 by decide)).symm
+        exact (L.t_w' (show 128 + 88 ≤ 1760 by decide)).symm
   refine WP.block_append (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w2560R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
-  show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R) (Spec.GcmSiv.keyLen (prmOf s).R)
-      (bytesAt s.mem (prmOf s).N 12) (bytesAt s.mem (prmOf s).D (prmOf s).n) (bytesAt s.mem (prmOf s).A (prmOf s).al) =
-    (bytesAt s'.mem (prmOf s).D (prmOf s).n, bytesAt s'.mem (prmOf s).T 16)
+  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w1760R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
+  show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R) (Spec.GcmSiv.keyLen (prmOf Wn s).R)
+      (bytesAt s.mem (prmOf Wn s).N 12) (bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n) (bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al) =
+    (bytesAt s'.mem (prmOf Wn s).D (prmOf Wn s).n, bytesAt s'.mem (prmOf Wn s).T 16)
   rw [hm, hT₆, bytesAt_keep fT (by disj_tac L) (by omega_using [hn])]
   -- What the pieces read.
-  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf s).K (prmOf s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R :=
+  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf Wn s).K (prmOf Wn s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
-  obtain n₁ : bytesAt s₁.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := bytesAt_keep f₁ (by disj_tac L) (by decide)
-  obtain n₂ : bytesAt s₂.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := by
+  obtain n₁ : bytesAt s₁.mem (prmOf Wn s).N 12 = bytesAt s.mem (prmOf Wn s).N 12 := bytesAt_keep f₁ (by disj_tac L) (by decide)
+  obtain n₂ : bytesAt s₂.mem (prmOf Wn s).N 12 = bytesAt s.mem (prmOf Wn s).N 12 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
-  obtain a₂ : bytesAt s₂.mem (prmOf s).A (prmOf s).al = bytesAt s.mem (prmOf s).A (prmOf s).al := by
+  obtain a₂ : bytesAt s₂.mem (prmOf Wn s).A (prmOf Wn s).al = bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_using [this]),
       bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega_using [this])]
-  obtain d₂ : bytesAt s₂.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
+  obtain d₂ : bytesAt s₂.mem (prmOf Wn s).D (prmOf Wn s).n = bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep f₁ (by disj_tac L) (by omega_using [hn])]
-  obtain d₄ : bytesAt s₄.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
+  obtain d₄ : bytesAt s₄.mem (prmOf Wn s).D (prmOf Wn s).n = bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n := by
     rw [bytesAt_keep Tg.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep Po.frame (by disj_tac L) (by omega_using [hn]), d₂]
-  obtain key₃ : Spec.GcmSiv.ctxCiph s₃.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R =
-      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R :=
+  obtain key₃ : Spec.GcmSiv.ctxCiph s₃.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R =
+      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R :=
     ciph_keep Po.frame (by disj_tac L) hRb
-  obtain key₄ : Spec.GcmSiv.ctxCiph s₄.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R =
-      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R := by
+  obtain key₄ : Spec.GcmSiv.ctxCiph s₄.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R =
+      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R := by
     rw [ciph_keep Tg.frame (by disj_tac L) hRb, key₃]
-  obtain t₅ : bytesAt s₅.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 =
-      bytesAt s₄.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 :=
+  obtain t₅ : bytesAt s₅.mem ((prmOf Wn s).W + BitVec.ofNat 64 0) 16 =
+      bytesAt s₄.mem ((prmOf Wn s).W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (by disj_tac L) (by decide)
   rw [L.w0] at t₅
   have tg := Tg.out
@@ -915,8 +935,8 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   rw [n₂, a₂, d₂] at po
   rw [Cr.data, t₅, d₄, key₄, ci, tg, key₃, ci, po, ← au]
   unfold Spec.GcmSiv.encryptWith
-  generalize Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R)
-    (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (prmOf s).N 12) = dk
+  generalize Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R)
+    (Spec.GcmSiv.keyLen (prmOf Wn s).R) (bytesAt s.mem (prmOf Wn s).N 12) = dk
   obtain ⟨a, e⟩ := dk
   simp only [hti]
 
@@ -928,7 +948,7 @@ structure OpenMid (p : Prm) (t t' : State) : Prop where
   env : Env p t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
-  frame : Frame (cryR p.W p.D p.n ++ polyR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ polyR p.W) t.mem t'.mem
   data : bytesAt t'.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n)
   out : bytesAt t'.mem (p.W + BitVec.ofNat 64 96) 16 =
@@ -939,10 +959,12 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
     (hG : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 64) =
       hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0) {k : Prog isa} {Q : State → Prop}
-    (hk : ∀ t', OpenMid p t t' → WP isa k t' Q) :
+    (hk : ∀ t', OpenMid p t t' → WP isa k t' Q)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (.seq (.block [Impl.AesGcm.AArch64.mov .x27 .x23, Impl.AesGcm.AArch64.mov .x28 .x24])
       (.seq (Impl.AesGcmSiv.AArch64.absorb v.callees) (.seq (Impl.AesGcmSiv.AArch64.Stitch.openData e3 v.callees)
       (.seq (Impl.AesGcmSiv.AArch64.lens v.callees) (.seq (.block Impl.AesGcmSiv.AArch64.tagIn) k))))) t Q := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   -- The additional data.
   refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
@@ -953,9 +975,9 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
   obtain P₂' := P₂.of_eq (t := t) rfl rfl rfl
   -- The data.
   refine WP.seq (WP.mono (openData_ok hP gh e3 v L P₂.env) fun t₄ O => ?_)
-  obtain hH : ∀ r ∈ cryR p.W p.D p.n ++ absorbR p.W, (⟨p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r :=
+  obtain hH : ∀ r ∈ cryR p.Wn p.W p.D p.n ++ absorbR p.W, (⟨p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r :=
     forall_app (by disj_tac L) (absorbR_H L)
-  obtain sA : ∀ r ∈ absorbR p.W, ∃ r' ∈ cryR p.W p.D p.n ++ absorbR p.W, Region.Sub r r' :=
+  obtain sA : ∀ r ∈ absorbR p.W, ∃ r' ∈ cryR p.Wn p.W p.D p.n ++ absorbR p.W, Region.Sub r r' :=
     fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩
   obtain P₂₄ := Absorbed.trans hH (P₂'.sub sA) ⟨O.env, O.rd, O.wr, O.frame, O.out⟩
   -- The lengths.
@@ -968,7 +990,7 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₆ rd₆ wr₆
   -- What the absorbing of the additional data kept.
-  obtain dA : ∀ {Q : Addr} {k : Nat}, (⟨Q, k⟩ : Region).Disjoint ⟨p.W, 3808⟩ → k ≤ 2 ^ 64 →
+  obtain dA : ∀ {Q : Addr} {k : Nat}, (⟨Q, k⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ → k ≤ 2 ^ 64 →
       bytesAt t₂.mem Q k = bytesAt t.mem Q k := fun hd hk' => by
     rw [Proof.AesGcm.AArch64.bytesAt_frame P₂'.frame (absorbR_buf hd) hk']
   obtain fT : Frame [⟨p.W + BitVec.ofNat 64 96, 16⟩] t₅.mem t₆.mem := by rw [hm₆]; exact tagInMem_frame _ _ _
@@ -998,76 +1020,77 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
         (by simp [Spec.GcmSiv.le64])]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre s) :
+theorem open_wp {Wn : Nat} (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre Wn s)
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by assumption) (hv : v.ctr.scratch ≤ Wn - 1760 := by assumption) :
     WP isa (Impl.AesGcmSiv.AArch64.Stitch.«open» e3 v.callees) s fun s' =>
-      GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.openAArch64.post s s' := by
-  obtain ⟨L, P, hA⟩ := args_of_open h
+      GprAbi s s' ∧ (Proof.AesGcmSiv.AArch64.openAArch64 Wn).post s s' := by
+  obtain ⟨L, P, hA⟩ := args_of_open h hWn
   have hRb := L.rounds_le
   have hn := L.n_lt
   refine WP.seq (WP.mono (entry_ok P hA) fun s₀ ⟨E₀, sv₀, f₀, sl₀, _, _⟩ => ?_)
   -- The received tag, copied to `W`.
   obtain ⟨s₁, run₁, fR, hR₁, -, ho₁, sp₁, rd₁, wr₁⟩ := recv_ok L E₀ sl₀
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  obtain E₁ : Env (prmOf s) s₁ := E₀.keep (fun r hr => ho₁ r (by
+  obtain E₁ : Env (prmOf Wn s) s₁ := E₀.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
-  obtain fR' : Frame [⟨(prmOf s).W + BitVec.ofNat 64 0, 16⟩] s₀.mem s₁.mem := by rw [L.w0]; exact fR
-  obtain sv₁ : SavedAt s₁.mem (prmOf s).W s := sv₀.frame fR' (by disj_tac L)
-  obtain f₁ : Frame [entryR (prmOf s).W, ⟨(prmOf s).W + BitVec.ofNat 64 0, 16⟩] s.mem s₁.mem :=
+  obtain fR' : Frame [⟨(prmOf Wn s).W + BitVec.ofNat 64 0, 16⟩] s₀.mem s₁.mem := by rw [L.w0]; exact fR
+  obtain sv₁ : SavedAt s₁.mem (prmOf Wn s).W s := sv₀.frame fR' (by disj_tac L)
+  obtain f₁ : Frame [entryR (prmOf Wn s).W, ⟨(prmOf Wn s).W + BitVec.ofNat 64 0, 16⟩] s.mem s₁.mem :=
     (f₀.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
     (fR'.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨(prmOf s).W + BitVec.ofNat 64 0, 16⟩, by simp, fun _ h => h⟩)
-  obtain hT₁ : bytesAt s₁.mem (prmOf s).W 16 = bytesAt s.mem (prmOf s).T 16 := by
+      exact ⟨⟨(prmOf Wn s).W + BitVec.ofNat 64 0, 16⟩, by simp, fun _ h => h⟩)
+  obtain hT₁ : bytesAt s₁.mem (prmOf Wn s).W 16 = bytesAt s.mem (prmOf Wn s).T 16 := by
     rw [hR₁, bytesAt_keep f₀ (by disj_tac L) (by decide)]
   -- The keys.
   refine WP.seq (WP.mono (keys_ok v L E₁) fun s₂ Ky => ?_)
   -- The additional data, then the data decrypted and absorbed, the lengths and the tag input.
   refine openMid_ok hP gh e3 v L Ky.env Ky.hkey Ky.acc fun s₄ Md => ?_
-  obtain dMd : ∀ {R' : Region}, (∀ r ∈ cryR (prmOf s).W (prmOf s).D (prmOf s).n, R'.Disjoint r) →
-      (∀ r ∈ polyR (prmOf s).W, R'.Disjoint r) → ∀ r ∈ cryR (prmOf s).W (prmOf s).D (prmOf s).n ++ polyR (prmOf s).W,
+  obtain dMd : ∀ {R' : Region}, (∀ r ∈ cryR (prmOf Wn s).Wn (prmOf Wn s).W (prmOf Wn s).D (prmOf Wn s).n, R'.Disjoint r) →
+      (∀ r ∈ polyR (prmOf Wn s).W, R'.Disjoint r) → ∀ r ∈ cryR (prmOf Wn s).Wn (prmOf Wn s).W (prmOf Wn s).D (prmOf Wn s).n ++ polyR (prmOf Wn s).W,
         R'.Disjoint r := fun h₁ h₂ => forall_app h₁ h₂
   -- Its tag at `W + 224`.
   refine WP.seq (WP.mono (tag_ok v L Md.env (o := 224) (by decide)) fun s₅ Tg => ?_)
   -- The comparison.
   obtain ⟨s₆, run₆, x27₆, ho₆, hm₆, sp₆, rd₆, wr₆⟩ := cmp_ok Tg.env
   refine WP.seq (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  obtain E₆ : Env (prmOf s) s₆ := Tg.env.keep (fun r hr => ho₆ r (by
+  obtain E₆ : Env (prmOf Wn s) s₆ := Tg.env.keep (fun r hr => ho₆ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₆ rd₆ wr₆
   -- The mask.
   refine WP.seq (WP.mono (mask_ok L E₆ x27₆) fun s₇ Mk => ?_)
   -- `ok` and the restore.
   refine WP.block_append (WP.of_runBlock ⟨_, by grun [], ?_⟩)
-  obtain sv₇ : SavedAt s₇.mem (prmOf s).W s := by
+  obtain sv₇ : SavedAt s₇.mem (prmOf Wn s).W s := by
     have := (((sv₁.frame Ky.frame (by disj_tac L)).frame Md.frame (dMd (by disj_tac L) (by disj_tac L))).frame
       Tg.frame (by disj_tac L))
     rw [← hm₆] at this
     exact this.frame Mk.frame (by disj_tac L)
   refine WP.mono (exit_ok (s₀ := s) (Mk.env.write (by decide) _).x19 (Mk.env.write (by decide) _).sp
-    (Mk.env.write (by decide) _).w2560R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
+    (Mk.env.write (by decide) _).w1760R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
   -- What the pieces read.
-  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf s).K (prmOf s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R :=
+  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf Wn s).K (prmOf Wn s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
-  obtain n₁ : bytesAt s₁.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := bytesAt_keep f₁ (by disj_tac L) (by decide)
-  obtain n₂ : bytesAt s₂.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := by
+  obtain n₁ : bytesAt s₁.mem (prmOf Wn s).N 12 = bytesAt s.mem (prmOf Wn s).N 12 := bytesAt_keep f₁ (by disj_tac L) (by decide)
+  obtain n₂ : bytesAt s₂.mem (prmOf Wn s).N 12 = bytesAt s.mem (prmOf Wn s).N 12 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
-  obtain a₂ : bytesAt s₂.mem (prmOf s).A (prmOf s).al = bytesAt s.mem (prmOf s).A (prmOf s).al := by
+  obtain a₂ : bytesAt s₂.mem (prmOf Wn s).A (prmOf Wn s).al = bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_using [this]),
       bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega_using [this])]
-  obtain d₂ : bytesAt s₂.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
+  obtain d₂ : bytesAt s₂.mem (prmOf Wn s).D (prmOf Wn s).n = bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep f₁ (by disj_tac L) (by omega_using [hn])]
-  obtain tag₂ : bytesAt s₂.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf s).T 16 := by
+  obtain tag₂ : bytesAt s₂.mem ((prmOf Wn s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf Wn s).T 16 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), L.w0, hT₁]
-  obtain tag₅ : bytesAt s₅.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf s).T 16 := by
+  obtain tag₅ : bytesAt s₅.mem ((prmOf Wn s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf Wn s).T 16 := by
     rw [bytesAt_keep Tg.frame (by disj_tac L) (by decide),
       bytesAt_keep Md.frame (dMd (by disj_tac L) (by disj_tac L)) (by decide), tag₂]
   rw [L.w0] at tag₂ tag₅
-  obtain ci₄ : Spec.GcmSiv.ctxCiph s₄.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R =
-      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R :=
+  obtain ci₄ : Spec.GcmSiv.ctxCiph s₄.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R =
+      Spec.GcmSiv.ctxCiph s₂.mem ((prmOf Wn s).W + BitVec.ofNat 64 240) (prmOf Wn s).R :=
     ciph_keep Md.frame (dMd (by disj_tac L) (by disj_tac L)) hRb
-  obtain d₆ : bytesAt s₆.mem (prmOf s).D (prmOf s).n = bytesAt s₄.mem (prmOf s).D (prmOf s).n := by
+  obtain d₆ : bytesAt s₆.mem (prmOf Wn s).D (prmOf Wn s).n = bytesAt s₄.mem (prmOf Wn s).D (prmOf Wn s).n := by
     rw [hm₆, bytesAt_keep Tg.frame (by disj_tac L) (by omega_using [hn])]
   have au := Ky.auth
   have ci := Ky.ciph
@@ -1084,31 +1107,31 @@ theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   obtain ax : s'.gpr .x0 = s₆.gpr .x27 := by
     rw [hx0]; simp only [gpr_write, ite_true, BitVec.setWidth_eq, BitVec.add_zero]; exact Mk.x27
   rw [x27₆, tg, tag₅] at ax
-  show openPost (openResult s) s' (prmOf s).D (prmOf s).n
+  show openPost (openResult s) s' (prmOf Wn s).D (prmOf Wn s).n
   obtain hdec : openResult s =
-      let dk := Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R)
-        (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (prmOf s).N 12)
-      if Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf s).N 12)
-          (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf s).T 16))
-            (bytesAt s.mem (prmOf s).D (prmOf s).n)) (bytesAt s.mem (prmOf s).A (prmOf s).al)) =
-          bytesAt s.mem (prmOf s).T 16 then
-        some (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf s).T 16))
-          (bytesAt s.mem (prmOf s).D (prmOf s).n))
+      let dk := Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R)
+        (Spec.GcmSiv.keyLen (prmOf Wn s).R) (bytesAt s.mem (prmOf Wn s).N 12)
+      if Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf Wn s).N 12)
+          (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf Wn s).T 16))
+            (bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n)) (bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al)) =
+          bytesAt s.mem (prmOf Wn s).T 16 then
+        some (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf Wn s).T 16))
+          (bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n))
       else none := decrypt_eq hti _ _ _ _ _ _
   simp only at hdec
-  generalize Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R)
-    (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (prmOf s).N 12) = dk at md ax hdec
+  generalize Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (prmOf Wn s).K (prmOf Wn s).R)
+    (Spec.GcmSiv.keyLen (prmOf Wn s).R) (bytesAt s.mem (prmOf Wn s).N 12) = dk at md ax hdec
   rw [hdec]
-  by_cases hc : Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf s).N 12)
-      (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf s).T 16))
-        (bytesAt s.mem (prmOf s).D (prmOf s).n)) (bytesAt s.mem (prmOf s).A (prmOf s).al)) =
-      bytesAt s.mem (prmOf s).T 16
+  by_cases hc : Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf Wn s).N 12)
+      (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf Wn s).T 16))
+        (bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n)) (bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al)) =
+      bytesAt s.mem (prmOf Wn s).T 16
   · refine openPost_some (ite_eq_left_of_eq_true _ _ (eq_true hc)) ?_ ?_
     · rw [ax]; simp only [hc, ↓reduceIte]; rfl
     · rw [hm]; simp only [mem_write]; rw [md]; simp only [hc, ↓reduceIte]
-  · have hc' : ¬bytesAt s.mem (prmOf s).T 16 = Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf s).N 12)
-        (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf s).T 16))
-          (bytesAt s.mem (prmOf s).D (prmOf s).n)) (bytesAt s.mem (prmOf s).A (prmOf s).al)) := Ne.symm hc
+  · have hc' : ¬bytesAt s.mem (prmOf Wn s).T 16 = Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (prmOf Wn s).N 12)
+        (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem (prmOf Wn s).T 16))
+          (bytesAt s.mem (prmOf Wn s).D (prmOf Wn s).n)) (bytesAt s.mem (prmOf Wn s).A (prmOf Wn s).al)) := Ne.symm hc
     refine openPost_none (ite_eq_right_of_eq_false _ _ (eq_false hc)) ?_ ?_
     · rw [ax]; simp only [hc', ↓reduceIte]; rfl
     · rw [hm]; simp only [mem_write]; rw [md]; simp only [hc', ↓reduceIte]
@@ -1159,6 +1182,7 @@ open VG.Impl.AesGcmSiv.AArch64.Stitch
 theorem restC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (.block (rest ++ ([.lsr .x .x9 .x28 4] : List Instr))) t fun t' => BL p (8 * (p.n / 128)) t' ∧
       t'.gpr .x9 = BitVec.ofNat 64 ((p.n - 16 * (8 * (p.n / 128))) / 16) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   rw [WP.block_append_iff]
   refine WP.mono (rest_ok L E) fun t₁ ⟨x27₁, x28₁, E₁, _, _, _, _⟩ => ?_
@@ -1172,9 +1196,11 @@ theorem restC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
 
 /-- The whole blocks of counter mode from block `b`, for their registers. -/
 theorem cryptMidFrom_ok (v : GcmImpl) {p : Prm} (L : Lay p) {b : Nat} (hb : 16 * b ≤ p.n) {t : State}
-    (B : BL p b t) (h9 : t.gpr .x9 = BitVec.ofNat 64 ((p.n - 16 * b) / 16)) :
+    (B : BL p b t) (h9 : t.gpr .x9 = BitVec.ofNat 64 ((p.n - 16 * b) / 16))
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (.ite (.zero .x .x9) (.block []) (.loop (Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (.nonzero .x .x9))) t
       (BL p (p.n / 16)) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   refine WP.ite (decide ((p.n - 16 * b) / 16 = 0)) (eval_zero h9 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
   · have h0 : (p.n - 16 * b) / 16 = 0 := by simpa using ht
@@ -1191,8 +1217,10 @@ theorem cryptMidFrom_ok (v : GcmImpl) {p : Prm} (L : Lay p) {b : Nat} (hb : 16 *
       exact ⟨ev.trans (by simp; omega_using [hj, he]), p.n / 16 - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hbj], by omega_using [hj, he], B''⟩
 
 /-- `cryptRest`, in two runs with the same public arguments. -/
-theorem cryptRest_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
+theorem cryptRest_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptRest v.callees) TT := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   have hb : 16 * (8 * (p.n / 128)) ≤ p.n := by omega_using []
   refine rel_seq (rel_env E₁ E₂ [] (by simp) restC_check) (restC_ok L E₁) (restC_ok L E₂)
@@ -1228,6 +1256,7 @@ theorem cryptRest_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} 
 theorem cryptHeadC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (.block Impl.AesGcmSiv.AArch64.cryptHead) t fun t₁ => Env p t₁ ∧
       CtrSt p.W (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) 0 t₁.mem := by
+  obtain hWn := L.hWn
   obtain ⟨t₁, run₁, hm₁, _, _, _, ho₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
   exact WP.of_runBlock ⟨t₁, run₁, E.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -1235,8 +1264,10 @@ theorem cryptHeadC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     by rw [hm₁]; exact headMem_ctr _⟩
 
 /-- `crypt`, in two runs with the same public arguments. -/
-theorem crypt_rel (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
+theorem crypt_rel (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (crypt e3 v.callees) TT := by
+  obtain hWn := L.hWn
   refine rel_seq (rel_env E₁ E₂ [] (by simp) cryptHead_check) (cryptHeadC_ok L E₁) (cryptHeadC_ok L E₂)
     fun u₁ u₂ ⟨F₁, C₁⟩ ⟨F₂, C₂⟩ => ?_
   refine rel_seq (rel_env F₁ F₂ [] (by simp) (ctrB_check e3)) (ctrBatches_ok e3 L F₁ C₁) (ctrBatches_ok e3 L F₂ C₂)
@@ -1249,11 +1280,12 @@ theorem crypt_rel (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ :
 with the same public arguments. -/
 theorem restAbs_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block rest) (Impl.AesGcmSiv.AArch64.absorb v.callees)) TT := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   refine rel_seq (rel_env E₁ E₂ [] (by simp) rest_check) (rest_ok L E₁) (rest_ok L E₂)
     fun c₁ c₂ ⟨x27₁, x28₁, G₁, _, _, _, _⟩ ⟨x27₂, x28₂, G₂, _, _, _, _⟩ => ?_
   have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint
-      ⟨p.W, 3808⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega_using []))
+      ⟨p.W, p.Wn⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega_using []))
   have hc : ∀ {c : State}, Env p c →
       Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (c.rd ++ c.wr) := fun G =>
     Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off G.perm.d (by omega_using []) hn)
@@ -1264,7 +1296,8 @@ theorem restAbs_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
 
 /-- `polyData`, in two runs with the same public arguments. -/
 theorem polyData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyData e3 v.callees) TT :=
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂)
+    : RelCT isa (Eq2 σ₁ σ₂) (polyData e3 v.callees) TT :=
   rel_seq (rel_env E₁ E₂ [] (by simp) (polyB_check e3)) (polyBatches_ok hP gh e3 L E₁)
     (polyBatches_ok hP gh e3 L E₂)
     fun _ _ A₁ A₂ => restAbs_rel v L A₁.env A₂.env
@@ -1272,10 +1305,11 @@ theorem polyData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : 
 /-- The lengths, in two runs with the same public arguments. -/
 theorem lens_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcmSiv.AArch64.lens v.callees) TT := by
+  obtain hWn := L.hWn
   have wL : ∀ {d : State}, Env p d → WP isa (.block Impl.AesGcmSiv.AArch64.lensBlock) d fun t =>
       Env p t ∧ t.gpr .x27 = p.W + BitVec.ofNat 64 224 ∧ t.gpr .x28 = BitVec.ofNat 64 16 := fun E => by
-    have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
-    have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
+    have w₀ := E.perm.wW (show 224 + 8 ≤ 1760 by decide)
+    have w₈ := E.perm.wW (show 232 + 8 ≤ 1760 by decide)
     refine WP.run ⟨_, by simp only [Impl.AesGcmSiv.AArch64.lensBlock]; grun [E.x19, E.x24, E.x26, w₀, w₈], rfl⟩
       fun t ht => ?_
     subst ht
@@ -1288,7 +1322,9 @@ theorem lens_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁
 
 /-- `polyval`, in two runs with the same public arguments. -/
 theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (polyval e3 v.callees) TT := by
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂)
+    : RelCT isa (Eq2 σ₁ σ₂) (polyval e3 v.callees) TT := by
+  obtain hWn := L.hWn
   refine rel_seq (rel_env E₁ E₂ [] (by simp) polyA_check) (mov2_ok E₁ (a := .x23) (b := .x24) (by decide) (by decide))
     (mov2_ok E₂ (a := .x23) (b := .x24) (by decide) (by decide)) fun a₁ a₂ ⟨G₁, a27₁, a28₁, _, rd₁, wr₁⟩
       ⟨G₂, a27₂, a28₂, _, rd₂, wr₂⟩ => ?_
@@ -1308,8 +1344,9 @@ theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
 open VG.Proof.AesGcmSiv.AArch64 (key_cryR absR) in
 /-- The key schedule, after code that writes only what counter mode and the
 batches' POLYVAL write. -/
-theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.W p.D p.n ++ absR p.W) m m') :
+theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) m m') :
     Spec.GcmSiv.ctxCiph m' (p.W + BitVec.ofNat 64 240) p.R = Spec.GcmSiv.ctxCiph m (p.W + BitVec.ofNat 64 240) p.R := by
+  obtain hWn := L.hWn
   have hR := L.rounds_le
   unfold Spec.GcmSiv.ctxCiph
   rw [Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])]
@@ -1322,7 +1359,9 @@ theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.W p.D
 
 /-- `openData`, in two runs with the same public arguments. -/
 theorem openData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}
-    (E₁ : Env p σ₁) (E₂ : Env p σ₂) : RelCT isa (Eq2 σ₁ σ₂) (openData e3 v.callees) TT := by
+    (E₁ : Env p σ₁) (E₂ : Env p σ₂)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) : RelCT isa (Eq2 σ₁ σ₂) (openData e3 v.callees) TT := by
+  obtain hWn := L.hWn
   have wR : ∀ {u w : State} {icb : List Byte}, OBatchPost p (Spec.GcmSiv.ctxCiph u.mem (p.W + BitVec.ofNat 64 240) p.R)
       icb (bytesAt u.mem p.D p.n) u w → WP isa (cryptRest v.callees) w (Env p) := fun B =>
     WP.mono (cryptRest_ok v L B.env (Proof.Cmac.bytesAt_length _ _ _) B.ctr B.data (ciph_cryAbs L B.frame))
@@ -1335,12 +1374,13 @@ theorem openData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : 
 
 /-! ## The functions -/
 
-theorem seal_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    ConstantTime isa Proof.AesGcmSiv.AArch64.sealAArch64.pre Proof.AesGcmSiv.AArch64.sealAArch64.pub
+theorem seal_ct {Wn : Nat} (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl)
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by assumption) (hv : v.ctr.scratch ≤ Wn - 1760 := by assumption) :
+    ConstantTime isa (Proof.AesGcmSiv.AArch64.sealAArch64 Wn).pre (Proof.AesGcmSiv.AArch64.sealAArch64 Wn).pub
       («seal» e3 v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  obtain ⟨L, P₁, -, hA₁⟩ := args_of_seal h₁
-  obtain ⟨-, P₂, -, hA₂⟩ := args_of_seal h₂
+  obtain ⟨L, P₁, -, hA₁⟩ := args_of_seal h₁ hWn
+  obtain ⟨-, P₂, -, hA₂⟩ := args_of_seal h₂ hWn
   refine rel_seq (entry_rel hp hA₁ hA₂) (entry_ok P₁ hA₁) (entry_pub hp P₂ hA₂)
     fun τ₁ τ₂ ⟨E₁, _, _, S₁, _⟩ ⟨E₂, S₂⟩ => ?_
   refine rel_seq (keys_rel v L E₁ E₂) (keys_ok v L E₁) (keys_ok v L E₂) fun a₁ a₂ K₁ K₂ => ?_
@@ -1350,23 +1390,24 @@ theorem seal_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     (tag_ok v L P₂.env (o := 0) (by decide)) fun c₁ c₂ T₁ T₂ => ?_
   refine rel_seq (crypt_rel e3 v L T₁.env T₂.env) (crypt_ok e3 v L T₁.env) (crypt_ok e3 v L T₂.env)
     fun d₁ d₂ C₁ C₂ => ?_
-  have sl : ∀ {τ a b c d : State}, TagSlot (prmOf σ₁) τ.mem → KeysPost (prmOf σ₁) τ a → PolyPost (prmOf σ₁) a b →
-      TagPost (prmOf σ₁) 0 b c → CryptPost (prmOf σ₁) c d → TagSlot (prmOf σ₁) d.mem := fun S K P T C =>
+  have sl : ∀ {τ a b c d : State}, TagSlot (prmOf Wn σ₁) τ.mem → KeysPost (prmOf Wn σ₁) τ a → PolyPost (prmOf Wn σ₁) a b →
+      TagPost (prmOf Wn σ₁) 0 b c → CryptPost (prmOf Wn σ₁) c d → TagSlot (prmOf Wn σ₁) d.mem := fun S K P T C =>
     (((S.frame K.frame (by disj_tac L)).frame P.frame (by disj_tac L)).frame T.frame (by disj_tac L)).frame C.frame
       (by disj_tac L)
   exact rel_ldrT (l := Impl.AesGcmSiv.AArch64.tagOut.tail ++ Impl.AesGcm.AArch64.restore) C₁.env C₂.env
     (sl S₁ K₁ P₁ T₁ C₁) (sl S₂ K₂ P₂ T₂ C₂) sealEnd_check
 
-theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    ConstantTime isa Proof.AesGcmSiv.AArch64.openAArch64.pre Proof.AesGcmSiv.AArch64.openAArch64.pub
+theorem open_ct {Wn : Nat} (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl)
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by assumption) (hv : v.ctr.scratch ≤ Wn - 1760 := by assumption) :
+    ConstantTime isa (Proof.AesGcmSiv.AArch64.openAArch64 Wn).pre (Proof.AesGcmSiv.AArch64.openAArch64 Wn).pub
       («open» e3 v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  obtain ⟨L, P₁, hA₁⟩ := args_of_open h₁
-  obtain ⟨-, P₂, hA₂⟩ := args_of_open h₂
+  obtain ⟨L, P₁, hA₁⟩ := args_of_open h₁ hWn
+  obtain ⟨-, P₂, hA₂⟩ := args_of_open h₂ hWn
   refine rel_seq (entry_rel hp hA₁ hA₂) (entry_ok P₁ hA₁) (entry_pub hp P₂ hA₂)
     fun τ₁ τ₂ ⟨E₁, _, _, S₁, _⟩ ⟨E₂, S₂⟩ => ?_
-  have wr : ∀ {τ : State}, Env (prmOf σ₁) τ → TagSlot (prmOf σ₁) τ.mem →
-      WP isa (.block Impl.AesGcmSiv.AArch64.recv) τ (Env (prmOf σ₁)) :=
+  have wr : ∀ {τ : State}, Env (prmOf Wn σ₁) τ → TagSlot (prmOf Wn σ₁) τ.mem →
+      WP isa (.block Impl.AesGcmSiv.AArch64.recv) τ (Env (prmOf Wn σ₁)) :=
     fun E S => by
       obtain ⟨t, run, -, -, -, ho, sp, rd, wr⟩ := recv_ok L E S
       exact WP.of_runBlock ⟨t, run, E.keep (fun r hr => ho r (by
@@ -1381,8 +1422,8 @@ theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     (mov2_ok K₂.env (a := .x23) (b := .x24) (by decide) (by decide)) fun b₁ b₂ ⟨G₁, b27₁, b28₁, _⟩
       ⟨G₂, b27₂, b28₂, _⟩ => ?_
   rw [K₁.env.x23] at b27₁; rw [K₁.env.x24] at b28₁; rw [K₂.env.x23] at b27₂; rw [K₂.env.x24] at b28₂
-  have hc₁ : Covers [⟨(prmOf σ₁).A, (prmOf σ₁).al⟩] (b₁.rd ++ b₁.wr) := G₁.perm.aad
-  have hc₂ : Covers [⟨(prmOf σ₁).A, (prmOf σ₁).al⟩] (b₂.rd ++ b₂.wr) := G₂.perm.aad
+  have hc₁ : Covers [⟨(prmOf Wn σ₁).A, (prmOf Wn σ₁).al⟩] (b₁.rd ++ b₁.wr) := G₁.perm.aad
+  have hc₂ : Covers [⟨(prmOf Wn σ₁).A, (prmOf Wn σ₁).al⟩] (b₂.rd ++ b₂.wr) := G₂.perm.aad
   refine rel_seq (absorb_rel v L G₁ G₂ L.al_lt L.aw L.a_w hc₁ hc₂ b27₁ b27₂ b28₁ b28₂)
     (absorb_ok v L G₁ hc₁ L.al_lt L.aw L.a_w b27₁ b28₁) (absorb_ok v L G₂ hc₂ L.al_lt L.aw L.a_w b27₂ b28₂)
     fun c₁ c₂ B₁ B₂ => ?_
@@ -1391,8 +1432,8 @@ theorem open_ct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
     (openData_ok hP gh e3 v L B₂.env) fun d₁ d₂ O₁ O₂ => ?_
   -- The lengths and the tag input.
   refine rel_seq (lens_rel v L O₁.env O₂.env) (lens_ok v L O₁.env) (lens_ok v L O₂.env) fun e₁ e₂ D₁ D₂ => ?_
-  have wT : ∀ {d : State}, Env (prmOf σ₁) d →
-      WP isa (.block Impl.AesGcmSiv.AArch64.tagIn) d (Env (prmOf σ₁)) := fun E => by
+  have wT : ∀ {d : State}, Env (prmOf Wn σ₁) d →
+      WP isa (.block Impl.AesGcmSiv.AArch64.tagIn) d (Env (prmOf Wn σ₁)) := fun E => by
     obtain ⟨t, run, -, ho, sp, rd, wr⟩ := tagIn_ok E
     exact WP.of_runBlock ⟨t, run, E.keep (fun r hr => ho r (by
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -1428,7 +1469,7 @@ namespace VG.Proof.AesGcmSiv.AArch64.Stitch
 
 open VG VG.AArch64 VG.Impl.AesGcmSiv.AArch64
 open VG.Proof.AesGcm.AArch64 (GcmImpl)
-open VG.Proof.AesGcmSiv.AArch64 (tagInput_eq sealSat openSat sealFrameSat_pre openFrameSat_pre sealAArch64
+open VG.Proof.AesGcmSiv.AArch64 (tagInput_eq sealSatW openSatW sealFrameSat_pre2288 sealFrameSat_pre3824 openFrameSat_pre2288 openFrameSat_pre3824 gsivWn gsivWn_cases gsivWn_hv sealAArch64
   openAArch64 oneLay onePub args rounds openResult openPost sealPre openPre)
 open VG.Proof.Gcm.AArch64.Pmull (PrepPow)
 open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
@@ -1454,74 +1495,135 @@ theorem open_keepsV (e3 : Bool) (v : GcmImpl) : (Stitch.«open» e3 v.callees).a
 
 /-! ## Correctness -/
 
-theorem seal_correct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (s : State) (hs : sealAArch64.pre s) :
-    ∃ t s', Exec isa (Stitch.«seal» e3 v.callees) s t s' ∧ abiPreserved s s' ∧ sealAArch64.post s s' :=
+theorem seal_correct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {Wn : Nat}
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808) (hv : v.ctr.scratch ≤ Wn - 1760) (s : State) (hs : (sealAArch64 Wn).pre s) :
+    ∃ t s', Exec isa (Stitch.«seal» e3 v.callees) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (seal_wp hP gh e3 v tagInput_eq hs) (seal_keepsV e3 v)
 
-theorem open_correct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (s : State) (hs : openAArch64.pre s) :
-    ∃ t s', Exec isa (Stitch.«open» e3 v.callees) s t s' ∧ abiPreserved s s' ∧ openAArch64.post s s' :=
+theorem open_correct (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {Wn : Nat}
+    (hWn : 2272 ≤ Wn ∧ Wn ≤ 3808) (hv : v.ctr.scratch ≤ Wn - 1760) (s : State) (hs : (openAArch64 Wn).pre s) :
+    ∃ t s', Exec isa (Stitch.«open» e3 v.callees) s t s' ∧ abiPreserved s s' ∧ (openAArch64 Wn).post s s' :=
   WP.withPreservedV (open_wp hP gh e3 v tagInput_eq hs) (open_keepsV e3 v)
 
-/-! ## The shared contracts, with the working space as an argument -/
+/-! ## The shared contracts, with `Wn / 8` words of working space as an argument -/
 
-theorem seal_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    Verified AArch64.target (Stitch.«seal» e3 v.callees) (Proof.AesGcmSiv.sealScratchContract AArch64.abi 476) :=
-  Verified.of_correct (seal_correct hP gh e3 v) (seal_ct hP gh e3 v) (by
-    sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
-      Proof.AesGcmSiv.sealRoundsPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
-      AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      [sealSat] using sealSat)
+theorem seal_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {Wn : Nat}
+    (h : Wn = 2272 ∨ Wn = 3808) (hv : v.ctr.scratch ≤ Wn - 1760) :
+    Verified AArch64.target (Stitch.«seal» e3 v.callees) (Proof.AesGcmSiv.sealScratchContract AArch64.abi (Wn / 8)) := by
+  have hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by omega
+  have ok := seal_correct hP gh e3 v hWn hv
+  have ct := seal_ct (Wn := Wn) hP gh e3 v
+  rcases h with rfl | rfl
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
+        Proof.AesGcmSiv.sealRoundsPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+        AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [sealSatW] using sealSatW 2272)
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
+        Proof.AesGcmSiv.sealRoundsPost, sealAArch64, sealPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+        AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        [sealSatW] using sealSatW 3808)
 
-theorem open_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    Verified AArch64.target (Stitch.«open» e3 v.callees) (Proof.AesGcmSiv.openScratchContract AArch64.abi 476) :=
-  Verified.of_correct (open_correct hP gh e3 v) (open_ct hP gh e3 v)
-    { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
-        openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      -- `h` and the goal match on the same outcome of `decryptWith` with
-      -- different matchers (`openPost`'s and `openContract`'s): split on it
-      -- rather than have `exact h` unfold both to unify them.
-      post := by
-        intro s s' _ h
-        sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+theorem open_verified (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {Wn : Nat}
+    (h : Wn = 2272 ∨ Wn = 3808) (hv : v.ctr.scratch ≤ Wn - 1760) :
+    Verified AArch64.target (Stitch.«open» e3 v.callees) (Proof.AesGcmSiv.openScratchContract AArch64.abi (Wn / 8)) := by
+  have hWn : 2272 ≤ Wn ∧ Wn ≤ 3808 := by omega
+  have ok := open_correct hP gh e3 v hWn hv
+  have ct := open_ct (Wn := Wn) hP gh e3 v
+  rcases h with rfl | rfl
+  · exact Verified.of_correct ok ct
+      { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
           Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
           AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-        sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+        -- `h` and the goal match on the same outcome of `decryptWith` with
+        -- different matchers (`openPost`'s and `openContract`'s): split on it
+        -- rather than have `exact h` unfold both to unify them.
+        post := by
+          intro s s' _ h
+          sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+            openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+            AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+            openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+            AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
+          intro _
+          split at h <;> rename_i heq <;> rw [heq] <;> exact h
+        pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
           Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
           openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
-        intro _
-        split at h <;> rename_i heq <;> rw [heq] <;> exact h
-      pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
-        openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
-        Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
-        openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat] using openSat }
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSatW, sealSatW] using openSatW 2272 }
+  · exact Verified.of_correct ok ct
+      { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        -- `h` and the goal match on the same outcome of `decryptWith` with
+        -- different matchers (`openPost`'s and `openContract`'s): split on it
+        -- rather than have `exact h` unfold both to unify them.
+        post := by
+          intro s s' _ h
+          sig_post [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+            openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+            AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          sig_reduce [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+            Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+            openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+            AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
+          intro _
+          split at h <;> rename_i heq <;> rw [heq] <;> exact h
+        pub := by sig_implies_pub [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        sat := by sig_implies_sat [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
+          Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, openAArch64, openResult, openPost,
+          openPre, oneLay, onePub, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSatW, sealSatW] using openSatW 3808 }
 
 theorem seal_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«seal» e3 v.callees))
-      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
-    (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
-    (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
-    (seal_verified hP gh e3 v) (by decide) (by decide) (sealPre_local _) (sealPost_local _)
-    (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (Stitch.«seal» e3 v.callees))
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi (gsivWn v + 16)) := by
+  obtain hv := seal_verified hP gh e3 v (gsivWn_cases v) (gsivWn_hv v)
+  rcases gsivWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+      (n := 284) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2288)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre2288
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+      (n := 476) (pre := Spec.GcmSiv.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcmSiv.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre3824
 
 theorem open_framed (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Stitch.«open» e3 v.callees))
-      (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
-    (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
-    (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
-    (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
-    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hP gh e3 v)) (by decide) (by decide) (openPre_local _)
-    (openPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
-    (hleak := openLeak_local _)
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (Stitch.«open» e3 v.callees))
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi (gsivWn v + 16)) := by
+  obtain hv := open_verified hP gh e3 v (gsivWn_cases v) (gsivWn_hv v)
+  rcases gsivWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+      (n := 284) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2288)
+      (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
+      (Proof.AesGcmSiv.Verified.of_openScratch hv) (by decide) (by decide) (openPre_local _) (openPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre2288 (hleak := openLeak_local _)
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+      (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcmSiv.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
+      (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
+      (Proof.AesGcmSiv.Verified.of_openScratch hv) (by decide) (by decide) (openPre_local _) (openPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre3824 (hleak := openLeak_local _)
 
 /-! ## The code of each function -/
 
@@ -1534,19 +1636,82 @@ def openCode (v : GcmImpl) : Prog isa :=
   if v.gh.pmull then Stitch.«open» v.stitch v.callees else «open» v.callees
 
 theorem sealCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (sealCode v))
-      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi 3824) := by
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (sealCode v))
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi (gsivWn v + 16)) := by
   unfold sealCode
   split
   · exact seal_framed hP gh v.stitch v
   · exact Proof.AesGcmSiv.AArch64.seal_framed v
 
 theorem openCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (openCode v))
-      (Proof.AesGcmSiv.openRoundsContract AArch64.abi 3824) := by
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (openCode v))
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi (gsivWn v + 16)) := by
   unfold openCode
   split
   · exact open_framed hP gh v.stitch v
   · exact Proof.AesGcmSiv.AArch64.open_framed v
+
+/-! ## Without secret residue
+
+`seal`'s and `open`'s postconditions read the memory on return only within
+the data and the tag, so their frames are zeroed whole on return
+(`ScrubAll.withScrubAll`: `sealReg`, `openReg`). -/
+
+theorem sealOk (W : Nat) (hW : 0 < W) :
+    ScrubAll.ScrubAllOk (Spec.GcmSiv.sealContract AArch64.abi W) W (Spec.GcmSiv.sealSig.retBits AArch64.abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.sealSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi),
+        Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.2 i hi]
+
+theorem openOk (W : Nat) (hW : 0 < W) :
+    ScrubAll.ScrubAllOk (Spec.GcmSiv.openContract AArch64.abi W) W (Spec.GcmSiv.openSig.retBits AArch64.abi.ptrBits) := by
+  -- The postcondition is a `match` on a decryption: prove the locality
+  -- by intros, so that no expected type of a `fun` is reduced to it.
+  refine ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.openSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    have e := Proof.AesSiv.bytesAt_congr (n := (BitVec.setWidth 64 len).toNat) fun i hi =>
+      Proof.AesSiv.agree_of hb.2.2.2.1 i (by simpa using hi)
+    rw [e]
+    exact @h
+
+/-- `vg_aes_gcm_siv_seal` over `v` in its frame (`sealCode_framed`), zeroed
+whole on return: 2288 bytes over implementations of counter mode that need
+no working space, else 3824. -/
+def sealReg (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) : Registration Spec.GcmSiv.sealApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (sealCode v)
+      verified := Proof.AesGcmSiv.seal_keyed (sealCode_framed hP gh v)
+      consts := []
+      stack := gsivWn v + 16 } (sealOk _ (by omega_using []))
+
+/-- `vg_aes_gcm_siv_open` over `v`, as `sealReg`. -/
+def openReg (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) : Registration Spec.GcmSiv.openApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (openCode v)
+      verified := Proof.AesGcmSiv.open_keyed (openCode_framed hP gh v)
+      consts := []
+      stack := gsivWn v + 16 } (openOk _ (by omega_using []))
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch

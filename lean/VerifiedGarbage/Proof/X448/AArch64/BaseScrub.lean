@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Proof.Framework.Offset
@@ -45,10 +46,15 @@ theorem baseOk (c₀ : String × List (BitVec 64)) (cs : List (String × List (B
 
 /-- `vg_x448_base`, scrubbed. -/
 def baseReg : Registration Spec.X448.x448BaseApi AArch64.target :=
-  ScrubAll.withScrubAll {
+  ScrubAll.scrubAllOf {
     code := Impl.X448.AArch64.Base.x448Base
     verified := Proof.X448.AArch64.Base.x448Base_verified
     consts := Impl.X448.AArch64.Base.combConsts
-    stack := 0 } (baseOk _ _)
+    stack := 0 }
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+      .v26, .v27, .v28, .v29, .v30, .v31],
+     [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
+    (baseOk _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
 
 end VG.Proof.X448.AArch64.BaseScrub

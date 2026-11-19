@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -74,7 +76,8 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_rsa_generate_init` without secret residue. -/
 def initReg : Registration Spec.RsaKeyGen.keyInitApi X86_64.target :=
-  withScrub { code := Impl.RsaKeyGen.X86_64.KeyInit.init, verified := init_verified } initOut [] (pubOk_nil _)
-    (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.RsaKeyGen.X86_64.KeyInit.init, verified := init_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _)
+    ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.RsaKeyGen.X86_64.KeyInit

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -163,38 +165,42 @@ theorem absentOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_aes_gcm_prepare_vpclmul_avx512`. -/
 def zReg : Registration Spec.Gcm.prepareApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_vpclmul_avx512"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare
-    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified }
-    (prepareOut _) [] (pubOk_nil _) (some ⟨zKs, zOk⟩)
+    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified } .avx true [.r11]
+    (prepareOut _) [] (pubOk_nil _) ⟨zKs, zOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_aes_gcm_prepare_vpclmul`. -/
 def p16Reg : Registration Spec.Gcm.prepareApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_vpclmul"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16
-    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified }
-    (prepareOut _) [] (pubOk_nil _) (some ⟨p16Ks, p16Ok⟩)
+    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified } .avx true [.r11]
+    (prepareOut _) [] (pubOk_nil _) ⟨p16Ks, p16Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_aes_gcm_prepare_pclmul_avx`. -/
 def avxReg : Registration Spec.Gcm.prepareApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_pclmul_avx"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16
-    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified }
-    (prepareOut _) [] (pubOk_nil _) (some ⟨avxKs, avxOk⟩)
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified } .avx true [.r11]
+    (prepareOut _) [] (pubOk_nil _) ⟨avxKs, avxOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_aes_gcm_prepare`. -/
 def absentReg : Registration Spec.Gcm.prepareApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := ""
     code := Impl.Gcm.X86_64.Flag.prepareAbsent
-    verified := Proof.Gcm.X86_64.Prepare.absent_verified }
-    (prepareOut _) [] (pubOk_nil _) (some ⟨absentKs, absentOk⟩)
+    verified := Proof.Gcm.X86_64.Prepare.absent_verified } .sse false [.r11]
+    (prepareOut _) [] (pubOk_nil _) ⟨absentKs, absentOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`, with its registers
 cleared (`withScrubAll`; it has no stack): it branches on the count of

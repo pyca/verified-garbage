@@ -1522,6 +1522,7 @@ theorem ghPre_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       s'.v C = ofVDwords Impl.Gcm.AArch64.Pmull.poly Impl.Gcm.AArch64.Pmull.poly ∧
       s'.v Y = ext8 (blockAt s.mem (p.W + BitVec.ofNat 64 80)) (blockAt s.mem (p.W + BitVec.ofNat 64 80)) ∧
       Others [.x9, .x11, .x12] s s' ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain hWn := L.hWn
   have hy : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 80) 16 := by
     rw [E.x19]; exact E.perm.wR (by decide)
   simp only [batches, ghSetup, List.cons_append, List.nil_append]
@@ -1583,6 +1584,7 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     (hnb : 1 ≤ p.n / 128) :
     WP isa (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq (ghLoop e3) (.block ghFinish))) t
       (Absorbed p (absR p.W) (elemsAt t.mem p.D (8 * (p.n / 128))) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   have hww := L.ww
   rw [List.append_assoc, WP.seq_iff, WP.block_append_iff]
@@ -1625,7 +1627,7 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega_arith
     wrap_k := by
       show (p.W + BitVec.ofNat 64 240).toNat + 16 * (p.R + 1) ≤ 2 ^ 64
-      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
+      rw [L.toNat_W (by omega)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
     tbl := by show TblOk s₂.mem p.W _; rw [m₂]; exact tok₁ }
   have hI : GInv σ (blockAt t.mem (p.W + BitVec.ofNat 64 80)) s₂ 0 s₂ := {
     le := Nat.zero_le _
@@ -1717,6 +1719,7 @@ theorem rest_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
 theorem polyBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (ifBatch (.seq (.block (tblBuild ++ batches ++ ghSetup)) (.seq (ghLoop e3) (.block ghFinish)))) t
       (Absorbed p (absR p.W) (elemsAt t.mem p.D (8 * (p.n / 128))) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   unfold ifBatch
   refine WP.seq (WP.mono (batchHead_ok L E) fun t₁ ⟨x9₁, E₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -1730,6 +1733,7 @@ theorem polyBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : La
 /-- `polyData`: the data padded absorbed. -/
 theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (polyData e3 v.callees) t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem p.D p.n))) t) := by
+  obtain hWn := L.hWn
   have hn := L.n_lt
   unfold polyData ifBatch
   -- The batches.
@@ -1740,7 +1744,7 @@ theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₃.rd ++ t₃.wr) := by
     rw [rd₃, wr₃, A.rd, A.wr]
     exact covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
-  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   refine WP.mono (absorb_ok v L E₃ hc (by omega_arith) (by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]
@@ -1751,7 +1755,7 @@ theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     rw [m₃]
     exact Proof.AesGcm.AArch64.bytesAt_frame A.frame (fun r hr => dW.sub_right (by
       simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Proof.AesGcmSiv.AArch64.Lay.wSub (by decide))) (by omega_arith)
+      rcases hr with rfl | rfl <;> exact Proof.AesGcmSiv.AArch64.Lay.wSub (by omega))) (by omega_arith)
   rw [e] at P₄
   rw [elems_split]
   exact AbsPost.trans L (A.sub (absR_sub p.W)) (P₄.of_eq m₃ rd₃ wr₃)
@@ -1762,6 +1766,7 @@ theorem polyval_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
       hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0) :
     WP isa (Impl.AesGcmSiv.AArch64.Stitch.polyval e3 v.callees) t (PolyPost p t) := by
+  obtain hWn := L.hWn
   -- The additional data.
   refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
   refine WP.seq (WP.mono (absorb_ok v L ((E.write (by decide) _).write (by decide) _) (by simp only [rd_write, wr_write]; exact E.perm.aad) L.al_lt L.aw L.a_w

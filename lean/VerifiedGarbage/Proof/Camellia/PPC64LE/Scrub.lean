@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubWiped
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Camellia on PPC64LE, without secret residue
@@ -16,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 Key expansion and the ECB, CBC, CFB128, OFB and CTR functions zero their
 whole frame themselves before they release it (`withStackScratchWiped`), and
 have no frames of their own inside it, so they need only the clearing of the
-volatile registers after them (`PPC64LE.Scrub.withScrubWiped`), with no stack
+volatile registers after them (`PPC64LE.Scrub.scrubWipedOf`), with no stack
 wiped. Their postconditions read the memory on return only within their
 buffers (`cbcEncOut`, …).
 
@@ -354,81 +355,105 @@ theorem ofbFinalOut (stack : Nat) :
     exact h key hk
 
 def cbcEncReg : Registration Spec.Camellia.cbcEncryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained
       verified := Proof.Camellia.PPC64LE.cbcEnc_framed Proof.Camellia.PPC64LE.Modes.cbcEncryptChained_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained rfl (cbcEncOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cbcEncOut _) (by dsimp only; lit_decide)
 
 def cbcDecReg : Registration Spec.Camellia.cbcDecryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained
       verified := Proof.Camellia.PPC64LE.cbcDec_framed Proof.Camellia.PPC64LE.Modes.cbcDecryptChained_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained rfl (cbcDecOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cbcDecOut _) (by dsimp only; lit_decide)
 
 def expandKeyReg : Registration Spec.Camellia.expandKeyApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
       verified := Proof.Camellia.PPC64LE.expandKey_framed }
-    3344 .r6 414 Impl.Camellia.PPC64LE.expandKey rfl (expandKeyOut _)
+    3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
+    ⟨true, true, [.r4, .r6, .r7, .r8, .r9, .r11, .r12], false, []⟩ rfl (expandKeyOut _) (by dsimp only; lit_decide)
 
 def ecbEncReg : Registration Spec.Camellia.ecbEncryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .encrypt)
       verified := Proof.Camellia.PPC64LE.ecb_framed .encrypt }
-    3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .encrypt) rfl (ecbOut .encrypt _)
+    3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .encrypt)
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbOut .encrypt _) (by dsimp only; lit_decide)
 
 def ecbDecReg : Registration Spec.Camellia.ecbDecryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .decrypt)
       verified := Proof.Camellia.PPC64LE.ecb_framed .decrypt }
-    3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .decrypt) rfl (ecbOut .decrypt _)
+    3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .decrypt)
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbOut .decrypt _) (by dsimp only; lit_decide)
 
 def cfbEncReg : Registration Spec.Camellia.cfbEncryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
       verified := Proof.Camellia.PPC64LE.cfbEnc_framed Proof.Camellia.PPC64LE.Modes.cfbEncrypt_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt rfl (cfbEncOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cfbEncOut _) (by dsimp only; lit_decide)
 
 def cfbDecReg : Registration Spec.Camellia.cfbDecryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
       verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt rfl (cfbDecOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cfbDecOut _) (by dsimp only; lit_decide)
 
 def cfbEncFinalReg : Registration Spec.Camellia.cfbEncryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.cfbEncryptFinal_framed }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal rfl (cfbEncFinalOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cfbEncFinalOut _) (by dsimp only; lit_decide)
 
 def cfbDecFinalReg : Registration Spec.Camellia.cfbDecryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.cfbDecryptFinal_framed }
-    3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal rfl (cfbDecFinalOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (cfbDecFinalOut _) (by dsimp only; lit_decide)
 
 def ofbReg : Registration Spec.Camellia.ofbApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ofb
       verified := Proof.Camellia.PPC64LE.ofb_framed Proof.Camellia.PPC64LE.Modes.ofb_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.ofb rfl (ofbOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.ofb
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (ofbOut _) (by dsimp only; lit_decide)
 
 def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ofbFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.ofbFinal_framed }
-    3408 .r8 422 Impl.Camellia.PPC64LE.ofbFinal rfl (ofbFinalOut _)
+    3408 .r8 422 Impl.Camellia.PPC64LE.ofbFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (ofbFinalOut _) (by dsimp only; lit_decide)
 
 def ctrReg : Registration Spec.Camellia.ctrApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ctr
       verified := Proof.Camellia.PPC64LE.ctr_framed Proof.Camellia.PPC64LE.Modes.ctr_verified }
-    3408 .r8 422 Impl.Camellia.PPC64LE.ctr rfl (ctrOut _)
-
-/-- All are scrubbed: `withScrubWiped`'s side conditions hold. -/
-example : cbcEncReg.residue.isSome ∧ cbcDecReg.residue.isSome ∧ expandKeyReg.residue.isSome ∧
-    ecbEncReg.residue.isSome ∧ ecbDecReg.residue.isSome ∧ cfbEncReg.residue.isSome ∧
-    cfbDecReg.residue.isSome ∧ cfbEncFinalReg.residue.isSome ∧ cfbDecFinalReg.residue.isSome ∧
-    ofbReg.residue.isSome ∧ ofbFinalReg.residue.isSome ∧ ctrReg.residue.isSome := by decide
+    3408 .r8 422 Impl.Camellia.PPC64LE.ctr
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩ rfl (ctrOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Camellia.PPC64LE.Scrub

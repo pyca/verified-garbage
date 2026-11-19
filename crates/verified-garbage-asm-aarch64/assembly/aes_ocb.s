@@ -5,7 +5,7 @@
 // gives.
 
 vg_aes_ocb_init_aes:
-	sub sp, sp, #2560
+	sub sp, sp, #1024
 	add x3, sp, #0
 	str x20, [x3, #168]
 	str x21, [x3, #176]
@@ -44,16 +44,124 @@ vg_aes_ocb_init_aes:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2560
+	add sp, sp, #1024
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #1024
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	add sp, sp, #1024
 	ret
 	.p2align 6
 
 vg_aes_ocb_seal_aes:
-	sub sp, sp, #2592
+	sub sp, sp, #544
 	add x16, sp, #0
-	ldr x17, [sp, #2592]
+	ldr x17, [sp, #544]
 	str x17, [x16, #0]
-	ldr x17, [sp, #2600]
+	ldr x17, [sp, #552]
 	str x17, [x16, #8]
 	add x17, sp, #32
 	str x17, [x16, #16]
@@ -1117,16 +1225,94 @@ vg_aes_ocb_seal_aes:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2592
+	add sp, sp, #544
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #544
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	add sp, sp, #544
 	ret
 	.p2align 6
 
 vg_aes_ocb_open_aes:
-	sub sp, sp, #2592
+	sub sp, sp, #544
 	add x16, sp, #0
-	ldr x17, [sp, #2592]
+	ldr x17, [sp, #544]
 	str x17, [x16, #0]
-	ldr x17, [sp, #2600]
+	ldr x17, [sp, #552]
 	str x17, [x16, #8]
 	add x17, sp, #32
 	str x17, [x16, #16]
@@ -2263,7 +2449,85 @@ vg_aes_ocb_open_aes:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2592
+	add sp, sp, #544
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #544
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	add sp, sp, #544
 	ret
 	.p2align 6
 
@@ -2307,6 +2571,208 @@ vg_aes_ocb_init_neon:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
+	add sp, sp, #2560
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2560
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
 	add sp, sp, #2560
 	ret
 	.p2align 6
@@ -3380,6 +3846,215 @@ vg_aes_ocb_seal_neon:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
+	add sp, sp, #2592
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2592
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
+	str q31, [x9, #2560]
+	str q31, [x9, #2576]
 	add sp, sp, #2592
 	ret
 	.p2align 6
@@ -4527,6 +5202,215 @@ vg_aes_ocb_open_neon:
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
 	add sp, sp, #2592
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #2592
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
+	str q31, [x9, #2560]
+	str q31, [x9, #2576]
+	add sp, sp, #2592
 	ret
 	.p2align 6
 
@@ -4570,6 +5454,208 @@ vg_aes_ocb_init:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
+	add sp, sp, #2560
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2560
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
 	add sp, sp, #2560
 	ret
 	.p2align 6
@@ -5643,6 +6729,211 @@ vg_aes_ocb_seal:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
+	add sp, sp, #2592
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2592
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
+	str q31, [x9, #2560]
+	str q31, [x9, #2576]
 	add sp, sp, #2592
 	ret
 	.p2align 6
@@ -6789,6 +8080,212 @@ vg_aes_ocb_open:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
+	add sp, sp, #2592
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x14, #0, lsl #0
+	movz x15, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #2592
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	str q31, [x9, #2448]
+	str q31, [x9, #2464]
+	str q31, [x9, #2480]
+	str q31, [x9, #2496]
+	str q31, [x9, #2512]
+	str q31, [x9, #2528]
+	str q31, [x9, #2544]
+	str q31, [x9, #2560]
+	str q31, [x9, #2576]
 	add sp, sp, #2592
 	ret
 	.p2align 6

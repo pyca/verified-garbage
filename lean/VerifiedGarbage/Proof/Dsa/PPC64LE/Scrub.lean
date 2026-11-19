@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
@@ -7,13 +8,14 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # DSA on PPC64LE, without secret residue
@@ -21,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `vg_dsa_derive_key`, `vg_dsa_generate_key`, `vg_dsa_sign_random_prevalidated`,
 `vg_dsa_validate_public_key`, `vg_dsa_validate_private_key`,
 `vg_dsa_verify_prevalidated` and `vg_dsa_parameter_search`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
 volatile registers and the stack their frames used, which they do not wipe
 themselves. Their postconditions read the memory on return only within
 their outputs, as x86-64's (`Proof/Dsa/X86_64/Scrub.lean`): the validations
@@ -147,61 +149,85 @@ theorem parameterSearchOut (cs : List (String × List (BitVec 64))) (stack : Nat
 
 /-- `Spec.Dsa.deriveKeyApi`. -/
 def deriveKeyReg : Registration Spec.Dsa.deriveKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.Derive.derive
       verified := Proof.Dsa.PPC64LE.deriveKey_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (deriveKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Dsa.randomSignPrevalidatedApi`. -/
 def randomSignPrevalidatedReg : Registration Spec.Dsa.randomSignPrevalidatedApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.RandomSign.code
       verified := Proof.Dsa.PPC64LE.randomSign_verified }
+    304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (randomSignPrevalidatedOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Dsa.generateKeyApi`. -/
 def generateKeyReg : Registration Spec.Dsa.generateKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.Generate.code
       verified := Proof.Dsa.PPC64LE.generate_verified }
+    304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (generateKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Dsa.validatePublicKeyApi`. -/
 def validatePublicKeyReg : Registration Spec.Dsa.validatePublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.Prevalidated.validate
       verified := Proof.Dsa.PPC64LE.validate_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (validatePublicKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Dsa.validatePrivateKeyApi`. -/
 def validatePrivateKeyReg : Registration Spec.Dsa.validatePrivateKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.PrevalidatedSign.validate
       verified := Proof.Dsa.PPC64LE.validatePrivate_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (validatePrivateKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Dsa.verifyPrevalidatedApi`. -/
 def verifyPrevalidatedReg : Registration Spec.Dsa.verifyPrevalidatedApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Dsa.PPC64LE.Prevalidated.verify
       verified := Proof.Dsa.PPC64LE.prevalidated_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (verifyPrevalidatedOut _)
+    (by dsimp only; lit_decide)
+
+/-- What `scrubOf` needs of the parameter search with each Miller-Rabin
+round: evaluated here. -/
+theorem parameterSearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    scrubSide (Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)) 176
+      (Spec.Dsa.parameterSearchSig.retBits 64) Impl.Scrub.PPC64LE.Clear.all = true := by
+  have h : (Proof.Variants.MillerRabin.PPC64LE.variants.all fun v =>
+      scrubSide (Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)) 176
+        (Spec.Dsa.parameterSearchSig.retBits 64) Impl.Scrub.PPC64LE.Clear.all) = true := by lit_decide
+  exact List.all_eq_true.mp h v hv
 
 /-- `Spec.Dsa.parameterSearchApi`, over the Miller-Rabin round `v`. -/
-def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :
+def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     Registration Spec.Dsa.parameterSearchApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       suffix := v.suffix
       code := Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)
       verified := Gen.search_params v }
+    176 Impl.Scrub.PPC64LE.Clear.all
     (parameterSearchOut Impl.RsaKeyGen.TrialTable32.consts 176)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. The
-parameter search's code is too long for `decide`; the emitter refuses it if it
-is not scrubbed, as `ci/residue_allowlist.txt` no longer lists it. -/
-example : deriveKeyReg.residue.isSome ∧ randomSignPrevalidatedReg.residue.isSome ∧
-    generateKeyReg.residue.isSome ∧ validatePublicKeyReg.residue.isSome ∧
-    validatePrivateKeyReg.residue.isSome ∧ verifyPrevalidatedReg.residue.isSome := by
-  decide
+    (parameterSearchSide v hv)
 
 end VG.Proof.Dsa.PPC64LE.Scrub

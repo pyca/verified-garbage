@@ -36,39 +36,45 @@ open VG.Proof.Dsa.AArch64
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.DsaArithmetic.AArch64.variants.flatMap fun (v : Backend) => [
-    Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v)
-        (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
-      verified := random_sign_prevalidated_verified v
-      spSafe := random_sign_sp v.prevalidatedSigner } (Proof.Dsa.AArch64.Scrub.randomSignPrevalidatedOk _)),
-    Spec.Dsa.validatePrivateKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul
-      verified := v.validatePrivateVerified
-      spSafe := v.validatePrivateSp } (Proof.Dsa.AArch64.Scrub.validatePrivateKeyOk _)),
-    Spec.Dsa.validatePublicKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.Prevalidated.validate v.mul
-      verified := v.validateVerified
-      spSafe := v.validateSp } (Proof.Dsa.AArch64.Scrub.validatePublicKeyOk _)),
-    Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.Prevalidated.verify v.mul
-      verified := v.prevalidatedVerified
-      spSafe := v.prevalidatedSp } (Proof.Dsa.AArch64.Scrub.verifyPrevalidatedOk _)),
-    Spec.Dsa.generateKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-        (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul)
-      verified := keygen_verified v
-      spSafe := keygen_sp v } (Proof.Dsa.AArch64.Scrub.generateKeyOk _)),
-    Spec.Dsa.deriveKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Dsa.AArch64.Generate.deriveKey v.mul
-      verified := v.deriveVerified
-      spSafe := v.deriveSp } (Proof.Dsa.AArch64.Scrub.deriveKeyOk _))]) ++
+  (VG.Proof.Variants.DsaArithmetic.AArch64.variants.attach.flatMap fun (v : { v : Backend // v ∈ _ }) => [
+    Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v.1)
+        (Impl.Dsa.AArch64.PrevalidatedSign.sign v.1.mul)
+      verified := random_sign_prevalidated_verified v.1
+      spSafe := random_sign_sp v.1.prevalidatedSigner } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.randomSignPrevalidatedOk _) (Proof.Dsa.AArch64.Scrub.randomSignPrevalidatedSide v.1 v.2)),
+    Spec.Dsa.validatePrivateKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.1.mul
+      verified := v.1.validatePrivateVerified
+      spSafe := v.1.validatePrivateSp } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.validatePrivateKeyOk _) (Proof.Dsa.AArch64.Scrub.validatePrivateKeySide v.1 v.2)),
+    Spec.Dsa.validatePublicKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.Prevalidated.validate v.1.mul
+      verified := v.1.validateVerified
+      spSafe := v.1.validateSp } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.validatePublicKeyOk _) (Proof.Dsa.AArch64.Scrub.validatePublicKeySide v.1 v.2)),
+    Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.Prevalidated.verify v.1.mul
+      verified := v.1.prevalidatedVerified
+      spSafe := v.1.prevalidatedSp } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.verifyPrevalidatedOk _) (Proof.Dsa.AArch64.Scrub.verifyPrevalidatedSide v.1 v.2)),
+    Spec.Dsa.generateKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v.1) (keygenDeriveName v.1)
+        (Impl.Dsa.AArch64.Generate.checkParameters v.1.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.1.mul)
+      verified := keygen_verified v.1
+      spSafe := keygen_sp v.1 } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.generateKeyOk _) (Proof.Dsa.AArch64.Scrub.generateKeySide v.1 v.2)),
+    Spec.Dsa.deriveKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.Dsa.AArch64.Generate.deriveKey v.1.mul
+      verified := v.1.deriveVerified
+      spSafe := v.1.deriveSp } Proof.Dsa.AArch64.Scrub.clear
+      (Proof.Dsa.AArch64.Scrub.deriveKeyOk _) (Proof.Dsa.AArch64.Scrub.deriveKeySide v.1 v.2))]) ++
   (Generation.Refill.hashPairs.flatMap fun (p : Generation.Refill.Hashes) =>
     VG.Proof.Variants.MillerRabin.AArch64.variants.map fun (v : Proof.MillerRabin.AArch64.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {

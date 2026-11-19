@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -135,10 +137,11 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_cmac_triple_des_stream_init`. -/
 def initReg : Registration Spec.Cmac.tdesStreamInitApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := initCode
     stack := 128
-    verified := Proof.CmacTripleDes.Stream.X86_64.init_framed } initOut [] (pubOk_nil _) (some ⟨initKs, initOk⟩)
+    verified := Proof.CmacTripleDes.Stream.X86_64.init_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_cmac_triple_des_absorb`'s code. -/
 abbrev absorbCode : Prog isa :=
@@ -154,10 +157,11 @@ theorem absorbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_cmac_triple_des_absorb`. -/
 def absorbReg : Registration Spec.Cmac.tdesAbsorbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := absorbCode
     stack := 168
-    verified := Proof.CmacTripleDes.Stream.X86_64.absorb_framed } absorbOut [] (pubOk_nil _) (some ⟨absorbKs, absorbOk⟩)
+    verified := Proof.CmacTripleDes.Stream.X86_64.absorb_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] absorbOut [] (pubOk_nil _) ⟨absorbKs, absorbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_cmac_triple_des_finish`'s code. -/
 abbrev finishCode : Prog isa :=
@@ -173,9 +177,10 @@ theorem finishOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_cmac_triple_des_finish`. -/
 def finishReg : Registration Spec.Cmac.tdesFinishApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := finishCode
     stack := 128
-    verified := Proof.CmacTripleDes.Stream.X86_64.finish_framed } finishOut [] (pubOk_nil _) (some ⟨finishKs, finishOk⟩)
+    verified := Proof.CmacTripleDes.Stream.X86_64.finish_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] finishOut [] (pubOk_nil _) ⟨finishKs, finishOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.CmacTripleDes.X86_64.Scrub

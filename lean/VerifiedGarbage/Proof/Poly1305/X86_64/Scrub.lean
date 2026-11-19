@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -115,16 +117,18 @@ theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_init`. -/
 def initReg : Registration Spec.Poly1305.initApi X86_64.target :=
-  withScrub { code := Impl.Poly1305.X86_64.init, verified := init_verified } (initOut _) [] (pubOk_nil _)
-    (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.Poly1305.X86_64.init, verified := init_verified } .sse false [.rcx, .rdx, .r8] (initOut _) [] (pubOk_nil _)
+    ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_finalize`. -/
 def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := finalizeCode
     stack := 136
-    verified := finalize_framed } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
+    verified := finalize_framed } .sse false [.rcx, .rdx, .r8, .r9, .r10, .r11] (finalizeOut _) [] (pubOk_nil _) ⟨finalizeKs, finalizeOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`,

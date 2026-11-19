@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Rc4.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -57,15 +59,17 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_rc4_init`. -/
 def initReg : Registration Spec.Rc4.initApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := initCode
-    verified := Proof.Rc4.X86_64.init_verified } initOut [] (pubOk_nil _) (some ⟨initKs, initOk⟩)
+    verified := Proof.Rc4.X86_64.init_verified } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_rc4_apply`, whose leak the residue analysis does not follow: with no
 stack, the registers alone cleared (`Scrub.withScrubAll`). -/
 def applyReg : Registration Spec.Rc4.applyApi X86_64.target :=
-  withScrubAll {
+  scrubAllOf {
     code := Impl.Rc4.X86_64.apply
-    verified := Proof.Rc4.X86_64.apply_verified } applyOut
+    verified := Proof.Rc4.X86_64.apply_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] applyOut
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Rc4.X86_64.Scrub

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.P521.AArch64.Law
 public import VerifiedGarbage.Spec.Ecdh.P521
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeExchange
@@ -655,10 +656,15 @@ open VG.Proof.P521.AArch64 (hasLaw)
 
 /-- `vg_ecdh_p521`, scrubbed. -/
 def exchangeReg : Registration Spec.Ecdh.P521.exchangeApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll {
+  AArch64.ScrubAll.scrubAllOf {
     code := Impl.Weierstrass.AArch64.P521Native.exchange
     verified := native_verified hasLaw.law hasLaw.inv hasLaw.prime
     consts := []
-    stack := 3456 } (EcKey.AArch64.Scrub.exchangeOkW Spec.EcKey.P521.inst 3456)
+    stack := 3456 }
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26,
+      .v28, .v29, .v31], []⟩
+    (EcKey.AArch64.Scrub.exchangeOkW Spec.EcKey.P521.inst 3456)
+    (by dsimp only [AArch64.ScrubAll.retBitsOf]; lit_decide)
 
 end VG.Proof.Weierstrass.AArch64.P521Native.Scrub

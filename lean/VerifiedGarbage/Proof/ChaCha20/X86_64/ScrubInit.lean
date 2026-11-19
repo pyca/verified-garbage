@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -78,13 +80,15 @@ theorem setNonceOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_chacha20_init`. -/
 def initReg : Registration initApi X86_64.target :=
-  withScrub { code := Impl.ChaCha20.X86_64.Stream.init, verified := Stream.init_verified } initOut []
-    (pubOk_nil _) (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.ChaCha20.X86_64.Stream.init, verified := Stream.init_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9] initOut []
+    (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_chacha20_set_nonce`. -/
 def setNonceReg : Registration setNonceApi X86_64.target :=
-  withScrub { code := Impl.ChaCha20.X86_64.Stream.setNonce, verified := Stream.setNonce_verified }
-    setNonceOut [] (pubOk_nil _) (some ⟨setNonceKs, setNonceOk⟩)
+  scrubOf { code := Impl.ChaCha20.X86_64.Stream.setNonce, verified := Stream.setNonce_verified } .sse false [.rcx, .rdx]
+    setNonceOut [] (pubOk_nil _) ⟨setNonceKs, setNonceOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.ChaCha20.X86_64.Scrub

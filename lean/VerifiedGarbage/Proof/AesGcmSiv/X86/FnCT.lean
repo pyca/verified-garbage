@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -68,6 +70,13 @@ theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)
   rw [c₁] at ht
   have h1 : n ≠ 1 := by simpa using ht
   exact ⟨n - 1, by omega_using [hn], i₁ h1, i₂ h1⟩
+
+/-- Code with SSE instructions that the taint analysis proves constant time
+from the registers `rs`, on which any two states satisfying `I` agree. -/
+theorem CT.taintSse {I : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.sseTaint.T}
+    (h : (VG.X86.sseTaint.check (τr rs) c hc).isSome = true) : CT I c :=
+  RelCT.taint (A := VG.X86.sseTaint) (τr rs) (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
 
 theorem CT.of_empty {I : State → Prop} {c : Prog isa} (h : ∀ s, ¬ I s) : CT I c :=
   RelCT.of_false fun s₁ _ hp => h s₁ hp.1
@@ -256,8 +265,15 @@ structure RevI (p : Prm) (Q : BitVec 32) (k : Nat) (s : State) : Prop where
   edx : s.gpr .edx = p.W + BitVec.ofNat 32 768
   ecx : s.gpr .ecx = BitVec.ofNat 32 k
 
-theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
-    CT (ChunkI p Q m) chunkPre := by
+/-- The copies, by either code: from the pointers and the count. -/
+theorem rev_ct (v : GcmImpl) {p : Prm} {Q : BitVec 32} {k : Nat} : CT (RevI p Q k) (rev v.callees) := by
+  unfold rev
+  split
+  · exact CT.taintSse [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide)
+  · exact CT.taint [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide)
+
+theorem chunkPre_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
+    CT (ChunkI p Q m) (chunkPre v.callees) := by
   have hk1 : 1 ≤ min (m / 16) 64 := by omega_using [h16]
   refine CT.seq (J := fun s => Env p s ∧ Src p s Q (16 * min (m / 16) 64) ∧ s.gpr .esi = Q ∧
       s.gpr .ecx = BitVec.ofNat 32 (min (m / 16) 64))
@@ -270,15 +286,15 @@ theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 
       ⟨E.keep (by gregs []) (by gregs []) (by gmems []) (by gmems []) (by gmems []), hQ.of_eq (by gmems []) (by gmems []),
         by gregs [si], by gregs [E.ebp], by gregs [cx]⟩⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = p.W)
-    (CT.taint [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide))
-    (fun s h => WP.mono (revLoop_ok L h.env hk1 (by omega_using []) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
+    (rev_ct v)
+    (fun s h => WP.mono (rev_ok v L h.env hk1 (by omega_using []) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
       rw [bp, h.env.ebp]) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
 
 theorem chunk_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
     CT (ChunkI p Q m) (chunk v.callees) := by
   have hk : min (m / 16) 64 ≤ 64 := by omega_using []
   refine CT.seq (J := fun t₅ => ∃ t, ChunkI p Q m t ∧ ChunkPre p Q m (min (m / 16) 64) t t₅)
-    (chunkPre_ct L hm h16) (fun t h => WP.mono (chunkPre_ok L h.env hm h16 h.src h.esi h.n) fun t₅ Pr => ⟨t, h, Pr⟩)
+    (chunkPre_ct v L hm h16) (fun t h => WP.mono (chunkPre_ok v L h.env hm h16 h.src h.esi h.n) fun t₅ Pr => ⟨t, h, Pr⟩)
     (CT.seq (J := fun s => s.gpr .ebp = p.W)
       (callGh_ct v L hk fun s ⟨_, _, Pr⟩ => ⟨Pr.env, Pr.eax, Pr.edx, Pr.ebx, Pr.edi⟩)
       (fun s ⟨_, _, Pr⟩ => WP.mono (callGh_ok v L Pr.env hk Pr.eax Pr.edx Pr.ebx Pr.edi) fun _ P => P.env.ebp)
@@ -535,7 +551,7 @@ def BlocksI (p : Prm) (j : Nat) (s : State) : Prop :=
   ∃ t ciph icb x, x.length = p.n ∧ Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph ∧
     BlocksPost p ciph icb x j t s
 
-theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
+theorem callBlocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
     CT (BlocksI p 0) (.loop (cryptBlock v.callees) .ne) := by
   refine (CT.loopN (fun k s => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BlocksI p j s) (fun k => ?_)
     (fun k s ⟨j, hk, hj, t, ciph, icb, x, hxl, hc, P⟩ => ?_) (p.n / 16)).mono
@@ -549,6 +565,36 @@ theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
     refine WP.mono (cryptBlock_ok v L P.env hxl (j := j) (by omega_using [hj]) P.esi P.n P.ctr P.data hc') fun t'' Q => ?_
     refine ⟨by omega_using [hk, hj], by rw [eval_ne Q.z]; simp; omega_using [hk, hj], fun hk1 => ⟨j + 1, by omega_using [hk], by omega, t, ciph, icb, x, hxl, hc,
       ⟨Q.env, Q.rd.trans P.rd, Q.wr.trans P.wr, Q.esi, Q.n, Q.ctr, Q.data, P.frame.trans Q.frame⟩⟩⟩
+
+/-- The whole blocks with AES-NI: the registers the loop branches on and
+addresses memory with are public after `niPre`, and the counter in `edx`
+is only data. -/
+theorem niBlocks_ct {p : Prm} (L : Lay p) : CT (BlocksI p 0) niBlocks := by
+  refine CT.seq (J := fun s => s.gpr .ebp = p.W ∧ s.gpr .esi = p.D ∧ s.gpr .edi = BitVec.ofNat 32 p.n ∧
+      s.gpr .eax = p.W + BitVec.ofNat 32 512 ∧ s.gpr .ecx = BitVec.ofNat 32 p.R)
+    (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P⟩ => P.env.ebp) (by taint_decide))
+    (fun s ⟨t, ciph, icb, x, _, _, P⟩ => by
+      obtain ⟨t₁, run₁, _, _, ax, cx, di, bp, _, si, _⟩ :=
+        niPre_ok L P.env (by rw [P.n, Nat.mul_zero, Nat.sub_zero])
+      exact WP.of_runBlock ⟨t₁, run₁, bp, by rw [si, P.esi, Nat.mul_zero, BitVec.add_zero], di, ax, cx⟩) ?_
+  exact CT.taintSse [.ebp, .esi, .edi, .eax, .ecx] (fun s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    obtain ⟨a₁, b₁, c₁, d₁, e₁⟩ := h₁
+    obtain ⟨a₂, b₂, c₂, d₂, e₂⟩ := h₂
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [a₁, a₂]
+    · rw [b₁, b₂]
+    · rw [c₁, c₂]
+    · rw [d₁, d₂]
+    · rw [e₁, e₂]) (by taint_decide)
+
+/-- The whole blocks, with either code. -/
+theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
+    CT (BlocksI p 0) (blocks v.callees) := by
+  unfold blocks
+  split
+  · exact niBlocks_ct L
+  · exact callBlocks_ct v L hb1
 
 /-! ## The last bytes -/
 

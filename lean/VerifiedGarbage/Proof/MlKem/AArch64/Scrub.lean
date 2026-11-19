@@ -3,7 +3,18 @@ module
 public import VerifiedGarbage.Spec.MlKem.Contract
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
+public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Impl.MlKem.AArch64.Wipe
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -16,7 +27,7 @@ memory on return only within their outputs and their scratch space
 (`ScrubAll.ScrubAllOk`, as x86-64's `Proof/MlKem/X86_64/CallWipe.lean` proves
 them): each implementation, generic over the Keccak-f[1600] implementations
 it calls, returns with every register it may leave secret cleared and its
-whole stack zeroed (`ScrubAll.withScrubAll`).
+whole stack zeroed (`ScrubAll.scrubAllOf`).
 -/
 
 @[expose] public section
@@ -195,5 +206,114 @@ theorem decaps1024Ok_tables (W : Nat) (hW : 0 < W := by decide) :
   decaps1024Ok W _ _ hW
 
 end
+
+/-! ## What `scrubAllOf` needs of the code
+
+`ScrubAll.scrubSide` of each function with each pair of Keccak
+implementations: evaluated here, by the kernel, so that the emitter works out
+nothing. -/
+
+section Sides
+
+open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW)
+open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
+
+/-- The registers the tails clear: every register the calling convention
+does not preserve, which the code, with each pair of permutations, may write. -/
+def clear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
+
+/-- Of `MlKem`'s `keyGen`. -/
+theorem keyGenSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.keyGenSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.keyGenSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem`'s `encaps`. -/
+theorem encapsSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.encapsSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.encapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem`'s `encapsH`. -/
+theorem encapsHSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.encapsHSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.encapsHSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem`'s `decaps`. -/
+theorem decapsSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.decapsSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+      (160) (Spec.MlKem.decapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem1024`'s `keyGen`. -/
+theorem keyGen1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.keyGenSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.keyGenSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem1024`'s `encaps`. -/
+theorem encaps1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.encapsSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.encapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem1024`'s `encapsH`. -/
+theorem encapsH1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.encapsHSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.encapsHSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+/-- Of `MlKem1024`'s `decaps`. -/
+theorem decaps1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
+    scrubSide (Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.decapsSig.retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
+      scrubSide (Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
+        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+      (160) (Spec.MlKem1024.decapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+
+end Sides
 
 end VG.Proof.MlKem.AArch64.Scrub

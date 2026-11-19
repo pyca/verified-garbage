@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ScrubSides
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Verified
@@ -28,26 +29,31 @@ open VG.AArch64
 
 def direct : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target Proof.Ffdh.AArch64.Scrub.precomputeReg,
-  Spec.Ffdh.cachedKeySearchApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
+  Spec.Ffdh.cachedKeySearchApi.artifact target (VG.AArch64.ScrubAll.scrubAllOf {
     code := Proof.Ffdh.AArch64.Cached.cachedSearch
-    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified } (Proof.Ffdh.AArch64.Scrub.cachedKeySearchOk _)),
-  Spec.Ffdh.checkPublicApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
+    verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified } Proof.Ffdh.AArch64.Scrub.clearMul
+    (Proof.Ffdh.AArch64.Scrub.cachedKeySearchOk _) Proof.Ffdh.AArch64.Scrub.cachedKeySearchSide),
+  Spec.Ffdh.checkPublicApi.artifact target (VG.AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.Domain.CheckPublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.checkPublicOk _)),
+    verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ } Proof.Ffdh.AArch64.Scrub.clearWindow
+    (Proof.Ffdh.AArch64.Scrub.checkPublicOk _) Proof.Ffdh.AArch64.Scrub.checkPublicSide),
   Spec.Ffdh.checkDomainApi.artifact target Proof.Ffdh.AArch64.Scrub.checkDomainReg,
-  Spec.Ffdh.exchangeApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
+  Spec.Ffdh.exchangeApi.artifact target (VG.AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.Domain.Exchange.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.exchangeOk _)),
-  Spec.Ffdh.checkPrivateApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
+    verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ } Proof.Ffdh.AArch64.Scrub.clearWindow
+    (Proof.Ffdh.AArch64.Scrub.exchangeOk _) Proof.Ffdh.AArch64.Scrub.exchangeSide),
+  Spec.Ffdh.checkPrivateApi.artifact target (VG.AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.Domain.CheckPrivate.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.checkPrivateOk _)),
-  Spec.Ffdh.derivePublicApi.artifact target (VG.AArch64.ScrubAll.withScrubAll {
+    verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ } Proof.Ffdh.AArch64.Scrub.clearWindow
+    (Proof.Ffdh.AArch64.Scrub.checkPrivateOk _) Proof.Ffdh.AArch64.Scrub.checkPrivateSide),
+  Spec.Ffdh.derivePublicApi.artifact target (VG.AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ffdh.AArch64.Domain.DerivePublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ } (Proof.Ffdh.AArch64.Scrub.derivePublicOk _)),
+    verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ } Proof.Ffdh.AArch64.Scrub.clearWindow
+    (Proof.Ffdh.AArch64.Scrub.derivePublicOk _) Proof.Ffdh.AArch64.Scrub.derivePublicSide),
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
     verified := Proof.Ffdh.AArch64.Generation.init_verified
@@ -59,10 +65,12 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
-    Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Proof.Ffdh.AArch64.Generation.searchCode v
-      verified := Proof.Ffdh.AArch64.Generation.search_verified v } (Proof.Ffdh.AArch64.Scrub.sievedParameterSearchOk _))])
+  (VG.Proof.Variants.MillerRabin.AArch64.variants.attach.flatMap
+    fun (v : { v : Proof.MillerRabin.AArch64.RoundImpl // v ∈ _ }) => [
+    Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Proof.Ffdh.AArch64.Generation.searchCode v.1
+      verified := Proof.Ffdh.AArch64.Generation.search_verified v.1 } Proof.Ffdh.AArch64.Scrub.clearMul
+      (Proof.Ffdh.AArch64.Scrub.sievedParameterSearchOk _) (Proof.Ffdh.AArch64.Scrub.sievedParameterSearchSide v.1 v.2))])
 
 end VG.Artifacts.Ffdh.AArch64

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -88,64 +92,69 @@ open VG.Proof.Aes.AArch64 (BlocksImpl)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ite eval_zero eval_nonzero)
 
 section
-variable {K W D : Addr} {n R : Nat} {SP : Addr} {A : Addr}
+variable {T : Nat} {K W D : Addr} {n R : Nat} {SP : Addr} {A : Addr}
   {ciph₁ ciph₂ : Cipher} {l₁ l₂ : Block} {a₁ a₂ : List Byte} {s₁ s₂ : State}
 
 /-- The blocks of the rest of the associated data, before its call. -/
-theorem hashRestPre_ok (C : HCtx K W D n R ciph₁ l₁ A a₁ s₁) {t : State}
-    (H : HInv K W D R n SP ciph₁ l₁ A a₁ s₁ t (a₁.length / 16)) (hr : 0 < a₁.length % 16)
+theorem hashRestPre_ok (C : HCtx T K W D n R ciph₁ l₁ A a₁ s₁) {t : State}
+    (H : HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ t (a₁.length / 16)) (hr : 0 < a₁.length % 16)
     (h24 : t.gpr .x24 = BitVec.ofNat 64 (a₁.length % 16)) :
     WP isa (.seq (.seq (.block (xor16 .x20 240 ohO)) (padTo bufO)) (.block (xor16 .x19 ohO bufO))) t
-      (Env K W D R n SP) := by
+      (Env T K W D R n SP) := by
+  obtain hT := C.lay.hT
   have E := H.env
   have hs := C.short
   generalize hm : a₁.length / 16 = m at H
   obtain ⟨t₁, run₁, B₁⟩ := xor16_ok (s := t) (b := .x20) (a := 240) (d := ohO) (by decide) (by decide) E.x19 E.x20
-    (by decide) (by decide) (by decide) (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide))
-    (E.perm.wW (by decide))
+    (by decide) (by decide) (by decide) (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by have := ocbOffs; omega))
+    (E.perm.wW (by have := ocbOffs; omega))
   have E₁ := E.others B₁.gpr B₁.sp B₁.rd B₁.wr
   have hB := C.buf.slice (a := 16 * m) (k := a₁.length % 16) (by omega_arith)
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a₁.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a₁.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
-    hB.w.sub_right (Lay.wSub (by decide))
+    hB.w.sub_right (Lay.wSub (by have := ocbOffs; omega))
   refine WP.seq (WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩))
-  refine WP.mono (padTo_ok E₁.x19 E₁.perm.w hr (by omega_arith) (by decide)
+  refine WP.mono (padTo_ok E₁.x19 E₁.perm.w5 hr (by omega_arith) (by decide)
     (by rw [B₁.gpr _ (by decide), H.x23]) (by rw [B₁.gpr _ (by decide), h24]) hS hSD)
     fun t₂ ⟨_, _, g₂, sp₂, rd₂, wr₂⟩ => ?_
   have E₂ := E₁.others g₂ sp₂ rd₂ wr₂
   obtain ⟨t₃, run₃, B₃⟩ := xor16_ok (s := t₂) (b := .x19) (a := ohO) (d := bufO) (by decide) (by decide) E₂.x19
-    E₂.x19 (by decide) (by decide) (by decide) (E₂.perm.wR (by decide)) (E₂.perm.wR (by decide))
-    (E₂.perm.wW (by decide)) (E₂.perm.wW (by decide))
+    E₂.x19 (by decide) (by decide) (by decide) (E₂.perm.wR (by have := ocbOffs; omega)) (E₂.perm.wR (by have := ocbOffs; omega))
+    (E₂.perm.wW (by have := ocbOffs; omega)) (E₂.perm.wW (by have := ocbOffs; omega))
   exact WP.of_runBlock ⟨t₃, run₃, E₂.others B₃.gpr B₃.sp B₃.rd B₃.wr⟩
 
 /-- The rest of the associated data, in two runs. -/
-theorem hashRest_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx K W D n R ciph₂ l₂ A a₂ s₂)
+theorem hashRest_rel (v : BlocksImpl) (C₁ : HCtx T K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx T K W D n R ciph₂ l₂ A a₂ s₂)
     (hlen : a₂.length = a₁.length) {τ₁ τ₂ : State}
-    (H₁ : HInv K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ (a₁.length / 16))
-    (H₂ : HInv K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ (a₂.length / 16)) (hr : 0 < a₁.length % 16)
-    (h24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (a₁.length % 16)) (h24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (a₂.length % 16)) :
+    (H₁ : HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ (a₁.length / 16))
+    (H₂ : HInv T K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ (a₂.length / 16)) (hr : 0 < a₁.length % 16)
+    (h24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (a₁.length % 16)) (h24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (a₂.length % 16))
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 τ₁ τ₂) (hashRest (callees v)) TT := by
+  obtain hT := C₁.lay.hT
   unfold hashRest
   refine RelCT.assoc (RelCT.assoc (rel_seq (rel_env H₁.env H₂.env [.x23, .x24]
       (by agree_tac [H₁.x23, H₂.x23, h24₁, h24₂, hlen]) ⟨_, by taint_decide⟩)
     (hashRestPre_ok C₁ H₁ hr h24₁) (hashRestPre_ok C₂ H₂ (by rw [hlen]; exact hr) h24₂) fun u₁ u₂ E₁ E₂ => ?_))
   have L := C₁.lay
-  refine rel_seq (callBlocks_rel v.encOk v.encCt L C₁.rounds E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
+  refine rel_seq (callBlocks_rel v.encOkW v.encCtW hv L C₁.rounds E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
       (oneBlock_ok E₁.x19 bufO (by decide)) (oneBlock_ok E₂.x19 bufO (by decide))
       (dstW L E₁.perm (d := bufO) (n := 1) (by decide)) (dstW L E₂.perm (d := bufO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L E₁ C₁.rounds (oneBlock_ok E₁.x19 bufO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L E₁ C₁.rounds (oneBlock_ok E₁.x19 bufO (by decide))
       (dstW L E₁.perm (d := bufO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L E₂ C₁.rounds (oneBlock_ok E₂.x19 bufO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L E₂ C₁.rounds (oneBlock_ok E₂.x19 bufO (by decide))
       (dstW L E₂.perm (d := bufO) (n := 1) (by decide))) fun w₁ w₂ P₁ P₂ => ?_
   exact rel_env (E₁.of_saved P₁.saved P₁.sp P₁.rd P₁.wr) (E₂.of_saved P₂.saved P₂.sp P₂.rd P₂.wr) []
     (by agree_tac []) ⟨_, by taint_decide⟩
 
 /-- A chunk, in two runs at the same block `j`. -/
-theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx K W D n R ciph₂ l₂ A a₂ s₂)
+theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx T K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx T K W D n R ciph₂ l₂ A a₂ s₂)
     (hlen : a₂.length = a₁.length) {τ₁ τ₂ : State} {j : Nat}
-    (H₁ : HInv K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ j) (H₂ : HInv K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ j)
-    (hj : j < a₁.length / 16) : RelCT isa (Eq2 τ₁ τ₂) (hashChunk (callees v)) TT := by
+    (H₁ : HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ j) (H₂ : HInv T K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ j)
+    (hj : j < a₁.length / 16)
+    (hv : v.scratch ≤ T - 512 := by assumption) : RelCT isa (Eq2 τ₁ τ₂) (hashChunk (callees v)) TT := by
+  obtain hT := C₁.lay.hT
   have hs := C₁.short
   have L := C₁.lay
   have x26₂ := H₂.x26
@@ -159,8 +168,8 @@ theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
   have H₂' := H₂.head g₂ m₂ sp₂ rd₂ wr₂
   obtain ⟨u₁, run₁, F₁⟩ := bufStart_inv H₁' h24₁
   obtain ⟨u₂, run₂, F₂⟩ := bufStart_inv H₂' h24₂
-  refine rel_seq (F₁ := fun t => FillInv K W D R n SP ciph₁ l₁ A a₁ s₁ j (min 8 (a₁.length / 16 - j)) t 0)
-    (F₂ := fun t => FillInv K W D R n SP ciph₂ l₂ A a₂ s₂ j (min 8 (a₁.length / 16 - j)) t 0)
+  refine rel_seq (F₁ := fun t => FillInv T K W D R n SP ciph₁ l₁ A a₁ s₁ j (min 8 (a₁.length / 16 - j)) t 0)
+    (F₂ := fun t => FillInv T K W D R n SP ciph₂ l₂ A a₂ s₂ j (min 8 (a₁.length / 16 - j)) t 0)
     (rel_env H₁'.env H₂'.env [.x24] (by agree_tac [h24₁, h24₂]) ⟨_, by taint_decide⟩)
     (WP.of_runBlock ⟨u₁, run₁, F₁⟩) (WP.of_runBlock ⟨u₂, run₂, F₂⟩) fun u₁ u₂ F₁ F₂ => ?_
   have x26f := F₂.x26
@@ -172,13 +181,13 @@ theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
     fun w₁ w₂ G₁ G₂ => ?_
   have x26g := G₂.x26
   rw [hlen] at x26g
-  refine rel_seq (callBlocks_rel v.encOk v.encCt L C₁.rounds G₁.env G₂.env [.x24] (by agree_tac [G₁.x24, G₂.x24])
+  refine rel_seq (callBlocks_rel v.encOkW v.encCtW hv L C₁.rounds G₁.env G₂.env [.x24] (by agree_tac [G₁.x24, G₂.x24])
       ⟨_, by taint_decide⟩ (bufArgs_ok G₁.env.x19 G₁.x24) (bufArgs_ok G₂.env.x19 G₂.x24)
       (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith))
       (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L G₁.env C₁.rounds (bufArgs_ok G₁.env.x19 G₁.x24)
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L G₁.env C₁.rounds (bufArgs_ok G₁.env.x19 G₁.x24)
       (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L G₂.env C₁.rounds (bufArgs_ok G₂.env.x19 G₂.x24)
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L G₂.env C₁.rounds (bufArgs_ok G₂.env.x19 G₂.x24)
       (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith))) fun y₁ y₂ P₁ P₂ => ?_
   have a₁ : y₁.gpr .x24 = w₁.gpr .x24 := P₁.saved _ (by decide) (by decide)
   have a₂ : y₂.gpr .x24 = w₂.gpr .x24 := P₂.saved _ (by decide) (by decide)
@@ -188,21 +197,23 @@ theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
     [.x24, .x26] (by agree_tac [a₁, a₂, b₁, b₂, G₁.x24, G₂.x24, G₁.x26, x26g]) ⟨_, by taint_decide⟩
 
 /-- The chunks, in two runs. -/
-theorem hashLoop_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s₁)
-    (C₂ : HCtx K W D n R ciph₂ l₂ A a₂ s₂) (hlen : a₂.length = a₁.length) {τ₁ τ₂ : State}
-    (H₁ : HInv K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ 0) (H₂ : HInv K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ 0)
-    (hm : 0 < a₁.length / 16) :
+theorem hashLoop_rel (v : BlocksImpl) (C₁ : HCtx T K W D n R ciph₁ l₁ A a₁ s₁)
+    (C₂ : HCtx T K W D n R ciph₂ l₂ A a₂ s₂) (hlen : a₂.length = a₁.length) {τ₁ τ₂ : State}
+    (H₁ : HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ τ₁ 0) (H₂ : HInv T K W D R n SP ciph₂ l₂ A a₂ s₂ τ₂ 0)
+    (hm : 0 < a₁.length / 16)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 τ₁ τ₂) (.loop (hashChunk (callees v)) (.nonzero .x .x26)) TT := by
+  obtain hT := C₁.lay.hT
   have hs := C₁.short
   refine (RelCT.loop (Q := TT)
     (fun (k : Nat) (u₁ u₂ : State) => ∃ j, k = a₁.length / 16 - j ∧ j < a₁.length / 16 ∧
-      HInv K W D R n SP ciph₁ l₁ A a₁ s₁ u₁ j ∧ HInv K W D R n SP ciph₂ l₂ A a₂ s₂ u₂ j) (fun k => ?_)
+      HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ u₁ j ∧ HInv T K W D R n SP ciph₂ l₂ A a₂ s₂ u₂ j) (fun k => ?_)
     (a₁.length / 16 - 0)).mono (fun x y hxy => by obtain ⟨rfl, rfl⟩ := hxy; exact ⟨0, rfl, hm, H₁, H₂⟩)
     fun _ _ h => h
   refine rel_of_pt fun σ₁ σ₂ ⟨j, hk, hj, G₁, G₂⟩ => ?_
   refine ((chunk_rel v C₁ C₂ hlen G₁ G₂ hj).wp
-    (F₁ := fun u => HInv K W D R n SP ciph₁ l₁ A a₁ s₁ u (j + min 8 (a₁.length / 16 - j)))
-    (F₂ := fun u => HInv K W D R n SP ciph₂ l₂ A a₂ s₂ u (j + min 8 (a₂.length / 16 - j))) fun x y hxy => by
+    (F₁ := fun u => HInv T K W D R n SP ciph₁ l₁ A a₁ s₁ u (j + min 8 (a₁.length / 16 - j)))
+    (F₂ := fun u => HInv T K W D R n SP ciph₂ l₂ A a₂ s₂ u (j + min 8 (a₂.length / 16 - j))) fun x y hxy => by
       obtain ⟨rfl, rfl⟩ := hxy
       exact ⟨hashChunk_ok v C₁ G₁ hj, hashChunk_ok v C₂ G₂ (by rw [hlen]; exact hj)⟩).mono (fun _ _ h => h)
     fun u₁ u₂ ⟨_, F₁, F₂⟩ => ?_
@@ -217,15 +228,17 @@ theorem hashLoop_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁
     by omega_arith, F₁, F₂⟩
 
 /-- `HASH`, in two runs. -/
-theorem hash_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx K W D n R ciph₂ l₂ A a₂ s₂)
-    (hlen : a₂.length = a₁.length) (E₁ : Env K W D R n SP s₁) (E₂ : Env K W D R n SP s₂)
+theorem hash_rel (v : BlocksImpl) (C₁ : HCtx T K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx T K W D n R ciph₂ l₂ A a₂ s₂)
+    (hlen : a₂.length = a₁.length) (E₁ : Env T K W D R n SP s₁) (E₂ : Env T K W D R n SP s₂)
     (haad₁ : s₁.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
     (haad₂ : s₂.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
     (halen₁ : s₁.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₁.length)
     (halen₂ : s₂.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₂.length)
     (hl0₁ : blockAtMem s₁.mem (W + BitVec.ofNat 64 l0O) = lAt l₁ 0)
-    (hl0₂ : blockAtMem s₂.mem (W + BitVec.ofNat 64 l0O) = lAt l₂ 0) :
+    (hl0₂ : blockAtMem s₂.mem (W + BitVec.ofNat 64 l0O) = lAt l₂ 0)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 s₁ s₂) (Impl.AesOcb.AArch64.hash (callees v)) TT := by
+  obtain hT := C₁.lay.hT
   have hs := C₁.short
   unfold Impl.AesOcb.AArch64.hash
   refine RelCT.assoc (rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩)
@@ -281,21 +294,23 @@ open VG.Proof.Aes.AArch64 (BlocksImpl)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ite eval_zero lsr_ofNat)
 
 section
-variable {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+variable {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay T K W) (hR : R = 10 ∨ R = 12 ∨ R = 14)
 include L hR
 
 /-- The tag at `W + d`, in two runs. -/
-theorem tag_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) {d : Nat}
-    (hd : d = tagO ∨ d = t2O) : RelCT isa (Eq2 σ₁ σ₂) (tag (callees v) d) TT := by
-  have mid : ∀ {τ₁ τ₂ : State}, Env K W D R n SP τ₁ → Env K W D R n SP τ₂ →
+theorem tag_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) {d : Nat}
+    (hd : d = tagO ∨ d = t2O)
+    (hv : v.scratch ≤ T - 512 := by assumption) : RelCT isa (Eq2 σ₁ σ₂) (tag (callees v) d) TT := by
+  obtain hT := E₁.perm.hT
+  have mid : ∀ {τ₁ τ₂ : State}, Env T K W D R n SP τ₁ → Env T K W D R n SP τ₂ →
       RelCT isa (Eq2 τ₁ τ₂) (.seq (callBlocks (callees v).enc (oneBlock tmpO)) (.block (copy16 tmpO d ++
         xor16 .x19 sumO d))) TT := fun {τ₁ τ₂} F₁ F₂ => by
-    refine rel_seq (callBlocks_rel v.encOk v.encCt L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
+    refine rel_seq (callBlocks_rel v.encOkW v.encCtW hv L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
         (oneBlock_ok F₁.x19 tmpO (by decide)) (oneBlock_ok F₂.x19 tmpO (by decide))
         (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)) (dstW L F₂.perm (d := tmpO) (n := 1) (by decide)))
-      (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
+      (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
         (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)))
-      (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
+      (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
         (dstW L F₂.perm (d := tmpO) (n := 1) (by decide))) fun u₁ u₂ P₁ P₂ => ?_
     rcases hd with rfl | rfl <;>
       exact rel_env (F₁.of_saved P₁.saved P₁.sp P₁.rd P₁.wr) (F₂.of_saved P₂.saved P₂.sp P₂.rd P₂.wr) []
@@ -306,13 +321,15 @@ theorem tag_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP 
     (fun _ _ h => E₂.exec h (by decide +kernel) (by decide +kernel)) fun _ _ F₁ F₂ => mid F₁ F₂
 
 /-- The rest of the data (`r` bytes at `P`), in two runs. -/
-theorem rest_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂)
+theorem rest_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂)
     {P : Addr} {r : Nat} (h23₁ : σ₁.gpr .x23 = P) (h23₂ : σ₂.gpr .x23 = P)
-    (h24₁ : σ₁.gpr .x24 = BitVec.ofNat 64 r) (h24₂ : σ₂.gpr .x24 = BitVec.ofNat 64 r) :
+    (h24₁ : σ₁.gpr .x24 = BitVec.ofNat 64 r) (h24₂ : σ₂.gpr .x24 = BitVec.ofNat 64 r)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (rest (callees v) enc) TT := by
-  have keep : ∀ {σ : State}, Env K W D R n SP σ → σ.gpr .x23 = P → σ.gpr .x24 = BitVec.ofNat 64 r →
+  obtain hT := E₁.perm.hT
+  have keep : ∀ {σ : State}, Env T K W D R n SP σ → σ.gpr .x23 = P → σ.gpr .x24 = BitVec.ofNat 64 r →
       ∀ t s', Exec isa (.block (xor16 .x20 240 ofsO ++ copy16 ofsO tmpO)) σ t s' →
-        Env K W D R n SP s' ∧ s'.gpr .x23 = P ∧ s'.gpr .x24 = BitVec.ofNat 64 r := fun E h23 h24 _ _ h => by
+        Env T K W D R n SP s' ∧ s'.gpr .x23 = P ∧ s'.gpr .x24 = BitVec.ofNat 64 r := fun E h23 h24 _ _ h => by
     obtain ⟨g, sp, rd, wr⟩ := exec_keep [.x19, .x20, .x21, .x22, .x28, .x23, .x24] (by decide +kernel)
       (by decide +kernel) h
     exact ⟨E.keep (fun q hq => g q (List.mem_append_left _ hq)) sp rd wr,
@@ -320,12 +337,12 @@ theorem rest_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env
   unfold rest
   refine rel_seqE (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (keep E₁ h23₁ h24₁) (keep E₂ h23₂ h24₂)
     fun τ₁ τ₂ ⟨F₁, a₁, b₁⟩ ⟨F₂, a₂, b₂⟩ => ?_
-  refine rel_seq (callBlocks_rel v.encOk v.encCt L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
+  refine rel_seq (callBlocks_rel v.encOkW v.encCtW hv L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
       (oneBlock_ok F₁.x19 tmpO (by decide)) (oneBlock_ok F₂.x19 tmpO (by decide))
       (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)) (dstW L F₂.perm (d := tmpO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
       (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
       (dstW L F₂.perm (d := tmpO) (n := 1) (by decide))) fun u₁ u₂ P₁ P₂ => ?_
   have c23₁ : u₁.gpr .x23 = τ₁.gpr .x23 := P₁.saved _ (by decide) (by decide)
   have c23₂ : u₂.gpr .x23 = τ₂.gpr .x23 := P₂.saved _ (by decide) (by decide)
@@ -336,10 +353,12 @@ theorem rest_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env
       (by agree_tac [c23₁, c23₂, c24₁, c24₂, a₁, a₂, b₁, b₂]) ⟨_, by taint_decide⟩
 
 /-- The rest of the data, if there is any, in two runs. -/
-theorem restIte_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) (hn : n < 2 ^ 64) :
+theorem restIte_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁)
+    (E₂ : Env T K W D R n SP σ₂) (hn : n < 2 ^ 64)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block [Impl.AesGcm.AArch64.imm .x10 15, .logic .and .x .x24 .x28 .x10,
       .sub .x .x9 .x28 .x24, .add .x .x23 .x21 .x9]) (.ite (.zero .x .x24) (.block []) (rest (callees v) enc))) TT := by
+  obtain hT := E₁.perm.hT
   obtain ⟨t₁, run₁, x23₁, x24₁, _, g₁, sp₁, rd₁, wr₁⟩ := bodyTail_ok E₁ hn
   obtain ⟨t₂, run₂, x23₂, x24₂, _, g₂, sp₂, rd₂, wr₂⟩ := bodyTail_ok E₂ hn
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨t₁, run₁, rfl⟩)
@@ -350,9 +369,9 @@ theorem restIte_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : 
 
 /-- The whole blocks (`m` of them, in `x26`), in two runs. -/
 theorem whole_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.AArch64.Blocks}
-    (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
-      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
-    (ct : ConstantTime isa (Proof.Aes.blocksAArch64 f).pre (Proof.Aes.blocksAArch64 f).pub b.code)
+    {M : Nat} (ok : ∀ s, (Proof.Aes.blocksAArch64With M f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64With M f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksAArch64With M f).pre (Proof.Aes.blocksAArch64With M f).pub b.code)
     (nf : b.code.noFrames = true) {pre post : List Instr} {pm qm : CkMode}
     (hc₁ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
@@ -365,24 +384,26 @@ theorem whole_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
     (hc₂ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block (copy16 o0O ofsO ++ ([Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
         Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (passFast qm post)) h).isSome = true)
-    {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) {m : Nat}
+    {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) {m : Nat}
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 m) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 m)
-    (hD₁ : DBuf K W σ₁ D (16 * m)) (hD₂ : DBuf K W σ₂ D (16 * m)) :
+    (hD₁ : DBuf T K W σ₁ D (16 * m)) (hD₂ : DBuf T K W σ₂ D (16 * m))
+    (hMs : M ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (whole b pre post pm qm) TT := by
-  have keep : ∀ {σ : State}, Env K W D R n SP σ → σ.gpr .x26 = BitVec.ofNat 64 m → DBuf K W σ D (16 * m) →
+  obtain hT := E₁.perm.hT
+  have keep : ∀ {σ : State}, Env T K W D R n SP σ → σ.gpr .x26 = BitVec.ofNat 64 m → DBuf T K W σ D (16 * m) →
       ∀ t s', Exec isa (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
         Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre)) σ t s' →
-        Env K W D R n SP s' ∧ s'.gpr .x26 = BitVec.ofNat 64 m ∧ DBuf K W s' D (16 * m) := fun E h26 hD _ _ h => by
+        Env T K W D R n SP s' ∧ s'.gpr .x26 = BitVec.ofNat 64 m ∧ DBuf T K W s' D (16 * m) := fun E h26 hD _ _ h => by
     obtain ⟨g, sp, rd, wr⟩ := exec_keep _ hk₁ hn₁ h
     exact ⟨E.keep (fun q hq => g q (List.mem_append_left _ hq)) sp rd wr,
       by rw [g _ (by simp), h26], hD.of_eq rd wr⟩
   unfold whole
   refine RelCT.assoc (rel_seqE (rel_env E₁ E₂ [.x26] (by agree_tac [h26₁, h26₂]) hc₁) (keep E₁ h26₁ hD₁)
     (keep E₂ h26₂ hD₂) fun τ₁ τ₂ ⟨F₁, a₁, d₁⟩ ⟨F₂, a₂, d₂⟩ => ?_)
-  refine rel_seq (callBlocks_rel ok ct L hR F₁ F₂ [.x26] (by agree_tac [a₁, a₂]) ⟨_, by taint_decide⟩
-      (dataArgs_ok F₁.x21 a₁) (dataArgs_ok F₂.x21 a₂) (dstD d₁) (dstD d₂))
-    (callBlocks_ok ok nf L F₁ hR (dataArgs_ok F₁.x21 a₁) (dstD d₁))
-    (callBlocks_ok ok nf L F₂ hR (dataArgs_ok F₂.x21 a₂) (dstD d₂)) fun u₁ u₂ P₁ P₂ => ?_
+  refine rel_seq (callBlocks_rel ok ct hMs L hR F₁ F₂ [.x26] (by agree_tac [a₁, a₂]) ⟨_, by taint_decide⟩
+      (dataArgs_ok F₁.x21 a₁) (dataArgs_ok F₂.x21 a₂) (dstD L.hT.1 d₁) (dstD L.hT.1 d₂))
+    (callBlocks_ok ok nf hMs L F₁ hR (dataArgs_ok F₁.x21 a₁) (dstD L.hT.1 d₁))
+    (callBlocks_ok ok nf hMs L F₂ hR (dataArgs_ok F₂.x21 a₂) (dstD L.hT.1 d₂)) fun u₁ u₂ P₁ P₂ => ?_
   have c₁ : u₁.gpr .x26 = τ₁.gpr .x26 := P₁.saved _ (by decide) (by decide)
   have c₂ : u₂.gpr .x26 = τ₂.gpr .x26 := P₂.saved _ (by decide) (by decide)
   exact rel_env (F₁.of_saved P₁.saved P₁.sp P₁.rd P₁.wr) (F₂.of_saved P₂.saved P₂.sp P₂.rd P₂.wr) [.x26]
@@ -390,9 +411,9 @@ theorem whole_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
 
 /-- The whole blocks, if there are any, in two runs. -/
 theorem wholeIte_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.AArch64.Blocks}
-    (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
-      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
-    (ct : ConstantTime isa (Proof.Aes.blocksAArch64 f).pre (Proof.Aes.blocksAArch64 f).pub b.code)
+    {M : Nat} (ok : ∀ s, (Proof.Aes.blocksAArch64With M f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64With M f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksAArch64With M f).pre (Proof.Aes.blocksAArch64With M f).pub b.code)
     (nf : b.code.noFrames = true) {pre post : List Instr} {pm qm : CkMode}
     (hc₁ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
@@ -405,13 +426,15 @@ theorem wholeIte_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Stat
     (hc₂ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block (copy16 o0O ofsO ++ ([Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
         Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (passFast qm post)) h).isSome = true)
-    {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) (hD₁ : DBuf K W σ₁ D n)
-    (hD₂ : DBuf K W σ₂ D n) :
+    {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) (hD₁ : DBuf T K W σ₁ D n)
+    (hD₂ : DBuf T K W σ₂ D n)
+    (hMs : M ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block [.lsr .x .x26 .x28 4]) (.ite (.zero .x .x26) (.block [])
       (whole b pre post pm qm))) TT := by
+  obtain hT := E₁.perm.hT
   have hn := hD₁.lt
-  have lsr : ∀ {σ : State}, Env K W D R n SP σ →
-      WP isa (.block [.lsr .x .x26 .x28 4]) σ fun t => Env K W D R n SP t ∧ t.gpr .x26 = BitVec.ofNat 64 (n / 16) ∧
+  have lsr : ∀ {σ : State}, Env T K W D R n SP σ →
+      WP isa (.block [.lsr .x .x26 .x28 4]) σ fun t => Env T K W D R n SP t ∧ t.gpr .x26 = BitVec.ofNat 64 (n / 16) ∧
         t.rd = σ.rd ∧ t.wr = σ.wr := fun {σ} E =>
     WP.of_runBlock ⟨σ.write .x .x26 (σ.gpr .x28 >>> 4), by orun [], E.others (rs := [.x26]) (fun r hr => by simp at hr; simp [gpr_write, hr]) rfl rfl rfl,
       by simp [gpr_write, E.x28, lsr_ofNat _ _ hn], rfl, rfl⟩
@@ -422,54 +445,58 @@ theorem wholeIte_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Stat
       ((hD₂.take' (Nat.mul_div_le n 16)).of_eq r₂ w₂)
 
 /-- `body` for `seal`, in two runs. -/
-theorem bodySeal_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂)
-    (hD₁ : DBuf K W σ₁ D n) (hD₂ : DBuf K W σ₂ D n) {O₁ O₂ : Block}
+theorem bodySeal_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂)
+    (hD₁ : DBuf T K W σ₁ D n) (hD₂ : DBuf T K W σ₂ D n) {O₁ O₂ : Block}
     (hofs₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 ofsO) = O₁) (ho0₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 o0O) = O₁)
     (hck₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 ckO) = 0)
     (hl0₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₁.mem K) 0)
     (hofs₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 ofsO) = O₂) (ho0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 o0O) = O₂)
     (hck₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 ckO) = 0)
-    (hl0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₂.mem K) 0) :
+    (hl0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₂.mem K) 0)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (body (callees v) true) TT := by
+  obtain hT := E₁.perm.hT
   simp only [body, ↓reduceIte]
-  refine RelCT.assoc (rel_seq (wholeIte_rel L hR v.encOk v.encCt v.encNoFrames ⟨_, by taint_decide⟩
+  refine RelCT.assoc (rel_seq (wholeIte_rel L hR v.encOkW v.encCtW v.encNoFrames ⟨_, by taint_decide⟩
       (by decide +kernel) (by decide +kernel) ⟨_, by taint_decide⟩ E₁ E₂ hD₁ hD₂)
     (wholeIte_ok (O0 := O₁) (l := ctxLstar σ₁.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.encOkW v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.encOkW v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v true P₁.env P₂.env hD₁.lt
 
 /-- `body` for `open`, in two runs. -/
-theorem bodyOpen_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂)
-    (hD₁ : DBuf K W σ₁ D n) (hD₂ : DBuf K W σ₂ D n) {O₁ O₂ : Block}
+theorem bodyOpen_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂)
+    (hD₁ : DBuf T K W σ₁ D n) (hD₂ : DBuf T K W σ₂ D n) {O₁ O₂ : Block}
     (hofs₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 ofsO) = O₁) (ho0₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 o0O) = O₁)
     (hck₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 ckO) = 0)
     (hl0₁ : blockAtMem σ₁.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₁.mem K) 0)
     (hofs₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 ofsO) = O₂) (ho0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 o0O) = O₂)
     (hck₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 ckO) = 0)
-    (hl0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₂.mem K) 0) :
+    (hl0₂ : blockAtMem σ₂.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar σ₂.mem K) 0)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (body (callees v) false) TT := by
+  obtain hT := E₁.perm.hT
   simp only [body, Bool.false_eq_true, ↓reduceIte]
-  refine RelCT.assoc (rel_seq (wholeIte_rel L hR v.decOk v.decCt v.decNoFrames ⟨_, by taint_decide⟩
+  refine RelCT.assoc (rel_seq (wholeIte_rel L hR v.decOkW v.decCtW v.decNoFrames ⟨_, by taint_decide⟩
       (by decide +kernel) (by decide +kernel) ⟨_, by taint_decide⟩ E₁ E₂ hD₁ hD₂)
     (wholeIte_ok (O0 := O₁) (l := ctxLstar σ₁.mem K) (ckF1 := fun _ => 0)
       (ckF2 := ckOf fun i => decG (bytesAt σ₁.mem K (16 * (R + 1)))
         (blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₁ (ctxLstar σ₁.mem K) (i + 1)) ^^^
           offAt O₁ (ctxLstar σ₁.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.decOkW v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K) (ckF1 := fun _ => 0)
       (ckF2 := ckOf fun i => decG (bytesAt σ₂.mem K (16 * (R + 1)))
         (blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₂ (ctxLstar σ₂.mem K) (i + 1)) ^^^
           offAt O₂ (ctxLstar σ₂.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.decOkW v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v false P₁.env P₂.env hD₁.lt
 
@@ -505,14 +532,15 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.AArch64 (BlocksImpl)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq)
 
-theorem nonceBlock_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {N : Addr} {nl : Nat}
+theorem nonceBlock_rel {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁)
+    (E₂ : Env T K W D R n SP σ₂) {N : Addr} {nl : Nat}
     (hN₁ : σ₁.mem.readW (W + BitVec.ofNat 64 nO) 64 = N) (hN₂ : σ₂.mem.readW (W + BitVec.ofNat 64 nO) 64 = N)
     (hnl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl)
     (hnl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl) :
     RelCT isa (Eq2 σ₁ σ₂) nonceBlock TT := by
-  obtain ⟨s₁, run₁, x12₁, x13₁, g₁, -, -, sp₁, rd₁, wr₁⟩ := nonceHead_ok E₁.x19 E₁.perm.w hN₁ hnl₁
-  obtain ⟨s₂, run₂, x12₂, x13₂, g₂, -, -, sp₂, rd₂, wr₂⟩ := nonceHead_ok E₂.x19 E₂.perm.w hN₂ hnl₂
+  obtain hT := E₁.perm.hT
+  obtain ⟨s₁, run₁, x12₁, x13₁, g₁, -, -, sp₁, rd₁, wr₁⟩ := nonceHead_ok E₁.x19 E₁.perm.w5 hN₁ hnl₁
+  obtain ⟨s₂, run₂, x12₂, x13₂, g₂, -, -, sp₂, rd₂, wr₂⟩ := nonceHead_ok E₂.x19 E₂.perm.w5 hN₂ hnl₂
   unfold nonceBlock
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨s₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
@@ -521,27 +549,29 @@ theorem nonceBlock_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : Sta
     (E₂.keep (fun r hr => g₂ r (envRegs_ne hr) (envRegs_ne hr) (envRegs_ne hr)) sp₂ rd₂ wr₂) [.x12, .x13]
     (by agree_tac [x12₁, x12₂, x13₁, x13₂]) ⟨_, by taint_decide⟩
 
-theorem nonce_rel (v : BlocksImpl) {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {σ₁ σ₂ : State}
-    (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) (hR : R = 10 ∨ R = 12 ∨ R = 14) {N : Addr} {nl t : Nat}
+theorem nonce_rel (v : BlocksImpl) {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay T K W) {σ₁ σ₂ : State}
+    (E₁ : Env T K W D R n SP σ₁) (E₂ : Env T K W D R n SP σ₂) (hR : R = 10 ∨ R = 12 ∨ R = 14) {N : Addr} {nl t : Nat}
     (hN₁ : σ₁.mem.readW (W + BitVec.ofNat 64 nO) 64 = N) (hN₂ : σ₂.mem.readW (W + BitVec.ofNat 64 nO) 64 = N)
     (hnl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl)
     (hnl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl)
     (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 t)
     (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 t) (h1 : 1 ≤ nl) (h15 : nl ≤ 15)
-    (ht : t < 2 ^ 64) (hB₁ : Buf W σ₁ N nl) (hB₂ : Buf W σ₂ N nl) :
+    (ht : t < 2 ^ 64) (hB₁ : Buf T W σ₁ N nl) (hB₂ : Buf T W σ₂ N nl)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (nonce (callees v)) TT := by
+  obtain hT := L.hT
   unfold nonce
   refine rel_seq (nonceBlock_rel E₁ E₂ hN₁ hN₂ hnl₁ hnl₂)
-    (nonceBlock_ok L E₁.x19 E₁.perm.w hN₁ hnl₁ htl₁ h1 h15 ht hB₁)
-    (nonceBlock_ok L E₂.x19 E₂.perm.w hN₂ hnl₂ htl₂ h1 h15 ht hB₂) fun τ₁ τ₂ P₁ P₂ => ?_
-  have F₁ : Env K W D R n SP τ₁ := E₁.others P₁.gpr P₁.sp P₁.rd P₁.wr
-  have F₂ : Env K W D R n SP τ₂ := E₂.others P₂.gpr P₂.sp P₂.rd P₂.wr
-  refine rel_seq (callBlocks_rel v.encOk v.encCt L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
+    (nonceBlock_ok L E₁.x19 E₁.perm.w5 hN₁ hnl₁ htl₁ h1 h15 ht hB₁)
+    (nonceBlock_ok L E₂.x19 E₂.perm.w5 hN₂ hnl₂ htl₂ h1 h15 ht hB₂) fun τ₁ τ₂ P₁ P₂ => ?_
+  have F₁ : Env T K W D R n SP τ₁ := E₁.others P₁.gpr P₁.sp P₁.rd P₁.wr
+  have F₂ : Env T K W D R n SP τ₂ := E₂.others P₂.gpr P₂.sp P₂.rd P₂.wr
+  refine rel_seq (callBlocks_rel v.encOkW v.encCtW hv L hR F₁ F₂ [] (by agree_tac []) ⟨_, by taint_decide⟩
       (oneBlock_ok F₁.x19 tmpO (by decide)) (oneBlock_ok F₂.x19 tmpO (by decide))
       (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)) (dstW L F₂.perm (d := tmpO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₁ hR (oneBlock_ok F₁.x19 tmpO (by decide))
       (dstW L F₁.perm (d := tmpO) (n := 1) (by decide)))
-    (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
+    (callBlocks_ok (f := Spec.Aes.cipher) v.encOkW v.encNoFrames hv L F₂ hR (oneBlock_ok F₂.x19 tmpO (by decide))
       (dstW L F₂.perm (d := tmpO) (n := 1) (by decide))) fun u₁ u₂ Q₁ Q₂ => ?_
   exact rel_env (F₁.of_saved Q₁.saved Q₁.sp Q₁.rd Q₁.wr) (F₂.of_saved Q₂.saved Q₂.sp Q₂.rd Q₂.wr) []
     (by agree_tac []) ⟨_, by taint_decide⟩
@@ -599,8 +629,8 @@ theorem entry_rel {σ₁ σ₂ : State} {W : Addr} (hW₁ : stackArg σ₁ 2 = W
     exact hq r (by simp only [List.mem_cons, List.not_mem_nil, or_false, h9, false_or] at hr ⊢; exact hr)
 
 /-- `entry`, `nonce` and `hash`, in two runs with the same public arguments. -/
-theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (A₁ : Args σ₁ K W N A D R nl al n tl T) (A₂ : Args σ₂ K W N A D R nl al n tl T)
+theorem pre_rel {T : Nat} (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl al n tl : Nat} {Tg : Addr}
+    (A₁ : Args T σ₁ K W N A D R nl al n tl Tg) (A₂ : Args T σ₂ K W N A D R nl al n tl Tg)
     (hW₁ : stackArg σ₁ 2 = W) (htl₁ : stackArg σ₁ 1 = BitVec.ofNat 64 tl)
     (h0₁ : σ₁.gpr .x0 = K) (h1₁ : σ₁.gpr .x1 = BitVec.ofNat 64 R) (h2₁ : σ₁.gpr .x2 = N)
     (h3₁ : σ₁.gpr .x3 = BitVec.ofNat 64 nl) (h4₁ : σ₁.gpr .x4 = A) (h5₁ : σ₁.gpr .x5 = BitVec.ofNat 64 al)
@@ -608,8 +638,10 @@ theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl 
     (hW₂ : stackArg σ₂ 2 = W) (htl₂ : stackArg σ₂ 1 = BitVec.ofNat 64 tl)
     (h0₂ : σ₂.gpr .x0 = K) (h1₂ : σ₂.gpr .x1 = BitVec.ofNat 64 R) (h2₂ : σ₂.gpr .x2 = N)
     (h3₂ : σ₂.gpr .x3 = BitVec.ofNat 64 nl) (h4₂ : σ₂.gpr .x4 = A) (h5₂ : σ₂.gpr .x5 = BitVec.ofNat 64 al)
-    (h6₂ : σ₂.gpr .x6 = D) (h7₂ : σ₂.gpr .x7 = BitVec.ofNat 64 n) (qsp : σ₁.sp = σ₂.sp) :
+    (h6₂ : σ₂.gpr .x6 = D) (h7₂ : σ₂.gpr .x7 = BitVec.ofNat 64 n) (qsp : σ₁.sp = σ₂.sp)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block entry) (.seq (nonce (callees v)) (hash (callees v)))) TT := by
+  obtain hT := A₁.lay.hT
   have L := A₁.lay
   refine rel_seq (entry_rel hW₁ hW₂ A₁.args A₂.args qsp
       (by agree_tac [h0₁, h0₂, h1₁, h1₂, h2₁, h2₂, h3₁, h3₂, h4₁, h4₂, h5₁, h5₂, h6₁, h6₂, h7₁, h7₂]))
@@ -632,11 +664,12 @@ theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl 
 
 /-- `Args` in two runs with the same public arguments, with the values of the
 first. -/
-theorem args₂_of {σ₁ σ₂ : State} (hq : onePub σ₁ σ₂)
-    (A₂ : Args σ₂ (σ₂.gpr .x0) (stackArg σ₂ 2) (σ₂.gpr .x2) (σ₂.gpr .x4) (σ₂.gpr .x6) (σ₂.gpr .x1).toNat
+theorem args₂_of {T : Nat} {σ₁ σ₂ : State} (hq : onePub σ₁ σ₂)
+    (A₂ : Args T σ₂ (σ₂.gpr .x0) (stackArg σ₂ 2) (σ₂.gpr .x2) (σ₂.gpr .x4) (σ₂.gpr .x6) (σ₂.gpr .x1).toNat
       (σ₂.gpr .x3).toNat (σ₂.gpr .x5).toNat (σ₂.gpr .x7).toNat (stackArg σ₂ 1).toNat (stackArg σ₂ 0)) :
-    Args σ₂ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
+    Args T σ₂ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
       (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat (stackArg σ₁ 0) := by
+  obtain hT := A₂.lay.hT
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, -, qa⟩ := hq
   rw [← q0, ← q1, ← q2, ← q3, ← q4, ← q5, ← q6, ← q7, ← qa 0 (by decide), ← qa 1 (by decide),
     ← qa 2 (by decide)] at A₂
@@ -644,18 +677,20 @@ theorem args₂_of {σ₁ σ₂ : State} (hq : onePub σ₁ σ₂)
 
 /-- `pre_rel` and `pre_wp'` in two runs with the same public arguments, then
 `k`. -/
-theorem pre_relk (v : BlocksImpl) {σ₁ σ₂ : State}
-    (A₁ : Args σ₁ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
+theorem pre_relk {T : Nat} (v : BlocksImpl) {σ₁ σ₂ : State}
+    (A₁ : Args T σ₁ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
       (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat (stackArg σ₁ 0))
-    (A₂ : Args σ₂ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
+    (A₂ : Args T σ₂ (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat
       (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat (stackArg σ₁ 0))
     (hq : onePub σ₁ σ₂) {k : Prog isa}
-    (hk : ∀ τ₁ τ₂, Pre (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat (σ₁.gpr .x7).toNat (σ₁.gpr .x2)
+    (hk : ∀ τ₁ τ₂, Pre T (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat (σ₁.gpr .x7).toNat (σ₁.gpr .x2)
       (σ₁.gpr .x4) (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (stackArg σ₁ 1).toNat σ₁ τ₁ →
-      Pre (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat (σ₁.gpr .x7).toNat (σ₁.gpr .x2)
+      Pre T (σ₁.gpr .x0) (stackArg σ₁ 2) (σ₁.gpr .x6) (σ₁.gpr .x1).toNat (σ₁.gpr .x7).toNat (σ₁.gpr .x2)
       (σ₁.gpr .x4) (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (stackArg σ₁ 1).toNat σ₂ τ₂ →
-      RelCT isa (Eq2 τ₁ τ₂) k TT) :
+      RelCT isa (Eq2 τ₁ τ₂) k TT)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block entry) (.seq (nonce (callees v)) (.seq (hash (callees v)) k))) TT := by
+  obtain hT := A₁.lay.hT
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   have o : ∀ x : BitVec 64, x = BitVec.ofNat 64 x.toNat := fun x => (ofNat_toNat64 x).symm
   have o' : ∀ {x y : BitVec 64}, x = y → y = BitVec.ofNat 64 x.toNat := fun h => by rw [h]; exact o _
@@ -682,14 +717,15 @@ theorem rel_front {P Q : State → State → Prop} {e n h b t tail : Prog isa}
 
 /-- `tagOut` in two runs: its first block loads the tag's address from the
 stack, and the copy runs from it. -/
-theorem tagOut_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {T : Addr} {tl : Nat}
+theorem tagOut_rel {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁)
+    (E₂ : Env T K W D R n SP σ₂) {Tg : Addr} {tl : Nat}
     (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hT₁ : stackArg σ₁ 0 = T)
-    (hT₂ : stackArg σ₂ 0 = T) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hTg₁ : stackArg σ₁ 0 = Tg)
+    (hTg₂ : stackArg σ₂ 0 = Tg) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
     (ha₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 (8 * 0)) 8) : RelCT isa (Eq2 σ₁ σ₂) tagOut TT := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := tagOutHead_ok E₁ htl₁ hT₁ ha₁
-  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := tagOutHead_ok E₂ htl₂ hT₂ ha₂
+  obtain hT := E₁.perm.hT
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := tagOutHead_ok E₁ htl₁ hTg₁ ha₁
+  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := tagOutHead_ok E₂ htl₂ hTg₂ ha₂
   unfold tagOut
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨s₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
@@ -699,23 +735,25 @@ theorem tagOut_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} 
 
 /-- The state after `front`, in a run with the arguments: the address of the
 tag on the stack, where the state may read it. -/
-theorem front_tag {s : State} {K W N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (Ar : Args s K W N A D R nl al n tl T) (hT : stackArg s 0 = T) {s₃ s₄ s₅ : State} {d : Nat} (hd : d + 16 ≤ 160)
-    (P : Pre K W D R n N A nl al tl s s₃) {out : List Byte} {ofs ck : Spec.Ocb.Block}
-    {SP SP' : Addr} (B : BodyPost K W D R n SP' out ofs ck s₃ s₄) (T₅ : TagPost K W D R n SP d s₄ s₅)
+theorem front_tag {T : Nat} {s : State} {K W N A D : Addr} {R nl al n tl : Nat} {Tg : Addr}
+    (Ar : Args T s K W N A D R nl al n tl Tg) (hTg : stackArg s 0 = Tg) {s₃ s₄ s₅ : State} {d : Nat} (hd : d + 16 ≤ 160)
+    (P : Pre T K W D R n N A nl al tl s s₃) {out : List Byte} {ofs ck : Spec.Ocb.Block}
+    {SP SP' : Addr} (B : BodyPost T K W D R n SP' out ofs ck s₃ s₄) (T₅ : TagPost T K W D R n SP d s₄ s₅)
     (hsp : SP = s.sp) :
-    stackArg s₅ 0 = T ∧ InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
+    stackArg s₅ 0 = Tg ∧ InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
+  obtain hT := Ar.lay.hT
   have sp₅ : s₅.sp = s.sp := T₅.env.sp.trans hsp
   refine ⟨?_, ?_⟩
-  · rw [← hT]; simp only [stackArg, stackArgAddr, sp₅]
+  · rw [← hTg]; simp only [stackArg, stackArgAddr, sp₅]
     exact args_kept Ar.argsW Ar.argsD (front_frame hd P.frame B.frame T₅.frame) (i := 0) (by decide)
   · rw [T₅.rd, B.rd, P.rd, T₅.wr, B.wr, P.wr, sp₅]
     exact in_off Ar.args (by decide) (by decide)
 
-theorem seal_ct (v : BlocksImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» (callees v)) := by
+theorem seal_ct {T : Nat} (v : BlocksImpl) (hT : 512 ≤ T ∧ T ≤ 2560 := by assumption)
+    (hv : v.scratch ≤ T - 512 := by assumption) : ConstantTime isa (sealAArch64 T).pre (sealAArch64 T).pub («seal» (callees v)) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  have A₁ := sealArgs_of h₁
-  have A₂ := args₂_of hq (sealArgs_of h₂)
+  have A₁ := sealArgs_of h₁ hT
+  have A₂ := args₂_of hq (sealArgs_of h₂ hT)
   have qsp := hq.2.2.2.2.2.2.2.2.1
   have qT : stackArg σ₂ 0 = stackArg σ₁ 0 := (hq.2.2.2.2.2.2.2.2.2 0 (by decide)).symm
   have L := A₁.lay
@@ -849,7 +887,7 @@ theorem cmpStep_ok (s : State) {A B : Addr} (ha : s.gpr .x11 = A) (hb : s.gpr .x
   all_goals rfl
 
 /-- `cmp`'s first block: the tag length, and the two tags' addresses. -/
-theorem cmpHead_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) {tl : Nat}
+theorem cmpHead_ok {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env T K W D R n SP s) {tl : Nat}
     (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) :
     ∃ s₁, runBlock isa
         [Impl.AesGcm.AArch64.imm .x13 0, Impl.AesGcm.AArch64.mov .x11 .x19, Impl.AesGcm.AArch64.ptr .x12 .x19 t2O,
@@ -857,7 +895,8 @@ theorem cmpHead_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K
       s₁.gpr .x13 = 0#64 ∧ s₁.gpr .x11 = W + BitVec.ofNat 64 0 ∧ s₁.gpr .x12 = W + BitVec.ofNat 64 t2O + BitVec.ofNat 64 0 ∧
       s₁.gpr .x24 = BitVec.ofNat 64 (tl - 0) ∧ s₁.mem = s.mem ∧
       (∀ r, r ∉ cmpRegs → s₁.gpr r = s.gpr r) ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have r₀ := E.perm.wR (show 248 + 8 ≤ 2560 by decide)
+  obtain hT := E.perm.hT
+  have r₀ := E.perm.wR (show 248 + 8 ≤ T by have := E.perm.hT; omega)
   simp only [tlO] at htl
   refine ⟨_, by orun [E.x19, r₀, htl], ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · simp [gpr_write]
@@ -871,15 +910,16 @@ theorem cmpHead_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K
   all_goals rfl
 
 /-- `cmp`: 1 at `W` if the first `tl` bytes at `W` and `W + t2O` are equal, else 0. -/
-theorem cmp_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) {tl : Nat} (h1 : 1 ≤ tl)
+theorem cmp_ok {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env T K W D R n SP s) {tl : Nat} (h1 : 1 ≤ tl)
     (h16 : tl ≤ 16) (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) :
     WP isa cmp s fun t => t.mem = s.mem.writeW (W + BitVec.ofNat 64 tagO)
         (if bytesAt s.mem W tl = bytesAt s.mem (W + BitVec.ofNat 64 t2O) tl then 1#64 else 0#64) ∧
       (∀ r, r ∉ cmpRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain hT := E.perm.hT
   obtain ⟨s₁, run₁, x13₁, x11₁, x12₁, x24₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := cmpHead_ok E htl
   unfold cmp
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have hR : ∀ {d j : Nat}, d + j < 2560 → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d + BitVec.ofNat 64 j) 1 :=
+  have hR : ∀ {d j : Nat}, d + j < T → InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d + BitVec.ofNat 64 j) 1 :=
     fun h => by rw [Offset.add_add]; exact E.perm.wR (by omega_arith)
   -- The loop: the OR of the XORs of the first `j` bytes in `x13`.
   refine WP.seq (WP.mono (WP.loop (M := isa) (c := .nonzero .x .x24)
@@ -924,7 +964,7 @@ theorem cmp_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D
         by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
   · obtain ⟨lt, iff, mem, g, sp, rd, wr⟩ := hu
     have h19 : u.gpr .x19 = W := by rw [g _ (by decide), E.x19]
-    have w₀ : InRegions u.wr W 8 := by rw [wr]; simpa using E.perm.wW (d := 0) (n := 8) (by decide)
+    have w₀ : InRegions u.wr W 8 := by rw [wr]; simpa using E.perm.wW (d := 0) (n := 8) (by have := ocbOffs; omega)
     refine WP.of_runBlock ⟨_, by orun [h19, w₀], ?_, fun r hr => ?_, ?_, ?_, ?_⟩
     · simp only [mem_write, gpr_write, ite_true, mem, tagO, BitVec.add_zero]
       rw [okBit lt]
@@ -1015,7 +1055,7 @@ theorem maskVector_ok (s : State) {P : Addr} {c : Bool} (h23 : s.gpr .x23 = P)
   all_goals rfl
 
 /-- A vector if one remains, otherwise a single tail byte. The branch depends only on length. -/
-theorem maskSmall_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D n)
+theorem maskSmall_ok {T : Nat} {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf T K W s D n)
     (hj : j < n) {c : Bool} (h23 : s.gpr .x23 = D + BitVec.ofNat 64 j)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 (n - j))
     (h10 : s.gpr .x10 = 0#64 - (if c then 1#64 else 0#64)) :
@@ -1065,7 +1105,7 @@ theorem maskSmall_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D n
     · exact fun r h₁ h₂ h₃ => (gg r h₁ h₂ h₃).trans (g r h₁)
 
 
-theorem maskVectors_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D n)
+theorem maskVectors_ok {T : Nat} {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf T K W s D n)
     (k : Nat) (hk : j + 16*k ≤ n) {c : Bool} (h23 : s.gpr .x23 = D + BitVec.ofNat 64 j)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 (n-j))
     (h10 : s.gpr .x10 = 0#64 - (if c then 1#64 else 0#64)) :
@@ -1116,7 +1156,7 @@ theorem maskVectors_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D
     · simp [show 16*(k+1) = 16+16*k by omega_arith,Proof.AesGcm.AArch64.bytesAt_add,Offset.add_add]
 
 /-- Mask four complete vectors, one vector, or one byte depending only on length. -/
-theorem maskChunk_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D n)
+theorem maskChunk_ok {T : Nat} {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf T K W s D n)
     (hj : j < n) {c : Bool} (h23 : s.gpr .x23 = D + BitVec.ofNat 64 j)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 (n - j))
     (h10 : s.gpr .x10 = 0#64 - (if c then 1#64 else 0#64)) :
@@ -1146,11 +1186,12 @@ theorem maskChunk_ok {K W D : Addr} {n j : Nat} {s : State} (hD : DBuf K W s D n
     exact ⟨64,by decide,by omega_arith,mem,xp,xc,fun r a b c => (g r a b c).trans (hg r a),sp,rd,wr⟩
 
 /-- Every byte of the data ANDed with `0 − ok`. -/
-theorem mask_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) (hD : DBuf K W s D n)
+theorem mask_ok {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env T K W D R n SP s) (hD : DBuf T K W s D n)
     {c : Bool} (hok : s.mem.readW (W + BitVec.ofNat 64 tagO) 64 = if c then 1#64 else 0#64) :
     WP isa mask s fun t => (∀ r, r ∉ maskRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.mem = writeBytes s.mem D (if c then bytesAt s.mem D n else zeros n) := by
-  have r₃ : InRegions (s.rd ++ s.wr) W 8 := by simpa using E.perm.wR (d := 0) (n := 8) (by decide)
+  obtain hT := E.perm.hT
+  have r₃ : InRegions (s.rd ++ s.wr) W 8 := by simpa using E.perm.wR (d := 0) (n := 8) (by have := ocbOffs; omega)
   simp only [tagO, BitVec.add_zero] at hok
   have hok' : s.mem.readW W 64 = if c then 1#64 else 0#64 := by simpa using hok
   have hn := hD.lt
@@ -1246,15 +1287,16 @@ open VG.Spec.Ocb (Block blockAtMem lAt ctxCiph ctxLstar pad zeros)
 open VG.Proof.Ocb (offAt length_bytesAt blockAtMem_frame)
 open VG.Proof.Aes.AArch64 (BlocksImpl)
 
-/-- `recv`: the `tl` bytes of the tag at `T` copied to `W`. -/
-theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) {T : Addr}
+/-- `recv`: the `tl` bytes of the tag at `Tg` copied to `W`. -/
+theorem recv_ok {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env T K W D R n SP s) {Tg : Addr}
     {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (hT : stackArg s 0 = T) (ha : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 0)) 8)
-    (hTr : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem T tl) ∧
+    (hTg : stackArg s 0 = Tg) (ha : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (hTr : Covers [⟨Tg, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨Tg, tl⟩ : Region).Disjoint ⟨W, T⟩) :
+    WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem Tg tl) ∧
       (∀ r, r ∉ Proof.AesGcm.AArch64.loopRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧
       t.wr = s.wr := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E htl hT ha
+  obtain hT := E.perm.hT
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E htl hTg ha
   unfold recv
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.mono (Proof.AesGcm.AArch64.copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega_using [h1])
@@ -1262,35 +1304,37 @@ theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W 
       rw [wr₁]
       exact fun a m ⟨r, hr, hc⟩ => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact E.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [h16, hc]⟩,
-      hTW.sub_right (Region.sub_prefix (by omega_using [h16]))⟩)
+        exact E.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [h16, hc, hT]⟩,
+      hTW.sub_right (Region.sub_prefix (by omega_using [h16, hT]))⟩)
     fun t ⟨m, _, _, g, sp, rd, wr⟩ => ⟨by rw [m, m₁], fun r hr => by rw [g r hr, g₁ r hr], by rw [sp, sp₁],
       by rw [rd, rd₁], by rw [wr, wr₁]⟩
 
 /-- `vg_aes_ocb_open`, for its arguments. -/
-theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl : Nat}
-    {T : Addr} (Ar : Args s K W N A D R nl al n tl T) (hW : stackArg s 2 = W) (hT : stackArg s 0 = T)
+theorem open_wp' {T : Nat} (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl : Nat}
+    {Tg : Addr} (Ar : Args T s K W N A D R nl al n tl Tg) (hW : stackArg s 2 = W) (hTg : stackArg s 0 = Tg)
     (htl : stackArg s 1 = BitVec.ofNat 64 tl)
     (h0 : s.gpr .x0 = K) (h1 : s.gpr .x1 = BitVec.ofNat 64 R) (h2 : s.gpr .x2 = N)
     (h3 : s.gpr .x3 = BitVec.ofNat 64 nl) (h4 : s.gpr .x4 = A) (h5 : s.gpr .x5 = BitVec.ofNat 64 al)
-    (h6 : s.gpr .x6 = D) (h7 : s.gpr .x7 = BitVec.ofNat 64 n) :
+    (h6 : s.gpr .x6 = D) (h7 : s.gpr .x7 = BitVec.ofNat 64 n)
+    (hv : v.scratch ≤ T - 512 := by assumption) :
     WP isa («open» (callees v)) s fun s' => GprAbi s s' ∧
       match Spec.Ocb.decryptWith (ctxCiph s.mem K R) (Spec.Ocb.ctxInv s.mem K R) (ctxLstar s.mem K) tl
-          (bytesAt s.mem N nl) (bytesAt s.mem A al) (bytesAt s.mem D n) (bytesAt s.mem T tl) with
+          (bytesAt s.mem N nl) (bytesAt s.mem A al) (bytesAt s.mem D n) (bytesAt s.mem Tg tl) with
       | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
       | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n := by
+  obtain hT := Ar.lay.hT
   have L := Ar.lay
   have hn := Ar.data.lt
   unfold «open» front
   refine WP.seq (pre_wp v Ar hW htl h0 h1 h2 h3 h4 h5 h6 h7 fun s₃ P₃ => ?_)
-  obtain hD₃ : DBuf K W s₃ D n := Ar.data.of_eq P₃.rd P₃.wr
+  obtain hD₃ : DBuf T K W s₃ D n := Ar.data.of_eq P₃.rd P₃.wr
   obtain c₃ : ctxCiph s₃.mem K R = ctxCiph s.mem K R := ctxCiph_W L P₃.frame Ar.rounds
   obtain i₃ : Spec.Ocb.ctxInv s₃.mem K R = Spec.Ocb.ctxInv s.mem K R := ctxInv_W L P₃.frame Ar.rounds
   obtain l₃ : ctxLstar s₃.mem K = ctxLstar s.mem K := ctxLstar_W L P₃.frame
   obtain d₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := bytesAt_W Ar.data.w hn P₃.frame
   refine WP.seq (WP.mono (bodyOpen_ok v L P₃.env Ar.rounds hD₃ P₃.ofs P₃.o0 P₃.ck (by rw [P₃.l0, l₃]))
     fun s₄ B => ?_)
-  obtain F₄ : Frame (mutR W D n) s₃.mem s₄.mem := bodyR_mut B.frame
+  obtain F₄ : Frame (mutR T W D n) s₃.mem s₄.mem := bodyR_mut B.frame
   obtain cK₄ : ctxCiph s₄.mem K R = ctxCiph s.mem K R := (ctxCiph_mut L Ar.data.k F₄ Ar.rounds).trans c₃
   obtain ld₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (ctxLstar s.mem K) := by
     rw [body_keep L Ar.data.w B.frame (d := ldO) (by decide), P₃.ld]
@@ -1299,24 +1343,24 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
     rw [body_keep L Ar.data.w B.frame (d := sumO) (by decide), P₃.sum]
   -- The tag, at `W + t2O`.
   refine WP.mono (tag_ok v L B.env Ar.rounds (.inr rfl)) fun s₅ T₅ => ?_
-  obtain F₅ : Frame (mutR W D n) s₄.mem s₅.mem := tagR_mut (by decide) T₅.frame
+  obtain F₅ : Frame (mutR T W D n) s₄.mem s₅.mem := tagR_mut (by decide) T₅.frame
   obtain S₅ := Slots.of_mut L Ar.data.w (F₄.trans F₅) P₃.slots
   obtain Ff := front_frame (by decide) P₃.frame B.frame T₅.frame
   have sp₅ : s₅.sp = s.sp := T₅.env.sp
   -- The received tag, to `W`.
-  obtain hT₅ : stackArg s₅ 0 = T := by
-    rw [← hT]; simp only [stackArg, stackArgAddr, sp₅]
+  obtain hTg₅ : stackArg s₅ 0 = Tg := by
+    rw [← hTg]; simp only [stackArg, stackArgAddr, sp₅]
     exact args_kept Ar.argsW Ar.argsD Ff (i := 0) (by decide)
   obtain ha₅ : InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
     rw [T₅.rd, B.rd, P₃.rd, T₅.wr, B.wr, P₃.wr, sp₅]
     exact Proof.AesGcm.AArch64.in_off Ar.args (by decide) (by decide)
-  refine WP.seq (WP.mono (recv_ok T₅.env Ar.t1 Ar.t16 S₅.tl hT₅ ha₅
+  refine WP.seq (WP.mono (recv_ok T₅.env Ar.t1 Ar.t16 S₅.tl hTg₅ ha₅
     (by rw [T₅.rd, B.rd, P₃.rd, T₅.wr, B.wr, P₃.wr]; exact Ar.tag.rd) Ar.tag.w)
     fun s₅' ⟨mr, gr, spr, rdr, wrr⟩ => ?_)
   obtain E₅' := T₅.env.others gr spr rdr wrr
   obtain Fr : Frame [⟨W, tl⟩] s₅.mem s₅'.mem := by
     rw [mr]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _)
-  obtain Fr' : Frame (mutR W D n) s₅.mem s₅'.mem := Fr.sub fun r hr => by
+  obtain Fr' : Frame (mutR T W D n) s₅.mem s₅'.mem := Fr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := Ar.t16; omega_using [this])⟩
   obtain S₅' := Slots.of_mut L Ar.data.w Fr' S₅
@@ -1325,7 +1369,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   obtain E₆ := E₅'.others g₆ sp₆ rd₆ wr₆
   obtain F₆ : Frame [⟨W + BitVec.ofNat 64 tagO, 8⟩] s₅'.mem s₆.mem := by
     rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  obtain hD₆ : DBuf K W s₆ D n :=
+  obtain hD₆ : DBuf T K W s₆ D n :=
     hD₃.of_eq (rd₆.trans (rdr.trans (T₅.rd.trans B.rd))) (wr₆.trans (wrr.trans (T₅.wr.trans B.wr)))
   let c : Bool := decide (bytesAt s₅'.mem W tl = bytesAt s₅'.mem (W + BitVec.ofNat 64 t2O) tl)
   -- The mask.
@@ -1334,7 +1378,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   obtain E₇ := E₆.others g₇ sp₇ rd₇ wr₇
   obtain F₇ : Frame [⟨D, n⟩] s₆.mem s₇.mem := by
     rw [m₇]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
-  obtain F₃₇ : Frame (mutR W D n) s₃.mem s₇.mem :=
+  obtain F₃₇ : Frame (mutR T W D n) s₃.mem s₇.mem :=
     (((F₄.trans F₅).trans Fr').trans (F₆.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact in_mutA (by decide))).trans
     (F₇.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact in_mutD fun _ h => h)
@@ -1348,8 +1392,8 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
       rw [this]; simp only [c, decide_eq_true_eq]
     rw [F₇.readW (r := ⟨W, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (Ar.data.w.sub_right (Region.sub_prefix (by decide))).symm) (by decide), e]
-  obtain r₀ : InRegions (s₇.rd ++ s₇.wr) W 8 := by simpa using E₇.perm.wR (d := 0) (n := 8) (by decide)
+      exact (Ar.data.w.sub_right (Region.sub_prefix (by have := ocbOffs; omega))).symm) (by decide), e]
+  obtain r₀ : InRegions (s₇.rd ++ s₇.wr) W 8 := by simpa using E₇.perm.wR (d := 0) (n := 8) (by have := ocbOffs; omega)
   obtain ⟨s₈, run₈, x0₈, m₈, g₈, sp₈, rd₈, wr₈⟩ : ∃ s₈, runBlock isa [ld .x0 .x19 tagO] s₇ = some s₈ ∧
       s₈.gpr .x0 = (if c then 1#64 else 0#64) ∧ s₈.mem = s₇.mem ∧ (∀ r, r ∉ [Reg.x0] → s₈.gpr r = s₇.gpr r) ∧
       s₈.sp = s₇.sp ∧ s₈.rd = s₇.rd ∧ s₈.wr = s₇.wr := by
@@ -1373,7 +1417,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   have hck := B.ck
   rw [c₃, i₃, l₃, d₃] at hck
   have hTn := Ar.tag.lt
-  obtain recv : bytesAt s₅'.mem W tl = bytesAt s.mem T tl := by
+  obtain recv : bytesAt s₅'.mem W tl = bytesAt s.mem Tg tl := by
     rw [mr, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]) (by omega_using [hTn]), length_bytesAt,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil]
     exact Proof.Cmac.bytesAt_frame Ff (fun r hr => by
@@ -1391,18 +1435,18 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   obtain d₉ : bytesAt s₉.mem D n = if c then bytesAt s₄.mem D n else zeros n := by
     obtain d₆ : bytesAt s₆.mem D n = bytesAt s₄.mem D n := by
       rw [Proof.Cmac.bytesAt_frame F₆ (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
+          simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by have := ocbOffs; omega)))
           (by omega_using [hn]),
         Proof.Cmac.bytesAt_frame Fr (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega_using [this]))) (by omega_using [hn]),
+          exact Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega_using [this, hT]))) (by omega_using [hn]),
         Proof.Cmac.bytesAt_frame T₅.frame (tag_data Ar.data.w (by decide)) (by omega_using [hn])]
     rw [Rs.mem, m₈, m₇, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) hn, length_mask,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, d₆]
   rw [x0₉, d₉, hout, Proof.Ocb.decryptWith_eq]
   simp only [length_bytesAt, List.length_drop]
   obtain hc : ∀ x : Block, bytesAt s₅.mem (W + BitVec.ofNat 64 t2O) tl = (Spec.Ocb.toBytes x).take tl →
-      (c = true ↔ (Spec.Ocb.toBytes x).take tl = bytesAt s.mem T tl) := fun x hx => by
+      (c = true ↔ (Spec.Ocb.toBytes x).take tl = bytesAt s.mem Tg tl) := fun x hx => by
     show decide (_ = _) = true ↔ _
     rw [recv, t2₅, hx, decide_eq_true_iff, eq_comm]
   by_cases hr : 0 < n % 16
@@ -1422,9 +1466,10 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
     · simp only [mt hc.mpr hk, hk, ↓reduceIte, Bool.false_eq_true]; exact ⟨by decide, trivial⟩
 
 /-- `vg_aes_ocb_open`. -/
-theorem open_wp (v : BlocksImpl) {s : State} (h : openAArch64.pre s) :
-    WP isa («open» (callees v)) s fun s' => GprAbi s s' ∧ openAArch64.post s s' :=
-  open_wp' v (openArgs_of h) rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm
+theorem open_wp {T : Nat} (v : BlocksImpl) {s : State} (h : (openAArch64 T).pre s)
+    (hT : 512 ≤ T ∧ T ≤ 2560 := by assumption) (hv : v.scratch ≤ T - 512 := by assumption) :
+    WP isa («open» (callees v)) s fun s' => GprAbi s s' ∧ (openAArch64 T).post s s' :=
+  open_wp' v (openArgs_of h hT) rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm
     rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm
 
 end VG.Proof.AesOcb.AArch64
@@ -1456,9 +1501,10 @@ open VG.Proof.Aes.AArch64 (BlocksImpl)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq ct_of)
 
 /-- `cmp`, in two runs. -/
-theorem cmp_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {tl : Nat} (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
+theorem cmp_rel {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁)
+    (E₂ : Env T K W D R n SP σ₂) {tl : Nat} (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
     (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) : RelCT isa (Eq2 σ₁ σ₂) cmp TT := by
+  obtain hT := E₁.perm.hT
   obtain ⟨s₁, run₁, -, x11₁, x12₁, x24₁, -, g₁, sp₁, rd₁, wr₁⟩ := cmpHead_ok E₁ htl₁
   obtain ⟨s₂, run₂, -, x11₂, x12₂, x24₂, -, g₂, sp₂, rd₂, wr₂⟩ := cmpHead_ok E₂ htl₂
   have ne : ∀ r ∈ envRegs, r ∉ cmpRegs := by decide
@@ -1471,14 +1517,15 @@ theorem cmp_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E�
 
 /-- `recv` in two runs: its first block loads the tag's address from the
 stack, and the copy runs from it. -/
-theorem recv_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {T : Addr} {tl : Nat}
+theorem recv_rel {T : Nat} {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env T K W D R n SP σ₁)
+    (E₂ : Env T K W D R n SP σ₂) {Tg : Addr} {tl : Nat}
     (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hT₁ : stackArg σ₁ 0 = T)
-    (hT₂ : stackArg σ₂ 0 = T) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hTg₁ : stackArg σ₁ 0 = Tg)
+    (hTg₂ : stackArg σ₂ 0 = Tg) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
     (ha₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 (8 * 0)) 8) : RelCT isa (Eq2 σ₁ σ₂) recv TT := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E₁ htl₁ hT₁ ha₁
-  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := recvHead_ok E₂ htl₂ hT₂ ha₂
+  obtain hT := E₁.perm.hT
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E₁ htl₁ hTg₁ ha₁
+  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := recvHead_ok E₂ htl₂ hTg₂ ha₂
   unfold recv
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨s₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
@@ -1487,17 +1534,18 @@ theorem recv_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E
     (by agree_tac [x11₁, x11₂, x12₁, x12₂, x13₁, x13₂]) ⟨_, by taint_decide⟩
 
 /-- The received tag's copy to `W` keeps the slots. -/
-theorem recv_slots {K W D : Addr} {n : Nat} (L : Lay K W) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {tl : Nat}
+theorem recv_slots {T : Nat} {K W D : Addr} {n : Nat} (L : Lay T K W) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, T⟩) {tl : Nat}
     (h16 : tl ≤ 16) {m : Mem} {xs : List Byte} (hx : xs.length = tl) {N A : Addr} {nl al : Nat}
     (S : Slots W N A nl al tl m) : Slots W N A nl al tl (writeBytes m W xs) :=
   Slots.of_mut L hDW ((writeBytes_frame _ _ _ (by rw [hx]; exact Region.contains_self _ _)).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega_using [h16])⟩) S
 
-theorem open_ct (v : BlocksImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» (callees v)) := by
+theorem open_ct {T : Nat} (v : BlocksImpl) (hT : 512 ≤ T ∧ T ≤ 2560 := by assumption)
+    (hv : v.scratch ≤ T - 512 := by assumption) : ConstantTime isa (openAArch64 T).pre (openAArch64 T).pub («open» (callees v)) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  have A₁ := openArgs_of h₁
-  have A₂ := args₂_of hq.1 (openArgs_of h₂)
+  have A₁ := openArgs_of h₁ hT
+  have A₂ := args₂_of hq.1 (openArgs_of h₂ hT)
   have qsp := hq.1.2.2.2.2.2.2.2.2.1
   have qT : stackArg σ₂ 0 = stackArg σ₁ 0 := (hq.1.2.2.2.2.2.2.2.2.2 0 (by decide)).symm
   have L := A₁.lay
@@ -1591,96 +1639,171 @@ theorem init_keepsV (v : BlocksImpl) : (init (callees v)).allInstrs keepsV = tru
 
 /-! ## Correctness -/
 
-theorem seal_correct (v : BlocksImpl) (s : State) (hs : sealAArch64.pre s) :
-    ∃ t s', Exec isa («seal» (callees v)) s t s' ∧ abiPreserved s s' ∧ sealAArch64.post s s' :=
+/-- The working space of `seal` and `open` over `v`: the 512 bytes the code
+uses itself, then its callee's (`BlocksImpl.scratch`). -/
+def sealT (v : BlocksImpl) : Nat := 512 + v.scratch
+
+theorem sealT_cases (v : BlocksImpl) : sealT v = 512 ∨ sealT v = 2560 := by
+  rcases v.scratch_ok with h | h <;> simp [sealT, h]
+
+theorem sealT_hv (v : BlocksImpl) : v.scratch ≤ sealT v - 512 := by simp [sealT]
+
+/-- The scratch of `init` over `v`: as `sealT`, but at least the 512 bytes
+key expansion needs after the code's. -/
+def initT (v : BlocksImpl) : Nat := if v.scratch = 0 then 1024 else 2560
+
+theorem initT_cases (v : BlocksImpl) : initT v = 1024 ∨ initT v = 2560 := by
+  unfold initT; split <;> simp
+
+theorem initT_hv (v : BlocksImpl) : v.scratch ≤ initT v - 512 := by
+  rcases v.scratch_ok with h | h <;> simp [initT, h]
+
+theorem seal_correct {T : Nat} (v : BlocksImpl) (hT : 512 ≤ T ∧ T ≤ 2560) (hv : v.scratch ≤ T - 512)
+    (s : State) (hs : (sealAArch64 T).pre s) :
+    ∃ t s', Exec isa («seal» (callees v)) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 T).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct (v : BlocksImpl) (s : State) (hs : openAArch64.pre s) :
-    ∃ t s', Exec isa («open» (callees v)) s t s' ∧ abiPreserved s s' ∧ openAArch64.post s s' :=
+theorem open_correct {T : Nat} (v : BlocksImpl) (hT : 512 ≤ T ∧ T ≤ 2560) (hv : v.scratch ≤ T - 512)
+    (s : State) (hs : (openAArch64 T).pre s) :
+    ∃ t s', Exec isa («open» (callees v)) s t s' ∧ abiPreserved s s' ∧ (openAArch64 T).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 
-theorem init_correct (v : BlocksImpl) (s : State) (hs : initAArch64.pre s) :
-    ∃ t s', Exec isa (init (callees v)) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
+theorem init_correct {T : Nat} (v : BlocksImpl) (hT : 1024 ≤ T ∧ T ≤ 2560) (hv : v.scratch ≤ T - 512)
+    (s : State) (hs : (initAArch64 T).pre s) :
+    ∃ t s', Exec isa (init (callees v)) s t s' ∧ abiPreserved s s' ∧ (initAArch64 T).post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
 /-! ## States satisfying the preconditions -/
 
 /-- A state satisfying the precondition of `vg_aes_ocb_seal`: a 1-byte nonce,
-no associated data, no data, a 4-byte tag at `0x5000` and `work` at 0. -/
-def sealSat : State where
+no associated data, no data, a 4-byte tag at `0x5000` and `F` bytes of
+`work` at 0. -/
+def sealSatW (F : Nat) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x2000 | .x3 => 1 | .x4 => 0x3000 | .x6 => 0x4000 | _ => 0
   sp := 0x8000
   mem a := if a = 0x8008 then 4 else if a = 0x8001 then 0x50 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8000, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩, ⟨0, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩, ⟨0, F⟩]
 
-/-- A state satisfying the precondition of `vg_aes_ocb_open`: as `sealSat`,
+/-- A state satisfying the precondition of `vg_aes_ocb_open`: as `sealSatW`,
 with the tag read only. -/
-def openSat : State := { sealSat with
+def openSatW (F : Nat) : State := { sealSatW F with
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8000, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0, 2560⟩] }
+  wr := [⟨0x4000, 0⟩, ⟨0, F⟩] }
 
-/-- A state satisfying the precondition of `vg_aes_ocb_init`: a 16-byte key. -/
-def initSat : State where
+/-- A state satisfying the precondition of `vg_aes_ocb_init`: a 16-byte key
+and `F` bytes of scratch. -/
+def initSatW (F : Nat) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 16 | .x2 => 0x2000 | .x3 => 0x4000 | _ => 0
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x2000, 256⟩, ⟨0x4000, F⟩]
 
-/-! ## The shared contracts -/
+/-! ## The shared contracts, with `T / 8` words of working space -/
 
-theorem seal_verified (v : BlocksImpl) :
-    Verified AArch64.target («seal» (callees v)) (Proof.AesOcb.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
-      Proof.AesOcb.sealRoundsPost, sealAArch64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
-      rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
-      List.range.loop] [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+theorem seal_verified (v : BlocksImpl) {T : Nat} (h : T = 512 ∨ T = 2560) (hv : v.scratch ≤ T - 512) :
+    Verified AArch64.target («seal» (callees v)) (Proof.AesOcb.sealWorkContract AArch64.abi (T / 8)) := by
+  have hT : 512 ≤ T ∧ T ≤ 2560 := by omega
+  have ok := seal_correct v hT hv
+  have ct := seal_ct (T := T) v
+  rcases h with rfl | rfl
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesOcb.sealWorkContract, Proof.AesOcb.sealWorkSig, Spec.Ocb.sealPre,
+        Proof.AesOcb.sealRoundsPost, sealAArch64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub,
+        args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+        List.range.loop] [sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 512)
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesOcb.sealWorkContract, Proof.AesOcb.sealWorkSig, Spec.Ocb.sealPre,
+        Proof.AesOcb.sealRoundsPost, sealAArch64, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub,
+        args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+        List.range.loop] [sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 2560)
 
-theorem init_verified (v : BlocksImpl) :
-    Verified AArch64.target (init (callees v)) (Proof.AesOcb.initScratchContract AArch64.abi) :=
-  Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Proof.AesOcb.initScratchContract, Proof.AesOcb.initScratchSig, Spec.Ocb.initPre,
-      Spec.Ocb.initPost, initAArch64, AArch64.abi, AArch64.argRegs] [initSat] using initSat)
+theorem init_verified (v : BlocksImpl) {T : Nat} (h : T = 1024 ∨ T = 2560) (hv : v.scratch ≤ T - 512) :
+    Verified AArch64.target (init (callees v)) (Proof.AesOcb.initWorkContract AArch64.abi (T / 8)) := by
+  have hT : 1024 ≤ T ∧ T ≤ 2560 := by omega
+  have ok := init_correct v hT hv
+  have ct := init_ct (T := T) v
+  rcases h with rfl | rfl
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesOcb.initWorkContract, Proof.AesOcb.initWorkSig, Spec.Ocb.initPre,
+        Spec.Ocb.initPost, initAArch64, AArch64.abi, AArch64.argRegs] [initSatW] using initSatW 1024)
+  · exact Verified.of_correct ok ct (by
+      sig_implies [Proof.AesOcb.initWorkContract, Proof.AesOcb.initWorkSig, Spec.Ocb.initPre,
+        Spec.Ocb.initPost, initAArch64, AArch64.abi, AArch64.argRegs] [initSatW] using initSatW 2560)
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
-theorem open_verified (v : BlocksImpl) :
-    Verified AArch64.target («open» (callees v)) (Proof.AesOcb.openScratchContract AArch64.abi) :=
-  Verified.of_correct (open_correct v) (open_ct v)
-    { pre := by sig_implies_pre [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      post := by sig_implies_post [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      pub := by
-        intro s₁ s₂ _ _ h
-        sig_pub [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
-        sig_split h
-        sig_reduce [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-        sig_simp [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
-        sig_and_intros
-        sig_close
-        all_goals with_reducible assumption
-      sat := by sig_implies_sat [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
-        Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
-        aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-        AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat }
+theorem open_verifiedAt (v : BlocksImpl) (F : Nat) (hF : F = 512 ∨ F = 2560)
+    (ok : ∀ s, (openAArch64 F).pre s → ∃ t s', Exec isa («open» (callees v)) s t s' ∧ abiPreserved s s' ∧
+      (openAArch64 F).post s s')
+    (ct : ConstantTime isa (openAArch64 F).pre (openAArch64 F).pub («open» (callees v))) :
+    Verified AArch64.target («open» (callees v)) (Proof.AesOcb.openWorkContract AArch64.abi (F / 8)) := by
+  rcases hF with rfl | rfl
+  · exact Verified.of_correct ok ct
+      { pre := by sig_implies_pre [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        post := by sig_implies_post [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        pub := by
+          intro s₁ s₂ _ _ h
+          sig_pub [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
+          sig_split h
+          sig_reduce [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          sig_simp [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
+          sig_and_intros
+          sig_close
+          all_goals with_reducible assumption
+        sat := by sig_implies_sat [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSatW, sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 512 }
+  · exact Verified.of_correct ok ct
+      { pre := by sig_implies_pre [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        post := by sig_implies_post [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        pub := by
+          intro s₁ s₂ _ _ h
+          sig_pub [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] at h
+          sig_split h
+          sig_reduce [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          sig_simp [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
+          sig_and_intros
+          sig_close
+          all_goals with_reducible assumption
+        sat := by sig_implies_sat [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
+          Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openAArch64, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
+          aTag, aWork, onePub, openOut, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openSatW, sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560 }
 
 end VG.Proof.AesOcb.AArch64
 
@@ -1688,20 +1811,23 @@ end
 
 end
 
-
 /-!
 # AES-OCB on AArch64, with its working space on the stack
 
 Every function runs its code, proved with the working space as its last
-argument (`Verified.lean`), in a frame that allocates it. `init`'s working
-space is in a register (`x3`): its frame holds the 2560 bytes
-(`Verified.stackScratch`). The working space of `seal` and `open` is their
-third stack argument, after `tag` and `tag_len`, so their frame of 2592
-bytes holds a copy of those two, the address of the working space and the
-working space, at the next 16-byte boundary (`Verified.stackArgScratch`).
-The code itself uses no stack: its calls keep the return address in `x30`.
-`open`'s leak, whether it succeeds, reads only its buffers
-(`openLeak_local`).
+argument, in a frame that allocates it, of only what the callees over `v`
+need: `sealT v` bytes for `seal` and `open` (512, or 2560 over an
+implementation of AES that needs working space), `initT v` for `init` (1024,
+or 2560). `init`'s working space is in a register (`x3`): its frame holds
+it (`Verified.stackScratch`). The working space of `seal` and `open` is
+their third stack argument, after `tag` and `tag_len`, so their frame of
+`sealT v + 32` bytes holds a copy of those two, the address of the working
+space and the working space, at the next 16-byte boundary
+(`Verified.stackArgScratch`). The code itself uses no stack: its calls keep
+the return address in `x30`. `open`'s leak, whether it succeeds, reads only
+its buffers (`openLeak_local`). Each postcondition reads the memory on
+return only within the function's buffers, so the whole frame is zeroed on
+return (`ScrubAll.withScrubAll`: `initReg`, `sealReg`, `openReg`).
 -/
 
 @[expose] public section
@@ -1711,66 +1837,204 @@ namespace VG.Proof.AesOcb.AArch64
 open VG VG.AArch64 VG.Impl.AesOcb.AArch64
 open VG.Proof.Aes.AArch64 (BlocksImpl)
 
+theorem open_verified (v : BlocksImpl) {T : Nat} (h : T = 512 ∨ T = 2560) (hv : v.scratch ≤ T - 512) :
+    Verified AArch64.target («open» (callees v)) (Proof.AesOcb.openWorkContract AArch64.abi (T / 8)) := by
+  have hT : 512 ≤ T ∧ T ≤ 2560 := by omega
+  exact open_verifiedAt v T h (open_correct v hT hv) (open_ct (T := T) v)
+
 /-- A state satisfying `vg_aes_ocb_init`'s precondition, without the working
 space. -/
-def initFrameSat : State := { initSat with wr := [⟨0x2000, 256⟩] }
+def initFrameSat : State := { initSatW 0 with wr := [⟨0x2000, 256⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Ocb.initContract AArch64.abi 2560).pre s := by
+theorem initFrameSat_pre1024 : ∃ s, (Spec.Ocb.initContract AArch64.abi 1024).pre s := by
   implies_sat [Spec.Ocb.initContract, Spec.Ocb.initSig, Spec.Ocb.initPre, Spec.Ocb.initPost,
-    AArch64.abi, AArch64.argRegs] [initFrameSat, initSat] using initFrameSat
+    AArch64.abi, AArch64.argRegs] [initFrameSat, initSatW] using initFrameSat
+
+theorem initFrameSat_pre2560 : ∃ s, (Spec.Ocb.initContract AArch64.abi 2560).pre s := by
+  implies_sat [Spec.Ocb.initContract, Spec.Ocb.initSig, Spec.Ocb.initPre, Spec.Ocb.initPost,
+    AArch64.abi, AArch64.argRegs] [initFrameSat, initSatW] using initFrameSat
 
 theorem init_framed (v : BlocksImpl) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (init (callees v)))
-      (Spec.Ocb.initContract AArch64.abi 2560) :=
-  AArch64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
-    (pre := Spec.Ocb.initPre AArch64.abi.ptrBits) (post := Spec.Ocb.initPost AArch64.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2560) (init_verified v) (by decide) (by decide)
-    (Proof.AesOcb.initPostOut_local _) initFrameSat_pre
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v)))
+      (Spec.Ocb.initContract AArch64.abi (initT v)) := by
+  obtain hv := init_verified v (initT_cases v) (initT_hv v)
+  rcases initT_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv
+  · exact AArch64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 128)
+      (pre := Spec.Ocb.initPre AArch64.abi.ptrBits) (post := Spec.Ocb.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 1024) hv (by decide) (by decide)
+      (Proof.AesOcb.initPostOut_local _) initFrameSat_pre1024
+  · exact AArch64.Verified.stackScratch (sig := Spec.Ocb.initSig) (nm := "scratch") (e := .u64) (n := 320)
+      (pre := Spec.Ocb.initPre AArch64.abi.ptrBits) (post := Spec.Ocb.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 2560) hv (by decide) (by decide)
+      (Proof.AesOcb.initPostOut_local _) initFrameSat_pre2560
 
 /-- A state satisfying `vg_aes_ocb_seal`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
 def sealFrameSat : State :=
-  { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
-                 wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
+  { sealSatW 0 with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩],
+                    wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract AArch64.abi 2592).pre s := by
+theorem sealFrameSat_pre544 : ∃ s, (Proof.AesOcb.sealRoundsContract AArch64.abi 544).pre s := by
   implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost,
     AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
-    List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    List.range.loop] [sealFrameSat, sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
+theorem sealFrameSat_pre2592 : ∃ s, (Proof.AesOcb.sealRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [sealFrameSat, sealSatW, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed (v : BlocksImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («seal» (callees v)))
-      (Proof.AesOcb.sealRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
-    (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (seal_verified v) (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
-    (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre
+      (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v)))
+      (Proof.AesOcb.sealRoundsContract AArch64.abi (sealT v + 32)) := by
+  obtain hv := seal_verified v (sealT_cases v) (sealT_hv v)
+  rcases sealT_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+      (n := 64) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 544)
+      hv (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
+      (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre544
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Ocb.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesOcb.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+      hv (by decide) (by decide) (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
+      (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre2592
 
 /-- A state satisfying `vg_aes_ocb_open`'s precondition, without the working
 space: `tag` and `tag_len`, its two stack arguments. -/
 def openFrameSat : State :=
-  { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8000, 16⟩],
-                 wr := [⟨0x4000, 0⟩] }
+  { sealSatW 0 with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8000, 16⟩],
+                    wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract AArch64.abi 2592).pre s := by
+theorem openFrameSat_pre544 : ∃ s, (Proof.AesOcb.openRoundsContract AArch64.abi 544).pre s := by
   implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost,
     Spec.Ocb.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
-    List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
+    List.getD, List.range, List.range.loop] [openFrameSat, sealSatW, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+theorem openFrameSat_pre2592 : ∃ s, (Proof.AesOcb.openRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost,
+    Spec.Ocb.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop] [openFrameSat, sealSatW, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed (v : BlocksImpl) :
     Verified AArch64.target
-      (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 («open» (callees v)))
-      (Proof.AesOcb.openRoundsContract AArch64.abi 2592) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Ocb.openPre AArch64.abi.ptrBits)
-    (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
-    (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (Proof.AesOcb.openPre_local _)
-    (Proof.AesOcb.openPost_local _)
-    (Proof.AesOcb.openPostOut_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
+      (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v)))
+      (Proof.AesOcb.openRoundsContract AArch64.abi (sealT v + 32)) := by
+  obtain hv := open_verified v (sealT_cases v) (sealT_hv v)
+  rcases sealT_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+      (n := 64) (pre := Spec.Ocb.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 544)
+      (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (Proof.AesOcb.openPre_local _)
+      (Proof.AesOcb.openPost_local _)
+      (Proof.AesOcb.openPostOut_local _) openFrameSat_pre544 (hleak := Proof.AesOcb.openLeak_local _)
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Ocb.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesOcb.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+      (leak := some (Spec.Ocb.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (Proof.AesOcb.openPre_local _)
+      (Proof.AesOcb.openPost_local _)
+      (Proof.AesOcb.openPostOut_local _) openFrameSat_pre2592 (hleak := Proof.AesOcb.openLeak_local _)
+
+/-! ## Without secret residue -/
+
+/-- `vg_aes_ocb_init`'s postcondition reads the memory on return only within
+the key context, for a key of 16, 24 or 32 bytes. -/
+theorem initOk (W : Nat) (hW : 0 < W) :
+    ScrubAll.ScrubAllOk (Spec.Ocb.initContract AArch64.abi W) W (Spec.Ocb.initSig.retBits AArch64.abi.ptrBits) :=
+  ScrubAll.scrubAllOk_regs_pre (sig := Spec.Ocb.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    fun vs m m₁ m₂ r hlen hpre hb h => by
+    match vs, hlen with
+    | [k, ln, ctx], _ =>
+      simp only [Spec.Ocb.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq] at hb
+      change Spec.Ocb.KeyRepr m₁ ctx _ at h
+      change Spec.Ocb.KeyRepr m₂ ctx _
+      change _ ∨ _ at hpre
+      obtain ⟨h1, h2⟩ := h
+      refine ⟨?_, ?_⟩
+      · rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2 ?_]
+        · exact h1
+        · simp only [Spec.Aes.bytesAt, List.length_map, List.length_range, Spec.Aes.rounds, Elem.size]
+          rcases hpre with h | h | h <;> rw [h] <;> decide
+      · simp only [Spec.Ocb.ctxLstar, Spec.Ocb.blockAtMem] at h2 ⊢
+        rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl] at h2 ⊢
+        rw [Proof.Aes.ScrubLocal.bytesAt_of hb.2 (by decide)]
+        exact h2
+
+/-- `vg_aes_ocb_seal`'s postcondition reads the memory on return only within
+the data and the tag. -/
+theorem sealOk (W : Nat) :
+    ScrubAll.ScrubAllOk (Spec.Ocb.sealContract AArch64.abi W) W (Spec.Ocb.sealSig.retBits AArch64.abi.ptrBits) :=
+  ScrubAll.scrubAllOk_args_any (sig := Spec.Ocb.sealSig) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ocb.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ocb.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [h key hk, Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp),
+        Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.2 (by simp)]
+
+/-- `vg_aes_ocb_open`'s postcondition reads the memory on return only within
+the data. -/
+theorem openOk (W : Nat) :
+    ScrubAll.ScrubAllOk (Spec.Ocb.openContract AArch64.abi W) W (Spec.Ocb.openSig.retBits AArch64.abi.ptrBits) :=
+  ScrubAll.scrubAllOk_args_any (sig := Spec.Ocb.openSig) fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ocb.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.openPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.openPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ocb.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp)]
+      exact h key hk
+
+/-- `vg_aes_ocb_init` over `v` in its frame (`init_framed`), scrubbed whole:
+1024 bytes over implementations that need no working space, else 2560. -/
+def initReg (v : BlocksImpl) : Registration Spec.Ocb.initApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))
+      verified := init_framed v
+      consts := []
+      stack := initT v } (initOk _ (by rcases initT_cases v with h | h <;> rw [h] <;> decide))
+
+/-- `vg_aes_ocb_seal` over `v` in its frame (`seal_framed`), scrubbed whole:
+544 bytes over implementations that need no working space, else 2592. -/
+def sealReg (v : BlocksImpl) : Registration Spec.Ocb.sealApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))
+      verified := Proof.AesOcb.seal_keyed (seal_framed v)
+      consts := []
+      stack := sealT v + 32 } (sealOk _)
+
+/-- `vg_aes_ocb_open` over `v`, as `sealReg`. -/
+def openReg (v : BlocksImpl) : Registration Spec.Ocb.openApi AArch64.target :=
+  ScrubAll.withScrubAll
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))
+      verified := Proof.AesOcb.open_keyed (open_framed v)
+      consts := []
+      stack := sealT v + 32 } (openOk _)
 
 end VG.Proof.AesOcb.AArch64

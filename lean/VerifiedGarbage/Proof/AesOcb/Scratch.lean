@@ -131,9 +131,9 @@ working space in a frame of their own (`Verified.stackScratch`,
 `Verified.stackArgScratch`), around code proved with the working space as a
 last argument: `initScratchContract`, `sealScratchContract` and
 `openScratchContract` are the shared contracts with a 2560-byte buffer
-appended, whatever it holds; `sealWorkContract` and `openWorkContract`,
-with a buffer of `words` 8-byte words, for an implementation that needs
-another size.
+appended, whatever it holds; `initWorkContract`, `sealWorkContract` and
+`openWorkContract`, with a buffer of `words` 8-byte words, for an
+implementation that needs another size.
 
 A frame that copies arguments passed on the stack needs the pre- and
 postconditions, and `open`'s leak, to read the memory on entry only within
@@ -209,6 +209,18 @@ def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true) (stack := stack)
     (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+
+/-- `vg_aes_ocb_init` with `scratch: *mut [u64; words]`. -/
+def initWorkSig (words : Nat) : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 32),
+    ("scratch", .array true .u64 words)]
+
+/-- `initContract`, whatever `scratch` (`words` words) is. -/
+def initWorkContract {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Contract M :=
+  (initWorkSig words).contract A
+    (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
+    (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_ocb_seal` with `work: *mut [u64; words]`. -/
 def sealWorkSig (words : Nat) : Sig where

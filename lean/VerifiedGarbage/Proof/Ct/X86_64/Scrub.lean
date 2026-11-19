@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ct.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -46,7 +48,8 @@ theorem eqOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_ct_eq`. -/
 def eqReg : Registration Spec.Ct.eqApi X86_64.target :=
-  withScrub { code := Impl.Ct.X86_64.eq, verified := verified } eqOut [] (pubOk_nil _)
-    (some ⟨eqKs, eqOk⟩)
+  scrubOf { code := Impl.Ct.X86_64.eq, verified := verified } .sse false [.r8, .r9, .r10] eqOut [] (pubOk_nil _)
+    ⟨eqKs, eqOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Ct.X86_64

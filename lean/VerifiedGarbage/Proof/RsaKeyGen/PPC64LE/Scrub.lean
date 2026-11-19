@@ -1,9 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
+public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Verified
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.IbInverse
@@ -11,12 +13,13 @@ public import VerifiedGarbage.Proof.Divstep.TcSBounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSA key generation on PPC64LE, without secret residue
 
 `vg_rsa_generate_init` and `vg_rsa_generate`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`): `init` has no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`): `init` has no
 frame, so the tail only clears the volatile registers it may write;
 `vg_rsa_generate` keeps the candidates, the Miller–Rabin state and its
 callers' state in frames it does not wipe themselves, which the tail zeroes.
@@ -100,24 +103,37 @@ theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
 
 /-- `Spec.RsaKeyGen.keyInitApi`. -/
 def keyInitReg : Registration Spec.RsaKeyGen.keyInitApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
       verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     keyInitOut
+    (by dsimp only; lit_decide)
+
+/-- What `scrubOf` needs of the search with each Miller–Rabin round:
+evaluated here. -/
+theorem keySearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    scrubSide (Proof.RsaKeyGen.PPC64LE.Generate.genCode v) 1088 (Spec.RsaKeyGen.keySearchSig.retBits 64)
+      ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+        [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true := by
+  have h : (Proof.Variants.MillerRabin.PPC64LE.variants.all fun v =>
+      scrubSide (Proof.RsaKeyGen.PPC64LE.Generate.genCode v) 1088 (Spec.RsaKeyGen.keySearchSig.retBits 64)
+        ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+          [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩) = true := by lit_decide
+  exact List.all_eq_true.mp h v hv
 
 /-- `Spec.RsaKeyGen.keySearchApi`, with the Miller–Rabin round `v`. -/
-def keySearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :
+def keySearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     Registration Spec.RsaKeyGen.keySearchApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       suffix := v.suffix
       code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
       verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }
+    1088 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (keySearchOut Proof.RsaKeyGen.PPC64LE.Generate.tables Proof.RsaKeyGen.PPC64LE.Generate.stackUse)
-
-/-- `init` is scrubbed: the side conditions of `withScrub` hold. Those of
-`keySearchReg`, whose code is too long for `decide`, the emitter checks: it
-refuses a function without a proof that `ci/residue_allowlist.txt` does not
-list. -/
-example : keyInitReg.residue.isSome := by decide
+    (keySearchSide v hv)
 
 end VG.Proof.RsaKeyGen.PPC64LE.Scrub

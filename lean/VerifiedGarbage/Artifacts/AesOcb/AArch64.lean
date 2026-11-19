@@ -42,17 +42,8 @@ open VG.Proof.AesOcb.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
-    Spec.Ocb.initApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesOcb.AArch64.init (callees v))
-      verified := init_framed v },
-    Spec.Ocb.sealApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.seal (callees v))
-      verified := Proof.AesOcb.seal_keyed (seal_framed v) },
-    Spec.Ocb.openApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.open (callees v))
-      verified := Proof.AesOcb.open_keyed (open_framed v) }]
+    Spec.Ocb.initApi.artifact AArch64.target (initReg v),
+    Spec.Ocb.sealApi.artifact AArch64.target (sealReg v),
+    Spec.Ocb.openApi.artifact AArch64.target (openReg v)]
 
 end VG.Artifacts.AesOcb.AArch64

@@ -1,9 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreVerified
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreVerified
@@ -15,13 +15,14 @@ public import VerifiedGarbage.Proof.Divstep.TcSBounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSA's key functions on PPC64LE, without secret residue
 
 `vg_rsa_public_precompute`, `vg_rsa_private_precompute`,
 `vg_rsa_crt_values`, `vg_rsa_check_key` and `vg_rsa_recover_primes_det`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`).
+each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`).
 None has a frame, so the tail only clears the volatile registers each may
 write. Their postconditions read the memory on return only within their
 outputs (`PPC64LE.Scrub.PostOut`), as on x86-64
@@ -213,42 +214,48 @@ theorem recoverPrimesDetOut (stack : Nat) :
 
 /-- `Spec.Rsa.publicPrecomputeApi`. -/
 def publicPrecomputeReg : Registration Spec.Rsa.publicPrecomputeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Bignum.PPC64LE.Precompute.precompute
       verified := Proof.Bignum.PPC64LE.Pre.precompute_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (publicPrecomputeOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Rsa.privatePrecomputeApi`. -/
 def privatePrecomputeReg : Registration Spec.Rsa.privatePrecomputeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Bignum.PPC64LE.PrivPre.code
       verified := Proof.Bignum.PPC64LE.PrivPre.pp_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (privatePrecomputeOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Rsa.crtValuesApi`. -/
 def crtValuesReg : Registration Spec.Rsa.crtValuesApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Rsa.PPC64LE.CrtValues.code
       verified := Proof.Rsa.PPC64LE.CrtValues.cv_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (crtValuesOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Rsa.checkKeyApi`. -/
 def checkKeyReg : Registration Spec.Rsa.checkKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Rsa.PPC64LE.CheckKey.code
       verified := Proof.Rsa.PPC64LE.KeyCheck.ck_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (checkKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Rsa.recoverPrimesDetApi`. -/
 def recoverPrimesDetReg : Registration Spec.Rsa.recoverPrimesDetApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Rsa.PPC64LE.RecoverDet.code
       verified := Proof.Rsa.PPC64LE.RecDet.rd_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (recoverPrimesDetOut _)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. -/
-example : publicPrecomputeReg.residue.isSome ∧ privatePrecomputeReg.residue.isSome ∧
-    crtValuesReg.residue.isSome ∧ checkKeyReg.residue.isSome ∧ recoverPrimesDetReg.residue.isSome := by
-  decide
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Rsa.PPC64LE.Scrub

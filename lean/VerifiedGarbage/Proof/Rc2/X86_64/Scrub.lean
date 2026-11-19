@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -71,10 +73,11 @@ theorem cbcInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_rc2_cbc_init`. -/
 def cbcInitReg : Registration Spec.Rc2.cbcInitApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcInitCode
     stack := 600
-    verified := Proof.Rc2.X86_64.Stream.init_framed } cbcInitOut [] (pubOk_nil _) (some ⟨cbcInitKs, cbcInitOk⟩)
+    verified := Proof.Rc2.X86_64.Stream.init_framed } .sse true [.rcx, .rdx, .r8, .r9, .r10, .r11] cbcInitOut [] (pubOk_nil _) ⟨cbcInitKs, cbcInitOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_rc2_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptChainedCode : Prog isa :=
@@ -101,19 +104,21 @@ theorem cbcDecryptChainedOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_rc2_cbc_encrypt_chained`. -/
 def cbcEncryptChainedReg : Registration Spec.Rc2.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptChainedCode
     stack := 528
-    verified := Proof.Rc2.X86_64.Cbc.encryptChained_framed } cbcEncryptChainedOut [] (pubOk_nil _)
-    (some ⟨cbcEncryptChainedKs, cbcEncryptChainedOk⟩)
+    verified := Proof.Rc2.X86_64.Cbc.encryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] cbcEncryptChainedOut [] (pubOk_nil _)
+    ⟨cbcEncryptChainedKs, cbcEncryptChainedOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_rc2_cbc_decrypt_chained`. -/
 def cbcDecryptChainedReg : Registration Spec.Rc2.cbcDecryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcDecryptChainedCode
     stack := 528
-    verified := Proof.Rc2.X86_64.Cbc.decryptChained_framed } cbcDecryptChainedOut [] (pubOk_nil _)
-    (some ⟨cbcDecryptChainedKs, cbcDecryptChainedOk⟩)
+    verified := Proof.Rc2.X86_64.Cbc.decryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] cbcDecryptChainedOut [] (pubOk_nil _)
+    ⟨cbcDecryptChainedKs, cbcDecryptChainedOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Rc2.X86_64.Scrub

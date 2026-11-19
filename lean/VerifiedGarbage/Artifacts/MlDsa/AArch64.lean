@@ -255,22 +255,26 @@ secret sampling with the four-way samplers of `v`, and positive transform
 arithmetic, which needs no CPU feature. Where the paired-state kernels may
 use the SHA3 instructions (`pairedSha3`), the matrix entries left after the
 groups of four are sampled as a pair; otherwise one at a time. -/
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact := [
+  Spec.MlDsa.keyGen44Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _)),
-  Spec.MlDsa.keyGen65Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) } Proof.MlDsa.AArch64.Scrub.clear
+    (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _) (Proof.MlDsa.AArch64.Scrub.keyGenSide v hv (.inl rfl))),
+  Spec.MlDsa.keyGen65Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _)),
-  Spec.MlDsa.keyGen87Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) } Proof.MlDsa.AArch64.Scrub.clear
+    (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _) (Proof.MlDsa.AArch64.Scrub.keyGenSide v hv (.inr (.inl rfl)))),
+  Spec.MlDsa.keyGen87Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _))]
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) } Proof.MlDsa.AArch64.Scrub.clear
+    (Proof.MlDsa.AArch64.Scrub.keyGenOk_consts _ 16 _ _) (Proof.MlDsa.AArch64.Scrub.keyGenSide v hv (.inr (.inr rfl))))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.KeyGen
 
@@ -306,24 +310,28 @@ open VG.Proof.MlDsa (signWithCacheName verifyWithCacheName preparedSignName prep
 open VG.Proof.MlDsa.AArch64.PreparedKey
 open VG.Proof.MlDsa.AArch64.Sign
 
-def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) : List Artifact := [
-  (signApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def entries (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets) :
+    List Artifact := [
+  (signApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := signCode v p (signWithCacheName module ++ v.callee.suffix) false
-    verified := sign_entry_verified v hp _ false } (Proof.MlDsa.AArch64.Scrub.signPairedOk p)),
-  (preparedSignApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := sign_entry_verified v hp _ false } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.signPairedOk p) (Proof.MlDsa.AArch64.Scrub.signSide v hv hs)),
+  (preparedSignApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := signCode v p (signWithCacheName module ++ v.callee.suffix) true
-    verified := sign_entry_verified v hp _ true } (Proof.MlDsa.AArch64.Scrub.preparedSignPairedOk p))]
+    verified := sign_entry_verified v hp _ true } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.preparedSignPairedOk p) (Proof.MlDsa.AArch64.Scrub.preparedSignSide v hv hs))]
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  entries v mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" ++
-  entries v mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" ++
-  entries v mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87"
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact :=
+  entries v hv mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" (.head _) ++
+  entries v hv mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" (.tail _ (.head _)) ++
+  entries v hv mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87" (.tail _ (.tail _ (.head _)))
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.Sign
 
@@ -336,33 +344,38 @@ open VG.Proof.MlDsa.AArch64.Sign
 
 /-- Signing a message with the parameters `p`: with a prepared key
 (`prepared`, `preparedSignMessageApi`) or with the key's bytes. -/
-def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) (prepared : Bool) : Artifact :=
+def entry (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets)
+    (prepared : Bool) : Artifact :=
   if prepared then
-    (preparedSignMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    (preparedSignMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         (preparedSignName module ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p
-      verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedSignMessagePairedOk p))
+        (Impl.Residue.AArch64.scrubAll 64 32 Proof.MlDsa.AArch64.Scrub.clear (signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p
+      verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ true) } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.preparedSignMessagePairedOk p) (Proof.MlDsa.AArch64.Scrub.preparedSignMessageSide v hv hs))
   else
-    (signMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    (signMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         ((signApi p module label).name ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p
-      verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ false) } (Proof.MlDsa.AArch64.Scrub.signMessagePairedOk p))
+        (Impl.Residue.AArch64.scrubAll 64 32 Proof.MlDsa.AArch64.Scrub.clear (signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p
+      verified := message_sign_verified v hp (Proof.MlDsa.AArch64.Scrub.message_sign_fn_scrub p v hp _ false) } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.signMessagePairedOk p) (Proof.MlDsa.AArch64.Scrub.signMessageSide v hv hs))
 
-def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]
+def entries (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets) :
+    List Artifact := [entry v hv p hp module label hs false, entry v hv p hp module label hs true]
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  entries v mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" ++
-  entries v mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" ++
-  entries v mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87"
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact :=
+  entries v hv mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" (.head _) ++
+  entries v hv mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" (.tail _ (.head _)) ++
+  entries v hv mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87" (.tail _ (.tail _ (.head _)))
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.SignMessage
 
@@ -374,24 +387,28 @@ open VG.Proof.MlDsa.AArch64.PreparedKey
 open VG.Proof.MlDsa.AArch64.Sign
 open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
-def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) : List Artifact := [
-  (verifyApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def entries (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets) :
+    List Artifact := [
+  (verifyApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false
-    verified := verify_entry_verified v hp _ false } (Proof.MlDsa.AArch64.Scrub.verifySelectedOk p)),
-  (preparedVerifyApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := verify_entry_verified v hp _ false } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.verifySelectedOk p) (Proof.MlDsa.AArch64.Scrub.verifySide v hv hs)),
+  (preparedVerifyApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true
-    verified := verify_entry_verified v hp _ true } (Proof.MlDsa.AArch64.Scrub.preparedVerifySelectedOk p))]
+    verified := verify_entry_verified v hp _ true } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.preparedVerifySelectedOk p) (Proof.MlDsa.AArch64.Scrub.preparedVerifySide v hv hs))]
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  entries v mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" ++
-  entries v mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" ++
-  entries v mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87"
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact :=
+  entries v hv mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" (.head _) ++
+  entries v hv mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" (.tail _ (.head _)) ++
+  entries v hv mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87" (.tail _ (.tail _ (.head _)))
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.Verify
 
@@ -405,33 +422,38 @@ open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-- Verifying a message with the parameters `p`: with a prepared key
 (`prepared`, `preparedVerifyMessageApi`) or with the key's bytes. -/
-def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) (prepared : Bool) : Artifact :=
+def entry (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets)
+    (prepared : Bool) : Artifact :=
   if prepared then
-    (preparedVerifyMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    (preparedVerifyMessageApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         (preparedVerifyName module ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p
-      verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ true) } (Proof.MlDsa.AArch64.Scrub.preparedVerifyMessageSelectedOk p))
+        (Impl.Residue.AArch64.scrubAll 64 32 Proof.MlDsa.AArch64.Scrub.clear (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p
+      verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ true) } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.preparedVerifyMessageSelectedOk p) (Proof.MlDsa.AArch64.Scrub.preparedVerifyMessageSide v hv hs))
   else
-    (verifyMessageCachedApi p module label).artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    (verifyMessageCachedApi p module label).artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := v.callee.suffix
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         ((verifyApi p module label).name ++ v.callee.suffix)
-        (Impl.Residue.AArch64.scrubAll 64 32 (Impl.Residue.AArch64.Clear.of (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p
-      verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ false) } (Proof.MlDsa.AArch64.Scrub.verifyMessageCachedSelectedOk p))
+        (Impl.Residue.AArch64.scrubAll 64 32 Proof.MlDsa.AArch64.Scrub.clear (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p
+      verified := message_verify_verified v hp (Proof.MlDsa.AArch64.Scrub.message_verify_fn_scrub p v hp _ false) } Proof.MlDsa.AArch64.Scrub.clear
+      (Proof.MlDsa.AArch64.Scrub.verifyMessageCachedSelectedOk p) (Proof.MlDsa.AArch64.Scrub.verifyMessageCachedSide v hv hs))
 
-def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
-    (module label : String) : List Artifact := [entry v p hp module label false,entry v p hp module label true]
+def entries (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants)
+    (p : Params) (hp : Ok3 p) (module label : String) (hs : (p, module, label) ∈ Proof.MlDsa.AArch64.Scrub.sets) :
+    List Artifact := [entry v hv p hp module label hs false, entry v hv p hp module label hs true]
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  entries v mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" ++
-  entries v mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" ++
-  entries v mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87"
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact :=
+  entries v hv mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" (.head _) ++
+  entries v hv mlDsa65 (.inr (.inl rfl)) "mldsa65" "ML-DSA-65" (.tail _ (.head _)) ++
+  entries v hv mlDsa87 (.inr (.inr rfl)) "mldsa87" "ML-DSA-87" (.tail _ (.tail _ (.head _)))
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.VerifyMessageCached
 
@@ -441,24 +463,30 @@ def artifacts : List Artifact :=
   KeyGen.artifacts ++
   PkTr.artifacts ++
   [
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inl rfl) 80)),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inl rfl) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
+      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inl rfl) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inl rfl))),
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inl rfl) 80)),
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inl rfl) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
+      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inl rfl) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inl rfl))),
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inl rfl)) 80)),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inl rfl)) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
+      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inl rfl)) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inr (.inl rfl)))),
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inl rfl)) 80)),
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inl rfl)) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
+      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inl rfl)) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inr (.inl rfl)))),
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inr rfl)) 80)),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inr rfl)) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
+      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inr rfl)) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inr (.inr rfl)))),
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inr rfl)) 80))] ++
+      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inr rfl)) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
+      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inr rfl)) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inr (.inr rfl))))] ++
   Sign.artifacts ++
   SignMessage.artifacts ++
   Verify.artifacts ++

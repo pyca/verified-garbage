@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubWiped
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Blowfish.Cbc
@@ -17,6 +16,7 @@ public import VerifiedGarbage.Proof.Blowfish.ScrubLocal
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Blowfish on PPC64LE, without secret residue
@@ -24,9 +24,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 Key expansion and the CBC, CFB64 and OFB functions zero their whole frame
 themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the
-volatile registers after them (`PPC64LE.Scrub.withScrubWiped`). ECB's frame
+volatile registers after them (`PPC64LE.Scrub.scrubWipedOf`). ECB's frame
 of 288 bytes, of which its own wipe clears 32, is wiped whole after it
-(`PPC64LE.Scrub.withScrub`). Their postconditions read the memory on return
+(`PPC64LE.Scrub.scrubOf`). Their postconditions read the memory on return
 only within their buffers, as on RISC-V (`Proof/Blowfish/RISCV64/Scrub.lean`).
 -/
 
@@ -205,92 +205,114 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract PPC64LE.abi stack)
 
 /-- `Spec.Blowfish.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Blowfish.expandKeyApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 64 .r6 4 Impl.Blowfish.PPC64LE.expandKey
       verified := Proof.Blowfish.PPC64LE.expandKey_framed }
-    64 .r6 4 Impl.Blowfish.PPC64LE.expandKey rfl (expandKeyOut _)
+    64 .r6 4 Impl.Blowfish.PPC64LE.expandKey
+    ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (expandKeyOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Blowfish.ecbEncryptApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.encrypt
       verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.encrypt_verified }
+    288 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩
     (ecbOut .encrypt _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Blowfish.ecbDecryptApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.decrypt
       verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.decrypt_verified }
+    288 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩
     (ecbOut .decrypt _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Blowfish.cbcEncryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cbcEncryptChained
       verified := Proof.Blowfish.PPC64LE.cbcEnc_framed Proof.Blowfish.PPC64LE.Modes.cbcEncryptChained_verified }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cbcEncryptChained rfl (cbcEncryptOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cbcEncryptChained
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cbcEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Blowfish.cbcDecryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cbcDecryptChained
       verified := Proof.Blowfish.PPC64LE.cbcDec_framed Proof.Blowfish.PPC64LE.Modes.cbcDecryptChained_verified }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cbcDecryptChained rfl (cbcDecryptOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cbcDecryptChained
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cbcDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Blowfish.cfbEncryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncrypt
       verified := Proof.Blowfish.PPC64LE.cfbEnc_framed Proof.Blowfish.PPC64LE.Modes.cfbEncrypt_verified }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncrypt rfl (cfbEncryptOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncrypt
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cfbEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Blowfish.cfbDecryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecrypt
       verified := Proof.Blowfish.PPC64LE.cfbDec_framed Proof.Blowfish.PPC64LE.Modes.cfbDecrypt_verified }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecrypt rfl (cfbDecryptOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecrypt
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cfbDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Blowfish.cfbEncryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncryptFinal
       verified := Proof.Blowfish.PPC64LE.FbFinal.cfbEncryptFinal_framed }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncryptFinal rfl (cfbEncryptFinalOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cfbEncryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Blowfish.cfbDecryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecryptFinal
       verified := Proof.Blowfish.PPC64LE.FbFinal.cfbDecryptFinal_framed }
-    128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecryptFinal rfl (cfbDecryptFinalOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.cfbDecryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.ofbApi`. -/
 def ofbReg : Registration Spec.Blowfish.ofbApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.ofb
       verified := Proof.Blowfish.PPC64LE.ofb_framed Proof.Blowfish.PPC64LE.Modes.ofb_verified }
-    128 .r7 12 Impl.Blowfish.PPC64LE.ofb rfl (ofbOut _)
+    128 .r7 12 Impl.Blowfish.PPC64LE.ofb
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (ofbOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Blowfish.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Blowfish.ofbFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 128 .r7 12 Impl.Blowfish.PPC64LE.ofbFinal
       verified := Proof.Blowfish.PPC64LE.FbFinal.ofbFinal_framed }
-    128 .r7 12 Impl.Blowfish.PPC64LE.ofbFinal rfl (ofbFinalOut _)
-
-/-- All are scrubbed: the side conditions of `withScrubWiped` and `withScrub` hold. -/
-example : expandKeyReg.residue.isSome ∧
-    ecbEncryptReg.residue.isSome ∧
-    ecbDecryptReg.residue.isSome ∧
-    cbcEncryptChainedReg.residue.isSome ∧
-    cbcDecryptChainedReg.residue.isSome ∧
-    cfbEncryptReg.residue.isSome ∧
-    cfbDecryptReg.residue.isSome ∧
-    cfbEncryptFinalReg.residue.isSome ∧
-    cfbDecryptFinalReg.residue.isSome ∧
-    ofbReg.residue.isSome ∧
-    ofbFinalReg.residue.isSome := by decide
+    128 .r7 12 Impl.Blowfish.PPC64LE.ofbFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17]⟩ rfl (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Blowfish.PPC64LE.Scrub

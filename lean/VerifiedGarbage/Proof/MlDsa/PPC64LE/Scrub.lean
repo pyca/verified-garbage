@@ -1,10 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
@@ -14,13 +14,14 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on PPC64LE, without secret residue
 
 Key generation, `pk_tr`, the preparation of keys, signing and verification
 (of a message representative or of a message, with a key or a prepared key),
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
 clears the volatile registers and the stack their frames used. The
 postconditions of key generation, `pk_tr`, the preparations and signing read
 the memory on return only within their outputs, and those of verification
@@ -227,243 +228,381 @@ theorem preparedVerifyMessageOut :
 end
 
 def keyGen44Reg : Registration Spec.MlDsa.keyGen44Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen44
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen44_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def pkTr44Reg : Registration Spec.MlDsa.pkTr44Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr44_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def preparePublic44Reg : Registration (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inl rfl) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inl rfl))
+    (by dsimp only; lit_decide)
 
 def prepareSecret44Reg : Registration (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inl rfl) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact secOut _ (.inl rfl))
+    (by dsimp only; lit_decide)
 
 def sign44Reg : Registration Spec.MlDsa.sign44Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.sign44
       verified := Proof.MlDsa.PPC64LE.Sign.sign44_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def signPrepared44Reg : Registration (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared44
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared44_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def signMessage44Reg : Registration Spec.MlDsa.signMessage44Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign44Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign44 Spec.MlDsa.mlDsa44
       verified := Message.signMessage_verified (.inl rfl) (by decide) Message.sign44Fn _
         (Message.signMessage_sat (.inl rfl)) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def preparedSignMessage44Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.signMessage_verified (.inl rfl) (by decide) Message.signPrepared44Fn _
         (Message.preparedSignMessage_sat (.inl rfl)) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def verify44Reg : Registration Spec.MlDsa.verify44Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verify44
       verified := Proof.MlDsa.PPC64LE.Verify.verify44_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def verifyPrepared44Reg : Registration (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared44
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared44_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def verifyMessageCached44Reg : Registration (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify44Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify44 Spec.MlDsa.mlDsa44
       verified := Message.verifyMessageCached_verified (.inl rfl) (by decide) Message.verify44Fn _
         (Message.verifyMessageCached_sat (.inl rfl)) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def preparedVerifyMessage44Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.verifyMessageCached_verified (.inl rfl) (by decide) Message.verifyPrepared44Fn _
         (Message.preparedVerifyMessage_sat (.inl rfl)) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa44 _)
+    (by dsimp only; lit_decide)
 
 def keyGen65Reg : Registration Spec.MlDsa.keyGen65Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen65
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen65_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def pkTr65Reg : Registration Spec.MlDsa.pkTr65Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr65_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def preparePublic65Reg : Registration (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inl rfl)) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inr (.inl rfl)))
+    (by dsimp only; lit_decide)
 
 def prepareSecret65Reg : Registration (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inl rfl)) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact secOut _ (.inr (.inl rfl)))
+    (by dsimp only; lit_decide)
 
 def sign65Reg : Registration Spec.MlDsa.sign65Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.sign65
       verified := Proof.MlDsa.PPC64LE.Sign.sign65_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def signPrepared65Reg : Registration (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared65
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared65_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def signMessage65Reg : Registration Spec.MlDsa.signMessage65Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign65Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign65 Spec.MlDsa.mlDsa65
       verified := Message.signMessage_verified (.inr (.inl rfl)) (by decide) Message.sign65Fn _
         (Message.signMessage_sat (.inr (.inl rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def preparedSignMessage65Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.signMessage_verified (.inr (.inl rfl)) (by decide) Message.signPrepared65Fn _
         (Message.preparedSignMessage_sat (.inr (.inl rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def verify65Reg : Registration Spec.MlDsa.verify65Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verify65
       verified := Proof.MlDsa.PPC64LE.Verify.verify65_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def verifyPrepared65Reg : Registration (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared65
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared65_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def verifyMessageCached65Reg : Registration (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify65Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify65 Spec.MlDsa.mlDsa65
       verified := Message.verifyMessageCached_verified (.inr (.inl rfl)) (by decide) Message.verify65Fn _
         (Message.verifyMessageCached_sat (.inr (.inl rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def preparedVerifyMessage65Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.verifyMessageCached_verified (.inr (.inl rfl)) (by decide) Message.verifyPrepared65Fn _
         (Message.preparedVerifyMessage_sat (.inr (.inl rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa65 _)
+    (by dsimp only; lit_decide)
 
 def keyGen87Reg : Registration Spec.MlDsa.keyGen87Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen87
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen87_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def pkTr87Reg : Registration Spec.MlDsa.pkTr87Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr87_verified }
+    48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def preparePublic87Reg : Registration (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inr rfl)) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inr (.inr rfl)))
+    (by dsimp only; lit_decide)
 
 def prepareSecret87Reg : Registration (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inr rfl)) }
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact secOut _ (.inr (.inr rfl)))
+    (by dsimp only; lit_decide)
 
 def sign87Reg : Registration Spec.MlDsa.sign87Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.sign87
       verified := Proof.MlDsa.PPC64LE.Sign.sign87_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def signPrepared87Reg : Registration (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared87
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared87_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def signMessage87Reg : Registration Spec.MlDsa.signMessage87Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign87Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign87 Spec.MlDsa.mlDsa87
       verified := Message.signMessage_verified (.inr (.inr rfl)) (by decide) Message.sign87Fn _
         (Message.signMessage_sat (.inr (.inr rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def preparedSignMessage87Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.signMessage_verified (.inr (.inr rfl)) (by decide) Message.signPrepared87Fn _
         (Message.preparedSignMessage_sat (.inr (.inr rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def verify87Reg : Registration Spec.MlDsa.verify87Api PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verify87
       verified := Proof.MlDsa.PPC64LE.Verify.verify87_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def verifyPrepared87Reg : Registration (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared87
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared87_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def verifyMessageCached87Reg : Registration (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify87 Spec.MlDsa.mlDsa87
       verified := Message.verifyMessageCached_verified (.inr (.inr rfl)) (by decide) Message.verify87Fn _
         (Message.verifyMessageCached_sat (.inr (.inr rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 def preparedVerifyMessage87Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.verifyMessageCached_verified (.inr (.inr rfl)) (by decide) Message.verifyPrepared87Fn _
         (Message.preparedVerifyMessage_sat (.inr (.inr rfl))) }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa87 _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.MlDsa.PPC64LE.Scrub

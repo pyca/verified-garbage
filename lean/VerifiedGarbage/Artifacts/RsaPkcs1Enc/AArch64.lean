@@ -7,6 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
@@ -34,12 +35,14 @@ namespace VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 open VG.Proof.RsaPkcs1Enc.AArch64 (privPOf decP_sat')
 open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decP_verified)
 
-def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
+def artifacts (h : Proof.Sha256.AArch64.Compress) (hh : h ∈ VG.Proof.Variants.Sha256Compress.AArch64.variants)
+    (c : Proof.Rsa.AArch64.CrtImpl) (hc : c ∈ VG.Proof.Variants.RsaPrivateCrt.AArch64.variants) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.codeP (HH h) (privPOf c).name (privPOf c).code
-      verified := decP_verified h (privPOf c) (decP_sat' c) } (Proof.Rsa.AArch64.Scrub.pkcs1DecryptOk _))]
+      verified := decP_verified h (privPOf c) (decP_sat' c) } Proof.RsaPkcs1Enc.AArch64.Scrub.decryptClear
+      (Proof.Rsa.AArch64.Scrub.pkcs1DecryptOk _) (Proof.RsaPkcs1Enc.AArch64.Scrub.decryptSide h hh c hc))]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
@@ -51,11 +54,13 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Enc
 open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.code_verified Rnd.sat)
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
-    Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))
-      verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat } (Proof.Rsa.AArch64.Scrub.pkcs1EncryptRandomOk _))])
+  (VG.Proof.Variants.Sha256Compress.AArch64.variants.attach.flatMap fun v =>
+    VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.attach.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v.1 v.2 v2.1 v2.2) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.attach.flatMap fun (v : { v : PublicImpl // v ∈ _ }) => [
+    Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v.1)) (Rnd.encCode (pdOf v.1))
+      verified := Rnd.code_verified (pdOf v.1) Pc.sat Rnd.sat } Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandomClear
+      (Proof.Rsa.AArch64.Scrub.pkcs1EncryptRandomOk _) (Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandomSide v.1 v.2))])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

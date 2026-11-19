@@ -16,7 +16,8 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
-    Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target (Proof.RsaKeyGen.PPC64LE.Scrub.keySearchReg v)])
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.flatMap
+    fun (v : { v : Proof.MillerRabin.PPC64LE.RoundImpl // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants }) => [
+    Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target (Proof.RsaKeyGen.PPC64LE.Scrub.keySearchReg v.1 v.2)])
 
 end VG.Artifacts.RsaKeyGen.PPC64LE

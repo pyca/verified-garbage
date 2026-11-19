@@ -19,8 +19,15 @@ where its Rust caller cannot clear it (`PPC64LE.NoResidue`), as
   bytes below the stack pointer, where the header of the next level's
   frame will be, then a frame of `c` bytes, inside which the next levels run;
   the last level is one frame of `c` bytes, whose header is the bottom 32
-  bytes. Each frame's region is zeroed, from its base up, by `std r0, 8k(r12)`
-  with `r0` zero and `r12` the region's base (`addi r12, r1, 32`);
+  bytes. Each frame's region is zeroed from its base, `r12` (`addi r12, r1,
+  32`), with `r0` zero (`zeroRegion`): a region of fewer than 512 bytes by
+  `std r0, 8k(r12)`; a larger one by `std`s of its first 128 bytes, then
+  `addi r12, r12, 128; dcbz r12, r0`, each zeroing the 128-byte block that
+  holds `r12` (`dcbz`, `TCB/PPC64LE/Isa.lean`), for as long as that block
+  ends within the region, then `std`s from the last `r12` to the region's
+  end. Whatever the region's alignment, the blocks are consecutive, start
+  within the first 128 bytes and end past the last `r12`, so together they
+  zero the whole region, and no block reaches outside it;
 * of the volatile registers (ELFv2 ABI §2.2.2.1, Table 2.21), those `cl`
   names (`Clear`): `r0` and others of `r4`–`r12` with `li r, 0`, the bits of
   `r3`, the result, above its `retBits` low ones, `XER`'s carry bit CA with
@@ -69,10 +76,24 @@ def stores (k₀ : Nat) : Nat → List Instr
   | 0 => []
   | n + 1 => .store .d .r0 .r12 (8 * k₀) :: stores (k₀ + 1) n
 
+/-- `addi r12, r12, 128; dcbz r12, r0`, `k` times: from `r12 = q`, the
+128-byte blocks holding `q + 128`, …, `q + 128 k` zeroed (`r0` zero). -/
+def zeroBlocks : Nat → List Instr
+  | 0 => []
+  | k + 1 => .addi .r12 .r12 128 :: .dcbz .r12 .r0 :: zeroBlocks k
+
+/-- Zero the `n` bytes (a multiple of 8) at `r12`, with `r0` zero: by `std`s
+for fewer than 512 bytes, or by `std`s of the first 128 bytes, the `dcbz`s
+of `zeroBlocks` for as long as the block ends within the `n` bytes, and
+`std`s from the last `r12` to the end (see the module docs). -/
+def zeroRegion (n : Nat) : List Instr :=
+  if n < 512 then stores 0 (n / 8)
+  else stores 0 16 ++ zeroBlocks ((n - 128) / 128) ++ stores 0 ((n - 128 * ((n - 128) / 128)) / 8)
+
 /-- A frame of `b` bytes whose region, the `b - 32` bytes below the stack
 pointer, it zeroes. -/
 def wipeFrame (b : Nat) : Prog isa :=
-  .frame (.alloc b) (.block (.addSp .r12 32 :: stores 0 ((b - 32) / 8))) (.free b)
+  .frame (.alloc b) (.block (.addSp .r12 32 :: zeroRegion (b - 32))) (.free b)
 
 /-- Zero the stack below `r1` in levels of the sizes `cs` (see the module
 docs). -/

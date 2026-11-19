@@ -34,6 +34,8 @@ import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.X86.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.PowJoint
+import VerifiedGarbage.Proof.Dsa.X86.CorePowerLoad
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
 import VerifiedGarbage.Proof.Dsa.X86.PowCall
@@ -416,6 +418,124 @@ theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : 
       powerHead_ok P.1.2.1 P.2.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
   rintro s t ⟨_, a, b, P, ⟨S, K⟩, ⟨T, L⟩⟩
   exact ⟨S, T, (K.1 .esp (by decide)).trans (P.2.2.2.trans (L.1 .esp (by decide)).symm)⟩
+
+/-- What two runs of the product of two powers share: `PowerAgree`, and the
+second base and exponent at the same addresses. -/
+def Power2Agree (base : Addr) (size len bl : Nat) (modulus : Field) (a b a2 b2 : Pointer) (s t : State) : Prop :=
+  PowerAgree base size len bl modulus a b s t ∧
+  OperandReady s base ((len + 7) / 8) a2 len ∧ OperandReady t base ((len + 7) / 8) a2 len ∧
+  OperandReady s base ((len + 7) / 8) b2 bl ∧ OperandReady t base ((len + 7) / 8) b2 bl ∧
+  pointerValue base s a2 = pointerValue base t a2 ∧ pointerValue base s b2 = pointerValue base t b2 ∧
+  Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) =
+    Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.input modulus)).setWidth 64) len)
+
+theorem power2Head_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b a2 b2 : Pointer} {s : State}
+    (P : ArithmeticPre base size len bl modulus a b s) (room : Pow.Room (s.gpr .esp) base size)
+    (A2 : OperandReady s base ((len + 7) / 8) a2 len) (B2 : OperandReady s base ((len + 7) / 8) b2 bl)
+    (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hb4 : 8 ≤ bl) (hb : bl ≤ len)
+    (hw4 : len % 4 = 0) (hwb : bl % 4 = 0) :
+    WP isa (Core.loadPower2 ((len + 7) / 8) len bl modulus a b a2 b2) s fun t =>
+      (PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t) ∧
+      wordsVal t.mem base (slot ((len + 7) / 8) 0) ((len + 7) / 8) =
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) := by
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
+  have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
+  have sz : 8256 ≤ size := hz
+  refine WP.mono (coreLoadPower2_ok P.scr hz rfl h4 hmax hw4 hb4 hb hwb P.modulusReady P.leftReady P.rightReady
+    A2 B2 rfl (by omega_using [cb, sz])) fun t ⟨M, _, _, _, _, _, K⟩ => ?_
+  exact ⟨⟨⟨P.scr.of_keeps K (by decide), by rw [K.1 _ (by decide)]; exact room, M ▸ P.large, M ▸ P.odd⟩, K⟩, M⟩
+
+/-- The staging of the product of two powers: the same trace from the same addresses. -/
+theorem power2Head_relCT (base : Addr) (size len bl : Nat) (modulus : Field) (a b a2 b2 : Pointer)
+    (hz : Layout.saved ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384) (hw4 : len % 4 = 0)
+    (hb4 : 8 ≤ bl) (hb : bl ≤ len) (hwb : bl % 4 = 0) :
+    RelCT isa (Power2Agree base size len bl modulus a b a2 b2)
+      (Core.loadPower2 ((len + 7) / 8) len bl modulus a b a2 b2) (fun _ _ => True) := by
+  intro s t tr ur sf tf ⟨⟨⟨P, Q, Mod, Left, Right⟩, _, _, _⟩, A2s, A2t, B2s, B2t, PA2, PB2, _⟩ E F
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
+  have Hn := VG.Proof.Dsa.X86.Layout.context_bound hn
+  have H8 : contextBytes ((len + 7) / 8) ≤ 8192 := Nat.le_trans Hn (by decide)
+  have H : 8256 ≤ size := hz
+  have B7 := slot_bound (n := (len + 7) / 8) (i := 7) (by decide)
+  have fit7 : slot ((len + 7) / 8) 7 + 8 * ((len + 7) / 8) ≤ size := by
+    simp only [stride] at B7; omega_using [Hn, B7, H]
+  cases E with
+  | seq E₀ E₁ => cases F with
+    | seq F₀ F₁ =>
+      have T₀ := (powerHead_relCT base size len bl modulus a b hz h4 hmax hw4 _ _ _ _ _ _
+        ⟨P, Q, Mod, Left, Right⟩ E₀ F₀).1
+      obtain ⟨_, _, _, O₁, K₁⟩ := wp_result (coreLoadPower_ok P.scr hz rfl h4 hmax hw4 hb4 hb hwb P.modulusReady
+        P.leftReady P.rightReady rfl (by omega_using [Hn, H])) E₀
+      obtain ⟨_, _, _, O₂, K₂⟩ := wp_result (coreLoadPower_ok Q.scr hz rfl h4 hmax hw4 hb4 hb hwb Q.modulusReady
+        Q.leftReady Q.rightReady rfl (by omega_using [Hn, H])) F₀
+      have S₁ := P.scr.of_keeps K₁ (by decide)
+      have S₂ := Q.scr.of_keeps K₂ (by decide)
+      have A₁ := A2s.keep K₁ (by decide) O₁ hn
+      have A₂ := A2t.keep K₂ (by decide) O₂ hn
+      have PA := (pointerValue_keep K₁ (by decide) O₁ H8 a2).trans
+        (PA2.trans (pointerValue_keep K₂ (by decide) O₂ H8 a2).symm)
+      have PB := (pointerValue_keep K₁ (by decide) O₁ H8 b2).trans
+        (PB2.trans (pointerValue_keep K₂ (by decide) O₂ H8 b2).symm)
+      cases E₁ with
+      | seq E₁ E₂ => cases F₁ with
+        | seq F₁ F₂ =>
+          have T₁ := (coreLoad_relCT _ len _ a2 base size hz _ _ _ _ _ _ ⟨S₁, S₂, PA⟩ E₁ F₁).1
+          obtain ⟨_, K₁', O₁'⟩ := wp_result (coreLoad_ok S₁ hz fit7 h4 (by omega_using []) hw4
+            A₁.toReadableComponent (A₁.slot (by decide))) E₁
+          obtain ⟨_, K₂', O₂'⟩ := wp_result (coreLoad_ok S₂ hz fit7 h4 (by omega_using []) hw4
+            A₂.toReadableComponent (A₂.slot (by decide))) F₁
+          have W₁ := slotOutside_whole O₁' (by decide)
+          have W₂ := slotOutside_whole O₂' (by decide)
+          have PB' := (pointerValue_keep K₁' (by decide) W₁ H8 b2).trans
+            (PB.trans (pointerValue_keep K₂' (by decide) W₂ H8 b2).symm)
+          have T₂ := (coreLoad_relCT _ bl _ b2 base size hz _ _ _ _ _ _
+            ⟨S₁.of_keeps K₁' (by decide), S₂.of_keeps K₂' (by decide), PB'⟩ E₂ F₂).1
+          exact ⟨by rw [T₀, T₁, T₂], trivial⟩
+
+/-- The product of two powers and the store of its result, for two runs with
+the same modulus. -/
+theorem power2Tail_relCT (base : Addr) (size n len e output : Nat)
+    (hz : contextBytes n ≤ size) (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (fun s t => PowerPair base size n s t ∧
+        wordsVal s.mem base (slot n 0) n = wordsVal t.mem base (slot n 0) n)
+      (.seq (Pow.core2 n e) (Core.store len output)) (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  refine RelCT.seq ?_ (coreStore_workspace_relCT len output)
+  intro s t tr ur sf tf ⟨⟨S, T, SP⟩, hm⟩ E F
+  have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.scr.edi_toNat.trans T.scr.edi_toNat.symm)
+  have RS := S.room.callRoom S.scr.nowrap
+  have RT := T.room.callRoom T.scr.nowrap
+  have CT := (Pow.core2_relCT (base := base) (sp := s.gpr .esp) (size := size)
+    (m := wordsVal s.mem base (slot n 0) n) hn hn48 he hen) _ _ _ _ _ _
+    ⟨⟨S.scr, RS, rfl, hz, rfl, S.large, S.odd⟩, ⟨T.scr, SP ▸ RT, SP.symm, hz, hm.symm, S.large, S.odd⟩⟩ E F
+  obtain ⟨_, _, K⟩ := wp_result (Pow.core2_ok S.scr RS hz hn hn48 he hen rfl S.large S.odd) E
+  obtain ⟨_, _, L⟩ := wp_result (Pow.core2_ok T.scr RT hz hn hn48 he hen rfl T.large T.odd) F
+  refine ⟨CT.1, agree_regs (rs := [.edi]) ?_⟩
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  rw [K.1 .edi (by decide), L.1 .edi (by decide), DI]
+
+theorem corePower2_relCT (base : Addr) (size len expLen output : Nat) (modulus : Field) (a b a2 b2 : Pointer)
+    (hz : Layout.saved ≤ size) (h4 : 48 ≤ len) (hmax : len ≤ 384)
+    (hw4 : len % 4 = 0) (he : 8 ≤ expLen) (hel : expLen ≤ len) (hew : expLen % 4 = 0) :
+    RelCT isa (Power2Agree base size len expLen modulus a b a2 b2)
+      (Core.power2 len expLen modulus a b a2 b2 output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
+  have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
+  have sz : 8256 ≤ size := hz
+  unfold Core.power2
+  dsimp only
+  refine RelCT.seq ?_ (power2Tail_relCT base size _ len _ output (by omega_using [cb, sz]) (by omega_using [h4]) hn
+    (by omega_using [he]) (by omega_using [hel]))
+  have H := power2Head_relCT base size len expLen modulus a b a2 b2 hz (by omega_using [h4]) hmax hw4 he hel hew
+  refine (H.wpDep (F := fun (s t : State) => (PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t) ∧
+      wordsVal t.mem base (slot ((len + 7) / 8) 0) ((len + 7) / 8) =
+        Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len))
+    (fun s t P => ⟨power2Head_ok P.1.1.1 P.1.2.1 P.2.1 P.2.2.2.1 hz (by omega_using [h4]) hmax he hel hw4 hew,
+      power2Head_ok P.1.1.2.1 P.1.2.2.1 P.2.2.1 P.2.2.2.2.1 hz (by omega_using [h4]) hmax he hel hw4 hew⟩)).mono
+    (fun _ _ P => P) ?_
+  rintro s t ⟨_, a, b, P, ⟨⟨S, K⟩, MS⟩, ⟨⟨T, L⟩, MT⟩⟩
+  exact ⟨⟨S, T, (K.1 .esp (by decide)).trans (P.1.2.2.2.trans (L.1 .esp (by decide)).symm)⟩,
+    MS.trans (P.2.2.2.2.2.2.2.trans MT.symm)⟩
 
 end VG.Proof.Dsa.X86
 
