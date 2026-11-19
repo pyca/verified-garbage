@@ -9,7 +9,12 @@
 //! of `ecdh_brainpoolP320r1_test.json`'s valid vectors sign, and what they
 //! sign verifies with the public keys they derive.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 
 use verified_garbage::ec::{BrainpoolP320r1, PrivateKey, PublicKey};
 use verified_garbage::error::{InvalidKey, InvalidSignature};

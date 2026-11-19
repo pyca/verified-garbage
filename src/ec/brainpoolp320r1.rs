@@ -1,7 +1,12 @@
 //! The curve brainpoolP320r1, its multiplications and public keys, which
 //! ECDSA and ECDH share.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 
 use crate::align::CacheAligned;
 use crate::arch::dispatch::ec_brainpoolp320r1::vg_ec_brainpoolp320r1_public_key_auto;

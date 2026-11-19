@@ -3,7 +3,7 @@
 //! Rev. 3 §5.7.1.2), with a [`PrivateKey<C>`] and a [`PublicKey<C>`] on each
 //! [`Curve`]: [`P192`], [`P224`], [`P256`], [`P384`], [`P521`], [`Secp256k1`],
 //! [`BrainpoolP256r1`], [`BrainpoolP384r1`] and [`BrainpoolP512r1`], and on
-//! x86-64, 32-bit Arm and PPC64LE [`BrainpoolP320r1`].
+//! x86-64, 32-bit Arm, PPC64LE and RISC-V [`BrainpoolP320r1`].
 //!
 //! Each curve converts a SEC 1 public key between its compressed and
 //! uncompressed forms, validating it (`compress_public_key`,
@@ -34,7 +34,12 @@ pub(crate) mod p521;
 pub(crate) mod secp256k1;
 mod validate;
 
-#[cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "powerpc64",
+    target_arch = "riscv64"
+))]
 pub use brainpoolp320r1::BrainpoolP320r1;
 pub use ecdsa::SignatureHash;
 

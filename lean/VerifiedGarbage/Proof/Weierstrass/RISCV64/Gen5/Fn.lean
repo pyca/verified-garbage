@@ -39,6 +39,9 @@ five words where those have six:
   `fnA_ok`).
 -/
 
+-- separate module: its proofs cost more than its imports, and the reduction's changes need not
+-- re-check them
+
 @[expose] public section
 
 /-! ## Arithmetic modulo a five-word modulus on RISC-V: the product -/
