@@ -153,7 +153,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn
   rw [hRR] at x22₁
   rw [hP] at x27₁
   have fsv : Frame [savedR W] s.mem s₁.mem := by rw [m₁]; exact savedMem_frame _ _ _
-  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by decide)
+  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by omega)
   have hH : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (dcw.sub_left (Lay.ctxSub (by decide))).sub_right sW)
@@ -182,9 +182,9 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn
       ciph_frame fsv (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact dcw.sub_right sW) (hRR ▸ hR)
     have hA₁ := Absorbed.frame fsv (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact st_wpart L (by decide) ⟨by decide, by decide⟩) habs
+      simp only [List.mem_singleton] at hr; subst hr; exact st_wpart L (by decide) ⟨by decide, by omega⟩) habs
     have hC₁ := Ctr.frame fsv (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact st_wpart L (by decide) ⟨by decide, by decide⟩) hctr
+      simp only [List.mem_singleton] at hr; subst hr; exact st_wpart L (by decide) ⟨by decide, by omega⟩) hctr
     rw [← hc₁] at hC₁
     obtain ⟨o₁, o₂, o₃⟩ := h₂.post hA₁ hC₁
     rw [hc₁] at o₂
@@ -228,12 +228,12 @@ theorem st0_crRun {Wn : Nat} {Ctx St W D : Addr} {n : Nat} (L : Lay Wn Ctx St W)
     · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
 
 /-- What does not change in the entry's writes. -/
-theorem crypt_inv {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s) {m : Mem} (hf : Frame [savedR (s.gpr .x7)] s.mem m) :
+theorem crypt_inv {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s) {m : Mem} (hf : Frame [savedR (s.gpr .x7)] s.mem m) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ciphOf m (s.gpr .x0) (s.gpr .x1).toNat = ciphOf s.mem (s.gpr .x0) (s.gpr .x1).toNat ∧
       bytesAt m (s.gpr .x5) (s.gpr .x6).toNat = bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat := by
   simp only [streamCryptPre] at hs
   obtain ⟨-, -, -, -, dcw, -, -, ddw, -, -, -, -, hR⟩ := hs
-  have sW : Region.Sub (savedR (s.gpr .x7)) ⟨s.gpr .x7, Wn⟩ := Lay.wSub (by decide)
+  have sW : Region.Sub (savedR (s.gpr .x7)) ⟨s.gpr .x7, Wn⟩ := Lay.wSub (by omega)
   exact ⟨ciph_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dcw.sub_right sW) hR,
     bytesAt_frame hf (fun r hr => by
