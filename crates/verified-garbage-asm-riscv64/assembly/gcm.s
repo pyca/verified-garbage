@@ -4251,3 +4251,3070 @@ vg_aes_gcm_bitslice:
 	addi t6, zero, 0
 	ret
 	.option pop
+
+vg_aes_gcm_stream_encrypt_bitsliced:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -2032
+	addi sp, sp, -544
+	addi t0, sp, 0
+	addi t1, t0, 8
+	sd t1, 0(t0)
+	addi t2, a7, 0
+	addi a7, sp, 0
+	ld a7, 0(a7)
+	sd s0, 128(a7)
+	sd s1, 136(a7)
+	sd s2, 144(a7)
+	sd s3, 152(a7)
+	sd s4, 160(a7)
+	sd s5, 168(a7)
+	sd s6, 176(a7)
+	sd s7, 184(a7)
+	sd s8, 192(a7)
+	sd s9, 200(a7)
+	sd s10, 208(a7)
+	sd s11, 216(a7)
+	sd ra, 224(a7)
+	addi s0, a7, 0
+	addi s1, a2, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s10, a3, 0
+	addi s11, a4, 0
+	addi s9, a5, 0
+	addi s8, a6, 0
+	addi s7, t2, 0
+	addi s4, s9, 0
+	addi s5, s8, 0
+	andi s6, s11, 15
+	beqz s5, 20f
+	beqz s6, 22f
+	addi a2, zero, 16
+	sub a2, a2, s6
+	srli a3, s5, 4
+	bnez a3, 24f
+	sub a3, s5, a2
+	srli a3, a3, 63
+	bnez a3, 26f
+	j 27f
+26:
+	addi a2, s5, 0
+27:
+	j 25f
+24:
+25:
+	addi a0, s1, 64
+	add a0, a0, s6
+	addi a1, s4, 0
+	add s4, s4, a2
+	sub s5, s5, a2
+28:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 28b
+	j 23f
+22:
+23:
+	addi a3, s4, 0
+	srli a4, s5, 4
+	andi a5, s5, 15
+	sub a6, s5, a5
+	add s4, s4, a6
+	addi s5, a5, 0
+	beqz a4, 29f
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 48
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	j 210f
+29:
+210:
+	beqz s5, 211f
+	addi t0, zero, 0
+	sd t0, 64(s1)
+	sd t0, 72(s1)
+	addi a3, s1, 64
+	addi a4, zero, 1
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 48
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	addi a0, s1, 64
+	addi a1, s4, 0
+	addi a2, s5, 0
+213:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 213b
+	j 212f
+211:
+212:
+	j 21f
+20:
+21:
+	beqz s8, 214f
+	beqz s11, 216f
+	j 217f
+216:
+	andi s6, s10, 15
+	beqz s6, 218f
+	addi t0, zero, 0
+	sd t0, 96(s0)
+	sd t0, 104(s0)
+	addi a0, s1, 32
+	addi a1, s0, 96
+	addi a2, s6, 0
+220:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 220b
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 219f
+218:
+219:
+217:
+	addi s4, s9, 0
+	addi s5, s8, 0
+	andi s6, s11, 15
+	beqz s5, 221f
+	beqz s6, 223f
+	addi a2, zero, 16
+	sub a2, a2, s6
+	srli a3, s5, 4
+	bnez a3, 225f
+	sub a3, s5, a2
+	srli a3, a3, 63
+	bnez a3, 227f
+	j 228f
+227:
+	addi a2, s5, 0
+228:
+	j 226f
+225:
+226:
+	addi a1, s1, 32
+	add a1, a1, s6
+	addi a0, s4, 0
+	add s4, s4, a2
+	sub s5, s5, a2
+	add s6, s6, a2
+229:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 229b
+	addi a3, s6, -16
+	beqz a3, 230f
+	j 231f
+230:
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s1, 32
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+231:
+	j 224f
+223:
+224:
+	addi a2, s4, 0
+	srli a3, s5, 4
+	andi a5, s5, 15
+	sub a6, s5, a5
+	add s4, s4, a6
+	addi s5, a5, 0
+	beqz a3, 232f
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 233f
+232:
+233:
+	beqz s5, 234f
+	addi a0, s4, 0
+	addi a1, s1, 32
+	addi a2, s5, 0
+236:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 236b
+	j 235f
+234:
+235:
+	j 222f
+221:
+222:
+	j 215f
+214:
+215:
+	addi t1, s0, 0
+	ld s0, 128(t1)
+	ld s1, 136(t1)
+	ld s2, 144(t1)
+	ld s3, 152(t1)
+	ld s4, 160(t1)
+	ld s5, 168(t1)
+	ld s6, 176(t1)
+	ld s7, 184(t1)
+	ld s8, 192(t1)
+	ld s9, 200(t1)
+	ld s10, 208(t1)
+	ld s11, 216(t1)
+	ld ra, 224(t1)
+	addi sp, sp, 544
+	addi sp, sp, 2032
+	addi t0, zero, 0
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -128
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	addi sp, sp, 128
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	ret
+	.option pop
+
+vg_aes_gcm_stream_decrypt_bitsliced:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -2032
+	addi sp, sp, -544
+	addi t0, sp, 0
+	addi t1, t0, 8
+	sd t1, 0(t0)
+	addi t2, a7, 0
+	addi a7, sp, 0
+	ld a7, 0(a7)
+	sd s0, 128(a7)
+	sd s1, 136(a7)
+	sd s2, 144(a7)
+	sd s3, 152(a7)
+	sd s4, 160(a7)
+	sd s5, 168(a7)
+	sd s6, 176(a7)
+	sd s7, 184(a7)
+	sd s8, 192(a7)
+	sd s9, 200(a7)
+	sd s10, 208(a7)
+	sd s11, 216(a7)
+	sd ra, 224(a7)
+	addi s0, a7, 0
+	addi s1, a2, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s10, a3, 0
+	addi s11, a4, 0
+	addi s9, a5, 0
+	addi s8, a6, 0
+	addi s7, t2, 0
+	beqz s8, 20f
+	beqz s11, 22f
+	j 23f
+22:
+	andi s6, s10, 15
+	beqz s6, 24f
+	addi t0, zero, 0
+	sd t0, 96(s0)
+	sd t0, 104(s0)
+	addi a0, s1, 32
+	addi a1, s0, 96
+	addi a2, s6, 0
+26:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 26b
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 25f
+24:
+25:
+23:
+	addi s4, s9, 0
+	addi s5, s8, 0
+	andi s6, s11, 15
+	beqz s5, 27f
+	beqz s6, 29f
+	addi a2, zero, 16
+	sub a2, a2, s6
+	srli a3, s5, 4
+	bnez a3, 211f
+	sub a3, s5, a2
+	srli a3, a3, 63
+	bnez a3, 213f
+	j 214f
+213:
+	addi a2, s5, 0
+214:
+	j 212f
+211:
+212:
+	addi a1, s1, 32
+	add a1, a1, s6
+	addi a0, s4, 0
+	add s4, s4, a2
+	sub s5, s5, a2
+	add s6, s6, a2
+215:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 215b
+	addi a3, s6, -16
+	beqz a3, 216f
+	j 217f
+216:
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s1, 32
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+217:
+	j 210f
+29:
+210:
+	addi a2, s4, 0
+	srli a3, s5, 4
+	andi a5, s5, 15
+	sub a6, s5, a5
+	add s4, s4, a6
+	addi s5, a5, 0
+	beqz a3, 218f
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 219f
+218:
+219:
+	beqz s5, 220f
+	addi a0, s4, 0
+	addi a1, s1, 32
+	addi a2, s5, 0
+222:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 222b
+	j 221f
+220:
+221:
+	j 28f
+27:
+28:
+	j 21f
+20:
+21:
+	addi s4, s9, 0
+	addi s5, s8, 0
+	andi s6, s11, 15
+	beqz s5, 223f
+	beqz s6, 225f
+	addi a2, zero, 16
+	sub a2, a2, s6
+	srli a3, s5, 4
+	bnez a3, 227f
+	sub a3, s5, a2
+	srli a3, a3, 63
+	bnez a3, 229f
+	j 230f
+229:
+	addi a2, s5, 0
+230:
+	j 228f
+227:
+228:
+	addi a0, s1, 64
+	add a0, a0, s6
+	addi a1, s4, 0
+	add s4, s4, a2
+	sub s5, s5, a2
+231:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 231b
+	j 226f
+225:
+226:
+	addi a3, s4, 0
+	srli a4, s5, 4
+	andi a5, s5, 15
+	sub a6, s5, a5
+	add s4, s4, a6
+	addi s5, a5, 0
+	beqz a4, 232f
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 48
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	j 233f
+232:
+233:
+	beqz s5, 234f
+	addi t0, zero, 0
+	sd t0, 64(s1)
+	sd t0, 72(s1)
+	addi a3, s1, 64
+	addi a4, zero, 1
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 48
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	addi a0, s1, 64
+	addi a1, s4, 0
+	addi a2, s5, 0
+236:
+	lbu t0, 0(a1)
+	lbu a3, 0(a0)
+	xor t0, t0, a3
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 236b
+	j 235f
+234:
+235:
+	j 224f
+223:
+224:
+	addi t1, s0, 0
+	ld s0, 128(t1)
+	ld s1, 136(t1)
+	ld s2, 144(t1)
+	ld s3, 152(t1)
+	ld s4, 160(t1)
+	ld s5, 168(t1)
+	ld s6, 176(t1)
+	ld s7, 184(t1)
+	ld s8, 192(t1)
+	ld s9, 200(t1)
+	ld s10, 208(t1)
+	ld s11, 216(t1)
+	ld ra, 224(t1)
+	addi sp, sp, 544
+	addi sp, sp, 2032
+	addi t0, zero, 0
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -128
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	addi sp, sp, 128
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	ret
+	.option pop
+
+vg_aes_gcm_stream_finish_bitsliced:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -2032
+	addi sp, sp, -528
+	addi a7, sp, 0
+	addi t2, a6, 0
+	addi a6, a7, 0
+	sd s0, 128(a6)
+	sd s1, 136(a6)
+	sd s2, 144(a6)
+	sd s3, 152(a6)
+	sd s4, 160(a6)
+	sd s5, 168(a6)
+	sd s6, 176(a6)
+	sd s7, 184(a6)
+	sd s8, 192(a6)
+	sd s9, 200(a6)
+	sd s10, 208(a6)
+	sd s11, 216(a6)
+	sd ra, 224(a6)
+	addi s0, a6, 0
+	addi s1, a2, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s10, a3, 0
+	addi s11, a4, 0
+	addi s9, a5, 0
+	addi s7, t2, 0
+	beqz s11, 20f
+	andi s6, s11, 15
+	j 21f
+20:
+	andi s6, s10, 15
+21:
+	beqz s6, 22f
+	addi t0, zero, 0
+	sd t0, 96(s0)
+	sd t0, 104(s0)
+	addi a0, s1, 32
+	addi a1, s0, 96
+	addi a2, s6, 0
+24:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 24b
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 23f
+22:
+23:
+	addi s4, s10, 0
+	addi s6, s11, 0
+	slli a0, s4, 3
+	slli a1, s6, 3
+	srli t0, a0, 56
+	sb t0, 96(s0)
+	srli t0, a0, 48
+	sb t0, 97(s0)
+	srli t0, a0, 40
+	sb t0, 98(s0)
+	srli t0, a0, 32
+	sb t0, 99(s0)
+	srli t0, a0, 24
+	sb t0, 100(s0)
+	srli t0, a0, 16
+	sb t0, 101(s0)
+	srli t0, a0, 8
+	sb t0, 102(s0)
+	srli t0, a0, 0
+	sb t0, 103(s0)
+	srli t0, a1, 56
+	sb t0, 104(s0)
+	srli t0, a1, 48
+	sb t0, 105(s0)
+	srli t0, a1, 40
+	sb t0, 106(s0)
+	srli t0, a1, 32
+	sb t0, 107(s0)
+	srli t0, a1, 24
+	sb t0, 108(s0)
+	srli t0, a1, 16
+	sb t0, 109(s0)
+	srli t0, a1, 8
+	sb t0, 110(s0)
+	srli t0, a1, 0
+	sb t0, 111(s0)
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	ld t0, 16(s1)
+	sd t0, 0(s0)
+	ld t0, 24(s1)
+	sd t0, 8(s0)
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 0
+	addi a3, s0, 0
+	addi a4, zero, 1
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	lbu t0, 0(s0)
+	sb t0, 0(s9)
+	lbu t0, 1(s0)
+	sb t0, 1(s9)
+	lbu t0, 2(s0)
+	sb t0, 2(s9)
+	lbu t0, 3(s0)
+	sb t0, 3(s9)
+	lbu t0, 4(s0)
+	sb t0, 4(s9)
+	lbu t0, 5(s0)
+	sb t0, 5(s9)
+	lbu t0, 6(s0)
+	sb t0, 6(s9)
+	lbu t0, 7(s0)
+	sb t0, 7(s9)
+	lbu t0, 8(s0)
+	sb t0, 8(s9)
+	lbu t0, 9(s0)
+	sb t0, 9(s9)
+	lbu t0, 10(s0)
+	sb t0, 10(s9)
+	lbu t0, 11(s0)
+	sb t0, 11(s9)
+	lbu t0, 12(s0)
+	sb t0, 12(s9)
+	lbu t0, 13(s0)
+	sb t0, 13(s9)
+	lbu t0, 14(s0)
+	sb t0, 14(s9)
+	lbu t0, 15(s0)
+	sb t0, 15(s9)
+	addi t1, s0, 0
+	ld s0, 128(t1)
+	ld s1, 136(t1)
+	ld s2, 144(t1)
+	ld s3, 152(t1)
+	ld s4, 160(t1)
+	ld s5, 168(t1)
+	ld s6, 176(t1)
+	ld s7, 184(t1)
+	ld s8, 192(t1)
+	ld s9, 200(t1)
+	ld s10, 208(t1)
+	ld s11, 216(t1)
+	ld ra, 224(t1)
+	addi sp, sp, 528
+	addi sp, sp, 2032
+	addi t0, zero, 0
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -112
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	addi sp, sp, 112
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi a0, zero, 0
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	ret
+	.option pop
+
+vg_aes_gcm_stream_verify_bitsliced:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -2032
+	addi sp, sp, -544
+	addi t0, sp, 0
+	addi t1, t0, 8
+	sd t1, 0(t0)
+	addi t2, a7, 0
+	addi a7, sp, 0
+	ld a7, 0(a7)
+	sd s0, 128(a7)
+	sd s1, 136(a7)
+	sd s2, 144(a7)
+	sd s3, 152(a7)
+	sd s4, 160(a7)
+	sd s5, 168(a7)
+	sd s6, 176(a7)
+	sd s7, 184(a7)
+	sd s8, 192(a7)
+	sd s9, 200(a7)
+	sd s10, 208(a7)
+	sd s11, 216(a7)
+	sd ra, 224(a7)
+	addi s0, a7, 0
+	addi s1, a2, 0
+	addi s2, a0, 0
+	addi s3, a1, 0
+	addi s10, a3, 0
+	addi s11, a4, 0
+	addi s9, a5, 0
+	addi s8, a6, 0
+	addi s7, t2, 0
+	addi s5, zero, 0
+	srli t0, s8, 2
+	beqz t0, 20f
+	srli t0, s8, 4
+	beqz t0, 22f
+	addi t0, s8, -16
+	beqz t0, 24f
+	j 25f
+24:
+	addi s5, zero, 1
+25:
+	j 23f
+22:
+	addi s5, zero, 1
+23:
+	j 21f
+20:
+21:
+	beqz s5, 26f
+	addi t0, zero, 0
+	sd t0, 256(s0)
+	sd t0, 264(s0)
+	addi a0, s9, 0
+	addi a1, s0, 256
+	addi a2, s8, 0
+28:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 28b
+	beqz s11, 29f
+	andi s6, s11, 15
+	j 210f
+29:
+	andi s6, s10, 15
+210:
+	beqz s6, 211f
+	addi t0, zero, 0
+	sd t0, 96(s0)
+	sd t0, 104(s0)
+	addi a0, s1, 32
+	addi a1, s0, 96
+	addi a2, s6, 0
+213:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 213b
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	j 212f
+211:
+212:
+	addi s4, s10, 0
+	addi s6, s11, 0
+	slli a0, s4, 3
+	slli a1, s6, 3
+	srli t0, a0, 56
+	sb t0, 96(s0)
+	srli t0, a0, 48
+	sb t0, 97(s0)
+	srli t0, a0, 40
+	sb t0, 98(s0)
+	srli t0, a0, 32
+	sb t0, 99(s0)
+	srli t0, a0, 24
+	sb t0, 100(s0)
+	srli t0, a0, 16
+	sb t0, 101(s0)
+	srli t0, a0, 8
+	sb t0, 102(s0)
+	srli t0, a0, 0
+	sb t0, 103(s0)
+	srli t0, a1, 56
+	sb t0, 104(s0)
+	srli t0, a1, 48
+	sb t0, 105(s0)
+	srli t0, a1, 40
+	sb t0, 106(s0)
+	srli t0, a1, 32
+	sb t0, 107(s0)
+	srli t0, a1, 24
+	sb t0, 108(s0)
+	srli t0, a1, 16
+	sb t0, 109(s0)
+	srli t0, a1, 8
+	sb t0, 110(s0)
+	srli t0, a1, 0
+	sb t0, 111(s0)
+	addi a0, s2, 240
+	addi a1, s1, 16
+	addi a2, s0, 96
+	addi a3, zero, 1
+	addi a4, s0, 512
+	call {vg_ghash}
+	ld t0, 16(s1)
+	sd t0, 0(s0)
+	ld t0, 24(s1)
+	sd t0, 8(s0)
+	addi a0, s7, 0
+	addi a1, s3, 0
+	addi a2, s1, 0
+	addi a3, s0, 0
+	addi a4, zero, 1
+	addi a5, s0, 512
+	call {vg_aes_ctr32_bs}
+	addi t0, zero, 0
+	sd t0, 272(s0)
+	sd t0, 280(s0)
+	addi a0, s0, 0
+	addi a1, s0, 272
+	addi a2, s8, 0
+214:
+	lbu t0, 0(a0)
+	sb t0, 0(a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	addi a2, a2, -1
+	bnez a2, 214b
+	ld a0, 272(s0)
+	ld a1, 256(s0)
+	xor a0, a0, a1
+	ld a1, 280(s0)
+	ld a2, 264(s0)
+	xor a1, a1, a2
+	or a0, a0, a1
+	addi a1, zero, 0
+	sub a1, a1, a0
+	or a0, a0, a1
+	srli a0, a0, 63
+	addi a1, zero, 1
+	sub a0, a1, a0
+	j 27f
+26:
+	addi a0, zero, 0
+27:
+	addi t1, s0, 0
+	ld s0, 128(t1)
+	ld s1, 136(t1)
+	ld s2, 144(t1)
+	ld s3, 152(t1)
+	ld s4, 160(t1)
+	ld s5, 168(t1)
+	ld s6, 176(t1)
+	ld s7, 184(t1)
+	ld s8, 192(t1)
+	ld s9, 200(t1)
+	ld s10, 208(t1)
+	ld s11, 216(t1)
+	ld ra, 224(t1)
+	addi sp, sp, 544
+	addi sp, sp, 2032
+	addi t0, zero, 0
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -2032
+	addi sp, sp, -16
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	sd t0, 128(t1)
+	sd t0, 136(t1)
+	sd t0, 144(t1)
+	sd t0, 152(t1)
+	sd t0, 160(t1)
+	sd t0, 168(t1)
+	sd t0, 176(t1)
+	sd t0, 184(t1)
+	sd t0, 192(t1)
+	sd t0, 200(t1)
+	sd t0, 208(t1)
+	sd t0, 216(t1)
+	sd t0, 224(t1)
+	sd t0, 232(t1)
+	sd t0, 240(t1)
+	sd t0, 248(t1)
+	sd t0, 256(t1)
+	sd t0, 264(t1)
+	sd t0, 272(t1)
+	sd t0, 280(t1)
+	sd t0, 288(t1)
+	sd t0, 296(t1)
+	sd t0, 304(t1)
+	sd t0, 312(t1)
+	sd t0, 320(t1)
+	sd t0, 328(t1)
+	sd t0, 336(t1)
+	sd t0, 344(t1)
+	sd t0, 352(t1)
+	sd t0, 360(t1)
+	sd t0, 368(t1)
+	sd t0, 376(t1)
+	sd t0, 384(t1)
+	sd t0, 392(t1)
+	sd t0, 400(t1)
+	sd t0, 408(t1)
+	sd t0, 416(t1)
+	sd t0, 424(t1)
+	sd t0, 432(t1)
+	sd t0, 440(t1)
+	sd t0, 448(t1)
+	sd t0, 456(t1)
+	sd t0, 464(t1)
+	sd t0, 472(t1)
+	sd t0, 480(t1)
+	sd t0, 488(t1)
+	sd t0, 496(t1)
+	sd t0, 504(t1)
+	sd t0, 512(t1)
+	sd t0, 520(t1)
+	sd t0, 528(t1)
+	sd t0, 536(t1)
+	sd t0, 544(t1)
+	sd t0, 552(t1)
+	sd t0, 560(t1)
+	sd t0, 568(t1)
+	sd t0, 576(t1)
+	sd t0, 584(t1)
+	sd t0, 592(t1)
+	sd t0, 600(t1)
+	sd t0, 608(t1)
+	sd t0, 616(t1)
+	sd t0, 624(t1)
+	sd t0, 632(t1)
+	sd t0, 640(t1)
+	sd t0, 648(t1)
+	sd t0, 656(t1)
+	sd t0, 664(t1)
+	sd t0, 672(t1)
+	sd t0, 680(t1)
+	sd t0, 688(t1)
+	sd t0, 696(t1)
+	sd t0, 704(t1)
+	sd t0, 712(t1)
+	sd t0, 720(t1)
+	sd t0, 728(t1)
+	sd t0, 736(t1)
+	sd t0, 744(t1)
+	sd t0, 752(t1)
+	sd t0, 760(t1)
+	sd t0, 768(t1)
+	sd t0, 776(t1)
+	sd t0, 784(t1)
+	sd t0, 792(t1)
+	sd t0, 800(t1)
+	sd t0, 808(t1)
+	sd t0, 816(t1)
+	sd t0, 824(t1)
+	sd t0, 832(t1)
+	sd t0, 840(t1)
+	sd t0, 848(t1)
+	sd t0, 856(t1)
+	sd t0, 864(t1)
+	sd t0, 872(t1)
+	sd t0, 880(t1)
+	sd t0, 888(t1)
+	sd t0, 896(t1)
+	sd t0, 904(t1)
+	sd t0, 912(t1)
+	sd t0, 920(t1)
+	sd t0, 928(t1)
+	sd t0, 936(t1)
+	sd t0, 944(t1)
+	sd t0, 952(t1)
+	sd t0, 960(t1)
+	sd t0, 968(t1)
+	sd t0, 976(t1)
+	sd t0, 984(t1)
+	sd t0, 992(t1)
+	sd t0, 1000(t1)
+	sd t0, 1008(t1)
+	sd t0, 1016(t1)
+	sd t0, 1024(t1)
+	sd t0, 1032(t1)
+	sd t0, 1040(t1)
+	sd t0, 1048(t1)
+	sd t0, 1056(t1)
+	sd t0, 1064(t1)
+	sd t0, 1072(t1)
+	sd t0, 1080(t1)
+	sd t0, 1088(t1)
+	sd t0, 1096(t1)
+	sd t0, 1104(t1)
+	sd t0, 1112(t1)
+	sd t0, 1120(t1)
+	sd t0, 1128(t1)
+	sd t0, 1136(t1)
+	sd t0, 1144(t1)
+	sd t0, 1152(t1)
+	sd t0, 1160(t1)
+	sd t0, 1168(t1)
+	sd t0, 1176(t1)
+	sd t0, 1184(t1)
+	sd t0, 1192(t1)
+	sd t0, 1200(t1)
+	sd t0, 1208(t1)
+	sd t0, 1216(t1)
+	sd t0, 1224(t1)
+	sd t0, 1232(t1)
+	sd t0, 1240(t1)
+	sd t0, 1248(t1)
+	sd t0, 1256(t1)
+	sd t0, 1264(t1)
+	sd t0, 1272(t1)
+	sd t0, 1280(t1)
+	sd t0, 1288(t1)
+	sd t0, 1296(t1)
+	sd t0, 1304(t1)
+	sd t0, 1312(t1)
+	sd t0, 1320(t1)
+	sd t0, 1328(t1)
+	sd t0, 1336(t1)
+	sd t0, 1344(t1)
+	sd t0, 1352(t1)
+	sd t0, 1360(t1)
+	sd t0, 1368(t1)
+	sd t0, 1376(t1)
+	sd t0, 1384(t1)
+	sd t0, 1392(t1)
+	sd t0, 1400(t1)
+	sd t0, 1408(t1)
+	sd t0, 1416(t1)
+	sd t0, 1424(t1)
+	sd t0, 1432(t1)
+	sd t0, 1440(t1)
+	sd t0, 1448(t1)
+	sd t0, 1456(t1)
+	sd t0, 1464(t1)
+	sd t0, 1472(t1)
+	sd t0, 1480(t1)
+	sd t0, 1488(t1)
+	sd t0, 1496(t1)
+	sd t0, 1504(t1)
+	sd t0, 1512(t1)
+	sd t0, 1520(t1)
+	sd t0, 1528(t1)
+	sd t0, 1536(t1)
+	sd t0, 1544(t1)
+	sd t0, 1552(t1)
+	sd t0, 1560(t1)
+	sd t0, 1568(t1)
+	sd t0, 1576(t1)
+	sd t0, 1584(t1)
+	sd t0, 1592(t1)
+	sd t0, 1600(t1)
+	sd t0, 1608(t1)
+	sd t0, 1616(t1)
+	sd t0, 1624(t1)
+	sd t0, 1632(t1)
+	sd t0, 1640(t1)
+	sd t0, 1648(t1)
+	sd t0, 1656(t1)
+	sd t0, 1664(t1)
+	sd t0, 1672(t1)
+	sd t0, 1680(t1)
+	sd t0, 1688(t1)
+	sd t0, 1696(t1)
+	sd t0, 1704(t1)
+	sd t0, 1712(t1)
+	sd t0, 1720(t1)
+	sd t0, 1728(t1)
+	sd t0, 1736(t1)
+	sd t0, 1744(t1)
+	sd t0, 1752(t1)
+	sd t0, 1760(t1)
+	sd t0, 1768(t1)
+	sd t0, 1776(t1)
+	sd t0, 1784(t1)
+	sd t0, 1792(t1)
+	sd t0, 1800(t1)
+	sd t0, 1808(t1)
+	sd t0, 1816(t1)
+	sd t0, 1824(t1)
+	sd t0, 1832(t1)
+	sd t0, 1840(t1)
+	sd t0, 1848(t1)
+	sd t0, 1856(t1)
+	sd t0, 1864(t1)
+	sd t0, 1872(t1)
+	sd t0, 1880(t1)
+	sd t0, 1888(t1)
+	sd t0, 1896(t1)
+	sd t0, 1904(t1)
+	sd t0, 1912(t1)
+	sd t0, 1920(t1)
+	sd t0, 1928(t1)
+	sd t0, 1936(t1)
+	sd t0, 1944(t1)
+	sd t0, 1952(t1)
+	sd t0, 1960(t1)
+	sd t0, 1968(t1)
+	sd t0, 1976(t1)
+	sd t0, 1984(t1)
+	sd t0, 1992(t1)
+	sd t0, 2000(t1)
+	sd t0, 2008(t1)
+	sd t0, 2016(t1)
+	sd t0, 2024(t1)
+	sd t0, 2032(t1)
+	sd t0, 2040(t1)
+	addi sp, sp, -128
+	addi t1, sp, 0
+	sd t0, 0(t1)
+	sd t0, 8(t1)
+	sd t0, 16(t1)
+	sd t0, 24(t1)
+	sd t0, 32(t1)
+	sd t0, 40(t1)
+	sd t0, 48(t1)
+	sd t0, 56(t1)
+	sd t0, 64(t1)
+	sd t0, 72(t1)
+	sd t0, 80(t1)
+	sd t0, 88(t1)
+	sd t0, 96(t1)
+	sd t0, 104(t1)
+	sd t0, 112(t1)
+	sd t0, 120(t1)
+	addi sp, sp, 128
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	addi sp, sp, 16
+	addi sp, sp, 2032
+	slli a0, a0, 32
+	srli a0, a0, 32
+	addi a1, zero, 0
+	addi a2, zero, 0
+	addi a3, zero, 0
+	addi a4, zero, 0
+	addi a5, zero, 0
+	addi a6, zero, 0
+	addi a7, zero, 0
+	addi t0, zero, 0
+	addi t1, zero, 0
+	addi t2, zero, 0
+	addi t3, zero, 0
+	addi t4, zero, 0
+	addi t5, zero, 0
+	addi t6, zero, 0
+	ret
+	.option pop

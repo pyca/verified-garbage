@@ -410,4 +410,128 @@ theorem streamVerifyBitslicedPre_local : ∀ vs m₁ m₂, vs.length = (streamVe
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   exact ctxSlicedRepr_congr (agree_of hb.2.2.2) (agree_of hb.1) h₂
 
+theorem streamEncryptBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (streamCryptBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptBitslicedSig.words pb) (streamEncryptBitslicedPost pb) vs m m₁ r →
+      Curry.apply (streamCryptBitslicedSig.words pb) (streamEncryptBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x2, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x3, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x4, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x5, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x6, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨bk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamCryptBitslicedSig, streamCryptSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamEncryptBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamEncryptBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamEncryptBitslicedPost, streamEncryptPost, ArgWord.ofRaw] at h ⊢
+  intro key hk iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h key hk iv a p hr hl ht
+  have := Nat.mod_le x6.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2.1 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
+theorem streamDecryptBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (streamCryptBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptBitslicedSig.words pb) (streamDecryptBitslicedPost pb) vs m m₁ r →
+      Curry.apply (streamCryptBitslicedSig.words pb) (streamDecryptBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x2, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x3, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x4, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x5, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x6, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨bk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamCryptBitslicedSig, streamCryptSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamDecryptBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamDecryptBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamDecryptBitslicedPost, streamDecryptPost, ArgWord.ofRaw] at h ⊢
+  intro key hk iv a p hr hl ht
+  obtain ⟨g₁, g₂⟩ := h key hk iv a p hr hl ht
+  have := Nat.mod_le x6.toNat (2 ^ pb)
+  refine ⟨streamRepr_congr (fun i hi => agree_of hb.2.1 i (by omega_using [hi])) g₁, Eq.trans ?_ g₂⟩
+  exact bytesAt_congr fun i hi => agree_of hb.2.2.1 i (by
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
+
+theorem streamFinishBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (streamFinishBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamFinishBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamFinishBitslicedSig.words pb) (streamFinishBitslicedPost pb) vs m m₁ r →
+      Curry.apply (streamFinishBitslicedSig.words pb) (streamFinishBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x2, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x3, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x4, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x5, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨bk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamFinishBitslicedSig, streamFinishSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.addr] (streamFinishBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.addr] (streamFinishBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamFinishBitslicedPost, streamFinishPost, ArgWord.ofRaw] at h ⊢
+  intro key hk iv a c hr hl ht
+  refine Eq.trans ?_ (h key hk iv a c hr hl ht)
+  exact bytesAt_congr fun i hi => agree_of hb.2.2.1 i (by omega_using [hi])
+
+theorem streamVerifyBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (streamVerifyBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamVerifyBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamVerifyBitslicedSig.words pb) (streamVerifyBitslicedPost pb) vs m m₁ r →
+      Curry.apply (streamVerifyBitslicedSig.words pb) (streamVerifyBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 7) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x1, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x2, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x3, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x4, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x5, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨x6, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨bk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamVerifyBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamVerifyBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, streamVerifyBitslicedPost, streamVerifyPost, ArgWord.ofRaw] at h ⊢
+  exact h
+
 end VG.Proof.AesGcm
