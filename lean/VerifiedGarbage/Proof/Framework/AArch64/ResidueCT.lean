@@ -89,6 +89,81 @@ theorem step_sound {τ τ' : RTaintL.T} {i : Instr} {s₁ s₂ s₁' s₂' : Sta
 theorem addrs_length (i : Instr) (s₁ s₂ : State) : (addrs i s₁).length = (addrs i s₂).length := by
   cases i <;> rfl
 
+/-! ## The step with its cases closed
+
+`step` is `RTaintL.step`, `RTaint.step`, `RTaint.vstep` and `VectorTaint.step`
+one in the other, with `pubBase`, `RTaintL.lstep`, `RTaint.fstep` and
+`RTaint.hstep`: nine matches on the instruction, each of which the kernel
+unfolds, building a term of every case of the match to keep one (see "The
+match on the instruction, with its cases closed" in
+`Proof/Framework/Taint.lean`). `stepK` is `step` (`stepK_eq`) as one `casesOn`
+of the instruction whose minor premises are closed (`inline_match%`), which
+`rtaintCT` takes for its step; the soundness proofs stay about `step`. It is
+made from `stepC`, which is `step` with `clobbersI` for `clobbers`: a function
+of the instruction last, which `inline_match%` then resolves too, where
+`clobbers i r` is left to the kernel, a match on the instruction at each
+instruction. -/
+
+/-- `clobbers i r`, as a function of the instruction last. -/
+def clobbersI (r : Reg) : Instr → Bool
+  | .ldp t1 t2 _ _ => r == t1 || r == t2
+  | i => dstOf i == some r
+
+theorem clobbersI_eq (r : Reg) (i : Instr) : clobbersI r i = clobbers i r := by
+  cases i <;> rfl
+
+/-- `RTaint.hstep`, with `clobbersI`. -/
+def hstepC (g' : Taint.T) (h : Nat) (i : Instr) : Nat :=
+  if Taint.pub g' .x0 then 0
+  else if !clobbersI .x0 i then h
+  else match i with
+    | .lsr .x .x0 _ sh => 64 - sh
+    | .movz .w .x0 _ _ | .lsr .w .x0 _ _ | .logic _ .w .x0 _ _ | .add .w .x0 _ _
+    | .sub .w .x0 _ _ | .addImm .w .x0 _ _ | .subImm .w .x0 _ _ => 32
+    | _ => 64
+
+theorem hstepC_eq (g' : Taint.T) (h : Nat) (i : Instr) : hstepC g' h i = RTaint.hstep g' h i := by
+  unfold hstepC RTaint.hstep
+  rw [clobbersI_eq]
+  rfl
+
+/-- `RTaint.step`, with `hstepC`. -/
+def stepRC (τ : RTaint.T) (i : Instr) : Option RTaint.T :=
+  (RTaint.vstep τ.1 i).map fun v => (v, RTaint.fstep τ.1.1 τ.2.1 i, hstepC v.1 τ.2.2 i)
+
+theorem stepRC_eq (τ : RTaint.T) (i : Instr) : stepRC τ i = RTaint.step τ i := by
+  simp only [stepRC, RTaint.step, hstepC_eq]
+
+/-- `RTaintL.step`, with `stepRC`. -/
+def stepLC (τ : RTaintL.T) (i : Instr) : Option RTaintL.T :=
+  (stepRC τ.1 i).map fun τ' => (τ', RTaintL.lstep τ.1 τ.2 i)
+
+theorem stepLC_eq (τ : RTaintL.T) (i : Instr) : stepLC τ i = RTaintL.step τ i := by
+  simp only [stepLC, RTaintL.step, stepRC_eq]
+
+/-- `step`, with `stepLC`. -/
+def stepC (τ : RTaintL.T) (i : Instr) : Option RTaintL.T := stepLC (pubBase τ i) i
+
+theorem stepC_eq (τ : RTaintL.T) (i : Instr) : stepC τ i = step τ i := stepLC_eq _ i
+
+/-- `stepC`, as a function of the instruction first. -/
+def stepFn (i : Instr) : RTaintL.T → Option RTaintL.T := fun τ => stepC τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → RTaintL.T → Option RTaintL.T :=
+  inline_match% stepFn stepC stepLC stepRC hstepC clobbersI dstOf pubBase base RTaintL.lstep
+    RTaintL.insD2 RTaint.vstep RTaint.vopStep RTaint.fstep RTaint.setsFlags vdstOf VectorTaint.step
+    Taint.step Taint.stepFn
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, with its cases closed. -/
+def stepK (τ : RTaintL.T) (i : Instr) : Option RTaintL.T := stepFnK i τ
+
+theorem stepK_eq (τ : RTaintL.T) (i : Instr) : stepK τ i = step τ i := by
+  rw [stepK, stepFnK_eq]
+  exact stepC_eq τ i
+
 end RTaintCT
 
 open RTaintCT in
@@ -96,8 +171,8 @@ open RTaintCT in
 def rtaintCT : VG.TaintCT isa where
   T := RTaintL.T
   Agree := RTaintL.Agree
-  step := RTaintCT.step
-  step_sound ha hs e₁ e₂ hadr := RTaintCT.step_sound ha hs e₁ e₂ hadr
+  step := RTaintCT.stepK
+  step_sound ha hs e₁ e₂ hadr := RTaintCT.step_sound ha ((RTaintCT.stepK_eq _ _).symm.trans hs) e₁ e₂ hadr
   addrs_length := RTaintCT.addrs_length
   meet := rtaintL.meet
   meet_left := rtaintL.meet_left

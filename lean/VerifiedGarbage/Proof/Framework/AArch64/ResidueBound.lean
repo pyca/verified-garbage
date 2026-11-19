@@ -143,14 +143,58 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   obtain ⟨σ, hσ, rfl⟩ := Option.map_eq_some_iff.mp hs
   exact ⟨RTaintCT.step_sound ha.1 hσ e₁ e₂ hadr, bound_step ha.2.1 e₁, bound_step ha.2.2 e₂⟩
 
+/-! ## The step with its cases closed
+
+As `RTaintCT.stepK`: `stepK` is `step` (`stepK_eq`) as one `casesOn` of the
+instruction whose minor premises are closed (`inline_match%`), made from
+`stepC`, which is `step` with `RTaintCT.clobbersI` for `clobbers`. -/
+
+/-- `wstep`, with `RTaintCT.clobbersI`. -/
+def wstepC (w : W) (i : Instr) : W :=
+  let kept := w.filter (fun e => !RTaintCT.clobbersI e.1 i)
+  match i with
+  | .movz .x d imm 0 => (d, bitsOf imm.toNat) :: kept
+  | .logic .and .x d n m => (d, min (wget w n) (wget w m)) :: kept
+  | _ => kept
+
+theorem wstepC_eq (w : W) (i : Instr) : wstepC w i = wstep w i := by
+  have h : (fun e : Reg × Nat => !RTaintCT.clobbersI e.1 i) = fun e => !clobbers i e.1 :=
+    funext fun e => by rw [RTaintCT.clobbersI_eq]
+  unfold wstepC wstep
+  rw [h]
+
+/-- `step`, with `RTaintCT.stepC` and `wstepC`. -/
+def stepC (τ : T) (i : Instr) : Option T := (RTaintCT.stepC τ.1 i).map (·, wstepC τ.2 i)
+
+theorem stepC_eq (τ : T) (i : Instr) : stepC τ i = step τ i := by
+  simp only [stepC, step, RTaintCT.stepC_eq, wstepC_eq]
+
+/-- `stepC`, as a function of the instruction first. -/
+def stepFn (i : Instr) : T → Option T := fun τ => stepC τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T :=
+  inline_match% stepFn stepC wstepC RTaintCT.stepC RTaintCT.stepLC RTaintCT.stepRC RTaintCT.hstepC
+    RTaintCT.clobbersI dstOf RTaintCT.pubBase RTaintCT.base RTaintL.lstep RTaintL.insD2 RTaint.vstep
+    RTaint.vopStep RTaint.fstep RTaint.setsFlags vdstOf VectorTaint.step Taint.step Taint.stepFn
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, with its cases closed. -/
+def stepK (τ : T) (i : Instr) : Option T := stepFnK i τ
+
+theorem stepK_eq (τ : T) (i : Instr) : stepK τ i = step τ i := by
+  rw [stepK, stepFnK_eq]
+  exact stepC_eq τ i
+
 end RTaintB
 
 /-- `rtaintCT` with the widths of registers (see `RTaintB`). -/
 def rtaintB : VG.TaintCT isa where
   T := RTaintB.T
   Agree := RTaintB.Agree
-  step := RTaintB.step
-  step_sound ha hs e₁ e₂ hadr := RTaintB.step_sound ha hs e₁ e₂ hadr
+  step := RTaintB.stepK
+  step_sound ha hs e₁ e₂ hadr := RTaintB.step_sound ha ((RTaintB.stepK_eq _ _).symm.trans hs) e₁ e₂ hadr
   addrs_length := RTaintCT.addrs_length
   meet τ σ := (rtaintCT.meet τ.1 σ.1, RTaintB.wmeet τ.2 σ.2)
   meet_left h := ⟨rtaintCT.meet_left h.1, RTaintB.bound_meet_left h.2.1,

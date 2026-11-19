@@ -404,6 +404,62 @@ theorem stepG_sound {W : Nat} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : 
       rw [sp₂]
       exact ptrStep_sound hp hsp rfl hD.2.1 hD.2.2.1 e₁ e₂
 
+/-! ## The step with its cases closed
+
+As `RTaintCT.stepK`: `stepGK` is `stepG` (`stepGK_eq`) as one `casesOn` of the
+instruction whose minor premises are closed (`inline_match%`), made from
+`stepGC`, which is `stepG` with `RTaintCT.clobbersI` for `clobbers`. An
+instruction that stores nothing then hands on the mask as the term it was. -/
+
+/-- `ptrStep`, with `RTaintCT.clobbersI`. -/
+def ptrStepC (W d : Nat) (ptrs : List (Reg × Nat)) (i : Instr) : List (Reg × Nat) :=
+  let kept := ptrs.filter (fun e => !RTaintCT.clobbersI e.1 i)
+  match i with
+  | .addSp dd imm => (dd, W - d + imm) :: kept
+  | .addImm .x dd n k =>
+    match offOf W d ptrs (.reg n) with
+    | some o => (dd, o + k) :: kept
+    | none => kept
+  | .subImm .x dd n k =>
+    match offOf W d ptrs (.reg n) with
+    | some o => if k ≤ o then (dd, o - k) :: kept else kept
+    | none => kept
+  | _ => kept
+
+theorem ptrStepC_eq (W d : Nat) (ptrs : List (Reg × Nat)) (i : Instr) :
+    ptrStepC W d ptrs i = ptrStep W d ptrs i := by
+  have h : (fun e : Reg × Nat => !RTaintCT.clobbersI e.1 i) = fun e => !clobbers i e.1 :=
+    funext fun e => by rw [RTaintCT.clobbersI_eq]
+  unfold ptrStepC ptrStep
+  rw [h]
+
+/-- `stepG`, with `RTaintB.stepC` and `ptrStepC`. -/
+def stepGC (W : Nat) (τ : T) (i : Instr) : Option T :=
+  (RTaintB.stepC τ.1 i).map fun τb => (τb, τ.2.map fun (d, P, ptrs) =>
+    (d, storesP W d ptrs τ.1 P (stores i), ptrStepC W d ptrs i))
+
+theorem stepGC_eq (W : Nat) (τ : T) (i : Instr) : stepGC W τ i = stepG W τ i := by
+  simp only [stepGC, stepG, RTaintB.stepC_eq, ptrStepC_eq]
+
+/-- `stepGC`, as a function of the instruction first. -/
+def stepGFn (i : Instr) : Nat → T → Option T := fun W τ => stepGC W τ i
+
+/-- `stepGFn`, with its cases closed (`inline_match%`). -/
+def stepGFnK : Instr → Nat → T → Option T :=
+  inline_match% stepGFn stepGC ptrStepC stores storesP RTaintB.stepC RTaintB.wstepC RTaintCT.stepC
+    RTaintCT.stepLC RTaintCT.stepRC RTaintCT.hstepC RTaintCT.clobbersI dstOf RTaintCT.pubBase
+    RTaintCT.base RTaintL.lstep RTaintL.insD2 RTaint.vstep RTaint.vopStep RTaint.fstep
+    RTaint.setsFlags vdstOf VectorTaint.step Taint.step Taint.stepFn
+
+theorem stepGFnK_eq (i : Instr) : stepGFnK i = stepGFn i := by cases i <;> rfl
+
+/-- `stepG`, with its cases closed. -/
+def stepGK (W : Nat) (τ : T) (i : Instr) : Option T := stepGFnK i W τ
+
+theorem stepGK_eq (W : Nat) (τ : T) (i : Instr) : stepGK W τ i = stepG W τ i := by
+  rw [stepGK, stepGFnK_eq]
+  exact stepGC_eq W τ i
+
 /-! ## Calls, returns and frames -/
 
 def pushG (W : Nat) (τ : T) (i : Instr) : Option T :=
@@ -732,8 +788,8 @@ open RTaintG in
 def rtaintG (W : Nat) : VG.TaintCT isa where
   T := RTaintG.T
   Agree := AgreeG W
-  step := stepG W
-  step_sound ha hs e₁ e₂ hadr := stepG_sound ha hs e₁ e₂ hadr
+  step := stepGK W
+  step_sound ha hs e₁ e₂ hadr := stepG_sound ha ((stepGK_eq W _ _).symm.trans hs) e₁ e₂ hadr
   addrs_length := RTaintCT.addrs_length
   meet := meetG
   meet_left := meetG_left
