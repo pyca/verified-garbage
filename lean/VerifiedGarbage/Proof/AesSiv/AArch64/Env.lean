@@ -32,6 +32,11 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesSiv.AArch64
 open VG.Proof.CmacAes.Stream.AArch64 (UArgsW FArgs toNat_add_lt)
 open VG.Proof.CmacAes.AArch64 (CallPre k0)
 
+/-- The offsets of the working space, for `omega`. -/
+theorem sivOffs : stOff = 128 ∧ zOff = 16 ∧ tailOff = 32 ∧ cntOff = 64 ∧ ksOff = 80 ∧ cbOff = 96 ∧
+    tOff = 112 ∧ dbOff = 144 ∧ dOff = 256 ∧ csOff = 272 :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
 /-- The regions of the arguments. -/
 structure Env (Nw : Nat) (s₀ : State) (C D P W : Addr) (R L : Nat) : Prop where
   rounds : R = 10 ∨ R = 12 ∨ R = 14
