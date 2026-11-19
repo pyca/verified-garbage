@@ -32,4 +32,8 @@ open VG.RISCV64
 /-- `vg_aes_gcm_open_to`: `vg_aes_gcm_open`'s body, from `src` to `dst`. -/
 def openTo : Prog isa := openWith true
 
+/-- `vg_aes_gcm_open_to_bitsliced`: `openTo`, with `bk` at `sp + 32` and the
+working space at `sp + 40`, and `vg_aes_ctr32_bs_to` on the buffer at `bk`. -/
+def openToBs : Prog isa := openWithB true true
+
 end VG.Impl.AesGcm.RISCV64.OpenTo

@@ -601,12 +601,22 @@ def openEntry : List Instr := oneEntry 16 ++ ([.load .d .s8 .t1 8] : List Instr)
 
 /-- `openEntry`, or out of place (`vg_aes_gcm_open_to`, `o`) with the source
 in `a6`, `dst = [sp]` (`dst - src` kept at `W + dstO`), `tag = [sp + 16]`,
-`tag_len = [sp + 24]` in `s8` and `scratch = [sp + 32]`. -/
-def openEntryWith (o : Bool) : List Instr :=
+`tag_len = [sp + 24]` in `s8` and `scratch = [sp + 32]`; with the round keys
+bitsliced (`bs`), `bk` before `scratch`, which is 8 bytes further. -/
+def openEntryWithB (bs o : Bool) : List Instr :=
   if o then
-    oneEntryAt 32 16 ++
+    oneEntryAt (if bs then 40 else 32) 16 ++
       ([.load .d .s8 .t1 24, .load .d .t2 .t1 0, .sub .t2 .t2 .a6, .store .d .t2 .s0 dstO] : List Instr)
-  else openEntry
+  else if bs then oneEntry 24 ++ ([.load .d .s8 .t1 8] : List Instr) else openEntry
+
+def openEntryWith (o : Bool) : List Instr := openEntryWithB false o
+
+/-- Where `bk` is: `[sp + 32]` out of place (`o`), `[sp + 16]` in place. -/
+def bkOff (o : Bool) : Nat := if o then 32 else 16
+
+/-- With the round keys bitsliced (`bs`), `bkLoad`, then `c`. -/
+def bkThen (bs o : Bool) (c : Prog isa) : Prog isa :=
+  if bs then .seq (.block (bkLoad (bkOff o))) c else c
 
 /-- Out of place, the distance from the source to the destination into `s9`
 (the tag's address, no longer needed), for `cryptWith`. -/
@@ -615,15 +625,18 @@ def deltaArg (o : Bool) : List Instr := if o then [.load .d .s9 .s0 dstO] else [
 /-- `open` once the tag length is allowed: the nonce's length back in `s5`,
 the tag of the ciphertext at `W + 112`, compared with the received one, the
 result (`a0`) kept in `s8`, and the data decrypted only if they are equal. -/
-def openGoodWith (o : Bool) : Prog isa :=
+def openGoodWithB (bs o : Bool) : Prog isa :=
   .seq (.block [mov .s5 .s7])
   (.seq oneAad
-  (.seq (oneTag 112)
+  (bkThen bs o
+  (.seq (oneTagB bs 112)
   (.seq recv
   (.seq (cmp 112)
   (.seq (.block ([mov .s8 .a0] ++ deltaArg o))
-  (.seq (.ite (.zero .s8) (.block []) (oneCryptWith o))
-    (.block [mov .a0 .s8])))))))
+  (.seq (.ite (.zero .s8) (.block []) (oneCryptB bs o))
+    (.block [mov .a0 .s8]))))))))
+
+def openGoodWith (o : Bool) : Prog isa := openGoodWithB false o
 
 /-- The `len` (`s11`) bytes at the destination (the source at `W + dataO`
 plus the distance at `W + dstO`) zeroed, a byte at a time, through `t1`
@@ -640,14 +653,21 @@ def openFin (o : Bool) : Prog isa :=
 
 /-- `vg_aes_gcm_open`'s body, in place, or (`o`) `vg_aes_gcm_open_to`'s, from
 the source to the destination. -/
-def openWith (o : Bool) : Prog isa :=
-  .seq (.block (openEntryWith o))
+def openWithB (bs o : Bool) : Prog isa :=
+  .seq (.block (openEntryWithB bs o))
   (.seq tagLenOk
-  (.seq (.ite (.zero .s5) (.block [.li .a0 0]) (openGoodWith o))
+  (.seq (.ite (.zero .s5) (.block [.li .a0 0]) (openGoodWithB bs o))
     (openFin o)))
+
+def openWith (o : Bool) : Prog isa := openWithB false o
 
 /-- `vg_aes_gcm_open`, with `tag = [sp]`, `tag_len = [sp + 8]` and
 `scratch = [sp + 16]`. -/
 def «open» : Prog isa := openWith false
+
+/-- `vg_aes_gcm_open_bitsliced`, with `tag = [sp]`, `tag_len = [sp + 8]`,
+`bk = [sp + 16]` and `scratch = [sp + 24]`: `open`, with `vg_aes_ctr32_bs`
+on the buffer at `bk` (`s7`, once `oneAad` is done). -/
+def openBs : Prog isa := openWithB true false
 
 end VG.Impl.AesGcm.RISCV64

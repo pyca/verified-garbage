@@ -169,7 +169,7 @@ theorem openToEntry_wp {s₀ : State} (h : openToPreR s₀) :
       rw [add_ofNat_assoc, Nat.zero_add] at hs
       exact dA.sub_left hs
   obtain spa : s₀.sp.toNat % 8 = 0 := by have := hstk.1; omega_using [this]
-  simp only [openEntryWith, ↓reduceIte]
+  simp only [openEntryWith, openEntryWithB, ↓reduceIte, Bool.false_eq_true]
   refine WP.block_append (WP.mono (WP.keep [.t1, .s0, .s1, .s2, .s3, .s4, .s5, .s7, .s9, .s10, .s11]
     (one1At_wp (off := 32) (tagO := 16) (W := stackArg s₀ 4) (T := stackArg s₀ 2) (.inr (.inr rfl)) (.inr rfl) hW
       wa hstk.1 (ain 4 (by decide)) rfl (ain 2 (by decide)) rfl (dAi 2 (by decide))) (by rfl) rfl)
@@ -509,15 +509,15 @@ theorem openTo_ct [VG.Proof.Gcm.RISCV64.GhashLaw] :
     q5.symm, q6.symm, q7.symm, q8.symm, q9.symm, q10.symm, qsp.symm, (qa 0 (by decide)).symm,
     (qa 1 (by decide)).symm, (qa 2 (by decide)).symm, (qa 3 (by decide)).symm, (qa 4 (by decide)).symm,
     (qres hR).symm⟩, ?_⟩
-  unfold OpenTo.openTo openWith
+  unfold OpenTo.openTo openWith openWithB
   -- the entry: its head loads `W` from a public address, the rest saves through it
   let J₁ : State → Prop := fun s => ∃ t₀, I₀ t₀ ∧ SO2 true (stackArg t₀ 4) (stackArg t₀ 2) (stackArg t₀ 0) t₀ s ∧
     s.gpr .s8 = stackArg t₀ 3
   refine CT.seq (J := J₁) ?_ (fun s hs => WP.mono (openToEntry_wp hs.1) fun s' ⟨a, b⟩ => ⟨s, hs, a, b⟩) ?_
   · let v : Reg → BitVec 64 := fun r => if r = .t1 then stackArg σ₁ 4 else σ₁.gpr r
-    have hl : openEntryWith true = [.addSp .t1 0, .load .d .t1 .t1 32] ++ (oneRestAt 16 ++
+    have hl : openEntryWithB false true = [.addSp .t1 0, .load .d .t1 .t1 32] ++ (oneRestAt 16 ++
         ([.load .d .s8 .t1 24, .load .d .t2 .t1 0, .sub .t2 .t2 .a6, .store .d .t2 .s0 dstO] : List Instr)) := by
-      simp only [openEntryWith, ↓reduceIte, oneEntryAt_eq, List.append_assoc]
+      simp only [openEntryWithB, ↓reduceIte, Bool.false_eq_true, oneEntryAt_eq, List.append_assoc]
     rw [hl]
     refine RelCT.block_append (CT.seq (J := fun s => s.sp = σ₁.sp ∧
       ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1], s.gpr r = v r) ?_ ?_ ?_)
