@@ -3,15 +3,8 @@ module
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
-public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
-public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM on AArch64, without secret residue
@@ -21,9 +14,9 @@ The postconditions of `vg_aes_gcm_init`, `vg_aes_gcm_open` and
 the data and the output (`ScrubAll.ScrubAllOk`): each implementation, generic
 over the implementations of counter mode, GHASH and key expansion it calls,
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.scrubAllOf`). Its frame is sized to what its callees need
-(`gcmWn`, `gcmInitWn`), so that the zeroing costs little where counter mode
-needs no working space.
+zeroed (`ScrubAll.scrubAllOf`, `Instances.lean`). Its frame is sized to what its
+callees need (`gcmWn`, `gcmInitWn`), so that the zeroing costs little where
+counter mode needs no working space.
 -/
 
 @[expose] public section
@@ -31,7 +24,6 @@ needs no working space.
 namespace VG.Proof.AesGcm.AArch64.Scrub
 
 open VG.AArch64 VG.AArch64.ScrubAll
-open VG.Proof.AesGcm.AArch64 (GcmImpl GcmVariant gcmWn gcmInitWn gcmWn_cases gcmInitWn_cases openCode openToCode)
 
 /-- The bytes at `d` within a buffer on which two memories agree. -/
 theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
@@ -116,47 +108,13 @@ theorem openToOk (stack : Nat) :
     rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]
     exact h key hk
 
-/-- `initOk` at `gcmInitWn v`. -/
-theorem initOkW (v : GcmImpl) :
-    ScrubAllOk (Spec.Gcm.initContract abi (gcmInitWn v)) (gcmInitWn v) (Spec.Gcm.initSig.retBits abi.ptrBits) :=
-  initOk _ (by rcases gcmInitWn_cases v with h | h <;> rw [h] <;> decide)
-
 /-- The registers the tails of `init`, `open` and `open_to` clear: those
 they may write, with every implementation of counter mode, GHASH and key
-expansion (`initSide`, `openSide`, `openToSide`). -/
+expansion (`Instances.lean`). -/
 def clear : Impl.Residue.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
     .v26, .v27, .v28, .v29, .v30, .v31], []⟩
 
-/-- What `scrubAllOf` needs of `init` in its frame, with each variant's
-implementations: evaluated here. -/
-theorem initSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmInitWn g.impl) .x3
-        (Impl.AesGcm.AArch64.init g.impl.callees)) (gcmInitWn g.impl) (Spec.Gcm.initSig.retBits abi.ptrBits)
-      clear [] = true := by
-  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
-      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmInitWn g.impl) .x3
-        (Impl.AesGcm.AArch64.init g.impl.callees)) (gcmInitWn g.impl) (Spec.Gcm.initSig.retBits abi.ptrBits)
-      clear []) = true := by lit_decide
-  exact List.all_eq_true.mp h g hg
-
-/-- `initSide`, for `open`. -/
-theorem openSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 32) 2 (openCode g.impl))
-      (gcmWn g.impl + 32) (Spec.Gcm.openSig.retBits abi.ptrBits) clear [] = true := by
-  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
-      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 32) 2 (openCode g.impl))
-        (gcmWn g.impl + 32) (Spec.Gcm.openSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp h g hg
-
-/-- `initSide`, for `open_to`. -/
-theorem openToSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
-    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 48) 4 (openToCode g.impl))
-      (gcmWn g.impl + 48) (Spec.Gcm.openToSig.retBits abi.ptrBits) clear [] = true := by
-  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
-      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 48) 4 (openToCode g.impl))
-        (gcmWn g.impl + 48) (Spec.Gcm.openToSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp h g hg
 
 end VG.Proof.AesGcm.AArch64.Scrub
