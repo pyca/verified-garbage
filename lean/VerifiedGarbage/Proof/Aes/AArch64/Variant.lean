@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
@@ -64,6 +65,10 @@ structure Ctr32Impl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The registers `callee.code` writes: a caller's tail clears them with
+  its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this
+  to the code. -/
+  clear : Impl.Residue.AArch64.Clear
   /-- The implementation of `vg_aes_expand_key` that goes with it, which
   needs no more CPU features. -/
   expand : Impl.Aes.AArch64.ExpandKey
@@ -94,6 +99,10 @@ def scalar : Ctr32Impl where
   toKeepsV := by lit_decide
   suffix := ""
   features := []
+  clear := ⟨[.x1, .x3, .x4, .x6, .x8, .x9, .x10],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
   expand := .scalar
   expandNoFrames := by lit_decide
   expandOk := expandKey_correct
@@ -118,6 +127,10 @@ def aese : Ctr32Impl where
   toKeepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]
+  clear := ⟨[.x3, .x4, .x6, .x7, .x9, .x10, .x12, .x13],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
   expand := .aese
   expandNoFrames := by lit_decide
   expandOk := Aese.Key.expandKey_correct

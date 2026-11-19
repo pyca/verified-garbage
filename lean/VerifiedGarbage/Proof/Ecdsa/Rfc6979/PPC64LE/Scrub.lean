@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -34,20 +34,21 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P384.CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.CombLit
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Deterministic ECDSA on PPC64LE, without secret residue
 
 For every curve, `vg_ecdsa_<curve>_sign`, generic over the HMAC
 implementations its table holds, which it calls indirectly, followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`): it calls
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`): it calls
 indirectly only the functions of its table (`PPC64LE.Scrub.tablesCall`), and
-returns with the volatile registers cleared and the stack its frames used
-zeroed. Its postcondition reads the memory on return only within `out`
-(`signOut`), as on RISC-V (`Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean`). Each
-takes the curve's group law (`Weierstrass.Law`), which its registration file
-gives, and the emitter checks `withScrub`'s side conditions, as it refuses a
-function without a proof that `ci/residue_allowlist.txt` does not list.
+returns with the volatile registers cleared and the 736 bytes of stack its
+frames use zeroed. Its postcondition reads the memory on return only within
+`out` (`signOut`), as on RISC-V (`Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean`).
+Each takes the curve's group law (`Weierstrass.Law`), which its registration
+file gives; its code does not depend on the law, and `scrubOf`'s side
+condition is proved of the code written without it.
 -/
 
 @[expose] public section
@@ -96,90 +97,108 @@ theorem signOut (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × Lis
 `HmacTable.PPC64LE.vars`. -/
 def p192Sign (hL : Law Spec.P192.curve) (hv : OK vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.p192SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (p192R hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vars
       verified := p192T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.p192 [] vars)
+    (by dsimp only [signCodeT, cfgT, p192R, p192Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.p224SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def p224Sign (hL : Law Spec.P224.curve) (hv : OK vars ∧ "VG_P224_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.p224SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (p224R hL) Spec.Ecdsa.Rfc6979.Curves.p224.tries vars
       verified := p224T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Weierstrass.PPC64LE.p224CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, p224R, p224Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.p256SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def p256Sign (hL : Law Spec.P256.curve) (hv : OK vars ∧ "VG_P256_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.p256SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (p256R hL) Spec.Ecdsa.Rfc6979.Curves.p256.tries vars
       verified := p256T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Weierstrass.PPC64LE.p256CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, p256R, p256Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.p384SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def p384Sign (hL : Law Spec.P384.curve) (hv : OK vars ∧ "VG_P384_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.p384SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (p384R hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
       verified := p384T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Weierstrass.PPC64LE.p384CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, p384R, p384Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.p521SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def p521Sign (hL : Law Spec.P521.curve) (hv : OK vars ∧ "VG_P521_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.p521SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (p521R hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
       verified := p521T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Weierstrass.PPC64LE.p521CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, p521R, p521Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def secp256k1Sign (hL : Law Spec.Secp256k1.curve) (hv : OK vars ∧ "VG_SECP256K1_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (secp256k1R hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
       verified := secp256k1T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Weierstrass.PPC64LE.secp256k1CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, secp256k1R, secp256k1Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def brainpoolp256r1Sign (hL : Law Spec.BrainpoolP256r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (brainpoolp256r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
       verified := brainpoolp256r1T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, brainpoolp256r1R, brainpoolp256r1Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def brainpoolp384r1Sign (hL : Law Spec.BrainpoolP384r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP384R1_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (brainpoolp384r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vars
       verified := brainpoolp384r1T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, brainpoolp384r1R, brainpoolp384r1Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
 def brainpoolp512r1Sign (hL : Law Spec.BrainpoolP512r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (brainpoolp512r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vars
       verified := brainpoolp512r1T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1 Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, brainpoolp512r1R, brainpoolp512r1Core, RfcCurve.Q]; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE.Scrub

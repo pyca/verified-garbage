@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -63,7 +65,7 @@ b 210f
 210:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHw="
 22:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOAAAADgh8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjgDyE4QfAh+MH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPhAByE4wA8hOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMRkjBHEbK0RxHTOEcR87xEgAIBO""#,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
         VG_SM4_PPC64LE_AFFINE = sym super::consts::VG_SM4_PPC64LE_AFFINE,
@@ -75,6 +77,8 @@ b 210f
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -443,7 +447,7 @@ b 2104f
 2104:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHw="
 296:
-.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrMA0hOHAKITggAIBO""#,
+.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrMA0hOHAKITgAAAA4IfAh+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz44A8hOEHwIfgh+CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz44AchOMAPITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
@@ -456,6 +460,8 @@ b 2104f
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -861,7 +867,7 @@ b 27f
 26:
 .base64 "AABgOA=="
 27:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OtADSE4cAohOCAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OtADSE4cAohOAAAADgh8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjgDyE4QfAh+BH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+PAHITjADyE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
@@ -874,6 +880,8 @@ b 27f
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -952,7 +960,7 @@ b 21f
 20:
 .base64 "AAB4gAQAmIAIALiAAAHAPAAAfpAEAJ6QCAC+kAwA3pA="
 21:
-.base64 "AAB+gAQAnoAIAL6ADAD+OAAAADksRMd8AQDGODAAfpA0AJ6QOAC+kDwA/jgsRcd8EAAe+RgAHvl4++x/8AAM6KYDCHyAAEzqiABs6pAAjOqYAKzqoADM6qgA7OqwAAzruAAs68AATOvIAGzr0ACM69gArOvgAMzr6ADs6yAKITggAIBO""#,
+.base64 "AAB+gAQAnoAIAL6ADAD+OAAAADksRMd8AQDGODAAfpA0AJ6QOAC+kDwA/jgsRcd8EAAe+RgAHvl4++x/8AAM6KYDCHyAAEzqiABs6pAAjOqYAKzqoADM6qgA7OqwAAzruAAs68AATOvIAGzr0ACM69gArOvgAMzr6ADs6yAKITgAAAA44fUh+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4IAohOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -960,6 +968,8 @@ b 21f
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1019,7 +1029,7 @@ b 214f
 b 21f
 20:
 21:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4IACATg==""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4AAAAOOH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+CAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -1029,6 +1039,8 @@ b 21f
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1234,7 +1246,7 @@ b 244f
 b 237f
 236:
 237:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOAAAADgh8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjgDyE4QfAh+MH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPhAByE4wA8hOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
@@ -1247,6 +1259,8 @@ b 237f
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1452,7 +1466,7 @@ b 246f
 b 224f
 223:
 224:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOAAAADgh8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjgDyE4QfAh+MH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPhAByE4wA8hOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
@@ -1463,6 +1477,8 @@ b 224f
 /// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1538,7 +1554,7 @@ b 214f
 214:
 .base64 "eOu/f7AMBYEAAB+RtAwFgQQAH5G4DAWBCAAfkbwMBYEMAB+RkAyl65gMxeugDOXrqAwF6KYDCHw="
 26:
-.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzr4AwhOCAKITggAIBO""#,
+.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzr4AwhOCAKITgAAAA4IfAh+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz44A8hOEHwIfjB+CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4QAchOMAPITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
@@ -1549,6 +1565,8 @@ b 214f
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1656,7 +1674,7 @@ b 27f
 26:
 .base64 "AABgOA=="
 27:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOCAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OvgDCE4IAohOAAAADgh8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjgDyE4QfAh+MH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPhAByE4wA8hOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,

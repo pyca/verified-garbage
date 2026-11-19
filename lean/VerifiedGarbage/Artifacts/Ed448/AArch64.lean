@@ -51,49 +51,55 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 -- Ed448 public-key derivation on AArch64
 namespace VG.Artifacts.Ed448.AArch64.PublicKey
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact := [
+  Spec.Ed448.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
     verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk }
-    Proof.Ed448.AArch64.Scrub.publicKeyOk)]
+    (AArch64.ScrubAll.clearUnion Proof.Ed448.AArch64.Scrub.own v.clear)
+    Proof.Ed448.AArch64.Scrub.publicKeyOk (Proof.Ed448.AArch64.Scrub.publicKeySide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed448.AArch64.PublicKey
 
 -- Ed448 signing with a cached public key on AArch64
 namespace VG.Artifacts.Ed448.AArch64.SignCached
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.Ed448.signCachedApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact := [
+  Spec.Ed448.signCachedApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
     verified := Proof.Ed448.AArch64.SignCached.signCached_verified v Proof.Ed448.AArch64.scalarBase_baseOk }
-    Proof.Ed448.AArch64.Scrub.signCachedOk)]
+    (AArch64.ScrubAll.clearUnion Proof.Ed448.AArch64.Scrub.own v.clear)
+    Proof.Ed448.AArch64.Scrub.signCachedOk (Proof.Ed448.AArch64.Scrub.signCachedSide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed448.AArch64.SignCached
 
 -- Ed448 verification on AArch64
 namespace VG.Artifacts.Ed448.AArch64.Verify
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.Ed448.verifyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation)
+    (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) : List Artifact := [
+  Spec.Ed448.verifyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
     verified := Proof.Ed448.AArch64.Verify.verify_verified v
       (Proof.Ed448.AArch64.Sparse.verified_eqOk Proof.Ed448.recover_ok) }
-    Proof.Ed448.AArch64.Scrub.verifyOk)]
+    (AArch64.ScrubAll.clearUnion Proof.Ed448.AArch64.Scrub.own v.clear)
+    Proof.Ed448.AArch64.Scrub.verifyOk (Proof.Ed448.AArch64.Scrub.verifySide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed448.AArch64.Verify
 

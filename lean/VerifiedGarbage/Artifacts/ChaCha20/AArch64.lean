@@ -26,11 +26,14 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.ChaCha20Xor.AArch64.variants.flatMap fun (v : Proof.ChaCha20.AArch64.XorImpl) => [
-    Spec.ChaCha20.applyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-      suffix := v.callee.suffix
-      code := Impl.ChaCha20.AArch64.Stream.apply v.callee
-      verified := Proof.ChaCha20.AArch64.Stream.apply_verified v }
-      (Proof.ChaCha20.AArch64.Stream.Scrub.applyOk 0))])
+  (VG.Proof.Variants.ChaCha20Xor.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.ChaCha20.AArch64.XorImpl // v ∈ VG.Proof.Variants.ChaCha20Xor.AArch64.variants }) => [
+    Spec.ChaCha20.applyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.callee.suffix
+      code := Impl.ChaCha20.AArch64.Stream.apply v.1.callee
+      verified := Proof.ChaCha20.AArch64.Stream.apply_verified v.1 }
+      (AArch64.ScrubAll.clearUnion Proof.ChaCha20.AArch64.Stream.Scrub.applyOwn v.1.clear)
+      (Proof.ChaCha20.AArch64.Stream.Scrub.applyOk 0)
+      (Proof.ChaCha20.AArch64.Stream.Scrub.applySide v.1 v.2))])
 
 end VG.Artifacts.ChaCha20.AArch64

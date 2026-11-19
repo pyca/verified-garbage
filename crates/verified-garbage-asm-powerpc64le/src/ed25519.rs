@@ -5,6 +5,8 @@
 
 /// Ed25519 key-pair derivation (RFC 8032 §5.1.5): for the 32-byte private seed at `seed`, writes its 64-byte SHA-512 digest (§5.1.5, step 1) to `*expanded` and its 32-byte public key to `*out`, including pruning: the digest and public key that `vg_ed25519_sign_expanded` takes. Contract: `VG.Spec.Ed25519.keyPairContract`. Constant time: only pointers may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -23,13 +25,15 @@ pub(crate) unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded
 bl {vg_sha512_digest_core}
 .base64 "IACBOQgAbOgQAIzoGACs6A=="
 bl {vg_ed25519_public_key_expanded}
-.base64 "IACBOQAADOimAwh8QAAhOCAAgE4=""#,
+.base64 "IACBOQAADOimAwh8QAAhOAAAADgx/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPjQAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -72,7 +76,7 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_ed25519_scalar_reduce}
 .base64 "IAB0OEAAmThgALk4AADZOAAA+Dg="
 bl {vg_ed25519_scalar_mul_add}
-.base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4IACATg==""#,
+.base64 "EAEZ6OAAmeroALnq8ADZ6vgA+eoAARnrCAE566YDCHwgAIE5AABgOQAAbPkIAGz5EABs+RgAbPkgAGz5KABs+TAAbPk4AGz5QABs+UgAbPlQAGz5WABs+WAAbPloAGz5cABs+XgAbPmAAGz5iABs+ZAAbPmYAGz5oABs+agAbPmwAGz5uABs+cAAbPnIAGz50ABs+dgAbPlAASE4AAAAOMH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4QAEhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
@@ -83,6 +87,8 @@ bl {vg_ed25519_scalar_mul_add}
 }
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -110,7 +116,7 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_ed25519_scalar_reduce}
 .base64 "AAAAOSAAGfkoABn5MAAZ+TgAGfkAAHQ4AACXOAAAuTgAANg4"
 bl {vg_ed25519_verify_equation}
-.base64 "sAAZ6IAAmeqIALnqkADZ6pgA+eqgABnrqAA566YDCHzgACE4IACATg==""#,
+.base64 "sAAZ6IAAmeqIALnqkADZ6pgA+eqgABnrqAA566YDCHzgACE4AAAAOCH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz44AAhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
