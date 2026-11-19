@@ -123,7 +123,7 @@ theorem aad_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn)
   refine WP.seq (WP.mono (aadEntry_ok hCtx hSt hD hn hW perm)
     fun s₁ ⟨he₁, hk₁, x23₁, x24₁, x25₁, m₁, rd₁, wr₁⟩ => ?_)
   have fsv : Frame [savedR W] s.mem s₁.mem := by rw [m₁]; exact savedMem_frame _ _ _
-  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by decide)
+  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by omega)
   have hdat : bytesAt s₁.mem D n = bytesAt s.mem D n :=
     bytesAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [hn])
@@ -180,10 +180,10 @@ theorem streamAad_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch6
         (⟨s.gpr .x1 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨s.gpr .x1 + BitVec.ofNat 64 e, k⟩ :=
       fun e k he h => Offset.disjoint _ h (by omega_using [hd]) (by omega_using [he])
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Lay.wSub (by decide))
+    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Lay.wSub (by omega))
     · exact st_off 16 16 (by decide) (by omega_using [hd'])
     · exact st_off 32 16 (by decide) (by omega_using [hd'])
-    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Lay.wSub (by decide))
+    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Lay.wSub (by omega))
   refine WP.mono (aad_run v hs hx) fun s' ⟨_, habs, hf⟩ => ?_
   refine Proof.Gcm.streamRepr_iff.mpr ⟨?_, ?_, ?_⟩
   · rw [← hj]
@@ -359,7 +359,8 @@ theorem init1_ok {Wn : Nat} {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W :
     (hLn : (s.gpr .x1).toNat = L) (hCtx : s.gpr .x2 = Ctx) (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩])
     (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, Wn⟩]) (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩)
     (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, Wn⟩) (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, Wn⟩)
-    (hL : L = 16 ∨ L = 24 ∨ L = 32) :
+    (hL : L = 16 ∨ L = 24 ∨ L = 32) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide)
+    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
     WP isa (.block initSeg1) s fun s₂ => KeyCall s₂ K Ctx (W + BitVec.ofNat 64 512) L ∧ s₂.gpr .x19 = W ∧
       s₂.gpr .x21 = Ctx ∧ s₂.gpr .x22 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) ∧ s₂.sp = s.sp ∧
       s₂.rd = s.rd ∧ s₂.wr = s.wr := by
@@ -388,10 +389,10 @@ theorem init1_ok {Wn : Nat} {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W :
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩)
   have rd₂' : s₂.rd = s.rd := rd₂.trans rd₁
   have wr₂' : s₂.wr = s.wr := wr₂.trans wr₁
-  have pS : Covers [⟨W + BitVec.ofNat 64 512, 512⟩] s.wr := covers_off pW (by decide) (by decide)
+  have pS : Covers [⟨W + BitVec.ofNat 64 512, 512⟩] s.wr := covers_off pW (by omega) (by omega)
   refine ⟨⟨x0₂, x1₂, x2₂, x3₂, hL, d_kc.sub_right (Region.sub_prefix (by decide)),
-      d_ks.sub_right (Lay.wSub (by decide)), (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right
-        (Lay.wSub (by decide)), ?_, ?_⟩, x19₂, x21₂, x22₂, by rw [sp₂, sp₁], rd₂', wr₂'⟩
+      d_ks.sub_right (Lay.wSub (by omega)), (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right
+        (Lay.wSub (by omega)), ?_, ?_⟩, x19₂, x21₂, x22₂, by rw [sp₂, sp₁], rd₂', wr₂'⟩
   · rw [rd₂', wr₂', hrd]
     exact covers_cons (covers_of_mem (List.mem_append_left _ (List.mem_singleton_self _)))
       (covers_left (covers_cons (covers_prefix pC (by decide)) pS))
@@ -401,14 +402,14 @@ theorem init1_ok {Wn : Nat} {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W :
 theorem init2_ok {Wn : Nat} {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = Ctx)
     (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR' : R = 10 ∨ R = 12 ∨ R = 14)
     (pC : Covers [⟨Ctx, 256⟩] s.wr) (pW : Covers [⟨W, Wn⟩] s.wr) (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩)
-    (wc : Ctx.toNat + 256 ≤ 2 ^ 64) :
+    (wc : Ctx.toNat + 256 ≤ 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.block initSeg2) s fun s₄ =>
       CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 (Wn - 512) ∧
       s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = s.sp := by
   have w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
   have w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
-  have w₃ := in_off pW (show 96 + 8 ≤ 512 by decide) (by decide)
-  have w₄ := in_off pW (show 104 + 8 ≤ 512 by decide) (by decide)
+  have w₃ := in_off pW (show 96 + 8 ≤ Wn by omega) (by omega)
+  have w₄ := in_off pW (show 104 + 8 ≤ Wn by omega) (by omega)
   obtain ⟨s₄, run₄, x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, og₄, sp₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa initSeg2 s = some s₄ ∧
       s₄.gpr .x0 = Ctx ∧ s₄.gpr .x1 = BitVec.ofNat 64 R ∧ s₄.gpr .x2 = W + BitVec.ofNat 64 96 ∧
       s₄.gpr .x3 = Ctx + BitVec.ofNat 64 240 ∧ s₄.gpr .x4 = BitVec.ofNat 64 1 ∧
@@ -432,16 +433,16 @@ theorem init2_ok {Wn : Nat} {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x
   have pW' : Covers [⟨W, Wn⟩] s₄.wr := by rw [wr₄]; exact pW
   refine ⟨x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, hR', ?_, by decide, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_using [wc]
-  · simpa using dCW 0 240 (by decide) 96 16 (by decide)
-  · simpa using dCW 0 240 (by decide) 512 (Wn - 512) (by decide)
-  · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
-  · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
-  · exact dCW 240 16 (by decide) 512 (Wn - 512) (by decide)
+  · simpa using dCW 0 240 (by decide) 96 16 (by omega)
+  · simpa using dCW 0 240 (by decide) 512 (Wn - 512) (by omega)
+  · exact (dCW 240 16 (by decide) 96 16 (by omega)).symm
+  · exact Offset.disjoint W (.inl (by decide)) (by decide) (by omega)
+  · exact dCW 240 16 (by decide) 512 (Wn - 512) (by omega)
   · exact covers_cons (covers_left (covers_prefix pC' (by decide))) (covers_cons
-      (covers_left (covers_off pW' (by decide) (by decide))) (covers_cons
-      (covers_left (covers_off pC' (by decide) (by decide))) (covers_left (covers_off pW' (by decide) (by decide)))))
-  · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_cons (covers_off pC' (by decide) (by decide))
-      (covers_off pW' (by decide) (by decide)))
+      (covers_left (covers_off pW' (by omega) (by omega))) (covers_cons
+      (covers_left (covers_off pC' (by decide) (by decide))) (covers_left (covers_off pW' (by omega) (by omega)))))
+  · exact covers_cons (covers_off pW' (by omega) (by omega)) (covers_cons (covers_off pC' (by decide) (by decide))
+      (covers_off pW' (by omega) (by omega)))
 
 /-- Key setup up to the hash subkey, then `fin`, which the taint analysis
 checks with `x19` (the working space) and `x21` (the context) public. -/
@@ -451,7 +452,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
       (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧
       (⟨s.gpr .x2, cl⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧ (s.gpr .x2).toNat + 256 ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 16 ∨ (s.gpr .x1).toNat = 24 ∨ (s.gpr .x1).toNat = 32))
-    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
     ConstantTime isa pre (initAArch64 Wn).pub (initWith v.callees fin) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
@@ -497,7 +499,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
     (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
       e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) hT
 
-theorem init_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (initAArch64 Wn).pre (initAArch64 Wn).pub (init v.callees) :=
+theorem init_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) : ConstantTime isa (initAArch64 Wn).pre (initAArch64 Wn).pub (init v.callees) :=
   initWith_ct v _ (Nat.le_refl _) (fun s h => by
       simp only [initAArch64] at h
       obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, -, hL⟩ := h
@@ -579,7 +582,8 @@ theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true
 
 /-! ## Correctness -/
 
-theorem init_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem init_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
     ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ (initAArch64 Wn).post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
@@ -591,27 +595,27 @@ theorem streamAad_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamAadA
     ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ (streamAadAArch64 Wn).post s s' :=
   WP.withPreservedV (streamAad_wp v hs) (streamAad_keepsV v)
 
-theorem streamEncrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamEncrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamEncryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamEncrypt_wp v hs) (streamEncrypt_keepsV v)
 
-theorem streamDecrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamDecrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamDecryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamDecrypt_wp v hs) (streamDecrypt_keepsV v)
 
-theorem streamFinish_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamFinish_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ (streamFinishAArch64 Wn).post s s' :=
   WP.withPreservedV (streamFinish_wp v hs) (streamFinish_keepsV v)
 
-theorem streamVerify_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamVerify_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ (streamVerifyAArch64 Wn).post s s' :=
   WP.withPreservedV (streamVerify_wp v hs) (streamVerify_keepsV v)
 
-theorem seal_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem seal_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem open_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ (openAArch64 Wn).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 
@@ -687,42 +691,42 @@ def openSat : State where
 
 theorem init_verified (v : GcmImpl) :
     Verified AArch64.target (init v.callees) (Proof.AesGcm.initScratchContract AArch64.abi) :=
-  Verified.of_correct (init_correct v) (init_ct v) (by
+  Verified.of_correct (init_correct (Wn := 2560) v) (init_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, initAArch64, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [initSat] using initSat)
 
 theorem streamInit_verified (v : GcmImpl) :
     Verified AArch64.target (streamInit v.callees) (Proof.AesGcm.streamInitScratchContract AArch64.abi) :=
-  Verified.of_correct (streamInit_correct v) (streamInit_ct v) (by
+  Verified.of_correct (streamInit_correct (Wn := 2560) v) (streamInit_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, streamInitAArch64, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamInitSat] using streamInitSat)
 
 theorem streamAad_verified (v : GcmImpl) :
     Verified AArch64.target (streamAad v.callees) (Proof.AesGcm.streamAadScratchContract AArch64.abi) :=
-  Verified.of_correct (streamAad_correct v) (streamAad_ct v) (by
+  Verified.of_correct (streamAad_correct (Wn := 2560) v) (streamAad_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, streamAadAArch64, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamAadSat] using streamAadSat)
 
 theorem streamEncrypt_verified (v : GcmImpl) :
     Verified AArch64.target (streamEncrypt v.callees) (Proof.AesGcm.streamEncryptScratchContract AArch64.abi) :=
-  Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
+  Verified.of_correct (streamEncrypt_correct (Wn := 2560) v) (streamEncrypt_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified (v : GcmImpl) :
     Verified AArch64.target (streamDecrypt v.callees) (Proof.AesGcm.streamDecryptScratchContract AArch64.abi) :=
-  Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
+  Verified.of_correct (streamDecrypt_correct (Wn := 2560) v) (streamDecrypt_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified (v : GcmImpl) :
     Verified AArch64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishScratchContract AArch64.abi) :=
-  Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
+  Verified.of_correct (streamFinish_correct (Wn := 2560) v) (streamFinish_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
       Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
@@ -730,7 +734,7 @@ theorem streamFinish_verified (v : GcmImpl) :
 
 theorem streamVerify_verified (v : GcmImpl) :
     Verified AArch64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyScratchContract AArch64.abi) :=
-  Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
+  Verified.of_correct (streamVerify_correct (Wn := 2560) v) (streamVerify_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
       Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyAArch64, verPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
@@ -738,7 +742,7 @@ theorem streamVerify_verified (v : GcmImpl) :
 
 theorem seal_verified (v : GcmImpl) :
     Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (seal_correct v) (seal_ct v) (by
+  Verified.of_correct (seal_correct (Wn := 2560) v) (seal_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
@@ -746,7 +750,7 @@ theorem seal_verified (v : GcmImpl) :
 
 theorem open_verified (v : GcmImpl) :
     Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi) :=
-  Verified.of_correct (open_correct v) (open_ct v) (by
+  Verified.of_correct (open_correct (Wn := 2560) v) (open_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
       Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
