@@ -1,0 +1,5 @@
+name = "ECDH brainpoolP320r1"
+family = "Key agreement"
+specs = ["Weierstrass", "BrainpoolP320r1", "EcKey", "Ecdh"]
+modules = ["src/ec/ecdh/brainpoolp320r1.rs"]
+asm = ["ecdh_brainpoolp320r1", "ec_brainpoolp320r1"]
