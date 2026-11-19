@@ -223,6 +223,35 @@ theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Proof.AesGcm.sealRoun
     | omega
     | exact Region.Disjoint.symm ‹_›
 
+/-- The 784 bytes below the stack pointer, within the 2576 that `callPre`
+leaves to the call. -/
+theorem stk784_sub (sp : Addr) :
+    Region.Sub ⟨sp - BitVec.ofNat 64 784, 784⟩ ⟨sp - BitVec.ofNat 64 2576, 2576⟩ := by
+  have e : sp - BitVec.ofNat 64 784 = sp - BitVec.ofNat 64 2576 + BitVec.ofNat 64 1792 := by
+    rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]; congr 1
+  rw [e]; exact Offset.sub_base _ (by decide)
+
+/-- `sealSpec_pre`, for an implementation whose frames use only 784 bytes
+of stack. -/
+theorem sealSpec_pre784 {s : State} (h : callPre .plain s) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pre s := by
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
+  have a₂₅ := h
+  clear h
+  have hsub := stk784_sub s.sp
+  sig_pre [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | trivial
+    | omega
+    | exact Region.Disjoint.symm ‹_›
+    | exact (Region.Disjoint.sub_left ‹_› hsub)
+    | exact (Region.Disjoint.sub_left ‹_› hsub).symm
+
 theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).post s s')
     (hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) :
     encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
@@ -256,6 +285,41 @@ def SealFn.plain (fn : Impl.AesGcm.AArch64.Fn)
   pre _ h _ := sealSpec_pre h
   post _ _ h hR := sealSpec_post h hR
   pub _ _ h := sealSpec_pub h
+
+
+theorem sealSpec_post784 {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch64.abi 784).post s s')
+    (hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14) :
+    encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
+        (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
+        (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
+      (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
+  sig_post [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Proof.AesGcm.sealRoundsPost, AArch64.abi, AArch64.argRegs,
+    stackArgs_one, List.append_eq, List.range, List.range.loop] at h
+  exact h hR
+
+theorem sealSpec_pub784 {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+    s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
+    s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pub s₁ s₂ := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
+  sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
+  sig_and_intros
+  all_goals first | with_reducible assumption | trivial
+
+/-- `SealFn.plain`, for an implementation whose frames use only 784 bytes of
+stack (`sealSpec_pre784`). -/
+def SealFn.plain784 (fn : Impl.AesGcm.AArch64.Fn)
+    (verified : Verified AArch64.target fn.code (Proof.AesGcm.sealRoundsContract AArch64.abi 784))
+    (depth : 16 * fn.code.aarch64Depth ≤ 2576) : SealFn .plain where
+  fn := fn
+  k := Proof.AesGcm.sealRoundsContract AArch64.abi 784
+  verified := verified
+  depth := depth
+  pre _ h _ := sealSpec_pre784 h
+  post _ _ h hR := sealSpec_post784 h hR
+  pub _ _ h := sealSpec_pub784 h
 
 end VG.Proof.AesGcm.AArch64.Gather
 

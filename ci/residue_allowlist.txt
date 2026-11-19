@@ -28,12 +28,6 @@ aarch64 vg_aes_gcm_open_with_powers
 aarch64 vg_aes_gcm_open_with_powers_aes
 aarch64 vg_aes_gcm_open_with_powers_aes_sha3
 aarch64 vg_aes_gcm_open_with_powers_neon
-aarch64 vg_aes_gcm_seal
-aarch64 vg_aes_gcm_seal_aes
-aarch64 vg_aes_gcm_seal_gather
-aarch64 vg_aes_gcm_seal_gather_aes
-aarch64 vg_aes_gcm_seal_gather_neon
-aarch64 vg_aes_gcm_seal_neon
 aarch64 vg_aes_gcm_seal_with_powers
 aarch64 vg_aes_gcm_seal_with_powers_aes
 aarch64 vg_aes_gcm_seal_with_powers_aes_sha3

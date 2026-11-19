@@ -71,10 +71,6 @@ open VG.Proof.AesGcm.AArch64
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.sealApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
-    verified := .unscrubbed (Proof.AesGcm.seal_keyed (sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)) },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
@@ -102,16 +98,26 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
       (Impl.AesGcm.AArch64.streamVerify v.callees)
     verified := .unscrubbed (Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)) }]
 
-/-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
-def artifactsGather (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.sealGatherApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.AesGcm.AArch64.SealGather.sealGather (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
-    verified := .unscrubbed (Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))) }]
+/-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the variant `g`. -/
+def artifactsGather (g : GcmVariant) (hg : g ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact := [
+  Spec.Gcm.sealGatherApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.AesGcm.AArch64.SealGather.sealGather
+      (Proof.AesGcm.AArch64.Scrub.sealFnW g hg Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
+    verified := Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified
+      (Proof.AesGcm.AArch64.Scrub.sealFnW g hg Proof.Gcm.AArch64.Pmull.mulV_keyV)) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.sealGatherOk _)
+    (Proof.AesGcm.AArch64.Scrub.sealGatherSide g hg Proof.Gcm.AArch64.Pmull.mulV_keyV))]
 
-/-- `vg_aes_gcm_init`, `vg_aes_gcm_open` and `vg_aes_gcm_open_to` of the
+/-- `vg_aes_gcm_seal`, `vg_aes_gcm_init`, `vg_aes_gcm_open` and `vg_aes_gcm_open_to` of the
 variant `g`, in frames sized to its implementations, zeroed whole on return. -/
 def artifactsScrubbed (g : GcmVariant) (hg : g ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact := [
+  Spec.Gcm.sealApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 16) 1 (sealCode g.impl)
+    verified := Proof.AesGcm.seal_keyed (sealCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.sealOk _)
+    (Proof.AesGcm.AArch64.Scrub.sealSide g hg)),
   Spec.Gcm.initApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := g.impl.suffix
     code := Impl.StackScratch.AArch64.withStackScratch (gcmInitWn g.impl) .x3 (Impl.AesGcm.AArch64.init g.impl.callees)
@@ -171,7 +177,7 @@ do not use the stitched loops only for the variant without them, of which
 the variant with them would be the same functions. -/
 def artifactsFor (v : GcmVariant) (hv : v ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact :=
   (if v.stitch then [] else
-    artifactsScrubbed v hv ++ artifactsOf v.impl ++ artifactsGather v.impl) ++
+    artifactsScrubbed v hv ++ artifactsOf v.impl ++ artifactsGather v hv) ++
     (v.impl.gh.withPowers.map (withPowersArtifacts v.impl)).getD
       (if v.stitch then [] else basePwArtifacts v.impl)
 

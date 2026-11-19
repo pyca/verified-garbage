@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
+public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
@@ -1284,7 +1287,7 @@ end VG.Proof.Gcm.AArch64.Stitch
 namespace VG.Proof.AesGcm.AArch64.Scrub
 
 open VG.AArch64 VG.AArch64.ScrubAll
-open VG.Proof.AesGcm.AArch64 (GcmImpl GcmVariant gcmWn gcmInitWn gcmInitWn_cases openCode openToCode)
+open VG.Proof.AesGcm.AArch64 (GcmImpl GcmVariant gcmWn gcmInitWn gcmInitWn_cases gcmWn_cases openCode openToCode sealCode sealCode_framedW)
 
 /-- `initOk` at `gcmInitWn v`. -/
 theorem initOkW (v : GcmImpl) :
@@ -1319,6 +1322,67 @@ theorem openToSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.va
   have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
       scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 48) 4 (openToCode g.impl))
         (gcmWn g.impl + 48) (Spec.Gcm.openToSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `seal`. -/
+theorem sealSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 16) 1 (sealCode g.impl))
+      (gcmWn g.impl + 16) (Spec.Gcm.sealSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 16) 1 (sealCode g.impl))
+        (gcmWn g.impl + 16) (Spec.Gcm.sealSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- The code of `vg_aes_gcm_seal` of the variant `g` as it is registered
+(`ScrubAll.scrubAllOf`): in its frame, then its registers cleared and its
+stack zeroed. -/
+def sealScrubbed (g : GcmVariant) : Prog isa :=
+  Impl.Residue.AArch64.scrubAll (gcmWn g.impl + 16) (Spec.Gcm.sealSig.retBits abi.ptrBits) clear
+    (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn g.impl + 16) 1 (sealCode g.impl))
+
+/-- Its frames, the scrub's included, use at most the 2576 bytes that
+`vg_aes_gcm_seal_gather` leaves to its call. -/
+theorem sealScrubbed_depth (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    16 * (sealScrubbed g).aarch64Depth ≤ 2576 := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      decide (16 * (sealScrubbed g).aarch64Depth ≤ 2576)) = true := by lit_decide
+  exact of_decide_eq_true (List.all_eq_true.mp h g hg)
+
+/-- The scrubbed code of `seal`, against the contract its frame is proved
+with, which `vg_aes_gcm_seal_gather`'s proof uses. -/
+theorem sealScrubbed_verified (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants)
+    (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    Verified AArch64.target (sealScrubbed g) (Proof.AesGcm.sealRoundsContract AArch64.abi (gcmWn g.impl + 16)) :=
+  Verified.scrubAllOfV (sealCode_framedW g.impl hMK) (sealRoundsOk _) (sealSide g hg)
+
+/-- The instance of `seal` that `seal_gather` calls: the scrubbed code
+registered as `vg_aes_gcm_seal` of `g`. -/
+def sealFnW (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants)
+    (hMK : Proof.Gcm.AArch64.Pmull.MulKey) : Proof.AesGcm.AArch64.Gather.SealFn .plain :=
+  if h : gcmWn g.impl = 768 then
+    .plain784 ⟨Spec.Gcm.sealApi.name ++ g.impl.suffix, sealScrubbed g⟩
+      (by have := sealScrubbed_verified g hg hMK; rw [h] at this; exact this) (sealScrubbed_depth g hg)
+  else
+    .plain ⟨Spec.Gcm.sealApi.name ++ g.impl.suffix, sealScrubbed g⟩
+      (by
+        have := sealScrubbed_verified g hg hMK
+        rw [(gcmWn_cases g.impl).resolve_left h] at this; exact this)
+      (sealScrubbed_depth g hg)
+
+theorem sealFnW_fn (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants)
+    (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    (sealFnW g hg hMK).fn = ⟨Spec.Gcm.sealApi.name ++ g.impl.suffix, sealScrubbed g⟩ := by
+  unfold sealFnW; split <;> rfl
+
+/-- `initSide`, for `seal_gather`, which calls the scrubbed `seal`. -/
+theorem sealGatherSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants)
+    (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    scrubSide (Impl.AesGcm.AArch64.SealGather.sealGather (sealFnW g hg hMK).fn) 2592
+      (Spec.Gcm.sealGatherSig.retBits abi.ptrBits) clear [] = true := by
+  rw [sealFnW_fn]
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.AesGcm.AArch64.SealGather.sealGather ⟨Spec.Gcm.sealApi.name ++ g.impl.suffix, sealScrubbed g⟩)
+        2592 (Spec.Gcm.sealGatherSig.retBits abi.ptrBits) clear []) = true := by lit_decide
   exact List.all_eq_true.mp h g hg
 
 end VG.Proof.AesGcm.AArch64.Scrub

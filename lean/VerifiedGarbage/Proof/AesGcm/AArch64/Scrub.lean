@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Scratch
@@ -62,6 +63,64 @@ theorem initOk (stack : Nat) (hW : 0 < stack) :
       · rw [show (ctx + 240 : BitVec 64) = ctx + BitVec.ofNat 64 240 from rfl,
           bytesAt_of hb.2 (d := 240) (n := 16) (by decide)]
         exact h₂
+
+theorem sealOk (stack : Nat) :
+    ScrubAllOk (Spec.Gcm.sealContract abi stack) stack (Spec.Gcm.sealSig.retBits abi.ptrBits) := by
+  refine scrubAllOk_args_any (sig := Spec.Gcm.sealSig) ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [ctx, rounds, nonce, nonceLen, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.Gcm.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Spec.Gcm.sealPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Spec.Gcm.sealPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.Gcm.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    simp only [BitVec.setWidth_eq] at h ⊢
+    rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by omega)]
+    exact h
+
+theorem sealRoundsOk (stack : Nat) :
+    ScrubAllOk (Proof.AesGcm.sealRoundsContract abi stack) stack (Spec.Gcm.sealSig.retBits abi.ptrBits) := by
+  refine scrubAllOk_args_any (sig := Spec.Gcm.sealSig) ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [ctx, rounds, nonce, nonceLen, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.Gcm.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Proof.AesGcm.sealRoundsPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Proof.AesGcm.sealRoundsPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Proof.AesGcm.sealRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    simp only [BitVec.setWidth_eq] at h ⊢
+    rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by omega)]
+    exact h
+
+theorem sealGatherOk (stack : Nat) :
+    ScrubAllOk (Spec.Gcm.sealGatherContract abi stack) stack (Spec.Gcm.sealGatherSig.retBits abi.ptrBits) := by
+  refine scrubAllOk_args_any (sig := Spec.Gcm.sealGatherSig) ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [ctx, rounds, nonce, nonceLen, aad, aadLen, src, srcCount, dst, len, tag], _ =>
+    simp only [Spec.Gcm.sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Spec.Gcm.sealGatherPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
+      (Spec.Gcm.sealGatherPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.Gcm.sealGatherPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    simp only [BitVec.setWidth_eq] at h ⊢
+    intro key hk hl
+    rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by omega)]
+    exact h key hk hl
 
 theorem openOk (stack : Nat) :
     ScrubAllOk (Spec.Gcm.openContract abi stack) stack (Spec.Gcm.openSig.retBits abi.ptrBits) := by
