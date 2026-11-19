@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
@@ -97,6 +98,10 @@ structure Compress where
   noDit : code.all (fun i => !i.touchesDit) = true
   suffix : String
   features : List String
+  /-- The registers `code` writes: a caller's tail clears them with its own
+  (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this to the
+  code. -/
+  clear : Impl.Residue.AArch64.Clear
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
     (updK (P := Stream.params) md).pub (update Stream.params name code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
