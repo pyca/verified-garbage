@@ -141,17 +141,17 @@ def p521Prime : Nat := 2 ^ 521 - 1
 /-- P-521's field, on its eighteen 32-bit words. -/
 def p521RedEnabled (M : Mod) (m : Nat) : Bool := M.n == 9 && m == p521Prime
 
+/-- `edx:ecx = 2^9 ecx`, through `eax`. -/
+def shift9 : List Instr := [.mov .eax (.reg .ecx), .mov .edx (.imm 512), .mul .edx, .mov .ecx (.reg .eax)]
+
 /-- `T + q p` for `p = 2^521 - 1` and `q` (in `ecx`) the low word of the
-window `T` at `[ebp + acc]`: the low word cleared (minus `q`), and
-`q 2^9` added at word 16 (`2^521 = 2^9 2^512`), its carry through words 17
-to 19. -/
+window `T` at `[ebp + acc]`, of twenty words: the low word cleared (minus
+`q`), and `q 2^9` added at word 16 (`2^521 = 2^9 2^512`), its low word and
+then its high word (`shift9`), the carry through words 18 and 19. -/
 def p521Red (acc : Nat) : List Instr :=
-  [.mov .eax (.imm 0), .store (bp acc) .eax,
-   .mov .eax (.reg .ecx), .mov .edx (.imm 512), .mul .edx,
-   .alu .add .eax (.mem (bp (acc + 64))), .store (bp (acc + 64)) .eax,
-   .alu .adc .edx (.mem (bp (acc + 68))), .store (bp (acc + 68)) .edx,
-   .mov .eax (.mem (bp (acc + 72))), .alu .adc .eax (.imm 0), .store (bp (acc + 72)) .eax,
-   .mov .eax (.mem (bp (acc + 76))), .alu .adc .eax (.imm 0), .store (bp (acc + 76)) .eax]
+  ([.mov .eax (.imm 0), .store (bp acc) .eax] : List Instr) ++ shift9 ++
+    sparseStep acc 16 .add true ++ ([.mov .ecx (.reg .edx)] : List Instr) ++
+    sparseStep acc 17 .adc true ++ sparseStep acc 18 .adc false ++ sparseStep acc 19 .adc false
 
 /-- The window `+= q m`, `q` in `ecx`: P-256's sparse identity when certified,
 P-521's shift, else a row of the modulus's words. -/
