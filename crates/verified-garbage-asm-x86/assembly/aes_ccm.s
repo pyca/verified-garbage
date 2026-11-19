@@ -1090,13 +1090,31 @@ vg_aes_ccm_open_aesni:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+176]
 	mov edi, DWORD PTR [ebp+168]
+	cmp ecx, 4
+	jb 229f
+231:
+	mov edx, DWORD PTR [edi]
+	and edx, ebx
+	mov DWORD PTR [edi], edx
+	add edi, 4
+	sub ecx, 4
+	cmp ecx, 4
+	jae 231b
+	jmp 230f
 229:
+230:
+	test ecx, ecx
+	je 232f
+234:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 229b
+	jne 234b
+	jmp 233f
+232:
+233:
 	jmp 228f
 227:
 228:
@@ -2195,13 +2213,31 @@ vg_aes_ccm_open:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+176]
 	mov edi, DWORD PTR [ebp+168]
+	cmp ecx, 4
+	jb 229f
+231:
+	mov edx, DWORD PTR [edi]
+	and edx, ebx
+	mov DWORD PTR [edi], edx
+	add edi, 4
+	sub ecx, 4
+	cmp ecx, 4
+	jae 231b
+	jmp 230f
 229:
+230:
+	test ecx, ecx
+	je 232f
+234:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 229b
+	jne 234b
+	jmp 233f
+232:
+233:
 	jmp 228f
 227:
 228:
