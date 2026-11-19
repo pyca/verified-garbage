@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlKem.RISCV64.CallWipe
 public import VerifiedGarbage.Proof.MlKem.RISCV64.CheckEk
@@ -11,7 +12,7 @@ public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CheckEk
 
 Key generation, encapsulation (with `H(ek)` given or not), decapsulation and
 the encapsulation key check, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and
 the stack their frames used (1200 bytes, `Wipe.*_verified`). Their postconditions read the memory on return only
 within their buffers: the outputs, and `scratch`, which each leaves scrubbed
 (`Proof/MlKem/Scrubbed.lean`). The proofs are PPC64LE's
@@ -168,43 +169,43 @@ theorem checkEk1024Out (stack : Nat) :
     exact h
 
 def keyGenReg : Registration Spec.MlKem.keyGenApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.keyGen, verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.keyGen, verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified }
     (by exact keyGenOut _)
 
 def encapsReg : Registration Spec.MlKem.encapsApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.encaps, verified := Proof.MlKem.RISCV64.Wipe.encaps_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.encaps, verified := Proof.MlKem.RISCV64.Wipe.encaps_verified }
     (by exact encapsOut _)
 
 def encapsHReg : Registration Spec.MlKem.encapsHApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.encapsH, verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.encapsH, verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified }
     (by exact encapsHOut _)
 
 def decapsReg : Registration Spec.MlKem.decapsApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.decaps, verified := Proof.MlKem.RISCV64.Wipe.decaps_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.decaps, verified := Proof.MlKem.RISCV64.Wipe.decaps_verified }
     (by exact decapsOut _)
 
 def checkEkReg : Registration Spec.MlKem.checkEkApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.checkEk, verified := Proof.MlKem.RISCV64.CheckEk.verified }
+  scrubOf { code := Impl.MlKem.RISCV64.checkEk, verified := Proof.MlKem.RISCV64.CheckEk.verified }
     (by exact checkEkOut _)
 
 def checkEk1024Reg : Registration Spec.MlKem1024.checkEkApi RISCV64.target :=
-  withScrub { code := Impl.MlKem1024.RISCV64.checkEk1024, verified := Proof.MlKem1024.RISCV64.CheckEk.verified }
+  scrubOf { code := Impl.MlKem1024.RISCV64.checkEk1024, verified := Proof.MlKem1024.RISCV64.CheckEk.verified }
     (by exact checkEk1024Out _)
 
 def keyGen1024Reg : Registration Spec.MlKem1024.keyGenApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.keyGen1024, verified := Proof.MlKem.RISCV64.Wipe.keyGen1024_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.keyGen1024, verified := Proof.MlKem.RISCV64.Wipe.keyGen1024_verified }
     (by exact keyGen1024Out _)
 
 def encaps1024Reg : Registration Spec.MlKem1024.encapsApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.encaps1024, verified := Proof.MlKem.RISCV64.Wipe.encaps1024_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.encaps1024, verified := Proof.MlKem.RISCV64.Wipe.encaps1024_verified }
     (by exact encaps1024Out _)
 
 def encapsH1024Reg : Registration Spec.MlKem1024.encapsHApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.encapsH1024, verified := Proof.MlKem.RISCV64.Wipe.encapsH1024_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.encapsH1024, verified := Proof.MlKem.RISCV64.Wipe.encapsH1024_verified }
     (by exact encapsH1024Out _)
 
 def decaps1024Reg : Registration Spec.MlKem1024.decapsApi RISCV64.target :=
-  withScrub { code := Impl.MlKem.RISCV64.Wipe.decaps1024, verified := Proof.MlKem.RISCV64.Wipe.decaps1024_verified }
+  scrubOf { code := Impl.MlKem.RISCV64.Wipe.decaps1024, verified := Proof.MlKem.RISCV64.Wipe.decaps1024_verified }
     (by exact decaps1024Out _)
 
 end VG.Proof.MlKem.RISCV64.Scrub

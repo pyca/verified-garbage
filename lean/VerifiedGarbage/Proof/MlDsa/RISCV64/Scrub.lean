@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.PkTr
@@ -20,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 Key generation, `pk_tr`, the preparation of keys, signing and verification
 (of a message representative or of a message, with a key or a prepared key),
 each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
 caller-saved registers and the stack their frames used (1072 to 1184
 bytes). The postconditions of all but verification read the memory on return
 only within their outputs, and those of verification not at all
@@ -224,73 +225,73 @@ end
 /-! ## The registrations -/
 
 def keyGen44Reg : Registration Spec.MlDsa.keyGen44Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.KeyGen.keyGen44
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen44_verified }
     (by exact keyGenOut mlDsa44 _)
 
 def keyGen65Reg : Registration Spec.MlDsa.keyGen65Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.KeyGen.keyGen65
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen65_verified }
     (by exact keyGenOut mlDsa65 _)
 
 def keyGen87Reg : Registration Spec.MlDsa.keyGen87Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.KeyGen.keyGen87
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen87_verified }
     (by exact keyGenOut mlDsa87 _)
 
 def pkTr44Reg : Registration Spec.MlDsa.pkTr44Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa44
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr44_verified }
     (by exact pkTrOut mlDsa44 _)
 
 def pkTr65Reg : Registration Spec.MlDsa.pkTr65Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa65
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr65_verified }
     (by exact pkTrOut mlDsa65 _)
 
 def pkTr87Reg : Registration Spec.MlDsa.pkTr87Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa87
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr87_verified }
     (by exact pkTrOut mlDsa87 _)
 
 def preparePublic44Reg : Registration (preparePublicKeyApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa44
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic44_verified }
     (by exact pubOut _ (.inl rfl))
 
 def prepareSecret44Reg : Registration (prepareSecretKeyApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa44
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret44_verified }
     (by exact secOut _ (.inl rfl))
 
 def preparePublic65Reg : Registration (preparePublicKeyApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa65
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic65_verified }
     (by exact pubOut _ (.inr (.inl rfl)))
 
 def prepareSecret65Reg : Registration (prepareSecretKeyApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa65
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret65_verified }
     (by exact secOut _ (.inr (.inl rfl)))
 
 def preparePublic87Reg : Registration (preparePublicKeyApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa87
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic87_verified }
     (by exact pubOut _ (.inr (.inr rfl)))
 
 def prepareSecret87Reg : Registration (prepareSecretKeyApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa87
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret87_verified }
     (by exact secOut _ (.inr (.inr rfl)))
@@ -298,31 +299,31 @@ def prepareSecret87Reg : Registration (prepareSecretKeyApi mlDsa87 "mldsa87" "ML
 /-! ## Signing and verification -/
 
 def sign44Reg : Registration Spec.MlDsa.sign44Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign44
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign44_verified }
     (by exact signOut mlDsa44 _)
 
 def signPrepared44Reg : Registration (preparedSignApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign44E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared44_verified }
     (by exact preparedSignOut mlDsa44 _)
 
 def verify44Reg : Registration Spec.MlDsa.verify44Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify44
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify44_verified }
     (by exact verifyOut mlDsa44 _)
 
 def verifyPrepared44Reg : Registration (preparedVerifyApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify44E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared44_verified }
     (by exact preparedVerifyOut mlDsa44 _)
 
 def signMessage44Reg : Registration Spec.MlDsa.signMessage44Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign44Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign44 mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.signMessage44_verified }
@@ -330,7 +331,7 @@ def signMessage44Reg : Registration Spec.MlDsa.signMessage44Api RISCV64.target :
 
 def preparedSignMessage44Reg :
     Registration (preparedSignMessageApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign44E true) mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared44_verified }
@@ -338,7 +339,7 @@ def preparedSignMessage44Reg :
 
 def verifyMessageCached44Reg :
     Registration (verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify44Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached44_verified }
@@ -346,38 +347,38 @@ def verifyMessageCached44Reg :
 
 def preparedVerifyMessage44Reg :
     Registration (preparedVerifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify44E true) mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared44_verified }
     (by exact preparedVerifyMessageOut mlDsa44 _)
 
 def sign65Reg : Registration Spec.MlDsa.sign65Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign65
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign65_verified }
     (by exact signOut mlDsa65 _)
 
 def signPrepared65Reg : Registration (preparedSignApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign65E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared65_verified }
     (by exact preparedSignOut mlDsa65 _)
 
 def verify65Reg : Registration Spec.MlDsa.verify65Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify65
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify65_verified }
     (by exact verifyOut mlDsa65 _)
 
 def verifyPrepared65Reg : Registration (preparedVerifyApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify65E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared65_verified }
     (by exact preparedVerifyOut mlDsa65 _)
 
 def signMessage65Reg : Registration Spec.MlDsa.signMessage65Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign65Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign65 mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.signMessage65_verified }
@@ -385,7 +386,7 @@ def signMessage65Reg : Registration Spec.MlDsa.signMessage65Api RISCV64.target :
 
 def preparedSignMessage65Reg :
     Registration (preparedSignMessageApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign65E true) mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared65_verified }
@@ -393,7 +394,7 @@ def preparedSignMessage65Reg :
 
 def verifyMessageCached65Reg :
     Registration (verifyMessageCachedApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify65Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached65_verified }
@@ -401,38 +402,38 @@ def verifyMessageCached65Reg :
 
 def preparedVerifyMessage65Reg :
     Registration (preparedVerifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify65E true) mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared65_verified }
     (by exact preparedVerifyMessageOut mlDsa65 _)
 
 def sign87Reg : Registration Spec.MlDsa.sign87Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign87
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign87_verified }
     (by exact signOut mlDsa87 _)
 
 def signPrepared87Reg : Registration (preparedSignApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Sign.sign87E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared87_verified }
     (by exact preparedSignOut mlDsa87 _)
 
 def verify87Reg : Registration Spec.MlDsa.verify87Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify87
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify87_verified }
     (by exact verifyOut mlDsa87 _)
 
 def verifyPrepared87Reg : Registration (preparedVerifyApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Verify.verify87E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared87_verified }
     (by exact preparedVerifyOut mlDsa87 _)
 
 def signMessage87Reg : Registration Spec.MlDsa.signMessage87Api RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign87Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign87 mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.signMessage87_verified }
@@ -440,7 +441,7 @@ def signMessage87Reg : Registration Spec.MlDsa.signMessage87Api RISCV64.target :
 
 def preparedSignMessage87Reg :
     Registration (preparedSignMessageApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign87E true) mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared87_verified }
@@ -448,7 +449,7 @@ def preparedSignMessage87Reg :
 
 def verifyMessageCached87Reg :
     Registration (verifyMessageCachedApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached87_verified }
@@ -456,7 +457,7 @@ def verifyMessageCached87Reg :
 
 def preparedVerifyMessage87Reg :
     Registration (preparedVerifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87") RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify87E true) mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared87_verified }
