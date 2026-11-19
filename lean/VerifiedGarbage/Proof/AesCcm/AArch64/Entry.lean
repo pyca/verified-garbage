@@ -28,11 +28,11 @@ namespace VG.Proof.AesCcm.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesCcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Impl.AesGcm.AArch64 (mov ptr imm save saved)
-open VG.Proof.AesGcm.AArch64 (savedMem savedR SavedAt save_ok readW_writeW_other savedMem_slot savedMem_frame
+open VG.Proof.AesGcm.AArch64 (savedMem savedR SavedAt save_ok save_ok256 covers_prefix readW_writeW_other savedMem_slot savedMem_frame
   covers_of_mem covers_left in_off)
 
-/-- The public values of the arguments of `s`. -/
-def cxOf (s : State) : Cx where
+/-- The public values of the arguments of `s`, with `384 + Nw` bytes of `work`. -/
+def cxOf (Nw : Nat) (hNw : Nw ≤ 2176) (s : State) : Cx where
   K := s.gpr .x0
   W := stackArg s 2
   D := s.gpr .x6
@@ -44,6 +44,8 @@ def cxOf (s : State) : Cx where
   nl := (s.gpr .x3).toNat
   SP := s.sp
   T := stackArg s 0
+  N := Nw
+  N_le := hNw
 
 /-- What `seal` and `open` are given: the public values `c`, and the nonce at
 `N`. -/
@@ -65,19 +67,19 @@ structure Args (c : Cx) (N : Addr) (s : State) : Prop where
   nonce : Buf c s N c.nl
   nd : (⟨N, c.nl⟩ : Region).Disjoint ⟨c.D, c.n⟩
   argsC : Covers [args s] (s.rd ++ s.wr)
-  argsW : (args s).Disjoint ⟨c.W, 2560⟩
+  argsW : (args s).Disjoint ⟨c.W, 384 + c.N⟩
   argsD : (args s).Disjoint ⟨c.D, c.n⟩
 
 theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
 /-- `Args` from the layout, with the buffers covered as each function's
 permissions say. -/
-theorem args_of_lay {s : State} (h : oneLay s)
+theorem args_of_lay {Nw : Nat} (hNw : Nw ≤ 2176) {s : State} (h : oneLay Nw s)
     (hk : Covers [⟨s.gpr .x0, 240⟩] (s.rd ++ s.wr)) (hN : Covers [⟨s.gpr .x2, (s.gpr .x3).toNat⟩] (s.rd ++ s.wr))
     (hA : Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr)) (ha : Covers [args s] (s.rd ++ s.wr))
     (hT : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr))
-    (hD : Covers [⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 2, 2560⟩] s.wr) :
-    Args (cxOf s) (s.gpr .x2) s := by
+    (hD : Covers [⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 2, 384 + Nw⟩] s.wr) :
+    Args (cxOf Nw hNw s) (s.gpr .x2) s := by
   obtain ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, b1, b2, b3, b4, b5, b6, _, hR, hv⟩ := h
   simp only [Spec.Ccm.valid, Spec.Ccm.tagLenOk, Spec.Ccm.nonceLenOk, Bool.and_eq_true, decide_eq_true_eq,
     beq_iff_eq] at hv
@@ -106,26 +108,26 @@ theorem args_of_lay {s : State} (h : oneLay s)
     argsD := d10.symm }
 
 /-- `seal`'s arguments, and its tag, to write. -/
-theorem args_of_seal {s : State} (h : sealPre s) :
-    Args (cxOf s) (s.gpr .x2) s ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] s.wr := by
+theorem args_of_seal {Nw : Nat} (hNw : Nw ≤ 2176) {s : State} (h : sealPre Nw s) :
+    Args (cxOf Nw hNw s) (s.gpr .x2) s ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] s.wr := by
   obtain ⟨hrd, hwr, hl⟩ := h
   have mrd : ∀ r ∈ [(⟨s.gpr .x0, 240⟩ : Region), ⟨s.gpr .x2, (s.gpr .x3).toNat⟩, ⟨s.gpr .x4, (s.gpr .x5).toNat⟩,
       args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
   have mwr : ∀ r ∈ [(⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region), ⟨stackArg s 0, (stackArg s 1).toNat⟩,
-      ⟨stackArg s 2, 2560⟩], Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
-  exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
+      ⟨stackArg s 2, 384 + Nw⟩], Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
+  exact ⟨args_of_lay hNw hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (covers_left (mwr _ (by simp))) (mwr _ (by simp)) (mwr _ (by simp)), mwr _ (by simp)⟩
 
 /-- `open`'s arguments, with its received tag, to read. -/
-theorem args_of_open {s : State} (h : openPre s) : Args (cxOf s) (s.gpr .x2) s := by
+theorem args_of_open {Nw : Nat} (hNw : Nw ≤ 2176) {s : State} (h : openPre Nw s) : Args (cxOf Nw hNw s) (s.gpr .x2) s := by
   obtain ⟨hrd, hwr, hl⟩ := h
   have mrd : ∀ r ∈ [(⟨s.gpr .x0, 240⟩ : Region), ⟨s.gpr .x2, (s.gpr .x3).toNat⟩, ⟨s.gpr .x4, (s.gpr .x5).toNat⟩,
       ⟨stackArg s 0, (stackArg s 1).toNat⟩, args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region), ⟨stackArg s 2, 2560⟩], Covers [r] s.wr :=
+  have mwr : ∀ r ∈ [(⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region), ⟨stackArg s 2, 384 + Nw⟩], Covers [r] s.wr :=
     fun r hr => covers_of_mem (by rw [hwr]; exact hr)
-  exact args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
+  exact args_of_lay hNw hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (mwr _ (by simp)) (mwr _ (by simp))
 
 /-! ## The entry -/
@@ -148,11 +150,11 @@ theorem entryMem_frame (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Frame [ent
   have c (d : Nat) (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 248) := entry_contains W h₁ h₂
   exact (((((savedMem_frame m W g).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩).writeW
-    (List.mem_singleton_self _) _ (c 216 (by decide) (by decide))).writeW
-    (List.mem_singleton_self _) _ (c 224 (by decide) (by decide))).writeW
-    (List.mem_singleton_self _) _ (c 232 (by decide) (by decide))).writeW
-    (List.mem_singleton_self _) _ (c 240 (by decide) (by decide))
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by first | decide | omega) (by first | decide | omega)⟩).writeW
+    (List.mem_singleton_self _) _ (c 216 (by first | decide | omega) (by first | decide | omega))).writeW
+    (List.mem_singleton_self _) _ (c 224 (by first | decide | omega) (by first | decide | omega))).writeW
+    (List.mem_singleton_self _) _ (c 232 (by first | decide | omega) (by first | decide | omega))).writeW
+    (List.mem_singleton_self _) _ (c 240 (by first | decide | omega) (by first | decide | omega))
 
 theorem entryMem_saved (m : Mem) (W : Addr) {g : Reg → BitVec 64} {s₀ : State}
     (hg : ∀ p ∈ saved, g p.1 = s₀.gpr p.1) : SavedAt (entryMem m W g) W s₀ := by
@@ -163,13 +165,13 @@ theorem entryMem_saved (m : Mem) (W : Addr) {g : Reg → BitVec 64} {s₀ : Stat
       rw [show W + BitVec.ofNat 64 d = (W + BitVec.ofNat 64 216) + BitVec.ofNat 64 (d - 216) from
         (Offset.add_add_eq W (by omega_using [h₁])).symm]
       exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
-    exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 216 (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (c 224 (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (c 232 (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (c 240 (by decide) (by decide))
+    exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 216 (by first | decide | omega) (by first | decide | omega))).writeW
+      (List.mem_singleton_self _) _ (c 224 (by first | decide | omega) (by first | decide | omega))).writeW
+      (List.mem_singleton_self _) _ (c 232 (by first | decide | omega) (by first | decide | omega))).writeW
+      (List.mem_singleton_self _) _ (c 240 (by first | decide | omega) (by first | decide | omega))
   · intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    exact Offset.disjoint W (.inl (by first | decide | omega)) (by first | decide | omega) (by first | decide | omega)
 
 theorem entryMem_slot (m : Mem) (W : Addr) (g : Reg → BitVec 64) :
     (entryMem m W g).readW (W + BitVec.ofNat 64 216) 64 = g .x4 ∧
@@ -180,7 +182,7 @@ theorem entryMem_slot (m : Mem) (W : Addr) (g : Reg → BitVec 64) :
   refine ⟨?_, ?_, ?_, ?_⟩ <;>
   repeat (first
     | rw [Mem.readW_writeW_self64]
-    | rw [readW_writeW_other _ _ _ (by decide) (by decide) (by decide)])
+    | rw [readW_writeW_other _ _ _ (by first | decide | omega) (by first | decide | omega) (by first | decide | omega)])
 
 /-- What the entry leaves. -/
 structure Entered (c : Cx) (N : Addr) (s s₁ : State) : Prop where
@@ -203,11 +205,11 @@ theorem ldr_ok {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
     have := Ar.argsC
     simpa [args, stackArgAddr] using this
   have a₀ : InRegions (s.rd ++ s.wr) s.sp 8 := by
-    simpa using in_off (d := 0) (n := 8) hA (by decide) (by decide)
+    simpa using in_off (d := 0) (n := 8) hA (by first | decide | omega) (by first | decide | omega)
   have a₈ : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 :=
-    in_off (d := 8) (n := 8) hA (by decide) (by decide)
+    in_off (d := 8) (n := 8) hA (by first | decide | omega) (by first | decide | omega)
   have a₁₆ : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 :=
-    in_off (d := 16) (n := 8) hA (by decide) (by decide)
+    in_off (d := 16) (n := 8) hA (by first | decide | omega) (by first | decide | omega)
   refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [a₀, a₈, a₁₆], rfl⟩ fun s₀ hs₀ => ?_
   subst hs₀
   refine ⟨?_, ?_, ?_, fun r h₁ h₂ h₃ => by simp [gpr_write, h₁, h₂, h₃], rfl, rfl, rfl, rfl⟩
@@ -223,16 +225,16 @@ theorem entry_ok {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
     WP isa (.block entry) s (Entered c N s) := by
   refine WP.block_append (WP.block_append (WP.mono (ldr_ok Ar) fun s₀ ⟨x9₀, x10₀, x11₀, g₀, sp₀, m₀, rd₀, wr₀⟩ => ?_))
   have hperm₀ : Perm c s₀ := Ar.perm.of_eq rd₀ wr₀
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ hperm₀.w
-  have w (d : Nat) (h : d + 8 ≤ 2560) := in_off hperm₀.w h (by decide)
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok256 s₀ .x9 x9₀ (covers_prefix hperm₀.w (by omega))
+  have w (d : Nat) (h : d + 8 ≤ 384 + c.N) := in_off hperm₀.w h (by have := c.N_le; omega)
   rw [← wr₁] at w
   have gx : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → s₁.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by rw [g₁, g₀ r h₁ h₂ h₃]
   have x9₁ : s₁.gpr .x9 = c.W := by rw [g₁, x9₀]
   have x10₁ : s₁.gpr .x10 = BitVec.ofNat 64 c.tl := by rw [g₁, x10₀]
-  have w₁ := w 216 (by decide)
-  have w₂ := w 224 (by decide)
-  have w₃ := w 232 (by decide)
-  have w₄ := w 240 (by decide)
+  have w₁ := w 216 (by first | decide | omega)
+  have w₂ := w 224 (by first | decide | omega)
+  have w₃ := w 232 (by first | decide | omega)
+  have w₄ := w 240 (by first | decide | omega)
   obtain ⟨s₂, run₂, m₂, y19, y20, y21, y22, y27, y28, y2, y3, sp₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 .x9, mov .x20 .x10, mov .x21 .x0, mov .x22 .x1, .str .x .x4 .x19 aadO,
         .str .x .x5 .x19 alenO, .str .x .x3 .x19 nlenO, .str .x .x11 .x19 tagO, mov .x27 .x6, mov .x28 .x7] s₁ =
@@ -251,16 +253,16 @@ theorem entry_ok {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have hm : s₂.mem = entryMem s.mem c.W s₀.gpr := by
     rw [m₂, m₁, m₀, entryMem, g₁]
   obtain ⟨e₁, e₂, e₃, e₄⟩ := entryMem_slot s.mem c.W s₀.gpr
-  rw [g₀ .x4 (by decide) (by decide) (by decide)] at e₁
-  rw [g₀ .x5 (by decide) (by decide) (by decide)] at e₂
-  rw [g₀ .x3 (by decide) (by decide) (by decide)] at e₃
+  rw [g₀ .x4 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega)] at e₁
+  rw [g₀ .x5 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega)] at e₂
+  rw [g₀ .x3 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega)] at e₃
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [y19, x9₁]
   · rw [y20, x10₁]
-  · rw [y21, gx .x0 (by decide) (by decide) (by decide), Ar.x0]
-  · rw [y22, gx .x1 (by decide) (by decide) (by decide), Ar.x1]
-  · rw [y27, gx .x6 (by decide) (by decide) (by decide), Ar.x6]
-  · rw [y28, gx .x7 (by decide) (by decide) (by decide), Ar.x7]
+  · rw [y21, gx .x0 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x0]
+  · rw [y22, gx .x1 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x1]
+  · rw [y27, gx .x6 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x6]
+  · rw [y28, gx .x7 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x7]
   · rw [sp₂, sp₁, sp₀, Ar.sp]
   · exact Ar.perm.of_eq (by rw [rd₂, rd₁, rd₀]) (by rw [wr₂, wr₁, wr₀])
   · rw [hm, e₁, Ar.x4]
@@ -273,8 +275,8 @@ theorem entry_ok {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
         revert hp; revert p; decide
       exact g₀ p.1 h9.1 h9.2.1 h9.2.2
   · rw [hm]; exact entryMem_frame _ _ _
-  · rw [y2, gx .x2 (by decide) (by decide) (by decide), Ar.x2]
-  · rw [y3, gx .x3 (by decide) (by decide) (by decide), Ar.x3]
+  · rw [y2, gx .x2 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x2]
+  · rw [y3, gx .x3 (by first | decide | omega) (by first | decide | omega) (by first | decide | omega), Ar.x3]
   · rw [rd₂, rd₁, rd₀]
   · rw [wr₂, wr₁, wr₀]
 

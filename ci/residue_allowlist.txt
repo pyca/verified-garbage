@@ -20,12 +20,6 @@ x86_64 vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512
 x86_64 vg_aes_gcm_seal_prepared_aesni
 x86_64 vg_aes_gcm_seal_prepared_aesni_pclmul_avx
 x86_64 vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512
-aarch64 vg_aes_ccm_open
-aarch64 vg_aes_ccm_open_aes
-aarch64 vg_aes_ccm_open_neon
-aarch64 vg_aes_ccm_seal
-aarch64 vg_aes_ccm_seal_aes
-aarch64 vg_aes_ccm_seal_neon
 aarch64 vg_aes_gcm_init
 aarch64 vg_aes_gcm_init_aes
 aarch64 vg_aes_gcm_init_neon

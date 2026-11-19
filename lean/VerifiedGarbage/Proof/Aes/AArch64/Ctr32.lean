@@ -242,6 +242,26 @@ def ctr32AArch64 : Contract AArch64.isa where
     s₁.sp = s₂.sp
 
 open VG.AArch64 in
+/-- `ctr32AArch64` with `n` bytes of `scratch`: for the implementations that
+need less of it (`Ctr32Impl.scratch`), so that their callers allocate only
+that. -/
+def ctr32AArch64With (n : Nat) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let counter : Region := ⟨s.gpr .x2, 16⟩
+    let data : Region := ⟨s.gpr .x3, 16 * (s.gpr .x4).toNat⟩
+    let scratch : Region := ⟨s.gpr .x5, n⟩
+    s.rd = [sched] ∧ s.wr = [counter, data, scratch] ∧
+    sched.Disjoint counter ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
+    counter.Disjoint data ∧ counter.Disjoint scratch ∧ data.Disjoint scratch ∧
+    (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post := ctr32AArch64.post
+  pub := ctr32AArch64.pub
+
+theorem ctr32AArch64With_2048 : ctr32AArch64With 2048 = ctr32AArch64 := rfl
+
+open VG.AArch64 in
 /-- `ctr32AArch64` out of place, for the internal `vg_aes_ctr32_to` and
 `vg_aes_ctr32_to_aes` (`schedule = x0, rounds = x1, counter = x2, src = x3,
 n = x4, scratch = x5, dst = x6`): the `n` blocks at `src` XORed with the
