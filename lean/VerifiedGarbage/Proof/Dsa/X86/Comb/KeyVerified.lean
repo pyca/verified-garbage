@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
 import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
-import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+public import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Impl.Dsa.X86.Comb
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
@@ -16,15 +16,13 @@ import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
-import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
-import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingOperationCT
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Checking
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
-public import VerifiedGarbage.Proof.Dsa.X86.CheckingABI
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingEntry
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckInvoke
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
@@ -35,23 +33,20 @@ import Mathlib.Tactic.IntervalCases
 import Mathlib.Data.List.Basic
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingOperationCT
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Correct
-import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallPre
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckPre
+public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Correct
 public import VerifiedGarbage.Proof.Dsa.X86.ScheduleFrame
 public import VerifiedGarbage.Impl.Dsa.X86.CombCore
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
@@ -68,20 +63,17 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Mont.OutsFrame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Dsa.X86.DerivingABI
+public import VerifiedGarbage.Proof.Dsa.X86.KeyCopyParts
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Entry
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Call
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
-import VerifiedGarbage.Proof.Dsa.X86.DerivingOperation
-import VerifiedGarbage.Proof.Dsa.X86.DerivingEntry
 import VerifiedGarbage.Impl.Dsa.X86.Entry
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.X86.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.Persistent
-import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
 public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Dsa.X86.Execution
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli

@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Dsa.X86.Generation
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.X86.RelCT

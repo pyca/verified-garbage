@@ -36,7 +36,6 @@ meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Dsa.RISCV64.GKCheck
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 
@@ -47,7 +46,7 @@ section
 /-!
 # `vg_dsa_generate_key` on RISC-V: the contract on the registers and the stack
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/Contract.lean`).
+As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/Fn.lean`).
 `generate_implies`: `gkContract` implies the shared contract, with
 `gkStack` bytes of stack.
 -/
@@ -142,7 +141,7 @@ section
 /-!
 # DSA key generation on RISC-V: constant time, the public data and the calls
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/CT.lean`). `pub_facts`: the
+As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/Verified.lean`). `pub_facts`: the
 contract's public data fix the call's data, the domain and the result's
 status and trace. The calls of `vg_dsa_check_parameters` and
 `vg_dsa_derive_key_checked` leak the same trace in two runs (`check_st`,
@@ -501,7 +500,7 @@ end
 /-!
 # DSA key generation on RISC-V: constant time
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/CT.lean`). `generate_ct`: two
+As on PPC64LE (`Proof/Dsa/PPC64LE/Generate/Verified.lean`). `generate_ct`: two
 runs from states that satisfy `gkContract` and agree on its public data
 (the arguments, the domain, and the result's status, octets consumed and
 trace) leak the same trace. The runs are followed together

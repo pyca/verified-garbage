@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.CT
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.CT
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.DeriveChecked.Fn
-import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Params.Fn
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.SizeBounds

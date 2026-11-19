@@ -5,10 +5,9 @@ import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Copy
 public import VerifiedGarbage.Impl.Dsa.X86.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.InvokeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Result
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.PrepareCT
+import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.SampleCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Public
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Sample
-import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.SampleCT
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.SampledCT
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Invoke
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Finish
@@ -18,7 +17,6 @@ import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallResult
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.State
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CheckPre
 public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! ### `Dsa.X86.KeyRandom.Generate`, which the modules that import this one used -/

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-public import VerifiedGarbage.Proof.Dsa.X86.CheckingABI
+public import VerifiedGarbage.Proof.Dsa.X86.CheckingEntry
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Installed
 import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
-import VerifiedGarbage.Proof.Dsa.X86.CheckingEntry
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources

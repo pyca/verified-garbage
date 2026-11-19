@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Divs
-import VerifiedGarbage.Proof.Rsa.X86_64.Rd.WordLoops
+import VerifiedGarbage.Proof.Rsa.X86_64.Rd.TwoStages
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Twos

@@ -28,7 +28,6 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindowCT
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponent
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -36,7 +35,6 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindowCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponent
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

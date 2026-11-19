@@ -6,13 +6,12 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
+public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -20,11 +19,10 @@ import VerifiedGarbage.Proof.Dsa.DomainWidths
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign

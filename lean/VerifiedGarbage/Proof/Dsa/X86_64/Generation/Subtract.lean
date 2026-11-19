@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-public import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 

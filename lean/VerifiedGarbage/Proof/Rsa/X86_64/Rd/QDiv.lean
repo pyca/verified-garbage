@@ -5,14 +5,11 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Rsa.X86_64.WordStep
+import VerifiedGarbage.Proof.Rsa.X86_64.WordInit
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Rsa.X86_64.WordInit
 import VerifiedGarbage.Proof.Bignum.LongDivision
 import VerifiedGarbage.Proof.Framework.Omega
 

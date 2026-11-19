@@ -1,7 +1,7 @@
 module
 
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 import VerifiedGarbage.Proof.Dsa.RISCV64.Elem
 import VerifiedGarbage.Proof.Dsa.RISCV64.Arr
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
 import VerifiedGarbage.Proof.Bignum.FrameOutside
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
@@ -1295,7 +1294,7 @@ section
 /-!
 # DSA signing on RISC-V: the contract on the registers, and the entry
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Sign/Front.lean`). `sContract`:
+As on PPC64LE (`Proof/Dsa/PPC64LE/PrevalidatedSign/Contract.lean`). `sContract`:
 `vg_dsa_sign(out = a0, out_len = a1, key = a2, key_len = a3, p_len = a4,
 nonce = a5, q_len = a6, digest = a7, digest_len, scratch, scratch_len)`, the
 last three on the stack. `sfront_ok`: `entry` loads `scratch`'s address

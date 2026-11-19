@@ -4,19 +4,15 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Batteries.Logic
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.Layout
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.Minus
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import Aesop.BuiltinRules
-public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
@@ -26,7 +22,427 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Dsa.Words
+import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+
+/-! ### `Dsa.X86_64.ZeroHead`, which this module and modules that import it used -/
+
+section
+
+/-! # Resolving the operand of a DSA zero check -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem zeroHead_ok {s : State} {B : Addr} {Z : Nat}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : pWorkspace ≤ Z)
+    (a : Operand) (ha : pointerFits a.pointer) :
+    WP isa (.block (Core.pointer a.pointer ++ ([.mov .rsi (.reg .rax),
+      .mov .rcx (.mem (Core.field a.length)), .mov32 .r8 (.imm 0)] : List Instr))) s fun t =>
+      t.gpr .rsi = pointerValue s.mem B a.pointer ∧ t.gpr .rcx = word s.mem B a.length.offset ∧
+      t.gpr .r8 = 0 ∧ t.mem = s.mem ∧ Keep [.rax, .rsi, .rcx, .r8] s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (pointer_ok hs hdi hZ a.pointer ha) fun u ⟨hua, hum, hku⟩ => ?_
+  have hudi := (hku.gpr (show Reg.rdi ∉ [Reg.rax] by decide)).trans hdi
+  have hul : word u.mem B a.length.offset = word s.mem B a.length.offset := by rw [hum]
+  have hus := hs.congr hku.2.2
+  refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v =>
+    v.gpr .rsi = pointerValue s.mem B a.pointer ∧ v.gpr .rcx = word s.mem B a.length.offset ∧
+    v.gpr .r8 = 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨hvp, hvn, hv8, hvm⟩, hkv⟩ =>
+      ⟨hvp, hvn, hv8, hvm.trans hum, (hku.trans hkv).mono (by decide)⟩
+  xrun [hua, State.ea, Core.field, hudi, fieldAddress, hul,
+    hus.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds a.length).2 hZ)]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.OneScan`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86_64.ZeroMask`, which the modules that import this one used -/
+
+section
+
+/-! # Turning a zero or equality accumulator into an acceptance mask -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+/-- Compare an accumulator with zero without branching, optionally invert
+the predicate. Used for both zero tests and byte-string equality. -/
+theorem zeroMask_ok (r : Reg) (invert : Bool) {s : State} :
+    WP isa (.block (([.alu .cmp r (.imm 1), .alu .sbb .rax (.reg .rax)] : List Instr) ++
+      (if invert then [.alu .xor .rax (.imm (-1))] else []))) s fun t =>
+      t.gpr .rax = mask (if invert then !decide (s.gpr r = 0) else decide (s.gpr r = 0)) ∧
+      t.mem = s.mem ∧ Keep [.rax, r] s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.rax, r] (Q := fun u =>
+    u.gpr .rax = mask (decide (s.gpr r = 0)) ∧ u.mem = s.mem) ?_ ?_)
+    fun u ⟨⟨hua, hum⟩, hku⟩ => ?_
+  · xrun [show BitVec.signExtend 64 (1 : BitVec 32) = 1 from rfl]
+    change mask (decide ((s.gpr r).toNat < 1)) = _
+    rw [mask_lt_one]
+  · cases r <;> rfl
+  · refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.gpr .rax = mask (if invert then !decide (s.gpr r = 0) else decide (s.gpr r = 0)) ∧
+      t.mem = u.mem) ?_ ?_) fun t ⟨⟨hta, htm⟩, hkt⟩ =>
+        ⟨hta, htm.trans hum, (hku.trans hkt).mono (by simp)⟩
+    · cases invert <;> simp only [Bool.false_eq_true, ite_false, ite_true]
+      · exact WP.block_nil ⟨hua, rfl⟩
+      · xrun [hua, show BitVec.signExtend 64 (-1 : BitVec 32) = BitVec.allOnes 64 from rfl, mask_complement]
+    · cases invert <;> rfl
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! # DSA subgroup checks against the ordinary value one -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+abbrev oneScanHead : List Instr := [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
+  .mov .r15 (.mem (at0 .rbx)), .alu .xor .r15 (.imm 1)]
+
+theorem oneScanHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) :
+    WP isa (.block oneScanHead) s fun t =>
+      t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = off B (slot w aX) ∧
+      t.gpr .r15 = word s.mem B (slot w aX) ^^^ 1 ∧ t.mem = s.mem ∧
+      Keep [.r12, .rbx, .r15] s t := by
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+    hg.scr.ld (Nat.le_trans (hdr_lt_slot w 8 hi) hZ)
+  have hx := Nat.le_trans (slot_le (w := w) (show aX < 8 by decide)) hZ
+  refine WP.mono (WP.keep [.r12, .rbx, .r15] (Q := fun t =>
+    t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = off B (slot w aX) ∧
+    t.gpr .r15 = word s.mem B (slot w aX) ^^^ 1 ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨h12, hbx, h15, hm⟩, hk⟩ => ⟨h12, hbx, h15, hm, hk⟩
+  unfold oneScanHead
+  xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aX) (by decide),
+    hg.hdr.hw, hg.hdr.harr aX (by decide), hg.scr.ld (show slot w aX + 8 ≤ Z by omega_using [hx]),
+    show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
+
+/-- Fixed-count comparison with one, retaining the boolean in the accumulator. -/
+theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) :
+    WP isa (.seq (.block oneScanHead)
+      (wordLoop 1 [.mov .rax (.mem (ix .rbx .r14)), .alu .or .r15 (.reg .rax)])) s fun t =>
+      (t.gpr .r15 = 0 ↔ wv s.mem B (slot w aX) w = 1) ∧ t.mem = s.mem ∧
+      Keep [.rax, .r12, .rbx, .r15, .r14] s t := by
+  have hx := Nat.le_trans (slot_le (w := w) (show aX < 8 by decide)) hZ
+  refine WP.seq (WP.mono (oneScanHead_ok hg hZ) fun u ⟨hu12, hubx, hu15, hum, hku⟩ => ?_)
+  have hlow : u.gpr .r15 = 0 ↔ (word u.mem B (slot w aX) ^^^ 1) = 0 := by rw [hu15, hum]
+  refine WP.mono (orWords_ok (hg.scr.congr hku.2.2) hubx hu12 hlow hw hw' (by omega_using [hx]))
+    fun t ⟨ht, htm, hkt⟩ => ?_
+  rw [VG.Proof.Dsa.words_eq_one (by omega_using [hw]), hum] at ht
+  exact ⟨ht, htm.trans hum, (hku.trans hkt).mono (by decide)⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.EqualHead`, which this module and modules that import it used -/
+
+section
+
+/-! # Resolving both operands of a DSA equality check -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem equalHead_ok {s : State} {B : Addr} {Z : Nat}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hZ : pWorkspace ≤ Z)
+    (a b : Operand) (ha : pointerFits a.pointer) (hb : pointerFits b.pointer) :
+    WP isa (.block (Core.pointer a.pointer ++ ([.mov .rsi (.reg .rax)] : List Instr) ++
+      Core.pointer b.pointer ++ ([.mov .rdx (.reg .rax), .mov .rcx (.mem (Core.field a.length)),
+        .mov32 .r8 (.imm 0)] : List Instr))) s fun t =>
+      t.gpr .rsi = pointerValue s.mem B a.pointer ∧ t.gpr .rdx = pointerValue s.mem B b.pointer ∧
+      t.gpr .rcx = word s.mem B a.length.offset ∧ t.gpr .r8 = 0 ∧ t.mem = s.mem ∧
+      Keep [.rax, .rsi, .rdx, .rcx, .r8] s t := by
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (pointer_ok hs hdi hZ a.pointer ha) fun u ⟨hua, hum, hku⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.rsi] (Q := fun v => v.gpr .rsi = pointerValue s.mem B a.pointer ∧ v.mem = u.mem)
+    (by xrun [hua]) rfl) fun v ⟨⟨hvsi, hvm⟩, hkv⟩ => ?_
+  have hks := hku.trans hkv
+  rw [WP.block_append_iff]
+  refine WP.mono (pointer_ok (hs.congr hks.2.2) ((hks.gpr (by decide)).trans hdi) hZ b.pointer hb)
+    fun z ⟨hza, hzm, hkz⟩ => ?_
+  rw [hvm, hum] at hza
+  have hzsi := (hkz.gpr (show Reg.rsi ∉ [Reg.rax] by decide)).trans hvsi
+  have hksz := hks.trans hkz
+  have hzdi := (hksz.gpr (show Reg.rdi ∉ _ by decide)).trans hdi
+  have hzlen : word z.mem B a.length.offset = word s.mem B a.length.offset := by rw [hzm, hvm, hum]
+  refine WP.mono (WP.keep [.rdx, .rcx, .r8] (Q := fun t =>
+    t.gpr .rdx = pointerValue s.mem B b.pointer ∧ t.gpr .rcx = word s.mem B a.length.offset ∧
+    t.gpr .r8 = 0 ∧ t.mem = z.mem) ?_ rfl) fun t ⟨⟨htd, htc, ht8, htm⟩, hkt⟩ =>
+      ⟨(hkt.gpr (by decide)).trans hzsi, htd, htc, ht8, htm.trans (hzm.trans (hvm.trans hum)),
+        (hksz.trans hkt).mono (by decide)⟩
+  xrun [hza, State.ea, Core.field, hzdi, fieldAddress, hzlen,
+    (hs.congr hksz.2.2).ld (Nat.le_trans (VG.Proof.Dsa.field_bounds a.length).2 hZ)]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.Minus`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86_64.MinusCore`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Dsa.X86_64.MinusHead`, which only this module used -/
+
+section
+
+/-! # The first limb of DSA modulus-minus constants -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+abbrev minusHead (amount : Nat) : List Instr :=
+  [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))),
+    .mov .rbx (.mem (hdr (sArr aY))), .mov .rax (.mem (at0 .rsi)),
+    .alu .sub .rax (.imm (BitVec.ofNat 32 amount)), .store (at0 .rbx) .rax, cfToRbp]
+
+theorem minusHead_ok {s : State} {B : Addr} {Z w amount : Nat} {minv : BitVec 64}
+    (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (ha : amount < 2 ^ 31) :
+    WP isa (.block (minusHead amount)) s fun t =>
+      t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rsi = off B (slot w aN) ∧
+      t.gpr .rbx = off B (slot w aY) ∧ Outside B (slot w aY) 8 s.mem t.mem ∧
+      (∃ c : Bool, t.gpr .rbp = mask c ∧
+        wv t.mem B (slot w aY) 1 + amount = wv s.mem B (slot w aN) 1 + 2 ^ 64 * c.toNat) ∧
+      Keep [.r12, .rsi, .rbx, .rax, .rbp] s t := by
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+    hg.scr.ld (Nat.le_trans (hdr_lt_slot w 8 hi) hZ)
+  have hn := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
+  have hy := Nat.le_trans (slot_le (w := w) (show aY < 8 by decide)) hZ
+  have hbound := hg.scr.nowrap
+  refine WP.mono (WP.keep [.r12, .rsi, .rbx, .rax, .rbp] (Q := fun t =>
+    t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rsi = off B (slot w aN) ∧
+    t.gpr .rbx = off B (slot w aY) ∧ ∃ c : Bool, t.gpr .rbp = mask c ∧
+    ∃ r : BitVec 64, t.mem = s.mem.writeW (off B (slot w aY)) r ∧
+      r.toNat + amount = (word s.mem B (slot w aN)).toNat + 2 ^ 64 * c.toNat) ?_ rfl)
+    fun t ⟨⟨ht12, htsi, htbx, c, htc, r, htm, hval⟩, hk⟩ => ?_
+  · unfold minusHead cfToRbp
+    xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aN) (by decide),
+      hl (sArr aY) (by decide), hg.hdr.hw, hg.hdr.harr aN (by decide), hg.hdr.harr aY (by decide),
+      hg.scr.ld (show slot w aN + 8 ≤ Z by omega_using [hn]), hg.scr.st (show slot w aY + 8 ≤ Z by omega_using [hy]),
+      show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, sx_ofNat ha]
+    refine ⟨_, rfl, _, rfl, ?_⟩
+    have h := sbb_toNat (word s.mem B (slot w aN)) (BitVec.ofNat 64 amount) false
+    simpa only [Bool.toNat_false, Nat.add_zero,
+      show (BitVec.ofBool false).setWidth 64 = 0#64 from rfl, BitVec.sub_zero,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show amount < 2 ^ 64 by omega_using [ha])] using h
+  · refine ⟨ht12, htsi, htbx, ?_, ⟨c, htc, ?_⟩, hk⟩
+    · rw [htm]; exact writeW_outside _ _ _ (by omega_using [hy, hbound])
+    · rw [htm]
+      simpa only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul,
+        word_writeW_self] using hval
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! ### `Dsa.X86_64.MinusStep`, which only this module used -/
+
+section
+
+/-! # Borrow propagation when forming DSA modulus-minus constants -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+/-- After `j` words of `modulusMinus`'s loop: `Y_j + amount = N_j + 2^(64 j) c`. -/
+structure MinusInv (s₀ : State) (B : Addr) (Z eN eY amount : Nat) (j : Nat) (t : State) : Prop where
+  scr : Scr t B Z
+  keep : Keep [.rax, .rbp, .r14] s₀ t
+  r14 : t.gpr .r14 = BitVec.ofNat 64 j
+  out : Outside B eY (8 * j) s₀.mem t.mem
+  val : ∃ c : Bool, t.gpr .rbp = mask c ∧
+    wv t.mem B eY j + amount = wv s₀.mem B eN j + 2 ^ (64 * j) * c.toNat
+
+theorem minusStep_ok {s₀ : State} {B : Addr} {Z w eN eY amount : Nat}
+    (hbx : s₀.gpr .rbx = off B eY) (hsi : s₀.gpr .rsi = off B eN) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w)
+    (hw : w < 2 ^ 32) (hY : eY + 8 * w ≤ Z) (hN : eN + 8 * w ≤ Z)
+    (hsep : eY + 8 * w ≤ eN ∨ eN + 8 * w ≤ eY) {j : Nat} (hj : j < w) {t : State}
+    (hI : MinusInv s₀ B Z eN eY amount j t) :
+    WP isa (.block (([cfFromRbp, .mov .rax (.mem (ix .rsi .r14)), .alu .sbb .rax (.imm 0),
+        .store (ix .rbx .r14) .rax, cfToRbp] : List Instr) ++ ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t
+      fun t' => t'.zf = some (decide (j + 1 = w)) ∧ MinusInv s₀ B Z eN eY amount (j + 1) t' := by
+  have hn := hI.scr.nowrap
+  have tbx : t.gpr .rbx = off B eY := (hI.keep.gpr (by decide)).trans hbx
+  have tsi : t.gpr .rsi = off B eN := (hI.keep.gpr (by decide)).trans hsi
+  have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans h12
+  obtain ⟨c, hbp, hval⟩ := hI.val
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t₁ =>
+      ∃ c' : Bool, t₁.gpr .rbp = mask c' ∧ ∃ r : BitVec 64, t₁.mem = t.mem.writeW (off B (eY + 8 * j)) r ∧
+        r.toNat + c.toNat = (word t.mem B (eN + 8 * j)).toNat + 2 ^ 64 * c'.toNat) ?_ rfl)
+    fun t₁ ⟨⟨c', h₁, r, hm, hr⟩, k₁⟩ => ?_
+  · unfold cfFromRbp cfToRbp
+    xrun [State.ea, ix, addr0 tbx hI.r14, addr0 tsi hI.r14, hbp, cf_mask, sx0,
+      hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega_arith), hI.scr.st (show eY + 8 * j + 8 ≤ Z by omega_arith)]
+    refine ⟨_, rfl, _, rfl, ?_⟩
+    have := sbb_toNat (word t.mem B (eN + 8 * j)) 0 c
+    simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero, Nat.zero_add] at this ⊢
+    exact this
+  have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
+  have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  have hx : word t.mem B (eN + 8 * j) = word s₀.mem B (eN + 8 * j) := hI.out.word (by omega_arith) (by omega_arith)
+  rw [hx] at hr
+  refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide), h14, ?_,
+    ⟨c', (k'.gpr (by decide)).trans h₁, ?_⟩⟩
+  · rw [hm', hm]
+    intro x hx'
+    rw [writeW_outside t.mem B r (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · have hlow : wv t.mem B eY j = wv (t.mem.writeW (off B (eY + 8 * j)) r) B eY j :=
+      ((writeW_outside t.mem B r (by omega_arith)).wv (Or.inl (by omega_arith)) (by omega_arith)).symm
+    rw [hm', hm]
+    simp only [wv]
+    rw [← hlow, word_writeW_self, pow64_succ]
+    grind
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+
+/-! # Complete subtraction for DSA modulus-minus constants -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+abbrev minusTail : List Instr := [cfFromRbp, .mov .rax (.mem (ix .rsi .r14)), .alu .sbb .rax (.imm 0),
+  .store (ix .rbx .r14) .rax, cfToRbp]
+
+/-- Copy the modulus minus a small constant into the ordinary result array.
+The input modulus is preserved, including its leading-zero padding. -/
+theorem minusCore_ok {s : State} {B : Addr} {Z w amount : Nat} {minv : BitVec 64}
+    (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (ha : amount < 2 ^ 31) (hm : amount ≤ wv s.mem B (slot w aN) w) :
+    WP isa (.seq (.block (minusHead amount)) (wordLoop 1 minusTail)) s fun t =>
+      wv t.mem B (slot w aY) w = wv s.mem B (slot w aN) w - amount ∧
+      Outside B (slot w aY) (8 * w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hnowrap := hg.scr.nowrap
+  have hy := Nat.le_trans (slot_le (w := w) (show aY < 8 by decide)) hZ
+  have hn := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
+  have hsep := slot_sep (w := w) (show aY ≠ aN by decide)
+  refine WP.seq (WP.mono (minusHead_ok hg hZ ha) fun u ⟨hu12, husi, hubx, hfu, hval, hku⟩ => ?_)
+  have huN : ∀ k ≤ w, wv u.mem B (slot w aN) k = wv s.mem B (slot w aN) k :=
+    fun k hk => hfu.wv (by omega_using [hsep, hk]) (by omega_using [hnowrap, hn, hk])
+  have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 1 → t.mem = u.mem → Keep [.r14] u t → t.cf = u.cf →
+      MinusInv u B Z (slot w aN) (slot w aY) amount 1 t := by
+    intro t ht14 htm hkt _
+    obtain ⟨c, huc, huv⟩ := hval
+    refine ⟨hg.scr.congr (hkt.2.2.trans hku.2.2), hkt.mono (by decide), ht14,
+      by rw [htm]; exact Outside.refl _ _ _ _, ⟨c, (hkt.gpr (by decide)).trans huc, ?_⟩⟩
+    rw [htm, huN 1 (by omega_using [hw])]
+    exact huv
+  refine WP.mono (wordLoop_ok (start := 1) (N := w) (by omega_using [hw]) hw'
+    (MinusInv u B Z (slot w aN) (slot w aY) amount) h0
+    (fun j _ hj t hi => minusStep_ok hubx husi hu12 (by omega_using [hw']) (by omega_using [hy]) (by omega_using [hn]) (by omega_using [hsep]) hj hi))
+    fun t ht => ?_
+  obtain ⟨c, _, hv⟩ := ht.val
+  rw [huN w (Nat.le_refl _)] at hv
+  have hvlt := wv_lt t.mem B (slot w aY) w
+  refine ⟨?_, (hfu.mono (Nat.le_refl _) (by omega_using [hw])).trans ht.out, (hku.trans ht.keep).mono (by decide)⟩
+  cases c
+  · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hv
+    omega_using [hv]
+  · simp only [Bool.toNat_true, Nat.mul_one] at hv
+    omega_using [hm, hvlt, hv]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+/-! # Modulus-minus constants in a linked DSA workspace -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem minus_ok {s : State} {B : Addr} {Z o w wx m amount : Nat} {minv : BitVec 64}
+    (hc : SubCtx s B Z o w wx minv) (hm : ModCtx s (off B o) (slot wx 8) wx minv m)
+    (hw : 2 ≤ wx) (hw' : wx < 2 ^ 31) (ha : amount < 2 ^ 31) (ham : amount ≤ m) :
+    WP isa (.seq (.block (minusHead amount)) (wordLoop 1 minusTail)) s fun t =>
+      SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
+      wv t.mem (off B o) (slot wx aY) wx = m - amount ∧
+      Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
+  refine WP.mono (minusCore_ok hc.good (Nat.le_refl _) hw hw' ha (by rw [hm.modulus]; exact ham))
+    fun t ⟨ht, hf, hk⟩ => ?_
+  have harr : Arrays (off B o) wx [aY] s.mem t.mem :=
+    Arrays.of_outside (List.mem_singleton_self aY) hf (Nat.le_refl _) (by omega_using [])
+  have hct := arrays_context hc harr (by decide) hk
+  have hz := hc.good.scr.nowrap
+  have hn := (harr.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hm.modulus
+  have hi : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
+    rw [harr.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw])]
+    exact hm.inverse
+  rw [hm.modulus] at ht
+  exact ⟨hct, ⟨hct.good, hn, hi⟩, ht, arrays_work harr (by decide), hk⟩
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.CheckEffects`, which this module and modules that import it used -/
 

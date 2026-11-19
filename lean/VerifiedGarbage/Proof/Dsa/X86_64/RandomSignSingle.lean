@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel

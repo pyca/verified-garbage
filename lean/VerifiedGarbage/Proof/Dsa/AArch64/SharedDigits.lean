@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.SharedPower
 public import VerifiedGarbage.Proof.Dsa.AArch64.SharedDigit
-import VerifiedGarbage.Proof.Dsa.AArch64.SharedBucket
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-public import VerifiedGarbage.Proof.Dsa.SharedPower
 
 /-! ### `Dsa.AArch64.SharedGroup`, which this module and modules that import it used -/
 

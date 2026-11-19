@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
-import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
+public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import Mathlib.Tactic.Set

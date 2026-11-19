@@ -5,8 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.Triangular
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
@@ -21,11 +20,578 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
+
+/-! ### `Bignum.X86_64.AdxTiledSquareRow`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.X86_64.AdxRect8RowS`, which this module and modules that import it used -/
+
+section
+
+/-!
+# A row of a square, with the carry handed from the row before
+
+`AdxRect8.rowS`: `AdxRect8.row`'s column blocks but the last in a loop that
+stops one block early (`nextColumnS`, or no loop for a row of one block),
+then the carry the row before left in `sFn 15` (`handOffset`) added to the
+pending carry (`addHand`), then the last block, whose input starts at that
+carry's word: the row's contribution and the handed carry, at its word
+(`rowS_ok`). The row does not write `sFn 15`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxRect8
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxRotate8 (cols cols_keep)
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset handOffset)
+
+theorem nextColumnS_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hj : j+16 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
+    WP isa (.block AdxRect8.nextColumnS) s fun t =>
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8)) ∧
+      t.zf = some (decide (j+16=w)) ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  have hiZ : 8*sFn 13+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega_arith
+  have hwZ : 8*sW+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_arith
+  unfold AdxRect8.nextColumnS
+  rw [show ([.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 13)) .rax, .alu .add .rax (.imm 8), .alu .cmp .rax (.mem (hdr sW))] : List Instr) =
+      [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8), .store (hdr (sFn 13)) .rax] ++
+      [.alu .add .rax (.imm 8), .alu .cmp .rax (.mem (hdr sW))] from rfl, WP.block_append_iff]
+  have first : WP isa (.block [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 13)) .rax]) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8)) ∧ Keep [.rax] s t := by
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j+8))) ?_ rfl)
+      fun t ⟨⟨a,b⟩,k⟩ => ⟨a,b,k⟩
+    xrun [State.ea,hdr,hd,hdrOff,hs.ld hiZ,hs.st hiZ,hidx,
+      show (8 : BitVec 32).signExtend 64 = 8 from rfl,BitVec.ofNat_add]
+    exact ⟨rfl,rfl⟩
+  refine WP.mono first fun a ⟨ra,ma,ka⟩ => ?_
+  have sa := hs.congr ka.2.2
+  have wa : word a.mem B (8*sW) = BitVec.ofNat 64 w := by
+    rw [ma,(writeW_outside s.mem B (BitVec.ofNat 64 (j+8)) (by omega_arith : 8*sFn 13+8 ≤ 2^64)).word
+      (by decide : 8*sW+8 ≤ 8*sFn 13 ∨ 8*sFn 13+8 ≤ 8*sW) (by omega_arith),hh.hw]
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = a.mem ∧ t.zf = some (decide (j+16=w))) ?_ rfl)
+    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt.trans ma,zt,(ka.trans kt).mono (by simp)⟩
+  xrun [State.ea,hdr,(ka.gpr (by decide)).trans hd,hdrOff,sa.ld hwZ,wa,ra,
+    show (8 : BitVec 32).signExtend 64 = 8 from rfl,
+    show BitVec.ofNat 64 (j+8) + 8 = BitVec.ofNat 64 (j+16) by
+      rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,← BitVec.ofNat_add],
+    ofNat_sub_beq hj hw]
+
+theorem oneTest_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hj : j+8 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
+    WP isa (.block AdxRect8.oneTest) s fun t =>
+      t.mem = s.mem ∧ t.zf = some (decide (j+8=w)) ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  have hiZ : 8*sFn 13+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega_arith
+  have hwZ : 8*sW+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_arith
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem ∧ t.zf = some (decide (j+8=w))) ?_ rfl)
+    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt,zt,kt⟩
+  unfold AdxRect8.oneTest
+  xrun [State.ea,hdr,hd,hdrOff,hs.ld hiZ,hs.ld hwZ,hidx,hh.hw,
+    show (8 : BitVec 32).signExtend 64 = 8 from rfl,
+    show BitVec.ofNat 64 j + 8 = BitVec.ofNat 64 (j+8) by
+      rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,← BitVec.ofNat_add],
+    ofNat_sub_beq hj hw]
+
+theorem addHand_ok {s : State} {B : Addr} {Z w : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) :
+    WP isa (.block AdxRect8.addHand) s fun t =>
+      t.mem = s.mem.writeW (off B carryOffset) (word s.mem B handOffset + word s.mem B carryOffset) ∧
+      Keep [.rax] s t := by
+  have hn := hs.nowrap
+  have h15 : 8*sFn 15+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 15 < 32 by decide); omega_arith
+  have h14 : 8*sFn 14+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 14 < 32 by decide); omega_arith
+  refine WP.keep [.rax] (Q := fun t => t.mem =
+    s.mem.writeW (off B carryOffset) (word s.mem B handOffset + word s.mem B carryOffset)) ?_ rfl
+  unfold AdxRect8.addHand
+  xrun [State.ea,hdr,hd,hdrOff,hs.ld h15,hs.ld h14,hs.st h14,carryOffset,handOffset]
+
+/-- What a block that keeps the memory and the registers but `rax` keeps of
+the stream's invariant. -/
+theorem StreamInv.of_keep {s₀ s t : State} {B : Addr} {Z w a b i j₀ k x cb : Nat} {mi : BitVec 64}
+    (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) (hm : t.mem = s.mem) (hk : Keep [.rax] s t) :
+    StreamInv s₀ B Z w a b i j₀ k mi x cb t := by
+  have cl : cols t = cols s := cols_keep hk (by decide)
+  refine ⟨h.scr.congr hk.2.2,hm ▸ h.hdr,(hk.gpr (by decide)).trans h.rdi,hm ▸ h.indexI,hm ▸ h.indexJ,
+    hm ▸ h.carry,(h.keep.trans hk).mono (by decide),hm ▸ h.frame,(hk.gpr (by decide)).trans h.pa,
+    (hk.gpr (by decide)).trans h.pb,(hk.gpr (by decide)).trans h.po,?_⟩
+  have v := h.val
+  unfold streamVal at v ⊢
+  rw [hm,cl]
+  exact v
+
+/-- The handed carry into the pending carry before block `k`, whose input
+starts at its word. -/
+theorem addHand_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k σ x cb : Nat} {mi : BitVec 64}
+    (hZ : slot w 8 ≤ Z) (hk8 : i+j₀+8*(k+1) ≤ 2*w) (hcb : cb ≤ 2)
+    (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) (hσ : (word s.mem B handOffset).toNat = σ) (hσ2 : σ ≤ 2) :
+    WP isa (.block AdxRect8.addHand) s
+      (StreamInv s₀ B Z w a b i j₀ k mi (x + (2 : Nat)^(64*(i+j₀+8*(k+1))) * σ) 4) := by
+  have nowrap := h.scr.nowrap
+  have rt := slot_le (w := w) (show aTmp < 8 by decide)
+  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_arith
+  refine WP.mono (addHand_ok h.scr h.rdi hZ) fun t ⟨mt,kt⟩ => ?_
+  have hc := h.carry
+  have oC : Outside B carryOffset 8 s.mem t.mem := by
+    rw [mt]; exact writeW_outside _ _ _ (by unfold carryOffset sFn; omega_arith)
+  have ct : (word t.mem B carryOffset).toNat = σ + (word s.mem B carryOffset).toNat := by
+    rw [mt,word_writeW_self,BitVec.toNat_add,hσ,Nat.mod_eq_of_lt (by omega_arith)]
+  have cl : cols t = cols s := cols_keep kt (by decide)
+  have fr : Frm B (rowRanges w) s.mem t.mem := Frm.of_outside oC (by simp [rowRanges])
+  have hrow : carryOffset+8 ≤ rawBase w := by unfold rawBase carryOffset sFn slot hdrBytes aAcc; omega_arith
+  have same : streamVal t B w (i+j₀+8*k) = streamVal s B w (i+j₀+8*k) := by
+    unfold streamVal
+    rw [cl,oC.wv (Or.inr (by omega_arith)) (by omega_arith),oC.wv (Or.inr (by omega_arith)) (by omega_arith)]
+  refine ⟨h.scr.congr kt.2.2,?_,(kt.gpr (by decide)).trans h.rdi,?_,?_,by rw [ct]; omega_arith,
+    (h.keep.trans kt).mono (by decide),h.frame.trans fr,(kt.gpr (by decide)).trans h.pa,
+    (kt.gpr (by decide)).trans h.pb,(kt.gpr (by decide)).trans h.po,?_⟩
+  · exact frame_hdr h.hdr (by unfold rawBase slot; omega_arith) fr
+  · rw [oC.word (by unfold carryOffset sFn; omega_arith) (by unfold sFn; omega_arith)]; exact h.indexI
+  · rw [oC.word (by unfold carryOffset sFn; omega_arith) (by unfold sFn; omega_arith)]; exact h.indexJ
+  · have v := h.val
+    rw [same,ct,Nat.mul_add]
+    generalize (2 : Nat)^(64*(i+j₀+8*(k+1))) = P at v ⊢
+    omega_arith
+
+/-- A square's row: `AdxRect8.row`'s contribution, plus the carry `σ` handed
+in `sFn 15`, at word `i + w` of the raw product. -/
+theorem rowS_ok {s : State} {B : Addr} {Z w a b i j₀ n σ : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hi : i+8 ≤ w)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hwN : w = j₀+8*n) (hn : 0 < n)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
+    (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j₀)
+    (hc : (word s.mem B carryOffset).toNat = 0)
+    (hσ : (word s.mem B handOffset).toNat = σ) (hσ2 : σ ≤ 2) :
+    WP isa (AdxRect8.rowS ca cb) s (RowInv s B Z w a b i j₀ n mi ((2 : Nat)^(64*(i+w)) * σ) 2) := by
+  have nowrap := hs.nowrap
+  have hR : handOffset+8 ≤ rawBase w := by unfold rawBase handOffset sFn slot hdrBytes aAcc; omega_arith
+  have hH : ∀ {m : Mem}, Frm B (rowRanges w) s.mem m → word m B handOffset = word s.mem B handOffset := by
+    intro m f
+    refine f.word_eq ?_ (by unfold handOffset sFn; omega_arith)
+    intro r hr
+    simp only [rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact Or.inl hR
+    · exact Or.inr (by unfold carryOffset handOffset sFn; omega_arith)
+    · exact Or.inr (by unfold handOffset sFn; omega_arith)
+  unfold AdxRect8.rowS
+  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
+  refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ hi
+    (by omega_arith) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
+  -- the blocks but the last
+  have front : WP isa (.seq (.block AdxRect8.oneTest) (.ite .e (.block []) (.loop AdxRect8.rowStepS .ne))) v
+      (StreamInv s B Z w a b i j₀ (n-1) mi 0 2) := by
+    refine WP.seq (WP.mono (oneTest_ok (j := j₀) hv0.scr hv0.rdi hv0.hdr hZ (by omega_arith) (by omega_arith)
+      (by simpa only [Nat.mul_zero,Nat.add_zero] using hv0.indexJ)) fun y ⟨my,zy,ky⟩ => ?_)
+    have hy := hv0.of_keep my ky
+    by_cases h1 : n = 1
+    · refine WP.ite true (by simp [eval,zy,show j₀+8=w by omega_arith]) (fun _ => WP.block_nil ?_) (by intro h; cases h)
+      rw [h1]; exact hy
+    · refine WP.ite false (by simp [eval,zy,show ¬ j₀+8=w by omega_arith]) (by intro h; cases h) (fun _ => ?_)
+      exact wp_upto (a := 0) (N := n-1) (by omega_arith) (StreamInv s B Z w a b i j₀ · mi 0 2)
+        (fun k _ hk t h => by
+          unfold AdxRect8.rowStepS
+          refine WP.mono (streamStep_gen hZ hw hi ha hb ha1 ha2 hb1 hb2 hwN (by omega_arith)
+            (fun u hs hd hh hj => nextColumnS_ok hs hd hh hZ (by omega_arith) (by omega_arith) hj) h)
+            fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
+          rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_arith)))
+        (fun _ h => h) hy
+  refine WP.seq (WP.mono front fun y hy => ?_)
+  have σy : (word y.mem B handOffset).toNat = σ := by rw [hH hy.frame]; exact hσ
+  refine WP.seq (WP.mono (addHand_inv hZ (by omega_arith) (Nat.le_refl _) hy σy hσ2) fun z hz => ?_)
+  rw [Nat.zero_add] at hz
+  refine WP.seq (WP.mono (streamStep_inv hZ hw hi ha hb ha1 ha2 hb1 hb2 hwN (by omega_arith) hz) fun t ⟨_,ht⟩ => ?_)
+  rw [show n-1+1 = n by omega_arith,show i+j₀+8*n = i+w by omega_arith] at ht
+  exact rowEnd_ok hZ hi hwN ht
+
+end VG.Proof.Bignum.X86_64.AdxRect8
+
+end
+
+end
+
+/-! ## AdxTiledSquareInit -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
+
+theorem rowInit_ok {s : State} {B : Addr} {Z w i : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hZ : slot w 8≤Z)
+    (hidx : word s.mem B (8*sFn 12)=BitVec.ofNat 64 i) :
+    WP isa (.block AdxTiledSquare.rowInit) s fun t =>
+      word t.mem B carryOffset=0 ∧ word t.mem B (8*sFn 13)=BitVec.ofNat 64 (i+8) ∧
+      Outside B (8*sFn 13) 16 s.mem t.mem ∧ Keep [.rax] s t := by
+  have nowrap := hs.nowrap
+  obtain bound : ∀ k<32, 8*k+8≤Z := fun k hk => by have := hdr_lt_slot w 8 hk; omega_using [hZ, this]
+  obtain first : WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 14)) .rax]) s fun t =>
+      t.mem=s.mem.writeW (off B carryOffset) (0 : BitVec 64) ∧ Keep [.rax] s t := by
+    apply WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off B carryOffset) (0 : BitVec 64)) _ rfl
+    xrun [State.ea,hdr,hd,hdrOff,hs.st (bound (sFn 14) (by decide)),carryOffset]; rfl
+  unfold AdxTiledSquare.rowInit
+  rw [show ([.mov32 .rax (.imm 0),.store (hdr (sFn 14)) .rax,.mov .rax (.mem (hdr (sFn 12))),
+    .alu .add .rax (.imm 8),.store (hdr (sFn 13)) .rax] : List Instr)=
+    [.mov32 .rax (.imm 0),.store (hdr (sFn 14)) .rax]++
+    [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),.store (hdr (sFn 13)) .rax] from rfl,
+    WP.block_append_iff]
+  refine WP.mono first fun u ⟨mu,ku⟩ => ?_
+  obtain ou : Outside B carryOffset 8 s.mem u.mem := by rw [mu]; exact writeW_outside _ _ _ (by decide)
+  obtain iu : word u.mem B (8*sFn 12)=BitVec.ofNat 64 i := by rw [ou.word (by decide) (by decide)]; exact hidx
+  obtain su := hs.congr ku.2.2
+  obtain second : WP isa (.block [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),.store (hdr (sFn 13)) .rax]) u
+      fun t => t.mem=u.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (i+8)) ∧ Keep [.rax] u t := by
+    apply WP.keep [.rax] (Q := fun t => t.mem=u.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (i+8))) _ rfl
+    xrun [State.ea,hdr,(ku.gpr (by decide)).trans hd,hdrOff,su.ld (bound (sFn 12) (by decide)),
+      su.st (bound (sFn 13) (by decide)),iu,show (8 : BitVec 32).signExtend 64=8 from rfl,BitVec.ofNat_add]
+    rfl
+  refine WP.mono second fun t ⟨mt,kt⟩ => ?_
+  obtain ot : Outside B (8*sFn 13) 8 u.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
+  refine ⟨?_,?_,(ou.mono (o' := 8*sFn 13) (n' := 16) (by decide) (by decide)).trans
+    (ot.mono (by omega_using []) (by omega_using [])),(ku.trans kt).mono (by simp)⟩
+  · rw [ot.word (by decide) (by decide),mu,word_writeW_self]
+  · rw [mt,word_writeW_self]
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+/-! ## AdxTiledSquareCounter -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep)
+
+theorem nextRow_ok {s : State} {B : Addr} {Z w j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hw8 : 8≤w) (hj : j+8 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 j) :
+    WP isa (.block AdxTiledSquare.nextRow) s fun t =>
+      t.mem = s.mem.writeW (off B (8*sFn 12)) (BitVec.ofNat 64 (j+8)) ∧
+      t.zf = some (decide (j+8=w-8)) ∧ Keep [.rax,.rcx] s t := by
+  have hn := hs.nowrap
+  obtain hiZ : 8*sFn 12+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega_using [hZ, this]
+  obtain hwZ : 8*sW+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]
+  unfold AdxTiledSquare.nextRow
+  rw [show ([.mov .rax (.mem (hdr (sFn 12))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 12)) .rax, .mov .rcx (.mem (hdr sW)), .alu .sub .rcx (.imm 8), .alu .cmp .rax (.reg .rcx)] : List Instr) =
+      [.mov .rax (.mem (hdr (sFn 12))), .alu .add .rax (.imm 8), .store (hdr (sFn 12)) .rax] ++
+      [.mov .rcx (.mem (hdr sW)),.alu .sub .rcx (.imm 8),.alu .cmp .rax (.reg .rcx)] from rfl, WP.block_append_iff]
+  obtain first : WP isa (.block [.mov .rax (.mem (hdr (sFn 12))), .alu .add .rax (.imm 8),
+      .store (hdr (sFn 12)) .rax]) s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 12)) (BitVec.ofNat 64 (j+8)) ∧ Keep [.rax] s t := by
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (j+8) ∧
+      t.mem = s.mem.writeW (off B (8*sFn 12)) (BitVec.ofNat 64 (j+8))) ?_ rfl)
+      fun t ⟨⟨a,b⟩,k⟩ => ⟨a,b,k⟩
+    xrun [State.ea,hdr,hd,hdrOff,hs.ld hiZ,hs.st hiZ,hidx,
+      show (8 : BitVec 32).signExtend 64 = 8 from rfl,BitVec.ofNat_add]
+    exact ⟨rfl,rfl⟩
+  refine WP.mono first fun a ⟨ra,ma,ka⟩ => ?_
+  obtain sa := hs.congr ka.2.2
+  obtain wa : word a.mem B (8*sW) = BitVec.ofNat 64 w := by
+    rw [ma,(writeW_outside s.mem B (BitVec.ofNat 64 (j+8)) (by omega_using [hn, hiZ] : 8*sFn 12+8 ≤ 2^64)).word
+      (by decide : 8*sW+8 ≤ 8*sFn 12 ∨ 8*sFn 12+8 ≤ 8*sW) (by omega_using [hn, hwZ]),hh.hw]
+  obtain sub : BitVec.ofNat 64 w - (8 : BitVec 64) = BitVec.ofNat 64 (w-8) := by
+    obtain add : BitVec.ofNat 64 (w-8)+(8 : BitVec 64)=BitVec.ofNat 64 w := by
+      change BitVec.ofNat 64 (w-8)+BitVec.ofNat 64 8=BitVec.ofNat 64 w
+      rw [← BitVec.ofNat_add,show w-8+8=w by omega_using [hw8]]
+    rw [← add]
+    exact BitVec.add_sub_cancel _ _
+  refine WP.mono (WP.keep [.rax,.rcx] (Q := fun t => t.mem = a.mem ∧ t.zf = some (decide (j+8=w-8))) ?_ rfl)
+    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt.trans ma,zt,(ka.trans kt).mono (by simp)⟩
+  xrun [State.ea,hdr,(ka.gpr (by decide)).trans hd,hdrOff,sa.ld hwZ,wa,ra,show (8 : BitVec 32).signExtend 64=8 from rfl,sub,ofNat_sub_beq hj (by omega_using [hw] : w-8<2^64)]
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+/-! ## AdxTiledSquareRow -/
+section
+
+/-! A complete raw multiplication row, including carry propagation. -/
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr frame_ops input_preserved)
+open VG.Proof.MlKem.X86_64 (Keep)
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
+open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
+
+open VG.Impl.Bignum.X86_64.AdxRect8 (handOffset)
+open VG.Proof.MlKem.X86_64 (WP.keep)
+
+theorem lastTest_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    (hZ : slot w 8 ≤ Z) (hi : i+16 < 2^64) (hw : w < 2^64)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i) :
+    WP isa (.block AdxTiledSquare.lastTest) s fun t =>
+      t.mem = s.mem ∧ t.zf = some (decide (i+16=w)) ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  obtain hiZ : 8*sFn 12+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 12 < 32 by decide); omega_using [hZ, this]
+  obtain hwZ : 8*sW+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem ∧ t.zf = some (decide (i+16=w))) ?_ rfl)
+    fun t ⟨⟨mt,zt⟩,kt⟩ => ⟨mt,zt,kt⟩
+  unfold AdxTiledSquare.lastTest
+  xrun [State.ea,hdr,hd,hdrOff,hs.ld hiZ,hs.ld hwZ,hidx,hh.hw,
+    show (16 : BitVec 32).signExtend 64 = 16 from rfl,
+    show BitVec.ofNat 64 i + 16 = BitVec.ofNat 64 (i+16) by
+      rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,← BitVec.ofNat_add],
+    ofNat_sub_beq hi hw]
+
+theorem hand_ok {s : State} {B : Addr} {Z w : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) :
+    WP isa (.block [.mov .rax (.mem (hdr (sFn 14))),.store (hdr (sFn 15)) .rax]) s fun t =>
+      t.mem = s.mem.writeW (off B handOffset) (word s.mem B carryOffset) ∧ Keep [.rax] s t := by
+  have hn := hs.nowrap
+  obtain h15 : 8*sFn 15+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 15 < 32 by decide); omega_using [hZ, this]
+  obtain h14 : 8*sFn 14+8 ≤ Z := by
+    have := hdr_lt_slot w 8 (show sFn 14 < 32 by decide); omega_using [hZ, this]
+  refine WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B handOffset) (word s.mem B carryOffset)) ?_ rfl
+  xrun [State.ea,hdr,hd,hdrOff,hs.ld h14,hs.st h15,carryOffset,handOffset]
+
+private theorem combine {X Y Z P C Q D : Nat}
+    (h : Y+P*C=X+D) (t : Z+Q=Y+P*C) : Z+Q=X+D := by omega_using [h, t]
+
+/-- A square's row `i`: its contribution, and the carry `σ` the row before
+handed it at word `i + w`; it hands its own at word `i + w + 8` in `sFn 15`,
+but the last, which propagates it to the top. -/
+theorem row_ok {s : State} {B : Addr} {Z w a i n σ : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hTail : w=i+8+8*n) (hn : 0<n)
+    (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
+    (hσ : (word s.mem B handOffset).toNat = σ) (hσ2 : σ ≤ 2) :
+    WP isa (AdxTiledSquare.row ca) s fun t =>
+      t.zf = some (decide (i+8=w-8)) ∧ word t.mem B (8*sFn 12) = BitVec.ofNat 64 (i+8) ∧
+      (word t.mem B handOffset).toNat ≤ 2 ∧
+      (∃ c, wv t.mem B (rawBase w) (2*w) +
+          (2 : Nat)^(64*(i+w+8))*(if i+16=w then 0 else (word t.mem B handOffset).toNat) +
+          (2 : Nat)^(128*w)*c =
+        wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(i+w))*σ +
+          (2 : Nat)^(64*(i+(i+8)))*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w a+8*(i+8)) (8*n)) ∧
+      Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have nowrap := hs.nowrap
+  obtain Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
+  obtain rawZ : rawBase w+16*w ≤ Z := by unfold rawBase slot aAcc at *; omega_using [hZ]
+  unfold AdxTiledSquare.row
+  refine WP.seq (WP.mono (rowInit_ok hs hd hZ hidx) fun u ⟨cu,ju,ou,ku⟩ => ?_)
+  obtain fu : Frm B (ranges w) s.mem u.mem := by
+    intro x hx
+    apply ou x
+    have := hx (8*sFn 12,32) (by simp [ranges])
+    simp only [sFn] at *; omega_using [this]
+  obtain iu : word u.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
+    rw [ou.word (by decide) (by decide)]; exact hidx
+  have σu : (word u.mem B handOffset).toNat = σ := by
+    rw [ou.word (by unfold handOffset sFn; omega_using []) (by unfold handOffset sFn; omega_using [])]; exact hσ
+  obtain rawU : wv u.mem B (rawBase w) (2*w) = wv s.mem B (rawBase w) (2*w) :=
+    ou.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ])
+  refine WP.seq (WP.mono (AdxRect8.rowS_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd)
+    (frame_hdr hh fu) (frame_ops hv fu) pa pa hZ hw (by omega_using [hTail]) ha ha ha1 ha2 ha1 ha2
+    hTail hn iu ju (by rw [cu]; rfl) σu hσ2) fun v hv => ?_)
+  obtain fv : Frm B (ranges w) u.mem v.mem := by
+    intro x hx
+    apply hv.frame x
+    intro r hr
+    simp only [AdxRect8.rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    obtain hr0 := hx (rawBase w,16*w) (by simp [ranges])
+    obtain hr1 := hx (8*sFn 12,32) (by simp [ranges])
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;> simp only [carryOffset,sFn] at * <;> omega_using [hr0, hr1]
+  obtain ptr : v.gpr .rsi = off B (rawBase w+8*(i+w)) := by
+    obtain p := hv.endPtr.resolve_left (by omega_using [hn])
+    rw [show i+(i+8)+8*n=i+w by omega_using [hTail]] at p
+    exact p
+  have rowEq := hv.val
+  rw [show i+(i+8)+8*(n+1)=i+w+8 by omega_using [hTail],rawU,
+    input_preserved ha ha1 ha2 (by omega_using [hTail]) Z64 fu,
+    input_preserved ha ha1 ha2 (by omega_using [hTail] : (i+8)+8*n ≤ w) Z64 fu] at rowEq
+  obtain f0 : Frm B (ranges w) s.mem v.mem := fu.trans fv
+  have σv : (word v.mem B handOffset).toNat = σ := by
+    rw [hv.frame.word_eq (by
+      intro r hr
+      simp only [AdxRect8.rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact Or.inl (by unfold rawBase handOffset sFn slot hdrBytes aAcc; omega_using [])
+      · exact Or.inr (by unfold carryOffset handOffset sFn; omega_using [])
+      · exact Or.inr (by unfold handOffset sFn; omega_using [])) (by unfold handOffset sFn; omega_using [])]
+    exact σu
+  -- the carry: through the words above for the last row, handed otherwise
+  obtain tailStep : WP isa AdxTiledSquare.tail v fun x =>
+      word x.mem B (8*sFn 12) = BitVec.ofNat 64 i ∧ (word x.mem B handOffset).toNat ≤ 2 ∧
+      (∃ c, wv x.mem B (rawBase w) (2*w) +
+          (2 : Nat)^(64*(i+w+8))*(if i+16=w then 0 else (word x.mem B handOffset).toNat) +
+          (2 : Nat)^(128*w)*c =
+        wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(i+w))*σ +
+          (2 : Nat)^(64*(i+(i+8)))*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w a+8*(i+8)) (8*n)) ∧
+      Frm B (ranges w) v.mem x.mem ∧ Keep mmRegs v x := by
+    unfold AdxTiledSquare.tail
+    refine WP.seq (WP.mono (lastTest_ok hv.scr hv.rdi hv.hdr hZ (by omega_using [hTail, nowrap, rawZ]) (by omega_using [nowrap, rawZ]) hv.indexI)
+      fun y ⟨my,zy,ky⟩ => ?_)
+    obtain sy := hv.scr.congr ky.2.2
+    by_cases hl : i+16=w
+    · refine WP.ite true (by simp [eval,zy,hl]) (fun _ => ?_) (by intro h; cases h)
+      refine WP.mono (AdxTiledProduct.tail_ok sy ((ky.gpr (by decide)).trans hv.rdi) (my ▸ hv.hdr) hZ hw
+        hTail (my ▸ hv.indexI) ((ky.gpr (by decide)).trans ptr)) fun x ⟨⟨c,eq⟩,ox,kx⟩ => ?_
+      obtain fx : Frm B (ranges w) y.mem x.mem := Frm.of_outside ox (by simp [ranges])
+      obtain hx : word x.mem B handOffset = word v.mem B handOffset := by
+        rw [ox.word (by unfold rawBase slot hdrBytes handOffset sFn; omega_using []) (by unfold handOffset sFn; omega_using []),my]
+      refine ⟨?_,?_,⟨c,?_⟩,my ▸ fx,(ky.trans kx).mono (by decide)⟩
+      · rw [ox.word (by unfold rawBase slot hdrBytes sFn; omega_using []) (by decide),my]; exact hv.indexI
+      · rw [hx,σv]; exact hσ2
+      · rw [my] at eq
+        simp only [hl,ite_true,Nat.mul_zero,Nat.add_zero]
+        exact combine rowEq eq
+    · refine WP.ite false (by simp [eval,zy,hl]) (by intro h; cases h) (fun _ => ?_)
+      refine WP.mono (hand_ok sy ((ky.gpr (by decide)).trans hv.rdi) hZ) fun x ⟨mx,kx⟩ => ?_
+      obtain ox : Outside B handOffset 8 y.mem x.mem := by
+        rw [mx]; exact writeW_outside _ _ _ (by unfold handOffset sFn; omega_using [])
+      obtain fx : Frm B (ranges w) y.mem x.mem := by
+        intro z hz
+        apply ox z
+        have := hz (8*sFn 12,32) (by simp [ranges])
+        unfold handOffset; simp only [sFn] at *; omega_using [this]
+      obtain hx : (word x.mem B handOffset).toNat = (word v.mem B carryOffset).toNat := by
+        rw [mx,word_writeW_self,my]
+      refine ⟨?_,by rw [hx]; exact hv.carry,⟨0,?_⟩,my ▸ fx,(ky.trans kx).mono (by decide)⟩
+      · rw [ox.word (by unfold handOffset sFn; omega_using []) (by decide),my]; exact hv.indexI
+      · rw [ox.wv (by unfold rawBase slot hdrBytes handOffset sFn; omega_using []) (by omega_using [nowrap, rawZ]),my]
+        simp only [hl,ite_false,hx,Nat.mul_zero,Nat.add_zero]
+        exact rowEq
+  refine WP.seq (WP.mono tailStep fun x ⟨ix,σx,⟨c,val⟩,fx,kx⟩ => ?_)
+  obtain f : Frm B (ranges w) s.mem x.mem := f0.trans fx
+  obtain hx : Hdr x.mem B w mi := frame_hdr hh f
+  refine WP.mono (nextRow_ok (hv.scr.congr kx.2.2) ((kx.gpr (by decide)).trans hv.rdi)
+    hx hZ (by omega_using [hTail]) (by omega_using [hTail, nowrap, rawZ]) (by omega_using [nowrap, rawZ]) ix) fun t ⟨mt,zt,kt⟩ => ?_
+  obtain ot : Outside B (8*sFn 12) 8 x.mem t.mem := by
+    rw [mt]; exact writeW_outside _ _ _ (by decide)
+  obtain ft : Frm B (ranges w) x.mem t.mem := by
+    intro y hy
+    apply ot y
+    have := hy (8*sFn 12,32) (by simp [ranges]); omega_using [this]
+  obtain ht : word t.mem B handOffset = word x.mem B handOffset :=
+    ot.word (by unfold handOffset sFn; omega_using []) (by unfold handOffset sFn; omega_using [])
+  refine ⟨zt,?_,by rw [ht]; exact σx,⟨c,?_⟩,frame_hdr hx ft,f.trans ft,
+    (((ku.trans hv.keep).trans kx).trans kt).mono (by decide)⟩
+  · rw [mt,word_writeW_self]
+  · rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ] : rawBase w+8*(2*w) ≤ 2^64),ht]
+    exact val
+
+/-- `row_ok` for `row1`, whose carry goes through the words above. -/
+theorem row1_ok {s : State} {B : Addr} {Z w a i n : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hTail : w=i+8+8*n) (hn : 0<n)
+    (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i) :
+    WP isa (AdxTiledSquare.row1 ca) s fun t =>
+      t.zf = some (decide (i+8=w-8)) ∧ word t.mem B (8*sFn 12) = BitVec.ofNat 64 (i+8) ∧
+      (∃ c, wv t.mem B (rawBase w) (2*w)+(2 : Nat)^(128*w)*c =
+        wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(i+(i+8)))*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w a+8*(i+8)) (8*n)) ∧
+      Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have nowrap := hs.nowrap
+  obtain Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
+  obtain rawZ : rawBase w+16*w ≤ Z := by unfold rawBase slot aAcc at *; omega_using [hZ]
+  unfold AdxTiledSquare.row1
+  refine WP.seq (WP.mono (rowInit_ok hs hd hZ hidx) fun u ⟨cu,ju,ou,ku⟩ => ?_)
+  obtain fu : Frm B (ranges w) s.mem u.mem := by
+    intro x hx
+    apply ou x
+    have := hx (8*sFn 12,32) (by simp [ranges])
+    simp only [sFn] at *; omega_using [this]
+  obtain iu : word u.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
+    rw [ou.word (by decide) (by decide)]; exact hidx
+  obtain rawU : wv u.mem B (rawBase w) (2*w) = wv s.mem B (rawBase w) (2*w) :=
+    ou.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ])
+  refine WP.seq (WP.mono (AdxRect8.row_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd)
+    (frame_hdr hh fu) (frame_ops hv fu) pa pa hZ hw (by omega_using [hTail]) ha ha ha1 ha2 ha1 ha2
+    hTail hn iu ju (by rw [cu]; rfl)) fun v hv => ?_)
+  obtain fv : Frm B (ranges w) u.mem v.mem := by
+    intro x hx
+    apply hv.frame x
+    intro r hr
+    simp only [AdxRect8.rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    obtain hr0 := hx (rawBase w,16*w) (by simp [ranges])
+    obtain hr1 := hx (8*sFn 12,32) (by simp [ranges])
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;> simp only [carryOffset,sFn] at * <;> omega_using [hr0, hr1]
+  obtain ptr : v.gpr .rsi = off B (rawBase w+8*(i+w)) := by
+    obtain p := hv.endPtr.resolve_left (by omega_using [hn])
+    rw [show i+(i+8)+8*n=i+w by omega_using [hTail]] at p
+    exact p
+  refine WP.seq (WP.mono (AdxTiledProduct.tail_ok hv.scr hv.rdi hv.hdr hZ hw hTail hv.indexI ptr)
+    fun x ⟨⟨c,eq⟩,ox,kx⟩ => ?_)
+  obtain fx : Frm B (ranges w) v.mem x.mem := Frm.of_outside ox (by simp [ranges])
+  obtain f : Frm B (ranges w) s.mem x.mem := (fu.trans fv).trans fx
+  obtain hx : Hdr x.mem B w mi := frame_hdr hh f
+  obtain ix : word x.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
+    rw [ox.word (by unfold rawBase slot hdrBytes sFn; omega_using []) (by decide)]
+    exact hv.indexI
+  have rowEq := hv.val
+  rw [show i+(i+8)+8*(n+1)=i+w+8 by omega_using [hTail],rawU,
+    input_preserved ha ha1 ha2 (by omega_using [hTail]) Z64 fu,
+    input_preserved ha ha1 ha2 (by omega_using [hTail] : (i+8)+8*n ≤ w) Z64 fu,Nat.add_zero] at rowEq
+  obtain val : wv x.mem B (rawBase w) (2*w)+2^(128*w)*c =
+      wv s.mem B (rawBase w) (2*w)+2^(64*(i+(i+8)))*wv s.mem B (slot w a+8*i) 8*
+        wv s.mem B (slot w a+8*(i+8)) (8*n) := combine rowEq eq
+  refine WP.mono (nextRow_ok (hv.scr.congr kx.2.2) ((kx.gpr (by decide)).trans hv.rdi)
+    hx hZ (by omega_using [hTail]) (by omega_using [hTail, nowrap, rawZ]) (by omega_using [nowrap, rawZ]) ix) fun t ⟨mt,zt,kt⟩ => ?_
+  obtain ot : Outside B (8*sFn 12) 8 x.mem t.mem := by
+    rw [mt]; exact writeW_outside _ _ _ (by decide)
+  obtain ft : Frm B (ranges w) x.mem t.mem := by
+    intro y hy
+    apply ot y
+    have := hy (8*sFn 12,32) (by simp [ranges]); omega_using [this]
+  refine ⟨zt,?_,⟨c,?_⟩,frame_hdr hx ft,f.trans ft,(((ku.trans hv.keep).trans kx).trans kt).mono (by decide)⟩
+  · rw [mt,word_writeW_self]
+  · rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega_using []) (by omega_using [nowrap, rawZ] : rawBase w+8*(2*w) ≤ 2^64)]
+    exact val
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+end
+
+end
 
 /-! ### `Bignum.X86_64.AdxTri8Block`, which this module and modules that import it used -/
 

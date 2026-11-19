@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset

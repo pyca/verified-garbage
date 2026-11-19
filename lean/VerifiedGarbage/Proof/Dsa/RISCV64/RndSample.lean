@@ -403,7 +403,7 @@ end
 /-!
 # DSA sampling on RISC-V: the sampling loop
 
-As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Sample.lean`). `sample_ok`: up to
+As on PPC64LE (`Proof/Dsa/PPC64LE/Random/Prepare.lean`). `sample_ok`: up to
 128 draws from the tape at `used`, against `Random.sample q 128`: the status
 in `s10` is its status, the octets consumed in `s5`, and an accepted scalar
 is the nonce's last `W` octets.

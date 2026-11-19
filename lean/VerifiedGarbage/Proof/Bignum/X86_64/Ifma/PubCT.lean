@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -26,7 +26,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 public import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Framework.Omega
@@ -35,7 +34,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 meta import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 meta import VerifiedGarbage.Proof.Bignum.Amm52
 meta import VerifiedGarbage.Proof.Framework.Omega

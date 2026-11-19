@@ -28,8 +28,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
@@ -46,7 +45,6 @@ meta import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-! ### `Bignum.X86_64.BaseSquareMont`, which only this module used -/

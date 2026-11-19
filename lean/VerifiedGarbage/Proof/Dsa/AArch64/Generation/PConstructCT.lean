@@ -32,21 +32,15 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PShape
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSeedHash
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSeedHash
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PShape
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ### `Dsa.AArch64.Generation.PShapeCT`, which only this module used -/

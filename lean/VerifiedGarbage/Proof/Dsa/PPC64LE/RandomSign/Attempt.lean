@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -31,7 +31,6 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFn
 import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Q
 

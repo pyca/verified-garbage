@@ -7,17 +7,15 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
-import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 import VerifiedGarbage.Proof.MdStream.Spec
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
@@ -27,25 +25,17 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.ValidatePrivateVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
-import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
-import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
-import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
+import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep

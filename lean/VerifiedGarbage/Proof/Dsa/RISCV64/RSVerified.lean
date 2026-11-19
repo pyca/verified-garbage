@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Dsa.RISCV64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.RISCV64.RSCtx
+public import VerifiedGarbage.Proof.Dsa.RISCV64.RSEntry
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.Octets

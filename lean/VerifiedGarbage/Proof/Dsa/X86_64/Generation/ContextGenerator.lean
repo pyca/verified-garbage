@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 public import Mathlib.Tactic.Push
 public import Mathlib.Data.Nat.Basic

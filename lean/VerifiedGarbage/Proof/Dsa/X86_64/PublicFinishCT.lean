@@ -6,14 +6,12 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
@@ -29,16 +27,12 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
 
 /-! ### `Dsa.X86_64.PublicCallCT`, which only this module used -/
 

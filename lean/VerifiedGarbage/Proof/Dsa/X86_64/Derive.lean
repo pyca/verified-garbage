@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
-import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
+import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Derive
@@ -31,8 +30,8 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
-import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
+import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup

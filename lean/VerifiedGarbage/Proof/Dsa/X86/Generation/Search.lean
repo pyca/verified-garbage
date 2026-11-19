@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Dsa.Contract

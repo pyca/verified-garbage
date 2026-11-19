@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Base
-import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
+import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Taint0

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.AArch64.Call

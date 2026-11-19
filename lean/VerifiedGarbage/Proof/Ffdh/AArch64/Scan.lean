@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Lead
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.Lead
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
@@ -32,23 +32,19 @@ meta import VerifiedGarbage.Proof.Ffdh.AArch64.Checks
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Pow
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 
 /-! ### `Ffdh.AArch64.PowCT`, which the modules that import this one used -/
 

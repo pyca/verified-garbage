@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.PubExp

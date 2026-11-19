@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset

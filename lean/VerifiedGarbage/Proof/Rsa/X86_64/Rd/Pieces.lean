@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Args
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

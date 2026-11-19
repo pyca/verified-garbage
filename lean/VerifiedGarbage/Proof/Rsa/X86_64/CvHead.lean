@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Rsa.X86_64.Div
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push

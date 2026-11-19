@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
 public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
-import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
+public import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Dsa.X86.RandomDraw
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Framework.AddrArith
 

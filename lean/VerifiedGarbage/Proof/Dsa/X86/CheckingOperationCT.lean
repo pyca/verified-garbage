@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Dsa.X86.CheckingEntry
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
-import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
-import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
 import VerifiedGarbage.Proof.Dsa.X86.ParameterBuffers

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -18,57 +18,43 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStages
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStages
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 import VerifiedGarbage.Proof.Dsa.Encoding
 public import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInput
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInput
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorModulus
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFields
 import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFields
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Parent
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
 import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorModulus
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
 import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DecrementOdd
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DecrementOdd
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
@@ -80,10 +66,8 @@ meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import Mathlib.Data.Nat.Basic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
 
 /-! ### `Dsa.AArch64.Generation.GeneratorLoopCT`, which this module and modules that import it used -/
 

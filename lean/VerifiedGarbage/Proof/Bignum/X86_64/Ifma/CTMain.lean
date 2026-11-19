@@ -46,17 +46,15 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ZCore
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
@@ -91,19 +89,17 @@ public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreR2
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
@@ -113,7 +109,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Rsa.PreWords
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPreR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 meta import VerifiedGarbage.Proof.Rsa.PreWords
@@ -128,18 +124,15 @@ meta import Mathlib.Data.Int.ModEq
 meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
 meta import Mathlib.Tactic.TermCongr
 import Mathlib.Tactic.TermCongr
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.Amm52
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 meta import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub

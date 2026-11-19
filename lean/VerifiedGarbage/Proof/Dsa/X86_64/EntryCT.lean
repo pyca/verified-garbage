@@ -19,26 +19,20 @@ meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-public import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
-meta import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-public import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-meta import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 

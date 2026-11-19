@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.DomainWidths
-public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
+public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
 public import VerifiedGarbage.Proof.Dsa.DomainShape
@@ -22,7 +22,6 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFront
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 meta import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyComb
 meta import VerifiedGarbage.Impl.Dsa.RISCV64.Sign
@@ -31,7 +30,6 @@ meta import VerifiedGarbage.Proof.Bignum.RISCV64.Reach
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyFn
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect

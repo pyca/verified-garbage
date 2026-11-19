@@ -1,31 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -33,7 +29,7 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
-public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
+public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
 public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
@@ -44,7 +40,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.Layout
@@ -54,10 +50,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Spec.Dsa.Prevalidated
 meta import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Result
-meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
-meta import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
@@ -68,29 +63,22 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
-import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
-meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
 meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
@@ -98,29 +86,23 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerify
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
-public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
-import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
 meta import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
 meta import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
-meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 

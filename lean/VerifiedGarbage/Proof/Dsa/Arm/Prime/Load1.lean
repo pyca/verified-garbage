@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Loads
+public import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.St
-public import VerifiedGarbage.Proof.Dsa.Arm.Prime.TaintD
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Framework.Offset

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 meta import VerifiedGarbage.Proof.Bignum.CrtMath
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2

@@ -8,29 +8,23 @@ import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
 import VerifiedGarbage.Proof.Dsa.RandomTrace
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 meta import VerifiedGarbage.Spec.Dsa.Random
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
@@ -38,7 +32,6 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
@@ -48,9 +41,6 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
 meta import VerifiedGarbage.Proof.Dsa.RandomTrace
 meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
 

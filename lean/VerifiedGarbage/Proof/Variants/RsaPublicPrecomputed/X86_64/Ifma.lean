@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 public import VerifiedGarbage.Proof.Bignum.Amm52
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 import VerifiedGarbage.Proof.Framework.Lit
 

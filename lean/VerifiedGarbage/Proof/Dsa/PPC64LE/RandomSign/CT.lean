@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Attempt
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Contract
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Contract
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Zero
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Save
 import VerifiedGarbage.Proof.Dsa.RandomSign
@@ -27,26 +27,22 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 public import VerifiedGarbage.Proof.Dsa.SameTrace
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Sample
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Random.Prepare
 meta import VerifiedGarbage.Proof.Dsa.SameTrace
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.CT
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Contract
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
-import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Spec
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.CT
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.PrevalidatedSign
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Key
+meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyCT
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CT.Sizes
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect

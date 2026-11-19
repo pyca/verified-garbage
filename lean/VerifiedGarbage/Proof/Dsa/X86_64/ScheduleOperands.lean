@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Batteries.Logic
 

@@ -17,7 +17,7 @@ public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Dsa.Contract
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.MdStream.Spec
@@ -47,7 +47,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
-import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.Arithmetic
@@ -60,9 +59,8 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Result
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Result
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Dsa.Derive
@@ -71,9 +69,7 @@ meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
-import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
 import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT

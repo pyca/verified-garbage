@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 
 /-! ### `Dsa.AArch64.Arguments`, which this module and modules that import it used -/
 

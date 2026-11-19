@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTab
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTab
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
 meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
@@ -24,9 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Rsa.Ranges
 meta import VerifiedGarbage.Proof.Rsa.Ranges
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWin
 import VerifiedGarbage.Proof.Bignum.CrtExp

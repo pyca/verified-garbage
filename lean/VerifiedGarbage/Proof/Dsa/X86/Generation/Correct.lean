@@ -14,8 +14,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Q
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PAttempt
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
-public import VerifiedGarbage.Proof.Dsa.X86.Generation.Env
+public import VerifiedGarbage.Proof.Dsa.X86.Generation.Geo
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Framework.X86.Syms

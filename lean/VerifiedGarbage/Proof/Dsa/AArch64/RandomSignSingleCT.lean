@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -19,14 +19,12 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules

@@ -7,14 +7,14 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: constant time but for `n`

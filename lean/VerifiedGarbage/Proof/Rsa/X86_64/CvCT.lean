@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Proof.Framework.Offset
