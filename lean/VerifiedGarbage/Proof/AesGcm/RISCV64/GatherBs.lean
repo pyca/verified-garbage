@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
@@ -53,6 +54,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
@@ -102,7 +104,7 @@ return address and `bk`'s bytes and the key context come back from it, and
   against the shared contract with 4672 bytes of stack
   (`sealGatherBs_verified`).
 * **No secret residue:** the registration (`sealGatherBsReg`) is
-  `withScrubSel`, as ChaCha20-Poly1305's `seal_gather`
+  `scrubSelOf`, as ChaCha20-Poly1305's `seal_gather`
   (`Proof/ChaCha20Poly1305/RISCV64/Scrub.lean`).
 -/
 
@@ -1070,7 +1072,7 @@ theorem gatherBsOut (stack : Nat) :
 `vg_aes_gcm_seal_bitsliced` (`sealBsReg`), 32 bytes lower, below our own. -/
 def sealGatherBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] :
     Registration Spec.Gcm.sealGatherBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := sealGatherBs
       verified := Proof.AesGcm.sealGatherBitsliced_keyed sealGatherBs_verified }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (176, [(0, 22)])]
