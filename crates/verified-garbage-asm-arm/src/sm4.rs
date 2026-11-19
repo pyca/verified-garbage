@@ -3044,5 +3044,9 @@ pub(crate) mod vg_sm4_ctr32;
 pub(crate) mod vg_sm4_ecb;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sm4_expand_key_core.rs"]
+pub(crate) mod vg_sm4_expand_key_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]
 pub(crate) mod vg_sm4_prepare_keys;

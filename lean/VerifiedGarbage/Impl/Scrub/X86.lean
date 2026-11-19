@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # Returning without secret residue (x86, 32-bit)
@@ -10,8 +9,11 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 where its Rust caller cannot clear it (`X86.NoResidue`):
 
 * the `n` bytes of stack below `esp` (the stack `c`'s frames and calls use),
-  in a frame of them (`wipeBelow`): `mov ecx, 0`, then `mov [esp + 4k], ecx`
-  for every doubleword of the frame (`Impl.StackScratch.X86.wipe`);
+  in nested frames of the sizes `chunks n` (`wipeBelow`), each of at most
+  4080 bytes, as the model's frames are of less than a page: `pxor xmm0,
+  xmm0` (and `mov ecx, 0` if a frame's size is not a multiple of 16), then,
+  in each frame, `movdqu [esp + 16k], xmm0` for every 16 bytes of it, and
+  `mov [esp + off], ecx` for each doubleword left over (`zeroFrame`);
 * the result's bits above its `retBits` low ones (`edx`, or `edx` and `eax`,
   with `mov r, 0`), and the other caller-saved general-purpose register,
   `ecx`, with `xor ecx, ecx`, which also leaves known flags: CF and OF clear,
@@ -50,9 +52,39 @@ def tail (rb : Nat) : List Instr :=
 /-- `c`, then `tail rb`. -/
 def scrub (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (tail rb))
 
-/-- Zero the `n` bytes below `esp`, in a frame of them. -/
-def wipeBelow (n : Nat) : Prog isa :=
-  .frame (.alloc n) (.block (Impl.StackScratch.X86.wipe 0 (n / 4))) (.free n)
+/-- `movdqu [esp + 16k], xmm0` for `k` from `k₀` to `k₀ + n - 1`. -/
+def stores16 (k₀ : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => .movdquStore ⟨.esp, 16 * k₀⟩ .xmm0 :: stores16 (k₀ + 1) n
+
+/-- `mov [esp + 4k], ecx` for `k` from `k₀` to `k₀ + n - 1`. -/
+def stores4 (k₀ : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => .store ⟨.esp, 4 * k₀⟩ .ecx :: stores4 (k₀ + 1) n
+
+/-- Zero the `b` bytes at `esp` (a multiple of 4), with `xmm0` and `ecx`
+zero: by 16 at a time, then the doublewords left over. -/
+def zeroFrame (b : Nat) : List Instr := stores16 0 (b / 16) ++ stores4 (4 * (b / 16)) (b % 16 / 4)
+
+/-- Zero the stack below `esp` in nested frames of the sizes `cs`. -/
+def wipe : List Nat → Prog isa
+  | [] => .block []
+  | b :: bs => .frame (.alloc b) (.seq (.block (zeroFrame b)) (wipe bs)) (.free b)
+
+/-- Frames of at most 4080 bytes (`fuel` of them at most) summing to `n`. -/
+def chunksAux : Nat → Nat → List Nat
+  | 0, _ => []
+  | _ + 1, 0 => []
+  | f + 1, n + 1 => if n + 1 ≤ 4080 then [n + 1] else 4080 :: chunksAux f (n + 1 - 4080)
+
+def chunks (n : Nat) : List Nat := chunksAux (n / 4080 + 1) n
+
+/-- Zero `xmm0`, and `ecx` if a frame of `cs` is not a multiple of 16 bytes. -/
+def zeroRegs (cs : List Nat) : List Instr :=
+  .xop (.bin .pxor .xmm0 .xmm0) :: if cs.all (· % 16 == 0) then [] else [.mov .ecx (.imm 0)]
+
+/-- Zero the `n` bytes below `esp`, in nested frames of the sizes `chunks n`. -/
+def wipeBelow (n : Nat) : Prog isa := .seq (.block (zeroRegs (chunks n))) (wipe (chunks n))
 
 /-- `c`, then the `n` bytes below `esp` zeroed, then `tail rb`. -/
 def scrubF (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))

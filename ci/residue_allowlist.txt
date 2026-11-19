@@ -480,12 +480,7 @@ powerpc64le vg_aes_ccm_seal
 powerpc64le vg_aes_siv_decrypt
 powerpc64le vg_aes_siv_encrypt
 powerpc64le vg_aes_siv_init
-powerpc64le vg_argon2
-powerpc64le vg_chacha20_apply
-powerpc64le vg_chacha20_init
-powerpc64le vg_chacha20_set_nonce
 powerpc64le vg_ct_eq
-powerpc64le vg_scrypt
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal
 riscv64 vg_aes_gcm_init
