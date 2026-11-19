@@ -116,7 +116,7 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
   obtain wE : ∀ {r : Region}, Region.Sub r (workR Wn W) → ∃ r' ∈ [workR Wn W, (⟨D, n⟩ : Region)], Region.Sub r r' :=
     fun h => ⟨_, List.mem_cons_self .., h⟩
   obtain F12 : Frame [workR Wn W, ⟨D, n⟩] s.mem s₂.mem := by
-    obtain F1 := f₁.sub fun r hr => wE (entryR_work W r hr)
+    obtain F1 := f₁.sub fun r hr => wE (entryR_work W (hWn := hWn) r hr)
     obtain F2 := h₂.frame.sub fun r hr => wE (by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide))
