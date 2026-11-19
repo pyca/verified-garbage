@@ -61,15 +61,15 @@ theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
 theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.callees).allInstrs keepsV = true :=
   fastSealWith_keepsV v v.gh.keepsV
 
-theorem fastSeal_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem fastSeal_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : sealAArch64.pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s t s' ∧ abiPreserved s s' ∧
-      (sealAArch64 Wn).post s s' :=
+      sealAArch64.post s s' :=
   WP.withPreservedV (Fast.seal_wp v hMK hs) (fastSeal_keepsV v)
 
 theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
+  Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
@@ -160,21 +160,21 @@ abbrev pwR (s : State) : Region := ⟨stackArg s 1, 128⟩
 /-- What `vg_aes_gcm_seal_with_powers` needs, on the regions its proofs run
 on: `sealPreXW 2`, with `pw` readable, apart from the text and the working
 space, and holding the powers of the hash subkey. -/
-def sealPwN (Wn : Nat) (s : State) : Prop :=
-  sealPreXW (Wn := Wn) 2 [pwR s] s ∧ (pwR s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
-    (pwR s).Disjoint ⟨stackArg s 2, Wn⟩ ∧
+def sealPwN (s : State) : Prop :=
+  sealPreXW 2 [pwR s] s ∧ (pwR s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
+    (pwR s).Disjoint ⟨stackArg s 2, 2560⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 1) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- What `vg_aes_gcm_seal_with_powers` needs: `sealPreXW 2`, with `pw`
 readable before the stack arguments, holding the powers. -/
-def sealPwW (Wn : Nat) (s : State) : Prop :=
+def sealPwW (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
   let pw : Region := pwR s
-  let work : Region := ⟨stackArg s 2, Wn⟩
+  let work : Region := ⟨stackArg s 2, 2560⟩
   s.rd = [ctx, nonce, aad, pw, args s 3] ∧ s.wr = [data, tag, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧ pw.Disjoint data ∧
@@ -182,13 +182,13 @@ def sealPwW (Wn : Nat) (s : State) : Prop :=
     work.Disjoint (args s 3) ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 2).toNat + Wn ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
+    (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 1) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- `vg_aes_gcm_seal_with_powers`. -/
 def sealPwAArch64 : Contract isa where
   pre := sealPwW
-  post := (sealAArch64 Wn).post
+  post := sealAArch64.post
   pub := onePub 3
 
 /-! ## The call of `vg_ghash_with_powers` -/
@@ -196,9 +196,9 @@ def sealPwAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space and the text: `pw` is at `[sp + 8]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
-theorem gwCall_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : sealPwN Wn σ) (sY : Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 2)))
-    (sS : Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 2))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR Wn (stackArg σ 2), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
+theorem gwCall_of {σ s : State} {Y S : Addr} (hs : sealPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 2)))
+    (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 2))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
+    (hf : Frame [workR 2560 (stackArg σ 2), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg σ 1 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 1) := by
@@ -244,20 +244,20 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem sealPw_wp {Wn : Nat} {s : State} (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem sealPw_wp {s : State} (hs : sealPwN s) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s fun s' =>
-      GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
+      GprAbi s s' ∧ sealAArch64.post s s' :=
   sealWithE_wp (w := 2) v _ hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
     have q := gwCall_of hs sY sS hrd hwr hsp hf
     pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2
 
-theorem sealPw_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem sealPw_correctN (s : State) (hs : sealPwN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      (sealAArch64 Wn).post s s' :=
+      sealAArch64.post s s' :=
   WP.withPreservedV (sealPw_wp v g hMK hs) (fastSealWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inl rfl)))
 
-theorem sealPw_ctN {Wn : Nat} :
-    ConstantTime isa sealPwN Wn (onePub 3) (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) :=
+theorem sealPw_ctN :
+    ConstantTime isa sealPwN (onePub 3) (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn) :=
   sealWithE_ct (w := 2) v _ hMK (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCall_of p sY sS hrd hwr hsp hf
@@ -284,18 +284,18 @@ def narrowRdP (s : State) : List Region :=
 /-- `s` with the readable regions of the proofs. -/
 def narrowP (s : State) : State := s.withRegions (narrowRdP s) s.wr
 
-theorem narrowP_pre {Wn : Nat} {s : State} (h : sealPwW Wn s) : sealPwN Wn (narrowP s) := by
+theorem narrowP_pre {s : State} (h : sealPwW s) : sealPwN (narrowP s) := by
   obtain ⟨-, hwr, cd, cw, nd, nw, ad, aw, dt, pd, dw, da, tw, pw, wa, b0, b2, b4, b6, b1, bsp, hr, rep⟩ := h
   exact ⟨⟨rfl, hwr, cd, cw, nd, nw, ad, aw, dt, dw, da, tw, wa, b0, b2, b4, b6, b1, bsp, hr⟩, pd, pw, rep⟩
 
-theorem narrowP_covers {Wn : Nat} {s : State} (h : sealPwW Wn s) :
+theorem narrowP_covers {s : State} (h : sealPwW s) :
     Covers ((narrowP s).rd ++ (narrowP s).wr) (s.rd ++ s.wr) := by
   rw [show (narrowP s).rd = narrowRdP s from rfl, show (narrowP s).wr = s.wr from rfl, h.1]
   refine Covers.append (Covers.of_mem fun r hr => ?_) (Covers.refl _)
   simp only [narrowRdP, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp
 
-theorem narrowP_exec {Wn : Nat} {c : Prog isa} {s s₁ : State} {t : List Leak} (h : sealPwW Wn s)
+theorem narrowP_exec {c : Prog isa} {s s₁ : State} {t : List Leak} (h : sealPwW s)
     (he : Exec isa c (narrowP s) t s₁) : Exec isa c s t (s₁.withRegions s.rd s.wr) := by
   have := Exec.widen he (narrowP_covers h) (Covers.refl _)
   rwa [show (narrowP s).withRegions s.rd s.wr = s from rfl] at this
@@ -337,7 +337,7 @@ theorem sealPw_ct :
 theorem sealPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
       (Proof.AesGcm.sealWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (sealPw_correct (Wn := 2560) v g hMK) (sealPw_ct (Wn := 2560) v g hMK)
+  Verified.of_correct (sealPw_correct v g hMK) (sealPw_ct v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
           Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
