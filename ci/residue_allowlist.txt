@@ -128,12 +128,6 @@ arm vg_aes_siv_init
 arm vg_aes_xts_decrypt_unit
 arm vg_aes_xts_encrypt_unit
 arm vg_argon2
-arm vg_blake2b_finalize
-arm vg_blake2b_init
-arm vg_blake2b_update
-arm vg_blake2s_finalize
-arm vg_blake2s_init
-arm vg_blake2s_update
 arm vg_blowfish_cbc_decrypt_chained
 arm vg_blowfish_cbc_encrypt_chained
 arm vg_blowfish_cfb64_decrypt
