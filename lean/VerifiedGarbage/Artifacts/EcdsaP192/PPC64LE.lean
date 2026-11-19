@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Lit
@@ -24,8 +25,8 @@ public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 
 namespace VG.Artifacts.EcdsaP192.PPC64LE
 
-open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT OK p192R p192T_verified)
-open VG.Proof.HmacTable.PPC64LE (vars tables)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (OK)
+open VG.Proof.HmacTable.PPC64LE (vars)
 
 open VG.Proof.P192.PPC64LE (hasLaw)
 
@@ -33,10 +34,8 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target
     (Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify hasLaw.law)] ++
   (if hv : OK vars then [
-    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact PPC64LE.target {
-      tables := [("hmac", tables vars)]
-      code := signCodeT (p192R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p192.tries vars
-      verified := p192T_verified hasLaw.law vars hv }]
+    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact PPC64LE.target
+      (Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.p192Sign hasLaw.law hv)]
   else [])
 
 end VG.Artifacts.EcdsaP192.PPC64LE
