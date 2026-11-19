@@ -648,10 +648,6 @@ x86 vg_cmac_aes_finish
 x86 vg_cmac_aes_finish_aesni
 x86 vg_cmac_aes_init
 x86 vg_cmac_aes_init_aesni
-x86 vg_cmac_triple_des_absorb
-x86 vg_cmac_triple_des_finish
-x86 vg_cmac_triple_des_stream_init
-x86 vg_ct_eq
 x86 vg_dsa_derive_key
 x86 vg_dsa_generate_key
 x86 vg_dsa_parameter_search

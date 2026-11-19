@@ -1,0 +1,48 @@
+module
+
+public import VerifiedGarbage.Proof.Ct.X86
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Lit
+
+/-!
+# Constant-time comparison on x86 (32-bit), without secret residue
+
+`vg_ct_eq`, followed by `Impl.Scrub.X86.tail` (`X86.Scrub.scrubOf`), which
+clears `eax`, `ecx` and `edx` but the result's bits, the flags and
+`xmm0`–`xmm7`. It calls nothing and has no frame, so there is no stack to
+wipe. Its postcondition reads no memory on return: it writes none
+(`X86.Scrub.PostOut`), as on the other targets (`Proof/Ct/PPC64LE/Scrub.lean`).
+`scrubOf`'s side condition (`scrubSide`) is proved at the registration, by
+the kernel's evaluation of it when this module is built.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ct.X86.Scrub
+
+open VG.X86 VG.X86.Scrub
+
+/-! ## Postconditions -/
+
+theorem eqOut (stack : Nat) : PostOut (Spec.Ct.eqContract abi stack) (Spec.Ct.eqSig.retBits 32) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+    obtain ⟨a, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨b, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨bl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+    exact h
+
+/-! ## The registration -/
+
+/-- `Spec.Ct.eqApi`. -/
+def eqReg : Registration Spec.Ct.eqApi X86.target :=
+  scrubOf {
+      code := Impl.Ct.X86.eq
+      verified := Proof.Ct.X86.verified }
+
+end VG.Proof.Ct.X86.Scrub
