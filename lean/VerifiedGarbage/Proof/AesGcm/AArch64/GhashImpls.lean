@@ -1385,4 +1385,25 @@ theorem sealGatherSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch6
         2592 (Spec.Gcm.sealGatherSig.retBits abi.ptrBits) clear []) = true := by lit_decide
   exact List.all_eq_true.mp h g hg
 
+/-- `initSide`, for `sealBasePw` of the variants without code that reads the powers. -/
+theorem sealBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode g.impl)) 2576 (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode g.impl)) 2576 (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `openBasePw` of the variants without code that reads the powers. -/
+theorem openBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode g.impl)) 2592 (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode g.impl)) 2592 (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `openToBasePw` of the variants without code that reads the powers. -/
+theorem openToBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode g.impl)) 2608 (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode g.impl)) 2608 (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
 end VG.Proof.AesGcm.AArch64.Scrub
