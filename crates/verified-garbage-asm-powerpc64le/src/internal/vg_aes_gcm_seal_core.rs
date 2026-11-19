@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_core() {
     core::arch::naked_asm!(
-        r#".base64 "kfUh+AAAgTnQCgzoYAAM+HAADDhoAAz4AACBOWgAjOmAAEz6iABs+pAAjPqYAKz6oADM+qgA7PqwAAz7uAAs+8AATPvIAGz70ACM+9gArPvgAMz76ADs+6YCCHzwAAz4eGOffXgbfXx4I5x8EADfO3gruHx4M9l8eDPSfHg79Xx4QxZ9eEs7fXhTV30AAIE5YACM6vT/2TgAACYo"
+        r#".base64 "Efsh+AAAgTlQBQzoYAAM+HAADDhoAAz4AACBOWgAjOmAAEz6iABs+pAAjPqYAKz6oADM+qgA7PqwAAz7uAAs+8AATPvIAGz70ACM+9gArPvgAMz76ADs+6YCCHzwAAz4eGOffXgbfXx4I5x8EADfO3gruHx4M9l8eDPSfHg79Xx4QxZ9eEs7fXhTV30AAIE5YACM6vT/2TgAACYo"
 beq %cr0, 20f
 .base64 "AAAAOAAAHvgIAB74AABAOwAAOSg="
 beq %cr0, 22f
@@ -331,7 +331,7 @@ bl {vg_ghash}
 .base64 "EAB+6AAAf/gYAH7oCAB/+Hjro39444R/ePPFfwAA3zgBAOA4"
 bl {vg_aes_ctr32}
 241:
-.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrcAohOCAAgE4=""#,
+.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzr8AQhOCAAgE4=""#,
         vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks = sym crate::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
         vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,

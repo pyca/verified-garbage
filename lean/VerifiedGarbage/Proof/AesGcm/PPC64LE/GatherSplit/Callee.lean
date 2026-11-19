@@ -14,7 +14,7 @@ namespace VG.Proof.AesGcm.PPC64LE.GatherSplit
 open VG VG.PPC64LE
 
 
-theorem split_sdepth : sdepth Impl.AesGcm.PPC64LE.GatherSplit.sealCode=2800 := by
+theorem split_sdepth : sdepth Impl.AesGcm.PPC64LE.GatherSplit.sealCode=1392 := by
   decide +kernel
 
 abbrev callContext (s : State) : Region := ⟨s.gpr .r3,256⟩
@@ -26,7 +26,7 @@ abbrev callTag (s : State) : Region := ⟨stackArg s 2,16⟩
 abbrev callArgsRegion (s : State) : Region := ⟨stackArgAddr s 0,24⟩
 
 structure CallLayout (s : State) : Prop where
-  space : 2800≤s.sp.toNat
+  space : 1392≤s.sp.toNat
   capacity : s.sp.toNat+120≤2^64
   rd : s.rd=[callContext s,callNonce s,callAad s,callSource s,callArgsRegion s]
   wr : s.wr=[callData s,callTag s]
@@ -34,14 +34,14 @@ structure CallLayout (s : State) : Prop where
   tagApart : ∀ r∈[callContext s,callNonce s,callAad s,callSource s,callData s],r.Disjoint (callTag s)
   argsApart : ∀ r∈[callData s,callTag s],r.Disjoint (callArgsRegion s)
   stackApart : ∀ r∈[callContext s,callNonce s,callAad s,callSource s,callData s,callTag s,callArgsRegion s],
-    (below s.sp 2800).Disjoint r
+    (below s.sp 1392).Disjoint r
   fits : ∀ r∈[callContext s,callNonce s,callAad s,callSource s,callData s,callTag s],r.base.toNat+r.len≤2^64
   rounds : (s.gpr .r4).toNat=10 ∨ (s.gpr .r4).toNat=12 ∨ (s.gpr .r4).toNat=14
   bound : (s.gpr .r10).toNat≤(stackArg s 1).toNat
 
 
 theorem call_pre {s : State} (h : CallLayout s) :
-    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pre s := by
   have cd := h.dataApart (callContext s) (by simp)
   have nd := h.dataApart (callNonce s) (by simp)
   have ad := h.dataApart (callAad s) (by simp)
@@ -72,7 +72,7 @@ theorem call_pre {s : State} (h : CallLayout s) :
     bc,bn,ba,bs,bd,bt,bargs,fc,fn,fa,fs,fd,ft,h.rounds,h.bound⟩
 
 
-theorem call_post {s z : State} (h : (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).post s z)
+theorem call_post {s z : State} (h : (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).post s z)
     (hR : (s.gpr .r4).toNat=10 ∨ (s.gpr .r4).toNat=12 ∨ (s.gpr .r4).toNat=14)
     (hb : (s.gpr .r10).toNat≤(stackArg s 1).toNat) :
     Spec.Gcm.encryptWith (Spec.Gcm.ctxCiph s.mem (s.gpr .r3) (s.gpr .r4).toNat)
@@ -90,7 +90,7 @@ theorem call_pub {s t : State}
     (hp : s.gpr .r3=t.gpr .r3 ∧ s.gpr .r4=t.gpr .r4 ∧ s.gpr .r5=t.gpr .r5 ∧ s.gpr .r6=t.gpr .r6 ∧
       s.gpr .r7=t.gpr .r7 ∧ s.gpr .r8=t.gpr .r8 ∧ s.gpr .r9=t.gpr .r9 ∧ s.gpr .r10=t.gpr .r10 ∧
       s.sp=t.sp ∧ stackArg s 0=stackArg t 0 ∧ stackArg s 1=stackArg t 1 ∧ stackArg s 2=stackArg t 2) :
-    (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub s t := by
+    (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pub s t := by
   obtain ⟨g3,g4,g5,g6,g7,g8,g9,g10,hsp,a0,a1,a2⟩ := hp
   sig_pub [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,PPC64LE.abi,PPC64LE.argRegs,
     List.range,List.range.loop]

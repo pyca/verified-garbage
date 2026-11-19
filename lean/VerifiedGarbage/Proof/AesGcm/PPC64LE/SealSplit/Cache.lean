@@ -88,10 +88,10 @@ theorem source_layout {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List By
       by rw [h29, h31]; exact (lay.workApart (contextR s) (by simp)).sub_right (Offset.sub_base _ (by decide)),
       by rw [h30, h31]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
       by rw [h27, h23, h31]; exact (lay.workApart (dataR s) (by simp)).sub_right (Offset.sub_base _ (by decide)), ?_⟩
-    change Covers [⟨s₁.gpr .r31 + 448, 2112⟩] s₂.wr
+    change Covers [⟨s₁.gpr .r31 + 448, 704⟩] s₂.wr
     rw [wr, h1.en.keeps.wr, h31]
     change Covers _ (frameR 112 s::s.wr)
     rw [lay.wr]
-    exact covers_off (p := stackArg s 3) (k := 2560) (Covers.of_mem (by simp [workR])) (by decide) (by decide)
+    exact covers_off (p := stackArg s 3) (k := 1152) (Covers.of_mem (by simp [workR])) (by decide) (by decide)
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit

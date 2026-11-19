@@ -194,14 +194,14 @@ def sealPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
-  let scr : Region := ⟨stackArg s 1, 2560⟩
+  let scr : Region := ⟨stackArg s 1, 1152⟩
   s.rd = [ctx, nonce, aad, args s 2] ∧ s.wr = [data, tag, scr] ∧
     ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
     aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
     data.Disjoint scr ∧ data.Disjoint (args s 2) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 2) ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 112 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+    (stackArg s 1).toNat + 1152 ≤ 2 ^ 64 ∧ s.sp.toNat + 112 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- The public arguments of `seal` and `open`, with `n` on the stack. -/
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
@@ -228,14 +228,14 @@ def openPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let scr : Region := ⟨stackArg s 2, 2560⟩
+  let scr : Region := ⟨stackArg s 2, 1152⟩
   s.rd = [ctx, nonce, aad, tag, args s 3] ∧ s.wr = [data, scr] ∧
     ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
     aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
     data.Disjoint scr ∧ data.Disjoint (args s 3) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 3) ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 1152 ≤ 2 ^ 64 ∧
     s.sp.toNat + 120 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- What `vg_aes_gcm_open` computes, in a state. -/

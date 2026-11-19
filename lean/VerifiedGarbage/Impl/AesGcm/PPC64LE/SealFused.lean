@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE.Blocks
 
 /-! # One-pass POWER8 AES-GCM seal
 
-The whole-block helper shares the existing 2560-byte workspace: its 64-byte
-header starts at W+448 and its 2048-byte kernel area at W+512. The final
+The whole-block helper shares the existing 1152-byte workspace: its 64-byte
+header starts at W+448 and its 640-byte kernel area at W+512. The final
 partial block and tag reuse the existing code. The entry and return are
 shared with the original one-shot implementation.
 -/

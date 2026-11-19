@@ -781,14 +781,12 @@ vg_aes_gcm_decrypt_blocks_to:
 	or %r4, %r26, %r26
 	or %r5, %r30, %r30
 	or %r6, %r25, %r25
-	addi %r7, %r31, 64
 	bl {vg_ghash}
 	or %r3, %r29, %r29
 	or %r4, %r28, %r28
 	or %r5, %r27, %r27
 	or %r6, %r30, %r30
 	or %r7, %r25, %r25
-	addi %r8, %r31, 64
 	bl {vg_aes_ctr32}
 	b 235f
 234:

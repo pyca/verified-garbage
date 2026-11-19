@@ -22,7 +22,7 @@ def frameSat : State := {sat with
   wr := [⟨0x4000,0⟩,⟨0x5000,16⟩]}
 
 
-theorem frameSat_pre : ∃ s, (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre s := by
+theorem frameSat_pre : ∃ s, (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pre s := by
   refine ⟨frameSat,?_⟩
   sig_eval [Proof.Gcm.sealSplitContract,Proof.Gcm.sealSplitSig,Proof.Gcm.sealSplitPre,PPC64LE.abi,PPC64LE.argRegs,
     stackArg,stackArgAddr,List.getD,List.range,List.range.loop,stackBelow,frameSat,sat,Mem.readW,Mem.read]
@@ -31,11 +31,11 @@ theorem frameSat_pre : ∃ s, (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
 
 
 theorem framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 3 Impl.AesGcm.PPC64LE.SealSplit.seal)
-      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 3 Impl.AesGcm.PPC64LE.SealSplit.seal)
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 1392) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Proof.Gcm.sealSplitSig) (nm := "work") (e := .u64) (n := 144)
     (pre := Proof.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (post := Proof.Gcm.sealSplitPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 112) (bytes := 2688) (m := 3) scratch_verified (by decide) (by decide)
+    (wa := true) (stack := 112) (bytes := 1280) (m := 3) scratch_verified (by decide) (by decide)
     (Proof.AesGcm.sealSplitPre_local _) (Proof.AesGcm.sealSplitPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealSplitPostOut_local _ vs m m₁ m₂ r hl) frameSat_pre
 
