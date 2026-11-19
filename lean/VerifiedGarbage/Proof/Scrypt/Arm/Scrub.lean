@@ -20,8 +20,9 @@ meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 
 `vg_scrypt` calls PBKDF2-HMAC-SHA256 and ROMix from frames, within the 40
 bytes of stack its contract reserves (`scrypt_armStack`). Its postcondition
-reads the memory on return only within `out` (`Arm.Scrub.PostOut`, by
-RISC-V's proof, `Proof/Scrypt/RISCV64/Scrub.lean`), so it is registered
+reads the memory on return only within `out` (`Arm.Scrub.PostOut`, as
+RISC-V's `Proof/Scrypt/RISCV64/Scrub.lean` proves it, on the arguments' low
+32 bits as DSA's `Proof/Dsa/Arm/Scrub.lean` reads them), so it is registered
 followed by a wipe of those 40 bytes and of the registers a callee may
 change (`Arm.Scrub.scrubRegF`).
 -/
@@ -30,52 +31,30 @@ change (`Arm.Scrub.scrubRegF`).
 
 namespace VG.Proof.Scrypt.Arm.Scrub
 
-open VG VG.Arm VG.Arm.Scrub VG.Impl.Scrypt.Arm
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Impl.Scrypt.Arm
+
+/-- The `n` bytes at `o` read the memory only within `⟨o, N⟩`, `n ≤ N`. -/
+theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
+    (h : ∀ a, Region.Contains ⟨o, N⟩ a 1 → m₁ a = m₂ a) (hN : n ≤ N) (hn : n < 2 ^ 64) :
+    Spec.Scrypt.bytesAt m₂ o n = Spec.Scrypt.bytesAt m₁ o n := by
+  unfold Spec.Scrypt.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  have := List.mem_range.mp hi
+  exact (h _ (Offset.contains_base _ (by omega_using [this, hN]) (by omega_using [this, hn]))).symm
 
 theorem scryptOut (stack : Nat) :
     PostOut (Spec.Scrypt.scryptContract abi stack) (Spec.Scrypt.scryptSig.retBits abi.ptrBits) :=
-  postOut_of_local ScrubAbi.plain (sig := Spec.Scrypt.scryptSig)
-    fun vs m m₁ m₂ ret hlen hb h => by
-    obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 12) hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨pwLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨salt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨saltLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨r, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨b, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨blen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨v, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨vlen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨slen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-    obtain rfl := List.eq_nil_of_length_eq_zero hlen
-    simp only [Spec.Scrypt.scryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    have hby : Spec.Scrypt.bytesAt m₂ out outLen.toNat = Spec.Scrypt.bytesAt m₁ out outLen.toNat := by
-      unfold Spec.Scrypt.bytesAt
-      refine List.map_congr_left fun i hi => ?_
-      have := List.mem_range.mp hi
-      exact (hb.2.2.2.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this])
-        (by have := outLen.isLt; omega_arith))).symm
-    replace h : Spec.Scrypt.scrypt (Spec.Scrypt.bytesAt m pw pwLen.toNat) (Spec.Scrypt.bytesAt m salt saltLen.toNat)
-        (vlen.toNat / r.toNat) r.toNat (blen.toNat / r.toNat) outLen.toNat =
-        some (Spec.Scrypt.bytesAt m₁ out outLen.toNat) := h
-    show _ = some (Spec.Scrypt.bytesAt m₂ out outLen.toNat)
-    rw [hby]; exact h
+  postOut_of_local ScrubAbi.plain (sig := Spec.Scrypt.scryptSig) fun
+    | [_, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, ret, _, hb, h => by
+      simp only [Spec.Scrypt.scryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ ret at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ ret
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have hle : (outLen.setWidth abi.ptrBits).toNat ≤ outLen.toNat * 1 := by
+        rw [BitVec.toNat_setWidth, Nat.mul_one]; exact Nat.mod_le _ _
+      rw [bytesAt_of hb.2.2.2.2.2 hle (by have := outLen.isLt; omega)]
+      exact h
 
 theorem roMix_armStack : armStack roMix = 0 := by lit_decide
 
