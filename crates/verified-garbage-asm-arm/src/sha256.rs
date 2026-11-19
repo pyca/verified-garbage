@@ -797,6 +797,10 @@ bx lr",
 pub(crate) mod vg_sha256_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha256_finalize_core.rs"]
+pub(crate) mod vg_sha256_finalize_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_sha256_finalize_scratch;
 
@@ -807,6 +811,10 @@ pub(crate) mod vg_sha256_init_core;
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]
 pub(crate) mod vg_sha256_state_digest;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_update_core.rs"]
+pub(crate) mod vg_sha256_update_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_update_scratch.rs"]

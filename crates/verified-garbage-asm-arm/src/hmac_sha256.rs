@@ -758,8 +758,16 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_core.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_core.rs"]
+pub(crate) mod vg_hmac_sha256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_init_scratch.rs"]
