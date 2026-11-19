@@ -837,6 +837,12 @@ def VerI (c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (tl : Nat) (s : State
     V .s11 = T ∧ V .s9 = Tp ∧ V .s8 = BitVec.ofNat 64 tl ∧ Env V sp s ∧ Covers [⟨Tp, tl⟩] (s.rd ++ s.wr) ∧
     (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩
 
+/-- `VerI`, and with the round keys bitsliced (`bs`), the buffer at `kb` in `s7`. -/
+def VerIB (bs : Bool) (kb c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (tl : Nat) (s : State) : Prop :=
+  ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧
+    V .s11 = T ∧ V .s9 = Tp ∧ V .s8 = BitVec.ofNat 64 tl ∧ Env V sp s ∧ Covers [⟨Tp, tl⟩] (s.rd ++ s.wr) ∧
+    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩ ∧ BkB bs kb V sp R s.mem w w 16 s
+
 theorem verEntry_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7]) (.block verEntry) h).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -858,10 +864,12 @@ variable {c st w sp : Addr} (L : Lay c st w) {R : Nat} (hR : R = 10 ∨ R = 12 �
   {tl : Nat}
 include L hR
 
-/-- `verify` after the tag length is known to be allowed. -/
-theorem verOk_ct [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
-    CT (VerI c st w sp R A T Tp tl) (.seq recv (.seq (finTag 0) (cmp 0))) := by
-  refine CT.seq (J := VerI c st w sp R A T Tp tl) ?_ (fun s ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ => ?_) ?_
+/-- `verify` after the tag length is known to be allowed; with the round keys
+bitsliced (`bs`), the buffer at `kb` in `s7`. -/
+theorem verOkB_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
+    CT (VerIB bs kb c st w sp R A T Tp tl) (.seq recv (.seq (finTagB bs 0) (cmp 0))) := by
+  refine CT.seq (J := VerIB bs kb c st w sp R A T Tp tl) ?_
+    (fun s ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, hb⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ := recv_taint
     refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, d₁, _, _, _, i₁, j₁, h₁, _⟩ ⟨_, _, _, d₂, _, _, _, i₂, j₂, h₂, _⟩ =>
       ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
@@ -871,15 +879,20 @@ theorem verOk_ct [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 1
     · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
     · rw [h₁.s0, h₂.s0, d₁, d₂]
   · refine WP.mono (recv_ok he (by rw [d]; exact L.wal) j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
-      (by decide)))) fun s' ⟨_, _, hg, hk⟩ => ⟨V, a, b, d, e, f, g, i, j, he.keep (fun r hr => hg r
+      (by decide)))) fun s' ⟨_, fr, hg, hk⟩ => ⟨V, a, b, d, e, f, g, i, j, he.keep (fun r hr => hg r
         (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide)) hk.sp hk.rd hk.wr, by rw [hk.rd, hk.wr]; exact hT, hTd⟩
+        (by revert r; decide)) hk.sp hk.rd hk.wr, by rw [hk.rd, hk.wr]; exact hT, hTd,
+        fun hbs => ⟨(hb hbs).1, (hb hbs).2.frame hR fr (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact (hb hbs).2.w.sub_right (Lay.wSub (by decide)))
+          (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact (L.v a b d).cw'.sub_right (Lay.wSub (by decide)))
+          hk.rd hk.wr⟩⟩
   refine CT.seq (J := VerI c st w sp R A T Tp tl)
-    ((finTag_ct L (o := 0) (.inl rfl) hR).mono fun s ⟨V, a, b, d, e, f, g, _, _, he, _⟩ =>
-      ⟨V, a, b, d, e, f, g, he⟩)
-    (fun s ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ => WP.mono (WP.with_rdwr (finTag_ok (L.v a b d) (o := 0)
+    ((finTagB_ct L (o := 0) (.inl rfl) hR).mono fun s ⟨V, a, b, d, e, f, g, _, _, he, _, _, hb⟩ =>
+      ⟨V, a, b, d, e, f, g, he, hb⟩)
+    (fun s ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, hb⟩ => WP.mono (WP.with_rdwr (finTagB_ok (L.v a b d) (o := 0)
       (.inl rfl) (a := List.replicate (A.toNat % 16) 0) (ct := List.replicate T.toNat 0) he e hR rfl
-      (by simp [f]) (by simp [g]))) fun s' ⟨fo, rd, wr, _⟩ =>
+      (by simp [f]) (by simp [g]) fun hbs => (hb hbs).2)) fun s' ⟨fo, rd, wr, _⟩ =>
         ⟨V, a, b, d, e, f, g, i, j, fo.env, by rw [rd, wr]; exact hT, hTd⟩) ?_
   obtain ⟨_, hc⟩ := cmp_taint
   refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, d₁, _, _, _, _, j₁, h₁, _⟩ ⟨_, _, _, d₂, _, _, _, _, j₂, h₂, _⟩ =>
@@ -889,19 +902,37 @@ theorem verOk_ct [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 1
   · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), j₁, j₂]
   · rw [h₁.s0, h₂.s0, d₁, d₂]
 
+/-- `verify` after the tag length is known to be allowed. -/
+theorem verOk_ct [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
+    CT (VerI c st w sp R A T Tp tl) (.seq recv (.seq (finTag 0) (cmp 0))) :=
+  (verOkB_ct L hR (bs := false) (kb := 0) t1 t16).mono fun _ ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ =>
+    ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, Bool.noConfusion⟩
+
 /-- The same, for correctness: `W` is kept in `s0`. -/
-theorem verOk_wp [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w sp R A T Tp tl s) :
-    WP isa (.seq recv (.seq (finTag 0) (cmp 0))) s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp := by
-  obtain ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ := h
+theorem verOkB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State}
+    (h : VerIB bs kb c st w sp R A T Tp tl s) :
+    WP isa (.seq recv (.seq (finTagB bs 0) (cmp 0))) s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp := by
+  obtain ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, hb⟩ := h
   refine WP.seq (WP.mono (recv_ok he (by rw [d]; exact L.wal) j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
-    (by decide)))) fun s₁ ⟨_, _, hg, hk⟩ => ?_)
+    (by decide)))) fun s₁ ⟨_, fr, hg, hk⟩ => ?_)
   have he₁ := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
-  refine WP.seq (WP.mono (finTag_ok (L.v a b d) (o := 0) (.inl rfl) (a := List.replicate (A.toNat % 16) 0)
-    (ct := List.replicate T.toNat 0) he₁ e hR rfl (by simp [f]) (by simp [g])) fun s₂ fo => ?_)
+  refine WP.seq (WP.mono (finTagB_ok (L.v a b d) (o := 0) (.inl rfl) (a := List.replicate (A.toNat % 16) 0)
+    (ct := List.replicate T.toNat 0) he₁ e hR rfl (by simp [f]) (by simp [g]) fun hbs =>
+      (hb hbs).2.frame hR fr (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact (hb hbs).2.w.sub_right (Lay.wSub (by decide)))
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact (L.v a b d).cw'.sub_right (Lay.wSub (by decide)))
+        hk.rd hk.wr) fun s₂ fo => ?_)
   refine WP.mono (cmp_ok fo.env (by rw [d]; exact L.wal) (o := 0) (.inl rfl) j t1 t16) fun s' ⟨_, _, hg', hk'⟩ =>
     ⟨by rw [hg' _ (by decide) (by decide) (by decide) (by decide) (by decide), fo.env.s0, d],
       by rw [hk'.sp, fo.env.sp]⟩
+
+/-- The same, for correctness: `W` is kept in `s0`. -/
+theorem verOk_wp [VG.Proof.Gcm.RISCV64.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w sp R A T Tp tl s) :
+    WP isa (.seq recv (.seq (finTag 0) (cmp 0))) s fun s' => s'.gpr .s0 = w ∧ s'.sp = sp :=
+  let ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd⟩ := h
+  verOkB_wp L hR (bs := false) (kb := 0) t1 t16 ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, Bool.noConfusion⟩
 
 end
 
