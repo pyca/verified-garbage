@@ -61,19 +61,35 @@ theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
 theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.callees).allInstrs keepsV = true :=
   fastSealWith_keepsV v v.gh.keepsV
 
-theorem fastSeal_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : sealAArch64.pre s) :
+theorem fastSeal_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State)
+    (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (Fast.seal_wp v hMK hs) (fastSeal_keepsV v)
 
 theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
+  Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+
+theorem fastSeal_verifiedW {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
+      (Proof.AesGcm.sealScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (fastSeal_correct (Wn := 768) v hMK) (Fast.seal_ct (Wn := 768) v hMK) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 768)
+  · exact Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 2560)
 
 theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (sealCode v) (Proof.AesGcm.sealScratchContract AArch64.abi) := by

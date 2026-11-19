@@ -256,6 +256,23 @@ theorem fastOpenTo_verified :
       AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSat)
 
+theorem fastOpenTo_verifiedW {Wn : Nat} (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openTo v.callees)
+      (Proof.AesGcm.openToScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (fastOpenTo_correct (Wn := 768) v hMK) (fastOpenTo_ct (Wn := 768) v hMK) (by
+        sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
+          Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
+          openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [openToSatW, openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSatW 768)
+  · exact Verified.of_correct (fastOpenTo_correct (Wn := 2560) v hMK) (fastOpenTo_ct (Wn := 2560) v hMK) (by
+        sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
+          Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
+          openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [openToSatW, openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSatW 2560)
+
 /-- `Fast.openTo` in a frame of 2608 bytes holding its working space and
 copies of its four other stack arguments. -/
 theorem fastOpenTo_framed :

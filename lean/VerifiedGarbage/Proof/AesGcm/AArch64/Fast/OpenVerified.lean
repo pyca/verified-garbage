@@ -66,6 +66,23 @@ theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 
+theorem fastOpen_verifiedW {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«open» v.callees)
+      (Proof.AesGcm.openScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (fastOpen_correct (Wn := 768) v hMK) (Fast.open_fast_ct (Wn := 768) v hMK) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 768)
+  · exact Verified.of_correct (fastOpen_correct (Wn := 2560) v hMK) (Fast.open_fast_ct (Wn := 2560) v hMK) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560)
+
 theorem openCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (openCode v) (Proof.AesGcm.openScratchContract AArch64.abi) := by
   unfold openCode
