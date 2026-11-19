@@ -110,7 +110,7 @@ theorem oneEntry_ok {Wn : Nat} {s : State} {Ctx W : Addr} {k : Nat} (hk : k % 8 
   obtain ⟨s₀, run₀, x9₀, g₀, sp₀, m₀, rd₀, wr₀⟩ := ldrSp_ok (t := .x9) hk hW hsp
   have hperm₀ : Perm Wn Ctx (W + BitVec.ofNat 64 16) W s₀ := hperm.of_eq rd₀ wr₀
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ hperm₀.w (by have := hperm₀.hWn; omega)
-  have w (d : Nat) (h : d + 8 ≤ Wn) := in_off hperm₀.w h (by decide)
+  have w (d : Nat) (h : d + 8 ≤ Wn) := in_off hperm₀.w h (by have := hperm.hWn; omega)
   rw [← wr₁] at w
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x22₂, x23₂, x24₂, x26₂, x27₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 .x9, ptr .x20 .x19 16, mov .x21 .x0, mov .x22 .x1, .str .x .x4 .x19 aadO,
@@ -124,10 +124,10 @@ theorem oneEntry_ok {Wn : Nat} {s : State} {Ctx W : Addr} {k : Nat} (hk : k % 8 
       s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
     have gx : ∀ r, r ≠ .x9 → s₁.gpr r = s.gpr r := fun r hr => by rw [g₁, g₀ r hr]
     have x9₁ : s₁.gpr .x9 = W := by rw [g₁, x9₀]
-    have w₁ := w 216 (by decide)
-    have w₂ := w 224 (by decide)
-    have w₃ := w 232 (by decide)
-    have w₄ := w 240 (by decide)
+    have w₁ := w 216 (by have := hperm.hWn; omega)
+    have w₂ := w 224 (by have := hperm.hWn; omega)
+    have w₃ := w 232 (by have := hperm.hWn; omega)
+    have w₄ := w 240 (by have := hperm.hWn; omega)
     refine ⟨_, by arun [x9₁, BitVec.add_zero, w₁, w₂, w₃, w₄], ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, ?_, rfl, rfl⟩
     · simp [gpr_write, x9₁]

@@ -48,7 +48,7 @@ theorem ghashInput_mod {a c : List Byte} : (ghashInput a c).length % 16 =
     omega_using [this]
 
 /-- The regions `finBody o` writes. -/
-abbrev finFrame (St W : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame Wn St W o
+abbrev finFrame (Wn : Nat) (St W : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame Wn St W o
 
 section
 variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
@@ -80,9 +80,9 @@ theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg →
     {a c : List Byte} {H : Block} {s : State} (he : Env Wn Ctx St W SP s) (hk : Kept k s)
     (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26 : s.gpr .x26 = BitVec.ofNat 64 a.length) (h27 : s.gpr .x27 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) :
+    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     WP isa (finBody v.callees o) s fun s' => Env Wn Ctx St W SP s' ∧ Kept k s' ∧
-      Frame (finFrame St W o) s.mem s'.mem ∧
+      Frame (finFrame Wn St W o) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
         bytesAt s'.mem (W + BitVec.ofNat 64 o) 16 =
           toBytes (ghashFrom H (ghash H (blocks (padded a c))) [ofBytes (lensBlock a.length c.length)] ^^^
@@ -123,7 +123,7 @@ theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg →
         · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩)]
     rfl
 
-theorem saved_finFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ finFrame St W o, (savedR W).Disjoint r := by
+theorem saved_finFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ finFrame Wn St W o, (savedR W).Disjoint r := by
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact saved_tFrame L (.inr rfl) r hr
