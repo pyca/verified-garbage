@@ -492,8 +492,6 @@ arm vg_triple_des_ofb_final
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
 arm vg_zeroize
-powerpc64le vg_aes_ccm_open
-powerpc64le vg_aes_ccm_seal
 powerpc64le vg_aes_gcm_init
 powerpc64le vg_aes_gcm_open
 powerpc64le vg_aes_gcm_open_to
