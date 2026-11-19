@@ -176,7 +176,7 @@ theorem ctrSetup_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
       t₁.gpr .x15 = p.W + BitVec.ofNat 64 240 ∧ t₁.gpr .x9 = p.D + BitVec.ofNat 64 (128 * 0) ∧
       t₁.gpr .x11 = BitVec.ofNat 64 (p.n / 128 - 0) ∧
       Others [.x9, .x10, .x11, .x15] t t₁ ∧ t₁.mem = t.mem ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 3808 by decide)
+  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 1760 by decide)
   refine ⟨_, by simp only [ctrSetup, batches, List.cons_append, List.nil_append]; grun [E.x19, c₀], ?_, ?_, ?_, ?_,
     by others_tac, (by rfl), (by rfl), (by rfl), (by rfl)⟩
   · simp [State.read, gpr_write, E.x19, setWidth_rt32, read4_readW]; rfl
@@ -198,7 +198,7 @@ theorem ctrFinish_ok {p : Prm} (L : Lay p) {H : Spec.Gcm.Block} {m₀ : Mem} {rd
   have hn := L.n_lt
   have hww := L.ww
   let σ : Ctx := ⟨p.W, p.W + BitVec.ofNat 64 240, p.D, p.R, p.n / 128, H, m₀, rd, wr⟩
-  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
+  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 1760 by decide)
   have hf₂ : Frame [σ.dR] m₀ t₂.mem := I.frame
   obtain dDR : ∀ {d k : Nat}, d + k ≤ 3808 → ∀ q ∈ [σ.dR], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h q hq => by
@@ -487,7 +487,7 @@ theorem ctrSet_ok {p : Prm} {t : State} (E : Env p t) :
       t₁.read .w .x10 = t.mem.readW (p.W + BitVec.ofNat 64 Impl.AesGcmSiv.AArch64.cbO) 32 ∧
       t₁.gpr .x15 = p.W + BitVec.ofNat 64 240 ∧
       Others [.x10, .x15] t t₁ ∧ t₁.mem = t.mem ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 3808 by decide)
+  obtain c₀ := E.perm.wR (show 96 + 4 ≤ 1760 by decide)
   refine ⟨_, by simp only [ctrSetup]; grun [E.x19, c₀], ?_, ?_, by others_tac, (by rfl), (by rfl), (by rfl), (by rfl)⟩
   · simp [State.read, gpr_write, E.x19, VG.Proof.AesGcmSiv.AArch64.setWidth_rt32,
       VG.Proof.AesGcmSiv.AArch64.read4_readW]; rfl
@@ -768,7 +768,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   obtain hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₄.rd ++ t₄.wr) := by
     rw [rd₄, wr₄, T.rd, T.wr, B.rd, B.wr, rd₁, wr₁]
     exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
-  obtain dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  obtain dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   refine WP.mono (absorb_ok v L E₄ hc (by omega_arith) (by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]
@@ -876,9 +876,9 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
     (((((sv₁.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
       Cr.frame (by disj_tac L))).frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (L.t_w' (show 128 + 88 ≤ 3808 by decide)).symm
+        exact (L.t_w' (show 128 + 88 ≤ 1760 by decide)).symm
   refine WP.block_append (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w2560R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
+  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w1760R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R) (Spec.GcmSiv.keyLen (prmOf s).R)
       (bytesAt s.mem (prmOf s).N 12) (bytesAt s.mem (prmOf s).D (prmOf s).n) (bytesAt s.mem (prmOf s).A (prmOf s).al) =
     (bytesAt s'.mem (prmOf s).D (prmOf s).n, bytesAt s'.mem (prmOf s).T 16)
@@ -968,7 +968,7 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₆ rd₆ wr₆
   -- What the absorbing of the additional data kept.
-  obtain dA : ∀ {Q : Addr} {k : Nat}, (⟨Q, k⟩ : Region).Disjoint ⟨p.W, 3808⟩ → k ≤ 2 ^ 64 →
+  obtain dA : ∀ {Q : Addr} {k : Nat}, (⟨Q, k⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ → k ≤ 2 ^ 64 →
       bytesAt t₂.mem Q k = bytesAt t.mem Q k := fun hd hk' => by
     rw [Proof.AesGcm.AArch64.bytesAt_frame P₂'.frame (absorbR_buf hd) hk']
   obtain fT : Frame [⟨p.W + BitVec.ofNat 64 96, 16⟩] t₅.mem t₆.mem := by rw [hm₆]; exact tagInMem_frame _ _ _
@@ -1046,7 +1046,7 @@ theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
     rw [← hm₆] at this
     exact this.frame Mk.frame (by disj_tac L)
   refine WP.mono (exit_ok (s₀ := s) (Mk.env.write (by decide) _).x19 (Mk.env.write (by decide) _).sp
-    (Mk.env.write (by decide) _).w2560R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
+    (Mk.env.write (by decide) _).w1760R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
   -- What the pieces read.
   obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf s).K (prmOf s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
@@ -1253,7 +1253,7 @@ theorem restAbs_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
   refine rel_seq (rel_env E₁ E₂ [] (by simp) rest_check) (rest_ok L E₁) (rest_ok L E₂)
     fun c₁ c₂ ⟨x27₁, x28₁, G₁, _, _, _, _⟩ ⟨x27₂, x28₂, G₂, _, _, _, _⟩ => ?_
   have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint
-      ⟨p.W, 3808⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega_using []))
+      ⟨p.W, p.Wn⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega_using []))
   have hc : ∀ {c : State}, Env p c →
       Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (c.rd ++ c.wr) := fun G =>
     Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off G.perm.d (by omega_using []) hn)
@@ -1274,8 +1274,8 @@ theorem lens_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcmSiv.AArch64.lens v.callees) TT := by
   have wL : ∀ {d : State}, Env p d → WP isa (.block Impl.AesGcmSiv.AArch64.lensBlock) d fun t =>
       Env p t ∧ t.gpr .x27 = p.W + BitVec.ofNat 64 224 ∧ t.gpr .x28 = BitVec.ofNat 64 16 := fun E => by
-    have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
-    have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
+    have w₀ := E.perm.wW (show 224 + 8 ≤ 1760 by decide)
+    have w₈ := E.perm.wW (show 232 + 8 ≤ 1760 by decide)
     refine WP.run ⟨_, by simp only [Impl.AesGcmSiv.AArch64.lensBlock]; grun [E.x19, E.x24, E.x26, w₀, w₈], rfl⟩
       fun t ht => ?_
     subst ht

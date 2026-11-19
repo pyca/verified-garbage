@@ -116,7 +116,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcmSiv.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
-open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_key GcmImpl CtrCall ctr_call KeyCall key_call eval_nonzero
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_key GcmImpl CtrCall ctr_call ctr_callLe ctr_relLe KeyCall key_call eval_nonzero
   Others)
 
 /-- A run of `derive` before block `i`. -/
@@ -126,7 +126,7 @@ structure DC (p : Prm) (i : Nat) (t : State) : Prop where
 
 theorem derA_wp {p : Prm} (L : Lay p) {i : Nat} {t : State} (h : DC p i t) :
     WP isa (.block deriveBlock) t fun t₁ =>
-      CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧
+      CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) ∧
         DC p i t₁ := by
   obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := derArgs_ok h.env h.x27
   have E₁ : Env p t₁ := h.env.keep (fun r hr => ho₁ r (by
@@ -135,7 +135,7 @@ theorem derA_wp {p : Prm} (L : Lay p) {i : Nat} {t : State} (h : DC p i t) :
   exact WP.of_runBlock ⟨t₁, run₁, derCall L E₁ x0 x1 x2 x3 x4 x5, E₁, by rw [ho₁ _ (by decide), h.x27]⟩
 
 theorem derC_wp (v : GcmImpl) {p : Prm} {i : Nat} {t : State}
-    (h : CtrCall t p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧
+    (h : CtrCall t p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) ∧
       DC p i t) :
     WP isa (callCtr v.callees) t (DC p i) :=
   WP.mono (ctr_call v.ctr h.1) fun _ P =>
@@ -285,7 +285,7 @@ theorem chunkB_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E�
 
 /-- `absorb`, in two runs with the same public arguments, pointer and count. -/
 theorem absorb_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
-    {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hw : Q.toNat + m ≤ 2 ^ 64) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, 3808⟩)
+    {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hw : Q.toNat + m ≤ 2 ^ 64) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, p.Wn⟩)
     (hc₁ : Covers [⟨Q, m⟩] (τ₁.rd ++ τ₁.wr)) (hc₂ : Covers [⟨Q, m⟩] (τ₂.rd ++ τ₂.wr))
     (a27 : τ₁.gpr .x27 = Q) (b27 : τ₂.gpr .x27 = Q) (a28 : τ₁.gpr .x28 = BitVec.ofNat 64 m)
     (b28 : τ₂.gpr .x28 = BitVec.ofNat 64 m) :
@@ -318,7 +318,7 @@ theorem absorb_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E�
   refine rel_ite (eval_zero x28₁ (by omega_arith)) (eval_zero x28₂ (by omega_arith))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_)
   have h0 : m % 16 ≠ 0 := by simpa using hf
-  have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     hd.sub_left (Offset.sub_base Q (by omega_arith))
   have hs₁ := (hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith)).of_eq A₁.rd A₁.wr
   have hs₂ := (hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith)).of_eq A₂.rd A₂.wr
@@ -375,8 +375,8 @@ theorem polyval_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
     rel_env F₁.env F₂.env [] (by simp) tagIn_check
   have wL : ∀ {d : State}, Env p d → WP isa (.block lensBlock) d fun t =>
       Env p t ∧ t.gpr .x27 = p.W + BitVec.ofNat 64 224 ∧ t.gpr .x28 = BitVec.ofNat 64 16 := fun E => by
-    have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
-    have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
+    have w₀ := E.perm.wW (show 224 + 8 ≤ 1760 by decide)
+    have w₈ := E.perm.wW (show 232 + 8 ≤ 1760 by decide)
     refine WP.run ⟨_, by simp only [lensBlock]; grun [E.x19, E.x24, E.x26, w₀, w₈], rfl⟩ fun t ht => ?_
     subst ht
     refine ⟨E.keep (fun q hq => by

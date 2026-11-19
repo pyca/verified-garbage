@@ -137,12 +137,12 @@ theorem hkeyMem_acc (m : Mem) (W : Addr) : Spec.Gcm.blockAt (hkeyMem m W) (W + B
 theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa hkey t = some t' ∧ t'.mem = hkeyMem t.mem p.W ∧
       Others [.x9, .x10, .x11, .x12, .x13] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₁ := E.perm.wR (show 16 + 8 ≤ 3808 by decide)
-  have r₂ := E.perm.wR (show 24 + 8 ≤ 3808 by decide)
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 3808 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 3808 by decide)
-  have w₃ := E.perm.wW (show 80 + 8 ≤ 3808 by decide)
-  have w₄ := E.perm.wW (show 88 + 8 ≤ 3808 by decide)
+  have r₁ := E.perm.wR (show 16 + 8 ≤ 1760 by decide)
+  have r₂ := E.perm.wR (show 24 + 8 ≤ 1760 by decide)
+  have w₁ := E.perm.wW (show 64 + 8 ≤ 1760 by decide)
+  have w₂ := E.perm.wW (show 72 + 8 ≤ 1760 by decide)
+  have w₃ := E.perm.wW (show 80 + 8 ≤ 1760 by decide)
+  have w₄ := E.perm.wW (show 88 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [hkey, zero16]; grun [E.x19, r₁, r₂, w₁, w₂, w₃, w₄], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_write, gpr_write, ite_true, ite_false, reduceCtorEq, hkeyMem, Mem.writeW, BitVec.setWidth_eq,
       read8_readW]

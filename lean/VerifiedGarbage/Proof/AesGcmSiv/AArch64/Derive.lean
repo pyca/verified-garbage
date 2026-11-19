@@ -46,51 +46,51 @@ abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 14
 /-- What `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` both need, but for
 the permissions: `(schedule = x0, rounds = x1, nonce = x2, aad = x3,
 aad_len = x4, data = x5, len = x6, tag = x7, work = [sp])`. -/
-def oneLay (s : State) : Prop :=
+def oneLay (Wn : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, 12⟩
   let aad : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
   let data : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
   let tag : Region := ⟨s.gpr .x7, 16⟩
-  let work : Region := ⟨stackArg s 0, 3808⟩
+  let work : Region := ⟨stackArg s 0, Wn⟩
   sch.Disjoint data ∧ sch.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ tag.Disjoint data ∧ tag.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s) ∧ work.Disjoint (args s) ∧
     (s.gpr .x0).toNat + 240 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 12 ≤ 2 ^ 64 ∧
     (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + (s.gpr .x6).toNat ≤ 2 ^ 64 ∧
-    (s.gpr .x7).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 3808 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧
+    (s.gpr .x7).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + Wn ≤ 2 ^ 64 ∧ s.sp.toNat + 8 ≤ 2 ^ 64 ∧
     rounds (s.gpr .x1)
 
 /-- What `vg_aes_gcm_siv_seal` needs: `oneLay`, with `tag` the 16 bytes to
 write. -/
-def sealPre (s : State) : Prop :=
+def sealPre (Wn : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, 12⟩
   let aad : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
   let data : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
   let tag : Region := ⟨s.gpr .x7, 16⟩
-  let work : Region := ⟨stackArg s 0, 3808⟩
-  s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ oneLay s
+  let work : Region := ⟨stackArg s 0, Wn⟩
+  s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ oneLay Wn s
 
 /-- What `vg_aes_gcm_siv_open` needs: `oneLay`, with the received tag the 16
 bytes at `tag`, to read. -/
-def openPre (s : State) : Prop :=
+def openPre (Wn : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, 12⟩
   let aad : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
   let data : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
   let tag : Region := ⟨s.gpr .x7, 16⟩
-  let work : Region := ⟨stackArg s 0, 3808⟩
-  s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay s
+  let work : Region := ⟨stackArg s 0, Wn⟩
+  s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay Wn s
 
 def onePub (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
     s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-/-- `vg_aes_gcm_siv_seal`. -/
-def sealAArch64 : Contract isa where
-  pre := sealPre
+/-- `vg_aes_gcm_siv_seal`, with `Wn` bytes of working space. -/
+def sealAArch64 (Wn : Nat) : Contract isa where
+  pre := sealPre Wn
   post s s' :=
     encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (keyLen (s.gpr .x1).toNat)
         (bytesAt s.mem (s.gpr .x2) 12) (bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat)
@@ -124,8 +124,8 @@ theorem openPost_none {r : Option (List Byte)} {s' : State} {D : Addr} {n : Nat}
 
 /-- `vg_aes_gcm_siv_open`. It does not branch on whether the tag is right,
 so its runs are related without the leak the shared contract allows. -/
-def openAArch64 : Contract isa where
-  pre := openPre
+def openAArch64 (Wn : Nat) : Contract isa where
+  pre := openPre Wn
   post s s' := openPost (openResult s) s' (s.gpr .x5) (s.gpr .x6).toNat
   pub := onePub
 
@@ -136,7 +136,8 @@ end VG.Proof.AesGcmSiv.AArch64
 
 Untrusted: everything here is checked by Lean. The public arguments
 (`Prm`): the key schedule of the key-generating key (240 bytes at `K`), the
-working space (3808 bytes at `W`), the nonce (12 bytes at `N`), the
+working space (`Wn` bytes at `W`: the 1760 the code uses itself, then
+its callees'), the nonce (12 bytes at `N`), the
 additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the tag
 (16 bytes at `T`), the stack pointer and the number of rounds; how their
 regions lie (`Lay`); what a state may access (`Perm`); and the registers
@@ -182,23 +183,28 @@ structure Prm where
   al : Nat
   /-- The length of the data. -/
   n : Nat
+  /-- The size of the working space: the 1760 bytes the code uses itself,
+  then its callees'. -/
+  Wn : Nat
 
 /-- How the regions lie. -/
 structure Lay (p : Prm) : Prop where
   kw : p.K.toNat + 240 ≤ 2 ^ 64
-  ww : p.W.toNat + 3808 ≤ 2 ^ 64
+  /-- The working space holds key expansion's 512 bytes after the code's. -/
+  hWn : 2272 ≤ p.Wn ∧ p.Wn ≤ 3808
+  ww : p.W.toNat + p.Wn ≤ 2 ^ 64
   nw : p.N.toNat + 12 ≤ 2 ^ 64
   aw : p.A.toNat + p.al ≤ 2 ^ 64
   dw : p.D.toNat + p.n ≤ 2 ^ 64
-  k_w : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  k_w : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W, p.Wn⟩
   k_d : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  n_w : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  n_w : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W, p.Wn⟩
   n_d : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  a_w : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  a_w : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W, p.Wn⟩
   a_d : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  d_w : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  d_w : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W, p.Wn⟩
   tw : p.T.toNat + 16 ≤ 2 ^ 64
-  t_w : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  t_w : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W, p.Wn⟩
   t_d : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.D, p.n⟩
   rounds : p.R = 10 ∨ p.R = 14
   al_lt : p.al < 2 ^ 64
@@ -210,14 +216,16 @@ structure Perm (p : Prm) (s : State) : Prop where
   non : Covers [⟨p.N, 12⟩] (s.rd ++ s.wr)
   aad : Covers [⟨p.A, p.al⟩] (s.rd ++ s.wr)
   d : Covers [⟨p.D, p.n⟩] s.wr
-  w : Covers [⟨p.W, 3808⟩] s.wr
+  w : Covers [⟨p.W, p.Wn⟩] s.wr
+  hWn : 1760 ≤ p.Wn ∧ p.Wn ≤ 3808
   t : Covers [⟨p.T, 16⟩] (s.rd ++ s.wr)
 
 theorem Perm.of_eq {p : Prm} {s s' : State} (h : Perm p s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     Perm p s' := by
-  obtain ⟨a, b, c, d, e, f⟩ := h
+  obtain hWn := h.hWn
+  obtain ⟨a, b, c, d, e, g, f⟩ := h
   exact ⟨by rw [hrd, hwr]; exact a, by rw [hrd, hwr]; exact b, by rw [hrd, hwr]; exact c, by rw [hwr]; exact d,
-    by rw [hwr]; exact e, by rw [hrd, hwr]; exact f⟩
+    by rw [hwr]; exact e, g, by rw [hrd, hwr]; exact f⟩
 
 /-- The registers holding the public arguments, the stack pointer, and what
 the state may access. -/
@@ -260,35 +268,56 @@ theorem Env.of_saved {p : Prm} {s s' : State} (h : Env p s)
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 3808) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 3808⟩ :=
+theorem wSub {W : Addr} {Wn d n : Nat} (h : d + n ≤ Wn) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, Wn⟩ :=
   Offset.sub_base _ h
 
 variable {p : Prm} (L : Lay p)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3808) (hd : d + k ≤ 3808) :
+theorem w_wn {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ p.Wn) (hd : d + k ≤ p.Wn) :
     (⟨p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
+  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+/-- `w_wn`, within the 1760 bytes the code uses itself. -/
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 1760) (hd : d + k ≤ 1760) :
+    (⟨p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.w_wn h (by have := L.hWn; omega) (by have := L.hWn; omega)
+
+theorem k_w'n {d k : Nat} (hd : d + k ≤ p.Wn) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem n_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 1760) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.k_w.sub_right (wSub (by have := L.hWn; omega))
+
+theorem n_w'n {d k : Nat} (hd : d + k ≤ p.Wn) : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.n_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem n_w' {d k : Nat} (hd : d + k ≤ 1760) : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.n_w.sub_right (wSub (by have := L.hWn; omega))
+
+theorem a_w'n {d k : Nat} (hd : d + k ≤ p.Wn) : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem a_w' {d k : Nat} (hd : d + k ≤ 1760) : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.a_w.sub_right (wSub (by have := L.hWn; omega))
+
+theorem d_w'n {d k : Nat} (hd : d + k ≤ p.Wn) : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem t_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 1760) : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.d_w.sub_right (wSub (by have := L.hWn; omega))
+
+theorem t_w'n {d k : Nat} (hd : d + k ≤ p.Wn) : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.t_w.sub_right (wSub hd)
 
-theorem toNat_W {d : Nat} (hd : d < 3808) : (p.W + BitVec.ofNat 64 d).toNat = p.W.toNat + d := by
+theorem t_w' {d k : Nat} (hd : d + k ≤ 1760) : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.t_w.sub_right (wSub (by have := L.hWn; omega))
+
+theorem toNat_W {d : Nat} (hd : d < p.Wn) : (p.W + BitVec.ofNat 64 d).toNat = p.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
+  have := L.hWn
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 
@@ -304,21 +333,27 @@ namespace Perm
 variable {p : Prm} {s : State} (P : Perm p s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 3808) : InRegions s.wr (p.W + BitVec.ofNat 64 d) n :=
-  in_off P.w h (by decide)
+theorem wWn {d n : Nat} (h : d + n ≤ p.Wn) : InRegions s.wr (p.W + BitVec.ofNat 64 d) n :=
+  in_off P.w h (by have := P.hWn; omega)
 
-theorem wR {d n : Nat} (h : d + n ≤ 3808) : InRegions (s.rd ++ s.wr) (p.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 1760) : InRegions s.wr (p.W + BitVec.ofNat 64 d) n :=
+  P.wWn (by have := P.hWn; omega)
+
+theorem wR {d n : Nat} (h : d + n ≤ 1760) : InRegions (s.rd ++ s.wr) (p.W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem wC {d n : Nat} (h : d + n ≤ 3808) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off P.w h (by decide)
+theorem wCn {d n : Nat} (h : d + n ≤ p.Wn) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off P.w h (by have := P.hWn; omega)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 3808) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wC {d n : Nat} (h : d + n ≤ 1760) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  P.wCn (by have := P.hWn; omega)
+
+theorem wCR {d n : Nat} (h : d + n ≤ 1760) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
 
-/-- The first 2560 bytes of `W`, where AES-GCM's save area is. -/
-theorem w2560 : Covers [⟨p.W, 2560⟩] s.wr :=
-  Proof.AesGcm.AArch64.covers_prefix P.w (by decide)
+/-- The first 1760 bytes of `W`, where AES-GCM's save area is. -/
+theorem w1760 : Covers [⟨p.W, 1760⟩] s.wr :=
+  Proof.AesGcm.AArch64.covers_prefix P.w P.hWn.1
 
 theorem nR {d k : Nat} (h : d + k ≤ 12) : InRegions (s.rd ++ s.wr) (p.N + BitVec.ofNat 64 d) k :=
   in_off P.non h (by decide)
@@ -327,8 +362,8 @@ end Perm
 
 /-- The registers `x19` and the permissions of an environment, as AES-GCM's
 `exit_ok` needs them. -/
-theorem Env.w2560R {p : Prm} {s : State} (E : Env p s) : Covers [⟨p.W, 2560⟩] (s.rd ++ s.wr) :=
-  covers_left E.perm.w2560
+theorem Env.w1760R {p : Prm} {s : State} (E : Env p s) : Covers [⟨p.W, 1760⟩] (s.rd ++ s.wr) :=
+  covers_left E.perm.w1760
 
 /-! ## Arithmetic -/
 
@@ -380,7 +415,7 @@ namespace VG.Proof.AesGcmSiv.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.AArch64 (CtrCall CtrPost ctr_call GcmImpl in_off covers_off covers_left covers_cons
+open VG.Proof.AesGcm.AArch64 (CtrCall CtrPost ctr_call ctr_callLe ctr_relLe GcmImpl in_off covers_off covers_left covers_cons
   covers_nil covers_append ofNat_add_ofNat add_ofNat_assoc ofNat_sub lsr_ofNat toNat_ofNat_of_lt eval_nonzero
   Others)
 
@@ -407,15 +442,16 @@ theorem derArgs_ok {p : Prm} {t : State} (E : Env p t) {i : Nat} (h27 : t.gpr .x
       t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760 ∧
       Others [.x9, .x10, .x11, .x0, .x1, .x2, .x3, .x4, .x5] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧
       t₁.wr = t.wr := by
+  obtain hWn := E.perm.hWn
   have n₀ : InRegions (t.rd ++ t.wr) p.N 4 := by simpa using E.perm.nR (d := 0) (k := 4) (by decide)
   have n₄ := E.perm.nR (d := 4) (k := 4) (by decide)
   have n₈ := E.perm.nR (d := 8) (k := 4) (by decide)
-  have w₁ := E.perm.wW (show 112 + 4 ≤ 3808 by decide)
-  have w₂ := E.perm.wW (show 116 + 4 ≤ 3808 by decide)
-  have w₃ := E.perm.wW (show 120 + 4 ≤ 3808 by decide)
-  have w₄ := E.perm.wW (show 124 + 4 ≤ 3808 by decide)
-  have w₅ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
-  have w₆ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
+  have w₁ := E.perm.wW (show 112 + 4 ≤ 1760 by decide)
+  have w₂ := E.perm.wW (show 116 + 4 ≤ 1760 by decide)
+  have w₃ := E.perm.wW (show 120 + 4 ≤ 1760 by decide)
+  have w₄ := E.perm.wW (show 124 + 4 ≤ 1760 by decide)
+  have w₅ := E.perm.wW (show 224 + 8 ≤ 1760 by decide)
+  have w₆ := E.perm.wW (show 232 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [deriveBlock, zero16]; grun [E.x19, E.x20, BitVec.add_zero, n₀, n₄, n₈, w₁, w₂, w₃,
     w₄, w₅, w₆], ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
@@ -464,9 +500,9 @@ theorem derMem_frame (m : Mem) (W N : Addr) (i : Nat) :
     (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (zc₂ W)
 
 /-- What `derive` writes. -/
-abbrev derR (W : Addr) : List Region :=
+abbrev derR (Wn : Nat) (W : Addr) : List Region :=
   [⟨W + BitVec.ofNat 64 16, 48⟩, ⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 224, 16⟩,
-    ⟨W + BitVec.ofNat 64 1760, 2048⟩]
+    ⟨W + BitVec.ofNat 64 1760, Wn - 1760⟩]
 
 /-- After `i` steps of `derive` from `σ`: the first `8 i` bytes of the halves
 at `W + 16`. -/
@@ -474,7 +510,7 @@ structure DInv (p : Prm) (σ : State) (i : Nat) (t : State) : Prop where
   env : Env p t
   x27 : t.gpr .x27 = BitVec.ofNat 64 i
   le : i ≤ p.R / 2 - 1
-  frame : Frame (derR p.W) σ.mem t.mem
+  frame : Frame (derR p.Wn p.W) σ.mem t.mem
   out : bytesAt t.mem (p.W + BitVec.ofNat 64 16) (8 * i) =
     GcmSiv.halves (Spec.GcmSiv.ctxCiph σ.mem p.K p.R) (bytesAt σ.mem p.N 12) i
 
@@ -485,8 +521,9 @@ theorem derPost_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {i : Nat} (hi
       t'.mem = t.mem.writeW (p.W + BitVec.ofNat 64 (16 + 8 * i)) (t.mem.readW (p.W + BitVec.ofNat 64 224) 64) ∧
       t'.gpr .x27 = BitVec.ofNat 64 (i + 1) ∧ t'.gpr .x10 = BitVec.ofNat 64 (p.R / 2 - 1 - (i + 1)) ∧
       Others [.x9, .x10, .x27] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  obtain hWn := L.hWn
   have hR := L.rounds
-  have rb := E.perm.wR (show 224 + 8 ≤ 3808 by decide)
+  have rb := E.perm.wR (show 224 + 8 ≤ 1760 by decide)
   have wo := E.perm.wW (d := 16 + 8 * i) (n := 8) (by omega_arith)
   have ea : p.W + BitVec.ofNat 64 i <<< 3 + BitVec.ofNat 64 16 = p.W + BitVec.ofNat 64 (16 + 8 * i) := by
     rw [ofNat_lsl, add_ofNat_assoc]; congr 2; omega_arith
@@ -500,15 +537,16 @@ theorem derPost_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {i : Nat} (hi
     rw [lsr_ofNat _ _ (by omega_arith), ofNat_sub (by omega_arith) (by omega_arith), ofNat_sub (by omega_arith) (by omega_arith)]
 
 /-- Buffers outside `W` are kept by `derive`. -/
-theorem bytesAt_derR {p : Prm} (_L : Lay p) {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨p.W, 3808⟩)
-    (hl : len ≤ 2 ^ 64) {m m' : Mem} (hf : Frame (derR p.W) m m') : bytesAt m' P len = bytesAt m P len :=
+theorem bytesAt_derR {p : Prm} (_L : Lay p) {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨p.W, p.Wn⟩)
+    (hl : len ≤ 2 ^ 64) {m m' : Mem} (hf : Frame (derR p.Wn p.W) m m') : bytesAt m' P len = bytesAt m P len :=
   Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hP.sub_right (Lay.wSub (by decide))) hl
+    rcases hr with rfl | rfl | rfl | rfl <;> exact hP.sub_right (Lay.wSub (by have := _L.hWn; omega))) hl
 
 /-- The key schedule is kept by `derive`. -/
-theorem ciph_derR {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (derR p.W) m m') :
+theorem ciph_derR {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (derR p.Wn p.W) m m') :
     Spec.GcmSiv.ctxCiph m' p.K p.R = Spec.GcmSiv.ctxCiph m p.K p.R := by
+  obtain hWn := L.hWn
   unfold Spec.GcmSiv.ctxCiph
   rw [bytesAt_derR L (L.k_w.sub_left (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega_arith) hf]
 
@@ -517,28 +555,30 @@ theorem derCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) (x0 : t
     (x1 : t₁.gpr .x1 = BitVec.ofNat 64 p.R) (x2 : t₁.gpr .x2 = p.W + BitVec.ofNat 64 112)
     (x3 : t₁.gpr .x3 = p.W + BitVec.ofNat 64 224) (x4 : t₁.gpr .x4 = BitVec.ofNat 64 1)
     (x5 : t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760) :
-    CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 :=
+    CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) :=
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
-    wrap := by rw [L.toNat_W (by decide)]; have := L.ww; omega_arith
+    wrap := by rw [L.toNat_W (by have := L.hWn; omega)]; have := L.ww; have := L.hWn; omega_arith
     n_lt := by decide
     kc := L.k_w' (by decide)
     kd := L.k_w' (by decide)
-    ks := L.k_w' (by decide)
+    ks := L.k_w'n (by have := L.hWn; omega)
     cd := L.w_w (.inl (by decide)) (by decide) (by decide)
-    cs := L.w_w (.inl (by decide)) (by decide) (by decide)
-    ds := L.w_w (.inl (by decide)) (by decide) (by decide)
+    cs := L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
+    ds := L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
     reads := covers_append (covers_cons E₁.perm.k covers_nil)
       (covers_cons (E₁.perm.wCR (by decide)) (covers_cons (E₁.perm.wCR (by decide))
-        (covers_cons (E₁.perm.wCR (by decide)) covers_nil)))
+        (covers_cons (covers_left (E₁.perm.wCn (by have := L.hWn; omega))) covers_nil)))
     writes := covers_cons (E₁.perm.wC (by decide)) (covers_cons (E₁.perm.wC (by decide))
-        (covers_cons (E₁.perm.wC (by decide)) covers_nil)) }
+        (covers_cons (E₁.perm.wCn (by have := L.hWn; omega)) covers_nil)) }
 
 /-- A step of `derive`. -/
 theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (hi : i < p.R / 2 - 1) {t : State}
-    (I : DInv p σ i t) :
+    (I : DInv p σ i t)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (.seq (.block deriveBlock) (.seq (callCtr v.callees) (.block derivePost))) t fun t' =>
       DInv p σ (i + 1) t' ∧ t'.gpr .x10 = BitVec.ofNat 64 (p.R / 2 - 1 - (i + 1)) := by
+  obtain hWn := L.hWn
   have hR := L.rounds
   have hw := L.ww
   have eN : bytesAt t.mem p.N 12 = bytesAt σ.mem p.N 12 := bytesAt_derR L L.n_w (by decide) I.frame
@@ -554,7 +594,7 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
   have f₁ : Frame [⟨p.W + BitVec.ofNat 64 112, 16⟩, ⟨p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₁.mem := by
     rw [hm₁]; exact derMem_frame _ _ _ _
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (ctr_call v.ctr cc) fun t₂ P => ?_)
+  refine WP.seq (WP.mono (ctr_callLe v.ctr hv cc) fun t₂ P => ?_)
   have E₂ : Env p t₂ := E₁.of_saved P.saved P.sp P.rd P.wr
   have h27₂ : t₂.gpr .x27 = BitVec.ofNat 64 i := by rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), I.x27]
   obtain ⟨t₃, run₃, hm₃, x27₃, x10₃, ho₃, sp₃, rd₃, wr₃⟩ := derPost_ok L E₂ hi h27₂
@@ -579,9 +619,9 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
       · exact ⟨_, by simp, fun _ h => h⟩
   · -- The bytes.
     have fc := P.frame
-    have dW : ∀ {d k : Nat}, d + k ≤ 3808 → 16 + 8 * i ≤ d ∨ d + k ≤ 16 →
+    have dW : ∀ {d k : Nat}, d + k ≤ p.Wn → 16 + 8 * i ≤ d ∨ d + k ≤ 16 →
         (⟨p.W + BitVec.ofNat 64 16, 8 * i⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
-      fun h₁ h₂ => L.w_w (by omega_arith) (by omega_arith) h₁
+      fun h₁ h₂ => L.w_wn (by omega_arith) (by omega_arith) h₁
     have keep : bytesAt t₃.mem (p.W + BitVec.ofNat 64 16) (8 * i) =
         bytesAt t.mem (p.W + BitVec.ofNat 64 16) (8 * i) := by
       rw [hm₃, Proof.AesGcm.AArch64.bytesAt_frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -589,10 +629,10 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
           (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW (by omega_arith) (by omega_arith)) (by omega_arith),
         Proof.AesGcm.AArch64.bytesAt_frame fc (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl <;> exact dW (by decide) (by omega_arith)) (by omega_arith),
+          rcases hr with rfl | rfl | rfl <;> exact dW (by omega) (by omega_arith)) (by omega_arith),
         Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> exact dW (by decide) (by omega_arith)) (by omega_arith)]
+          rcases hr with rfl | rfl <;> exact dW (by omega) (by omega_arith)) (by omega_arith)]
     have hout := P.out
     simp only [Spec.Gcm.blocksAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
       hz₁, Proof.Cmac.ctr32_one, List.cons.injEq, and_true] at hout
@@ -619,8 +659,10 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
       add_ofNat_assoc, last]
 
 /-- `derive`: the halves of `derive_keys` at `W + 16`. -/
-theorem derive_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) :
+theorem derive_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (derive v.callees) σ (DInv p σ (p.R / 2 - 1)) := by
+  obtain hWn := L.hWn
   have hR := L.rounds
   refine WP.seq (WP.run (Q := fun t => DInv p σ 0 t) ⟨_, by grun [], ?_⟩ fun t I₀ => ?_)
   · exact ⟨E.keep (fun r hr => by
@@ -642,6 +684,7 @@ theorem DInv.keys {p : Prm} (L : Lay p) {σ t : State} (I : DInv p σ (p.R / 2 -
     Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem p.K p.R) (Spec.GcmSiv.keyLen p.R) (bytesAt σ.mem p.N 12) =
       (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16,
         bytesAt t.mem (p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R)) := by
+  obtain hWn := L.hWn
   have hR := L.rounds
   have hk : Spec.GcmSiv.keyLen p.R / 8 + 2 = p.R / 2 - 1 := by unfold Spec.GcmSiv.keyLen; omega_arith
   have hl : 8 * (p.R / 2 - 1) = 16 + Spec.GcmSiv.keyLen p.R := by unfold Spec.GcmSiv.keyLen; omega_arith

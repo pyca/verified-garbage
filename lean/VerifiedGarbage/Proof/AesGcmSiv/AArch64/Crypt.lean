@@ -35,7 +35,7 @@ namespace VG.Proof.AesGcmSiv.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.AArch64 (GcmImpl CtrCall CtrPost ctr_call covers_cons covers_nil covers_append
+open VG.Proof.AesGcm.AArch64 (GcmImpl CtrCall CtrPost ctr_call ctr_callLe ctr_relLe covers_cons covers_nil covers_append
   add_ofNat_assoc Others)
 
 theorem blockAt_zero2 (m : Mem) (p : Addr) : Spec.Gcm.blockAt (Proof.Cmac.zero2 m p) p = 0 := by
@@ -59,7 +59,7 @@ theorem copyMem_bytes (m : Mem) (W : Addr) :
 
 /-- What `tag o` writes. -/
 abbrev tagR (W : Addr) (o : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 1760, 2048⟩]
+  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 1760, Wn - 1760⟩]
 
 /-- What `tag o` leaves, from `t`. -/
 structure TagPost (p : Prm) (o : Nat) (t t' : State) : Prop where
@@ -80,10 +80,10 @@ theorem tagArgs_ok {p : Prm} {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨
       t₁.gpr .x2 = p.W + BitVec.ofNat 64 112 ∧ t₁.gpr .x3 = p.W + BitVec.ofNat 64 o ∧
       t₁.gpr .x4 = BitVec.ofNat 64 1 ∧ t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760 ∧
       Others [.x9, .x0, .x1, .x2, .x3, .x4, .x5] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain r₀ := E.perm.wR (show 96 + 8 ≤ 3808 by decide)
-  obtain r₈ := E.perm.wR (show 104 + 8 ≤ 3808 by decide)
-  obtain w₀ := E.perm.wW (show 112 + 8 ≤ 3808 by decide)
-  obtain w₈ := E.perm.wW (show 120 + 8 ≤ 3808 by decide)
+  obtain r₀ := E.perm.wR (show 96 + 8 ≤ 1760 by decide)
+  obtain r₈ := E.perm.wR (show 104 + 8 ≤ 1760 by decide)
+  obtain w₀ := E.perm.wW (show 112 + 8 ≤ 1760 by decide)
+  obtain w₈ := E.perm.wW (show 120 + 8 ≤ 1760 by decide)
   obtain z₀ := E.perm.wW (show o + 8 ≤ 3808 by omega_arith)
   obtain z₈ := E.perm.wW (show o + 8 + 8 ≤ 3808 by omega_arith)
   obtain o₁ : o % 8 = 0 := by omega_arith
@@ -107,7 +107,7 @@ theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Na
     (x2 : t₁.gpr .x2 = p.W + BitVec.ofNat 64 112) (x3 : t₁.gpr .x3 = p.W + BitVec.ofNat 64 o)
     (x4 : t₁.gpr .x4 = BitVec.ofNat 64 1) (x5 : t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760) :
     CtrCall t₁ (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o)
-      (p.W + BitVec.ofNat 64 1760) p.R 1 :=
+      (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) :=
   have hw := L.ww
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
@@ -203,7 +203,7 @@ namespace VG.Proof.AesGcmSiv.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.WriteBytes (writeBytes)
-open VG.Proof.AesGcm.AArch64 (GcmImpl CtrCall CtrPost ctr_call covers_cons covers_nil covers_append covers_off
+open VG.Proof.AesGcm.AArch64 (GcmImpl CtrCall CtrPost ctr_call ctr_callLe ctr_relLe covers_cons covers_nil covers_append covers_off
   covers_left add_ofNat_assoc ofNat_sub lsr_ofNat eval_zero eval_nonzero toNat_ofNat_of_lt Others LoopPre
   xorLoop_ok loopRegs xorBytes length_bytesAt)
 
@@ -240,7 +240,7 @@ theorem frame_outside {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : 
 /-- What counter mode writes: the counter block, its copy, the block at
 `W + 224`, `vg_aes_ctr32`'s working space and the data. -/
 abbrev cryR (W D : Addr) (n : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 96, 32⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 1760, 2048⟩, ⟨D, n⟩]
+  [⟨W + BitVec.ofNat 64 96, 32⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 1760, Wn - 1760⟩, ⟨D, n⟩]
 
 /-- What a block of counter mode leaves, from `t`. -/
 structure BlockPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (j : Nat) (t t' : State) : Prop where
@@ -263,10 +263,10 @@ theorem blkArgs_ok {p : Prm} {t : State} (E : Env p t) {j : Nat}
       t₁.gpr .x2 = p.W + BitVec.ofNat 64 112 ∧ t₁.gpr .x3 = p.D + BitVec.ofNat 64 (16 * j) ∧
       t₁.gpr .x4 = BitVec.ofNat 64 1 ∧ t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760 ∧
       Others [.x9, .x0, .x1, .x2, .x3, .x4, .x5] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain r₀ := E.perm.wR (show 96 + 8 ≤ 3808 by decide)
-  obtain r₈ := E.perm.wR (show 104 + 8 ≤ 3808 by decide)
-  obtain w₀ := E.perm.wW (show 112 + 8 ≤ 3808 by decide)
-  obtain w₈ := E.perm.wW (show 120 + 8 ≤ 3808 by decide)
+  obtain r₀ := E.perm.wR (show 96 + 8 ≤ 1760 by decide)
+  obtain r₈ := E.perm.wR (show 104 + 8 ≤ 1760 by decide)
+  obtain w₀ := E.perm.wW (show 112 + 8 ≤ 1760 by decide)
+  obtain w₈ := E.perm.wW (show 120 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [copy16, ctrArgs]; grun [E.x19, E.x22, r₀, r₈, w₀, w₈], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     by others_tac, (by rfl), (by rfl), (by rfl)⟩
   · have sep : ∀ v : BitVec (8 * 8), (t.mem.write (p.W + BitVec.ofNat 64 112) 8 v).read (p.W + BitVec.ofNat 64 104) 8 =
@@ -282,10 +282,10 @@ theorem blkCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {j : Na
     (x2 : t₁.gpr .x2 = p.W + BitVec.ofNat 64 112) (x3 : t₁.gpr .x3 = p.D + BitVec.ofNat 64 (16 * j))
     (x4 : t₁.gpr .x4 = BitVec.ofNat 64 1) (x5 : t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760) :
     CtrCall t₁ (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112) (p.D + BitVec.ofNat 64 (16 * j))
-      (p.W + BitVec.ofNat 64 1760) p.R 1 :=
+      (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) :=
   have hn := L.n_lt
   have hdw := L.dw
-  have dQ : (⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  have dQ : (⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
@@ -295,9 +295,9 @@ theorem blkCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {j : Na
       rw [Nat.mod_eq_of_lt this]; omega_arith
     n_lt := by decide
     kc := L.w_w (.inr (by decide)) (by decide) (by decide)
-    kd := (dQ.sub_right (Lay.wSub (show 240 + 240 ≤ 3808 by decide))).symm
+    kd := (dQ.sub_right (Lay.wSub (show 240 + 240 ≤ 1760 by decide))).symm
     ks := L.w_w (.inl (by decide)) (by decide) (by decide)
-    cd := (dQ.sub_right (Lay.wSub (show 112 + 16 ≤ 3808 by decide))).symm
+    cd := (dQ.sub_right (Lay.wSub (show 112 + 16 ≤ 1760 by decide))).symm
     cs := L.w_w (.inl (by decide)) (by decide) (by decide)
     ds := dQ.sub_right (Lay.wSub (by decide))
     reads := covers_append (covers_cons (E₁.perm.wCR (by decide)) covers_nil)
@@ -320,7 +320,7 @@ theorem cryptBlock_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
   obtain E₁ : Env p t₁ := E.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
-  obtain dQ : (⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  obtain dQ : (⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   obtain cc := blkCall L E₁ hj x0 x1 x2 x3 x4 x5
   -- What the copy changed.
@@ -363,15 +363,15 @@ theorem cryptBlock_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
     · exact .inl rfl
     · exact .inr (L.d_w' (by decide))
   obtain E₂ : Env p t₂ := E₁.of_saved P.saved P.sp P.rd P.wr
-  obtain c₀ := E₂.perm.wR (show 96 + 4 ≤ 3808 by decide)
-  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
+  obtain c₀ := E₂.perm.wR (show 96 + 4 ≤ 1760 by decide)
+  obtain c₁ := E₂.perm.wW (show 96 + 4 ≤ 1760 by decide)
   obtain h27₂ : t₂.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) := by
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), h27]
   obtain h28₂ : t₂.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := by
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), h28]
   -- What the first two pieces changed.
   obtain f₂' : Frame [⟨p.W + BitVec.ofNat 64 112, 16⟩, ⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩,
-      ⟨p.W + BitVec.ofNat 64 1760, 2048⟩] t.mem t₂.mem :=
+      ⟨p.W + BitVec.ofNat 64 1760, p.Wn - 1760⟩] t.mem t₂.mem :=
     (f₁.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; simp).trans fc
   obtain f₂ : Frame (cryR p.W p.D p.n) t.mem t₂.mem := f₂'.sub fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -381,7 +381,7 @@ theorem cryptBlock_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
     · exact ⟨_, by simp, fun _ h => h⟩
   obtain dC : ∀ {d k : Nat}, 96 ≤ d → d + k ≤ 112 →
       ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 112, 16⟩ : Region), ⟨p.D + BitVec.ofNat 64 (16 * j), 16⟩,
-        ⟨p.W + BitVec.ofNat 64 1760, 2048⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
+        ⟨p.W + BitVec.ofNat 64 1760, p.Wn - 1760⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h₁ h₂ q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl
@@ -517,14 +517,14 @@ theorem cryptTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p 
     · simp [gpr_write, h27₂]
     · simp [gpr_write, h28₂]
   refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
-  obtain dQ : (⟨p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  obtain dQ : (⟨p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   obtain lp : LoopPre t₃ (p.W + BitVec.ofNat 64 224) (p.D + BitVec.ofNat 64 (16 * b)) r := by
     refine ⟨by omega_arith, ?_, ?_, ?_⟩
     · rw [rd₃, wr₃]
-      exact Proof.AesGcm.AArch64.covers_prefix (T.env.perm.wCR (show 224 + 16 ≤ 3808 by decide)) (by omega_arith)
+      exact Proof.AesGcm.AArch64.covers_prefix (T.env.perm.wCR (show 224 + 16 ≤ 1760 by decide)) (by omega_arith)
     · rw [wr₃]; exact covers_off T.env.perm.d (by omega_arith) hn'
-    · exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 3808 by decide))).sub_right (Region.sub_prefix (by omega_arith))).symm
+    · exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 1760 by decide))).sub_right (Region.sub_prefix (by omega_arith))).symm
   refine WP.mono (xorLoop_ok t₃ x11₃ x12₃ x13₃ (by omega_arith) lp) fun t₄ ⟨hm₄, ho₄, sp₄, rd₄, wr₄⟩ => ?_
   rw [m₃] at hm₄
   obtain hl : (xorBytes t₂.mem (p.D + BitVec.ofNat 64 (16 * b)) (p.W + BitVec.ofNat 64 224) r).length = r := by
@@ -582,10 +582,10 @@ theorem cryptHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t₁ : State, runBlock isa cryptHead t = some t₁ ∧ t₁.mem = headMem t.mem p.W ∧
       t₁.gpr .x27 = p.D ∧ t₁.gpr .x28 = BitVec.ofNat 64 p.n ∧ t₁.gpr .x9 = BitVec.ofNat 64 (p.n / 16) ∧
       Others [.x9, .x10, .x27, .x28] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  obtain rT₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 3808 by decide)
-  obtain rT₈ := E.perm.wR (show 8 + 8 ≤ 3808 by decide)
-  obtain w₀ := E.perm.wW (show 96 + 8 ≤ 3808 by decide)
-  obtain w₈ := E.perm.wW (show 104 + 8 ≤ 3808 by decide)
+  obtain rT₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 1760 by decide)
+  obtain rT₈ := E.perm.wR (show 8 + 8 ≤ 1760 by decide)
+  obtain w₀ := E.perm.wW (show 96 + 8 ≤ 1760 by decide)
+  obtain w₈ := E.perm.wW (show 104 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [cryptHead]; grun [E.x19, BitVec.add_zero, rT₀, rT₈, w₀, w₈], ?_, ?_, ?_, ?_,
     by others_tac, (by rfl), (by rfl), (by rfl)⟩
   · have sep : ∀ v : BitVec (8 * 8), (t.mem.write (p.W + BitVec.ofNat 64 96) 8 v).read (p.W + BitVec.ofNat 64 8) 8 =

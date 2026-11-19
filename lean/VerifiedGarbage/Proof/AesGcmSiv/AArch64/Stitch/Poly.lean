@@ -1740,7 +1740,7 @@ theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₃.rd ++ t₃.wr) := by
     rw [rd₃, wr₃, A.rd, A.wr]
     exact covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
-  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
+  have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, p.Wn⟩ :=
     L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
   refine WP.mono (absorb_ok v L E₃ hc (by omega_arith) (by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]

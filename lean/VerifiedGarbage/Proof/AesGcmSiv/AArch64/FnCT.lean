@@ -85,10 +85,10 @@ theorem cmp_ok {p : Prm} {t : State} (E : Env p t) :
       t'.gpr .x27 = BitVec.ofNat 64 (if bytesAt t.mem p.W 16 = bytesAt t.mem (p.W + BitVec.ofNat 64 224) 16
         then 1 else 0) ∧
       Others [.x9, .x10, .x11, .x12, .x27] t t' ∧ t'.mem = t.mem ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  obtain r₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 3808 by decide)
-  obtain r₈ := E.perm.wR (show 8 + 8 ≤ 3808 by decide)
-  obtain u₀ := E.perm.wR (show 224 + 8 ≤ 3808 by decide)
-  obtain u₈ := E.perm.wR (show 232 + 8 ≤ 3808 by decide)
+  obtain r₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 1760 by decide)
+  obtain r₈ := E.perm.wR (show 8 + 8 ≤ 1760 by decide)
+  obtain u₀ := E.perm.wR (show 224 + 8 ≤ 1760 by decide)
+  obtain u₈ := E.perm.wR (show 232 + 8 ≤ 1760 by decide)
   refine ⟨_, by simp only [cmp]; grun [E.x19, BitVec.add_zero, r₀, r₈, u₀, u₈, gpr_addWithCarry, c_addWithCarry,
     mem_addWithCarry, rd_addWithCarry, wr_addWithCarry, sp_addWithCarry, c_write], ?_,
     fun r hr => ?_, (by rfl), (by rfl), (by rfl), (by rfl)⟩
@@ -484,11 +484,11 @@ theorem entry_ok {s : State} (P : Perm (prmOf s) s) (hA : Covers [args s] (s.rd 
   subst hs₀
   obtain hW₀ : (s.write .x .x9 (s.mem.readW s.sp 64)).gpr .x9 = (prmOf s).W := by
     simp [gpr_write, prmOf, stackArg, stackArgAddr]
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok _ .x9 hW₀ (by simpa only [wr_write] using P.w2560)
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok _ .x9 hW₀ (by simpa only [wr_write] using P.w1760)
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   obtain hWv : (prmOf s).W = s.mem.readW s.sp 64 := by simp [prmOf, stackArg, stackArgAddr, Mem.readW]
   obtain w216 : InRegions s₁.wr (s.mem.readW s.sp 64 + BitVec.ofNat 64 216) 8 := by
-    rw [wr₁, ← hWv]; simpa only [wr_write] using in_off P.w (show 216 + 8 ≤ 3808 by decide) (by decide)
+    rw [wr₁, ← hWv]; simpa only [wr_write] using in_off P.w (show 216 + 8 ≤ 1760 by decide) (by decide)
   refine WP.run ⟨_, by grun [g₁, BitVec.add_zero, w216], rfl⟩ fun s₂ hs₂ => ?_
   subst hs₂
   obtain hs : ∀ r ∈ saved, (s.write .x .x9 (s.mem.readW s.sp 64)).gpr r.1 = s.gpr r.1 := by
@@ -538,11 +538,11 @@ theorem recv_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (hT : TagSlot p 
     ∃ s', runBlock isa recv s = some s' ∧ Frame [⟨p.W, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem p.W 16 = bytesAt s.mem p.T 16 ∧ s'.gpr .x9 = p.T ∧ Others [.x9, .x10] s s' ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain r₀ := E.perm.wR (show 216 + 8 ≤ 3808 by decide)
+  obtain r₀ := E.perm.wR (show 216 + 8 ≤ 1760 by decide)
   obtain t₀ : InRegions (s.rd ++ s.wr) p.T 8 := by simpa using in_off (d := 0) (n := 8) E.perm.t (by decide) (by decide)
   obtain t₈ := in_off (d := 8) (n := 8) E.perm.t (by decide) (by decide)
-  obtain w₀ : InRegions s.wr p.W 8 := by simpa using E.perm.wW (show 0 + 8 ≤ 3808 by decide)
-  obtain w₈ := E.perm.wW (show 8 + 8 ≤ 3808 by decide)
+  obtain w₀ : InRegions s.wr p.W 8 := by simpa using E.perm.wW (show 0 + 8 ≤ 1760 by decide)
+  obtain w₈ := E.perm.wW (show 8 + 8 ≤ 1760 by decide)
   obtain hT' : s.mem.read (p.W + BitVec.ofNat 64 216) 8 = p.T := by rw [read8_readW]; exact hT
   obtain hs : Mem.Sep (p.T + BitVec.ofNat 64 8) (64 / 8) p.W (64 / 8) :=
     L.t_w.sep (Offset.contains_base p.T (d := 8) (n := 8) (k := 16) (by decide) (by decide))
@@ -561,11 +561,11 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (hT : TagSlot 
     ∃ s', runBlock isa tagOut s = some s' ∧ Frame [⟨p.T, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem p.T 16 = bytesAt s.mem p.W 16 ∧ s'.gpr .x9 = p.T ∧ Others [.x9, .x10] s s' ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain r₀ := E.perm.wR (show 216 + 8 ≤ 3808 by decide)
+  obtain r₀ := E.perm.wR (show 216 + 8 ≤ 1760 by decide)
   obtain t₀ : InRegions s.wr p.T 8 := by simpa using in_off (d := 0) (n := 8) hTw (by decide) (by decide)
   obtain t₈ := in_off (d := 8) (n := 8) hTw (by decide) (by decide)
-  obtain w₀ : InRegions (s.rd ++ s.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 3808 by decide)
-  obtain w₈ := E.perm.wR (show 8 + 8 ≤ 3808 by decide)
+  obtain w₀ : InRegions (s.rd ++ s.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 1760 by decide)
+  obtain w₈ := E.perm.wR (show 8 + 8 ≤ 1760 by decide)
   obtain hT' : s.mem.read (p.W + BitVec.ofNat 64 216) 8 = p.T := by rw [read8_readW]; exact hT
   obtain hs : Mem.Sep (p.W + BitVec.ofNat 64 8) (64 / 8) p.T (64 / 8) :=
     L.t_w.symm.sep (Offset.contains_base p.W (d := 8) (n := 8) (k := 3808) (by decide) (by decide))
@@ -675,9 +675,9 @@ theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre s) :
     (((((sv₁.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
       Cr.frame (by disj_tac L))).frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (L.t_w' (show 128 + 88 ≤ 3808 by decide)).symm
+        exact (L.t_w' (show 128 + 88 ≤ 1760 by decide)).symm
   refine WP.block_append (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w2560R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
+  refine WP.mono (exit_ok (s₀ := s) E₆.x19 E₆.sp E₆.w1760R sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R) (Spec.GcmSiv.keyLen (prmOf s).R)
       (bytesAt s.mem (prmOf s).N 12) (bytesAt s.mem (prmOf s).D (prmOf s).n) (bytesAt s.mem (prmOf s).A (prmOf s).al) =
     (bytesAt s'.mem (prmOf s).D (prmOf s).n, bytesAt s'.mem (prmOf s).T 16)
@@ -805,7 +805,7 @@ theorem open_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre s) :
     rw [← hm₆] at this
     exact this.frame Mk.frame (by disj_tac L)
   refine WP.mono (exit_ok (s₀ := s) (Mk.env.write (by decide) _).x19 (Mk.env.write (by decide) _).sp
-    (Mk.env.write (by decide) _).w2560R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
+    (Mk.env.write (by decide) _).w1760R (by simp only [mem_write]; exact sv₇)) fun s' ⟨ga, hm, hx0, _⟩ => ⟨ga, ?_⟩
   -- What the pieces read.
   obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf s).K (prmOf s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
@@ -899,7 +899,7 @@ namespace VG.Proof.AesGcmSiv.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_ite rel_taint ct_of GcmImpl CtrCall ctr_call eval_zero in_off
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_ite rel_taint ct_of GcmImpl CtrCall ctr_call ctr_callLe ctr_relLe eval_zero in_off
   RelCT.block_split
   eval_nonzero Others add_ofNat_assoc ofNat_sub lsr_ofNat)
 
@@ -914,7 +914,7 @@ theorem tag_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ 
     (ho : o = 0 ∨ o = 224) : RelCT isa (Eq2 τ₁ τ₂) (tag v.callees o) TT := by
   have w : ∀ {τ : State}, Env p τ → WP isa (.block (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++
       [Impl.AesGcm.AArch64.ptr .x3 .x19 o])) τ fun t₁ => CtrCall t₁ (p.W + BitVec.ofNat 64 240)
-        (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t₁ :=
+        (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o) (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) ∧ Env p t₁ :=
     fun E => by
       obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := tagArgs_ok E ho
       have E' : Env p t₁ := E.keep (fun r hr => ho₁ r (by
@@ -946,7 +946,7 @@ theorem cryptBlock_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State}
       τ.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) →
       WP isa (.block (copy16 cbO ccO ++ ctrArgs ++ [Impl.AesGcm.AArch64.mov .x3 .x27])) τ fun t₁ =>
         CtrCall t₁ (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112) (p.D + BitVec.ofNat 64 (16 * j))
-          (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t₁ ∧ t₁.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
+          (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) ∧ Env p t₁ ∧ t₁.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
           t₁.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := fun E h27 h28 => by
     obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := blkArgs_ok E h27
     have E' : Env p t₁ := E.keep (fun r hr => ho₁ r (by
@@ -955,7 +955,7 @@ theorem cryptBlock_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State}
     exact WP.of_runBlock ⟨t₁, run₁, blkCall L E' hj x0 x1 x2 x3 x4 x5, E', by rw [ho₁ _ (by decide), h27],
       by rw [ho₁ _ (by decide), h28]⟩
   have wc : ∀ {t : State}, (CtrCall t (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112)
-      (p.D + BitVec.ofNat 64 (16 * j)) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t ∧
+      (p.D + BitVec.ofNat 64 (16 * j)) (p.W + BitVec.ofNat 64 1760) p.R 1 (p.Wn - 1760) ∧ Env p t ∧
       t.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧ t.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j)) →
       WP isa (callCtr v.callees) t fun u => Env p u ∧ u.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
         u.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := fun ⟨cc, E, h27, h28⟩ =>
@@ -991,8 +991,8 @@ theorem cryptBlockL_ok (v : GcmImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : 16 * 
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), B.x27]
   have h28₂ : t₂.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := by
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), B.x28]
-  have c₀ := E₂.perm.wR (show 96 + 4 ≤ 3808 by decide)
-  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
+  have c₀ := E₂.perm.wR (show 96 + 4 ≤ 1760 by decide)
+  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 1760 by decide)
   refine WP.run ⟨_, by grun [E₂.x19, c₀, c₁, h27₂, h28₂], rfl⟩ fun t₃ ht₃ => ?_
   subst ht₃
   refine ⟨⟨E₂.keep (fun r hr => by
@@ -1127,7 +1127,7 @@ theorem entry_pub {σ₁ σ₂ : State} (hp : onePub σ₁ σ₂) (P : Perm (prm
 /-- `ldr x9, [x19, #216]`: `tag`'s address in `x9`. -/
 theorem ldrT_ok {p : Prm} {s : State} (E : Env p s) (hT : TagSlot p s.mem) :
     WP isa (.block [.ldr .x .x9 .x19 tagPO]) s fun s' => s'.gpr .x9 = p.T ∧ Env p s' := by
-  have r₀ := E.perm.wR (show 216 + 8 ≤ 3808 by decide)
+  have r₀ := E.perm.wR (show 216 + 8 ≤ 1760 by decide)
   have hT' : s.mem.read (p.W + BitVec.ofNat 64 216) 8 = p.T := by rw [read8_readW]; exact hT
   refine WP.run ⟨_, by grun [E.x19, r₀, hT'], rfl⟩ fun s' hs => ?_
   subst hs
