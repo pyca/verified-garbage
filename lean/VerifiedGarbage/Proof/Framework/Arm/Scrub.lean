@@ -622,8 +622,10 @@ theorem Verified.scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 Code with frames also writes the stack below the stack pointer: at most
 `armStack c` bytes of it (`Exec.frameSp`), which hold what its frames held.
 `scrubF rb n c` is `c`, then a frame of the `n` bytes below the stack pointer
-whose every word is zeroed (`wipeBelow`), then `tail rb`: so those bytes are
-zero when that frame is released, and every other byte outside the buffers
+whose every word is zeroed (`wipeBelow`: from 64 bytes by a loop of eight
+stores a pass, `wipeLoop`, the shorter code there, and below by a store for
+each word), then `tail rb`: so those bytes are zero when that frame is
+released, and every other byte outside the buffers
 is what it was. The frame is apart from the buffers (the contract reserves
 it), so a postcondition that reads the memory on return only within the
 buffers (`PostOut`) still holds.
