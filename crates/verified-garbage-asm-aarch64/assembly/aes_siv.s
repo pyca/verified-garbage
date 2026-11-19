@@ -5,109 +5,558 @@
 // gives.
 
 vg_aes_siv_init_aes:
-	sub sp, sp, #2560
+	sub sp, sp, #560
 	add x3, sp, #0
-	str x19, [x3, #2176]
-	str x20, [x3, #2184]
-	str x21, [x3, #2192]
-	str x22, [x3, #2200]
-	str x30, [x3, #2208]
+	str x19, [x3, #0]
+	str x20, [x3, #8]
+	str x21, [x3, #16]
+	str x22, [x3, #24]
+	str x30, [x3, #32]
 	add x19, x0, #0
 	lsr x20, x1, #1
 	add x21, x2, #0
 	add x22, x3, #0
 	add x1, x20, #0
+	add x3, x3, #48
 	bl {vg_aes_expand_key_scratch_aes}
 	add x0, x21, #0
 	lsr x1, x20, #2
 	add x1, x1, #6
 	add x2, x21, #240
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_cmac_aes_subkeys_aes}
 	add x0, x19, x20
 	add x1, x20, #0
 	add x2, x21, #272
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_aes_expand_key_scratch_aes}
-	ldr x19, [x22, #2176]
-	ldr x20, [x22, #2184]
-	ldr x21, [x22, #2192]
-	ldr x30, [x22, #2208]
-	ldr x22, [x22, #2200]
-	add sp, sp, #2560
+	ldr x19, [x22, #0]
+	ldr x20, [x22, #8]
+	ldr x21, [x22, #16]
+	ldr x30, [x22, #32]
+	ldr x22, [x22, #24]
+	add sp, sp, #560
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #560
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	add sp, sp, #560
 	ret
 	.p2align 6
 
 vg_aes_siv_init_neon:
-	sub sp, sp, #2560
+	sub sp, sp, #2224
 	add x3, sp, #0
-	str x19, [x3, #2176]
-	str x20, [x3, #2184]
-	str x21, [x3, #2192]
-	str x22, [x3, #2200]
-	str x30, [x3, #2208]
+	str x19, [x3, #0]
+	str x20, [x3, #8]
+	str x21, [x3, #16]
+	str x22, [x3, #24]
+	str x30, [x3, #32]
 	add x19, x0, #0
 	lsr x20, x1, #1
 	add x21, x2, #0
 	add x22, x3, #0
 	add x1, x20, #0
+	add x3, x3, #48
 	bl {vg_aes_expand_key_scratch}
 	add x0, x21, #0
 	lsr x1, x20, #2
 	add x1, x1, #6
 	add x2, x21, #240
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_cmac_aes_subkeys_neon}
 	add x0, x19, x20
 	add x1, x20, #0
 	add x2, x21, #272
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_aes_expand_key_scratch}
-	ldr x19, [x22, #2176]
-	ldr x20, [x22, #2184]
-	ldr x21, [x22, #2192]
-	ldr x30, [x22, #2208]
-	ldr x22, [x22, #2200]
-	add sp, sp, #2560
+	ldr x19, [x22, #0]
+	ldr x20, [x22, #8]
+	ldr x21, [x22, #16]
+	ldr x30, [x22, #32]
+	ldr x22, [x22, #24]
+	add sp, sp, #2224
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2224
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	add sp, sp, #2224
 	ret
 	.p2align 6
 
 vg_aes_siv_init:
-	sub sp, sp, #2560
+	sub sp, sp, #2224
 	add x3, sp, #0
-	str x19, [x3, #2176]
-	str x20, [x3, #2184]
-	str x21, [x3, #2192]
-	str x22, [x3, #2200]
-	str x30, [x3, #2208]
+	str x19, [x3, #0]
+	str x20, [x3, #8]
+	str x21, [x3, #16]
+	str x22, [x3, #24]
+	str x30, [x3, #32]
 	add x19, x0, #0
 	lsr x20, x1, #1
 	add x21, x2, #0
 	add x22, x3, #0
 	add x1, x20, #0
+	add x3, x3, #48
 	bl {vg_aes_expand_key_scratch}
 	add x0, x21, #0
 	lsr x1, x20, #2
 	add x1, x1, #6
 	add x2, x21, #240
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_cmac_aes_subkeys}
 	add x0, x19, x20
 	add x1, x20, #0
 	add x2, x21, #272
-	add x3, x22, #0
+	add x3, x22, #48
 	bl {vg_aes_expand_key_scratch}
-	ldr x19, [x22, #2176]
-	ldr x20, [x22, #2184]
-	ldr x21, [x22, #2192]
-	ldr x30, [x22, #2208]
-	ldr x22, [x22, #2200]
-	add sp, sp, #2560
+	ldr x19, [x22, #0]
+	ldr x20, [x22, #8]
+	ldr x21, [x22, #16]
+	ldr x30, [x22, #32]
+	ldr x22, [x22, #24]
+	add sp, sp, #2224
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2224
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	add sp, sp, #2224
 	ret
 	.p2align 6
 
 vg_aes_siv_encrypt_aes:
-	sub sp, sp, #2576
+	sub sp, sp, #400
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -131,14 +580,14 @@ vg_aes_siv_encrypt_aes:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 	cbz x25, 20f
 22:
@@ -161,17 +610,17 @@ vg_aes_siv_encrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -186,16 +635,16 @@ vg_aes_siv_encrypt_aes:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -232,11 +681,11 @@ vg_aes_siv_encrypt_aes:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -247,7 +696,7 @@ vg_aes_siv_encrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -262,7 +711,7 @@ vg_aes_siv_encrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -272,7 +721,7 @@ vg_aes_siv_encrypt_aes:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 	b 26f
 25:
@@ -297,9 +746,9 @@ vg_aes_siv_encrypt_aes:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -335,7 +784,7 @@ vg_aes_siv_encrypt_aes:
 	add x2, x19, #0
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 26:
 	ldr x9, [x19, #0]
@@ -356,7 +805,7 @@ vg_aes_siv_encrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_aes}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -389,7 +838,7 @@ vg_aes_siv_encrypt_aes:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_aes}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -452,12 +901,82 @@ vg_aes_siv_encrypt_aes:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #400
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #400
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	add sp, sp, #400
 	ret
 	.p2align 6
 
 vg_aes_siv_decrypt_aes:
-	sub sp, sp, #2576
+	sub sp, sp, #400
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -481,14 +1000,14 @@ vg_aes_siv_decrypt_aes:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 	cbz x25, 20f
 22:
@@ -511,17 +1030,17 @@ vg_aes_siv_decrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -536,16 +1055,16 @@ vg_aes_siv_decrypt_aes:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -577,7 +1096,7 @@ vg_aes_siv_decrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_aes}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -610,7 +1129,7 @@ vg_aes_siv_decrypt_aes:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_aes}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -685,11 +1204,11 @@ vg_aes_siv_decrypt_aes:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -700,7 +1219,7 @@ vg_aes_siv_decrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -715,7 +1234,7 @@ vg_aes_siv_decrypt_aes:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_aes}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -725,7 +1244,7 @@ vg_aes_siv_decrypt_aes:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #112
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 	b 214f
 213:
@@ -750,9 +1269,9 @@ vg_aes_siv_decrypt_aes:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -788,7 +1307,7 @@ vg_aes_siv_decrypt_aes:
 	add x2, x19, #112
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_aes}
 214:
 	ldr x9, [x19, #0]
@@ -840,12 +1359,82 @@ vg_aes_siv_decrypt_aes:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #400
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #400
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	add sp, sp, #400
 	ret
 	.p2align 6
 
 vg_aes_siv_encrypt_neon:
-	sub sp, sp, #2576
+	sub sp, sp, #2448
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -869,14 +1458,14 @@ vg_aes_siv_encrypt_neon:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 	cbz x25, 20f
 22:
@@ -899,17 +1488,17 @@ vg_aes_siv_encrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -924,16 +1513,16 @@ vg_aes_siv_encrypt_neon:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -970,11 +1559,11 @@ vg_aes_siv_encrypt_neon:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -985,7 +1574,7 @@ vg_aes_siv_encrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -1000,7 +1589,7 @@ vg_aes_siv_encrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -1010,7 +1599,7 @@ vg_aes_siv_encrypt_neon:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 	b 26f
 25:
@@ -1035,9 +1624,9 @@ vg_aes_siv_encrypt_neon:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -1073,7 +1662,7 @@ vg_aes_siv_encrypt_neon:
 	add x2, x19, #0
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 26:
 	ldr x9, [x19, #0]
@@ -1094,7 +1683,7 @@ vg_aes_siv_encrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_neon}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -1127,7 +1716,7 @@ vg_aes_siv_encrypt_neon:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_neon}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -1190,12 +1779,209 @@ vg_aes_siv_encrypt_neon:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #2448
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2448
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	add sp, sp, #2448
 	ret
 	.p2align 6
 
 vg_aes_siv_decrypt_neon:
-	sub sp, sp, #2576
+	sub sp, sp, #2448
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -1219,14 +2005,14 @@ vg_aes_siv_decrypt_neon:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 	cbz x25, 20f
 22:
@@ -1249,17 +2035,17 @@ vg_aes_siv_decrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -1274,16 +2060,16 @@ vg_aes_siv_decrypt_neon:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -1315,7 +2101,7 @@ vg_aes_siv_decrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_neon}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -1348,7 +2134,7 @@ vg_aes_siv_decrypt_neon:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32_neon}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -1423,11 +2209,11 @@ vg_aes_siv_decrypt_neon:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -1438,7 +2224,7 @@ vg_aes_siv_decrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -1453,7 +2239,7 @@ vg_aes_siv_decrypt_neon:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update_neon}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -1463,7 +2249,7 @@ vg_aes_siv_decrypt_neon:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #112
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 	b 214f
 213:
@@ -1488,9 +2274,9 @@ vg_aes_siv_decrypt_neon:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -1526,7 +2312,7 @@ vg_aes_siv_decrypt_neon:
 	add x2, x19, #112
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize_neon}
 214:
 	ldr x9, [x19, #0]
@@ -1578,12 +2364,209 @@ vg_aes_siv_decrypt_neon:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #2448
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v7.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #2448
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	add sp, sp, #2448
 	ret
 	.p2align 6
 
 vg_aes_siv_encrypt:
-	sub sp, sp, #2576
+	sub sp, sp, #2448
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -1607,14 +2590,14 @@ vg_aes_siv_encrypt:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 	cbz x25, 20f
 22:
@@ -1637,17 +2620,17 @@ vg_aes_siv_encrypt:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -1662,16 +2645,16 @@ vg_aes_siv_encrypt:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -1708,11 +2691,11 @@ vg_aes_siv_encrypt:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -1723,7 +2706,7 @@ vg_aes_siv_encrypt:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -1738,7 +2721,7 @@ vg_aes_siv_encrypt:
 	add x1, x21, #0
 	add x2, x19, #0
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -1748,7 +2731,7 @@ vg_aes_siv_encrypt:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 	b 26f
 25:
@@ -1773,9 +2756,9 @@ vg_aes_siv_encrypt:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -1811,7 +2794,7 @@ vg_aes_siv_encrypt:
 	add x2, x19, #0
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 26:
 	ldr x9, [x19, #0]
@@ -1832,7 +2815,7 @@ vg_aes_siv_encrypt:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -1865,7 +2848,7 @@ vg_aes_siv_encrypt:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -1928,12 +2911,208 @@ vg_aes_siv_encrypt:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #2448
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	movz x0, #0, lsl #0
+	sub sp, sp, #2448
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	add sp, sp, #2448
 	ret
 	.p2align 6
 
 vg_aes_siv_decrypt:
-	sub sp, sp, #2576
+	sub sp, sp, #2448
 	add x7, sp, #0
 	str x19, [x7, #160]
 	str x20, [x7, #168]
@@ -1957,14 +3136,14 @@ vg_aes_siv_decrypt:
 	movz x9, #0, lsl #0
 	str x9, [x19, #16]
 	str x9, [x19, #24]
-	str x9, [x19, #2560]
-	str x9, [x19, #2568]
+	str x9, [x19, #256]
+	str x9, [x19, #264]
 	add x0, x20, #0
 	add x1, x21, #0
-	add x2, x19, #2560
+	add x2, x19, #256
 	add x3, x19, #16
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 	cbz x25, 20f
 22:
@@ -1987,17 +3166,17 @@ vg_aes_siv_decrypt:
 	add x1, x21, #0
 	add x2, x19, #128
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	add x3, x22, x28
 	sub x4, x23, x28
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #128
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
-	ldr x9, [x19, #2560]
-	ldr x10, [x19, #2568]
+	ldr x9, [x19, #256]
+	ldr x10, [x19, #264]
 	rev x9, x9
 	rev x10, x10
 	lsr x11, x9, #63
@@ -2012,16 +3191,16 @@ vg_aes_siv_decrypt:
 	eor x10, x10, x11
 	rev x9, x9
 	rev x10, x10
-	str x9, [x19, #2560]
-	str x10, [x19, #2568]
-	ldr x9, [x19, #2560]
+	str x9, [x19, #256]
+	str x10, [x19, #264]
+	ldr x9, [x19, #256]
 	ldr x10, [x19, #128]
 	eor x9, x9, x10
-	str x9, [x19, #2560]
-	ldr x9, [x19, #2568]
+	str x9, [x19, #256]
+	ldr x9, [x19, #264]
 	ldr x10, [x19, #136]
 	eor x9, x9, x10
-	str x9, [x19, #2568]
+	str x9, [x19, #264]
 	add x24, x24, #16
 	sub x25, x25, #1
 	cbnz x25, 22b
@@ -2053,7 +3232,7 @@ vg_aes_siv_decrypt:
 	add x1, x21, #0
 	add x2, x19, #96
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32}
 	lsr x9, x23, #4
 	lsl x9, x9, #33
@@ -2086,7 +3265,7 @@ vg_aes_siv_decrypt:
 	add x2, x19, #96
 	add x3, x19, #80
 	movz x4, #1, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_aes_ctr32}
 	lsr x9, x23, #4
 	add x8, x23, #0
@@ -2161,11 +3340,11 @@ vg_aes_siv_decrypt:
 	sub x6, x23, x28
 	add x6, x19, x6
 	ldr x9, [x6, #16]
-	ldr x10, [x19, #2560]
+	ldr x10, [x19, #256]
 	eor x9, x9, x10
 	str x9, [x6, #16]
 	ldr x9, [x6, #24]
-	ldr x10, [x19, #2568]
+	ldr x10, [x19, #264]
 	eor x9, x9, x10
 	str x9, [x6, #24]
 	movz x9, #0, lsl #0
@@ -2176,7 +3355,7 @@ vg_aes_siv_decrypt:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x22, #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	sub x9, x23, #1
 	lsr x9, x9, #4
@@ -2191,7 +3370,7 @@ vg_aes_siv_decrypt:
 	add x1, x21, #0
 	add x2, x19, #112
 	add x3, x19, #32
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_update}
 	lsl x9, x25, #4
 	add x3, x19, #32
@@ -2201,7 +3380,7 @@ vg_aes_siv_decrypt:
 	add x0, x20, #0
 	add x1, x21, #0
 	add x2, x19, #112
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 	b 214f
 213:
@@ -2226,9 +3405,9 @@ vg_aes_siv_decrypt:
 	add x6, x6, #32
 	movz x9, #128, lsl #0
 	strb w9, [x6, #0]
-	ldr x9, [x19, #2560]
+	ldr x9, [x19, #256]
 	str x9, [x19, #144]
-	ldr x9, [x19, #2568]
+	ldr x9, [x19, #264]
 	str x9, [x19, #152]
 	ldr x9, [x19, #144]
 	ldr x10, [x19, #152]
@@ -2264,7 +3443,7 @@ vg_aes_siv_decrypt:
 	add x2, x19, #112
 	add x3, x19, #32
 	movz x4, #16, lsl #0
-	add x5, x19, #256
+	add x5, x19, #272
 	bl {vg_cmac_aes_finalize}
 214:
 	ldr x9, [x19, #0]
@@ -2316,6 +3495,202 @@ vg_aes_siv_decrypt:
 	ldr x28, [x19, #232]
 	ldr x30, [x19, #240]
 	ldr x19, [x19, #160]
-	add sp, sp, #2576
+	add sp, sp, #2448
+	movz x1, #0, lsl #0
+	movz x2, #0, lsl #0
+	movz x3, #0, lsl #0
+	movz x4, #0, lsl #0
+	movz x5, #0, lsl #0
+	movz x6, #0, lsl #0
+	movz x7, #0, lsl #0
+	movz x8, #0, lsl #0
+	movz x9, #0, lsl #0
+	movz x10, #0, lsl #0
+	movz x11, #0, lsl #0
+	movz x12, #0, lsl #0
+	movz x16, #0, lsl #0
+	movz x17, #0, lsl #0
+	movi v0.2d, #0
+	movi v1.2d, #0
+	movi v2.2d, #0
+	movi v3.2d, #0
+	movi v4.2d, #0
+	movi v5.2d, #0
+	movi v6.2d, #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+	movi v20.2d, #0
+	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
+	movi v24.2d, #0
+	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
+	movi v29.2d, #0
+	movi v30.2d, #0
+	movi v31.2d, #0
+	tst x1, x1
+	add w0, w0, #0
+	sub sp, sp, #2448
+	movi v31.2d, #0
+	add x9, sp, #0
+	str q31, [x9, #0]
+	str q31, [x9, #16]
+	str q31, [x9, #32]
+	str q31, [x9, #48]
+	str q31, [x9, #64]
+	str q31, [x9, #80]
+	str q31, [x9, #96]
+	str q31, [x9, #112]
+	str q31, [x9, #128]
+	str q31, [x9, #144]
+	str q31, [x9, #160]
+	str q31, [x9, #176]
+	str q31, [x9, #192]
+	str q31, [x9, #208]
+	str q31, [x9, #224]
+	str q31, [x9, #240]
+	str q31, [x9, #256]
+	str q31, [x9, #272]
+	str q31, [x9, #288]
+	str q31, [x9, #304]
+	str q31, [x9, #320]
+	str q31, [x9, #336]
+	str q31, [x9, #352]
+	str q31, [x9, #368]
+	str q31, [x9, #384]
+	str q31, [x9, #400]
+	str q31, [x9, #416]
+	str q31, [x9, #432]
+	str q31, [x9, #448]
+	str q31, [x9, #464]
+	str q31, [x9, #480]
+	str q31, [x9, #496]
+	str q31, [x9, #512]
+	str q31, [x9, #528]
+	str q31, [x9, #544]
+	str q31, [x9, #560]
+	str q31, [x9, #576]
+	str q31, [x9, #592]
+	str q31, [x9, #608]
+	str q31, [x9, #624]
+	str q31, [x9, #640]
+	str q31, [x9, #656]
+	str q31, [x9, #672]
+	str q31, [x9, #688]
+	str q31, [x9, #704]
+	str q31, [x9, #720]
+	str q31, [x9, #736]
+	str q31, [x9, #752]
+	str q31, [x9, #768]
+	str q31, [x9, #784]
+	str q31, [x9, #800]
+	str q31, [x9, #816]
+	str q31, [x9, #832]
+	str q31, [x9, #848]
+	str q31, [x9, #864]
+	str q31, [x9, #880]
+	str q31, [x9, #896]
+	str q31, [x9, #912]
+	str q31, [x9, #928]
+	str q31, [x9, #944]
+	str q31, [x9, #960]
+	str q31, [x9, #976]
+	str q31, [x9, #992]
+	str q31, [x9, #1008]
+	str q31, [x9, #1024]
+	str q31, [x9, #1040]
+	str q31, [x9, #1056]
+	str q31, [x9, #1072]
+	str q31, [x9, #1088]
+	str q31, [x9, #1104]
+	str q31, [x9, #1120]
+	str q31, [x9, #1136]
+	str q31, [x9, #1152]
+	str q31, [x9, #1168]
+	str q31, [x9, #1184]
+	str q31, [x9, #1200]
+	str q31, [x9, #1216]
+	str q31, [x9, #1232]
+	str q31, [x9, #1248]
+	str q31, [x9, #1264]
+	str q31, [x9, #1280]
+	str q31, [x9, #1296]
+	str q31, [x9, #1312]
+	str q31, [x9, #1328]
+	str q31, [x9, #1344]
+	str q31, [x9, #1360]
+	str q31, [x9, #1376]
+	str q31, [x9, #1392]
+	str q31, [x9, #1408]
+	str q31, [x9, #1424]
+	str q31, [x9, #1440]
+	str q31, [x9, #1456]
+	str q31, [x9, #1472]
+	str q31, [x9, #1488]
+	str q31, [x9, #1504]
+	str q31, [x9, #1520]
+	str q31, [x9, #1536]
+	str q31, [x9, #1552]
+	str q31, [x9, #1568]
+	str q31, [x9, #1584]
+	str q31, [x9, #1600]
+	str q31, [x9, #1616]
+	str q31, [x9, #1632]
+	str q31, [x9, #1648]
+	str q31, [x9, #1664]
+	str q31, [x9, #1680]
+	str q31, [x9, #1696]
+	str q31, [x9, #1712]
+	str q31, [x9, #1728]
+	str q31, [x9, #1744]
+	str q31, [x9, #1760]
+	str q31, [x9, #1776]
+	str q31, [x9, #1792]
+	str q31, [x9, #1808]
+	str q31, [x9, #1824]
+	str q31, [x9, #1840]
+	str q31, [x9, #1856]
+	str q31, [x9, #1872]
+	str q31, [x9, #1888]
+	str q31, [x9, #1904]
+	str q31, [x9, #1920]
+	str q31, [x9, #1936]
+	str q31, [x9, #1952]
+	str q31, [x9, #1968]
+	str q31, [x9, #1984]
+	str q31, [x9, #2000]
+	str q31, [x9, #2016]
+	str q31, [x9, #2032]
+	str q31, [x9, #2048]
+	str q31, [x9, #2064]
+	str q31, [x9, #2080]
+	str q31, [x9, #2096]
+	str q31, [x9, #2112]
+	str q31, [x9, #2128]
+	str q31, [x9, #2144]
+	str q31, [x9, #2160]
+	str q31, [x9, #2176]
+	str q31, [x9, #2192]
+	str q31, [x9, #2208]
+	str q31, [x9, #2224]
+	str q31, [x9, #2240]
+	str q31, [x9, #2256]
+	str q31, [x9, #2272]
+	str q31, [x9, #2288]
+	str q31, [x9, #2304]
+	str q31, [x9, #2320]
+	str q31, [x9, #2336]
+	str q31, [x9, #2352]
+	str q31, [x9, #2368]
+	str q31, [x9, #2384]
+	str q31, [x9, #2400]
+	str q31, [x9, #2416]
+	str q31, [x9, #2432]
+	add sp, sp, #2448
 	ret
 	.p2align 6
