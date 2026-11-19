@@ -1,6 +1,6 @@
 //! ECDSA over brainpoolP320r1.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
