@@ -80,7 +80,7 @@ theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg →
     {a c : List Byte} {H : Block} {s : State} (he : Env Wn Ctx St W SP s) (hk : Kept k s)
     (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26 : s.gpr .x26 = BitVec.ofNat 64 a.length) (h27 : s.gpr .x27 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hc : c.length < 2 ^ 64) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (finBody v.callees o) s fun s' => Env Wn Ctx St W SP s' ∧ Kept k s' ∧
       Frame (finFrame Wn St W o) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →

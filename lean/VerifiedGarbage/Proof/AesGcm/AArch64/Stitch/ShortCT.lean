@@ -191,7 +191,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   obtain h₁ := hpre _ p₁
@@ -399,7 +399,7 @@ theorem sealWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (g
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) shortRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees (8 * w) tb cl true) :=
   sealWithShX_ct v cl hMK gh hw hpre (ex := fun _ => []) (fun _ => by simp) (fun _ => by simp) (fun _ => rfl)
     (fun p c y z r w sp f _ => hgh p c y z r w sp f)

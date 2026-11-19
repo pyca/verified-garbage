@@ -65,7 +65,7 @@ theorem openDec_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
     (x15₂c : cond to (s₂c.gpr .x15 = O) True) (sp₂c : s₂c.sp = s₂.sp) (rd₂c : s₂c.rd = s₂.rd)
     (wr₂c : s₂c.wr = s₂.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = t.rd → u.wr = t.wr →
-      Frame [workR Wn W, ⟨O, n⟩] t.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+      Frame [workR Wn W, ⟨O, n⟩] t.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     Stitch.SInM Wn Ctx (W + BitVec.ofNat 64 16) W SP H (bytesAt t.mem A al ++ zeros (padLen (bytesAt t.mem A al).length))
         (inc32 (Spec.Gcm.j0 H (bytesAt t.mem Np 12))) R D O n to s₂c ∧
       Stitch.TbOk Wn Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂c ∧
@@ -105,7 +105,7 @@ theorem openBlk_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
     (F₂c : Frame [workR Wn W, ⟨O, n⟩] t.mem s₂c.mem)
     (hm : Stitch.SMid Wn Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n (fun _ => bytesAt s₂c.mem D (Stitch.pre n))
       s₂c s₂') (hin : Stitch.SInM Wn Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n to s₂c)
-    (key₂c : KeyAt H s₂c.mem W) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (key₂c : KeyAt H s₂c.mem W) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
         absSeg2 16)) s₂' fun s₆ => ∃ s₃ : State, ∃ X : Addr,
       MidG Wn to Ctx W SP H R n D (BitVec.ofNat 64 tl) X s₃ s₃ ∧ Frame [workR Wn W, ⟨O, n⟩] t.mem s₃.mem ∧
@@ -207,7 +207,7 @@ theorem openRunAS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
       (to = true → v₁.gpr .x15 = v₂.gpr .x15) →
       v₁.rd = t₁.rd → v₁.wr = t₁.wr → Frame [workR Wn W, ⟨O, n⟩] t₁.mem v₁.mem →
       v₂.rd = t₂.rd → v₂.wr = t₂.wr → Frame [workR Wn W, ⟨O, n⟩] t₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     RelCT isa (Eq2 t₁ t₂) (openRunAS v.callees cl tb to) TT := by
   have L := o₁.lay
   obtain hn := (dataOk_of o₁.dat).lt
@@ -329,7 +329,7 @@ variable {Wn : Nat} {Ctx W SP D O Np A : Addr} {R nl al n tl P : Nat} {C₁ C₂
 /-- The arguments of `failS`'s `cryptAl`, in place: the first `P` bytes, from
 the kept counter block. -/
 theorem failCr_ok {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
@@ -381,7 +381,7 @@ theorem omBS_rel (v : GcmImpl) (to : Bool) (L : Lay Wn Ctx (W + BitVec.ofNat 64 
     {s s' m₁ m₂ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s m₁)
     (mo₂ : MidSG Wn to fr' Ctx W SP D O Np A R nl al n tl P C₁' C₂' s' m₂)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 m₁ m₂) (omBS v.callees to) TT := by
   obtain hWn := L.hWn
   obtain hP16 : P % 16 = 0 := by rw [mo₁.hP]; omega_using []
@@ -506,7 +506,7 @@ theorem openRunWithS_relX {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey
       (to = true → v₁.gpr .x15 = v₂.gpr .x15) →
       v₁.rd = s₀₁.rd → v₁.wr = s₀₁.wr → Frame [workR Wn W, ⟨O, n⟩] s₀₁.mem v₁.mem →
       v₂.rd = s₀₂.rd → v₂.wr = s₀₂.wr → Frame [workR Wn W, ⟨O, n⟩] s₀₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) (Impl.Gcm.AArch64.Stitch.dec to)) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Stitch.openRunWithSG v.callees to tb cl) TT := by
   subst h12
   have L := o₁.lay

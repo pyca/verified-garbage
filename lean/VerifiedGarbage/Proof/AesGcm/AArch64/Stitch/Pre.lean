@@ -121,7 +121,7 @@ theorem kpre_of {t : State} {R : Nat} {D O : Addr} {n : Nat} {to : Bool} (he : E
     (h22 : t.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h23 : t.gpr .x23 = D)
     (h26 : t.gpr .x26 = BitVec.ofNat 64 n) (hd : DataOk Wn St W t D n)
     (ho : DataW Wn Ctx St W t O n) (hm : cond to (t.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D))
-    (h1 : 128 ≤ n) (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : KPreM t to := by
+    (h1 : 128 ≤ n) (tok : TblOk t.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240))) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : KPreM t to := by
   obtain hWn := he.perm.hWn
   have hn := hd.lt
   have hnb : Gcm.AArch64.Stitch.nb t = n / 128 := by
@@ -186,7 +186,7 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : A
     {k : Prog isa} {c : Mem → List Byte} (h0 : n / 128 = 0 → ∀ m, c m = [])
     (hk : ∀ t, KPreM t to → Env Wn Ctx St W SP t → Frame [tblR W] s.mem t.mem →
       (∀ r, r ≠ .x5 → r ≠ .x9 → t.gpr r = s.gpr r) → t.sp = s.sp → t.rd = s.rd → t.wr = s.wr →
-      WP isa k t (SMid Wn Ctx St W SP H x icb R D O n c s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa k t (SMid Wn Ctx St W SP H x icb R D O n c s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb k) s (SMid Wn Ctx St W SP H x icb R D O n c s) := by
   have hn := hs.src.lt
   rw [Impl.AesGcm.AArch64.Stitch.stitched, WP.seq_iff, WP.block_cons_iff]
@@ -300,7 +300,7 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr}
 
 /-- `seal`'s interleaved loop. -/
 theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
-    {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s) (hs : SIn Wn Ctx St W SP H x icb R D n s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s) (hs : SIn Wn Ctx St W SP H x icb R D n s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.enc) s
       (SMid Wn Ctx St W SP H x icb R D D n (fun m => bytesAt m D (pre n)) s) := by
   refine stitch_core L htb hs.toM (fun hz m => by simp only [pre, hz]; rfl)
@@ -322,7 +322,7 @@ theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
 place. -/
 theorem stitchDM_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D O : Addr} {n : Nat}
     {to : Bool} {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s)
-    (hs : SInM Wn Ctx St W SP H x icb R D O n to s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : SInM Wn Ctx St W SP H x icb R D O n to s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb (Impl.Gcm.AArch64.Stitch.dec to)) s
       (SMid Wn Ctx St W SP H x icb R D O n (fun _ => bytesAt s.mem D (pre n)) s) := by
   refine stitch_core L htb hs (fun hz m => by simp only [pre, hz]; rfl)
@@ -346,7 +346,7 @@ theorem stitchDM_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : 
 
 /-- `open`'s interleaved loop, in place. -/
 theorem stitchD_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {n : Nat}
-    {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s) (hs : SIn Wn Ctx St W SP H x icb R D n s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    {s : State} {tb : List Instr} (htb : TbOk Wn Ctx St W SP H tb s) (hs : SIn Wn Ctx St W SP H x icb R D n s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (Impl.AesGcm.AArch64.Stitch.stitched [] tb Impl.Gcm.AArch64.Stitch.dec) s
       (SMid Wn Ctx St W SP H x icb R D D n (fun _ => bytesAt s.mem D (pre n)) s) :=
   stitchDM_ok L gh htb hs.toM

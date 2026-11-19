@@ -235,7 +235,7 @@ theorem write_zero16 (m : Mem) (a : Addr) :
 
 /-- The first `k` stores of `v0 = 0` to `B₂`: its first `16 k` bytes zeroed. -/
 theorem zstores_ok {Wn : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (hv : s.v .v0 = 0) (h19 : s.gpr .x19 = W)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block ((List.range k).map fun i => .strq .v0 .x19 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * i))) s
       fun s' => s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.b2O)
           (List.replicate (16 * k) 0) ∧
@@ -292,7 +292,7 @@ theorem shortLen_ok {D : Addr} {n al : Nat} (s : State) (h7 : s.gpr .x7 = BitVec
 
 /-- `zeroBufs`: `B₂` zeroed, then block `p − 1` of `B₁`, with `x25 = 16 c`. -/
 theorem zeroBufs_ok {Wn : Nat} {W : Addr} {c : Nat} (hc6 : c ≤ 6) (s : State) (h19 : s.gpr .x19 = W)
-    (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block Impl.AesGcm.AArch64.Stitch.zeroBufs) s fun s' =>
       s'.mem = writeBytes (writeBytes s.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.b2O)
           (List.replicate 128 0)) (W + BitVec.ofNat 64 (864 - 16 * c)) (List.replicate 16 0) ∧
@@ -349,7 +349,7 @@ theorem atP_ok {W : Addr} {c : Nat} (r : Reg) (b d : Nat) (hb : b + 96 + 16 * d 
 theorem aadIn_ok {Wn : Nat} {W A : Addr} {c al : Nat} (hc6 : c ≤ 6) (s : State) (h19 : s.gpr .x19 = W)
     (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (hw : Covers [⟨W, Wn⟩] s.wr)
     (h4 : s.gpr .x4 = A) (h24 : s.gpr .x24 = BitVec.ofNat 64 al) (hal16 : al ≤ 16)
-    (hAr : Covers [⟨A, al⟩] (s.rd ++ s.wr)) (hd : (⟨A, al⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (992 - 16 * c), al⟩) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hAr : Covers [⟨A, al⟩] (s.rd ++ s.wr)) (hd : (⟨A, al⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (992 - 16 * c), al⟩) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa Impl.AesGcm.AArch64.Stitch.aadIn s fun s' =>
       s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 (992 - 16 * c)) (bytesAt s.mem A al) ∧
         (∀ r, r ∉ [.x11, .x12, .x13, .x14, .x15] → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧
@@ -392,7 +392,7 @@ theorem aadIn_ok {Wn : Nat} {W A : Addr} {c al : Nat} (hc6 : c ≤ 6) (s : State
 16 zero bytes from `n` bytes on. -/
 theorem ctToB2_ok {Wn : Nat} {W : Addr} {c n : Nat} (hc1 : 1 ≤ c) (hc6 : c ≤ 6) (hn : n ≤ 16 * c) (s : State)
     (h19 : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa Impl.AesGcm.AArch64.Stitch.ctToB2 s fun s' =>
       s'.mem = writeBytes (writeBytes s.mem (W + BitVec.ofNat 64 (1008 - 16 * c))
           (bytesAt s.mem (W + BitVec.ofNat 64 (880 - 16 * c)) (16 * c)))
@@ -474,7 +474,7 @@ theorem ctToB2_ok {Wn : Nat} {W : Addr} {c n : Nat} (hc1 : 1 ≤ c) (hc6 : c ≤
 /-- `ctToB2_ok` for no blocks. -/
 theorem ctToB2_ok0 {Wn : Nat} {W : Addr} {c n : Nat} (hc1 : c = 0) (_hc6 : c ≤ 6) (hn : n ≤ 16 * c) (s : State)
     (h19 : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa Impl.AesGcm.AArch64.Stitch.ctToB2 s fun s' =>
       s'.mem = writeBytes (writeBytes s.mem (W + BitVec.ofNat 64 (1008 - 16 * c))
           (bytesAt s.mem (W + BitVec.ofNat 64 (880 - 16 * c)) (16 * c)))
@@ -554,7 +554,7 @@ theorem ctToB2_ok0 {Wn : Nat} {W : Addr} {c n : Nat} (hc1 : c = 0) (_hc6 : c ≤
 /-- `ctToB2_ok`, for any number of blocks. -/
 theorem ctToB2_ok' {Wn : Nat} {W : Addr} {c n : Nat} (hc6 : c ≤ 6) (hn : n ≤ 16 * c) (s : State)
     (h19 : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c)) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa Impl.AesGcm.AArch64.Stitch.ctToB2 s fun s' =>
       s'.mem = writeBytes (writeBytes s.mem (W + BitVec.ofNat 64 (1008 - 16 * c))
           (bytesAt s.mem (W + BitVec.ofNat 64 (880 - 16 * c)) (16 * c)))
@@ -726,7 +726,7 @@ open VG.Proof.Gcm.AArch64.Stitch (TblOk Gh8Ok GhIn ghPart_ok gh8V blkV tblV ghV 
 open VG.Proof.Gcm.AArch64.Pmull (ext8 rev64b_read) in
 /-- `shortGh`: GHASH from zero of the eight blocks of `B₂`, with the table of `H`, in `v16` as loaded. -/
 theorem shortGh_ok {Wn : Nat} {W : Addr} {H : Spec.Gcm.Block} (gh : Gh8Ok) (s : State) (h19 : s.gpr .x19 = W)
-    (ht : TblOk s.mem W H) (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (ht : TblOk s.mem W H) (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block Impl.AesGcm.AArch64.Stitch.shortGh) s fun s' =>
       s'.v Impl.Gcm.AArch64.Stitch.Y =
         ext8 (Spec.Gcm.ghashFrom H 0 ((List.range 8).map fun j =>
@@ -804,7 +804,7 @@ theorem shortGh_ok {Wn : Nat} {W : Addr} {H : Spec.Gcm.Block} (gh : Gh8Ok) (s : 
 /-- `lensB`: the lengths block of `al` and `n` bytes, at block 7 of `B₂`. -/
 theorem lensB_ok {Wn : Nat} {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, Wn⟩] s.wr)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 al) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
-    (hal' : al < 2 ^ 64) (hn : n < 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hal' : al < 2 ^ 64) (hn : n < 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block Impl.AesGcm.AArch64.Stitch.lensB) s fun s' =>
       Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 1008) 16 = Proof.Gcm.lensBlock al n ∧
       Frame [⟨W + BitVec.ofNat 64 1008, 16⟩] s.mem s'.mem ∧
@@ -850,7 +850,7 @@ open VG.Proof.Gcm.AArch64.Pmull (ext8 ext8_ext8 rev64b_rev64b rev64b_read blockA
 /-- `shortTagAt o`: GHASH (in `v16`, as loaded) XORed with block `p − 1` of `B₁`, at `W + o`. -/
 theorem shortTagAt_ok {Wn : Nat} {W : Addr} {c : Nat} {g : Spec.Gcm.Block} {o : Nat} (ho : o = 0 ∨ o = 112)
     (hc6 : c ≤ 6) (s : State) (h19 : s.gpr .x19 = W) (h25 : s.gpr .x25 = BitVec.ofNat 64 (16 * c))
-    (hY : s.v Impl.Gcm.AArch64.Stitch.Y = ext8 g g) (hr : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hY : s.v Impl.Gcm.AArch64.Stitch.Y = ext8 g g) (hr : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block (Impl.AesGcm.AArch64.Stitch.shortTagAt o)) s fun s' =>
       Spec.Gcm.blockAt s'.mem (W + BitVec.ofNat 64 o) =
         g ^^^ Spec.Gcm.blockAt s.mem (W + BitVec.ofNat 64 (864 - 16 * c)) ∧
@@ -1137,7 +1137,7 @@ theorem shortMin_ok {n : Nat} (s : State) (h7 : s.gpr .x7 = BitVec.ofNat 64 n) (
 /-- A region apart from the 2560 bytes of the working space, neither wrapping
 around, is at most `2⁶⁴ − 2560` bytes long. -/
 theorem len_of_disjoint {Wn : Nat} {D W : Addr} {n : Nat} (hd : (⟨D, n⟩ : Region).Disjoint ⟨W, Wn⟩)
-    (hD : D.toNat + n ≤ 2 ^ 64) (hW : W.toNat + Wn ≤ 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) : n + Wn ≤ 2 ^ 64 := by
+    (hD : D.toNat + n ≤ 2 ^ 64) (hW : W.toNat + Wn ≤ 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) : n + Wn ≤ 2 ^ 64 := by
   refine Classical.byContradiction fun h => ?_
   by_cases hDW : D.toNat ≤ W.toNat
   · refine hd W ?_ ?_
@@ -1167,7 +1167,7 @@ theorem sealShort_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {w : Nat} {extra 
     (hs : sealPreXW (Wn := Wn) w extra s extraW) (htb : TbForP Wn tb w s)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16)
-    (hlo : 17 ≤ (s.gpr .x7).toNat) (hhi : (s.gpr .x7).toNat ≤ 96) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hlo : 17 ≤ (s.gpr .x7).toNat) (hhi : (s.gpr .x7).toNat ≤ 96) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (Impl.AesGcm.AArch64.Stitch.sealShort tb) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain hx4 := hx .x4 (by simp)

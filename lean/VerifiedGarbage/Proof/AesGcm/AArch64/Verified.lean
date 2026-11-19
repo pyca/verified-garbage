@@ -102,7 +102,7 @@ abbrev aadFrame (St W : Addr) : List Region := savedR W :: absFrame St W 16
 
 /-- One run of `stream_aad`, for additional data `x` so far of `o` bytes modulo 16. -/
 theorem aad_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn).pre s) {x : List Byte}
-    (hx : x.length % 16 = (s.gpr .x2).toNat % 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hx : x.length % 16 = (s.gpr .x2).toNat % 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (streamAad v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x1 + BitVec.ofNat 64 16) (s.gpr .x1 + BitVec.ofNat 64 32)
           (Spec.Gcm.ctxH s.mem (s.gpr .x0)) x →
@@ -156,7 +156,7 @@ theorem aad_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn)
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
       (h₂.frame.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
 
-theorem streamAad_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamAad_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (streamAad v.callees) s fun s' => GprAbi s s' ∧ (streamAadAArch64 Wn).post s s' := by
   have hz : (Spec.Gcm.zeros ((s.gpr .x2).toNat % 16)).length % 16 = (s.gpr .x2).toNat % 16 := by
     rw [Proof.Gcm.length_zeros, Nat.mod_mod]
@@ -217,7 +217,7 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem streamAad_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamAad_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ConstantTime isa (streamAadAArch64 Wn).pre (streamAadAArch64 Wn).pub (streamAad v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, qsp⟩ := hq
@@ -287,7 +287,7 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem streamInit_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamInit_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ConstantTime isa (streamInitAArch64 Wn).pre (streamInitAArch64 Wn).pub (streamInit v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, qsp⟩ := hq
@@ -359,8 +359,8 @@ theorem init1_ok {Wn : Nat} {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W :
     (hLn : (s.gpr .x1).toNat = L) (hCtx : s.gpr .x2 = Ctx) (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩])
     (hwr : s.wr = [⟨Ctx, cl⟩, ⟨W, Wn⟩]) (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, cl⟩)
     (d_ks : (⟨K, L⟩ : Region).Disjoint ⟨W, Wn⟩) (d_cs : (⟨Ctx, cl⟩ : Region).Disjoint ⟨W, Wn⟩)
-    (hL : L = 16 ∨ L = 24 ∨ L = 32) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide)
-    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hL : L = 16 ∨ L = 24 ∨ L = 32) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide)
+    (hWk : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     WP isa (.block initSeg1) s fun s₂ => KeyCall s₂ K Ctx (W + BitVec.ofNat 64 512) L ∧ s₂.gpr .x19 = W ∧
       s₂.gpr .x21 = Ctx ∧ s₂.gpr .x22 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) ∧ s₂.sp = s.sp ∧
       s₂.rd = s.rd ∧ s₂.wr = s.wr := by
@@ -402,7 +402,7 @@ theorem init1_ok {Wn : Nat} {cl : Nat} (hcl : 256 ≤ cl) {s : State} {K Ctx W :
 theorem init2_ok {Wn : Nat} {s : State} {Ctx W : Addr} {R : Nat} (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = Ctx)
     (h22 : s.gpr .x22 = BitVec.ofNat 64 R) (hR' : R = 10 ∨ R = 12 ∨ R = 14)
     (pC : Covers [⟨Ctx, 256⟩] s.wr) (pW : Covers [⟨W, Wn⟩] s.wr) (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩)
-    (wc : Ctx.toNat + 256 ≤ 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (wc : Ctx.toNat + 256 ≤ 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block initSeg2) s fun s₄ =>
       CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 (Wn - 512) ∧
       s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = s.sp := by
@@ -452,8 +452,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
       (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧
       (⟨s.gpr .x2, cl⟩ : Region).Disjoint ⟨s.gpr .x3, Wn⟩ ∧ (s.gpr .x2).toNat + 256 ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 16 ∨ (s.gpr .x1).toNat = 24 ∨ (s.gpr .x1).toNat = 32))
-    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
-    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (hT : ∃ h, (taint.check (Taint.ofRegs [.x19, .x21]) fin h).isSome = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     ConstantTime isa pre (initAArch64 Wn).pub (initWith v.callees fin) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
@@ -499,8 +499,8 @@ theorem initWith_ct {Wn : Nat} (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 
     (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
       e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) hT
 
-theorem init_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
-    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) : ConstantTime isa (initAArch64 Wn).pre (initAArch64 Wn).pub (init v.callees) :=
+theorem init_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) : ConstantTime isa (initAArch64 Wn).pre (initAArch64 Wn).pub (init v.callees) :=
   initWith_ct v _ (Nat.le_refl _) (fun s h => by
       simp only [initAArch64] at h
       obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, wc, -, hL⟩ := h
@@ -582,40 +582,40 @@ theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true
 
 /-! ## Correctness -/
 
-theorem init_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le)
-    (hWk : 1024 ≤ Wn := by first | assumption | decide | omega) :
+theorem init_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le)
+    (hWk : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ (initAArch64 Wn).post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
-theorem streamInit_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamInit_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∃ t s', Exec isa (streamInit v.callees) s t s' ∧ abiPreserved s s' ∧ (streamInitAArch64 Wn).post s s' :=
   WP.withPreservedV (streamInit_wp v hs) (streamInit_keepsV v)
 
-theorem streamAad_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamAad_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamAadAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∃ t s', Exec isa (streamAad v.callees) s t s' ∧ abiPreserved s s' ∧ (streamAadAArch64 Wn).post s s' :=
   WP.withPreservedV (streamAad_wp v hs) (streamAad_keepsV v)
 
-theorem streamEncrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamEncrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamEncryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamEncrypt_wp v hs) (streamEncrypt_keepsV v)
 
-theorem streamDecrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamDecrypt_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamDecryptAArch64 Wn).post s s' :=
   WP.withPreservedV (streamDecrypt_wp v hs) (streamDecrypt_keepsV v)
 
-theorem streamFinish_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamFinish_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ (streamFinishAArch64 Wn).post s s' :=
   WP.withPreservedV (streamFinish_wp v hs) (streamFinish_keepsV v)
 
-theorem streamVerify_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamVerify_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ (streamVerifyAArch64 Wn).post s s' :=
   WP.withPreservedV (streamVerify_wp v hs) (streamVerify_keepsV v)
 
-theorem seal_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem seal_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem open_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ (openAArch64 Wn).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 

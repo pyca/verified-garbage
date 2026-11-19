@@ -69,7 +69,7 @@ open VG.Spec.Gcm (Block blockAt ctxH ctxCiph)
 /-- The bit `openMain` computes, after `tagIn`, is whether `open` succeeds. -/
 theorem tagBit {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
     (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t) (rt : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     decide ((Spec.Gcm.fullTag (ciphOf t.mem Ctx R) (blockAt t.mem (Ctx + BitVec.ofNat 64 240))
       (bytesAt t.mem Np nl) (bytesAt t.mem A al) (bytesAt t.mem D n)).take tl = bytesAt t.mem W tl) =
     (Spec.Gcm.openResult (ctxCiph s₀.mem Ctx R) (ctxH s₀.mem Ctx) tl (bytesAt s₀.mem Np nl)
@@ -90,7 +90,7 @@ theorem OpenInG.front {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl
 /-- `openMain` (`openMainG to`) up to the branch on the tag, in two runs. -/
 theorem omA_rel {Wn : Nat} (v : GcmImpl) {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₁ s₂ t₁ t₂ : State}
     (o₁ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₁ t₁)
-    (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₂ t₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (o₂ : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₂ t₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (omA v.callees) TT := by
   have L := o₁.lay
   have hal := o₁.aad.lt
@@ -184,7 +184,7 @@ theorem omBG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr}
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s m₁) (mo₂ : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 m₁ m₂) (omBG v.callees to) TT := by
   obtain hWn := L.hWn
   unfold omBG
@@ -230,7 +230,7 @@ theorem omB_relD {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
   obtain hWn := L.hWn
   rw [← omBG_false]
@@ -241,7 +241,7 @@ theorem omB_rel {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl 
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR Wn W))
     (mo₁ : MidO Wn fr Ctx W SP D Np A R nl al n tl s m₁) (mo₂ : MidO Wn fr Ctx W SP D Np A R nl al n tl s' m₂)
-    (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hx : m₁.gpr .x27 = m₂.gpr .x27) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT :=
   omB_relD v L hR mo₁ mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW) hx
 
@@ -276,7 +276,7 @@ theorem openRestWithFl_rel {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W SP Np
       bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl → bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl →
       Spec.Gcm.tagLenOk tl = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₁.gpr r = s₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₂.gpr r = s₂.gpr r) →
-      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 s₁ s₂) (.seq tagLenOk (.seq (.ite (.zero .x .x9) fl (.seq tagIn m)) (.block restore))) TT := by
   refine rel_seq (rel_taint [.x28] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac [o₁.x28, o₂.x28])
       ⟨_, by taint_decide⟩)
@@ -345,7 +345,7 @@ theorem openRestWithG_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ 
       bytesAt t₂.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₁.gpr r = s₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₂.gpr r = s₂.gpr r) →
-      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 s₁ s₂) (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m))
       (.block restore))) TT := by
   obtain t0 : ∃ h, (taint.check (Taint.ofRegs []) (.block [imm .x0 0]) h).isSome = true := ⟨_, by taint_decide⟩
@@ -386,7 +386,7 @@ theorem openRestWith_rel {Wn : Nat} {m : Prog isa} {w : Nat} {σ₁ σ₂ s₁ s
       bytesAt t₂.mem (stackArg σ₁ w) (stackArg σ₁ 1).toNat = bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat →
       Spec.Gcm.tagLenOk (stackArg σ₁ 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₁.gpr r = s₁.gpr r) → (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t₂.gpr r = s₂.gpr r) →
-      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 t₁ t₂) m TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 s₁ s₂) (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m))
       (.block restore))) TT :=
   openRestWithG_rel (C₁ := bytesAt σ₁.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
@@ -404,7 +404,7 @@ theorem openMainG_rel {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP Np A D O Tg
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem Ctx R) (ctxH σ₁.mem Ctx) tl (bytesAt σ₁.mem Np nl)
         (bytesAt σ₁.mem D n) (bytesAt σ₁.mem A al) (bytesAt σ₁.mem Tg tl)).isSome =
       (Spec.Gcm.openResult (ctxCiph σ₂.mem Ctx R) (ctxH σ₂.mem Ctx) tl (bytesAt σ₂.mem Np nl)
-        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (openMainG v.callees to) TT := by
   have L := p₁.lay
   refine (openMainG_split v.callees to).symm.rel (rel_seq (omA_rel v p₁ p₂)
@@ -424,7 +424,7 @@ theorem openMain_rel {Wn : Nat} (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl 
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem Ctx R) (ctxH σ₁.mem Ctx) tl (bytesAt σ₁.mem Np nl)
         (bytesAt σ₁.mem D n) (bytesAt σ₁.mem A al) (bytesAt σ₁.mem Tg tl)).isSome =
       (Spec.Gcm.openResult (ctxCiph σ₂.mem Ctx R) (ctxH σ₂.mem Ctx) tl (bytesAt σ₂.mem Np nl)
-        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 t₁ t₂) (openMain v.callees) TT := by
   rw [← openMainG_false]
   exact openMainG_rel v false p₁ p₂ rt₁ rt₂ hok hb
@@ -449,7 +449,7 @@ theorem open_ct_ofW {Wn : Nat} {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {
           (stackArg σ₁ 1).toNat (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat)
           (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat) (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat)
           (bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat)).isSome →
-      RelCT isa (Eq2 s₁ s₂) X TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 s₁ s₂) X TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (.seq (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) X) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
@@ -524,11 +524,11 @@ theorem open_ct_of {Wn : Nat} {X : Prog isa} {pre : State → Prop} {extra : Sta
           (stackArg σ₁ 1).toNat (bytesAt σ₂.mem (σ₁.gpr .x2) (σ₁.gpr .x3).toNat)
           (bytesAt σ₂.mem (σ₁.gpr .x6) (σ₁.gpr .x7).toNat) (bytesAt σ₂.mem (σ₁.gpr .x4) (σ₁.gpr .x5).toNat)
           (bytesAt σ₂.mem (stackArg σ₁ 0) (stackArg σ₁ 1).toNat)).isSome →
-      RelCT isa (Eq2 s₁ s₂) X TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 s₁ s₂) X TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ConstantTime isa pre (openAArch64 Wn).pub (.seq (.block openEntry) X) :=
   open_ct_ofW (w := 2) (.inl rfl) (fun s h => openPreX_W (hpre s h)) hX
 
-theorem open_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) : ConstantTime isa (openAArch64 Wn).pre (openAArch64 Wn).pub («open» v.callees) :=
+theorem open_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) : ConstantTime isa (openAArch64 Wn).pre (openAArch64 Wn).pub («open» v.callees) :=
   open_ct_of (extra := fun _ => []) (fun _ h => h) fun _ _ _ o₁ o₂ x12₁ x12₂ _ _ hb =>
     openRestWith_rel o₁ o₂ x12₁ x12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁' rt₂' hok _ _ =>

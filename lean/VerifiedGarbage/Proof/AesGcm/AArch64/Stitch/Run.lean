@@ -63,7 +63,7 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
         Frame [Stitch.tblR (stackArg s w)] u.mem t.mem ∧ (∀ r, r ≠ .x5 → t.gpr r = u.gpr r) ∧
         t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) s₁ fun s' =>
       (GprAbi s s' ∧ (sealAArch64 Wn).post s s') ∧ I s'.mem := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁

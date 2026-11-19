@@ -370,7 +370,7 @@ theorem mem_ba {St W D : Addr} {n : Nat} {r : Region} (h : r ∈ absFrame St W 1
 
 /-- `encBody`: the data encrypted, and the ciphertext absorbed. -/
 theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Wn Ctx St W SP k R n P D a c H s) (icb : Block) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    {s : State} (h : BodyIn Wn Ctx St W SP k R n P D a c H s) (icb : Block) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (encBody v.callees) s (BodyOut Wn Ctx St W SP k R n P D a c H icb
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n))
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n)) s.mem) := by
@@ -433,7 +433,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr
 
 /-- `decBody`: the data absorbed, and decrypted. -/
 theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Wn Ctx St W SP k R n P D a c H s) (icb : Block) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    {s : State} (h : BodyIn Wn Ctx St W SP k R n P D a c H s) (icb : Block) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (decBody v.callees) s (BodyOut Wn Ctx St W SP k R n P D a c H icb (bytesAt s.mem D n)
       (xorKs (ciphOf s.mem Ctx R) icb P (bytesAt s.mem D n)) s.mem) := by
   have k22 : k .x22 = BitVec.ofNat 64 R := (h.kept .x22 (by decide)).symm.trans h.x22

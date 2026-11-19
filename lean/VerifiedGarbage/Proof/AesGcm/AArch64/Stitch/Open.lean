@@ -147,7 +147,7 @@ include L
 
 omit L in
 theorem failArgs_ok {fr : List Region} {s s₇ : State}
-    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (mo : MidSG Wn false fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     ∃ s₈, runBlock isa (([.ldrq .v0 .x19 Impl.AesGcm.AArch64.Stitch.cbO, .strq .v0 .x20 48,
       .ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] : List Instr) ++ Impl.AesGcm.AArch64.Stitch.whole ++
       [mov .x24 .x9, imm .x25 0]) s₇ = some s₈ ∧
@@ -237,7 +237,7 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
 /-- `omBS to`: the rest decrypted if the tag is right; if not, in place the
 text as it was, out of place the output zeroed. -/
 theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (mo : MidSG Wn to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s s₇) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omBS v.callees to) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -491,7 +491,7 @@ theorem sfr_lo' {Wn : Nat} {to : Bool} {W : Addr} {d k : Nat} (h₂ : 16 + d + k
   · exact fastP_lo' h₂
 
 theorem sfr_hi {Wn : Nat} {to : Bool} {W : Addr} {d k : Nat}
-    (h : (256 ≤ d ∧ d + k ≤ 320) ∨ (512 ≤ d ∧ d + k ≤ Wn)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
+    (h : (256 ≤ d ∧ d + k ≤ 320) ∨ (512 ≤ d ∧ d + k ≤ Wn)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
     ∃ r' ∈ sfr Wn to W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := by
   cases to
   · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
@@ -499,23 +499,23 @@ theorem sfr_hi {Wn : Nat} {to : Bool} {W : Addr} {d k : Nat}
     · exact fast_hi (by omega_using [h₁]) h₂
   · exact fastP_hi h
 
-theorem sfr_work {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ sfr Wn to W, Region.Sub r (workR Wn W) := by
+theorem sfr_work {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ sfr Wn to W, Region.Sub r (workR Wn W) := by
   cases to
   · exact fastFrame_work W
   · exact fastFrameP_work W
 
-theorem slots_sfr {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ sfr Wn to W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
+theorem slots_sfr {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ sfr Wn to W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
   cases to
   · exact slots_fastFrame W
   · exact slots_fastFrameP W
 
-theorem sfr_sub {Wn : Nat} {to : Bool} {W : Addr} {ex : List Region} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem sfr_sub {Wn : Nat} {to : Bool} {W : Addr} {ex : List Region} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ sfr Wn to W ++ ex, ∃ r' ∈ fastFrame Wn W ++ ex, Region.Sub r r' := by
   cases to
   · exact fun r hr => ⟨r, hr, fun _ h => h⟩
   · exact fastFrameP_sub
 
-theorem cbF_sub {Wn : Nat} {to : Bool} {W : Addr} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ cbF to W, ∃ r' ∈ sfr Wn to W, Region.Sub r r' := by
+theorem cbF_sub {Wn : Nat} {to : Bool} {W : Addr} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ cbF to W, ∃ r' ∈ sfr Wn to W, Region.Sub r r' := by
   cases to
   · intro r hr
     simp only [cbF, Bool.cond_false, List.mem_singleton] at hr; subst hr
@@ -531,7 +531,7 @@ theorem cbF_disj {to : Bool} {W : Addr} {X : Region}
   · intro r hr
     simp at hr
 
-theorem tag_sfr {Wn : Nat} {to : Bool} {W : Addr} {k : Nat} (hk : k ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem tag_sfr {Wn : Nat} {to : Bool} {W : Addr} {k : Nat} (hk : k ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ sfr Wn to W, (⟨W, k⟩ : Region).Disjoint r := by
   cases to
   · intro r hr
@@ -591,7 +591,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
       Frame [workR Wn W, ⟨O, n⟩] t.mem u.mem → KeyAt (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) u.mem W →
       WP isa (.block tb) u fun t' => TblOk t'.mem W (blockAt t.mem (Ctx + BitVec.ofNat 64 240)) ∧
         Frame [Stitch.tblR W] u.mem t'.mem ∧ (∀ r, r ≠ .x5 → t'.gpr r = u.gpr r) ∧
-        t'.sp = u.sp ∧ t'.rd = u.rd ∧ t'.wr = u.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+        t'.sp = u.sp ∧ t'.rd = u.rd ∧ t'.wr = u.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (openRunAS v.callees cl tb to) t fun u =>
       MidSG Wn to (⟨O, n⟩ :: (fastFrame Wn W ++ ex)) Ctx W SP D O Np A R 12 al n tl (Stitch.pre n)
         (bytesAt t.mem D (Stitch.pre n)) (bytesAt t.mem (D + BitVec.ofNat 64 (Stitch.pre n)) (n - Stitch.pre n)) t u ∧

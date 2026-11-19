@@ -53,7 +53,7 @@ theorem siEntry_ok {Wn : Nat} {s : State} {Ctx Np St W : Addr} {n : Nat} (hCtx :
   exact ⟨⟨x19₂, x20₂, x21₂, by rw [sp₂, sp₁], hperm.of_eq (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])⟩,
     fun _ _ => rfl, x23₂, x24₂, x26₂, x27₂, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
-theorem streamInit_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem streamInit_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamInitAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (streamInit v.callees) s fun s' => GprAbi s s' ∧ (streamInitAArch64 Wn).post s s' := by
   simp only [streamInitAArch64] at hs ⊢
   obtain ⟨hrd, hwr, dcs, dcw, dns, dnw, dsw, wc, wn, ws, ww⟩ := hs

@@ -91,7 +91,7 @@ theorem openToWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ₁ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ₁ w)) →
       s₁.sp = σ₁.sp → s₂.sp = σ₁.sp → s₁.rd = σ₁.rd → s₁.wr = σ₁.wr →
       Frame [workR Wn (stackArg σ₁ w)] σ₁.mem s₁.mem → s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
-      Frame [workR Wn (stackArg σ₁ w)] σ₂.mem s₂.mem → RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      Frame [workR Wn (stackArg σ₁ w)] σ₂.mem s₂.mem → RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithEG v.callees true w cl) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
@@ -233,14 +233,14 @@ section
 variable (v : GcmImpl) (hMK : MulKey)
 include hMK
 
-theorem fastOpenTo_correct {Wn : Nat} (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem fastOpenTo_correct {Wn : Nat} (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openTo v.callees) s t s' ∧ abiPreserved s s' ∧
       (openToAArch64 Wn).post s s' :=
   WP.withPreservedV (openToWithE_wp (w := 4) _ v hMK (.inl rfl) hs
       fun _ _ _ _ _ hc _ _ _ _ _ _ => gh_call v.gh hc)
     (fastOpenToWithE_keepsV v (.inl rfl) (by simp only [Code.allInstrs, GcmImpl.callees, v.gh.keepsV]))
 
-theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openTo v.callees) :=
   openToWithE_ct (w := 4) v _ hMK (.inl rfl) (extra := fun _ => []) (extraW := fun _ => []) (fun _ h => h)
     (fun _ hc _ _ _ _ _ _ => gh_call v.gh hc)

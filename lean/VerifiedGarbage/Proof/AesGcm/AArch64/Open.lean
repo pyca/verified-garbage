@@ -105,7 +105,7 @@ abbrev omFrame (Wn : Nat) (W : Addr) : List Region :=
     absFrame (W + BitVec.ofNat 64 16) W 16) ++ finFrame Wn (W + BitVec.ofNat 64 16) W 112 ++
     [⟨W + BitVec.ofNat 64 256, 32⟩]
 
-theorem omFrame_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ omFrame Wn W, Region.Sub r (workR Wn W) := by
+theorem omFrame_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ omFrame Wn W, Region.Sub r (workR Wn W) := by
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
   rotate_left
@@ -141,7 +141,7 @@ theorem saved_omFrame {Wn : Nat} {Ctx W : Addr} (L : Lay Wn Ctx (W + BitVec.ofNa
   · exact saved_absFrame L (.inr rfl) r hr
 
 /-- What `openMain` writes is above the received tag. -/
-theorem omFrame_hi {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ omFrame Wn W, Region.Sub r ⟨W + BitVec.ofNat 64 16, 2544⟩ := by
+theorem omFrame_hi {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ omFrame Wn W, Region.Sub r ⟨W + BitVec.ofNat 64 16, 2544⟩ := by
   obtain hi : ∀ d k, 16 ≤ d → d + k ≤ Wn →
       Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W + BitVec.ofNat 64 16, 2544⟩ :=
     fun d k h₁ h₂ => Offset.sub _ h₁ (by omega_arith)
@@ -286,7 +286,7 @@ abbrev MidO (Wn : Nat) (fr : List Region) (Ctx W SP D Np A : Addr) (R nl al n tl
 
 /-- What `openMain` writes before the branch is below `W + 320` or in the
 keystream's space. -/
-theorem omFrame_lo {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ omFrame Wn W,
+theorem omFrame_lo {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ omFrame Wn W,
     Region.Sub r ⟨W, 320⟩ ∨ Region.Sub r ⟨W + BitVec.ofNat 64 512, Wn - 512⟩ := by
   obtain lo : ∀ d k, d + k ≤ 320 → Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W, 320⟩ :=
     fun d k h => Offset.sub_base _ h
@@ -307,7 +307,7 @@ theorem omFrame_lo {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by
 
 /-- Where `open_to` keeps `dst` is outside what `openMain` writes before the
 branch. -/
-theorem dst_omFrame {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ omFrame Wn W, (⟨W + BitVec.ofNat 64 320, 8⟩ : Region).Disjoint r := by
+theorem dst_omFrame {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ omFrame Wn W, (⟨W + BitVec.ofNat 64 320, 8⟩ : Region).Disjoint r := by
   intro r hr
   rcases omFrame_lo W (hWn := hWn) r hr with h | h
   · exact (Offset.disjoint_base W (d := 320) (n := 8) (k := 320) (by decide) (by decide)).sub_right h
@@ -356,7 +356,7 @@ theorem openMainAG_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : 
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sT : s.mem.readW (W + BitVec.ofNat 64 248) 64 = BitVec.ofNat 64 tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omA v.callees) s (MidOG Wn to (omFrame Wn W) Ctx W SP D O Np A R nl al n tl s) := by
   obtain hWn := L.hWn
   unfold omA
@@ -490,7 +490,7 @@ theorem openMainA_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al 
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sT : s.mem.readW (W + BitVec.ofNat 64 248) 64 = BitVec.ofNat 64 tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omA v.callees) s (MidO Wn (omFrame Wn W) Ctx W SP D Np A R nl al n tl s) :=
   openMainAG_ok v false L he h22 hR h23 h24 h26 h27 hnon haad hdat rfl ddW dcW sA sL sD sN sT hok
 
@@ -697,7 +697,7 @@ theorem omIteWith_ok {Wn : Nat} (cr : Prog isa) {Ctx W SP D Np A : Addr} {R nl a
 theorem omIte_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo : MidO Wn fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
-    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (.ite (.zero .x .x27) (.block []) (oneCrypt v.callees)) s₇ fun s₈ =>
       Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
       Frame (crFrame Wn (W + BitVec.ofNat 64 16) W D n) s₇.mem s₈.mem ∧
@@ -770,7 +770,7 @@ theorem omBXWith_ok {Wn : Nat} (cr : Prog isa) {Ctx W SP D Np A : Addr} {R nl al
 theorem omBX_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (mo : MidO Wn fr Ctx W SP D Np A R nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
-    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omB v.callees) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -785,7 +785,7 @@ theorem omBX_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl 
 theorem omB_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR Wn W))
-    (mo : MidO Wn fr Ctx W SP D Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (mo : MidO Wn fr Ctx W SP D Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omB v.callees) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -810,7 +810,7 @@ theorem openMain_ok {Wn : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sT : s.mem.readW (W + BitVec.ofNat 64 248) 64 = BitVec.ofNat 64 tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (openMain v.callees) s fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -842,7 +842,7 @@ theorem openMainG_split (c : Callees) (to : Bool) : PEq (.seq (omA c) (omBG c to
 theorem omBG_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : Addr} {R nl al n tl : Nat}
     (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W) {fr : List Region} {s s₇ : State} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (ddW : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) (dcW : (⟨Ctx, 256⟩ : Region).Disjoint (workR Wn W))
-    (mo : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (mo : MidOG Wn to fr Ctx W SP D O Np A R nl al n tl s s₇) (hfr : ∀ r ∈ fr, Region.Sub r (workR Wn W)) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (omBG v.callees to) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -872,7 +872,7 @@ theorem openMainG_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : A
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
     (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     (sT : s.mem.readW (W + BitVec.ofNat 64 248) 64 = BitVec.ofNat 64 tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (openMainG v.callees to) s fun s' =>
       let ciph := ciphOf s.mem Ctx R
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
@@ -955,14 +955,14 @@ theorem OpenInG.of_regs {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R 
     outG_of_eq o.out r.rd r.wr (by rw [r.mem])⟩
 
 /-- What the entry and `tagIn` write is in `work`. -/
-theorem entry16_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ [entryR W, ⟨W, 16⟩], Region.Sub r (workR Wn W) := by
+theorem entry16_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ [entryR W, ⟨W, 16⟩], Region.Sub r (workR Wn W) := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact Lay.wSub (by omega)
   · exact Region.sub_prefix (by omega)
 
-theorem entryFr_work {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ entryFr to W, Region.Sub r (workR Wn W) := by
+theorem entryFr_work {Wn : Nat} (to : Bool) (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ entryFr to W, Region.Sub r (workR Wn W) := by
   cases to
   · exact entry16_work W
   · intro r hr
@@ -1019,7 +1019,7 @@ theorem openCore {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     OneLay Wn s (w + 1) w ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR Wn (stackArg s w)) := by
   have hs' := hs
@@ -1030,7 +1030,7 @@ theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (h
 /-- `open`'s first block: the entry, the tag length and the tag, with `work`
 the stack argument `w`. -/
 theorem openEntryW_ok {Wn : Nat} {w : Nat} (hw : 2 ≤ w ∧ w ≤ 5) {extra extraW : List Region} {s : State}
-    (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn Wn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
@@ -1102,7 +1102,7 @@ theorem openEntryW_ok {Wn : Nat} {w : Nat} (hw : 2 ≤ w ∧ w ≤ 5) {extra ext
 /-- `openEntryW_ok` for `vg_aes_gcm_open` (`w = 2`) and its instance with the
 powers (`w = 3`). -/
 theorem openEntry_ok {Wn : Nat} {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
-    (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : openPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn Wn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
@@ -1111,7 +1111,7 @@ theorem openEntry_ok {Wn : Nat} {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW :
 
 /-- What `openMain` reads, in a state after `tagIn`, as it was on entry. -/
 theorem OpenInG.vals {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
-    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ciphOf t.mem Ctx R = ctxCiph s₀.mem Ctx R ∧ blockAt t.mem (Ctx + BitVec.ofNat 64 240) = ctxH s₀.mem Ctx ∧
       bytesAt t.mem Np nl = bytesAt s₀.mem Np nl ∧ bytesAt t.mem A al = bytesAt s₀.mem A al ∧
       bytesAt t.mem D n = bytesAt s₀.mem D n := by
@@ -1126,7 +1126,7 @@ theorem OpenInG.vals {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl 
 
 /-- The received tag, after `tagIn`, as it was on entry. -/
 theorem OpenInG.tag {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ s : State}
-    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : bytesAt s.mem Tg tl = bytesAt s₀.mem Tg tl :=
+    (o : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : bytesAt s.mem Tg tl = bytesAt s₀.mem Tg tl :=
   bytesAt_frame o.fr (keep_of_sub (entryFr_work to W) o.dtW) (by have := o.tlt; omega_arith)
 
 /-- What `open` leaves after its branch on the tag length, from the state
@@ -1155,7 +1155,7 @@ output if the tag is right; if not, out of place zeros there, in place the
 text as it was. -/
 theorem openMainG_post {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
     {s₀ t : State} (o' : OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t)
-    (hT₃ : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl) (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hT₃ : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl) (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (openMainG v.callees to) t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl (bytesAt s₀.mem D n)
       (fun m => bytesAt m O n = cond to (List.replicate n 0) (bytesAt s₀.mem D n)) s₀) := by
   have L := o'.lay
@@ -1187,7 +1187,7 @@ theorem openMainG_false (c : Callees) : openMainG c false = openMain c := by
 /-- `openMain`, once the received tag is at `W`. -/
 theorem openMain_post {Wn : Nat} (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
     (o' : OpenIn Wn Ctx W SP Np A D Tg R nl al n tl s₀ t) (hT₃ : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
-    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hok : Spec.Gcm.tagLenOk tl = true) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (openMain v.callees) t (OpenPost Wn Ctx W SP Np A D Tg R nl al n tl s₀) := by
   rw [← openMainG_false]
   exact openMainG_post v false o' hT₃ hok
@@ -1209,7 +1209,7 @@ theorem failZero_ok {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl a
 /-- The branch on the tag length failing, out of place: 0 returned, and the
 output zeroed. -/
 theorem failTo_ok {Wn : Nat} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {C : List Byte} {s₀ s₃ : State}
-    (o : OpenInG Wn true Ctx W SP Np A D O Tg R nl al n tl s₀ s₃) (hok : Spec.Gcm.tagLenOk tl = false) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (o : OpenInG Wn true Ctx W SP Np A D O Tg R nl al n tl s₀ s₃) (hok : Spec.Gcm.tagLenOk tl = false) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.seq (.block [imm .x0 0]) (wipeG true)) s₃
       (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C (fun m => bytesAt m O n = List.replicate n 0) s₀) := by
   obtain ⟨s₄, run₄, x0₄, r₄⟩ : ∃ s₄, runBlock isa [imm .x0 0] s₃ = some s₄ ∧ s₄.gpr .x0 = 0 ∧
@@ -1243,7 +1243,7 @@ theorem oiteWithFl_ok {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W SP Np A D 
     (hm : ∀ {t : State}, OpenInG Wn to Ctx W SP Np A D O Tg R nl al n tl s₀ t →
       bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       Others loopRegs s₃ t →
-      WP isa m t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C F s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa m t (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C F s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.ite (.zero .x .x9) fl (.seq tagIn m)) s₃
       (OpenPostG Wn Ctx W SP Np A O Tg R nl al n tl C F s₀) := by
   obtain ev : isa.eval (.zero .x .x9) s₃ = some (decide ((if Spec.Gcm.tagLenOk tl then 1 else 0) = 0)) :=
@@ -1266,7 +1266,7 @@ theorem oiteWithG_ok {Wn : Nat} {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl
     (hm : ∀ {t : State}, OpenIn Wn Ctx W SP Np A D Tg R nl al n tl s₀ t →
       bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       Others loopRegs s₃ t →
-      WP isa m t (OpenPostG Wn Ctx W SP Np A D Tg R nl al n tl C F s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa m t (OpenPostG Wn Ctx W SP Np A D Tg R nl al n tl C F s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
       (OpenPostG Wn Ctx W SP Np A D Tg R nl al n tl C F s₀) :=
   oiteWithFl_ok o x12₃ x9₃ (failZero_ok o hF) hm
@@ -1278,7 +1278,7 @@ theorem oiteWith_ok {Wn : Nat} {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl 
     (hm : ∀ {t : State}, OpenIn Wn Ctx W SP Np A D Tg R nl al n tl s₀ t →
       bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       Others loopRegs s₃ t →
-      WP isa m t (OpenPost Wn Ctx W SP Np A D Tg R nl al n tl s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa m t (OpenPost Wn Ctx W SP Np A D Tg R nl al n tl s₀)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
       (OpenPost Wn Ctx W SP Np A D Tg R nl al n tl s₀) :=
   oiteWithG_ok (C := bytesAt s₀.mem D n) (F := fun m => bytesAt m D n = bytesAt s₀.mem D n) o x12₃ x9₃
@@ -1296,7 +1296,7 @@ theorem openRestWithFl_wp {Wn : Nat} {fl m : Prog isa} {to : Bool} {Ctx W Np A D
     (hm : ∀ {t : State}, OpenInG Wn to Ctx W s.sp Np A D O Tg R nl al n tl s t →
       bytesAt t.mem W tl = bytesAt s.mem Tg tl → Spec.Gcm.tagLenOk tl = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
-      WP isa m t (OpenPostG Wn Ctx W s.sp Np A O Tg R nl al n tl C F s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      WP isa m t (OpenPostG Wn Ctx W s.sp Np A O Tg R nl al n tl C F s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) fl (.seq tagIn m)) (.block restore))) s₂
       fun s' => GprAbi s s' ∧
         match Spec.Gcm.openResult (ctxCiph s.mem Ctx R) (ctxH s.mem Ctx) tl (bytesAt s.mem Np nl) C
@@ -1327,7 +1327,7 @@ theorem openRestWithG_wp {Wn : Nat} {m : Prog isa} {w : Nat} {s s₂ : State} {C
       Spec.Gcm.tagLenOk (stackArg s 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
       WP isa m t (OpenPostG Wn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
-        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat C F s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat C F s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
       fun s' => GprAbi s s' ∧
         match Spec.Gcm.openResult (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0))
@@ -1349,7 +1349,7 @@ theorem openRestWith_wp {Wn : Nat} {m : Prog isa} {w : Nat} {s s₂ : State}
       Spec.Gcm.tagLenOk (stackArg s 1).toNat = true →
       (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
       WP isa m t (OpenPost Wn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
-        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
       fun s' => GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   refine WP.seq (WP.mono (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun s₃ ⟨x9₃, r₃⟩ => ?_)
@@ -1364,7 +1364,7 @@ theorem openRestWith_wp {Wn : Nat} {m : Prog isa} {w : Nat} {s s₂ : State}
   rw [hm, hx0]
   exact post₄
 
-theorem open_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem open_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (openAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa («open» v.callees) s fun s' => GprAbi s s' ∧ (openAArch64 Wn).post s s' := by
   refine WP.seq (WP.mono (openEntry_ok (.inl rfl) (openPreX_W hs)) fun s₂ ⟨o₂, x12₂⟩ => ?_)
   exact openRestWith_wp o₂ x12₂ fun o' hT hok _ => openMain_post v o' hT hok
@@ -1395,7 +1395,7 @@ structure ToLay (Wn : Nat) (s : State) (w : Nat) : Prop where
   dtW : (⟨stackArg s 2, (stackArg s 3).toNat⟩ : Region).Disjoint (workR Wn (stackArg s w))
   rounds : rounds (s.gpr .x1)
 
-theorem openToLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem openToLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ToLay Wn s w := by
   simp only [openToPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, dsd, dsw, ddt, ddw, ddg, dtw, dwg, wc, wn, wa, wsr, wds, wt,
@@ -1431,7 +1431,7 @@ theorem openToLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} 
 /-- The load of `dst`, the first stack argument, and its store at `W + dstO`. -/
 theorem dstStash_ok {Wn : Nat} {s : State} {W : Addr} {V : BitVec 64} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, Wn⟩] s.wr)
     (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8)
-    (hV : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = V) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hV : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = V) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block [.ldrSp .x10 0, .str .x .x10 .x19 dstO]) s fun s' =>
       s'.mem = s.mem.writeW (W + BitVec.ofNat 64 320) V ∧ Others [.x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧
         s'.wr = s.wr := by
@@ -1445,7 +1445,7 @@ theorem dstStash_ok {Wn : Nat} {s : State} {W : Addr} {V : BitVec 64} (h19 : s.g
 /-- `open_to`'s first block: the entry, `dst` kept at `W + dstO`, the tag
 length stashed and the tag in `x12`, with `work` the stack argument `w`. -/
 theorem openEntryTo_ok {Wn : Nat} {w : Nat} (hw : 4 ≤ w ∧ w ≤ 5) {extra extraW : List Region} {s : State}
-    (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (openEntryG true w)) s fun s' =>
       OpenInG Wn true (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (stackArg s 2) (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
@@ -1561,7 +1561,7 @@ theorem openEntryTo_ok {Wn : Nat} {w : Nat} (hw : 4 ≤ w ∧ w ≤ 5) {extra ex
 /-- `vg_aes_gcm_open_to` (`openG c true w`, with `work` the stack argument
 `w`: 4, or 5 after the powers). -/
 theorem openTo_wp {Wn : Nat} (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {extra extraW : List Region} {s : State}
-    (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hs : openToPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (openG v.callees true w) s fun s' => GprAbi s s' ∧ openToPostOf s s' := by
   unfold openG openRestG
   refine WP.seq (WP.mono (openEntryTo_ok (by omega_using [hw]) hs) fun s₂ ⟨o₂, x12₂⟩ => ?_)

@@ -147,7 +147,7 @@ theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
 /-- `encBody` in two runs. -/
 theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
     {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (encBody v.callees) TT := by
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
   have k28₁ : k₁ .x28 = D := (h₁.kept .x28 (by decide)).symm.trans h₁.x28
@@ -175,7 +175,7 @@ theorem finBody_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ 
     (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 A) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 A)
     (h27₁ : σ₁.gpr .x27 = BitVec.ofNat 64 P) (h27₂ : σ₂.gpr .x27 = BitVec.ofNat 64 P)
-    (hA : A < 2 ^ 64) (hP : P < 2 ^ 64) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hA : A < 2 ^ 64) (hP : P < 2 ^ 64) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (finBody v.callees o) TT := by
   obtain hWn := he₁.perm.hWn
   have ho' : (if P = 0 then A % 16 else P % 16) < 16 := by split <;> exact Nat.mod_lt _ (by decide)

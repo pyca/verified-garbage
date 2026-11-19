@@ -38,17 +38,17 @@ open VG.Spec.Gcm (Block blockAt)
 /-- `work`. -/
 abbrev workR (Wn : Nat) (W : Addr) : Region := ⟨W, Wn⟩
 
-theorem stW {Wn : Nat} {W : Addr} {d k : Nat} (h : d + k ≤ 80) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem stW {Wn : Nat} {W : Addr} {d k : Nat} (h : d + k ≤ 80) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ (workR Wn W) := by
   rw [add_ofNat_assoc]; exact Lay.wSub (by omega)
 
 theorem keep_of_sub {Wn : Nat} {rs : List Region} {W : Addr} (hs : ∀ r ∈ rs, Region.Sub r (workR Wn W)) {X : Region}
     (hX : X.Disjoint (workR Wn W)) : ∀ r ∈ rs, X.Disjoint r := fun r hr => hX.sub_right (hs r hr)
 
-theorem entryR_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ [entryR W], Region.Sub r (workR Wn W) := by
+theorem entryR_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ [entryR W], Region.Sub r (workR Wn W) := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact Lay.wSub (by omega)
 
-theorem frontFrame_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ∀ r ∈ frontFrame (W + BitVec.ofNat 64 16) W, Region.Sub r (workR Wn W) := by
+theorem frontFrame_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : ∀ r ∈ frontFrame (W + BitVec.ofNat 64 16) W, Region.Sub r (workR Wn W) := by
   intro r hr
   simp only [frontFrame, j0Frame, absFrame, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
@@ -60,7 +60,7 @@ theorem frontFrame_work {Wn : Nat} (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 
   · exact stW (by decide)
   · exact Lay.wSub (by omega)
 
-theorem finFrame_work {Wn : Nat} (W : Addr) {o : Nat} (ho : o = 0 ∨ o = 112) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem finFrame_work {Wn : Nat} (W : Addr) {o : Nat} (ho : o = 0 ∨ o = 112) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ finFrame Wn (W + BitVec.ofNat 64 16) W o, Region.Sub r (workR Wn W) := by
   intro r hr
   simp only [finFrame, tFrame, tagFrame, List.cons_append, List.nil_append, List.mem_cons,
@@ -75,7 +75,7 @@ theorem finFrame_work {Wn : Nat} (W : Addr) {o : Nat} (ho : o = 0 ∨ o = 112) (
   · exact Lay.wSub (by omega)
 
 /-- The regions a body writes: in `work`, or the data. -/
-theorem bodyFrame_work {Wn : Nat} (W D : Addr) (n : Nat) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem bodyFrame_work {Wn : Nat} (W D : Addr) (n : Nat) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, Region.Sub r (workR Wn W) ∨ r = ⟨D, n⟩ := by
   intro r hr
   simp only [bodyFrame, tFrame, crFrame, absFrame, List.cons_append, List.nil_append, List.mem_cons,
@@ -91,7 +91,7 @@ theorem bodyFrame_work {Wn : Nat} (W D : Addr) (n : Nat) (hWn : 768 ≤ Wn ∧ W
   · exact .inl (stW (by decide))
   · exact .inl (Lay.wSub (by omega))
 
-theorem keep_body {Wn : Nat} {W D : Addr} {n : Nat} {X : Region} (hX : X.Disjoint (workR Wn W)) (hD : X.Disjoint ⟨D, n⟩) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem keep_body {Wn : Nat} {W D : Addr} {n : Nat} {X : Region} (hX : X.Disjoint (workR Wn W)) (hD : X.Disjoint ⟨D, n⟩) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, X.Disjoint r := fun r hr => by
   rcases bodyFrame_work W D n (hWn := hWn) r hr with h | rfl
   · exact hX.sub_right h
@@ -118,7 +118,7 @@ structure OneLay (Wn : Nat) (s : State) (n w : Nat) : Prop where
   aadR : Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr)
   dataW : Covers [⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.wr
 
-theorem oneLay {Wn : Nat} {s : State} {n w : Nat} (hs : oneCore (Wn := Wn) n w s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : OneLay Wn s n w := by
+theorem oneLay {Wn : Nat} {s : State} {n w : Nat} (hs : oneCore (Wn := Wn) n w s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : OneLay Wn s n w := by
   simp only [oneCore] at hs
   sig_split hs
   rename_i mc mn ma mg md mw dcd dcw dnd dnw dad daw ddw dda dwa wc wn wa wd ww wsp
@@ -232,7 +232,7 @@ theorem ofNat_toNat' (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
 /-- `finPrep`: the lengths from their slots. -/
 theorem finPrep_ok {Wn : Nat} {s : State} {W : Addr} (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr))
     {al n : Nat} (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
-    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block finPrep) s fun s' => s'.gpr .x26 = BitVec.ofNat 64 al ∧ s'.gpr .x27 = BitVec.ofNat 64 n ∧
       Regs [.x26, .x27] s s' := by
   obtain q₁ := in_off hr (show 224 + 8 ≤ Wn by omega) (by omega)
@@ -261,7 +261,7 @@ theorem ldr28_ok {Wn : Nat} {Ctx W SP : Addr} {V : BitVec 64} {s : State} (he : 
 theorem stashArg_ok {Wn : Nat} {s : State} {W : Addr} {k : Nat} {V : BitVec 64} (hk : k % 8 = 0 ∧ k < 32768)
     (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, Wn⟩] s.wr)
     (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
-    (hV : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = V) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hV : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = V) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (stashArg k)) s fun s' =>
       s'.gpr .x28 = V ∧ s'.mem = s.mem.writeW (W + BitVec.ofNat 64 248) V ∧
       Others [.x10, .x28] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -331,7 +331,7 @@ theorem sealCore {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `sealPre` gives. -/
-theorem sealLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem sealLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     OneLay Wn s (w + 1) w ∧ Covers [⟨stackArg s 0, 16⟩] s.wr ∧
       (⟨stackArg s 0, 16⟩ : Region).Disjoint (workR Wn (stackArg s w)) ∧
       (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 16⟩ := by
@@ -361,7 +361,7 @@ structure SealEntry (Wn : Nat) (w : Nat) (s s₁ : State) : Prop where
 
 /-- The entry of `seal`. -/
 theorem sealEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State}
-    (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s (SealEntry Wn w s) := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
@@ -380,7 +380,7 @@ theorem sealEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW :
 
 /-- `seal` after its entry. -/
 theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁ : State}
-    (hs : sealPreXW (Wn := Wn) w extra s extraW) (h₁ : SealEntry Wn w s s₁) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) (h₁ : SealEntry Wn w s s₁) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
@@ -498,7 +498,7 @@ theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Regi
     List.take_of_length_le (by rw [Proof.Cmac.toBytes_length])]
   rfl
 
-theorem seal_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem seal_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.seq (WP.mono (sealEntry_ok (.inl rfl) (sealPreX_W hs)) fun _ h₁ => sealRest_ok v (sealPreX_W hs) h₁)
 

@@ -574,7 +574,7 @@ theorem crSeg1_ok {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {
 /-- The first call: the whole blocks. -/
 theorem ctrCallG1_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat}
     {D O : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State} (h : Cr1G Wn to Ctx St W SP k R icb P D O n m₀ j s)
-    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (ctrCallG v.callees to) s fun s' =>
       CrMidG Wn to Ctx St W SP k R icb P D O n m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 := by
   obtain hdk := dataOk_of h.data
@@ -660,7 +660,7 @@ theorem ctrCallG1_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat}
 /-- The first call in place: the whole blocks. -/
 theorem ctrCall1_ok (v : GcmImpl) {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
     {m₀ : Mem} {j : Nat} {s : State} (h : Cr1 Wn Ctx St W SP k R icb P D n m₀ j s)
-    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (ctrCall v.callees) s fun s' =>
       CrMid Wn Ctx St W SP k R icb P D n m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 :=
   ctrCallG1_ok L v h hc
@@ -821,7 +821,7 @@ theorem crSeg2_ok {to : Bool} {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P
 /-- The second call: a new keystream block, if there are bytes left. -/
 theorem ctrCall2_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat}
     {D O : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State} (h : Cr2G Wn to Ctx St W SP k R icb P D O n m₀ j s)
-    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (ctrCall v.callees) s (Cr3G Wn to Ctx St W SP k R icb P D O n m₀ j) := by
   obtain hdk := dataOk_of h.data
   obtain hdO := OutAt.dataW h.outAt h.data
@@ -1193,7 +1193,7 @@ theorem cryptAlG_false (c : Callees) : cryptAlG c false = cryptAl c := by
 /-- `cryptAlG`: `crypt` from the start of a keystream block, in place or
 out of place. -/
 theorem cryptAlG_ok (v : GcmImpl) (to : Bool) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D O : Addr}
-    {n : Nat} {s : State} (h : CrInG Wn to Ctx St W SP k R P D O n s) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    {n : Nat} {s : State} (h : CrInG Wn to Ctx St W SP k R P D O n s) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (cryptAlG v.callees to) s (CrOutG Wn to Ctx St W SP k R icb P D O n s.mem) := by
   obtain hc : ∀ {m' : Mem}, Frame (crFrame Wn St W O n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
     fun hf => ciph_frame hf (ctx_crFrame L (OutAt.dataW h.outAt h.data)) h.rounds
@@ -1204,14 +1204,14 @@ theorem cryptAlG_ok (v : GcmImpl) (to : Bool) {k : Reg → BitVec 64} {R P : Nat
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
 theorem cryptAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat}
-    {s : State} (h : CrIn Wn Ctx St W SP k R P D n s) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    {s : State} (h : CrIn Wn Ctx St W SP k R P D n s) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (cryptAl v.callees) s (CrOut Wn Ctx St W SP k R icb P D n s.mem) := by
   rw [← cryptAlG_false]
   exact cryptAlG_ok L v false h hP
 
 /-- `crypt`. -/
 theorem crypt_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Wn Ctx St W SP k R P D n s) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h : CrIn Wn Ctx St W SP k R P D n s) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (crypt v.callees) s (CrOut Wn Ctx St W SP k R icb P D n s.mem) := by
   obtain hc : ∀ {m' : Mem}, Frame (crFrame Wn St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds

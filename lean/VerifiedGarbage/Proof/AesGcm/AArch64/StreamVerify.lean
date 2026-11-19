@@ -58,7 +58,7 @@ theorem verEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 =
 
 /-- What `verPre` gives. -/
 theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre (Wn := Wn) s)
-    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧ Perm Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s ∧
       rounds (s.gpr .x1) ∧ Covers [⟨s.gpr .x5, (s.gpr .x6).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, Wn⟩ := by
@@ -81,7 +81,7 @@ theorem tag16_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) :
 /-- One run of `stream_verify`, for a message `a`, `c` of those lengths. -/
 theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 Wn).pre s) {a c : List Byte}
     (h3 : s.gpr .x3 = BitVec.ofNat 64 a.length) (h4 : s.gpr .x4 = BitVec.ofNat 64 c.length)
-    (hc : c.length < 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (hc : c.length < 2 ^ 64) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (streamVerify v.callees) s fun s' => GprAbi s s' ∧
       (Absorbed s.mem (s.gpr .x2 + BitVec.ofNat 64 16) (s.gpr .x2 + BitVec.ofNat 64 32)
           (ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
@@ -208,7 +208,7 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
   rw [hx0]
   exact post₄ ha
 
-theorem streamVerify_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamVerify_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (streamVerify v.callees) s fun s' => GprAbi s s' ∧ (streamVerifyAArch64 Wn).post s s' := by
   have h3 : s.gpr .x3 = BitVec.ofNat 64 (Spec.Gcm.zeros (s.gpr .x3).toNat).length := by
     rw [Proof.Gcm.length_zeros, BitVec.ofNat_toNat, BitVec.setWidth_eq]

@@ -460,7 +460,7 @@ theorem cryptAlT_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Blo
     {s : State} (h : CrIn Wn Ctx St W SP k R P D n s) (hP : P % 16 = 0) {N : Nat}
     (h26 : k .x26 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
     (hbig : 16 ≤ N → n % 16 ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - n % 16) = D + BitVec.ofNat 64 (n - n % 16) ∧
-      InRegions s.wr E 16) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+      InRegions s.wr E 16) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (cryptAlT v.callees) s (CrOut Wn Ctx St W SP k R icb P D n s.mem) := by
   have hc : ∀ {m' : Mem}, Frame (crFrame Wn St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
@@ -668,7 +668,7 @@ theorem sub_scr {Wn : Nat} {W : Addr} {k : Nat} (h : k ≤ Wn - 512) :
     ∃ r' ∈ wsR Wn W, Region.Sub ⟨W + BitVec.ofNat 64 512, k⟩ r' :=
   ⟨_, by simp, Region.sub_prefix h⟩
 
-theorem saved_wsR {Wn : Nat} {W : Addr} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem saved_wsR {Wn : Nat} {W : Addr} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     ∀ r ∈ wsR Wn W, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -714,7 +714,7 @@ theorem runWithPX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' =>
       (GprAbi s s' ∧ (sealAArch64 Wn).post s s') ∧ I s'.mem := by
   -- Facts are stated with `obtain`, not `have`: `have` keeps its proof in the context (a `let` nothing
@@ -1163,7 +1163,7 @@ theorem runWithP_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w :
       Frame [workR Wn (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
-    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' :=
   WP.mono (runWithPX_ok v cl hMK (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
     (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>

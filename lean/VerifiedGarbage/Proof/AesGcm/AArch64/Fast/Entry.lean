@@ -25,7 +25,7 @@ theorem entry_keeps {Wn : Nat} {s : State} {k j : Nat} {W : Addr} (hk : k % 8 = 
     (hW : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = W)
     (hspk : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8)
     (hspj : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 j) 8)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (oneEntry k ++ stashArg j)) s fun s' => ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s'.gpr r = s.gpr r := by
   obtain ⟨s₀, run₀, x9₀, g₀, sp₀, m₀, rd₀, wr₀⟩ := ldrSp_ok (t := .x9) hk hW hspk
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ (by rw [wr₀]; exact hw)
@@ -56,7 +56,7 @@ theorem entry_keeps {Wn : Nat} {s : State} {k j : Nat} {W : Addr} (hk : k % 8 = 
 
 /-- The entry of `seal`, with `x4`–`x7` kept. -/
 theorem fastEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State}
-    (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s fun s₁ =>
       SealEntry Wn w s s₁ ∧ ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs

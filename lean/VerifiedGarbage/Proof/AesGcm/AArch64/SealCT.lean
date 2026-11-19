@@ -84,7 +84,7 @@ open VG.Spec.Gcm (Block blockAt)
 theorem finBody_env {Wn : Nat} (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Wn Ctx St W) {o : Nat} (ho : o = 0 ∨ o = 112)
     {k : Reg → BitVec 64} {R A P : Nat} {τ : State} (he : Env Wn Ctx St W SP τ) (hk : Kept k τ)
     (h22 : τ.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (h26 : τ.gpr .x26 = BitVec.ofNat 64 A) (h27 : τ.gpr .x27 = BitVec.ofNat 64 P) (hP : P < 2 ^ 64) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+    (h26 : τ.gpr .x26 = BitVec.ofNat 64 A) (h27 : τ.gpr .x27 = BitVec.ofNat 64 P) (hP : P < 2 ^ 64) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     WP isa (finBody v.callees o) τ fun τ' => Env Wn Ctx St W SP τ' ∧ Kept k τ' ∧
       Frame (finFrame Wn St W o) τ.mem τ'.mem :=
   WP.mono (finBody_ok L v ho (a := Spec.Gcm.zeros A) (c := Spec.Gcm.zeros P)
@@ -92,7 +92,7 @@ theorem finBody_env {Wn : Nat} (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Wn Ct
     (by rw [Proof.Gcm.length_zeros]; exact h26) (by rw [Proof.Gcm.length_zeros]; exact h27)
     (by rw [Proof.Gcm.length_zeros]; exact hP) rfl) fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩
 
-theorem streamFinish_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamFinish_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (streamFinishAArch64 Wn).pre (streamFinishAArch64 Wn).pub (streamFinish v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, qsp⟩ := hq
@@ -124,7 +124,7 @@ theorem streamFinish_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 25
   exact rel_taint [.x19, .x28] (by rw [f₁.1.sp, f₂.1.sp])
     (by agree_tac [f₁.1.x19, f₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem streamVerify_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem streamVerify_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (streamVerifyAArch64 Wn).pre (streamVerifyAArch64 Wn).pub (streamVerify v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩ := hq
@@ -277,7 +277,7 @@ theorem RelCT.assoc' {a b c : Prog isa} {P Q : State → State → Prop}
 /-- `oneAad`'s first block. -/
 theorem aadBlk_ok {Wn : Nat} {s : State} {W A : Addr} {al : Nat} (h19 : s.gpr .x19 = W)
     (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (sA : s.mem.readW (W + BitVec.ofNat 64 216) 64 = A)
-    (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO, imm .x25 0]) s fun s' =>
       s'.gpr .x23 = A ∧ s'.gpr .x24 = BitVec.ofNat 64 al ∧ s'.gpr .x25 = BitVec.ofNat 64 0 ∧
       Regs [.x23, .x24, .x25] s s' := by
@@ -294,7 +294,7 @@ theorem encPrep_ok {Wn : Nat} {s : State} {W D : Addr} {al n : Nat} (h19 : s.gpr
     (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (hlt : al < 2 ^ 64)
     (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
-    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     WP isa (.block encPrep) s fun s' =>
       s'.gpr .x25 = BitVec.ofNat 64 (al % 16) ∧ s'.gpr .x26 = BitVec.ofNat 64 n ∧ s'.gpr .x27 = 0 ∧
       s'.gpr .x28 = D ∧ Regs [.x9, .x10, .x25, .x26, .x27, .x28] s s' := by
@@ -350,7 +350,7 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
     (h₁ : FrontIn Wn Ctx St W SP k₁ Np A D nl al n σ₁) (h₂ : FrontIn Wn Ctx St W SP k₂ Np A D nl al n σ₂)
     {rest : Prog isa}
     (hr : ∀ τ₁ τ₂, FrontOut Wn Ctx St W SP k₁ D al n σ₁ τ₁ → FrontOut Wn Ctx St W SP k₂ D al n σ₂ τ₂ →
-      RelCT isa (Eq2 τ₁ τ₂) rest TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 τ₁ τ₂) rest TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) TT := by
   have hlt := h₁.aad.lt
   have j₁ : J0In Wn Ctx St W SP k₁ (blockAt σ₁.mem (Ctx + BitVec.ofNat 64 240)) Np nl σ₁ :=
@@ -417,7 +417,7 @@ theorem entry_rel {Wn : Nat} {σ₁ σ₂ : State} {W : Addr} {k : Nat} (hk : k 
     (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
     (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
     (hw₁ : Covers [⟨W, Wn⟩] σ₁.wr) (hw₂ : Covers [⟨W, Wn⟩] σ₂.wr) (qsp : σ₁.sp = σ₂.sp)
-    (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k)) TT := by
   have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl | rfl | rfl <;> decide
   have run : ∀ {σ : State}, σ.mem.readW (σ.sp + BitVec.ofNat 64 k) 64 = W →
@@ -480,7 +480,7 @@ structure OneFacts (Wn : Nat) (σ σ₀ : State) (n w : Nat) : Prop where
   args : (args σ n).Disjoint (workR Wn (stackArg σ₀ w))
 
 theorem oneFacts {Wn : Nat} {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore (Wn := Wn) n w σ₁) (h₂ : oneCore (Wn := Wn) n w σ₂)
-    (hq : onePub n σ₁ σ₂) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : OneFacts Wn σ₁ σ₁ n w ∧ OneFacts Wn σ₂ σ₁ n w := by
+    (hq : onePub n σ₁ σ₂) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : OneFacts Wn σ₁ σ₁ n w ∧ OneFacts Wn σ₂ σ₁ n w := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   obtain qw : stackArg σ₁ w = stackArg σ₂ w := qa w hw
   obtain o₁ := oneLay h₁
@@ -514,7 +514,7 @@ theorem frontIn_of {Wn : Nat} {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} 
       τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 240) 64 = σ.gpr .x7 ∧
       τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 248) 64 = V ∧
       Frame [entryR (stackArg σ₀ w)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ w) σ ∧ τ.rd = σ.rd ∧
-      τ.wr = σ.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      τ.wr = σ.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     FrontIn Wn (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ.sp τ.gpr (σ₀.gpr .x2)
       (σ₀.gpr .x4) (σ₀.gpr .x6) (σ₀.gpr .x3).toNat (σ₀.gpr .x5).toNat (σ₀.gpr .x7).toNat τ := by
   obtain ⟨he, _, x23, x24, x26, x27, _, s1, s2, s3, s4, _, _, _, rd, wr⟩ := a
@@ -528,7 +528,7 @@ theorem frontIn_of {Wn : Nat} {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} 
 the stack argument at `sp + j` kept. -/
 theorem entryStash_rel {Wn : Nat} {σ₁ σ₂ : State} {n w k j : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 24 ∨ k = 40) (hkw : k = 8 * w) (hj : j = 0 ∨ j = 8)
     (f₁ : OneFacts Wn σ₁ σ₁ n w) (f₂ : OneFacts Wn σ₂ σ₁ n w) (hwn : w < n) (qsp : σ₁.sp = σ₂.sp)
-    (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k ++ stashArg j)) TT := by
   subst hkw
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg σ₁ w := rfl
@@ -556,7 +556,7 @@ abbrev SealEntered (Wn : Nat) (w : Nat) (σ σ₀ τ : State) : Prop :=
 /-- `seal` after its entry, in two runs. -/
 theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
     (h₁ : sealPreXW (Wn := Wn) w extra₁ σ₁ extraW₁) (h₂ : sealPreXW (Wn := Wn) w extra₂ σ₂ extraW₂)
-    (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered Wn w σ₁ σ₁ τ₁) (a₂ : SealEntered Wn w σ₂ σ₁ τ₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered Wn w σ₁ σ₁ τ₁) (a₂ : SealEntered Wn w σ₂ σ₁ τ₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest
   obtain ⟨f₁, f₂⟩ := oneFacts (by omega_using [] : w < w + 1) (sealCore h₁) (sealCore h₂) hq
@@ -630,7 +630,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem seal_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) : ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub («seal» v.callees) := by
+theorem seal_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) : ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub («seal» v.callees) := by
   unfold «seal»
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
