@@ -182,19 +182,24 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 26:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -268,19 +273,24 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 212:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -338,19 +348,24 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 218:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -424,19 +439,24 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 224:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -506,19 +526,24 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 227:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -1098,19 +1123,24 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 216:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -1184,19 +1214,24 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 222:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -1254,19 +1289,24 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 228:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -1340,19 +1380,24 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 234:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -1422,19 +1467,24 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 237:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -3342,19 +3392,24 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 26:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -3428,19 +3483,24 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 212:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -3498,19 +3558,24 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 218:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -3584,19 +3649,24 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 224:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -3666,19 +3736,24 @@ vg_aes_gcm_siv_seal_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 227:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -4216,19 +4291,24 @@ vg_aes_gcm_siv_open_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 212:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -4302,19 +4382,24 @@ vg_aes_gcm_siv_open_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 218:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -4372,19 +4457,24 @@ vg_aes_gcm_siv_open_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 224:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -4458,19 +4548,24 @@ vg_aes_gcm_siv_open_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 230:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1
@@ -4540,19 +4635,24 @@ vg_aes_gcm_siv_open_pclmul:
 	mov DWORD PTR [ebp+180], ecx
 	mov edx, ebp
 	add edx, 768
+	mov eax, 66051
+	movd xmm0, eax
+	pslldq xmm0, 4
+	mov eax, 67438087
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 134810123
+	movd xmm5, eax
+	por xmm0, xmm5
+	pslldq xmm0, 4
+	mov eax, 202182159
+	movd xmm5, eax
+	por xmm0, xmm5
 233:
-	mov eax, DWORD PTR [esi+12]
-	bswap eax
-	mov DWORD PTR [edx], eax
-	mov eax, DWORD PTR [esi+8]
-	bswap eax
-	mov DWORD PTR [edx+4], eax
-	mov eax, DWORD PTR [esi+4]
-	bswap eax
-	mov DWORD PTR [edx+8], eax
-	mov eax, DWORD PTR [esi]
-	bswap eax
-	mov DWORD PTR [edx+12], eax
+	movdqu xmm7, XMMWORD PTR [esi]
+	pshufb xmm7, xmm0
+	movdqu XMMWORD PTR [edx], xmm7
 	add esi, 16
 	add edx, 16
 	sub ecx, 1

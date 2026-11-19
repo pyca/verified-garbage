@@ -265,8 +265,15 @@ structure RevI (p : Prm) (Q : BitVec 32) (k : Nat) (s : State) : Prop where
   edx : s.gpr .edx = p.W + BitVec.ofNat 32 768
   ecx : s.gpr .ecx = BitVec.ofNat 32 k
 
-theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
-    CT (ChunkI p Q m) chunkPre := by
+/-- The copies, by either code: from the pointers and the count. -/
+theorem rev_ct (v : GcmImpl) {p : Prm} {Q : BitVec 32} {k : Nat} : CT (RevI p Q k) (rev v.callees) := by
+  unfold rev
+  split
+  · exact CT.taintSse [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide)
+  · exact CT.taint [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide)
+
+theorem chunkPre_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
+    CT (ChunkI p Q m) (chunkPre v.callees) := by
   have hk1 : 1 ≤ min (m / 16) 64 := by omega_using [h16]
   refine CT.seq (J := fun s => Env p s ∧ Src p s Q (16 * min (m / 16) 64) ∧ s.gpr .esi = Q ∧
       s.gpr .ecx = BitVec.ofNat 32 (min (m / 16) 64))
@@ -279,15 +286,15 @@ theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 
       ⟨E.keep (by gregs []) (by gregs []) (by gmems []) (by gmems []) (by gmems []), hQ.of_eq (by gmems []) (by gmems []),
         by gregs [si], by gregs [E.ebp], by gregs [cx]⟩⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = p.W)
-    (CT.taint [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide))
-    (fun s h => WP.mono (revLoop_ok L h.env hk1 (by omega_using []) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
+    (rev_ct v)
+    (fun s h => WP.mono (rev_ok v L h.env hk1 (by omega_using []) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
       rw [bp, h.env.ebp]) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
 
 theorem chunk_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
     CT (ChunkI p Q m) (chunk v.callees) := by
   have hk : min (m / 16) 64 ≤ 64 := by omega_using []
   refine CT.seq (J := fun t₅ => ∃ t, ChunkI p Q m t ∧ ChunkPre p Q m (min (m / 16) 64) t t₅)
-    (chunkPre_ct L hm h16) (fun t h => WP.mono (chunkPre_ok L h.env hm h16 h.src h.esi h.n) fun t₅ Pr => ⟨t, h, Pr⟩)
+    (chunkPre_ct v L hm h16) (fun t h => WP.mono (chunkPre_ok v L h.env hm h16 h.src h.esi h.n) fun t₅ Pr => ⟨t, h, Pr⟩)
     (CT.seq (J := fun s => s.gpr .ebp = p.W)
       (callGh_ct v L hk fun s ⟨_, _, Pr⟩ => ⟨Pr.env, Pr.eax, Pr.edx, Pr.ebx, Pr.edi⟩)
       (fun s ⟨_, _, Pr⟩ => WP.mono (callGh_ok v L Pr.env hk Pr.eax Pr.edx Pr.ebx Pr.edi) fun _ P => P.env.ebp)

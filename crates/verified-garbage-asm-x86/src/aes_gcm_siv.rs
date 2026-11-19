@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -24,7 +24,7 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2888 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `ssse3` and `pclmulqdq` target features.
+/// * The CPU must support the `ssse3`, `aes` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -45,9 +45,9 @@ jb 24f
 jmp 25f
 24:
 25:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 26:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 26b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -68,9 +68,9 @@ jb 210f
 jmp 211f
 210:
 211:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 212b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -87,9 +87,9 @@ jb 216f
 jmp 217f
 216:
 217:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 218b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -110,9 +110,9 @@ jb 222f
 jmp 223f
 222:
 223:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 224b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -126,9 +126,9 @@ jb 225f
 jmp 226f
 225:
 226:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 227:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 227b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -252,9 +252,9 @@ jb 214f
 jmp 215f
 214:
 215:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 216:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 216b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -275,9 +275,9 @@ jb 220f
 jmp 221f
 220:
 221:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 222:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 222b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -294,9 +294,9 @@ jb 226f
 jmp 227f
 226:
 227:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 228:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 228b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -317,9 +317,9 @@ jb 232f
 jmp 233f
 232:
 233:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 234:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 234b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -333,9 +333,9 @@ jb 235f
 jmp 236f
 235:
 236:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 237:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 237b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -779,9 +779,9 @@ jb 24f
 jmp 25f
 24:
 25:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 26:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 26b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -802,9 +802,9 @@ jb 210f
 jmp 211f
 210:
 211:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 212b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -821,9 +821,9 @@ jb 216f
 jmp 217f
 216:
 217:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 218b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -844,9 +844,9 @@ jb 222f
 jmp 223f
 222:
 223:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 224b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -860,9 +860,9 @@ jb 225f
 jmp 226f
 225:
 226:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 227:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 227b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -960,9 +960,9 @@ jb 210f
 jmp 211f
 210:
 211:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 212:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 212b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -983,9 +983,9 @@ jb 216f
 jmp 217f
 216:
 217:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 218:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 218b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -1002,9 +1002,9 @@ jb 222f
 jmp 223f
 222:
 223:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 224:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 224b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -1025,9 +1025,9 @@ jb 228f
 jmp 229f
 228:
 229:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 230:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 230b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}
@@ -1041,9 +1041,9 @@ jb 231f
 jmp 232f
 231:
 232:
-.base64 "iY20AAAAieqBwgADAAA="
+.base64 "iY20AAAAieqBwgADAAC4AwIBAGYPbsBmD3P4BLgHBgUEZg9u6GYP68VmD3P4BLgLCgkIZg9u6GYP68VmD3P4BLgPDg0MZg9u6GYP68U="
 233:
-.base64 "i0YMD8iJAotGCA/IiUIEi0YED8iJQgiLBg/IiUIMg8YQg8IQg+kB"
+.base64 "8w9vPmYPOAD48w9/OoPGEIPCEIPpAQ=="
 jne 233b
 .base64 "i720AAAAifgBwAHAAcABwIuNsAAAACnBiY2wAAAAieiDwECJ6oPCUInrgcMAAwAAgcUABwAAVVdTUlA="
 call {vg_ghash_pclmul}

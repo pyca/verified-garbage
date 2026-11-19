@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.X86
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
+public import VerifiedGarbage.Impl.Gcm.X86.Pclmul
 
 /-!
 # AES-GCM-SIV: x86 (32-bit) implementation
@@ -25,7 +26,10 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   `vg_ghash` absorbs them (`chunk`). The last bytes of a string, padded
   with zeros, and the lengths block are put in the block at `W + 224` and
   absorbed the same way (`absorb`, `lens`); the result is read back
-  reversed (`tagIn`).
+  reversed (`tagIn`). The copies are made a word at a time (`revLoop`), but
+  over the implementation of `vg_ghash` with PCLMULQDQ, whose code has
+  `pshufb`, a block at a time by `pshufb` with the mask that code builds,
+  in `xmm0` (`revShuf`).
 * The tag is `vg_aes_ctr32_to` of the tag input on a zero block (`tag`).
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
   little-endian number, which `vg_aes_ctr32_to` (which increments the last 4,
@@ -208,6 +212,25 @@ def revLoop : Prog isa :=
     .bswap .eax, .store (at_ .edx 8) .eax, .mov .eax (.mem (at_ .esi 0)), .bswap .eax, .store (at_ .edx 12) .eax,
     .alu .add .esi (imm 16), .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)]) .ne
 
+/-- One block of `revShuf`. -/
+def shufBody : List Instr :=
+  [.movdquLoad .xmm7 (Impl.Gcm.X86.Pclmul.at_ .esi 0), .xop (.bin .pshufb .xmm7 .xmm0),
+   .movdquStore (at_ .edx 0) .xmm7, .alu .add .esi (imm 16), .alu .add .edx (imm 16), .alu .sub .ecx (imm 1)]
+
+/-- As `revLoop`, with `pshufb`: the mask that reverses 16 bytes in `xmm0`
+(built in `eax` and `xmm5`, as `vg_ghash` builds it), then each block
+loaded, shuffled and stored. -/
+def revShuf : Prog isa :=
+  .seq (.block (Impl.Gcm.X86.Pclmul.const .xmm0 Impl.Gcm.X86.Pclmul.revMask)) (.loop (.block shufBody) .ne)
+
+/-- Whether `vg_ghash` is the implementation with PCLMULQDQ, whose code has
+`pshufb` (SSSE3): the copies are then `revShuf`'s. -/
+def shuffles : Bool := c.gh.name == "vg_ghash_pclmul"
+
+/-- The `ecx` (at least 1) blocks at `esi` copied to `edx`, the bytes of
+each reversed, advancing both: with `pshufb` where `vg_ghash` has it. -/
+def rev : Prog isa := if shuffles c then revShuf else revLoop
+
 /-- After the copies: `W + nO` past the blocks, and the arguments of
 `vg_ghash`. -/
 def chunkArgs : List Instr :=
@@ -219,14 +242,14 @@ def chunkArgs : List Instr :=
 /-- Up to 64 of the whole blocks of the `nO` bytes at `esi` reversed at
 `W + 768`, `esi` and `nO` past them, and the arguments of `vg_ghash`. -/
 def chunkPre : Prog isa :=
-  .seq (chunkLen) (.seq (.block [.mov .edx (.reg .ebp), .alu .add .edx (imm revO)]) (.seq revLoop (.block chunkArgs)))
+  .seq (chunkLen) (.seq (.block [.mov .edx (.reg .ebp), .alu .add .edx (imm revO)]) (.seq (rev c) (.block chunkArgs)))
 
 /-- ZF set iff fewer than 16 of the `nO` bytes are left. -/
 def wholeLeft : List Instr := [.mov .ecx (slot nO), .shift .shr .ecx 4, .alu .test .ecx (.reg .ecx)]
 
 /-- Up to 64 of the whole blocks of the `nO` bytes at `esi`, reversed and
 absorbed; `esi` and `nO` past them, and ZF set if no whole block is left. -/
-def chunk : Prog isa := .seq (chunkPre) (.seq (callGh c) (.block wholeLeft))
+def chunk : Prog isa := .seq (chunkPre c) (.seq (callGh c) (.block wholeLeft))
 
 /-- ZF set iff no byte is left. -/
 def anyLeft : List Instr := [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)]
