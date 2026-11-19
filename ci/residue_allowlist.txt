@@ -538,14 +538,6 @@ x86 vg_aes_gcm_seal_gather_aesni
 x86 vg_aes_gcm_seal_gather_aesni_pclmul
 x86 vg_aes_gcm_seal_gather_pclmul
 x86 vg_aes_gcm_seal_pclmul
-x86 vg_aes_gcm_siv_open
-x86 vg_aes_gcm_siv_open_aesni
-x86 vg_aes_gcm_siv_open_aesni_pclmul
-x86 vg_aes_gcm_siv_open_pclmul
-x86 vg_aes_gcm_siv_seal
-x86 vg_aes_gcm_siv_seal_aesni
-x86 vg_aes_gcm_siv_seal_aesni_pclmul
-x86 vg_aes_gcm_siv_seal_pclmul
 x86 vg_aes_gcm_stream_aad
 x86 vg_aes_gcm_stream_aad_pclmul
 x86 vg_aes_gcm_stream_decrypt

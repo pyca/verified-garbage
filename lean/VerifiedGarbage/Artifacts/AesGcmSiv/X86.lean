@@ -51,16 +51,8 @@ open VG.Proof.AesGcmSiv.X86
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
-    verified := .unscrubbed (Proof.AesGcmSiv.seal_keyed (seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG))
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v) },
-  Spec.GcmSiv.openApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
-    verified := .unscrubbed (Proof.AesGcmSiv.open_keyed (open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG))
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v) }]
+  Spec.GcmSiv.sealApi.artifact X86.target (Scrub.sealReg v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG),
+  Spec.GcmSiv.openApi.artifact X86.target (Scrub.openReg v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl
