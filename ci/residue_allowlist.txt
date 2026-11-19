@@ -806,16 +806,3 @@ x86 vg_sm4_gcm_stream_verify
 x86 vg_sm4_gcm_stream_verify_pclmul
 x86 vg_sm4_ofb
 x86 vg_sm4_ofb_final
-x86 vg_triple_des_cbc_decrypt_chained
-x86 vg_triple_des_cbc_encrypt_chained
-x86 vg_triple_des_cfb64_decrypt
-x86 vg_triple_des_cfb64_decrypt_final
-x86 vg_triple_des_cfb64_encrypt
-x86 vg_triple_des_cfb64_encrypt_final
-x86 vg_triple_des_cfb8_decrypt
-x86 vg_triple_des_cfb8_encrypt
-x86 vg_triple_des_ecb_decrypt
-x86 vg_triple_des_ecb_encrypt
-x86 vg_triple_des_expand_key
-x86 vg_triple_des_ofb
-x86 vg_triple_des_ofb_final

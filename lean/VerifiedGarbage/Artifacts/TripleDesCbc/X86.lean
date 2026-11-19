@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
+public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
@@ -12,11 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 namespace VG.Artifacts.TripleDesCbc.X86
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
-    verified := .unscrubbed Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed },
-  Spec.TripleDes.cbcDecryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained
-    verified := .unscrubbed Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }]
+  Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target Proof.TripleDes.X86.Scrub.cbcEncryptChainedReg,
+  Spec.TripleDes.cbcDecryptChainedApi.artifact X86.target Proof.TripleDes.X86.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.TripleDesCbc.X86
