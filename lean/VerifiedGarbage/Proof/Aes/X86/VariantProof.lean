@@ -426,6 +426,7 @@ def scalar : Ctr32Impl where
   ct := ctr32_ct
   nosp := NoSp.of_all (by lit_decide)
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := ""
   features := []
   okTo := ctr32To_correct
@@ -437,6 +438,7 @@ def scalar : Ctr32Impl where
   expandCt := expandKey_ct
   expandNosp := NoSp.of_all (by lit_decide)
   expandSpSafe := Code.all_of_spTest (by lit_decide)
+  expandScrub := by lit_decide
 
 def aesni : Ctr32Impl where
   callee := .aesni
@@ -446,6 +448,7 @@ def aesni : Ctr32Impl where
   ct := AesNi.ctr32_ct
   nosp := NoSp.of_all (by lit_decide)
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := "_aesni"
   features := ["aes"]
   okTo := AesNi.ctr32To_correct
@@ -457,5 +460,6 @@ def aesni : Ctr32Impl where
   expandCt := AesNi.expandKey_ct
   expandNosp := NoSp.of_all (by lit_decide)
   expandSpSafe := Code.all_of_spTest (by lit_decide)
+  expandScrub := by lit_decide
 
 end VG.Proof.Aes.X86.Ctr32Impl

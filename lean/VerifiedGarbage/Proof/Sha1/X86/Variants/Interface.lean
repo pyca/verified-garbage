@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
@@ -270,6 +271,15 @@ structure Backend where
   features : List String
   /-- Its own functions: the streaming functions made with it. -/
   functions : List StreamFn
+  /-- The compression function and the streaming functions it makes, the
+  code the functions built on it call, have no MMX instruction and make no
+  indirect call (`calleeOk`): what the cleanup of every function that calls
+  them needs of them, with their stack (`X86.Scrub.calleeSide`), so that each
+  proves only its own code, whatever the implementation
+  (`Proof/Framework/X86/ScrubCall.lean`). -/
+  cmpScrub : calleeOk cmpC = true
+  updScrub : calleeOk stream.upd = true
+  finScrub : calleeOk stream.fin = true
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/
   initSp : (sha1M stream cmpN cmpC).hmacInit.all (fun i => !isa.writesSp i) = true

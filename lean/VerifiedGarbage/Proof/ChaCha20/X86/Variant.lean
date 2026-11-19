@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
@@ -44,6 +45,11 @@ structure XorImpl where
   nosp : NoSp callee.code
   stack : stackUse callee.code = 12
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code, and the code it calls, has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk callee.code = true
   /-- What the names of its callers' instances end with (e.g. `_ssse3`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -60,6 +66,7 @@ def sse2 : XorImpl where
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := ""
   features := []
 
@@ -71,6 +78,7 @@ def ssse3 : XorImpl where
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  scrub := by lit_decide
   suffix := "_ssse3"
   features := ["ssse3"]
 

@@ -1028,6 +1028,7 @@ def variant : RoundImpl where
   noSp := code_noSp
   spSafe := by decide +kernel
   stack := code_stack
+  scrub := by lit_decide
   suffix := ""
   features := []
 
