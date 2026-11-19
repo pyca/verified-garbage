@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Impl.MdStream.X86.Digest
+import VerifiedGarbage.Proof.Sha1.PostOut
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Impl.MdStream.X86.Digest
+meta import VerifiedGarbage.Proof.Sha1.PostOut
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
@@ -235,18 +241,37 @@ structure StreamFn where
     contract = api.sig.contract (X86.abi) pre post api.writeArgs stack leak
   ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- Its postcondition reads the memory on return only within the buffers. -/
+  post : X86.Scrub.PostOut contract (api.sig.retBits 32)
+  /-- What `X86.Scrub.scrubFOf` needs of its code, which has a frame and
+  calls the compression function: evaluated where the variant is defined. -/
+  scrub : X86.Scrub.scrubFSide code stack = true
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
-  consts := []
-  tables := []
-  code := f.code
-  contract := f.contract
-  stack := f.stack
-  verified := .unscrubbed f.verified
-  ofApi := f.ofApi
-  ofSig := f.ofSig
-  spSafe := f.spSafe
+/-- `f` as a registration of its `Api` (`Api.artifact`), followed by the
+zeroing of its stack and the clearing of the registers a callee may change
+(`X86.Scrub.scrubFOf`): it returns without secret residue. -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86.target :=
+  X86.Scrub.scrubFOf {
+      consts := []
+      tables := []
+      code := f.code
+      contract := f.contract
+      stack := f.stack
+      verified := f.verified
+      ofApi := f.ofApi
+      ofSig := f.ofSig
+      spSafe := f.spSafe }
+    f.post f.stack f.scrub
+
+/-! What the streaming functions' postconditions read of the memory on return. -/
+
+theorem updateOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha1.updateContract X86.abi stack) (Spec.Sha1.updateSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha1.updatePost_out 32)
+
+theorem finalizeOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha1.finalizeContract X86.abi stack) (Spec.Sha1.finalizeSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha1.finalizePost_out 32)
 
 /-- The functions the whole of PBKDF2 calls, with the compression function
 `cmpN`/`cmpC` and the streaming functions `s`. -/
@@ -270,6 +295,10 @@ structure Backend where
   features : List String
   /-- Its own functions: the streaming functions made with it. -/
   functions : List StreamFn
+  /-- What `X86.Scrub.scrubFOf` needs of the one-shot SHA-1 digest made with
+  it (`vg_sha1_digest`): evaluated where the variant is defined. -/
+  digestScrub : X86.Scrub.scrubFSide (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha1H stream))
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha1H stream)) = true
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/
   initSp : (sha1M stream cmpN cmpC).hmacInit.all (fun i => !isa.writesSp i) = true

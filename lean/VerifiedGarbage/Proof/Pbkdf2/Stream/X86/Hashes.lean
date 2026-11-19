@@ -92,7 +92,7 @@ theorem finK_of_finKr {c : Prog isa} {S Wb F D : Nat} {R : Mem → Addr → List
 
 /-! ## MD5 -/
 
-def md5H : Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init", Impl.Md5.X86.Stream.init,
+def md5H : Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init_core", Impl.Md5.X86.Stream.init,
   "vg_md5_update_scratch", Impl.Md5.X86.Stream.update, "vg_md5_finalize_scratch", Impl.Md5.X86.Stream.finalize⟩
 
 def md5OK : HashOK md5H := by
@@ -185,20 +185,20 @@ def sha512FamOK (SH : Spec.Hmac.StreamingHash) (D : Nat) (initN : String) (iv : 
   updSU := by show stackUse Impl.Sha512.X86.Stream.update ≤ 20; rw [sha512_updSU]
   finSU := by show stackUse Impl.Sha512.X86.Stream.finalize ≤ 20; rw [sha512_finSU]
 
-def sha384H : Hash := sha512H 48 "vg_sha384_init" Spec.Sha512.H0_384
-def sha512H' : Hash := sha512H 64 "vg_sha512_init" Spec.Sha512.H0_512
-def sha512_224H : Hash := sha512H 28 "vg_sha512_224_init" Spec.Sha512.H0_512_224
-def sha512_256H : Hash := sha512H 32 "vg_sha512_256_init" Spec.Sha512.H0_512_256
+def sha384H : Hash := sha512H 48 "vg_sha384_init_core" Spec.Sha512.H0_384
+def sha512H' : Hash := sha512H 64 "vg_sha512_init_core" Spec.Sha512.H0_512
+def sha512_224H : Hash := sha512H 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
+def sha512_256H : Hash := sha512H 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
 
-def sha384OK : HashOK sha384H := sha512FamOK Spec.Hmac.sha384S 48 "vg_sha384_init" Spec.Sha512.H0_384
+def sha384OK : HashOK sha384H := sha512FamOK Spec.Hmac.sha384S 48 "vg_sha384_init_core" Spec.Sha512.H0_384
   rfl rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (nosp_of (by lit_decide)) (by lit_decide)
-def sha512OK : HashOK sha512H' := sha512FamOK Spec.Hmac.sha512S 64 "vg_sha512_init" Spec.Sha512.H0_512
+def sha512OK : HashOK sha512H' := sha512FamOK Spec.Hmac.sha512S 64 "vg_sha512_init_core" Spec.Sha512.H0_512
   rfl rfl rfl rfl (fun m => (List.take_of_length_le (Nat.le_of_eq (finalHash_length _ m))).symm) (by decide) (by decide)
   (nosp_of (by lit_decide)) (by lit_decide)
-def sha512_224OK : HashOK sha512_224H := sha512FamOK Spec.Hmac.sha512_224S 28 "vg_sha512_224_init"
+def sha512_224OK : HashOK sha512_224H := sha512FamOK Spec.Hmac.sha512_224S 28 "vg_sha512_224_init_core"
   Spec.Sha512.H0_512_224 rfl rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (nosp_of (by lit_decide))
   (by lit_decide)
-def sha512_256OK : HashOK sha512_256H := sha512FamOK Spec.Hmac.sha512_256S 32 "vg_sha512_256_init"
+def sha512_256OK : HashOK sha512_256H := sha512FamOK Spec.Hmac.sha512_256S 32 "vg_sha512_256_init_core"
   Spec.Sha512.H0_512_256 rfl rfl rfl rfl (fun _ => rfl) (by decide) (by decide) (nosp_of (by lit_decide))
   (by lit_decide)
 

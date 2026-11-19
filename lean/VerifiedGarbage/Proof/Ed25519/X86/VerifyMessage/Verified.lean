@@ -249,7 +249,7 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem init_call_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (OutArgs L [.caller 4 0]))
-      (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
+      (.call (Spec.Sha512.init512Api.name ++ "_core") (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL (Proof.Sha512.X86.Stream.init_verified _).1
     (Proof.Sha512.X86.Stream.init_verified _).2.1 Whole.init_nosp (by rw [Whole.init_stack]; decide)
