@@ -756,14 +756,6 @@ riscv64 vg_argon2
 riscv64 vg_cmac_triple_des_absorb
 riscv64 vg_cmac_triple_des_finish
 riscv64 vg_cmac_triple_des_stream_init
-riscv64 vg_dsa_derive_key
-riscv64 vg_dsa_generate_key
-riscv64 vg_dsa_parameter_search
-riscv64 vg_dsa_parameter_search_init
-riscv64 vg_dsa_sign_random_prevalidated
-riscv64 vg_dsa_validate_private_key
-riscv64 vg_dsa_validate_public_key
-riscv64 vg_dsa_verify_prevalidated
 riscv64 vg_ed25519_key_pair
 riscv64 vg_ed25519_sign_expanded
 riscv64 vg_ed25519_verify
