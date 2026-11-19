@@ -336,7 +336,7 @@ theorem bargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
     (r3 : s.gpr .r3 = K') (r4 : s.gpr .r4 = BitVec.ofNat 64 c.R)
     (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 496) (r6 : s.gpr .r6 = BitVec.ofNat 64 k)
     (r7 : s.gpr .r7 = c.W + BitVec.ofNat 64 1776) :
-    Proof.AesOcb.PPC64LE.BCall s K' (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R k where
+    Proof.AesOcb.PPC64LE.BCallS s K' (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R k where
   r3 := r3
   r4 := r4
   r5 := r5

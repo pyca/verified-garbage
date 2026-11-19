@@ -205,7 +205,7 @@ theorem ciph_k {c : Cx} (L : Lay c) {rs : List Region} (hrs : ∀ r ∈ rs, Regi
 /-- `deriveArgs`: the arguments of the call. -/
 theorem dargs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) (h25 : t.gpr .r25 = BitVec.ofNat 64 (cnt c)) :
     WP isa (.block deriveArgs) t fun t₅ => PK t t₅ ∧ t₅.mem = t.mem ∧ t₅.gpr .r25 = t.gpr .r25 ∧
-      Proof.AesOcb.PPC64LE.BCall t₅ c.K (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R (cnt c) := by
+      Proof.AesOcb.PPC64LE.BCallS t₅ c.K (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R (cnt c) := by
   obtain hc := cnt_bounds L
   unfold deriveArgs
   refine wp_mv fun t₁ u₁ => wp_mv fun t₂ u₂ => wp_addi (by decide) (by decide) fun t₃ u₃ =>
@@ -233,7 +233,7 @@ theorem call_wp {c : Cx} (L : Lay c) {σ t : State} (I : BInv c σ (cnt c) t) :
   obtain hc := cnt_bounds L
   have hw := L.ww
   refine WP.seq (WP.mono (dargs_wp L I.env I.r25) fun t₅ ⟨pk₅, m₅, r25₅, bc⟩ => ?_)
-  refine WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
+  refine WP.mono (Proof.AesOcb.PPC64LE.blk_callS Proof.Aes.PPC64LE.encryptBlocks_correct
     Proof.AesOcb.PPC64LE.encryptBlocks_noFrames bc) fun t₆ B => ?_
   obtain pk₆ : PK t₅ t₆ := PK.ofSaved B.rd B.wr B.sp B.saved
   obtain fB : Frame [⟨c.W + BitVec.ofNat 64 496, 1024⟩, ⟨c.W + BitVec.ofNat 64 1776, 2048⟩] t₅.mem t₆.mem :=

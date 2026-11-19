@@ -558,7 +558,7 @@ theorem encArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {k : Nat} (hk 
     (h25 : t.gpr .r25 = BitVec.ofNat 64 k) :
     WP isa (.block chunkEncArgs) t fun t₅ => PK t t₅ ∧ t₅.mem = t.mem ∧
       (∀ r ∈ [Reg.r23, .r24, .r25], t₅.gpr r = t.gpr r) ∧
-      Proof.AesOcb.PPC64LE.BCall t₅ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 496)
+      Proof.AesOcb.PPC64LE.BCallS t₅ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 496)
         (c.W + BitVec.ofNat 64 1776) c.R k := by
   unfold chunkEncArgs
   refine wp_addi (by decide) (by decide) fun t₁ u₁ => wp_mv fun t₂ u₂ => wp_addi (by decide) (by decide)
@@ -660,7 +660,7 @@ theorem cryptChunk_wp {c : Cx} (L : Lay c) {ciph : Spec.GcmSiv.Cipher} {icb x : 
   obtain C₁ : CtrSt c.W icb j t₁.mem := by rw [u₁.mem]; exact P.ctr
   refine WP.seq (WP.mono (ctrBuild_wp L E₁ hk1 hk C₁ u₁.gpr) fun t₂ G => ?_)
   refine WP.seq (WP.mono (encArgs_wp L G.env hk G.r25) fun t₃ ⟨pk₃, m₃, k₃, bc⟩ => ?_)
-  refine WP.seq (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
+  refine WP.seq (WP.mono (Proof.AesOcb.PPC64LE.blk_callS Proof.Aes.PPC64LE.encryptBlocks_correct
     Proof.AesOcb.PPC64LE.encryptBlocks_noFrames bc) fun t₄ B => ?_)
   obtain pk₄ : PK t₃ t₄ := PK.ofSaved B.rd B.wr B.sp B.saved
   obtain E₄ := G.env.of_pk (pk₃.trans pk₄)

@@ -63,12 +63,12 @@ structure PadOut (W : Addr) (d : Nat) (v : Block) (s t : State) : Prop where
   wr : t.wr = s.wr
 
 /-- `padTo d`: `W + d ← pad(S)`, for the `n` bytes `S` at `r24`, `0 < n < 16`. -/
-theorem padTo_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {S : Addr}
-    {n d : Nat} (hn : 0 < n) (hn' : n < 16) (hd : d % 4 = 0 ∧ d + 16 ≤ 2560) (h24 : s.gpr .r24 = S)
+theorem padTo_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) (hw : Covers [⟨W, 512⟩] s.wr) {S : Addr}
+    {n d : Nat} (hn : 0 < n) (hn' : n < 16) (hd : d % 4 = 0 ∧ d + 16 ≤ 512) (h24 : s.gpr .r24 = S)
     (h25 : s.gpr .r25 = BitVec.ofNat 64 n) (hS : Covers [⟨S, n⟩] (s.rd ++ s.wr))
     (hSD : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 16⟩) :
     WP isa (padTo d) s (PadOut W d (pad (bytesAt s.mem S n)) s) := by
-  have wW : ∀ {e k : Nat}, e + k ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 e) k := fun h => in_off hw h (by decide)
+  have wW : ∀ {e k : Nat}, e + k ≤ 512 → InRegions s.wr (W + BitVec.ofNat 64 e) k := fun h => in_off hw h (by decide)
   unfold padTo
   have hA : WP isa (.block (zero16 d ++ [.addi .r4 .r31 d, Impl.AesGcm.PPC64LE.mov .r3 .r24,
       Impl.AesGcm.PPC64LE.mov .r5 .r25])) s fun s₂ => ∃ s₁, BlkStep W d 0 [.r0] s s₁ ∧
