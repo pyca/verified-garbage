@@ -60,7 +60,7 @@ theorem save_ok256 (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Cov
 theorem save_ok {Wn : Nat} (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, Wn⟩] s.wr) :
     ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = savedMem s.mem W s.gpr :=
-  save_ok256 s b hb (covers_prefix hw (by decide))
+  save_ok256 s b hb (covers_prefix hw (by omega))
 
 theorem readW_writeW_other (m : Mem) (b : Addr) {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
     (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :

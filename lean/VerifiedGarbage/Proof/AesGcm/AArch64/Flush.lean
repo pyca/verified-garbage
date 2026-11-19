@@ -79,7 +79,7 @@ theorem ctx_tFrame : ∀ r ∈ tFrame St W yo, (⟨Ctx + BitVec.ofNat 64 240, 16
   rcases hr with rfl | rfl | rfl
   · exact L.ctx_st (by decide) (by omega_using [hyo])
   · exact L.ctx_w (by decide) (by decide)
-  · exact L.ctx_w (by decide) (by decide)
+  · exact L.ctx_wn (by decide) (by have := L.hWn; omega)
 
 /-- Padding the `o` bytes at `P`, which `src` points `x12` at. -/
 theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat} {s : State}
@@ -162,7 +162,7 @@ theorem padSeg_ok {k : Reg → BitVec 64} {src : List Instr} {P : Addr} {o : Nat
     by rw [ggA _ (by decide), h25], ?_, ?_, ?_⟩
   · have hnb : padBlocks o ≤ 1 := by simp only [padBlocks]; split <;> omega_arith
     refine ghCall_of L hyo he₅ x0₅ x1₅ x2₅ (by rw [r₅.others _ (by decide), x3₄]) x4₅ (by omega_arith)
-      (L.st_w (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)) (L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
+      (L.st_w (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)) (L.w_wn (.inl (by omega_arith)) (by omega_arith) (by have := he.perm.hWn; omega))
       (covers_left (he₅.perm.wC (by omega_arith)))
   · rw [hm₅, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hPo]
     congr 1
@@ -223,7 +223,7 @@ theorem flush_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List Byt
         rcases hr with rfl | rfl | rfl
         · exact L.st_st (.inr (by omega_using [hyo])) (by omega_using [ho]) (by omega_using [hyo])
         · exact L.st_w (by omega_using [ho]) (.inr ⟨by decide, by decide⟩)
-        · exact L.st_w (by omega_using [ho]) (.inr ⟨by decide, by decide⟩)) (by omega_using [ho])
+        · exact L.st_wn (by omega_using [ho]) (.inr ⟨by decide, by have := he.perm.hWn; omega⟩)) (by omega_using [ho])
     by_cases h0 : o = 0
     · rw [Proof.Gcm.padLen_of_mod (by omega_using [ho, h0]), Spec.Gcm.zeros, List.replicate_zero, List.append_nil]
       refine ha.congr ?_ (by rw [ho]; exact hB)
@@ -282,7 +282,7 @@ theorem lensSeg_ok {k : Reg → BitVec 64} {o : Nat} {ra rb : Reg} {s : State} (
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   refine ⟨he₁, hk.of_others og, by rw [og _ (by decide), h25], ?_, ?_, ?_⟩
   · exact ghCall_of L hyo he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by decide)
-      (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)) (L.w_w (.inl (by decide)) (by decide) (by decide))
+      (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)) (L.w_wn (.inl (by decide)) (by have := he.perm.hWn; omega) (by have := he.perm.hWn; omega))
       (covers_left (he₁.perm.wC (by decide)))
   · rw [m₁, Proof.Cmac.bytesAt_store2, le8_lens, le8_lens]; rfl
   · rw [m₁]; exact Proof.Cmac.frame_store2 _ _ _

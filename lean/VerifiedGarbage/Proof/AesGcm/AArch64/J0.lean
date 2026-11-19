@@ -311,7 +311,7 @@ theorem j0Seg_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : 
   · rw [add_ofNat_zero, blockAt, hm₁, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
   · exact ghCall_of L (yo := 0) (.inl rfl) he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by have := hdw.lt; omega_using [hlt])
       (by simpa using (hdw.st.sub_right (Lay.stSub (d := 0) (n := 16) (by decide))).symm)
-      (hdw.w.sub_right (Lay.wSub (by decide))) (by rw [rd₁, wr₁]; exact hdw.rd)
+      (hdw.w.sub_right (Lay.wSub (by have := L.hWn; omega))) (by rw [rd₁, wr₁]; exact hdw.rd)
 
 /-- The whole blocks of the nonce absorbed. -/
 theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {m₀ : Mem} {s : State}
@@ -327,7 +327,7 @@ theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hd.st.sub_right (Lay.stSub (by decide))
-    · exact hd.w.sub_right (Lay.wSub (by decide))
+    · exact hd.w.sub_right (Lay.wSub (by have := L.hWn; omega))
   have hiv : bytesAt s.mem Np n = bytesAt m₀ Np n := bytesAt_frame h.frame dD (by have := hd.lt; omega_using [this])
   refine ⟨g.env h.env, h.kept.of_saved g.saved, by rw [g.saved _ (by decide) (by decide), h.x23],
     by rw [g.saved _ (by decide) (by decide), h.x25], hd.of_eq g.rd g.wr, by rw [hH_gh L (.inl rfl) g, h.hH], ?_,
@@ -359,7 +359,7 @@ theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} 
   refine WP.seq (WP.mono (padSeg_ok L (yo := 0) (.inl rfl) (P := Np + BitVec.ofNat 64 (16 * (n / 16)))
     h₂.env h₂.kept h₂.x25 (Nat.mod_lt _ (by decide))
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, h₂.x23], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
-    hdr.rd (hdr.w.sub_right (Lay.wSub (by decide)))) fun s₃ h₃ =>
+    hdr.rd (hdr.w.sub_right (Lay.wSub (by have := L.hWn; omega)))) fun s₃ h₃ =>
     WP.seq (WP.mono (padCall_ok L (.inl rfl) v h₃) fun s₄ h₄ => ?_))
   refine WP.seq (WP.mono (lensSeg_ok L (yo := 0) (.inl rfl) (ra := .x27) (rb := .x26) h₄.env h₄.kept h₄.x25
     (by decide)) fun s₅ h₅ => WP.mono (lensCall_ok L (.inl rfl) v h₅) fun s₆ h₆ => ?_)
