@@ -35,6 +35,33 @@ vg_aes_siv_init:
 	ldr lr, [r11, #2192]
 	ldr r11, [r11, #2188]
 	add sp, sp, #2560
+	sub sp, sp, #2576
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #80
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2576
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_siv_encrypt:
@@ -423,6 +450,29 @@ vg_aes_siv_encrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2608
+	sub sp, sp, #2624
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #82
+220:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 220b
+	add sp, sp, #2624
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_siv_decrypt:
@@ -850,4 +900,26 @@ vg_aes_siv_decrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2608
+	sub sp, sp, #2624
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #82
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	add sp, sp, #2624
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

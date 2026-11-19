@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Frame
+public import VerifiedGarbage.Proof.AesCcm.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -10,14 +10,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesCcm.Arm
 
-open VG.Proof.AesCcm.Arm
-
 def artifacts : List Artifact := [
-  Spec.Ccm.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
-    verified := .unscrubbed (Proof.AesCcm.seal_keyed seal_framed) },
-  Spec.Ccm.openApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
-    verified := .unscrubbed (Proof.AesCcm.open_keyed open_framed) }]
+  Spec.Ccm.sealApi.artifact Arm.target Proof.AesCcm.Arm.Scrub.sealReg,
+  Spec.Ccm.openApi.artifact Arm.target Proof.AesCcm.Arm.Scrub.openReg]
 
 end VG.Artifacts.AesCcm.Arm
