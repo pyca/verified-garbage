@@ -41,7 +41,7 @@ theorem finEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} {w : Reg} (hCtx : s
       s'.gpr .x5 = s.gpr .x5 ∧ s'.gpr .x6 = s.gpr .x6 ∧ s'.mem = savedMem s.mem W s.gpr ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   obtain hWn := hperm.hWn
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s w hW hperm.w
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s w hW hperm.w (by have := hperm.hWn; omega)
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x22₂, x26₂, x27₂, x5₂, x6₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 w, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x26 .x3, mov .x27 .x4] s₁ = some s₂ ∧
       s₂.gpr .x19 = W ∧ s₂.gpr .x20 = St ∧ s₂.gpr .x21 = Ctx ∧

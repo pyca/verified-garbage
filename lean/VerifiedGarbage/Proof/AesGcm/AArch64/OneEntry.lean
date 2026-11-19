@@ -109,7 +109,7 @@ theorem oneEntry_ok {Wn : Nat} {s : State} {Ctx W : Addr} {k : Nat} (hk : k % 8 
   obtain hWn := hperm.hWn
   obtain ⟨s₀, run₀, x9₀, g₀, sp₀, m₀, rd₀, wr₀⟩ := ldrSp_ok (t := .x9) hk hW hsp
   have hperm₀ : Perm Wn Ctx (W + BitVec.ofNat 64 16) W s₀ := hperm.of_eq rd₀ wr₀
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ hperm₀.w
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ hperm₀.w (by have := hperm₀.hWn; omega)
   have w (d : Nat) (h : d + 8 ≤ Wn) := in_off hperm₀.w h (by decide)
   rw [← wr₁] at w
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x22₂, x23₂, x24₂, x26₂, x27₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa

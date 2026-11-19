@@ -80,7 +80,7 @@ theorem crEntry_ok {Wn : Nat} {s : State} {Ctx St D W : Addr} {n : Nat} (hCtx : 
       s'.gpr .x27 = BitVec.ofNat 64 (s.gpr .x4).toNat ∧ s'.gpr .x28 = D ∧ s'.mem = savedMem s.mem W s.gpr ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain hWn := hperm.hWn
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x7 hW hperm.w
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x7 hW hperm.w (by have := hperm.hWn; omega)
   have hn' : s.gpr .x6 = BitVec.ofNat 64 n := by rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x22₂, x26₂, x27₂, x28₂, x25₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 .x7, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x26 .x6, mov .x27 .x4, mov .x28 .x5,

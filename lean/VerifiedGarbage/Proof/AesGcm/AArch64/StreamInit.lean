@@ -40,7 +40,7 @@ theorem siEntry_ok {Wn : Nat} {s : State} {Ctx Np St W : Addr} {n : Nat} (hCtx :
       s'.gpr .x23 = Np ∧ s'.gpr .x24 = BitVec.ofNat 64 n ∧ s'.gpr .x26 = BitVec.ofNat 64 n ∧
       s'.gpr .x27 = 0 ∧ s'.mem = savedMem s.mem W s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain hWn := hperm.hWn
-  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x4 hW hperm.w
+  obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x4 hW hperm.w (by have := hperm.hWn; omega)
   have hn' : s.gpr .x2 = BitVec.ofNat 64 n := by rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   obtain ⟨s₂, run₂, x19₂, x20₂, x21₂, x23₂, x24₂, x26₂, x27₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [mov .x19 .x4, mov .x20 .x3, mov .x21 .x0, mov .x23 .x1, mov .x24 .x2, mov .x26 .x2, imm .x27 0] s₁ =
