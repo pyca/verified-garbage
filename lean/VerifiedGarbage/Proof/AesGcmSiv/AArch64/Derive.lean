@@ -348,6 +348,12 @@ theorem wCn {d n : Nat} (h : d + n ≤ p.Wn) : Covers [⟨p.W + BitVec.ofNat 64 
 theorem wC {d n : Nat} (h : d + n ≤ 1760) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   P.wCn (by have := P.hWn; omega)
 
+theorem wRn {d n : Nat} (h : d + n ≤ p.Wn) : InRegions (s.rd ++ s.wr) (p.W + BitVec.ofNat 64 d) n :=
+  in_left (P.wWn h)
+
+theorem wCRn {d n : Nat} (h : d + n ≤ p.Wn) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+  covers_left (P.wCn h)
+
 theorem wCR {d n : Nat} (h : d + n ≤ 1760) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
 

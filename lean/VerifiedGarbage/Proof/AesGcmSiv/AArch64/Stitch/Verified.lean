@@ -167,7 +167,7 @@ structure BatchPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (t
   wr : t'.wr = t.wr
   ctr : CtrSt p.W icb (8 * (p.n / 128)) t'.mem
   data : bytesAt t'.mem p.D p.n = GcmSiv.ctrPart ciph icb x (128 * (p.n / 128))
-  frame : Frame (cryR p.W p.D p.n) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n) t.mem t'.mem
 
 /-- `ctrSetup ++ batches`: the counter's word, the key schedule and the batches. -/
 theorem ctrSetup_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
@@ -193,7 +193,7 @@ theorem ctrFinish_ok {p : Prm} (L : Lay p) {H : Spec.Gcm.Block} {m₀ : Mem} {rd
       CtrSt p.W icb (8 * (p.n / 128)) t₃.mem ∧
       bytesAt t₃.mem p.D p.n = GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph m₀ (p.W + BitVec.ofNat 64 240) p.R) icb
         (bytesAt m₀ p.D p.n) (128 * (p.n / 128)) ∧
-      Frame (VG.Proof.AesGcmSiv.AArch64.cryR p.W p.D p.n) m₀ t₃.mem ∧
+      Frame (VG.Proof.AesGcmSiv.AArch64.cryR p.Wn p.W p.D p.n) m₀ t₃.mem ∧
       Frame [⟨p.W + BitVec.ofNat 64 96, 4⟩] t₂.mem t₃.mem := by
   have hn := L.n_lt
   have hww := L.ww
@@ -423,7 +423,7 @@ theorem crypt_ok (e3 : Bool) (v : Proof.AesGcm.AArch64.GcmImpl) {p : Prm} (L : L
   obtain E₁ : Env p t₁ := E.keep (fun r hr => ho₁ r (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
-  obtain fC : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR p.W p.D p.n, Region.Sub q q' :=
+  obtain fC : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR p.Wn p.W p.D p.n, Region.Sub q q' :=
     fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
@@ -502,7 +502,7 @@ structure OBatchPost (p : Prm) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) (
   wr : t'.wr = t.wr
   ctr : CtrSt p.W icb (8 * (p.n / 128)) t'.mem
   data : bytesAt t'.mem p.D p.n = GcmSiv.ctrPart ciph icb x (128 * (p.n / 128))
-  frame : Frame (cryR p.W p.D p.n ++ absR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) t.mem t'.mem
   out : blockAt t'.mem (p.W + BitVec.ofNat 64 80) =
     ghashFrom (blockAt t.mem (p.W + BitVec.ofNat 64 64)) (blockAt t.mem (p.W + BitVec.ofNat 64 80))
       (elemsAt t'.mem p.D (8 * (p.n / 128)))
@@ -623,12 +623,12 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
   refine ⟨E₅.keep (fun r _ => by rw [g₆]) sp₆ rd₆ wr₆, by rw [rd₆, rd₅, O.ci.rd, rd₃, rd₂, rd₁],
     by rw [wr₆, wr₅, O.ci.wr, wr₃, wr₂, wr₁], ctrSt_frame C₅ f₆ (dY (.inl (by decide)) (by decide)), ?_, ?_, ?_⟩
   · rw [Proof.AesGcm.AArch64.bytesAt_frame f₆ dYD (Nat.le_of_lt hn), d₅, hc₃, hx₃]
-  · have fA : Frame (cryR p.W p.D p.n ++ absR p.W) t.mem s₁.mem := f₁.sub fun r hr => by
+  · have fA : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) t.mem s₁.mem := f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨p.W + BitVec.ofNat 64 480, 1280⟩, by simp [absR], Region.sub_prefix (by decide)⟩
-    obtain fB : Frame (cryR p.W p.D p.n ++ absR p.W) s₃.mem s₅.mem :=
+    obtain fB : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) s₃.mem s₅.mem :=
       f₅.mono fun r hr => List.mem_append_left _ hr
-    obtain fC : Frame (cryR p.W p.D p.n ++ absR p.W) s₅.mem s₆.mem := f₆.mono fun r hr => by
+    obtain fC : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) s₅.mem s₆.mem := f₆.mono fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; simp [absR]
     rw [← m₁₃] at fA
     exact (fA.trans fB).trans fC
@@ -685,7 +685,7 @@ structure OpenPost (p : Prm) (t t' : State) : Prop where
   env : Env p t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
-  frame : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t.mem t'.mem
   data : bytesAt t'.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n)
   out : blockAt t'.mem (p.W + BitVec.ofNat 64 80) =
@@ -702,7 +702,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     GcmSiv.ctxCiph_length _ _ _
   obtain hxl : (bytesAt t.mem p.D p.n).length = p.n := Proof.Cmac.bytesAt_length _ _ _
   -- What the parts miss.
-  obtain dCry : ∀ {d k : Nat}, d + k ≤ 96 → ∀ r ∈ cryR p.W p.D p.n, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
+  obtain dCry : ∀ {d k : Nat}, d + k ≤ 96 → ∀ r ∈ cryR p.Wn p.W p.D p.n, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -716,7 +716,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
       rcases hr with rfl | rfl
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
       · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-  obtain dKey : ∀ r ∈ cryR p.W p.D p.n ++ absR p.W,
+  obtain dKey : ∀ r ∈ cryR p.Wn p.W p.D p.n ++ absR p.W,
       (⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩ : Region).Disjoint r := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact (key_cryR L r hr).sub_left (Region.sub_prefix L.rounds_le)
@@ -780,16 +780,16 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
       (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n) := by
     rw [d₅, T.data, GcmSiv.ctrPart_all _ hcl _ _ (by rw [hxl])]
   refine ⟨P₅.env, by rw [P₅.rd, rd₄, T.rd, B.rd, rd₁], by rw [P₅.wr, wr₄, T.wr, B.wr, wr₁], ?_, hd₅, ?_⟩
-  · have g₁ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t.mem t₁.mem := f₁.sub fun r hr => by
+  · have g₁ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t.mem t₁.mem := f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨p.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub p.W (by decide) (by decide)⟩
-    obtain g₂ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₁.mem t₂.mem := B.frame.mono fun r hr => by
+    obtain g₂ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₁.mem t₂.mem := B.frame.mono fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact List.mem_append_left _ hr
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ hr)
-    obtain g₃ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₂.mem t₄.mem := by
+    obtain g₃ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₂.mem t₄.mem := by
       rw [m₄]; exact T.frame.mono fun r hr => List.mem_append_left _ hr
-    obtain g₄ : Frame (cryR p.W p.D p.n ++ absorbR p.W) t₄.mem t₅.mem :=
+    obtain g₄ : Frame (cryR p.Wn p.W p.D p.n ++ absorbR p.W) t₄.mem t₅.mem :=
       P₅.frame.mono fun r hr => List.mem_append_right _ hr
     exact ((g₁.trans g₂).trans g₃).trans g₄
   · have hH₄ : blockAt t₄.mem (p.W + BitVec.ofNat 64 64) = blockAt t.mem (p.W + BitVec.ofNat 64 64) := by
@@ -928,7 +928,7 @@ structure OpenMid (p : Prm) (t t' : State) : Prop where
   env : Env p t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
-  frame : Frame (cryR p.W p.D p.n ++ polyR p.W) t.mem t'.mem
+  frame : Frame (cryR p.Wn p.W p.D p.n ++ polyR p.W) t.mem t'.mem
   data : bytesAt t'.mem p.D p.n = Spec.GcmSiv.ctr (Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R)
     (Spec.GcmSiv.initialCounter (bytesAt t.mem p.W 16)) (bytesAt t.mem p.D p.n)
   out : bytesAt t'.mem (p.W + BitVec.ofNat 64 96) 16 =
@@ -953,9 +953,9 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
   obtain P₂' := P₂.of_eq (t := t) rfl rfl rfl
   -- The data.
   refine WP.seq (WP.mono (openData_ok hP gh e3 v L P₂.env) fun t₄ O => ?_)
-  obtain hH : ∀ r ∈ cryR p.W p.D p.n ++ absorbR p.W, (⟨p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r :=
+  obtain hH : ∀ r ∈ cryR p.Wn p.W p.D p.n ++ absorbR p.W, (⟨p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r :=
     forall_app (by disj_tac L) (absorbR_H L)
-  obtain sA : ∀ r ∈ absorbR p.W, ∃ r' ∈ cryR p.W p.D p.n ++ absorbR p.W, Region.Sub r r' :=
+  obtain sA : ∀ r ∈ absorbR p.W, ∃ r' ∈ cryR p.Wn p.W p.D p.n ++ absorbR p.W, Region.Sub r r' :=
     fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩
   obtain P₂₄ := Absorbed.trans hH (P₂'.sub sA) ⟨O.env, O.rd, O.wr, O.frame, O.out⟩
   -- The lengths.
@@ -1308,7 +1308,7 @@ theorem polyval_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
 open VG.Proof.AesGcmSiv.AArch64 (key_cryR absR) in
 /-- The key schedule, after code that writes only what counter mode and the
 batches' POLYVAL write. -/
-theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.W p.D p.n ++ absR p.W) m m') :
+theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.Wn p.W p.D p.n ++ absR p.W) m m') :
     Spec.GcmSiv.ctxCiph m' (p.W + BitVec.ofNat 64 240) p.R = Spec.GcmSiv.ctxCiph m (p.W + BitVec.ofNat 64 240) p.R := by
   have hR := L.rounds_le
   unfold Spec.GcmSiv.ctxCiph

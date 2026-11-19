@@ -51,6 +51,7 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t₁ : State, runBlock isa expandArgs t = some t₁ ∧
       KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 1760)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ ∧ t₁.mem = t.mem := by
+  obtain hWn := L.hWn
   have hl : Spec.GcmSiv.keyLen p.R = 16 ∨ Spec.GcmSiv.keyLen p.R = 32 := by
     unfold Spec.GcmSiv.keyLen; rcases L.rounds with h | h <;> rw [h] <;> decide
   have hl' := L.rounds
@@ -69,15 +70,16 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   case x3 => simp [gpr_write]
   case len => omega_using [hl]
   case kc => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
-  case ks => exact L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
-  case cs => exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  case ks => exact L.w_wn (.inl (by omega_using [hl])) (by have := L.hWn; omega_using [hl, this]) (by have := L.hWn; omega)
+  case cs => exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
   case rd =>
     exact covers_append (covers_cons (E.perm.wCR (by omega_using [hl])) covers_nil)
-      (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by decide)) covers_nil))
-  case wr => exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
+      (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCRn (by have := L.hWn; omega)) covers_nil))
+  case wr => exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wCn (by have := L.hWn; omega)) covers_nil)
 
 theorem expand_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (expand v.callees) t (ExpPost p t) := by
+  obtain hWn := L.hWn
   obtain ⟨t₁, run₁, kc, E₁, hm₁⟩ := expArgs_ok L E
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (key_call v.key kc) fun t₂ P => ?_
@@ -137,6 +139,7 @@ theorem hkeyMem_acc (m : Mem) (W : Addr) : Spec.Gcm.blockAt (hkeyMem m W) (W + B
 theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa hkey t = some t' ∧ t'.mem = hkeyMem t.mem p.W ∧
       Others [.x9, .x10, .x11, .x12, .x13] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  obtain hWn := E.perm.hWn
   have r₁ := E.perm.wR (show 16 + 8 ≤ 1760 by decide)
   have r₂ := E.perm.wR (show 24 + 8 ≤ 1760 by decide)
   have w₁ := E.perm.wW (show 64 + 8 ≤ 1760 by decide)
@@ -169,8 +172,10 @@ structure KeysPost (p : Prm) (σ t : State) : Prop where
     hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16))
   acc : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 80) = 0
 
-theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) :
+theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ)
+    (hv : v.ctr.scratch ≤ p.Wn - 1760 := by assumption) :
     WP isa (keys v.callees) σ (KeysPost p σ) := by
+  obtain hWn := L.hWn
   have hR := L.rounds
   refine WP.seq (WP.mono (derive_ok v L E) fun t₂ I => ?_)
   have k0 : (⟨p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR p.W := List.mem_cons_self
@@ -183,13 +188,13 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
     · exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩
     · exact ⟨_, k0, Offset.sub p.W (by decide) (by decide)⟩
     · exact ⟨_, k1, fun _ h => h⟩
-    · exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
+    · exact ⟨_, k2, Offset.sub p.W (by decide) (by omega)⟩
   refine WP.seq (WP.mono (expand_ok v L I.env) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hm₄, ho₄, sp₄, rd₄, wr₄⟩ := hkey_ok X.env
   have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region),
       ⟨p.W + BitVec.ofNat 64 1760, 512⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
+    rcases hr with rfl | rfl <;> exact L.w_wn (.inl (by omega_using [h₁])) (by have := L.hWn; omega_using [h₁, this]) (by have := L.hWn; omega)
   have f₃ : Frame (keyR p.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
