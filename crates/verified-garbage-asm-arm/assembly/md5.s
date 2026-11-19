@@ -17,6 +17,12 @@ vg_md5_init:
 	movw r12, #21622
 	movt r12, #4146
 	str r12, [r0, #12]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_md5_update:
@@ -152,6 +158,29 @@ vg_md5_update:
 	ldr r11, [r3, #92]
 	ldr lr, [r3, #96]
 	add sp, sp, #128
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	add sp, sp, #128
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_md5_finalize:
@@ -238,4 +267,27 @@ vg_md5_finalize:
 	ldr r11, [r3, #92]
 	ldr lr, [r3, #96]
 	add sp, sp, #128
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	add sp, sp, #128
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

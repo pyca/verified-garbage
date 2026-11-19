@@ -330,9 +330,6 @@ arm vg_idea_expand_key
 arm vg_idea_invert_key
 arm vg_idea_ofb
 arm vg_idea_ofb_final
-arm vg_md5_finalize
-arm vg_md5_init
-arm vg_md5_update
 arm vg_mlkem1024_check_ek
 arm vg_mlkem1024_decaps
 arm vg_mlkem1024_encaps
