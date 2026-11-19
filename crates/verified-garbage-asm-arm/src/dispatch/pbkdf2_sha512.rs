@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_pbkdf2_hmac_sha512`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -15,7 +17,7 @@
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 64`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the 3480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the 3488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_pbkdf2_hmac_sha512_auto(_dit: verified_garbage_cpu::Dit<'_>, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {

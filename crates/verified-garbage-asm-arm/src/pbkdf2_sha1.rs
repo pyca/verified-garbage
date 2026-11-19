@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -14,7 +16,7 @@
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the 1176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the 1184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
@@ -215,6 +217,29 @@ ldr r10, [r11, #472]
 ldr lr, [r11, #476]
 ldr r11, [r11, #480]
 add sp, sp, #1152
+sub sp, sp, #1184
+add r12, sp, #0
+mov r2, #0
+mov r3, #37
+211:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 211b
+add sp, sp, #1184
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,

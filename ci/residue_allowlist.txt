@@ -343,14 +343,6 @@ arm vg_mlkem768_decaps
 arm vg_mlkem768_encaps
 arm vg_mlkem768_encaps_h
 arm vg_mlkem768_keygen
-arm vg_pbkdf2_hmac_md5
-arm vg_pbkdf2_hmac_sha1
-arm vg_pbkdf2_hmac_sha224
-arm vg_pbkdf2_hmac_sha256
-arm vg_pbkdf2_hmac_sha384
-arm vg_pbkdf2_hmac_sha512
-arm vg_pbkdf2_hmac_sha512_224
-arm vg_pbkdf2_hmac_sha512_256
 arm vg_poly1305_init
 arm vg_rc2_cbc_decrypt_chained
 arm vg_rc2_cbc_encrypt_chained
