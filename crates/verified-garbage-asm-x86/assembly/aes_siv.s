@@ -1220,13 +1220,31 @@ vg_aes_siv_decrypt_aesni:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+216]
 	mov edi, DWORD PTR [ebp+192]
+	cmp ecx, 4
+	jb 222f
+224:
+	mov edx, DWORD PTR [edi]
+	and edx, ebx
+	mov DWORD PTR [edi], edx
+	add edi, 4
+	sub ecx, 4
+	cmp ecx, 4
+	jae 224b
+	jmp 223f
 222:
+223:
+	test ecx, ecx
+	je 225f
+227:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 222b
+	jne 227b
+	jmp 226f
+225:
+226:
 	jmp 221f
 220:
 221:
@@ -2455,13 +2473,31 @@ vg_aes_siv_decrypt:
 	mov ebx, 0
 	sub ebx, DWORD PTR [ebp+216]
 	mov edi, DWORD PTR [ebp+192]
+	cmp ecx, 4
+	jb 222f
+224:
+	mov edx, DWORD PTR [edi]
+	and edx, ebx
+	mov DWORD PTR [edi], edx
+	add edi, 4
+	sub ecx, 4
+	cmp ecx, 4
+	jae 224b
+	jmp 223f
 222:
+223:
+	test ecx, ecx
+	je 225f
+227:
 	movzx edx, BYTE PTR [edi]
 	and edx, ebx
 	mov BYTE PTR [edi], dl
 	add edi, 1
 	sub ecx, 1
-	jne 222b
+	jne 227b
+	jmp 226f
+225:
+226:
 	jmp 221f
 220:
 221:

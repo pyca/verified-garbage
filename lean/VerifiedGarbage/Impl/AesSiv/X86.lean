@@ -103,7 +103,7 @@ them, and so are the numbers of calls, bytes copied and blocks chained.
 namespace VG.Impl.AesSiv.X86
 
 open VG.X86
-open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry saveAt restore zero4 copyLoop xorLoop)
+open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry saveAt restore zero4 copyLoop xorLoop maskWords)
 
 /-! ## `vg_aes_siv_init` -/
 
@@ -369,13 +369,17 @@ def compare : List Instr :=
    .mov .ecx (slot 12), .alu .xor .ecx (slot (tOff + 12)), .alu .or .eax (.reg .ecx),
    .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0), .store (at_ .ebp okO) .eax]
 
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok`: four at a time while four
+are left (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (slot okO), .mov .edi (slot dataO)])
-        (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
-          .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)))
+        (.seq maskWords
+          (.seq (.block [.alu .test .ecx (.reg .ecx)])
+            (.ite .e (.block [])
+              (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
+                .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))))))
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 

@@ -317,10 +317,22 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32_to_aesni}
 .base64 "WFhYWFhYWIHtAAMAAItFADOF8AAAAItNBDON9AAAAAnIi00IM434AAAACciLTQwzjfwAAAAJyIP4AbgAAAAAg9AAuwAAAAApw4uNqAAAAIXJ"
 je 234f
-.base64 "i72kAAAA"
+.base64 "i72kAAAAg/kE"
+jb 236f
+238:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 238b
+jmp 237f
 236:
+237:
+.base64 "hck="
+je 239f
+241:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 236b
+jne 241b
+jmp 240f
+239:
+240:
 jmp 235f
 234:
 235:
@@ -646,10 +658,22 @@ call {vg_ghash}
 call {vg_aes_ctr32_to_aesni}
 .base64 "WFhYWFhYWIHtAAMAAItFADOF8AAAAItNBDON9AAAAAnIi00IM434AAAACciLTQwzjfwAAAAJyIP4AbgAAAAAg9AAuwAAAAApw4uNqAAAAIXJ"
 je 234f
-.base64 "i72kAAAA"
+.base64 "i72kAAAAg/kE"
+jb 236f
+238:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 238b
+jmp 237f
 236:
+237:
+.base64 "hck="
+je 239f
+241:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 236b
+jne 241b
+jmp 240f
+239:
+240:
 jmp 235f
 234:
 235:
@@ -975,10 +999,22 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32_to}
 .base64 "WFhYWFhYWIHtAAMAAItFADOF8AAAAItNBDON9AAAAAnIi00IM434AAAACciLTQwzjfwAAAAJyIP4AbgAAAAAg9AAuwAAAAApw4uNqAAAAIXJ"
 je 234f
-.base64 "i72kAAAA"
+.base64 "i72kAAAAg/kE"
+jb 236f
+238:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 238b
+jmp 237f
 236:
+237:
+.base64 "hck="
+je 239f
+241:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 236b
+jne 241b
+jmp 240f
+239:
+240:
 jmp 235f
 234:
 235:
@@ -1296,10 +1332,22 @@ call {vg_ghash}
 call {vg_aes_ctr32_to}
 .base64 "WFhYWFhYWIHtAAMAAItFADOF8AAAAItNBDON9AAAAAnIi00IM434AAAACciLTQwzjfwAAAAJyIP4AbgAAAAAg9AAuwAAAAApw4uNqAAAAIXJ"
 je 234f
-.base64 "i72kAAAA"
+.base64 "i72kAAAAg/kE"
+jb 236f
+238:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 238b
+jmp 237f
 236:
+237:
+.base64 "hck="
+je 239f
+241:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 236b
+jne 241b
+jmp 240f
+239:
+240:
 jmp 235f
 234:
 235:
