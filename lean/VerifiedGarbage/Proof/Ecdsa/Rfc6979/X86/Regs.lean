@@ -119,7 +119,7 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
 /-- Unless `big`, the scalars are `Q = 4 k` bytes, in at most sixteen 32-bit words. -/
 theorem sizesA (h : P.R.big = false) : P.Q = 4 * P.k ∧ P.k ≤ 16 ∧ P.Q ≤ 64 := by
   have := P.R.sizesA h
-  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega_arith
+  rcases this.1 with h' | h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega_arith
 
 /-- If `big`, P-521's sizes, longer than any digest. -/
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.k = 18 ∧ P.Q = 66 ∧ P.F.H.D < P.Q := by
