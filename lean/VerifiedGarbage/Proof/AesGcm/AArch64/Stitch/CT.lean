@@ -106,13 +106,13 @@ theorem sealWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
     simp only [ite_true]
     refine WP.seq (WP.mono (shortThr_ok (n := (s.gpr .x7).toNat) s₂ (by rw [hx₂ .x7 (by simp), ofNat_toNat'])
-      (by omega_using [hnb])) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+      (by omega)) fun s₃ ⟨x9₃, r₃⟩ => ?_)
     have h₃ := SealEntry.of_regs h₂ r₃
     have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
       rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
     refine WP.ite _ (eval_zero x9₃ (by omega_using [])) (fun hz => ?_) (fun _ => ?_)
     · refine WP.seq (WP.mono (shortMin_ok (n := (s.gpr .x7).toNat) s₃ (by rw [hx₃ .x7 (by simp), ofNat_toNat'])
-        (by omega_using [hnb])) fun s₄ ⟨x9₄, r₄⟩ => ?_)
+        (by omega)) fun s₄ ⟨x9₄, r₄⟩ => ?_)
       have h₄ := SealEntry.of_regs h₃ r₄
       have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
         rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
@@ -221,9 +221,9 @@ theorem Mid.cryptS {H : Block} {R n n₂ P : Nat} {D D₂ Tg X : Addr} {ρ s s' 
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
+    · exact (hd.ok.w.sub_right (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega))).symm
     · exact (L.st_w (a := 48) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by have := L.hWn; omega)
   refine ⟨o.env, by rw [o.kept .x22 (by decide), h.x22], h.rounds, by rw [o.kept .x26 (by decide), h.x26],
     by rw [o.kept .x27 (by decide), h.x27], by rw [o.kept .x28 (by decide), h.x28],
     by rw [hH_crFrame L hd o.frame, h.hH], h.key.frame o.frame dWK, h.data.of_eq hrd hwr,
@@ -232,7 +232,7 @@ theorem Mid.cryptS {H : Block} {R n n₂ P : Nat} {D D₂ Tg X : Addr} {ρ s s' 
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), hsub⟩
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by have := L.hWn; omega)⟩
 
 /-- `Mid.absorbX`, for the whole blocks of part `⟨D₂, n₂⟩` of the text. -/
 theorem Mid.absorbXS {to : Bool} {H : Block} {R n n₂ : Nat} {D D₂ Tg X : Addr} {ρ s s' : State} {x : List Byte}
@@ -289,7 +289,7 @@ theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega_using [hlt]) hdj.rd
-    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ (dataOk_of h.data).lt
+    (hdj.w.sub_right (Lay.wSub (by have := L.hWn; omega))) x26₁₀ (dataOk_of h.data).lt
     (pad_big ((dataOk_of h.data).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd
       (dataOk_of h.data).lt
       (by rw [hD₂, Offset.add_add]; congr 2; omega_using [hn₂, hjn]) (by omega_using [hlt]))))
@@ -331,11 +331,11 @@ theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H
 
 omit L in
 /-- The front's frame is in the working space. -/
-theorem frontFrame'_work (W : Addr) :
+theorem frontFrame'_work (W : Addr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     ∀ r ∈ frontFrame' (W + BitVec.ofNat 64 16) W, Region.Sub r (workR Wn W) := by
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide)
+  rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega)
 
 omit L in
 /-- After `front`: what the interleaved loop needs, from `FFront`. -/
@@ -345,12 +345,12 @@ theorem stIn_of {H : Block} {iv a : List Byte} {R n : Nat} {D : Addr} {ρ σ s�
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hf : Frame [workR Wn W, ⟨D, n⟩] ρ.mem σ.mem) (hrd : σ.rd = ρ.rd)
     (hwr : σ.wr = ρ.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = ρ.rd → u.wr = ρ.wr →
-      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) :
+      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     Stitch.SIn Wn Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
       (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D n s₂ ∧ Stitch.TbOk Wn Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂ ∧
       Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₂.mem := by
   obtain F₂ : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₂.mem :=
-    hf.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., frontFrame'_work W r hr⟩)
+    hf.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., frontFrame'_work W (hWn := hWn) (hWs := hWs) r hr⟩)
   refine ⟨⟨h₂.env, by rw [h₂.x22, h22], hR, h₂.x23, h₂.x26, hd.of_eq (by rw [h₂.rd]) (by rw [h₂.wr]), h₂.hH,
     h₂.cb, h₂.y, ?_⟩, fun u he hm hrd' hwr' _ => htb u he (by rw [hrd', h₂.rd, hrd]) (by rw [hwr', h₂.wr, hwr])
     (by rw [hm]; exact F₂) (by rw [hm]; exact h₂.key), F₂⟩
@@ -389,7 +389,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     · exact (L.cs.sub_left (Lay.ctxSub (by decide))).sub_right (Lay.stSub (by decide))
     · exact (L.cs.sub_left (Lay.ctxSub (by decide))).sub_right (Lay.stSub (by decide))
     · exact (hd.ctx.sub_left (Lay.ctxSub (by decide))).sub_right subP
-    · exact (L.cw'.sub_left (Lay.ctxSub (by decide))).sub_right (Lay.wSub (by decide))
+    · exact (L.cw'.sub_left (Lay.ctxSub (by decide))).sub_right (Lay.wSub (by have := L.hWn; omega))
   obtain key₄ : KeyAt H s₄.mem W := by
     rw [r₄.mem]
     refine h₂.key.frame hm.frame fun r hr => ?_
@@ -397,7 +397,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     rcases hr with rfl | rfl | rfl | rfl
     · exact (L.st_w (a := 16) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
     · exact (L.st_w (a := 48) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-    · exact ((hd.ok.w.sub_left subP).sub_right (Lay.wSub (by decide))).symm
+    · exact ((hd.ok.w.sub_left subP).sub_right (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega))).symm
     · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
   obtain F₄ : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₄.mem := by
     rw [r₄.mem]
@@ -407,7 +407,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), subP⟩
-    · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+    · exact ⟨_, List.mem_cons_self .., Lay.wSub (by have := L.hWn; omega)⟩
   obtain x22₄ : s₄.gpr .x22 = BitVec.ofNat 64 R := by rw [g _ (by simp), h₂.x22, h22]
   exact ⟨⟨he₄, x22₄, hR, by rw [g _ (by simp), h₂.x26], x27, by rw [g _ (by simp), h₂.x28, h28], hH₄, key₄, hd₄,
     F₄, by rw [r₄.rd, hm.rd, h₂.rd, hrd], by rw [r₄.wr, hm.wr, h₂.wr, hwr]⟩,
@@ -445,7 +445,7 @@ theorem ctAS_ok (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {k : Reg → BitVe
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg)
     (hf : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₁.mem) (hrd : s₁.rd = ρ.rd) (hwr : s₁.wr = ρ.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = ρ.rd → u.wr = ρ.wr →
-      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.seq (Impl.AesGcm.AArch64.Stitch.stitched [] tb
         Impl.Gcm.AArch64.Stitch.enc) (.block (Impl.AesGcm.AArch64.Stitch.whole ++
         ([.add .x .x23 .x23 .x9, mov .x27 .x23, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr))))) s₁
@@ -499,7 +499,7 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = SP → v₂.sp = SP → (∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = ρ₁.rd → v₁.wr = ρ₁.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₁.mem v₁.mem →
       v₂.rd = ρ₂.rd → v₂.wr = ρ₂.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) Impl.Gcm.AArch64.Stitch.enc) TT) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Stitch.runWithS v.callees tb cl) TT := by
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
@@ -558,12 +558,12 @@ theorem runWithSX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) 
   obtain r₂ : t₅.rd = ρ₂.rd := rd₅'.trans M₂.rd
   obtain w₂ : t₅.wr = ρ₂.wr := wr₅'.trans M₂.wr
   obtain sY : Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ (workR Wn W) := stW (by decide)
-  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by decide)
+  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by have := L.hWn; omega)
   obtain hexH : ∀ r ∈ ex, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))
   obtain hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
-  obtain hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
+  obtain hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega))
   obtain hDd : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n) + BitVec.ofNat 64 0, 16 * ((n - Stitch.pre n - 0) / 16)⟩
       ⟨D, n⟩ := fun x hx => subR x (Offset.sub_base _ (by omega_using []) x hx)
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
