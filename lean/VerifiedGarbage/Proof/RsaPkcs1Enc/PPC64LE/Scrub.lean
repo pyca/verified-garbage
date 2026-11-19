@@ -1,17 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecP
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndVerified
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSAES-PKCS1-v1_5 on PPC64LE, without secret residue
 
 `vg_rsa_pkcs1_decrypt_precomputed` and `vg_rsa_pkcs1_encrypt_random`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`),
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
 which clears the volatile registers each may write and zeroes the stack
 their frames used: decryption keeps the CRT's halves, the decoded message
 and its callees' state in frames that it does not wipe itself. Their
@@ -86,20 +88,21 @@ theorem decryptPrecomputedOut (stack : Nat) :
 
 /-- `Spec.RsaPkcs1Enc.decryptPrecomputedApi`. -/
 def decryptPrecomputedReg : Registration Spec.RsaPkcs1Enc.decryptPrecomputedApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
       verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.codeP_verified }
+    3648 Impl.Scrub.PPC64LE.Clear.all
     (decryptPrecomputedOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.RsaPkcs1Enc.encryptRandomApi`. -/
 def encryptRandomReg : Registration Spec.RsaPkcs1Enc.encryptRandomApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
       verified := Proof.RsaPkcs1Enc.PPC64LE.Rnd.code_verified }
+    3440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (encryptRandomOut _)
-
-/-- Both are scrubbed: the side conditions of `withScrub` hold. -/
-example : decryptPrecomputedReg.residue.isSome ∧ encryptRandomReg.residue.isSome := by
-  decide
+    (by dsimp only; lit_decide)
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Scrub

@@ -1,10 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # FFDH on PPC64LE, without secret residue
@@ -27,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `vg_ffdh_derive_public`, `vg_ffdh_exchange`,
 `vg_ffdh_generate_key_precompute`, `vg_ffdh_generate_key_search_cached` and
 `vg_ffdh_generate_parameters`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
 volatile registers they may write and the stack their frames used: they work
 in the caller's `scratch` (or `ctx`) buffer, and the frames the searches'
 calls push are not wiped by the code itself.
@@ -197,74 +198,102 @@ theorem cachedKeySearchOut (stack : Nat) (cs : List (String × List (BitVec 64))
 
 /-- `vg_ffdh_check_public`. -/
 def checkPublicReg : Registration Spec.Ffdh.checkPublicApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.Domain.checkPublic
       verified := Proof.Ffdh.PPC64LE.Domain.cp_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkPublicOut _)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_check_domain`. -/
 def checkDomainReg : Registration Spec.Ffdh.checkDomainApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.VettedValidation.code
       verified := Proof.Ffdh.PPC64LE.VettedValidation.verified
       consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkDomainOut 0 Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_exchange`. -/
 def exchangeReg : Registration Spec.Ffdh.exchangeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.Domain.exchange
       verified := Proof.Ffdh.PPC64LE.Domain.ex_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (exchangeOut _)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_derive_public`. -/
 def derivePublicReg : Registration Spec.Ffdh.derivePublicApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.Derive.derivePublic
       verified := Proof.Ffdh.PPC64LE.Derive.dp_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (derivePublicOut _)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_check_private`. -/
 def checkPrivateReg : Registration Spec.Ffdh.checkPrivateApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
       verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkPrivateOut _)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_generate_key_precompute`. -/
 def precomputeReg : Registration Spec.Ffdh.generationPrecomputeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
       verified := Proof.Ffdh.PPC64LE.Cached.pc_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (generationPrecomputeOut 0 Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)
+    (by dsimp only; lit_decide)
 
 /-- `vg_ffdh_generate_key_search_cached`. -/
 def cachedKeySearchReg : Registration Spec.Ffdh.cachedKeySearchApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
       verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }
+    192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (cachedKeySearchOut _)
+    (by dsimp only; lit_decide)
+
+/-- What `scrubOf` needs of the parameter search with each Miller–Rabin
+round: evaluated here. -/
+theorem searchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    scrubSide (Proof.Ffdh.PPC64LE.Generation.searchCode v) 336
+      (Spec.Ffdh.parameterSearchSig.retBits 64)
+      ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+        [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true := by
+  have h : (Proof.Variants.MillerRabin.PPC64LE.variants.all fun v =>
+      scrubSide (Proof.Ffdh.PPC64LE.Generation.searchCode v) 336
+        (Spec.Ffdh.parameterSearchSig.retBits 64)
+        ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+          [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩) = true := by lit_decide
+  exact List.all_eq_true.mp h v hv
 
 /-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v`. -/
-def searchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :
+def searchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     Registration Spec.Ffdh.sievedParameterSearchApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       suffix := v.suffix
       code := Proof.Ffdh.PPC64LE.Generation.searchCode v
       verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }
+    336 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (sievedParameterSearchOut Proof.Ffdh.PPC64LE.Generation.stackUse
       Proof.Ffdh.PPC64LE.Generation.tables)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. That of
-`searchReg`, whose code is too long for `decide`'s recursion limit, the
-emitter checks: it refuses a function the allowlist does not list that has
-no proof (`Registration.residue`). -/
-example : checkPublicReg.residue.isSome ∧ checkDomainReg.residue.isSome ∧ exchangeReg.residue.isSome ∧
-    derivePublicReg.residue.isSome ∧ checkPrivateReg.residue.isSome := by
-  decide
-
-example : precomputeReg.residue.isSome ∧ cachedKeySearchReg.residue.isSome := by
-  decide
-
+    (searchSide v hv)
 
 end VG.Proof.Ffdh.PPC64LE.Scrub
