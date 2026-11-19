@@ -134,7 +134,7 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Wn Ctx St W SP s
       Env Wn Ctx St W SP s' ∧ Kept k s' ∧ s'.gpr .x28 = BitVec.ofNat 64 t ∧
       Frame [⟨W + BitVec.ofNat 64 256, 32⟩] s.mem s'.mem := by
   obtain hWn := he.perm.hWn
-  have w (d : Nat) (h : d + 8 ≤ Wn) := he.perm.wW h
+  have w (d : Nat) (h : d + 8 ≤ Wn) := he.perm.wWn h
   obtain ⟨s₁, run₁, hm₁, x11₁, x12₁, x13₁, og₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [imm .x9 0, .str .x .x9 .x19 vO,
       .str .x .x9 .x19 (vO + 8), .str .x .x9 .x19 rO, .str .x .x9 .x19 (rO + 8), ptr .x11 .x19 rO, mov .x12 .x19,
       mov .x13 .x28] s = some s₁ ∧
@@ -143,7 +143,7 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Wn Ctx St W SP s
           (0 : BitVec 64) ∧
       s₁.gpr .x11 = W + BitVec.ofNat 64 272 ∧ s₁.gpr .x12 = W ∧ s₁.gpr .x13 = BitVec.ofNat 64 t ∧
       Others [.x9, .x11, .x12, .x13] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by arun [he.x19, w 256 (by decide), w 264 (by decide), w 272 (by decide), w 280 (by decide)], ?_⟩
+    refine ⟨_, by arun [he.x19, w 256 (by have := he.perm.hWn; omega), w 264 (by have := he.perm.hWn; omega), w 272 (by have := he.perm.hWn; omega), w 280 (by have := he.perm.hWn; omega)], ?_⟩
     refine ⟨?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
     · simp only [mem_write]; rfl
     · simp [gpr_write, he.x19]
@@ -188,7 +188,7 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Wn Ctx St W SP s
   have he₄ : Env Wn Ctx St W SP s₄ := he₃.keep (fun r hr => og₄ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₄ rd₄ wr₄
-  have r (d : Nat) (h : d + 8 ≤ Wn) := he₄.perm.wR h
+  have r (d : Nat) (h : d + 8 ≤ Wn) := he₄.perm.wRn h
   obtain ⟨s₅, run₅, x10₅, og₅, sp₅, m₅, rd₅, wr₅⟩ : ∃ s₅, runBlock isa [.ldr .x .x9 .x19 vO, .ldr .x .x10 .x19 rO,
       .logic .eor .x .x9 .x9 .x10, .ldr .x .x10 .x19 (vO + 8), .ldr .x .x11 .x19 (rO + 8),
       .logic .eor .x .x10 .x10 .x11, .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1,
@@ -197,7 +197,7 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Wn Ctx St W SP s
         s₄.mem.readW (W + BitVec.ofNat 64 272) 64) ||| (s₄.mem.readW (W + BitVec.ofNat 64 264) 64 ^^^
         s₄.mem.readW (W + BitVec.ofNat 64 280) 64) = 0 then 0 else 1) ∧
       Others [.x9, .x10, .x11, .x12] s₄ s₅ ∧ s₅.sp = s₄.sp ∧ s₅.mem = s₄.mem ∧ s₅.rd = s₄.rd ∧ s₅.wr = s₄.wr := by
-    refine ⟨_, by arun [he₄.x19, r 256 (by decide), r 264 (by decide), r 272 (by decide), r 280 (by decide),
+    refine ⟨_, by arun [he₄.x19, r 256 (by have := he.perm.hWn; omega), r 264 (by have := he.perm.hWn; omega), r 272 (by have := he.perm.hWn; omega), r 280 (by have := he.perm.hWn; omega),
       gpr_addWithCarry, c_addWithCarry, mem_addWithCarry, rd_addWithCarry, wr_addWithCarry, sp_addWithCarry,
       c_write], ?_⟩
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
@@ -306,17 +306,17 @@ theorem cmp_ok {k : Reg → BitVec 64} {s : State} (he : Env Wn Ctx St W SP s) (
       ⟨by rw [x10, m₀], e, k', x28', by rw [← m₀]; exact f⟩
   · have e : t = 16 := by have := of_decide_eq_false hf; omega_arith
     subst e
-    have r (d : Nat) (h : d + 8 ≤ Wn) := he₀.perm.wR h
+    have r (d : Nat) (h : d + 8 ≤ Wn) := he₀.perm.wRn h
     obtain ⟨s₁, run₁, x10₁, og₁, sp₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa cmp16 s₀ = some s₁ ∧
         s₁.gpr .x10 = BitVec.ofNat 64 (if (s₀.mem.readW (W + BitVec.ofNat 64 112) 64 ^^^
           s₀.mem.readW (W + BitVec.ofNat 64 0) 64) ||| (s₀.mem.readW (W + BitVec.ofNat 64 120) 64 ^^^
           s₀.mem.readW (W + BitVec.ofNat 64 8) 64) = 0 then 0 else 1) ∧
         Others [.x9, .x10, .x11, .x12] s₀ s₁ ∧ s₁.sp = s₀.sp ∧ s₁.mem = s₀.mem ∧ s₁.rd = s₀.rd ∧
         s₁.wr = s₀.wr := by
-      have q₀ := r 112 (by decide)
-      have q₁ := r 0 (by decide)
-      have q₂ := r 120 (by decide)
-      have q₃ := r 8 (by decide)
+      have q₀ := r 112 (by have := he.perm.hWn; omega)
+      have q₁ := r 0 (by have := he.perm.hWn; omega)
+      have q₂ := r 120 (by have := he.perm.hWn; omega)
+      have q₃ := r 8 (by have := he.perm.hWn; omega)
       refine ⟨_, by arun [cmp16, he₀.x19, q₀, q₁, q₂, q₃, gpr_addWithCarry, c_addWithCarry, mem_addWithCarry,
         rd_addWithCarry, wr_addWithCarry, sp_addWithCarry, c_write], ?_⟩
       refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
@@ -354,7 +354,7 @@ theorem verRet_ok {s : State} {b : Bool} (h10 : s.gpr .x10 = BitVec.ofNat 64 (if
 /-- `tagIn` one byte at a time: the received tag, the `t` bytes at `Tg`, copied to `W`. -/
 theorem tagInB_ok {Wn : Nat} {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x19 = W) (h12 : s.gpr .x12 = Tg)
     (h28 : s.gpr .x28 = BitVec.ofNat 64 t) (h16 : t ≤ 16) (hr : Covers [⟨Tg, t⟩] (s.rd ++ s.wr))
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hd : (⟨Tg, t⟩ : Region).Disjoint ⟨W, 16⟩) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hd : (⟨Tg, t⟩ : Region).Disjoint ⟨W, 16⟩) (h16W : 16 ≤ Wn ∧ Wn ≤ 2560 := by omega) :
     WP isa (.seq (.block [mov .x11 .x19, mov .x13 .x28]) copyB) s fun s' => bytesAt s'.mem W t = bytesAt s.mem Tg t ∧ Frame [⟨W, 16⟩] s.mem s'.mem ∧
       Others loopRegs s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, og₁, m₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [mov .x11 .x19, mov .x13 .x28] s =
@@ -367,7 +367,7 @@ theorem tagInB_ok {Wn : Nat} {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x
     · simp [gpr_write, h28]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have lp : LoopPre s₁ Tg W t :=
-    ⟨by omega_arith, by rw [rd₁, wr₁]; exact hr, covers_prefix (by rw [wr₁]; exact hw) (by omega_arith),
+    ⟨by omega_arith, by rw [rd₁, wr₁]; exact hr, covers_prefix (by rw [wr₁]; exact hw) (by omega),
       hd.sub_right (Region.sub_prefix h16)⟩
   refine WP.mono (copyB_ok s₁ x12₁ x11₁ x13₁ lp) fun s₂ ⟨hm₂, og₂, sp₂, rd₂, wr₂⟩ => ⟨?_, ?_, ?_, by rw [sp₂, sp₁],
     by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
@@ -397,7 +397,7 @@ theorem exec_strq' {t : VReg} {n : Reg} {off : Nat} {s : State} (ho : off % 16 =
 /-- `tagIn`: the received tag, the `t` bytes at `Tg`, copied to `W`. -/
 theorem tagIn_ok {Wn : Nat} {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x19 = W) (h12 : s.gpr .x12 = Tg)
     (h28 : s.gpr .x28 = BitVec.ofNat 64 t) (h16 : t ≤ 16) (hr : Covers [⟨Tg, t⟩] (s.rd ++ s.wr))
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hd : (⟨Tg, t⟩ : Region).Disjoint ⟨W, 16⟩) :
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hd : (⟨Tg, t⟩ : Region).Disjoint ⟨W, 16⟩) (h16W : 16 ≤ Wn ∧ Wn ≤ 2560 := by omega) :
     WP isa tagIn s fun s' => bytesAt s'.mem W t = bytesAt s.mem Tg t ∧ Frame [⟨W, 16⟩] s.mem s'.mem ∧
       Others loopRegs s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₀, run₀, x13₀, og₀, m₀, sp₀, rd₀, wr₀⟩ : ∃ s₀, runBlock isa [.lsr .x .x13 .x28 4] s = some s₀ ∧
@@ -423,7 +423,7 @@ theorem tagIn_ok {Wn : Nat} {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x1
         ((s₀.setV .v0 (s₀.mem.read (s₀.gpr .x12 + BitVec.ofNat 64 0) 16)).gpr .x19 + BitVec.ofNat 64 0) 16 := by
       show InRegions s₀.wr (s₀.gpr .x19 + BitVec.ofNat 64 0) 16
       rw [og₀ _ (by decide), h19, wr₀, BitVec.add_zero]
-      exact covers_prefix (n := 16) hw (by decide) W 16 ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+      exact covers_prefix (n := 16) hw h16W.1 W 16 ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
     refine WP.block_cons_iff.mpr ⟨_, exec_ldrq' (by decide) (by decide) i₁, ?_⟩
     refine WP.block_cons_iff.mpr ⟨_, exec_strq' (by decide) (by decide) i₂, WP.block_nil ?_⟩
     have hx12 : s₀.gpr .x12 = Tg := by rw [og₀ _ (by decide), h12]
@@ -439,11 +439,11 @@ theorem tagIn_ok {Wn : Nat} {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x1
 /-- `tagOut`: the tag at `W` copied to the 16 bytes at `Tg`. -/
 theorem tagOut_ok {Wn : Nat} {s : State} {W Tg : Addr} (h19 : s.gpr .x19 = W) (h28 : s.gpr .x28 = Tg)
     (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (hw : Covers [⟨Tg, 16⟩] s.wr)
-    (hd : (⟨Tg, 16⟩ : Region).Disjoint ⟨W, 16⟩) :
+    (hd : (⟨Tg, 16⟩ : Region).Disjoint ⟨W, 16⟩) (h16W : 16 ≤ Wn ∧ Wn ≤ 2560 := by omega) :
     WP isa (.block tagOut) s fun s' => bytesAt s'.mem Tg 16 = bytesAt s.mem W 16 ∧
       Frame [⟨Tg, 16⟩] s.mem s'.mem ∧ Others [.x9] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have r₁ := in_off hr (show 0 + 8 ≤ 512 by decide) (by decide)
-  have r₂ := in_off hr (show 8 + 8 ≤ 512 by decide) (by decide)
+  have r₁ := in_off hr (show 0 + 8 ≤ Wn by omega) (by omega)
+  have r₂ := in_off hr (show 8 + 8 ≤ Wn by omega) (by omega)
   have w₁ := in_off hw (show 0 + 8 ≤ 16 by decide) (by decide)
   have w₂ := in_off hw (show 8 + 8 ≤ 16 by decide) (by decide)
   have hd' : (⟨Tg, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 8, 8⟩ :=
