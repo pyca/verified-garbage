@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run

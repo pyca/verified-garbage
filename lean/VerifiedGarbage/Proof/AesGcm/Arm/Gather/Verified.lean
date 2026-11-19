@@ -35,7 +35,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -49,13 +49,11 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 meta import VerifiedGarbage.Proof.AesGcm.ScratchGather
 meta import VerifiedGarbage.Proof.AesGcm.CtxFrame
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Run

@@ -27,17 +27,16 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

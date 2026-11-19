@@ -2,10 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Idea.KeyLit
-import VerifiedGarbage.Proof.Idea.AArch64.Mul
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

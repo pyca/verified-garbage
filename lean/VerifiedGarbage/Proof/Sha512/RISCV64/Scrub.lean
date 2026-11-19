@@ -3,24 +3,19 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 public import VerifiedGarbage.Proof.Sha512.PostOut
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 meta import VerifiedGarbage.Proof.Sha512.PostOut
 public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
-import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Update
+import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -31,8 +26,7 @@ public import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 meta import VerifiedGarbage.Proof.Sha512.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
-meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Update
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Finalize
 meta import VerifiedGarbage.Spec.Sha512.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target

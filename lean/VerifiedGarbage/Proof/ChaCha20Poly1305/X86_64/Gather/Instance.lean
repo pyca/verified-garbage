@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import Mathlib.Tactic.NormNum.Pow
@@ -26,7 +25,7 @@ import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 meta import Mathlib.Tactic.NormNum.Pow
 meta import Mathlib.Tactic.NormNum.Inv
 meta import Mathlib.Algebra.Group.Nat.Defs
@@ -79,7 +78,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Aes.KeyExp
@@ -92,7 +90,6 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 meta import VerifiedGarbage.Proof.AesGcm.ScratchGather
 meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 meta import VerifiedGarbage.Proof.Gcm.SealGather
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 meta import VerifiedGarbage.Proof.Aes.KeyExp

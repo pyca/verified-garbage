@@ -1,14 +1,13 @@
 module
+
 import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.AdjoinRoot
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
-
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Loops
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env

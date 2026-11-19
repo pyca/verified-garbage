@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.BlocksScratch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Poly1305.RISCV64.Init
-import VerifiedGarbage.Proof.Poly1305.RISCV64.Buffer
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Poly1305.Contract
@@ -22,7 +21,7 @@ section
 # Poly1305 on RISC-V: the shared contracts
 
 The proofs are written against per-target contracts
-(`Proof/Poly1305/RISCV64/Contract.lean`); these theorems move them to the
+(`Proof/Poly1305/RISCV64/Init.lean`); these theorems move them to the
 shared contracts, which the artifacts are emitted with. No function uses
 the stack.
 -/

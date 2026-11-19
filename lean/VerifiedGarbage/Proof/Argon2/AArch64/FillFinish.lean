@@ -8,11 +8,9 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillSlice
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
-public import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.Slices
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Argon2.Iterations
 import VerifiedGarbage.Proof.Argon2.Serialization
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Argon2.Contract
@@ -54,13 +52,11 @@ meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Lit

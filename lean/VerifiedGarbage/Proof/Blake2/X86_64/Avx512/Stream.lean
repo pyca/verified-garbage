@@ -30,10 +30,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Blake2.Contract
-public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Argon2.X86_64.Taint
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 meta import VerifiedGarbage.Proof.Blake2.Contract
@@ -49,7 +47,7 @@ section
 /-!
 # BLAKE2b on x86-64 with AVX-512: a round
 
-As for the AVX2 code (`Proof/Blake2/X86_64/Avx2/Round.lean`), whose
+As for the AVX2 code (`Proof/Blake2/X86_64/Avx2/Compress.lean`), whose
 message gathering (`msg_ok`), diagonals (`diag_words`, `undiag_words`) and
 columns (`words_of_cols`) this proof uses: only the halves of `G` differ,
 each rotation being one `vprorq` (`xorRor_qw`), so no masks are needed.

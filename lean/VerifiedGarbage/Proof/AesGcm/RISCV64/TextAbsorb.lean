@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: absorbing the text (`textAbsorb`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/TextAbsorb.lean`): `textAbsorb` absorbs the `len` bytes
+(`Proof/AesGcm/Arm/StreamFinish.lean`): `textAbsorb` absorbs the `len` bytes
 (`s8`) at `data` (`s9`) into GHASH as text: before the first text
 (`text_len`, `s11`, 0) it pads the additional data (of `aad_len` bytes,
 `s10`) first (`firstFlush`), and it does nothing for no bytes

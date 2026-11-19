@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
-import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Init
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
@@ -22,7 +21,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.Spec.TripleDes
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.FinCT
-import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86_64.Lit
@@ -33,7 +31,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.AesGcm.Scratch
-import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
@@ -41,7 +38,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.OpenCT
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
@@ -63,7 +60,6 @@ import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
-meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Fn
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.Gcm.Compose
@@ -621,7 +617,7 @@ arguments in `W` (`cryptEntry_ok`), from what the precondition gives
 (`CryptCtx`); `streamText` follows (`StreamText.lean`), then the exit, for
 any message the state represents (`streamText_run`): encrypting appends the
 ciphertext it writes (`streamEncrypt_wp`), decrypting the ciphertext it reads
-(`streamDecrypt_wp`), as AES-GCM's (`Proof/AesGcm/X86_64/StreamCrypt.lean`,
+(`streamDecrypt_wp`), as AES-GCM's (`Proof/AesGcm/X86_64/StreamCryptCT.lean`,
 `StreamRun.lean`).
 -/
 

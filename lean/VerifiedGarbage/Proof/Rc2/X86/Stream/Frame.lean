@@ -7,18 +7,17 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.Rc2.X86.Key
+public import VerifiedGarbage.Proof.Rc2.X86.Key
 meta import VerifiedGarbage.Proof.Rc2.X86.Key
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 public import VerifiedGarbage.Proof.Rc2.Scratch
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Rc2.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
@@ -68,12 +67,10 @@ meta import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 meta import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
 meta import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.Wp
@@ -82,7 +79,6 @@ public import VerifiedGarbage.Impl.Rc2.X86.Stream
 public import VerifiedGarbage.Spec.Rc2.Contract
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.X86.KeyLit
-meta import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Wp

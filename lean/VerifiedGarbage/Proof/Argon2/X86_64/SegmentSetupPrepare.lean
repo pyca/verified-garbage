@@ -27,7 +27,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
 
 /-! ### `Argon2.X86_64.FillKernelStable`, which this module and modules that import it used -/
 

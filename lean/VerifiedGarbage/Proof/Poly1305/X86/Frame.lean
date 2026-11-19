@@ -7,10 +7,9 @@ import VerifiedGarbage.Proof.Poly1305.X86.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Poly1305.X86.Buffer
 public import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.Stream
-meta import VerifiedGarbage.Proof.Poly1305.X86.Buffer
+meta import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import VerifiedGarbage.Proof.Poly1305.Stream

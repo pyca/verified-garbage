@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
@@ -34,7 +34,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Prefix
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenSplit
@@ -47,7 +46,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Gcm.StreamTo
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenToSplit.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Prefix
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -59,9 +58,7 @@ meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Gcm.StreamTo
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops

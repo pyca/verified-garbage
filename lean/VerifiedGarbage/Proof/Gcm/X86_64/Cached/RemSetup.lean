@@ -24,10 +24,9 @@ import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds

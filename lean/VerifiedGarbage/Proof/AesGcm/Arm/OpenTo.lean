@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Zeroize.Common
 import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
-import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 import VerifiedGarbage.Proof.AesGcm.Scratch

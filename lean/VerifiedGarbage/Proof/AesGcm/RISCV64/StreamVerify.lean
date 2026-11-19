@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Ghash
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
-import VerifiedGarbage.Proof.AesGcm.RISCV64.FinTag
+import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamInit
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Flush
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Compare
 import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
-import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Run

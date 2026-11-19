@@ -16,11 +16,9 @@ meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
-public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Framework.X86_64.Depth
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -45,7 +43,7 @@ section
 `vg_sha1_digest` is the generic one-shot digest
 (`Impl/MdStream/X86_64/OneShot.lean`) for SHA-1's streaming parameters, its
 initial hash value's code `init` and an implementation `f` of the compression
-function, as SHA-256's is (`Proof/Sha256/X86_64/OneShot.lean`). Its body is
+function, as SHA-256's is (`Proof/Pbkdf2/Md/X86_64/Hashes/Sha256.lean`). Its body is
 verified by the generic proofs (`OneShot.verified`) against `OneShot.oneK`,
 which implies the contract of `digest` with a scratch buffer as its last
 argument (`digestScratchContract`); in a frame of its own, it is

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
-import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.Cmac.Frame

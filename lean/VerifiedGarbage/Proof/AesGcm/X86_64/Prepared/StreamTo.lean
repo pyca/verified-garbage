@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
@@ -46,12 +45,11 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixOk
@@ -60,7 +58,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec

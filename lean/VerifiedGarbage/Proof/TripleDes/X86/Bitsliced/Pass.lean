@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Bitsliced.Step
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 public import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.TripleDes.Schedule
@@ -13,6 +12,432 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.TripleDes.X86.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.Bitsliced.Machine
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+public import VerifiedGarbage.Proof.TripleDes.X86.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+meta import VerifiedGarbage.Proof.TripleDes.X86.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.SboxTables
+
+/-! ### `TripleDes.X86.Bitsliced.Step`, which only this module used -/
+
+section
+
+/-! ### `TripleDes.X86.Bitsliced.Sbox`, which only this module used -/
+
+section
+
+/-!
+# The bitsliced S-box circuits' machine code on x86 (32-bit)
+
+Untrusted. As on ARMv7 (`Proof/TripleDes/Arm/Bitsliced/Sbox.lean`): the
+kernel checks each allocated circuit on all 64 inputs, with its inputs in
+the first six words of the working space and its values spilled to the
+words after them (`sboxCfg`), and the truth-table evaluator lifts that check
+to every bit position of arbitrary 32-bit words. The circuits write only
+those words of memory (`sbox_ok`'s frame), and never the working space's
+base.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86.Bitsliced
+
+open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.TripleDes.X86.Bitslice
+open VG.Proof.TripleDes (inputTable outputTable)
+
+noncomputable def sboxLiterals : Array (Prog isa) :=
+  #[sbox0.lit, sbox1.lit, sbox2.lit, sbox3.lit, sbox4.lit, sbox5.lit, sbox6.lit, sbox7.lit]
+
+noncomputable def sboxLiteral (j : Nat) : Prog isa := sboxLiterals.getD j (.block [])
+
+/-- The words the circuits use: their inputs and the values they spill. -/
+def sboxCfg : Cfg := { base := .ebp, slots := spills, ext := .ebp, exts := 0 }
+
+def sboxEnv : Env Nat :=
+  { reg := fun _ => none,
+    slot := fun k => if k < 6 then some (inputTable k) else none }
+
+def sboxPost (j : Nat) (e : Env Nat) : Bool :=
+  (List.range 4).all fun i => e.reg (outReg i) == some (outputTable j i)
+
+theorem sbox_check : ∀ j < 8,
+    check (table 32 64) sboxCfg (fun _ => none) (instrs (sboxLiteral j)) sboxEnv (sboxPost j) = true := by
+  lit_decide
+
+theorem sboxLiteral_eq : ∀ j < 8, sboxLiteral j = .block (sboxCode j)
+  | 0, _ => sbox0.lit_eq.symm
+  | 1, _ => sbox1.lit_eq.symm
+  | 2, _ => sbox2.lit_eq.symm
+  | 3, _ => sbox3.lit_eq.symm
+  | 4, _ => sbox4.lit_eq.symm
+  | 5, _ => sbox5.lit_eq.symm
+  | 6, _ => sbox6.lit_eq.symm
+  | 7, _ => sbox7.lit_eq.symm
+  | n + 8, h => by omega
+
+/-- Bit `p` of each input word, as the S-box's input. -/
+def inputsAt (s : State) (p : Nat) : BitVec 6 :=
+  ofBits 6 fun i => (fw s i).getLsbD p
+
+theorem inputsAt_bit (s : State) (p k : Nat) (hk : k < 6) :
+    (inputsAt s p).toNat.testBit k = (fw s k).getLsbD p := by
+  simp only [inputsAt, BitVec.testBit_toNat, getLsbD_ofBits, hk, decide_true, Bool.true_and]
+
+/-- Every S-box output bit, for arbitrary input words; only the circuits'
+words of memory change, and not the working space's base. -/
+theorem sbox_ok (j : Nat) (hj : j < 8) {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa (sboxCode j) s = some s' ∧
+      (∀ i < 4, ∀ p < 32, (s'.gpr (outReg i)).getLsbD p =
+        (Spec.TripleDes.sBox j (inputsAt s p)).getLsbD i) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esp = s.gpr .esp ∧
+      Frame [slotRegion sboxCfg s] s.mem s'.mem := by
+  have codeEq : instrs (sboxLiteral j) = sboxCode j := by rw [sboxLiteral_eq j hj]; rfl
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ (sbox_check j hj)
+  rw [codeEq] at he
+  have hout : ∀ i < 4, e'.reg (outReg i) = some (outputTable j i) := by
+    intro i hi
+    have h := List.all_eq_true.mp hpost i (List.mem_range.mpr hi)
+    exact beq_iff_eq.mp h
+  have key : ∀ p < 32, ∃ s', runBlock isa (sboxCode j) s = some s' ∧
+      Post (TableRel p (inputsAt s p).toNat) sboxCfg (fun _ => none) e' s s'
+        (fun r => ((sboxCode j).all fun i => i.dst != some r) = false) := by
+    intro p hp
+    have hc := (inputsAt s p).isLt
+    refine run (table_sound hp hc) hok ⟨(fun r a h => by cases h), fun k a hk h => ?_,
+      (fun _ _ hk => by simp [sboxCfg] at hk)⟩ he
+    simp only [sboxEnv] at h
+    split at h
+    · rename_i hk6
+      cases h
+      simp only [TableRel, inputTable, testBit_tableOf, hc, decide_true, Bool.true_and,
+        inputsAt_bit s p k hk6]
+      rfl
+    · cases h
+  obtain ⟨s', hs', p₀⟩ := key 0 (by decide)
+  have nesp : ((sboxCode j).all fun i => i.dst != some .esp) = true := by
+    have : ∀ j < 8, ((sboxCode j).all fun i => i.dst != some .esp) = true := by lit_decide
+    exact this j hj
+  refine ⟨s', hs', fun i hi p hp => ?_, p₀.rd, p₀.wr, p₀.base, p₀.other _ (by rw [nesp]; exact Bool.noConfusion),
+    p₀.frame⟩
+  obtain ⟨s'', hs'', p₁⟩ := key p hp
+  obtain rfl := run_unique hs'' hs'
+  have h := p₁.rel.reg (outReg i) _ (hout i hi)
+  simp only [TableRel, outputTable, testBit_tableOf, (inputsAt s p).isLt,
+    decide_true, Bool.true_and] at h
+  rw [BitVec.ofNat_toNat] at h
+  exact h.symm
+
+end VG.Proof.TripleDes.X86.Bitsliced
+
+end
+
+end
+
+/-!
+# One S-box of a bitsliced round on x86 (32-bit), and the exchange of the halves
+
+As on ARMv7 (`Proof/TripleDes/Arm/Bitsliced/Step.lean`). `sboxStep_ok`: the
+code of S-box `j` (its inputs, the key's bits `inBit j i`, from the round
+key's words in words `kloSlot` and `khiSlot` of the working space, as masks
+XORed with the words of `E`, into the first six words; its circuit; XORing
+its outputs into their words) does to the state words what `step` does, and
+writes only the circuits' words and the state words. `swapHalves_ok`: the
+exchange of the halves does what `swapW` does.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86.Bitsliced
+
+open VG VG.X86 VG.X86.Straight VG.X86.Wp VG.Bitslice VG.Impl.TripleDes.X86.Bitslice
+open VG.Impl.TripleDes.Bitslice
+open VG.Proof.TripleDes.Bitslice (step sboxIn sboxOut outIdx partner swapW)
+
+/-- The all-zero or all-one word. -/
+def maskVal (b : Bool) : BitVec 32 := if b then BitVec.allOnes 32 else 0
+
+theorem getLsbD_mask (b : Bool) {p : Nat} (hp : p < 32) : (maskVal b).getLsbD p = b := by
+  cases b
+  · simp [maskVal]
+  · simp only [maskVal, ite_true, BitVec.getLsbD_allOnes, hp, decide_true]
+
+/-- The carry of a word added to itself is its top bit. -/
+theorem carry_double (x : BitVec 32) : decide (2 ^ 32 ≤ x.toNat + x.toNat) = x.getLsbD 31 := by
+  rw [BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq]
+  have := x.isLt
+  apply decide_eq_decide.mpr
+  omega_using [this]
+
+/-- A word of the working space in a state that differs from `s` by a store to another. -/
+theorem fw_write {s s' : State} (h : Room s) {k j : Nat} {v : BitVec 32}
+    (hm : s'.mem = s.mem.writeW (wordAddr (s.gpr .ebp) k) v) (hb : s'.gpr .ebp = s.gpr .ebp)
+    (hk : k < wsWords) (hj : j < wsWords) : fw s' j = if j = k then v else fw s j := by
+  rw [← fw_stFw h hk hj v, fw, fw, hb, hm]; rfl
+
+/-! ## Inputs -/
+
+/-- One input: bit `c` of the word in slot `kslot` as a mask, XORed with the
+word in slot `st`, into slot `i`. -/
+theorem inputAt_wp {s : State} (h : Room s) {kslot c st i : Nat} (hk : kslot < wsWords) (hc : c < 32)
+    (hst : st < wsWords) (hi : i < wsWords) :
+    WP isa (.block (inputAt kslot c st i)) s fun s' =>
+      s'.mem = s.mem.writeW (wordAddr (s.gpr .ebp) i) (maskVal ((fw s kslot).getLsbD c) ^^^ fw s st) ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have tail : ∀ (s₂ : State), s₂.cf = some ((fw s kslot).getLsbD c) → s₂.mem = s.mem →
+      (∀ r, r ≠ .eax → s₂.gpr r = s.gpr r) → s₂.rd = s.rd → s₂.wr = s.wr →
+      WP isa (.block [.alu .sbb .ecx (.reg .ecx), .alu .xor .ecx (.mem (ws st)), .store (ws i) .ecx]) s₂
+        fun s' => s'.mem = s.mem.writeW (wordAddr (s.gpr .ebp) i)
+            (maskVal ((fw s kslot).getLsbD c) ^^^ fw s st) ∧
+          (∀ r, r ≠ .eax → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    intro s₂ cf₂ m₂ g₂ rd₂ wr₂
+    refine wp_sbb_self cf₂ fun s₃ u₃ => ?_
+    have b₃ : s₃.gpr .ebp = s.gpr .ebp := by rw [u₃.other _ (by decide), g₂ _ (by decide)]
+    refine wp_xorm (B := s.gpr .ebp) b₃ (by rw [u₃.rd, u₃.wr, rd₂, wr₂]; exact slot_rd h hst) fun s₄ u₄ => ?_
+    have b₄ : s₄.gpr .ebp = s.gpr .ebp := by rw [u₄.other _ (by decide), b₃]
+    refine wp_stm (B := s.gpr .ebp) b₄ (by rw [u₄.wr, u₃.wr, wr₂]; exact slot_in h hi) fun s₅ u₅ =>
+      WP.block_nil ⟨?_, fun r h0 h1 => ?_, by rw [u₅.rd, u₄.rd, u₃.rd, rd₂], by rw [u₅.wr, u₄.wr, u₃.wr, wr₂]⟩
+    · rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₄.gpr, u₃.gpr, u₃.mem, m₂]
+      rfl
+    · rw [u₅.gpr, u₄.other _ h1, u₃.other _ h1, g₂ _ h0]
+  unfold inputAt
+  split
+  · rename_i h31
+    subst h31
+    refine wp_ldm (B := s.gpr .ebp) rfl (slot_rd h hk) fun s₁ u₁ => ?_
+    refine wp_add fun s₂ u₂ cf₂ => ?_
+    refine tail s₂ ?_ (by rw [u₂.mem, u₁.mem]) (fun r hr => by rw [u₂.other _ hr, u₁.other _ hr])
+      (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
+    rw [cf₂, carry_double, u₁.gpr]; rfl
+  · rename_i h31
+    refine wp_ldm (B := s.gpr .ebp) rfl (slot_rd h hk) fun s₁ u₁ => ?_
+    refine wp_shr (by omega_using [hc, h31]) fun s₂ u₂ cf₂ => ?_
+    refine tail s₂ ?_ (by rw [u₂.mem, u₁.mem]) (fun r hr => by rw [u₂.other _ hr, u₁.other _ hr])
+      (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr])
+    rw [cf₂, u₁.gpr, Nat.add_sub_cancel]; rfl
+
+def inputsN (ρ : Role) (j n : Nat) : List Instr := (List.range n).flatMap (inputStep ρ j)
+
+theorem inputCode_eq (ρ : Role) (j : Nat) : inputCode ρ j = inputsN ρ j 6 := rfl
+
+theorem inputsN_succ (ρ : Role) (j n : Nat) :
+    inputsN ρ j (n + 1) = inputsN ρ j n ++ inputStep ρ j n := by
+  simp only [inputsN, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
+    List.append_nil]
+
+theorem readWord_lt : ∀ ρ : Role, ∀ j < 8, ∀ i < 6, readWord ρ (eBit (inBit j i)) < 64 := by
+  intro ρ; cases ρ <;> lit_decide
+
+/-- The slot of the key word with S-box `j`'s input `m`. -/
+def keySlot (j m : Nat) : Nat := if inBit j m < 32 then kloSlot else khiSlot
+
+theorem keySlot_bounds (j m : Nat) : 6 ≤ keySlot j m ∧ keySlot j m < wsWords := by
+  unfold keySlot; split <;> decide
+
+/-- The first `n` inputs of S-box `j`, in the first words of the working space. -/
+structure Ins (ρ : Role) (j n : Nat) (s s' : State) : Prop where
+  ins : ∀ m < n, fw s' m = maskVal ((fw s (keySlot j m)).getLsbD (inBit j m % 32)) ^^^
+    words s (readWord ρ (eBit (inBit j m)))
+  rest : ∀ k, n ≤ k → k < wsWords → fw s' k = fw s k
+  regs : ∀ r, r ≠ .eax → r ≠ .ecx → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  frame : Frame [headR s 6] s.mem s'.mem
+
+theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {s : State} (h : Room s) :
+    WP isa (.block (inputsN ρ j n)) s (Ins ρ j n s) := by
+  induction n with
+  | zero =>
+    exact WP.block_nil ⟨fun m hm => by omega, fun _ _ _ => rfl, fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
+  | succ n ih =>
+    rw [inputsN_succ, WP.block_append_iff]
+    refine WP.mono (ih (by omega_using [hn])) fun s₁ p₁ => ?_
+    have b₁ : s₁.gpr .ebp = s.gpr .ebp := p₁.regs _ (by decide) (by decide)
+    have h₁ : Room s₁ := h.congr b₁ p₁.wr
+    obtain ⟨kb0, kb1⟩ := keySlot_bounds j n
+    have hw := readWord_lt ρ j hj n (by omega_using [hn])
+    have hst : stSlot (readWord ρ (eBit (inBit j n))) < wsWords := by
+      unfold stSlot spills wsWords; omega_using [hw]
+    refine WP.mono (inputAt_wp h₁ (kslot := keySlot j n) (c := inBit j n % 32)
+      (st := stSlot (readWord ρ (eBit (inBit j n)))) (i := n) kb1 (Nat.mod_lt _ (by decide)) hst
+      (by unfold wsWords; omega_using [hn])) fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
+    have b₂ : s₂.gpr .ebp = s₁.gpr .ebp := g₂ _ (by decide) (by decide)
+    have fwn : ∀ k, k < wsWords → fw s₂ k = if k = n then
+        maskVal ((fw s₁ (keySlot j n)).getLsbD (inBit j n % 32)) ^^^
+          fw s₁ (stSlot (readWord ρ (eBit (inBit j n)))) else fw s₁ k := fun k hk =>
+      fw_write h₁ m₂ b₂ (by unfold wsWords; omega_using [hn]) hk
+    refine ⟨fun m hm => ?_, fun k hk hk' => ?_, fun r h0 h1 => by rw [g₂ r h0 h1, p₁.regs r h0 h1],
+      rd₂.trans p₁.rd, wr₂.trans p₁.wr, ?_⟩
+    · rw [fwn m (by unfold wsWords; omega_using [hn, hm])]
+      by_cases he : m = n
+      · subst he
+        rw [ite_eq_left rfl, p₁.rest _ (by omega_using [kb0, hn]) kb1,
+          p₁.rest _ (by unfold stSlot spills; omega_using [hn]) hst]
+        rfl
+      · rw [ite_eq_right he]; exact p₁.ins m (by omega_using [hm, he])
+    · rw [fwn k hk', ite_eq_right (by omega_using [hk]), p₁.rest k (by omega_using [hk]) hk']
+    · refine p₁.frame.trans ?_
+      rw [m₂, b₁]
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+        (slot_contains _ (by omega_using [hn]) (by have := h.fit; unfold wsWords at this; omega_using [this]))
+
+/-! ## Outputs -/
+
+def outPost (ρ : Role) (j : Nat) (e : Env Nat) : Bool :=
+  (List.range 64).all fun k => e.slot (spills + k) ==
+    some (match outIdx ρ j k with
+      | some i => 2 ^ k ^^^ 2 ^ (64 + i)
+      | none => 2 ^ k)
+
+theorem output_check : ∀ ρ : Role, ∀ j < 8,
+    check (vars 32) varsCfg (fun _ => none) (outputCode ρ j) (varEnv outRegs) (outPost ρ j) = true := by
+  intro ρ; cases ρ <;> lit_decide
+
+theorem output_kept : ∀ ρ : Role, ∀ j < 8,
+    ((outputCode ρ j).all fun i => i.dst != some .esp) = true := by
+  intro ρ; cases ρ <;> lit_decide
+
+theorem outIdx_lt (ρ : Role) (j x i : Nat) (h : outIdx ρ j x = some i) : i < 4 := by
+  have := List.mem_of_find?_eq_some h
+  simpa using this
+
+theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
+    ∃ s', runBlock isa (outputCode ρ j) s = some s' ∧
+      (∀ k < 64, words s' k = match outIdx ρ j k with
+        | some i => words s k ^^^ s.gpr (outReg i)
+        | none => words s k) ∧
+      s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [stR s] s.mem s'.mem := by
+  obtain ⟨e', s', hpost, hrun, p⟩ := varsRun outRegs (output_check ρ j hj) h
+  simp only [outPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hpost
+  refine ⟨s', hrun, fun k hk => ?_, p.base, p.other _ (by rw [output_kept ρ j hj]; exact Bool.noConfusion),
+    p.rd, p.wr, p.frame⟩
+  rw [varRel_word p.rel hk (hpost k hk)]
+  split
+  · rename_i i hi
+    have hi4 := outIdx_lt ρ j k i hi
+    rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega_using [hk])
+      (by simp [varN, outRegs]; omega_using [hi4])]
+    have e1 : ¬ 64 + i < 64 := by omega_using []
+    simp only [varVals, hk, ite_true, e1, ite_false, Nat.add_sub_cancel_left, outReg]
+  · rw [xorSet_two_pow _ (by simp [varN]; omega_using [hk])]
+    simp only [varVals, hk, ite_true]
+
+/-! ## One S-box -/
+
+theorem sboxStep_eq (ρ : Role) (j : Nat) :
+    sboxStep ρ j = inputsN ρ j 6 ++ (sboxCode j ++ outputCode ρ j) := by
+  simp only [sboxStep, inputCode_eq, List.append_assoc]
+
+/-- The key `k`'s low and high words. -/
+structure KeyWords (lo hi : BitVec 32) (k : BitVec 48) : Prop where
+  lo : ∀ b < 32, lo.getLsbD b = k.getLsbD b
+  hi : ∀ b < 16, hi.getLsbD b = k.getLsbD (32 + b)
+
+theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) (k : BitVec 48)
+    (hkey : KeyWords (fw s kloSlot) (fw s khiSlot) k) :
+    WP isa (.block (sboxStep ρ j)) s fun s' =>
+      (∀ x < 64, words s' x = step ρ k j (words s) x) ∧ s'.gpr .ebp = s.gpr .ebp ∧
+      s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [stR s] s.mem s'.mem := by
+  rw [sboxStep_eq, WP.block_append_iff]
+  refine WP.mono (inputsN_ok ρ hj (Nat.le_refl 6) h) fun s₁ p₁ => ?_
+  have g₁ : s₁.gpr .ebp = s.gpr .ebp := p₁.regs _ (by decide) (by decide)
+  have h₁ : Room s₁ := h.congr g₁ p₁.wr
+  obtain ⟨s₂, run₂, out₂, rd₂, wr₂, g₂', sp₂, f₂⟩ := sbox_ok j hj (h₁.ok rfl (by decide) rfl)
+  have g₂ : s₂.gpr .ebp = s.gpr .ebp := g₂'.trans g₁
+  have h₂ : Room s₂ := h.congr g₂ (wr₂.trans p₁.wr)
+  obtain ⟨s₃, run₃, w₃, g₃, sp₃, rd₃, wr₃, f₃⟩ := outputs_ok ρ hj h₂
+  refine WP.of_runBlock ⟨s₃, runBlock_cat_some run₂ run₃, ?_⟩
+  have f₁₂ : Frame [headR s spills] s.mem s₂.mem := by
+    have e : slotRegion sboxCfg s₁ = headR s spills := by simp only [slotRegion, sboxCfg, headR, g₁]
+    rw [e] at f₂
+    exact (headR_mono (by decide) p₁.frame).trans f₂
+  have w₂ : ∀ x < 64, words s₂ x = words s x := fun x hx => by
+    simp only [words, fw, g₂]
+    exact fw_frame h f₁₂ (Nat.le_add_right _ _) (by unfold spills wsWords; omega_using [hx])
+  have kbit : ∀ i < 6, (fw s (keySlot j i)).getLsbD (inBit j i % 32) = k.getLsbD (inBit j i) := by
+    intro i hi
+    have hb : inBit j i < 48 := by unfold inBit; omega_using [hi, hj]
+    unfold keySlot
+    split
+    · rename_i hlt
+      rw [Nat.mod_eq_of_lt hlt]; exact hkey.lo _ hlt
+    · rename_i hge
+      rw [show inBit j i % 32 = inBit j i - 32 by omega_using [hb, hge],
+        hkey.hi _ (by omega_using [hb, hge])]
+      congr 1; omega_using [hge]
+  have hin : ∀ i < 6, fw s₁ i =
+      maskVal (k.getLsbD (inBit j i)) ^^^ words s (readWord ρ (eBit (inBit j i))) := by
+    intro i hi
+    rw [p₁.ins i hi, kbit i hi]
+  refine ⟨fun x hx => ?_, g₃.trans g₂, sp₃.trans (sp₂.trans (p₁.regs _ (by decide) (by decide))),
+    rd₃.trans (rd₂.trans p₁.rd), wr₃.trans (wr₂.trans p₁.wr), ?_⟩
+  · rw [w₃ _ hx]
+    simp only [VG.Proof.TripleDes.Bitslice.step]
+    rcases hidx : outIdx ρ j x with _ | i
+    · exact w₂ x hx
+    · have hi4 := outIdx_lt ρ j x i hidx
+      dsimp only
+      rw [w₂ x hx]
+      congr 1
+      apply BitVec.eq_of_getLsbD_eq
+      intro p hp
+      rw [out₂ i hi4 p hp]
+      simp only [sboxOut, getLsbD_ofBits, hp, decide_true, Bool.true_and]
+      congr 2
+      apply BitVec.eq_of_getLsbD_eq
+      intro i' hi'
+      simp only [inputsAt, sboxIn, getLsbD_ofBits, hi', decide_true, Bool.true_and, hin i' hi',
+        BitVec.getLsbD_xor, getLsbD_mask _ hp]
+      rw [Bool.xor_comm]
+  · refine (f₁₂.sub fun r hr => ?_).trans (by rw [← stR_congr g₂]; exact f₃)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by unfold spills; omega_using [])⟩
+
+/-! ## The exchange of the halves -/
+
+/-- The word that goes into word `k`. -/
+def swapSlot (k : Nat) : Nat := match partner k with | some y => y | none => k
+
+def swapPost (e : Env Nat) : Bool :=
+  (List.range 64).all fun k => e.slot (spills + k) == some (2 ^ swapSlot k)
+
+theorem swap_check :
+    check (vars 32) varsCfg (fun _ => none) swapHalves (varEnv []) swapPost = true := by
+  lit_decide
+
+theorem swap_kept : (swapHalves.all fun i => i.dst != some .esp) = true := by lit_decide
+
+theorem swapSlot_lt : ∀ k < 64, swapSlot k < 64 := by lit_decide
+
+theorem swapHalves_ok {s : State} (h : Room s) :
+    ∃ s', runBlock isa swapHalves s = some s' ∧ (∀ x < 64, words s' x = swapW (words s) x) ∧
+      s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [stR s] s.mem s'.mem := by
+  obtain ⟨e', s', hpost, hrun, p⟩ := varsRun [] swap_check h
+  simp only [swapPost, List.all_eq_true, List.mem_range, beq_iff_eq] at hpost
+  have key : ∀ k < 64, words s' k = words s (swapSlot k) := by
+    intro k hk
+    rw [varRel_word p.rel hk (hpost k hk), xorSet_two_pow _ (by simp [varN]; exact swapSlot_lt k hk)]
+    simp only [varVals, swapSlot_lt k hk, ite_true]
+  refine ⟨s', hrun, fun x hx => ?_, p.base, p.other _ (by rw [swap_kept]; exact Bool.noConfusion), p.rd, p.wr,
+    p.frame⟩
+  rw [key _ hx]
+  simp only [swapW, swapSlot]
+  rcases partner x with _ | y <;> rfl
+
+end VG.Proof.TripleDes.X86.Bitsliced
+
+end
+
+end
 
 /-!
 # Bitsliced DES rounds and passes on x86 (32-bit)

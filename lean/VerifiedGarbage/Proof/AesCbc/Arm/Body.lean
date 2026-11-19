@@ -8,10 +8,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 public import VerifiedGarbage.Impl.AesCbc.Arm
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! ### `AesCbc.Arm.Loop`, which this module and modules that import it used -/
@@ -28,7 +27,7 @@ block function pushes its stack argument in the 8 bytes below the stack
 pointer, which may not overlap any buffer.
 
 The registers are saved, and the arguments kept, as by AES-CMAC's
-`vg_cmac_aes_update` (`Proof/CmacAes/Arm/UpdateLoop.lean`), whose names for
+`vg_cmac_aes_update` (`Proof/CmacAes/Arm/UpdateCorrect.lean`), whose names for
 them (`W`, `R`, `Dp`, `N`, `S`) and saved memory (`savedMem`) this reuses.
 
 The invariant after `k` blocks (`LInv`): the registers hold the arguments

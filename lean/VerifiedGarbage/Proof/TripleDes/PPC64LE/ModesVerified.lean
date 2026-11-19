@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Modes
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
+meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 meta import VerifiedGarbage.Impl.TripleDes.PPC64LE.Modes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit

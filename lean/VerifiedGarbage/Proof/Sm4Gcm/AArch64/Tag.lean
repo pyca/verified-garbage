@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Flush
+public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Flush
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Gcm.Ctr
-public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Absorb
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Callee
 import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops

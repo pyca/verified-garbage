@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Cast5.ModeCipher
 meta import VerifiedGarbage.Proof.Modes.X86_64.Core
@@ -41,7 +40,6 @@ meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Modes.X86_64.Words
-meta import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ### `Cast5.X86_64.ModeCore`, which this module and modules that import it used -/

@@ -18,9 +18,8 @@ import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
-public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
 import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import Batteries.Logic

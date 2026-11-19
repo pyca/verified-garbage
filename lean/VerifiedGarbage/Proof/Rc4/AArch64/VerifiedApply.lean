@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Rc4.AArch64.Group
+public import VerifiedGarbage.Proof.Rc4.AArch64.Group
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Rc4.AArch64
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 import VerifiedGarbage.Proof.Rc4.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -22,7 +21,7 @@ public import VerifiedGarbage.Spec.Rc4
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Spec.Rc4
-meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Group
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 meta import VerifiedGarbage.Impl.Rc4.AArch64
 meta import VerifiedGarbage.Proof.Framework.Offset

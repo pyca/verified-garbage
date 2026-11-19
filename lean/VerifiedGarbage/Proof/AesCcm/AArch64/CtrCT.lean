@@ -12,11 +12,11 @@ meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Header
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Header
 meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

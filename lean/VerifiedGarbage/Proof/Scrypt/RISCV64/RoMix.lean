@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.RISCV64.Common
+public import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
 public import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
-import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
 import VerifiedGarbage.Proof.Scrypt.RISCV64.Lit
 import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps

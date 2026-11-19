@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
-import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel

@@ -19,8 +19,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Seed.X86.Crypt8
-meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Seed.X86.Prologue
+meta import VerifiedGarbage.Proof.Seed.X86.Prologue
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Aes.X86.Sbox

@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Aes.KeyExp
@@ -27,7 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
@@ -43,7 +42,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 meta import VerifiedGarbage.Proof.AesGcm.ScratchGather
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Run

@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 Untrusted: everything here is checked by Lean. `gatherCopy` walks the
 descriptors as ChaCha20-Poly1305's `gather` does, with `copy` for each slice,
-so its proofs are those of `Proof/ChaCha20Poly1305/X86_64/Gather/Loop.lean`
+so its proofs are those of `Proof/ChaCha20Poly1305/X86_64/Gather/LoopCT.lean`
 and `LoopCT.lean` (whose invariants, `GatherPre` and `GInv`, it shares) with
 `copy_ok` for `copyBytes_ok`: the `cnt` slices copied to `Dst`
 (`gatherCopy_wp`), and two runs whose descriptors agree, from states with

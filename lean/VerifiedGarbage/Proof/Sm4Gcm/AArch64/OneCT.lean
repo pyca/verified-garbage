@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.BodyCT
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.BodyCT
+import VerifiedGarbage.Proof.Sm4Gcm.AArch64.FinCT
+meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.FinCT
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -10,10 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.FinCT
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Body
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Rel
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.StreamVerify
+meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Contract
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -23,35 +20,24 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Save
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Save
-public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Body
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Cmp
-import VerifiedGarbage.Proof.Sm4Gcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.FinTag
-public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Env
+public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Flush
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.J0
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Cmp
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Contract
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.FinTag
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Flush
 meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-meta import VerifiedGarbage.Proof.Sm4Gcm.AArch64.J0
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-! ### `Sm4Gcm.AArch64.StreamCryptCT`, which this module and modules that import it used -/

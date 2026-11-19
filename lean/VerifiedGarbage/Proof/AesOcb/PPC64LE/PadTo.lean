@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 Untrusted: everything here is checked by Lean. `padTo d` writes `pad(S)`
 (§4.1) of the `n < 16` bytes `S` at `r24` to `W + d`: zeros, the bytes
 (AES-GCM's `copyLoop`), and `0x80` after them (`padTo_ok`). As on AArch64
-(`Proof/AesOcb/AArch64/PadTo.lean`).
+(`Proof/AesOcb/AArch64/LNtz.lean`).
 -/
 
 @[expose] public section

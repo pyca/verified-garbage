@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -15,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch

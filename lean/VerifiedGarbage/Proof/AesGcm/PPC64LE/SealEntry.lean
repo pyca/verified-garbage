@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne

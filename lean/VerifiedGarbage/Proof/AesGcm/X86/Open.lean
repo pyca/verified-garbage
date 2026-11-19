@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -23,8 +23,6 @@ meta import VerifiedGarbage.TCB.X86.State
 meta import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 meta import VerifiedGarbage.Proof.Gcm.Compose
-public import VerifiedGarbage.Proof.AesGcm.X86.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
 meta import VerifiedGarbage.Proof.AesGcm.X86.CryptTail

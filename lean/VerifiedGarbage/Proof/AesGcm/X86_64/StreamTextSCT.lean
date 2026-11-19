@@ -17,9 +17,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
@@ -27,9 +25,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith

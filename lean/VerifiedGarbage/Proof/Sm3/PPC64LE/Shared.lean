@@ -103,7 +103,7 @@ end
 # SM3 on PPC64LE: the shared contracts
 
 The proofs are written against per-target contracts
-(`Proof/Sm3/PPC64LE/Contract.lean`); these theorems move them to the shared
+(`Proof/Sm3/PPC64LE/Compress.lean`); these theorems move them to the shared
 contracts of `Spec/Sm3/Contract.lean`, which the artifacts are emitted with.
 
 `update` and `finalize` keep their working space (20 words: the compression

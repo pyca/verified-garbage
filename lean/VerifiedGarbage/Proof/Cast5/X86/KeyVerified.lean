@@ -10,9 +10,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
 meta import VerifiedGarbage.Spec.Cast5.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Cast5.X86.Round
+public import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Cast5.KeyMem
@@ -22,9 +21,8 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.X86.SseDword
-meta import VerifiedGarbage.Proof.Cast5.X86.Round
-meta import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.CallLay
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Cast5.KeyMem

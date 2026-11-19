@@ -2,11 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
-import VerifiedGarbage.Proof.Argon2.Slices
-public import VerifiedGarbage.Proof.Argon2.Iterations
+public import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
-public import VerifiedGarbage.Proof.Argon2.Lanes
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Argon2.Contract

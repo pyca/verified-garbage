@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
-import VerifiedGarbage.Proof.AesOcb.X86_64.Pass
 import VerifiedGarbage.Proof.AesOcb.X86_64.Words
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Idea.AArch64.Key
 public import VerifiedGarbage.Proof.Idea.Inverse
-public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.TCB.AArch64.Target

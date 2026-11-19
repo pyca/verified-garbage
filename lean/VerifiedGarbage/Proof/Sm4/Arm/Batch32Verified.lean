@@ -31,7 +31,6 @@ public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sm4
-import VerifiedGarbage.Proof.Sm4.Arm.BatchLoop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.AesCtr.Ctr32

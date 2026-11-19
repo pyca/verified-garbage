@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Words
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Args
 public import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env
 import VerifiedGarbage.Proof.AesOcb.PPC64LE.LNtz
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesOcb.PPC64LE

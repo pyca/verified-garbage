@@ -4,7 +4,7 @@ module
 
 Its multiplication is in radix `2¹³`, with `mul`, or in radix `2³²`, with `umaal` (CPU feature
 `umaal`): `blocks umaal`, `update umaal` and `finalize umaal`, proven for both
-(`Proof/Poly1305/Arm/Steps.lean`). A function that absorbs blocks is emitted with each.
+(`Proof/Poly1305/Arm/Finalize.lean`). A function that absorbs blocks is emitted with each.
 -/
 
 @[expose] public section

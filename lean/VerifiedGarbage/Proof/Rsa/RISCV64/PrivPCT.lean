@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Rsa.RISCV64.Priv
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPre
+public import VerifiedGarbage.Proof.Rsa.RISCV64.PrivPreCall
 
 /-! ### `Rsa.RISCV64.PrivVerified`, which the modules that import this one used -/
 

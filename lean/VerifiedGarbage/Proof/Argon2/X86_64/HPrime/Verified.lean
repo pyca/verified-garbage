@@ -15,19 +15,17 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update

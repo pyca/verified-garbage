@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Cipher
+public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
 import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE
@@ -28,7 +28,7 @@ public import VerifiedGarbage.Spec.Blowfish
 import VerifiedGarbage.Proof.Blowfish.Schedule
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.Semantics
-meta import VerifiedGarbage.Proof.Blowfish.PPC64LE.Cipher
+meta import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.Blowfish.PPC64LE
@@ -40,13 +40,11 @@ meta import VerifiedGarbage.Spec.Blowfish
 meta import VerifiedGarbage.Proof.Blowfish.Schedule
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 meta import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.Lit
-meta import VerifiedGarbage.Proof.Blowfish.PPC64LE.Ecb
 meta import VerifiedGarbage.Proof.Blowfish.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.TCB.PPC64LE.Target

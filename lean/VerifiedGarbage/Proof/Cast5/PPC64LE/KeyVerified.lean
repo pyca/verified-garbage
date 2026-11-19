@@ -24,7 +24,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Cast5.KeyMem
@@ -35,7 +34,6 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-meta import VerifiedGarbage.Proof.Cast5.PPC64LE.Ecb
 meta import VerifiedGarbage.Impl.Cast5.PPC64LE
 meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Spill

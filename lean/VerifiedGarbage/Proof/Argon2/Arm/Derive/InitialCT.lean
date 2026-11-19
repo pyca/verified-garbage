@@ -1,32 +1,28 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
-meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
-meta import VerifiedGarbage.Proof.Argon2.Arm.Mix
+meta import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 meta import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-! ### `Argon2.Arm.Derive.CTCall`, which this module and modules that import it used -/

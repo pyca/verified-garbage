@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.References
 import VerifiedGarbage.Proof.Argon2.IterationsIndices
 public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

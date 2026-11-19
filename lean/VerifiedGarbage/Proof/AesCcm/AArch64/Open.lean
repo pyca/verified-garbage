@@ -1,5 +1,6 @@
 module
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Header
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant

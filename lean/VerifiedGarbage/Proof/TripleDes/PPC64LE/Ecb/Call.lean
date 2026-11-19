@@ -8,13 +8,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundLit
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Block

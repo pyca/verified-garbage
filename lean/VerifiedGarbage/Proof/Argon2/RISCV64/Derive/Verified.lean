@@ -3,50 +3,900 @@ module
 public import VerifiedGarbage.Impl.Argon2.RISCV64.Derive
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Correct
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.InitialCT
-import VerifiedGarbage.Proof.Argon2.References
-import VerifiedGarbage.Proof.Argon2.Iterations
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Correct
+import VerifiedGarbage.Proof.Argon2.IterationsIndices
+public import VerifiedGarbage.Proof.Argon2.Slices
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCT1
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.InitialCT
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Correct
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Scratch
-meta import VerifiedGarbage.Proof.Argon2.References
-meta import VerifiedGarbage.Proof.Argon2.Iterations
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.CTCall
-import VerifiedGarbage.Proof.Argon2.FinalReduction
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Reduce
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Reduce
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillLoops
-public import VerifiedGarbage.Proof.Argon2.FillStep
-public import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Proof.Argon2.IterationsIndices
-import VerifiedGarbage.Proof.Argon2.SegmentIndices
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillLoops
-meta import VerifiedGarbage.Proof.Argon2.FillStep
-meta import VerifiedGarbage.Proof.Argon2.Slices
 meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
+meta import VerifiedGarbage.Proof.Argon2.Slices
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Argon2.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.FillStep
+import VerifiedGarbage.Proof.Argon2.SegmentIndices
+meta import VerifiedGarbage.Proof.Argon2.FillStep
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillBlock
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCT1
 public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.FillPositions
-import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCache
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.FillPositions
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.FillCall
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
-meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
 meta import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
+public import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
+import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.Initial
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.CT
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Correct
+import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+public import VerifiedGarbage.Proof.Framework.RISCV64.FrameTaint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.Derive.HCall
+meta import VerifiedGarbage.Proof.Argon2.RISCV64.HPrime.Correct
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RISCV64.FrameTaint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Mem
+
+/-! ### `Argon2.RISCV64.Derive.FillCT1`, which only this module used -/
+
+section
+
+/-! ### `Argon2.RISCV64.Derive.InitialCT`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.RISCV64.Derive.CTCall`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.RISCV64.Derive.CTBase`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Argon2 on RISC-V: two runs of the derivation
+
+`Two s₀₁ s₀₂`: two runs with the same public data (`Pub2`: the stack pointer
+and the arguments). The body's pieces are analysed by `frameTaint` from
+`τF ws rs`: `s3`, `s4`, `s0` and the registers `rs` public, and the frame's
+doublewords at the offsets `ws` and the arguments' public bytes (`leaf`,
+from `agreeF`). `RelCT.seqW` composes pieces, carrying what each run
+satisfies by correctness.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.RISCV64.Derive
+
+open VG VG.RISCV64
+open VG.RISCV64.Wp (Upd Mupd wp_add wp_sub wp_addi wp_subi wp_li wp_mv wp_ld wp_sd wp_xor)
+open VG.Impl.Argon2.RISCV64.Derive (argOff)
+
+/-- What two runs share: the stack pointer and the arguments' public bits. -/
+def Pub2 (s₀₁ s₀₂ : State) : Prop := s₀₁.sp = s₀₂.sp ∧ ∀ i < 18, argPub s₀₁ i = argPub s₀₂ i
+
+namespace Pub2
+variable {s₀₁ s₀₂ : State} (h : Pub2 s₀₁ s₀₂)
+include h
+
+theorem E_eq : E s₀₁ = E s₀₂ := by simp only [E, h.1]
+
+theorem arg_eq {i : Nat} (hi : i < 18) (hn : i ∉ intArgs := by decide) : arg s₀₁ i = arg s₀₂ i := by
+  have e := h.2 i hi
+  simp only [argPub, hn, ite_false] at e
+  exact e
+
+theorem arg32_eq {i : Nat} (hi : i < 18) : arg32 s₀₁ i = arg32 s₀₂ i := by
+  have e := h.2 i hi
+  by_cases hn : i ∈ intArgs
+  · simp only [argPub, hn, ite_true] at e
+    have e' := congrArg (BitVec.setWidth 32) e
+    rwa [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq,
+      BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq] at e'
+  · rw [arg32, arg32, h.arg_eq hi hn]
+
+theorem memP_eq : memP s₀₁ = memP s₀₂ := h.arg_eq (i := 13) (by decide)
+theorem scrP_eq : scrP s₀₁ = scrP s₀₂ := h.arg_eq (i := 15) (by decide)
+theorem outP_eq : outP s₀₁ = outP s₀₂ := h.arg_eq (i := 16) (by decide)
+theorem blocksN_eq : blocksN s₀₁ = blocksN s₀₂ := by simp only [blocksN, h.arg_eq (i := 14) (by decide)]
+theorem lanesN_eq : lanesN s₀₁ = lanesN s₀₂ := by simp only [lanesN, h.arg32_eq (i := 7) (by decide)]
+theorem itersN_eq : itersN s₀₁ = itersN s₀₂ := by simp only [itersN, h.arg32_eq (i := 5) (by decide)]
+
+theorem prm_eq : prm s₀₁ = prm s₀₂ := by
+  simp only [prm, kindV, itersN, mcostN, lanesN, outL, h.arg32_eq (i := 0) (by decide),
+    h.arg32_eq (i := 5) (by decide), h.arg32_eq (i := 6) (by decide), h.arg32_eq (i := 7) (by decide),
+    h.arg_eq (i := 17) (by decide)]
+
+end Pub2
+
+/-- Two runs of the derivation, with the same public data. -/
+structure Two (s₀₁ s₀₂ : State) : Prop where
+  hp₁ : DPre s₀₁
+  hp₂ : DPre s₀₂
+  pb : Pub2 s₀₁ s₀₂
+
+/-! ## The taint of the body -/
+
+/-- The bytes of the doublewords at the offsets `ws`. -/
+def slotsOf (ws : List Nat) : Nat := ws.foldr (fun d S => Nat.lor (Slots.bits d 8) S) 0
+
+/-- The public bytes of argument `i`'s copy in the frame: its low word if it
+is a 32-bit one. -/
+def argWidth (i : Nat) : Nat := if i ∈ intArgs then 4 else 8
+
+/-- The public bytes of the arguments' copies in the frame. -/
+def argSlots : Nat := (List.range 18).foldr (fun i S => Nat.lor (Slots.bits (argOff i) (argWidth i)) S) 0
+
+/-- `s3`, `s4`, `s0` and `rs` public, and the doublewords at `ws` and the
+arguments' public bytes. -/
+def τF (ws : List Nat) (rs : List Reg := []) : FrameTaint.T :=
+  ⟨RegSet.ofList (.s3 :: .s4 :: .s0 :: rs), Nat.lor (slotsOf ws) argSlots⟩
+
+theorem slotsOf_testBit {ws : List Nat} {k : Nat} (h : (slotsOf ws).testBit k = true) :
+    ∃ d ∈ ws, d ≤ k ∧ k < d + 8 := by
+  induction ws with
+  | nil => simp [slotsOf] at h
+  | cons d ws ih =>
+    simp only [slotsOf, List.foldr_cons] at h ih
+    rw [show Nat.lor _ _ = _ ||| _ from rfl, Nat.testBit_or, Bool.or_eq_true, Slots.testBit_bits] at h
+    rcases h with h | h
+    · simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      exact ⟨d, by simp, h⟩
+    · obtain ⟨e, he, h⟩ := ih h
+      exact ⟨e, by simp [he], h⟩
+
+theorem argSlots_testBit {k : Nat} (h : argSlots.testBit k = true) :
+    ∃ i < 18, argOff i ≤ k ∧ k < argOff i + argWidth i := by
+  suffices ∀ l : List Nat, (∀ i ∈ l, i < 18) →
+      (l.foldr (fun i S => Nat.lor (Slots.bits (argOff i) (argWidth i)) S) 0).testBit k = true →
+      ∃ i < 18, argOff i ≤ k ∧ k < argOff i + argWidth i from
+    this _ (fun i hi => List.mem_range.mp hi) h
+  intro l hl h
+  induction l with
+  | nil => simp at h
+  | cons i l ih =>
+    simp only [List.foldr_cons] at h
+    rw [show Nat.lor _ _ = _ ||| _ from rfl, Nat.testBit_or, Bool.or_eq_true, Slots.testBit_bits] at h
+    rcases h with h | h
+    · simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      exact ⟨i, hl i (by simp), h⟩
+    · exact ih (fun j hj => hl j (by simp [hj])) h
+
+/-- Byte `j` of equal words. -/
+theorem byte_of_lw32 {m₁ m₂ : Mem} {a₁ a₂ : Addr} (h : m₁.readW a₁ 32 = m₂.readW a₂ 32) {j : Nat}
+    (hj : j < 4) : m₁ (a₁ + BitVec.ofNat 64 j) = m₂ (a₂ + BitVec.ofNat 64 j) := by
+  rw [← Mem.extractLsb'_read m₁ a₁ (n := 4) hj, ← Mem.extractLsb'_read m₂ a₂ (n := 4) hj]
+  have e : m₁.read a₁ 4 = m₂.read a₂ 4 := by simpa [Mem.readW] using h
+  rw [e]
+
+/-- Byte `j` of equal doublewords. -/
+theorem byte_of_lw {m₁ m₂ : Mem} {a₁ a₂ : Addr} (h : m₁.readW a₁ 64 = m₂.readW a₂ 64) {j : Nat}
+    (hj : j < 8) : m₁ (a₁ + BitVec.ofNat 64 j) = m₂ (a₂ + BitVec.ofNat 64 j) := by
+  rw [← Mem.extractLsb'_read m₁ a₁ (n := 8) hj, ← Mem.extractLsb'_read m₂ a₂ (n := 8) hj]
+  have e : m₁.read a₁ 8 = m₂.read a₂ 8 := by simpa [Mem.readW] using h
+  rw [e]
+
+namespace Two
+variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)
+include T
+
+/-- What the taint analysis knows, from what two runs of the body share. -/
+theorem agreeF {s₁ s₂ : State} (h₁ : Inv s₀₁ s₁) (h₂ : Inv s₀₂ s₂) (ws : List Nat) (rs : List Reg)
+    (hw : ∀ d ∈ ws, lw s₀₁ s₁ d = lw s₀₂ s₂ d)
+    (hr : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) : FrameTaint.Agree (τF ws rs) s₁ s₂ := by
+  refine ⟨⟨by rw [h₁.sp, h₂.sp, T.pb.E_eq], fun r hr' => ?_⟩, fun k hk hbit => ?_⟩
+  · simp only [τF, RegSet.mem_ofList, List.mem_cons] at hr'
+    rcases hr' with rfl | rfl | rfl | hr'
+    · rw [h₁.s3, h₂.s3, T.pb.E_eq]
+    · rw [h₁.s4, h₂.s4, T.pb.scrP_eq]
+    · rw [h₁.s0, h₂.s0, hiP, hiP, T.pb.scrP_eq]
+    · exact hr _ hr'
+  · have e : ∀ {s₀ s : State} {d : Nat}, d ≤ k → Inv s₀ s →
+        s.mem (s.gpr .s3 + BitVec.ofNat 64 k) = s.mem (E s₀ + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d)) :=
+      fun {s₀ s d} hd h => by rw [h.s3, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' hd]
+    simp only [τF] at hbit
+    rw [show Nat.lor _ _ = _ ||| _ from rfl, Nat.testBit_or, Bool.or_eq_true] at hbit
+    rcases hbit with hbit | hbit
+    · obtain ⟨d, hd, h₁d, h₂d⟩ := slotsOf_testBit hbit
+      rw [e h₁d h₁, e h₁d h₂]
+      exact byte_of_lw (hw d hd) (by omega_using [h₂d])
+    · obtain ⟨i, hi, h₁d, h₂d⟩ := argSlots_testBit hbit
+      rw [e h₁d h₁, e h₁d h₂]
+      by_cases hn : i ∈ intArgs
+      · simp only [argWidth, hn, ite_true] at h₂d
+        refine byte_of_lw32 ?_ (by omega_using [h₂d])
+        rw [h₁.arg32 T.hp₁ hi, h₂.arg32 T.hp₂ hi, T.pb.arg32_eq hi]
+      · simp only [argWidth, hn, ite_false] at h₂d
+        refine byte_of_lw ?_ (by omega_using [h₂d])
+        rw [h₁.arg T.hp₁ hi, h₂.arg T.hp₂ hi, T.pb.arg_eq hi hn]
+
+/-- A piece the taint analysis proves, from the doublewords at `ws`, which
+both runs agree on, and the registers `rs`. -/
+theorem leaf {P : State → State → Prop} {c : Prog isa} (ws : List Nat) (rs : List Reg)
+    (hag : ∀ s₁ s₂, P s₁ s₂ → Inv s₀₁ s₁ ∧ Inv s₀₂ s₂ ∧ (∀ d ∈ ws, lw s₀₁ s₁ d = lw s₀₂ s₂ d) ∧
+      ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
+    (hc : ∃ hc, (VG.Taint.check frameTaint (τF ws rs) c hc).isSome = true) :
+    RelCT isa P c fun _ _ => True := by
+  obtain ⟨_, hc⟩ := hc
+  refine RelCT.taint (A := frameTaint) (τF ws rs) (fun s₁ s₂ h => ?_) hc
+  obtain ⟨i₁, i₂, hw, hr⟩ := hag s₁ s₂ h
+  exact T.agreeF i₁ i₂ ws rs hw hr
+
+end Two
+
+/-! ## Composition -/
+
+/-- What each run satisfies after a piece, in the relation of its final states. -/
+theorem rel_wp {F₁ F₂ G₁ G₂ : State → Prop} {c : Prog isa}
+    (h : RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) c fun _ _ => True)
+    (w₁ : ∀ s, F₁ s → WP isa c s G₁) (w₂ : ∀ s, F₂ s → WP isa c s G₂) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) c fun s₁ s₂ => G₁ s₁ ∧ G₂ s₂ :=
+  (h.wp fun s₁ s₂ hp => ⟨w₁ s₁ hp.1, w₂ s₂ hp.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+
+/-- Composition, with what each run satisfies after the first part. -/
+theorem RelCT.seqW {F₁ F₂ G₁ G₂ : State → Prop} {c₁ c₂ : Prog isa} {Q : State → State → Prop}
+    (h₁ : RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) c₁ fun _ _ => True)
+    (w₁ : ∀ s, F₁ s → WP isa c₁ s G₁) (w₂ : ∀ s, F₂ s → WP isa c₁ s G₂)
+    (h₂ : RelCT isa (fun s₁ s₂ => G₁ s₁ ∧ G₂ s₂) c₂ Q) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (.seq c₁ c₂) Q :=
+  RelCT.seq (rel_wp h₁ w₁ w₂) h₂
+
+/-- A branch on a condition that agrees in both runs. -/
+theorem RelCT.iteF {F₁ F₂ : State → Prop} {c : Cond} {th el : Prog isa} {Q : State → State → Prop}
+    (hc : ∀ s₁ s₂, F₁ s₁ → F₂ s₂ → isa.eval c s₁ = isa.eval c s₂)
+    (ht : RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) th Q) (he : RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) el Q) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (.ite c th el) Q :=
+  RelCT.ite (fun s₁ s₂ h => hc s₁ s₂ h.1 h.2) (ht.mono (fun _ _ h => h.1) fun _ _ h => h)
+    (he.mono (fun _ _ h => h.1) fun _ _ h => h)
+
+end VG.Proof.Argon2.RISCV64.Derive
+
+end
+
+end
+
+/-!
+# Argon2 on RISC-V: the calls of G and H′, in two runs
+
+`ccall_rel` and `hcall_rel` relate the calls of G and H′, from their
+preconditions in both runs (`ccall_pre`, `hcall_pre`) and their public
+arguments, by the callees' constant time (`RelCT.callEx`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.RISCV64.Derive
+
+open VG VG.RISCV64
+open VG.RISCV64.Wp (Upd Mupd wp_add wp_sub wp_addi wp_subi wp_li wp_mv wp_ld wp_sd wp_xor)
+
+namespace Two
+variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)
+include T
+
+/-- A call of G: `compress(a0, a1, a2, a3)` to `scratch + o`, with the same
+blocks in both runs. -/
+theorem ccall_rel {o : Nat} (ho' : o + 1024 ≤ 4096) (ho8 : o % 8 = 0) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ →
+      (Inv s₀₁ s₁ ∧ s₁.gpr .a3 = gwP s₀₁ ∧ s₁.gpr .a2 = scrP s₀₁ + BitVec.ofNat 64 o ∧
+        GArg s₀₁ o (s₁.gpr .a0) ∧ GArg s₀₁ o (s₁.gpr .a1)) ∧
+      (Inv s₀₂ s₂ ∧ s₂.gpr .a3 = gwP s₀₂ ∧ s₂.gpr .a2 = scrP s₀₂ + BitVec.ofNat 64 o ∧
+        GArg s₀₂ o (s₂.gpr .a0) ∧ GArg s₀₂ o (s₂.gpr .a1)) ∧
+      s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1) :
+    RelCT isa P Impl.Argon2.RISCV64.Derive.compressCall fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.Derive.compressCall
+  refine RelCT.callEx (k := Proof.Argon2.RISCV64.compressLocal) Proof.Argon2.RISCV64.compress_correct
+    Proof.Argon2.RISCV64.compress_ct fun s₁ s₂ hP => ?_
+  obtain ⟨⟨i₁, d₁, c₁, x₁, y₁⟩, ⟨i₂, d₂, c₂, x₂, y₂⟩, ea, es⟩ := h s₁ s₂ hP
+  obtain ⟨p₁, v₁, w₁⟩ := ccall_pre T.hp₁ i₁ d₁ ho' ho8 c₁ x₁ y₁
+  obtain ⟨p₂, v₂, w₂⟩ := ccall_pre T.hp₂ i₂ d₂ ho' ho8 c₂ x₂ y₂
+  refine ⟨_, _, _, _, p₁, p₂, ?_, v₁, w₁, v₂, w₂⟩
+  simp only [Proof.Argon2.RISCV64.compressLocal, State.withRegions_gpr, State.withRegions_sp,
+    State.callEntry_sp, State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a2 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a3 ∉ linkRegs by decide)]
+  exact ⟨ea, es, by rw [c₁, c₂, T.pb.scrP_eq], by rw [d₁, d₂, gwP, gwP, T.pb.scrP_eq],
+    by rw [i₁.sp, i₂.sp, T.pb.E_eq]⟩
+
+/-- What a call of H′ needs in one run. -/
+def HArgs (s₀ s : State) : Prop :=
+  Inv s₀ s ∧ s.gpr .a4 = scrP s₀ ∧
+    (∃ R ∈ [memR s₀, inR s₀], ∃ off, s.gpr .a0 = R.base + BitVec.ofNat 64 off ∧
+      off + (s.gpr .a1).toNat ≤ R.len) ∧
+    (∃ R ∈ [memR s₀, outR s₀], ∃ off, s.gpr .a2 = R.base + BitVec.ofNat 64 off ∧
+      off + (s.gpr .a3).toNat ≤ R.len) ∧
+    (s.gpr .a1).toNat < 2 ^ 32 ∧ (1 ≤ (s.gpr .a3).toNat ∧ (s.gpr .a3).toNat < 2 ^ 32)
+
+/-- A call of H′: `hprime(a0, a1, a2, a3, a4)`, with the same arguments in
+both runs. -/
+theorem hcall_rel {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → HArgs s₀₁ s₁ ∧ HArgs s₀₂ s₂ ∧
+      s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+        s₁.gpr .a3 = s₂.gpr .a3) :
+    RelCT isa P Impl.Argon2.RISCV64.Derive.hPrimeCall fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.Derive.hPrimeCall
+  refine RelCT.callEx (k := HPrime.localContract) HPrime.code_correct HPrime.code_ct fun s₁ s₂ hP => ?_
+  obtain ⟨⟨i₁, d₁, n₁, o₁, l₁, q₁⟩, ⟨i₂, d₂, n₂, o₂, l₂, q₂⟩, e3, e4, e5, e6⟩ := h s₁ s₂ hP
+  obtain ⟨p₁, v₁, w₁, -⟩ := hcall_pre T.hp₁ i₁ d₁ n₁ o₁ l₁ q₁
+  obtain ⟨p₂, v₂, w₂, -⟩ := hcall_pre T.hp₂ i₂ d₂ n₂ o₂ l₂ q₂
+  refine ⟨_, _, _, _, p₁, p₂, ?_, v₁, w₁, v₂, w₂⟩
+  simp only [HPrime.localContract, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+    State.callEntry_gpr _ (show Reg.a0 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a1 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a2 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a3 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.a4 ∉ linkRegs by decide)]
+  exact ⟨e3, e4, e5, e6, by rw [d₁, d₂, T.pb.scrP_eq], by rw [i₁.sp, i₂.sp, T.pb.E_eq]⟩
+
+end Two
+
+end VG.Proof.Argon2.RISCV64.Derive
+
+end
+
+end
+
+/-!
+# Argon2 on RISC-V: H₀, in two runs
+
+`code_rel`: H₀'s hash leaks the same trace in two runs with the same public
+data. The BLAKE2b calls are related by H′'s (`HPrime.init_rel`,
+`update_rel`, `finalize_rel`), from the same arguments: `scratch`, the
+inputs' places and lengths, and the byte count, which only the inputs'
+lengths fix; the code between them by `frameTaint`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.RISCV64.Derive
+
+open VG VG.RISCV64
+open VG.RISCV64.Wp (Upd Mupd wp_add wp_sub wp_addi wp_subi wp_li wp_mv wp_ld wp_sd wp_xor)
+open VG.Spec.Blake2 (Repr b bytesAt)
+open VG.Proof.Argon2.RISCV64 (wp_sll wp_srl wp_srlw wp_mul wp_mulhu wp_or wp_and wp_lwu wp_sw)
+open VG.Impl.Argon2.RISCV64.Derive (countOff ld st lda)
+
+theorem li64_ok {s₀ s : State} (h : Inv s₀ s) (pr : Prm s₀ s) :
+    WP isa (.block [.li .a1 64]) s fun t => Inv s₀ t ∧ Prm s₀ t ∧ t.gpr .a1 = BitVec.ofNat 64 64 :=
+  wp_li (by decide) fun _ u₁ => WP.block_nil ⟨h.upd u₁, Prm.of_lw pr fun d _ _ => lw_mem u₁.mem d, u₁.gpr⟩
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+theorem finReady {s : State} (h : Inv s₀ s) : HPrime.FinalizeReady s :=
+  ⟨h.scr_in hp⟩
+
+theorem initReady {s : State} (h : Inv s₀ s) (r4 : s.gpr .a1 = BitVec.ofNat 64 64) : HPrime.InitReady s :=
+  ⟨by rw [r4]; decide, h.scr_in hp⟩
+
+/-- `update`'s readiness, for data readable and outside `scratch`'s state. -/
+theorem updReady {s : State} (h : Inv s₀ s)
+    (hdata : Covers [⟨s.gpr .a2, (s.gpr .a3).toNat⟩] (s.rd ++ s.wr))
+    (dataState : (⟨s.gpr .a2, (s.gpr .a3).toNat⟩ : Region).Disjoint ⟨scrP s₀, 768⟩) :
+    HPrime.UpdateReady s :=
+  ⟨h.scr_in hp, hdata, by rw [h.s4]; exact dataState.sub_right (Region.sub_prefix (by decide)),
+    by rw [h.s4]; exact dataState.sub_right (Offset.sub_base _ (by decide))⟩
+
+theorem init_step {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) (r4 : s.gpr .a1 = BitVec.ofNat 64 64) :
+    WP isa Impl.Argon2.RISCV64.HPrime.init s fun t => Inv s₀ t ∧ Prm s₀ t ∧
+      Repr b (Spec.Blake2.init b 64 0) t.mem (scrP s₀) [] :=
+  (HPrime.init_ok s (by rw [r4]; decide) (h.scr_in hp)).mono fun t ⟨rp, g, rd, wr, sp, f⟩ => by
+    obtain ⟨i, p, -⟩ := h.keepsP hp pr ⟨g, rd, wr, sp, HPrime.init_frame _ f⟩
+    rw [r4, h.s4] at rp
+    exact ⟨i, p, by simpa using rp⟩
+
+theorem fixed_step {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) (offset size : Nat) (ho : offset < 2048)
+    (hn : size < 2048) (lo : 768 ≤ offset) (hi : offset + size ≤ 16384) :
+    WP isa (Impl.Argon2.RISCV64.HPrime.absorbFixed offset size) s fun t => Inv s₀ t ∧ Prm s₀ t :=
+  (HPrime.absorbFixed_keeps s offset size (finReady hp h) ho hn lo hi).mono fun _ k =>
+    let ⟨i, p, _⟩ := h.keepsP hp pr k
+    ⟨i, p⟩
+
+end
+
+namespace Two
+variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)
+include T
+
+/-- Absorbing `size` bytes of `scratch` at `offset` leaks the same trace in two runs. -/
+theorem fixed_rel (offset size : Nat) (ho : offset < 2048) (hn : size < 2048) (lo : 768 ≤ offset) (hi : offset + size ≤ 16384)
+    (hc : ∃ hc, (VG.Taint.check frameTaint (τF [] []) (.block (Impl.Argon2.RISCV64.HPrime.fixedArgs offset size))
+      hc).isSome = true)
+    {F₁ F₂ : State → Prop} (hF₁ : ∀ s, F₁ s → Inv s₀₁ s) (hF₂ : ∀ s, F₂ s → Inv s₀₂ s) :
+    RelCT isa (fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) (Impl.Argon2.RISCV64.HPrime.absorbFixed offset size)
+      fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.HPrime.absorbFixed
+  have args := (T.leaf (P := fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) [] []
+    (fun s₁ s₂ h => ⟨hF₁ _ h.1, hF₂ _ h.2, by simp, by simp⟩) hc).wpDep
+    (F := fun s t => HPrime.FixedArgs s t offset size)
+    fun s₁ s₂ _ => ⟨HPrime.fixedArgs_ok s₁ offset size ho hn,
+      HPrime.fixedArgs_ok s₂ offset size ho hn⟩
+  refine args.seq (HPrime.update_rel fun s₁ s₂ ⟨_, σ₁, σ₂, hσ, h₁, h₂⟩ => ?_)
+  have i₁ := hF₁ _ hσ.1
+  have i₂ := hF₂ _ hσ.2
+  have base : σ₁.gpr .s4 = σ₂.gpr .s4 := by rw [i₁.s4, i₂.s4, T.pb.scrP_eq]
+  exact ⟨HPrime.fixed_ready (finReady T.hp₁ i₁) h₁ lo hi, HPrime.fixed_ready (finReady T.hp₂ i₂) h₂ lo hi,
+    by rw [h₁.keeps.s4, h₂.keeps.s4, base], by rw [h₁.count, h₂.count],
+    by rw [h₁.data, h₂.data, base], by rw [h₁.size, h₂.size],
+    by rw [h₁.keeps.sp, h₂.keeps.sp, i₁.sp, i₂.sp, T.pb.E_eq]⟩
+
+/-- `start` leaks the same trace in two runs. -/
+theorem start_rel :
+    RelCT isa (fun s₁ s₂ => (Inv s₀₁ s₁ ∧ Prm s₀₁ s₁) ∧ (Inv s₀₂ s₂ ∧ Prm s₀₂ s₂))
+      Impl.Argon2.RISCV64.Derive.start fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.Derive.start
+  refine RelCT.seqW (T.leaf [] [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by simp, by simp⟩) ⟨_, by taint_decide⟩)
+    (fun s h => li64_ok h.1 h.2) (fun s h => li64_ok h.1 h.2) ?_
+  refine RelCT.seqW (HPrime.init_rel fun s₁ s₂ h => ⟨initReady T.hp₁ h.1.1 h.1.2.2,
+      initReady T.hp₂ h.2.1 h.2.2.2, by rw [h.1.1.s4, h.2.1.s4, T.pb.scrP_eq], by rw [h.1.2.2, h.2.2.2],
+      by rw [h.1.1.sp, h.2.1.sp, T.pb.E_eq]⟩)
+    (fun s h => init_step T.hp₁ h.1 h.2.1 h.2.2) (fun s h => init_step T.hp₂ h.1 h.2.1 h.2.2) ?_
+  refine RelCT.seqW (T.leaf [] [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by simp, by simp⟩) ⟨_, by taint_decide⟩)
+    (G₁ := fun t => Inv s₀₁ t ∧ Prm s₀₁ t) (G₂ := fun t => Inv s₀₂ t ∧ Prm s₀₂ t)
+    (fun s h => (header_ok T.hp₁ h.1 h.2.1 h.2.2).mono fun t ⟨i, p, _⟩ => ⟨i, p⟩)
+    (fun s h => (header_ok T.hp₂ h.1 h.2.1 h.2.2).mono fun t ⟨i, p, _⟩ => ⟨i, p⟩) ?_
+  refine RelCT.seqW (T.fixed_rel 896 24 (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
+      (fun s h => h.1) (fun s h => h.1))
+    (fun s h => fixed_step T.hp₁ h.1 h.2 896 24 (by decide) (by decide) (by decide) (by decide))
+    (fun s h => fixed_step T.hp₂ h.1 h.2 896 24 (by decide) (by decide) (by decide) (by decide)) ?_
+  exact T.leaf [] [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by simp, by simp⟩) ⟨_, by taint_decide⟩
+
+/-- `absorb ptr len` leaks the same trace in two runs whose absorbed data have
+the same length. -/
+theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18) (hnp : ptr ∉ intArgs)
+    (hnl : len ∉ intArgs)
+    (hR₁ : (⟨arg s₀₁ ptr, (arg s₀₁ len).toNat⟩ : Region) ∈ [pwR s₀₁, saltR s₀₁, secR s₀₁, adR s₀₁])
+    (hR₂ : (⟨arg s₀₂ ptr, (arg s₀₂ len).toNat⟩ : Region) ∈ [pwR s₀₂, saltR s₀₂, secR s₀₂, adR s₀₂])
+    (hl₁ : (arg s₀₁ len).toNat < 2 ^ 32) (hl₂ : (arg s₀₂ len).toNat < 2 ^ 32)
+    {data₁ data₂ : List Byte} (heq : data₁.length = data₂.length)
+    (hd₁ : data₁.length + 4 + 2 ^ 32 < 2 ^ 36) (hd₂ : data₂.length + 4 + 2 ^ 32 < 2 ^ 36)
+    (hcA : ∃ hc, (VG.Taint.check frameTaint (τF [countOff] [])
+      (.block [lda .a0 len, .store .w .a0 .s4 920, ld .a1 countOff, .addi .a2 .s4 920, .li .a3 4])
+      hc).isSome = true)
+    (hcB : ∃ hc, (VG.Taint.check frameTaint (τF [countOff] [])
+      (.block [ld .a1 countOff, .addi .a1 .a1 4, st countOff .a1, lda .a2 ptr, lda .a3 len]) hc).isSome = true)
+    (hcC : ∃ hc, (VG.Taint.check frameTaint (τF [countOff] [])
+      (.block [ld .a1 countOff, lda .a0 len, .add .a1 .a1 .a0, st countOff .a1]) hc).isSome = true) :
+    RelCT isa (fun s₁ s₂ => HI s₀₁ data₁ s₁ ∧ HI s₀₂ data₂ s₂) (Impl.Argon2.RISCV64.Derive.absorb ptr len)
+      fun _ _ => True := by
+  have ep := T.pb.arg_eq hptr hnp
+  have el := T.pb.arg_eq hlen hnl
+  -- What a run satisfies after each part.
+  let GA (s₀ : State) (data : List Byte) (t : State) : Prop :=
+    HI s₀ data t ∧ t.gpr .a1 = BitVec.ofNat 64 data.length ∧
+      t.gpr .a2 = scrP s₀ + BitVec.ofNat 64 920 ∧ t.gpr .a3 = BitVec.ofNat 64 4 ∧
+      bytesAt t.mem (scrP s₀ + BitVec.ofNat 64 920) 4 = Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)
+  let GU (s₀ : State) (data : List Byte) (t : State) : Prop :=
+    Inv s₀ t ∧ Prm s₀ t ∧ lw s₀ t countOff = BitVec.ofNat 64 data.length ∧
+      Repr b (Spec.Blake2.init b 64 0) t.mem (scrP s₀) (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32))
+  let GB (s₀ : State) (data : List Byte) (t : State) : Prop :=
+    Inv s₀ t ∧ Prm s₀ t ∧
+      Repr b (Spec.Blake2.init b 64 0) t.mem (scrP s₀) (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)) ∧
+      lw s₀ t countOff = BitVec.ofNat 64 (data.length + 4) ∧ t.gpr .a1 = BitVec.ofNat 64 (data.length + 4) ∧
+      t.gpr .a2 = arg s₀ ptr ∧ t.gpr .a3 = arg s₀ len
+  let GC (s₀ : State) (data : List Byte) (t : State) : Prop :=
+    Inv s₀ t ∧ lw s₀ t countOff = BitVec.ofNat 64 (data.length + 4)
+  have wl : ∀ s₀ : State, (Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = 4 := fun _ => by
+    simp [Spec.Blake2.wordBytes]
+  -- The first `update`'s readiness and effect.
+  have rdyU : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GA s₀ data s → HPrime.UpdateReady s :=
+    fun {s₀ s data} hp ⟨h, _, r5, r6, _⟩ => updReady hp h.inv
+      (by rw [r5, r6, h.inv.wr]
+          exact Covers.right (Covers.one ⟨scrR s₀, scr_mem hp, Offset.contains_base _ (by decide) (by decide)⟩))
+      (by rw [r5, r6]; exact Offset.disjoint_base _ (by decide) (by decide))
+  have wU : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → ∀ s, GA s₀ data s →
+      WP isa Impl.Argon2.RISCV64.HPrime.update s (GU s₀ data) :=
+    fun {s₀ data} hp s ⟨h, r4, r5, r6, w⟩ => (absU_ok hp h r4 (by rw [r6]; decide)
+      (by rw [r5, r6, h.inv.wr]
+          exact Covers.right (Covers.one ⟨scrR s₀, scr_mem hp, Offset.contains_base _ (by decide) (by decide)⟩))
+      (by rw [r5, r6]; exact Offset.disjoint_base _ (by decide) (by decide))).mono
+      fun t ⟨i, p, c, rp⟩ => ⟨i, p, c.trans h.cnt, by
+        rw [r5, r6, show (BitVec.ofNat 64 4).toNat = 4 from rfl, w] at rp; exact rp⟩
+  -- The second `update`'s readiness and effect.
+  have hR' : ∀ {s₀ : State}, (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
+      (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀, argR s₀] :=
+    fun {s₀} hR => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hR ⊢
+      rcases hR with h | h | h | h <;> simp [h]
+  have cov₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
+      (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
+      Covers [⟨s.gpr .a2, (s.gpr .a3).toNat⟩] (s.rd ++ s.wr) := fun {s₀ s data} hp h hR => by
+    rw [h.2.2.2.2.2.1, h.2.2.2.2.2.2, h.1.rd, hp.rd]
+    exact Covers.left (Covers.one ⟨_, hR' hR, Region.contains_self _ _⟩)
+  have ds₂ : ∀ {s₀ s : State} {data : List Byte}, DPre s₀ → GB s₀ data s →
+      (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] →
+      (⟨s.gpr .a2, (s.gpr .a3).toNat⟩ : Region).Disjoint ⟨scrP s₀, 768⟩ := fun {s₀ s data} hp h hR => by
+    rw [h.2.2.2.2.2.1, h.2.2.2.2.2.2]
+    exact (hp.ro_w _ (hR' hR) (scrR s₀) (by simp)).sub_right (Region.sub_prefix (by decide))
+  have wU2 : ∀ {s₀ : State} {data : List Byte}, DPre s₀ → (arg s₀ len).toNat < 2 ^ 32 →
+      data.length + 4 + 2 ^ 32 < 2 ^ 36 →
+      (⟨arg s₀ ptr, (arg s₀ len).toNat⟩ : Region) ∈ [pwR s₀, saltR s₀, secR s₀, adR s₀] → ∀ s, GB s₀ data s →
+      WP isa Impl.Argon2.RISCV64.HPrime.update s (GC s₀ data) :=
+    fun {s₀ data} hp hl hd hR s h => by
+      obtain ⟨i, p, rp, c, r4, r5, r6⟩ := h
+      have dl : (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = data.length + 4 := by
+        rw [List.length_append, wl]
+      exact (absU_ok hp ⟨i, p, rp, by rw [c, dl], by rw [dl]; omega_arith⟩ (by rw [r4, dl]) (by rw [r6]; exact hl)
+        (cov₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR) (ds₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR)).mono fun t ⟨i', _, c', _⟩ => ⟨i', c'.trans c⟩
+  unfold Impl.Argon2.RISCV64.Derive.absorb
+  refine RelCT.seqW (G₁ := GA s₀₁ data₁) (G₂ := GA s₀₂ data₂)
+    (T.leaf [countOff] [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by
+      simp only [List.mem_singleton, forall_eq]; rw [h.1.cnt, h.2.cnt, heq], by simp⟩) hcA)
+    (fun s h => absA_ok T.hp₁ hlen h) (fun s h => absA_ok T.hp₂ hlen h) ?_
+  refine RelCT.seqW (G₁ := GU s₀₁ data₁) (G₂ := GU s₀₂ data₂)
+    (HPrime.update_rel fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨rdyU T.hp₁ h₁, rdyU T.hp₂ h₂,
+      by rw [h₁.1.inv.s4, h₂.1.inv.s4, T.pb.scrP_eq], by rw [h₁.2.1, h₂.2.1, heq],
+      by rw [h₁.2.2.1, h₂.2.2.1, T.pb.scrP_eq], by rw [h₁.2.2.2.1, h₂.2.2.2.1],
+      by rw [h₁.1.inv.sp, h₂.1.inv.sp, T.pb.E_eq]⟩)
+    (wU T.hp₁) (wU T.hp₂) ?_
+  refine RelCT.seqW (G₁ := GB s₀₁ data₁) (G₂ := GB s₀₂ data₂)
+    (T.leaf [countOff] [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by
+      simp only [List.mem_singleton, forall_eq]; rw [h.1.2.2.1, h.2.2.2.1, heq], by simp⟩) hcB)
+    (fun s h => absB_ok T.hp₁ hptr hlen h.1 h.2.1 h.2.2.2 h.2.2.1)
+    (fun s h => absB_ok T.hp₂ hptr hlen h.1 h.2.1 h.2.2.2 h.2.2.1) ?_
+  refine RelCT.seqW (G₁ := GC s₀₁ data₁) (G₂ := GC s₀₂ data₂)
+    (HPrime.update_rel fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨updReady T.hp₁ h₁.1 (cov₂ T.hp₁ h₁ hR₁) (ds₂ T.hp₁ h₁ hR₁),
+      updReady T.hp₂ h₂.1 (cov₂ T.hp₂ h₂ hR₂) (ds₂ T.hp₂ h₂ hR₂),
+      by rw [h₁.1.s4, h₂.1.s4, T.pb.scrP_eq], by rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1, heq],
+      by rw [h₁.2.2.2.2.2.1, h₂.2.2.2.2.2.1, ep], by rw [h₁.2.2.2.2.2.2, h₂.2.2.2.2.2.2, el],
+      by rw [h₁.1.sp, h₂.1.sp, T.pb.E_eq]⟩)
+    (wU2 T.hp₁ hl₁ hd₁ hR₁) (wU2 T.hp₂ hl₂ hd₂ hR₂) ?_
+  exact T.leaf [countOff] [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by
+    simp only [List.mem_singleton, forall_eq]; rw [h.1.2, h.2.2, heq], by simp⟩) hcC
+
+/-- `finish` leaks the same trace in two runs whose hashed data have the same
+length. -/
+theorem finish_rel {data₁ data₂ : List Byte} (heq : data₁.length = data₂.length) :
+    RelCT isa (fun s₁ s₂ => HI s₀₁ data₁ s₁ ∧ HI s₀₂ data₂ s₂) Impl.Argon2.RISCV64.Derive.finish
+      fun _ _ => True := by
+  have ld : ∀ {s₀ : State} {data : List Byte} (s : State), HI s₀ data s →
+      WP isa (.block [ld .a1 countOff]) s fun t =>
+        Inv s₀ t ∧ Prm s₀ t ∧ t.gpr .a1 = BitVec.ofNat 64 data.length :=
+    fun {s₀ data} s h => wp_ldloc h.inv (d := countOff) (by decide) fun t u => WP.block_nil
+      ⟨h.inv.upd u, Prm.of_lw h.prm fun d _ _ => lw_mem u.mem d, by rw [u.gpr, h.cnt]⟩
+  unfold Impl.Argon2.RISCV64.Derive.finish
+  refine RelCT.seqW (T.leaf [countOff] [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by
+      simp only [List.mem_singleton, forall_eq]; rw [h.1.cnt, h.2.cnt, heq], by simp⟩) ⟨_, by taint_decide⟩)
+    (ld (data := data₁)) (ld (data := data₂)) ?_
+  refine RelCT.seqW (G₁ := fun t => Inv s₀₁ t) (G₂ := fun t => Inv s₀₂ t)
+    (HPrime.finalize_rel fun s₁ s₂ ⟨h₁, h₂⟩ => ⟨finReady T.hp₁ h₁.1, finReady T.hp₂ h₂.1,
+      by rw [h₁.1.s4, h₂.1.s4, T.pb.scrP_eq], by rw [h₁.2.2, h₂.2.2, heq],
+      by rw [h₁.1.sp, h₂.1.sp, T.pb.E_eq]⟩)
+    (fun s h => (HPrime.finalize_keeps s (finReady T.hp₁ h.1)).mono fun _ k => (h.1.keeps T.hp₁ k).1)
+    (fun s h => (HPrime.finalize_keeps s (finReady T.hp₂ h.1)).mono fun _ k => (h.1.keeps T.hp₂ k).1) ?_
+  exact T.leaf [] [] (fun s₁ s₂ h => ⟨h.1, h.2, by simp, by simp⟩) ⟨_, by taint_decide⟩
+
+/-- H₀'s hash leaks the same trace in two runs. -/
+theorem code_rel :
+    RelCT isa (fun s₁ s₂ => (Inv s₀₁ s₁ ∧ Prm s₀₁ s₁) ∧ (Inv s₀₂ s₂ ∧ Prm s₀₂ s₂))
+      Impl.Argon2.RISCV64.Derive.code fun _ _ => True := by
+  have l : ∀ {s₀ : State}, DPre s₀ → (arg s₀ 2).toNat < 2 ^ 32 ∧ (arg s₀ 4).toNat < 2 ^ 32 ∧
+      (arg s₀ 10).toNat < 2 ^ 32 ∧ (arg s₀ 12).toNat < 2 ^ 32 := fun {s₀} hp =>
+    ⟨hp.valid.2.2.2.2.2.2.2.2.1, hp.valid.2.2.2.2.2.2.2.2.2.1, hp.valid.2.2.2.2.2.2.2.2.2.2.1,
+      hp.valid.2.2.2.2.2.2.2.2.2.2.2⟩
+  obtain ⟨l1, l2, l3, l4⟩ := l T.hp₁
+  obtain ⟨m1, m2, m3, m4⟩ := l T.hp₂
+  have e2 : (arg s₀₁ 2).toNat = (arg s₀₂ 2).toNat := by rw [T.pb.arg_eq (by decide)]
+  have e4 : (arg s₀₁ 4).toNat = (arg s₀₂ 4).toNat := by rw [T.pb.arg_eq (by decide)]
+  have e10 : (arg s₀₁ 10).toNat = (arg s₀₂ 10).toNat := by rw [T.pb.arg_eq (by decide)]
+  have len : ∀ (d : List Byte) (m : Mem) (p : Addr) (n : Nat),
+      (Proof.Argon2.appendInput d (bytesAt m p n)).length = d.length + 4 + n := fun d m p n => by
+    simp only [Proof.Argon2.appendInput_length, bytesAt, List.length_map, List.length_range]
+  have h24 := Proof.Argon2.initialHeader_length (prm s₀₁)
+  have h24' := Proof.Argon2.initialHeader_length (prm s₀₂)
+  unfold Impl.Argon2.RISCV64.Derive.code
+  refine RelCT.seqW T.start_rel (fun s h => start_ok T.hp₁ h.1 h.2) (fun s h => start_ok T.hp₂ h.1 h.2) ?_
+  refine RelCT.seqW (T.absorb_rel (ptr := 1) (len := 2) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l1 m1
+      (by rw [h24, h24']) (by rw [h24]; omega_arith) (by rw [h24']; omega_arith)
+      ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
+    (fun s h => absorb_ok T.hp₁ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) l1
+      (by rw [h24]; omega_arith) h)
+    (fun s h => absorb_ok T.hp₂ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) m1
+      (by rw [h24']; omega_arith) h) ?_
+  refine RelCT.seqW (T.absorb_rel (ptr := 3) (len := 4) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l2 m2
+      (by rw [len, len, h24, h24', e2]) (by rw [len, h24]; omega_arith) (by rw [len, h24']; omega_arith)
+      ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
+    (fun s h => absorb_ok T.hp₁ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) l2
+      (by rw [len, h24]; omega_arith) h)
+    (fun s h => absorb_ok T.hp₂ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) m2
+      (by rw [len, h24']; omega_arith) h) ?_
+  refine RelCT.seqW (T.absorb_rel (ptr := 9) (len := 10) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l3 m3
+      (by rw [len, len, len, len, h24, h24', e2, e4]) (by rw [len, len, h24]; omega_arith)
+      (by rw [len, len, h24']; omega_arith)
+      ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
+    (fun s h => absorb_ok T.hp₁ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) l3
+      (by rw [len, len, h24]; omega_arith) h)
+    (fun s h => absorb_ok T.hp₂ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) m3
+      (by rw [len, len, h24']; omega_arith) h) ?_
+  refine RelCT.seqW (T.absorb_rel (ptr := 11) (len := 12) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l4 m4
+      (by rw [len, len, len, len, len, len, h24, h24', e2, e4, e10]) (by rw [len, len, len, h24]; omega_arith)
+      (by rw [len, len, len, h24']; omega_arith)
+      ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
+    (fun s h => absorb_ok T.hp₁ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) l4
+      (by rw [len, len, len, h24]; omega_arith) h)
+    (fun s h => absorb_ok T.hp₂ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) m4
+      (by rw [len, len, len, h24']; omega_arith) h) ?_
+  exact T.finish_rel (by rw [len, len, len, len, len, len, len, len, h24, h24', e2, e4, e10,
+    T.pb.arg_eq (i := 12) (by decide)])
+
+end Two
+
+end VG.Proof.Argon2.RISCV64.Derive
+
+end
+
+end
+
+/-!
+# Argon2 on RISC-V: the random word, in two runs
+
+`W`: the public doublewords of the filling loops' frame (the parameters, the
+position and the counter), which `Two.leafF` makes public for the taint
+analysis, with any registers the runs agree on. A store of a secret through
+a register other than `s3` makes the analysis forget the frame, so the
+pieces are cut after such stores (and around the calls of G), and the runs
+related again from what correctness says the frame and registers hold.
+`randomSource_rel`: the random word's trace depends only on the position.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.RISCV64.Derive
+
+open VG VG.RISCV64
+open VG.RISCV64.Wp (Upd Mupd wp_add wp_sub wp_addi wp_subi wp_li wp_mv wp_ld wp_sd wp_xor)
+open VG.Proof.Argon2.RISCV64 (wp_sll wp_srl wp_srlw wp_mul wp_mulhu wp_or wp_and wp_lwu wp_sw)
+open VG.RISCV64.Wp (Upd wp_addi)
+open VG.Spec.Argon2 (FillState)
+open VG.Impl.Argon2.RISCV64.Derive (sliceOff segLenOff indexOff laneOff laneLenOff passOff counterOff
+  strideOff st)
+
+/-- An empty block. -/
+theorem RelCT.nil {P Q : State → State → Prop} (h : ∀ x y, P x y → Q x y) :
+    RelCT isa P (.block []) Q := by
+  intro x y t₁ t₂ x' y' hp e₁ e₂
+  cases e₁ with
+  | block h₁ =>
+    cases e₂ with
+    | block h₂ =>
+      simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
+      obtain ⟨rfl, rfl⟩ := h₁; obtain ⟨rfl, rfl⟩ := h₂
+      exact ⟨rfl, h _ _ hp⟩
+
+/-- The public doublewords of the filling loops' frame. -/
+structure W (s₀ : State) (pass slice lane index ctr : Nat) (s : State) : Prop where
+  inv : Inv s₀ s
+  pr : Prm s₀ s
+  pos : Pos s₀ s pass slice lane index
+  ctr : lw s₀ s counterOff = BitVec.ofNat 64 ctr
+
+theorem FS.w {s₀ s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) : W s₀ pass slice lane index ctr s :=
+  ⟨h.inv, h.pr, h.pos, h.cache.2.1⟩
+
+theorem W.of_only {s₀ s t : State} {pass slice lane index ctr : Nat} (h : W s₀ pass slice lane index ctr s)
+    {ds : List Reg} (k : Only ds s t) (hd : ∀ r ∈ ds, Free r := by decide) :
+    W s₀ pass slice lane index ctr t :=
+  ⟨h.inv.only k hd, h.pr.of_mem k.mem, h.pos.of_mem k.mem, by rw [lw_mem k.mem]; exact h.ctr⟩
+
+/-- The doublewords `W` is about. -/
+abbrev wsW : List Nat := [passOff, laneOff, sliceOff, indexOff, counterOff, laneLenOff, strideOff, segLenOff]
+
+namespace Two
+variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)
+include T
+
+theorem prm_lw {s₁ s₂ : State} (p₁ : Prm s₀₁ s₁) (p₂ : Prm s₀₂ s₂) :
+    lw s₀₁ s₁ laneLenOff = lw s₀₂ s₂ laneLenOff ∧ lw s₀₁ s₁ strideOff = lw s₀₂ s₂ strideOff ∧
+      lw s₀₁ s₁ segLenOff = lw s₀₂ s₂ segLenOff :=
+  ⟨by rw [p₁.laneLen, p₂.laneLen, T.pb.prm_eq], by rw [p₁.stride, p₂.stride, T.pb.prm_eq],
+    by rw [p₁.segLen, p₂.segLen, T.pb.prm_eq]⟩
+
+theorem words {pass slice lane index ctr : Nat} {s₁ s₂ : State} (h₁ : W s₀₁ pass slice lane index ctr s₁)
+    (h₂ : W s₀₂ pass slice lane index ctr s₂) : ∀ d ∈ wsW, lw s₀₁ s₁ d = lw s₀₂ s₂ d := by
+  obtain ⟨a, b, c⟩ := T.prm_lw h₁.pr h₂.pr
+  intro d hd
+  simp only [wsW, List.mem_cons, List.not_mem_nil, or_false] at hd
+  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact h₁.pos.pass.trans h₂.pos.pass.symm
+  · exact h₁.pos.lane.trans h₂.pos.lane.symm
+  · exact h₁.pos.slice.trans h₂.pos.slice.symm
+  · exact h₁.pos.index.trans h₂.pos.index.symm
+  · exact h₁.ctr.trans h₂.ctr.symm
+  · exact a
+  · exact b
+  · exact c
+
+/-- A piece the taint analysis proves from the public doublewords `W`, those
+at `ex`, and the registers `rs`, which both runs agree on. -/
+theorem leafF {P : State → State → Prop} {c : Prog isa} (rs : List Reg) (ex : List Nat)
+    (hag : ∀ s₁ s₂, P s₁ s₂ → (∃ pass slice lane index ctr, W s₀₁ pass slice lane index ctr s₁ ∧
+      W s₀₂ pass slice lane index ctr s₂) ∧ (∀ r ∈ rs, s₁.gpr r = s₂.gpr r) ∧
+      ∀ d ∈ ex, lw s₀₁ s₁ d = lw s₀₂ s₂ d)
+    (hc : ∃ hc, (VG.Taint.check frameTaint (τF (wsW ++ ex) rs) c hc).isSome = true) :
+    RelCT isa P c fun _ _ => True :=
+  T.leaf (wsW ++ ex) rs (fun s₁ s₂ h =>
+    let ⟨⟨_, _, _, _, _, w₁, w₂⟩, hr, he⟩ := hag s₁ s₂ h
+    ⟨w₁.inv, w₂.inv, fun d hd => (List.mem_append.mp hd).elim (T.words w₁ w₂ d) (he d), hr⟩) hc
+
+end Two
+
+/-! ## The address block -/
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+omit hp in
+theorem Inv.base4 {s : State} (h : Inv s₀ s) : Base s₀ s .s4 0 := ⟨.inl rfl, by rw [h.s4]; simp⟩
+
+omit hp in
+theorem Inv.base0 {s : State} (h : Inv s₀ s) : Base s₀ s .s0 2048 := ⟨.inr rfl, h.s0⟩
+
+omit hp in
+/-- The instructions before G's call in `stage (bx, x) (by, y) (bo, o)`. -/
+theorem stageBlk_ok {s : State} (h : Inv s₀ s) {bx by' bo : Reg} {Bx By Bo x y o : Nat}
+    (hx : Base s₀ s bx Bx) (hy : Base s₀ s by' By) (hob : Base s₀ s bo Bo)
+    (hxi : x < 2048) (hyi : y < 2048) (hoi : o < 2048) :
+    WP isa (.block (([.addi .a0 bx x, .addi .a1 by' y, .addi .a2 bo o] : List Instr) ++
+      Impl.Argon2.RISCV64.Derive.gScratch)) s fun t =>
+      Inv s₀ t ∧ t.gpr .a3 = gwP s₀ ∧ t.gpr .a0 = scrP s₀ + BitVec.ofNat 64 (Bx + x) ∧
+      t.gpr .a1 = scrP s₀ + BitVec.ofNat 64 (By + y) ∧ t.gpr .a2 = scrP s₀ + BitVec.ofNat 64 (Bo + o) := by
+  unfold Impl.Argon2.RISCV64.Derive.gScratch
+  simp only [List.cons_append, List.nil_append]
+  refine wp_addi hxi fun s₁ u₁ => wp_addi hyi fun s₂ u₂ =>
+    wp_addi hoi fun s₃ u₃ => wp_addi (imm := 1024) (by decide) fun s₄ u₄ =>
+    wp_addi (imm := 1024) (by decide) fun s₅ u₅ => WP.block_nil ?_
+  have nb : ∀ b : Reg, (b = .s4 ∨ b = .s0) → b ≠ .a0 ∧ b ≠ .a1 ∧ b ≠ .a2 ∧ b ≠ .a3 := by
+    intro b hb; rcases hb with rfl | rfl <;> decide
+  obtain ⟨y1, -, -, -⟩ := nb by' hy.1
+  obtain ⟨o1, o2, -, -⟩ := nb bo hob.1
+  have off : ∀ (B d : Nat), scrP s₀ + BitVec.ofNat 64 B + BitVec.ofNat 64 d =
+      scrP s₀ + BitVec.ofNat 64 (B + d) := fun B d => by
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  refine ⟨((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅, ?_, ?_, ?_, ?_⟩
+  · rw [u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
+      h.s0, off, off]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+      u₁.gpr, hx.2, off]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr,
+      u₁.other _ y1, hy.2, off]
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ o2,
+      u₁.other _ o1, hob.2, off]
+
+omit hp in
+/-- The counter, stored. -/
+theorem stctr_w {s : State} {pass slice lane index ctr c : Nat} (h : W s₀ pass slice lane index ctr s)
+    (ha : s.gpr .a0 = BitVec.ofNat 64 c) :
+    WP isa (.block [st counterOff .a0]) s (W s₀ pass slice lane index c) :=
+  wp_stloc h.inv (d := counterOff) (by decide) fun t it vt ot _ _ => WP.block_nil
+    ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inl (by simp only [counterOff]; omega_using [h₁])),
+      h.pos.of_lw fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inr (by simp only [counterOff]; omega_using [h₂])), by rw [vt, ha]⟩
+
+end
+
+namespace Two
+variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)
+include T
+
+/-- `dependentWord` leaks the same trace in two runs at the same position. -/
+theorem dependentWord_rel {pass slice lane index ctr : Nat} :
+    RelCT isa (fun s₁ s₂ => W s₀₁ pass slice lane index ctr s₁ ∧ W s₀₂ pass slice lane index ctr s₂)
+      Impl.Argon2.RISCV64.Derive.dependentWord fun _ _ => True :=
+  T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1, h.2⟩, by simp, by simp⟩) ⟨_, by taint_decide⟩
+
+/-- `stage (bx, x) (by, y) (bo, o)` leaks the same trace in two runs. -/
+theorem stage_rel {bx by' bo : Reg} {Bx By Bo x y o : Nat}
+    (bX : ∀ {s₀ s : State}, Inv s₀ s → Base s₀ s bx Bx) (bY : ∀ {s₀ s : State}, Inv s₀ s → Base s₀ s by' By)
+    (bO : ∀ {s₀ s : State}, Inv s₀ s → Base s₀ s bo Bo)
+    (hxi : x < 2048) (hyi : y < 2048) (hoi : o < 2048)
+    (ho' : Bo + o + 1024 ≤ 4096) (ho8 : (Bo + o) % 8 = 0)
+    (hx' : Bx + x + 1024 ≤ 4096) (hx8 : (Bx + x) % 8 = 0)
+    (hxo : Bx + x + 1024 ≤ Bo + o ∨ Bo + o + 1024 ≤ Bx + x)
+    (hy' : By + y + 1024 ≤ 4096) (hy8 : (By + y) % 8 = 0)
+    (hyo : By + y + 1024 ≤ Bo + o ∨ Bo + o + 1024 ≤ By + y)
+    (hc : ∃ hc, (VG.Taint.check frameTaint (τF [] []) (.block (([.addi .a0 bx x, .addi .a1 by' y,
+      .addi .a2 bo o] : List Instr) ++ Impl.Argon2.RISCV64.Derive.gScratch)) hc).isSome = true) :
+    RelCT isa (fun s₁ s₂ => Inv s₀₁ s₁ ∧ Inv s₀₂ s₂) (Impl.Argon2.RISCV64.Derive.stage (bx, x) (by', y) (bo, o))
+      fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.Derive.stage
+  refine RelCT.seqW (T.leaf [] [] (fun s₁ s₂ h => ⟨h.1, h.2, by simp, by simp⟩) hc)
+    (fun s h => stageBlk_ok h (bX h) (bY h) (bO h) hxi hyi hoi)
+    (fun s h => stageBlk_ok h (bX h) (bY h) (bO h) hxi hyi hoi) ?_
+  refine T.ccall_rel ho' ho8 fun s₁ s₂ ⟨⟨i₁, d₁, a₁, e₁, c₁⟩, ⟨i₂, d₂, a₂, e₂, c₂⟩⟩ =>
+    ⟨⟨i₁, d₁, c₁, by rw [a₁]; exact .inr ⟨Bx + x, hx', hx8, hxo, rfl⟩,
+        by rw [e₁]; exact .inr ⟨By + y, hy', hy8, hyo, rfl⟩⟩,
+     ⟨i₂, d₂, c₂, by rw [a₂]; exact .inr ⟨Bx + x, hx', hx8, hxo, rfl⟩,
+        by rw [e₂]; exact .inr ⟨By + y, hy', hy8, hyo, rfl⟩⟩,
+     by rw [a₁, a₂, T.pb.scrP_eq], by rw [e₁, e₂, T.pb.scrP_eq]⟩
+
+/-- `addressCalls` leaks the same trace in two runs at the same position. -/
+theorem addressCalls_rel {pass slice lane index c : Nat} :
+    RelCT isa (fun s₁ s₂ => W s₀₁ pass slice lane index c s₁ ∧ W s₀₂ pass slice lane index c s₂)
+      Impl.Argon2.RISCV64.Derive.addressCalls fun _ _ => True := by
+  unfold Impl.Argon2.RISCV64.Derive.addressCalls
+  refine RelCT.seqW (T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1, h.2⟩, by simp, by simp⟩)
+      ⟨_, by taint_decide⟩)
+    (fun s h => (input_ok T.hp₁ h.inv h.pos h.ctr).mono fun t ht => ht.1)
+    (fun s h => (input_ok T.hp₂ h.inv h.pos h.ctr).mono fun t ht => ht.1) ?_
+  refine RelCT.seqW (T.stage_rel (bx := .s0) (by' := .s4) (bo := .s4) (Bx := 2048) (By := 0) (Bo := 0)
+      (x := 1024) (y := 1024) (o := 0) Inv.base0 Inv.base4 Inv.base4 (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      ⟨_, by taint_decide⟩)
+    (fun s h => (stage_ok T.hp₁ h h.base0 h.base4 h.base4 (x := 1024) (y := 1024) (o := 0) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide)).mono fun t ht => ht.1)
+    (fun s h => (stage_ok T.hp₂ h h.base0 h.base4 h.base4 (x := 1024) (y := 1024) (o := 0) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide)).mono fun t ht => ht.1) ?_
+  exact T.stage_rel (bx := .s0) (by' := .s4) (bo := .s0) (Bx := 2048) (By := 0) (Bo := 2048)
+    (x := 1024) (y := 0) (o := 0) Inv.base0 Inv.base4 Inv.base0 (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    ⟨_, by taint_decide⟩
+
+/-- `addressCache` leaks the same trace in two runs at the same position. -/
+theorem addressCache_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillState}
+    (hi : index < (prm s₀₁).segmentLen) :
+    RelCT isa (fun s₁ s₂ => FS s₀₁ pass slice lane index ctr st₁ s₁ ∧ FS s₀₂ pass slice lane index ctr st₂ s₂)
+      Impl.Argon2.RISCV64.Derive.addressCache fun _ _ => True := by
+  have pe := T.pb.prm_eq
+  have hi₂ : index < (prm s₀₂).segmentLen := pe ▸ hi
+  unfold Impl.Argon2.RISCV64.Derive.addressCache
+  refine RelCT.seqW (T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.w, h.2.w⟩, by simp, by simp⟩)
+      ⟨_, by taint_decide⟩)
+    (fun s h => cacheCheck_ok T.hp₁ h hi) (fun s h => cacheCheck_ok T.hp₂ h hi₂) ?_
+  refine RelCT.seqW (RelCT.iteF (fun s₁ s₂ h₁ h₂ =>
+      (h₁.2.2.trans (by rw [h₁.1.cache.2.1, h₂.1.cache.2.1])).trans h₂.2.2.symm)
+    (RelCT.nil fun _ _ _ => trivial) ?_)
+    (fun s h => cacheFill_ok T.hp₁ h.1 hi h.2.1 h.2.2)
+    (fun s h => cacheFill_ok T.hp₂ h.1 hi₂ h.2.1 h.2.2)
+    (T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by simp, by simp⟩) ⟨_, by taint_decide⟩)
+  refine RelCT.seqW (G₁ := W s₀₁ pass slice lane index (index / 128 + 1))
+    (G₂ := W s₀₂ pass slice lane index (index / 128 + 1))
+    (T.leafF [.a0] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by
+      simp only [List.mem_singleton, forall_eq]; rw [h.1.2.1, h.2.2.1], by simp⟩) ⟨_, by taint_decide⟩)
+    (fun s h => stctr_w h.1.w h.2.1) (fun s h => stctr_w h.1.w h.2.1) ?_
+  exact T.addressCalls_rel
+
+/-- `randomSource` leaks the same trace in two runs at the same position. -/
+theorem randomSource_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillState} (hpass : pass < 2 ^ 32)
+    (hs : slice < 4) (hi : index < (prm s₀₁).segmentLen) :
+    RelCT isa (fun s₁ s₂ => FS s₀₁ pass slice lane index ctr st₁ s₁ ∧ FS s₀₂ pass slice lane index ctr st₂ s₂)
+      Impl.Argon2.RISCV64.Derive.randomSource fun _ _ => True := by
+  have pe := T.pb.prm_eq
+  unfold Impl.Argon2.RISCV64.Derive.randomSource
+  refine RelCT.seqW (T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.w, h.2.w⟩, by simp, by simp⟩)
+      ⟨_, by taint_decide⟩)
+    (G₁ := fun t => FS s₀₁ pass slice lane index ctr st₁ t ∧
+      VG.RISCV64.eval (.nonzero .a5) t = some (!Spec.Argon2.independent (prm s₀₁) pass slice))
+    (G₂ := fun t => FS s₀₂ pass slice lane index ctr st₂ t ∧
+      VG.RISCV64.eval (.nonzero .a5) t = some (!Spec.Argon2.independent (prm s₀₂) pass slice))
+    (fun s h => (addressMode_ok T.hp₁ h.inv h.pos hpass hs).mono fun t ⟨z, k⟩ => ⟨h.of_only k, z⟩)
+    (fun s h => (addressMode_ok T.hp₂ h.inv h.pos hpass hs).mono fun t ⟨z, k⟩ => ⟨h.of_only k, z⟩) ?_
+  refine RelCT.iteF (fun s₁ s₂ h₁ h₂ => (h₁.2.trans (by rw [pe])).trans h₂.2.symm)
+    (T.dependentWord_rel.mono (fun _ _ h => ⟨h.1.1.w, h.2.1.w⟩) fun _ _ h => h)
+    ((T.addressCache_rel hi).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
+
+end Two
+
+end VG.Proof.Argon2.RISCV64.Derive
+
+end
+
+end
 
 /-! ### `Argon2.RISCV64.Derive.BodyCT`, which only this module used -/
 

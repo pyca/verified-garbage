@@ -11,22 +11,21 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -53,11 +52,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 
 /-! ### `AesGcm.X86_64.Fast.SealEnd`, which only this module used -/
 

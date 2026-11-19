@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

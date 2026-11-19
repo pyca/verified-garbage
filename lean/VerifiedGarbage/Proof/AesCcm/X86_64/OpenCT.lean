@@ -48,17 +48,15 @@ meta import VerifiedGarbage.Proof.AesCcm.Mac
 meta import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
-import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 
 /-! ### `AesCcm.X86_64.SealCT`, which only this module used -/

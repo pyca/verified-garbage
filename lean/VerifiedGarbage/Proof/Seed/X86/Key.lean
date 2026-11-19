@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Seed.X86.Crypt8
+public import VerifiedGarbage.Proof.Seed.X86.Prologue
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Seed.X86.KeyRound
 import VerifiedGarbage.Proof.Seed.X86.Ecb

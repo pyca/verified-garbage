@@ -18,7 +18,7 @@ public import VerifiedGarbage.Impl.AesGcm.RISCV64
 # AES-GCM on RISC-V: `j0` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/CTJ0.lean`): the invariants fix the context, the state,
+(`Proof/AesGcm/Arm/CTOpen.lean`): the invariants fix the context, the state,
 `W`, the nonce's address and length (also in `s7`), and leave the rest
 existential.
 -/

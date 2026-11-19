@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Spec.Aes.Contract
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 meta import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Spec.Aes.Contract

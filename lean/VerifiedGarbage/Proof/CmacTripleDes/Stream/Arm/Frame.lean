@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
@@ -37,8 +37,6 @@ meta import VerifiedGarbage.Proof.CmacTripleDes.Stream
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Framework.Covers

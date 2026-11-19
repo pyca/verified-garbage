@@ -6,10 +6,8 @@ public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Common
 import VerifiedGarbage.Proof.Md5.RISCV64.Stream
 import VerifiedGarbage.Proof.Sha1.RISCV64.Stream

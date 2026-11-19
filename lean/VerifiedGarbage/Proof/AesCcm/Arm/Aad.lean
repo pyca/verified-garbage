@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
 public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.Cmac.Stream

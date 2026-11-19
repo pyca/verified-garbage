@@ -21,10 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
-import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry

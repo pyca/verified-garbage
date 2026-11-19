@@ -20,7 +20,7 @@ Untrusted: everything here is checked by Lean. `zero16`, `copy16` and
 `xorB` and `dbl` write a block (`BlkStep`): zeros, a copy, the XOR of two
 blocks and `double` of a block (`zero16_ok`, `copy16_ok`, `xorB_ok`,
 `dbl_ok`), as blocks of memory (`blockAtMem`).
-As on AArch64 (`Proof/AesOcb/AArch64/PadTo.lean`).
+As on AArch64 (`Proof/AesOcb/AArch64/LNtz.lean`).
 -/
 
 @[expose] public section

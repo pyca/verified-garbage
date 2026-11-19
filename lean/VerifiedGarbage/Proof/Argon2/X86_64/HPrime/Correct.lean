@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.HPrime
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 public import VerifiedGarbage.Proof.Framework.Semantics

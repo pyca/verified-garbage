@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
-
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset

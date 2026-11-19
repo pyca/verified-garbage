@@ -15,13 +15,11 @@ import VerifiedGarbage.Proof.Argon2.Initial
 meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 meta import VerifiedGarbage.Proof.Argon2.Initial
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset

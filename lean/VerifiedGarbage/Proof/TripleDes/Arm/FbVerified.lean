@@ -23,9 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cfb8
-public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 meta import VerifiedGarbage.Spec.Cfb8
-meta import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 
 /-! ### `Modes.Arm.Cfb8`, which only this module used -/
 

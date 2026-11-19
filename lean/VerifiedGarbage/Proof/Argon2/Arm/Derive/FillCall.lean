@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
-public import VerifiedGarbage.Proof.Argon2.Arm.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.HPrime
@@ -25,13 +23,13 @@ import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Proof.Argon2.Contract
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 import VerifiedGarbage.Proof.Blake2.Stream
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 
 /-! ### `Argon2.Arm.Derive.FillState`, which this module and modules that import it used -/
 

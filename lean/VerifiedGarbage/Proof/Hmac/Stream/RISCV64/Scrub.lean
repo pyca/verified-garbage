@@ -7,16 +7,13 @@ public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
-public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 public import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Registration
@@ -24,15 +21,14 @@ meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha224
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha256
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha384
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
-meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_224
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512_256
+meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 meta import VerifiedGarbage.Proof.Hmac.AnyKey
 meta import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
+
 /-!
 # HMAC on RISC-V, without secret residue
 

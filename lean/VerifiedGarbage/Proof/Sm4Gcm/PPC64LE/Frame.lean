@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamFinish
-import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTVerify
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTOpen
@@ -23,7 +21,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTText
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
-meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTText
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase

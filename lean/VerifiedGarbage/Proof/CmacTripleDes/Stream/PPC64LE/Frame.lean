@@ -37,7 +37,7 @@ import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Verified
 import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit

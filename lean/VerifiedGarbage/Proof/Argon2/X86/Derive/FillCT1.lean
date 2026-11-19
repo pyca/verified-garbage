@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
-import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
 import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
 import VerifiedGarbage.Proof.Argon2.Dimensions
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCall
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 meta import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
 meta import VerifiedGarbage.Proof.Argon2.Dimensions

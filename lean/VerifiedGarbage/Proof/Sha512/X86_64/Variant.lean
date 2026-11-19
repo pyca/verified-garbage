@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Sha512.X86_64.Avx512
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -24,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Impl.Sha512.X86_64.Avx512
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.CT
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit

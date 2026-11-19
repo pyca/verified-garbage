@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Scrypt.Memory
-public import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
 import Mathlib.Tactic.DefEqTransformations
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
@@ -23,7 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 meta import Init.Data.Nat.Power2.Basic
 meta import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
 meta import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.CT
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Split
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -23,11 +21,11 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOpen
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Split
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Compare
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -38,10 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Pass
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
@@ -49,13 +44,10 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.SigEval
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.OpenTo.Pass
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SplitBlocks.Verified
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT

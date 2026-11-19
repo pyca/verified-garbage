@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Impl.Gcm.AArch64.Stitch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
-public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.Gcm.Spec

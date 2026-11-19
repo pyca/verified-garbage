@@ -33,11 +33,11 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Argon2.Contract
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Impl.Argon2.X86_64.Initial
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 meta import VerifiedGarbage.Proof.Blake2.Stream
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Argon2.X86_64.Initial

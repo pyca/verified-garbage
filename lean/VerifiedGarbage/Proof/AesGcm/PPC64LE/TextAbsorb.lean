@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 # AES-GCM on PPC64LE: absorbing the text (`textAbsorb`)
 
 Untrusted: everything here is checked by Lean. As on ARMv7
-(`Proof/AesGcm/Arm/TextAbsorb.lean`): `textAbsorb` absorbs the `len` bytes
+(`Proof/AesGcm/Arm/StreamFinish.lean`): `textAbsorb` absorbs the `len` bytes
 (`r19`) at `data` (`r20`) into GHASH as text: before the first text
 (`text_len`, `r23`, 0) it pads the additional data (of `aad_len` bytes,
 `r22`) first (`firstFlush`), and it does nothing for no bytes

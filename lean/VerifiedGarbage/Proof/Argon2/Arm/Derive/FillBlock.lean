@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
 public import VerifiedGarbage.Proof.Argon2.FillStep
 import VerifiedGarbage.Proof.Argon2.FillPositions
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,11 +12,802 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Argon2.Arm.Words
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 import VerifiedGarbage.Proof.Argon2.Reference
 import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Argon2.AddressInput
+
+/-! ### `Argon2.Arm.Derive.FillCache`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.Arm.Derive.FillInput`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Argon2.Arm.Derive.FillDep`, which the modules that import this one used -/
+
+section
+
+/-!
+# Argon2 on ARMv7: what keeps the filling state, and data-dependent addressing
+
+`FS.keep`: the filling state is kept by steps that keep the parameters, the
+position and counter in the locals, the cached address block and the
+matrix. `dependentWord_ok`: J₁ and J₂ are the first word of the previous
+block.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.Arm.Derive
+
+open VG VG.Arm
+open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_ldr)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
+open VG.Proof.Argon2.Arm (blk)
+open VG.Proof.Sha512.Arm (Only A)
+open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
+  divisorOff strideOff j1Off j2Off)
+
+/-- The offsets of the locals the filling state is about. -/
+abbrev fsOffs : List Nat :=
+  [divisorOff, segLenOff, laneLenOff, strideOff, passOff, sliceOff, laneOff, indexOff, counterOff]
+
+theorem FS.keep {s₀ s t : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t) (hl : ∀ d ∈ fsOffs, lw s₀ t d = lw s₀ s d)
+    (hc : blk t.mem (scrP s₀) 6144 = blk s.mem (scrP s₀) 6144)
+    (hm : ∀ k < (prm s₀).blocks, blockAt t.mem (matrixCell (memB s₀) k) = blockAt s.mem (matrixCell (memB s₀) k)) :
+    FS s₀ pass slice lane index ctr st t := by
+  refine ⟨it, Prm.of_lw h.pr fun d hd => hl d (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
+    h.pos.of_lw fun d hd => hl d (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
+    ?_, Represents.keep h.mem hm⟩
+  obtain ⟨c0, c1, c2 | ⟨c3, c4⟩⟩ := h.cache
+  · exact ⟨c0, by rw [hl _ (by simp)]; exact c1, .inl c2⟩
+  · exact ⟨c0, by rw [hl _ (by simp)]; exact c1, .inr ⟨c3, by rw [hc]; exact c4⟩⟩
+
+/-- A step that writes only registers but `r11` keeps the filling state. -/
+theorem FS.of_only {s₀ s t : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) {ds : List Reg} (o : Only ds s t) (h11 : Reg.r11 ∉ ds) :
+    FS s₀ pass slice lane index ctr st t :=
+  h.keep (h.inv.only o h11) (fun d _ => lw_mem o.mem d) (by rw [o.mem]) fun _ _ => by rw [o.mem]
+
+/-- `[B + o + d]` -/
+theorem A_shift (B : BitVec 32) (o d : Nat) : A (B + BitVec.ofNat 32 o) d = A B (o + d) := by
+  simp only [A, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+/-- A block of `scratch`. -/
+theorem scr_blk (m : Mem) {o : Nat} (ho : o + 1024 ≤ 16384) :
+    blk m (scrP s₀) o = blockAt m (scrB s₀ + BitVec.ofNat 64 o) := by
+  have := hp.scr_fits
+  have f : (scrP s₀ + BitVec.ofNat 32 o).toNat + 1024 ≤ 2 ^ 32 := by rw [add_nat (by omega_arith)]; omega_arith
+  rw [← scr_addr hp (by omega_arith), Proof.Argon2.Arm.blockAt_eq f, blk_shift]
+
+/-- A word of the matrix is kept by a store to the locals. -/
+theorem mem_loc_store {m : Mem} {d : Nat} (hd : d + 4 ≤ 144) (v : BitVec 32) {a : Addr}
+    (ha : (memR s₀).Contains a 4) :
+    (m.writeW (State.addr (E s₀ + BitVec.ofNat 32 d)) v).readW a 32 = m.readW a 32 :=
+  ((Frame.refl [⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩] m).writeW (List.mem_singleton_self _) v
+    (Region.contains_self _ _)).readW (r := memR s₀) ha (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (loc_disj hp hd (memR s₀) (by simp)).symm) (by decide)
+
+/-- A store to the locals keeps what the filling state is about, but at the word `d`. -/
+theorem FS.store {s t : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t) {d : Nat} (hd : d + 4 ≤ 144)
+    (hd' : d ∉ fsOffs) (hd'' : d % 4 = 0) {v : BitVec 32}
+    (hm : t.mem = s.mem.writeW (State.addr (E s₀ + BitVec.ofNat 32 d)) v) :
+    FS s₀ pass slice lane index ctr st t := by
+  have f : Frame [⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩] s.mem t.mem := by
+    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) v (Region.contains_self _ _)
+  refine h.keep it (fun e he => ?_) ?_ fun k hk => ?_
+  · show t.mem.readW _ 32 = s.mem.readW _ 32
+    rw [hm]
+    simp only [fsOffs, List.mem_cons, List.not_mem_nil, or_false] at he hd'
+    have : (e + 4 ≤ d ∨ d + 4 ≤ e) ∧ e + 4 ≤ 144 := by
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [divisorOff, segLenOff, laneLenOff, strideOff, passOff, sliceOff, laneOff, indexOff,
+        counterOff] at hd' ⊢ <;> omega_arith
+    exact lw_store hp (by omega_arith) (by omega_arith) this.1.symm v
+  · rw [scr_blk hp t.mem (by decide), scr_blk hp s.mem (by decide)]
+    refine blockAt_keep f fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (loc_disj hp hd (scrR s₀) (by simp)).symm.sub_left (Offset.sub_base _ (by omega_arith))
+  · refine blockAt_keep f fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
+    exact (loc_disj hp hd (memR s₀) (by simp)).symm.sub_left (cell_in_mem hk')
+
+/-- `dependentWord`: J₁ and J₂ are the halves of the previous block's first word. -/
+theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (hl : lane < lanesN s₀) (hs : slice < 4)
+    (hi : index < (prm s₀).segmentLen) :
+    WP isa Impl.Argon2.Arm.Derive.dependentWord s fun t => FS s₀ pass slice lane index ctr st t ∧
+      lw s₀ t j2Off ++ lw s₀ t j1Off = (blockAt s.mem (matrixCell (memB s₀) (lane * (prm s₀).laneLen +
+        (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) % (prm s₀).laneLen)))[0] := by
+  have hm := hp.mem_fits
+  have L8 := laneLen_ge hp
+  obtain ⟨cl, cf⟩ := cell_fits hp hl (col := (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
+    (prm s₀).laneLen) (Nat.mod_lt _ (by omega_arith))
+  unfold Impl.Argon2.Arm.Derive.dependentWord
+  refine WP.seq ((prevPointer_ok hp h.inv h.pr h.pos hl hs hi).mono fun s₁ ⟨a₁, k₁⟩ => ?_)
+  generalize (lane * (prm s₀).laneLen + (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
+    (prm s₀).laneLen) = c at cl cf a₁ ⊢
+  have h₁ := h.of_only k₁ (by decide)
+  have inP : ∀ o, o + 4 ≤ 1024 → (memR s₀).Contains (A (memP s₀ + BitVec.ofNat 32 (c * 1024)) o) 4 :=
+    fun o ho => by
+      rw [A_shift, VG.Proof.Sha512.Arm.A_eq (by omega_arith)]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  have mW : ∀ t, Inv s₀ t → memR s₀ ∈ t.wr := fun t it => by rw [it.wr]; exact mem_mem hp
+  refine wp_ldr (by decide) (by rw [a₁]) ⟨_, List.mem_append_right _ (mW _ h₁.inv), inP 0 (by decide)⟩
+    fun s₂ u₂ => ?_
+  have h₂ := h₁.of_only (Only.of_upd u₂) (by decide)
+  refine wp_stloc hp h₂.inv (d := j1Off) (by decide) fun s₃ i₃ v₃ o₃ g₃ m₃ => ?_
+  have h₃ := h₂.store hp i₃ (d := j1Off) (by decide) (by decide) (by decide) m₃
+  refine wp_ldr (by decide) (by rw [g₃, u₂.other _ (by decide), a₁])
+    ⟨_, List.mem_append_right _ (mW _ h₃.inv), inP 4 (by decide)⟩ fun s₄ u₄ => ?_
+  have h₄ := h₃.of_only (Only.of_upd u₄) (by decide)
+  refine wp_stloc hp h₄.inv (d := j2Off) (by decide) fun t it vt ot gt mt => WP.block_nil ⟨?_, ?_⟩
+  · exact h₄.store hp it (d := j2Off) (by decide) (by decide) (by decide) mt
+  · rw [vt, ot j1Off (by decide) (by decide), lw_mem u₄.mem, v₃, u₄.gpr, m₃,
+      mem_loc_store hp (by decide) _ (inP 4 (by decide)), u₂.mem, u₂.gpr, k₁.mem, cell_blk hp _ cl, blk_zero,
+      A_shift, A_shift, Nat.add_zero (c * 1024)]
+
+end
+
+/-- Regions a step of the filling loops may write without changing the filling state. -/
+def Outside (s₀ : State) (r : Region) : Prop :=
+  r.Disjoint (locR s₀) ∧ r.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 6144, 1024⟩ ∧ r.Disjoint (memR s₀)
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+theorem loc_word_sub {d : Nat} (hd : d + 4 ≤ 144) :
+    Region.Sub ⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩ (locR s₀) := by
+  have := E_hi hp
+  exact sub32 (by rw [loc_nat hp (by omega_arith)]; omega_arith) (by rw [loc_nat hp (by omega_arith)]; omega_arith)
+
+theorem FS.frame {s t : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t) {rs : List Region} (f : Frame rs s.mem t.mem)
+    (ho : ∀ r ∈ rs, Outside s₀ r) : FS s₀ pass slice lane index ctr st t := by
+  refine h.keep it (fun d hd => ?_) ?_ fun k hk => ?_
+  · have hd' : d + 4 ≤ 144 := by
+      simp only [fsOffs, List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    exact f.readW (r := ⟨State.addr (E s₀ + BitVec.ofNat 32 d), 4⟩) (Region.contains_self _ _)
+      (fun r hr => (ho r hr).1.symm.sub_left (loc_word_sub hp hd')) (by decide)
+  · rw [scr_blk hp t.mem (by decide), scr_blk hp s.mem (by decide)]
+    exact blockAt_keep f fun r hr => (ho r hr).2.1.symm
+  · have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
+    exact blockAt_keep f fun r hr => (ho r hr).2.2.symm.sub_left (cell_in_mem hk')
+
+theorem outside_scr {o n : Nat} (h : o + n ≤ 6144 ∨ (7168 ≤ o ∧ o + n ≤ 16384)) :
+    Outside s₀ ⟨scrB s₀ + BitVec.ofNat 64 o, n⟩ := by
+  have sub : Region.Sub ⟨scrB s₀ + BitVec.ofNat 64 o, n⟩ (scrR s₀) := Offset.sub_base _ (by omega_arith)
+  refine ⟨(loc_disj' hp (R := scrR s₀) (by simp)).symm.sub_left sub, Offset.disjoint _ (by omega_arith) (by omega_arith)
+    (by omega_arith), hp.mem_scr.symm.sub_left sub⟩
+
+end
+
+end VG.Proof.Argon2.Arm.Derive
+
+end
+
+end
+
+/-!
+# Argon2 on ARMv7: the input of the address block
+
+`clearAt_ok`: `clearAt d` zeroes `scratch[d, d + 1024)`. `aheader_ok`: the
+seven words of the address-generation input block (§3.4.1.2), at
+`scratch + 5120`. `input_ok`: after both, the block there is
+`addressInput`, and the one at `scratch + 7168` is zero.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.Arm.Derive
+
+open VG VG.Arm
+open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_add wp_str op2_imm)
+open VG.Spec.Argon2 (Block zeroBlock FillState)
+open VG.Proof.Argon2.Arm (blk ofWords blk_of_words)
+open VG.Proof.Sha512.Arm (A)
+open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff)
+
+/-- Words of `scratch`. -/
+abbrev sw (s₀ : State) (m : Mem) (o : Nat) : BitVec 32 := m.readW (A (scrP s₀) o) 32
+
+theorem toNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+/-- A word of `scratch` after a store to another, or the same. -/
+theorem sw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ 16384) (hb : b + 4 ≤ 16384)
+    (h : a = b ∨ a + 4 ≤ b ∨ b + 4 ≤ a) (v : BitVec 32) :
+    sw s₀ (m.writeW (A (scrP s₀) a) v) b = if a = b then v else sw s₀ m b := by
+  by_cases e : a = b
+  · subst e; rw [ite_eq_left rfl]; exact Mem.readW_writeW_self32 _ _ _
+  · rw [ite_eq_right e, sw, sw, A, A, scr_addr hp (by omega_arith), scr_addr hp (by omega_arith)]
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
+
+/-- `n` stores of `r0 = 0` to `[r2, #4k]`, with `r2 = scratch + d`. -/
+theorem zeros_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 16384)
+    (hx : s.gpr .r2 = scrP s₀ + BitVec.ofNat 32 d) (ha : s.gpr .r0 = 0) :
+    ∀ n ≤ 256, WP isa (.block ((List.range n).map fun k => Instr.str .r0 .r2 (4 * k))) s fun t =>
+      Inv s₀ t ∧ t.gpr = s.gpr ∧ Frame [⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩] s.mem t.mem ∧
+      ∀ i < n, sw s₀ t.mem (d + 4 * i) = 0
+  | 0, _ => WP.block_nil ⟨h, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  | n + 1, hn => by
+    have hs := hp.scr_fits
+    rw [List.range_succ, List.map_append, List.map_singleton]
+    refine WP.block_append ((zeros_ok h hd hx ha n (by omega_arith)).mono fun t ⟨it, gt, ft, wt⟩ => ?_)
+    have ea : State.addr (t.gpr .r2 + BitVec.ofNat 32 (4 * n)) = scrB s₀ + BitVec.ofNat 64 (d + 4 * n) := by
+      rw [gt, hx, BitVec.add_assoc, BitVec.ofNat_add_ofNat, scr_addr hp (by omega_arith)]
+    have hc : (scrR s₀).Contains (scrB s₀ + BitVec.ofNat 64 (d + 4 * n)) 4 :=
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
+    have hc' : (⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩ : Region).Contains (scrB s₀ + BitVec.ofNat 64 (d + 4 * n)) 4 :=
+      Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
+    refine wp_str (by omega_arith) ea ⟨_, by rw [it.wr]; exact scr_mem hp, hc⟩ fun t₁ u₁ => WP.block_nil
+      ⟨it.store (R := scrR s₀) (by simp) hc u₁, by rw [u₁.gpr, gt], ?_, fun i hi => ?_⟩
+    · rw [u₁.mem]
+      exact ft.writeW (List.mem_singleton_self _) _ hc'
+    · have e : scrB s₀ + BitVec.ofNat 64 (d + 4 * n) = A (scrP s₀) (d + 4 * n) := (scr_addr hp (by omega_arith)).symm
+      rw [u₁.mem, e, gt, ha, sw_store hp _ (by omega_arith) (by omega_arith) (by omega_arith)]
+      by_cases e : d + 4 * n = d + 4 * i
+      · rw [ite_eq_left e]
+      · rw [ite_eq_right e]; exact wt i (by omega_arith)
+
+/-- `clearAt d`: zero `scratch[d, d + 1024)`. -/
+theorem clearAt_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 16384)
+    (he : encodable (BitVec.ofNat 32 d) = true) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Inv s₀ t → (∀ r, r ≠ .r0 → r ≠ .r2 → t.gpr r = s.gpr r) →
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩] s.mem t.mem → (∀ i < 256, sw s₀ t.mem (d + 4 * i) = 0) →
+      WP isa (.block is) t Q) :
+    WP isa (.block (Impl.Argon2.Arm.Derive.clearAt d ++ is)) s Q := by
+  unfold Impl.Argon2.Arm.Derive.clearAt Impl.Argon2.Arm.Derive.scratchAt
+  simp only [List.cons_append, List.nil_append]
+  refine wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => wp_add (op2_imm he) fun s₂ u₂ =>
+    wp_mov (op2_imm (by decide)) fun s₃ u₃ => ?_
+  have i₃ := ((h.upd u₁ (by decide)).upd u₂ (by decide)).upd u₃ (by decide)
+  refine WP.block_append ((zeros_ok hp i₃ hd (by rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr]) u₃.gpr 256
+    (Nat.le_refl _)).mono fun t ⟨it, gt, ft, wt⟩ => k t it (fun r a b => ?_) ?_ wt)
+  · rw [gt, u₃.other _ a, u₂.other _ b, u₁.other _ b]
+  · rw [show s.mem = s₃.mem by rw [u₃.mem, u₂.mem, u₁.mem]]; exact ft
+
+end
+
+/-- The seven words of the address-generation input block. -/
+def hdr (s₀ : State) (pass lane slice c : Nat) : Nat → BitVec 32
+  | 0 => BitVec.ofNat 32 pass
+  | 1 => BitVec.ofNat 32 lane
+  | 2 => BitVec.ofNat 32 slice
+  | 3 => arg s₀ 14
+  | 4 => arg s₀ 5
+  | 5 => arg s₀ 0
+  | _ => BitVec.ofNat 32 c
+
+/-- The words of the input block after its first `n` words are written over `m`'s. -/
+def HW (s₀ : State) (m : Mem) (pass lane slice c n : Nat) (m' : Mem) : Prop :=
+  ∀ i < 256, sw s₀ m' (5120 + 4 * i) =
+    if i % 2 = 0 ∧ i < 2 * n then hdr s₀ pass lane slice c (i / 2) else sw s₀ m (5120 + 4 * i)
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+/-- One word of the header. -/
+theorem hdr_step {m : Mem} {pass lane slice c n : Nat} (hn : n < 7) {u : State} (h : Inv s₀ u)
+    (hx : u.gpr .r2 = scrP s₀ + BitVec.ofNat 32 5120) (ha : u.gpr .r0 = hdr s₀ pass lane slice c n)
+    (hw : HW s₀ m pass lane slice c n u.mem) {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Inv s₀ t → t.gpr = u.gpr → Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] u.mem t.mem →
+      HW s₀ m pass lane slice c (n + 1) t.mem → WP isa (.block is) t Q) :
+    WP isa (.block (.str .r0 .r2 (8 * n) :: is)) u Q := by
+  have hs := hp.scr_fits
+  have ea : State.addr (u.gpr .r2 + BitVec.ofNat 32 (8 * n)) = A (scrP s₀) (5120 + 8 * n) := by
+    rw [hx, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  have eb : A (scrP s₀) (5120 + 8 * n) = scrB s₀ + BitVec.ofNat 64 (5120 + 8 * n) := scr_addr hp (by omega_arith)
+  have hc : (scrR s₀).Contains (A (scrP s₀) (5120 + 8 * n)) 4 := by
+    rw [eb]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  have hc' : (⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩ : Region).Contains (A (scrP s₀) (5120 + 8 * n)) 4 := by
+    rw [eb]; exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine wp_str (by omega_arith) ea ⟨_, by rw [h.wr]; exact scr_mem hp, hc⟩ fun t u₁ =>
+    k t (h.store (R := scrR s₀) (by simp) hc u₁) u₁.gpr ?_ fun i hi => ?_
+  · rw [u₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc'
+  · rw [u₁.mem, sw_store hp _ (by omega_arith) (by omega_arith) (by omega_arith), ha, hw i hi]
+    by_cases e : 5120 + 8 * n = 5120 + 4 * i
+    · rw [ite_eq_left e, ite_eq_left (by omega_arith), show i / 2 = n by omega_arith]
+    · rw [ite_eq_right e]
+      by_cases c₁ : i % 2 = 0 ∧ i < 2 * n
+      · rw [ite_eq_left c₁, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right c₁, ite_eq_right (by omega_arith)]
+
+theorem aheader_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
+    (ps : Pos s₀ s pass slice lane index) (hc : lw s₀ s counterOff = BitVec.ofNat 32 c) :
+    WP isa (.block Impl.Argon2.Arm.Derive.addressHeader) s fun t => Inv s₀ t ∧
+      (∀ r, r ≠ .r0 → r ≠ .r2 → t.gpr r = s.gpr r) ∧
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t.mem ∧ HW s₀ s.mem pass lane slice c 7 t.mem := by
+  have fsub : ∀ r ∈ [(⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩ : Region)],
+      ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨scrR s₀, by simp, Offset.sub_base _ (by decide)⟩
+  unfold Impl.Argon2.Arm.Derive.addressHeader Impl.Argon2.Arm.Derive.scratchAt
+  simp only [List.cons_append, List.nil_append]
+  refine wp_ldarg hp h (i := 15) (by decide) fun s₀' u₀ => wp_add (op2_imm (by decide)) fun s₁ u₁ => ?_
+  have i₁ := (h.upd u₀ (by decide)).upd u₁ (by decide)
+  have x₁ : s₁.gpr .r2 = scrP s₀ + BitVec.ofNat 32 5120 := by rw [u₁.gpr, u₀.gpr]
+  have m₁ : s₁.mem = s.mem := by rw [u₁.mem, u₀.mem]
+  have w₀ : HW s₀ s.mem pass lane slice c 0 s₁.mem := fun i _ => by
+    rw [ite_eq_right (by omega_arith), m₁]
+  -- Word 0: the pass.
+  refine wp_ldloc hp i₁ (d := passOff) (by decide) fun s₂ u₂ => ?_
+  refine hdr_step hp (n := 0) (by decide) (i₁.upd u₂ (by decide)) (by rw [u₂.other _ (by decide), x₁])
+    (by rw [u₂.gpr, lw_mem m₁, ps.pass]; rfl) (by rw [u₂.mem]; exact w₀) fun t₂ it₂ g₂ f₂ w₂ => ?_
+  -- Word 1: the lane.
+  refine wp_ldloc hp it₂ (d := laneOff) (by decide) fun s₃ u₃ => ?_
+  refine hdr_step hp (n := 1) (by decide) (it₂.upd u₃ (by decide))
+    (by rw [u₃.other _ (by decide), g₂, u₂.other _ (by decide), x₁])
+    (by rw [u₃.gpr, lw_keep hp f₂ fsub (by decide), lw_mem u₂.mem, lw_mem m₁, ps.lane]; rfl)
+    (by rw [u₃.mem]; exact w₂) fun t₃ it₃ g₃ f₃ w₃ => ?_
+  have F₃ : Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t₃.mem := by
+    rw [← m₁, ← u₂.mem]; exact f₂.trans (by rw [← u₃.mem]; exact f₃)
+  -- Word 2: the slice.
+  refine wp_ldloc hp it₃ (d := sliceOff) (by decide) fun s₄ u₄ => ?_
+  refine hdr_step hp (n := 2) (by decide) (it₃.upd u₄ (by decide))
+    (by rw [u₄.other _ (by decide), g₃, u₃.other _ (by decide), g₂, u₂.other _ (by decide), x₁])
+    (by rw [u₄.gpr, lw_keep hp F₃ fsub (by decide), ps.slice]; rfl)
+    (by rw [u₄.mem]; exact w₃) fun t₄ it₄ g₄ f₄ w₄ => ?_
+  have F₄ : Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t₄.mem :=
+    F₃.trans (by rw [← u₄.mem]; exact f₄)
+  -- Words 3 to 5: the arguments.
+  refine wp_ldarg hp it₄ (i := 14) (by decide) fun s₅ u₅ => ?_
+  refine hdr_step hp (n := 3) (by decide) (it₄.upd u₅ (by decide))
+    (by rw [u₅.other _ (by decide), g₄, u₄.other _ (by decide), g₃, u₃.other _ (by decide), g₂,
+      u₂.other _ (by decide), x₁])
+    (by rw [u₅.gpr]; rfl) (by rw [u₅.mem]; exact w₄) fun t₅ it₅ g₅ f₅ w₅ => ?_
+  have F₅ : Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t₅.mem :=
+    F₄.trans (by rw [← u₅.mem]; exact f₅)
+  refine wp_ldarg hp it₅ (i := 5) (by decide) fun s₆ u₆ => ?_
+  refine hdr_step hp (n := 4) (by decide) (it₅.upd u₆ (by decide))
+    (by rw [u₆.other _ (by decide), g₅, u₅.other _ (by decide), g₄, u₄.other _ (by decide), g₃,
+      u₃.other _ (by decide), g₂, u₂.other _ (by decide), x₁])
+    (by rw [u₆.gpr]; rfl) (by rw [u₆.mem]; exact w₅) fun t₆ it₆ g₆ f₆ w₆ => ?_
+  have F₆ : Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t₆.mem :=
+    F₅.trans (by rw [← u₆.mem]; exact f₆)
+  refine wp_ldarg hp it₆ (i := 0) (by decide) fun s₇ u₇ => ?_
+  refine hdr_step hp (n := 5) (by decide) (it₆.upd u₇ (by decide))
+    (by rw [u₇.other _ (by decide), g₆, u₆.other _ (by decide), g₅, u₅.other _ (by decide), g₄,
+      u₄.other _ (by decide), g₃, u₃.other _ (by decide), g₂, u₂.other _ (by decide), x₁])
+    (by rw [u₇.gpr]; rfl) (by rw [u₇.mem]; exact w₆) fun t₇ it₇ g₇ f₇ w₇ => ?_
+  have F₇ : Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩] s.mem t₇.mem :=
+    F₆.trans (by rw [← u₇.mem]; exact f₇)
+  -- Word 6: the counter.
+  refine wp_ldloc hp it₇ (d := counterOff) (by decide) fun s₈ u₈ => ?_
+  refine hdr_step hp (n := 6) (by decide) (it₇.upd u₈ (by decide))
+    (by rw [u₈.other _ (by decide), g₇, u₇.other _ (by decide), g₆, u₆.other _ (by decide), g₅,
+      u₅.other _ (by decide), g₄, u₄.other _ (by decide), g₃, u₃.other _ (by decide), g₂,
+      u₂.other _ (by decide), x₁])
+    (by rw [u₈.gpr, lw_keep hp F₇ fsub (by decide), hc]; rfl)
+    (by rw [u₈.mem]; exact w₇) fun t it g f w => WP.block_nil ⟨it, fun r a b => ?_,
+      F₇.trans (by rw [← u₈.mem]; exact f), w⟩
+  rw [g, u₈.other _ a, g₇, u₇.other _ a, g₆, u₆.other _ a, g₅, u₅.other _ a, g₄, u₄.other _ a, g₃,
+    u₃.other _ a, g₂, u₂.other _ a, u₁.other _ b, u₀.other _ b]
+
+end
+
+theorem zero_append32 (x : BitVec 32) : 0#32 ++ x = BitVec.ofNat 64 x.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_append, BitVec.toNat_ofNat]
+  simp
+  have := x.isLt
+  omega_arith
+
+/-- The input block's words. -/
+def inWord (s₀ : State) (pass lane slice c : Nat) (i : Nat) : BitVec 32 :=
+  if i % 2 = 0 ∧ i < 14 then hdr s₀ pass lane slice c (i / 2) else 0
+
+theorem input_words {s₀ : State} (hp : DPre s₀) {pass lane slice c : Nat} (h₁ : pass < 2 ^ 32)
+    (h₂ : lane < 2 ^ 32) (h₃ : slice < 2 ^ 32) (h₄ : c < 2 ^ 32) :
+    ofWords (inWord s₀ pass lane slice c) = Proof.Argon2.addressInput (prm s₀) pass lane slice c := by
+  have eb : (arg s₀ 14).toNat = (prm s₀).blocks := hp.blocks
+  have ep : (arg s₀ 5).toNat = (prm s₀).passes := rfl
+  have ek : (arg s₀ 0).toNat = (prm s₀).variant.code := (variant_code hp.kind_le).symm
+  apply Vector.ext
+  intro j hj
+  simp only [ofWords, Vector.getElem_ofFn, Proof.Argon2.addressInput, Vector.getElem_set, zeroBlock,
+    Vector.getElem_replicate, inWord]
+  rw [ite_eq_right (by omega_arith)]
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ 7 ≤ j) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | hj7
+  · simp [hdr]; rw [zero_append32, toNat32 h₁]
+  · simp [hdr]; rw [zero_append32, toNat32 h₂]
+  · simp [hdr]; rw [zero_append32, toNat32 h₃]
+  · simp [hdr]; rw [zero_append32, eb]
+  · simp [hdr]; rw [zero_append32, ep]
+  · simp [hdr]; rw [zero_append32, ek]
+  · simp [hdr]; rw [zero_append32, toNat32 h₄]
+  · rw [ite_eq_right (by omega_arith)]
+    simp (disch := omega_arith) only [ite_eq_right]
+    rfl
+
+theorem ofWords_zero : ofWords (fun _ => 0) = zeroBlock := by
+  apply Vector.ext
+  intro j hj
+  simp only [ofWords, Vector.getElem_ofFn, zeroBlock, Vector.getElem_replicate]
+  rfl
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+/-- A word of `scratch` outside a frame's region of `scratch`. -/
+theorem sw_frame {m m' : Mem} {a n : Nat} (f : Frame [⟨scrB s₀ + BitVec.ofNat 64 a, n⟩] m m') {o : Nat}
+    (h : o + 4 ≤ a ∨ a + n ≤ o) (ho : o + 4 ≤ 16384) (hn : a + n ≤ 16384) : sw s₀ m' o = sw s₀ m o := by
+  rw [sw, sw, A, scr_addr hp (by omega_arith)]
+  refine f.readW (r := ⟨scrB s₀ + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
+
+/-- The address-generation input block at `scratch + 5120`, and a zero block at `scratch + 7168`. -/
+theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
+    (ps : Pos s₀ s pass slice lane index) (hc : lw s₀ s counterOff = BitVec.ofNat 32 c)
+    (h₁ : pass < 2 ^ 32) (h₂ : lane < 2 ^ 32) (h₃ : slice < 2 ^ 32) (h₄ : c < 2 ^ 32) :
+    WP isa (.block (Impl.Argon2.Arm.Derive.clearAt 5120 ++ Impl.Argon2.Arm.Derive.clearAt 7168 ++
+      Impl.Argon2.Arm.Derive.addressHeader)) s fun t => Inv s₀ t ∧
+      (∀ r, r ≠ .r0 → r ≠ .r2 → t.gpr r = s.gpr r) ∧
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩, ⟨scrB s₀ + BitVec.ofNat 64 7168, 1024⟩] s.mem t.mem ∧
+      blk t.mem (scrP s₀) 5120 = Proof.Argon2.addressInput (prm s₀) pass lane slice c ∧
+      blk t.mem (scrP s₀) 7168 = zeroBlock := by
+  have fsub : ∀ d, d + 1024 ≤ 16384 → ∀ r ∈ [(⟨scrB s₀ + BitVec.ofNat 64 d, 1024⟩ : Region)],
+      ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' := fun d hd r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨scrR s₀, by simp, Offset.sub_base _ hd⟩
+  rw [List.append_assoc]
+  refine clearAt_ok hp h (d := 5120) (by decide) (by decide) fun t₁ i₁ g₁ f₁ z₁ => ?_
+  refine clearAt_ok hp i₁ (d := 7168) (by decide) (by decide) fun t₂ i₂ g₂ f₂ z₂ => ?_
+  have L : ∀ d, d + 4 ≤ 144 → lw s₀ t₂ d = lw s₀ s d := fun d hd => by
+    rw [lw_keep hp f₂ (fsub _ (by decide)) hd, lw_keep hp f₁ (fsub _ (by decide)) hd]
+  refine (aheader_ok hp i₂ (pass := pass) (slice := slice) (lane := lane) (index := index) (c := c)
+    (ps.of_lw fun d hd => L d (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide))
+    (by rw [L _ (by decide)]; exact hc)).mono
+    fun t ⟨it, gt, ft, wt⟩ => ⟨it, fun r a b => by rw [gt r a b, g₂ r a b, g₁ r a b], ?_, ?_, ?_⟩
+  · refine (Frame.trans (f₁.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩)
+      (f₂.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inr hr, fun _ h => h⟩)).trans
+      (ft.sub fun r hr => ⟨⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩, by simp, by
+        simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
+  · rw [blk_of_words (f := inWord s₀ pass lane slice c) fun i hi => ?_, input_words hp h₁ h₂ h₃ h₄]
+    have w := wt i hi
+    simp only [sw] at w
+    rw [w, inWord]
+    by_cases e : i % 2 = 0 ∧ i < 2 * 7
+    · rw [ite_eq_left e, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right e, ite_eq_right (by omega_arith), ← sw, sw_frame hp f₂ (by omega_arith) (by omega_arith) (by decide)]
+      exact z₁ i hi
+  · rw [blk_of_words (f := fun _ => 0) fun i hi => ?_, ofWords_zero]
+    rw [← sw, sw_frame hp ft (by omega_arith) (by omega_arith) (by decide)]
+    exact z₂ i hi
+
+end
+
+end VG.Proof.Argon2.Arm.Derive
+
+end
+
+end
+
+/-!
+# Argon2 on ARMv7: the address block and the random word
+
+`stage_ok`: G of two blocks of `scratch` to a third. `addressCalls_ok`: the
+address block for the counter, G(0, G(0, input)), at `scratch + 6144`.
+`addressCache_ok`: J₁, J₂ from the cached address block, regenerated when
+the index enters a new group of 128. `randomSource_ok`: J₁, J₂ are the
+random word of `FillStep.random`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Argon2.Arm.Derive
+
+open VG VG.Arm
+open VG.Proof.MdStream.Arm (Upd Mupd Fupd wp_mov wp_add wp_and wp_cmp wp_ldr op2_imm op2_reg op2_lsr op2_lsl)
+open VG.Spec.Argon2 (Block zeroBlock FillState compress addressBlock)
+open VG.Proof.Argon2.Arm (blk)
+open VG.Proof.Sha512.Arm (Only A)
+open VG.Impl.Argon2.Arm.Derive (sliceOff segLenOff indexOff laneOff laneLenOff argOff passOff counterOff
+  j1Off j2Off)
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+theorem scr_blockAt (m : Mem) {o : Nat} (ho : o + 1024 ≤ 16384) :
+    blockAt m (State.addr (scrP s₀ + BitVec.ofNat 32 o)) = blk m (scrP s₀) o := by
+  have := hp.scr_fits
+  rw [Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega_arith)]; omega_arith), blk_shift]
+
+/-- `stage x y out`: G of the blocks at `scratch + x` and `scratch + y` to `scratch + out`. -/
+theorem stage_ok {s : State} (h : Inv s₀ s) {x y o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384)
+    (hx : 4096 ≤ x) (hx' : x + 1024 ≤ 16384) (hxo : x + 1024 ≤ o ∨ o + 1024 ≤ x)
+    (hy : 4096 ≤ y) (hy' : y + 1024 ≤ 16384) (hyo : y + 1024 ≤ o ∨ o + 1024 ≤ y)
+    (ex : encodable (BitVec.ofNat 32 x) = true) (ey : encodable (BitVec.ofNat 32 y) = true)
+    (eo : encodable (BitVec.ofNat 32 o) = true) :
+    WP isa (Impl.Argon2.Arm.Derive.stage x y o) s fun t => Inv s₀ t ∧
+      (∀ q ∈ preserved, q ≠ .lr → t.gpr q = s.gpr q) ∧
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] s.mem t.mem ∧
+      blk t.mem (scrP s₀) o = compress (blk s.mem (scrP s₀) x) (blk s.mem (scrP s₀) y) := by
+  unfold Impl.Argon2.Arm.Derive.stage
+  refine WP.seq (wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => wp_add (op2_imm ex) fun s₂ u₂ =>
+    wp_add (op2_imm ey) fun s₃ u₃ => wp_add (op2_imm eo) fun s₄ u₄ => WP.block_nil ?_)
+  have o₄ := (((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans (Only.of_upd u₄)
+  have i₄ := h.only o₄ (by decide)
+  have dx : s₄.gpr .r3 = scrP s₀ := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
+  have ax : s₄.gpr .r0 = scrP s₀ + BitVec.ofNat 32 x := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.gpr]
+  have sx : s₄.gpr .r1 = scrP s₀ + BitVec.ofNat 32 y := by
+    rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.gpr]
+  have cx : s₄.gpr .r2 = scrP s₀ + BitVec.ofNat 32 o := by
+    rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
+  refine ccall_ok hp i₄ dx ho ho' cx (by rw [ax]; exact .inr ⟨x, hx, hx', hxo, rfl⟩)
+    (by rw [sx]; exact .inr ⟨y, hy, hy', hyo, rfl⟩) fun t it cs f post =>
+      ⟨it, fun q hq hl => ?_, by rw [← o₄.mem]; exact f,
+        by rw [post, ax, sx, scr_blockAt hp _ hx', scr_blockAt hp _ hy', o₄.mem]⟩
+  rw [cs q hq hl]
+  refine o₄.gpr q ?_
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+/-- A block of `scratch` at `d`, outside the regions G's call at `o` writes. -/
+theorem stage_keep {m m' : Mem} {o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384)
+    (f : Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] m m') {d : Nat} (hd : 4096 ≤ d)
+    (hd' : d + 1024 ≤ 16384) (hdo : d + 1024 ≤ o ∨ o + 1024 ≤ d) :
+    blk m' (scrP s₀) d = blk m (scrP s₀) d := by
+  rw [scr_blk hp m' hd', scr_blk hp m hd']
+  refine blockAt_keep f fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact Offset.disjoint _ hdo (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint_base _ hd (by omega_arith)
+
+omit hp in
+theorem stage_frame {m m' : Mem} {o : Nat} (ho' : o + 1024 ≤ 16384)
+    (f : Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] m m') :
+    Frame [scrR s₀] m m' :=
+  f.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨scrR s₀, by simp, Offset.sub_base _ ho'⟩
+    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+
+/-- `addressCalls`: the address block for the counter `c` at `scratch + 6144`. -/
+theorem addressCalls_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
+    (ps : Pos s₀ s pass slice lane index) (hc : lw s₀ s counterOff = BitVec.ofNat 32 c)
+    (h₁ : pass < 2 ^ 32) (h₂ : lane < 2 ^ 32) (h₃ : slice < 2 ^ 32) (h₄ : c < 2 ^ 32) :
+    WP isa Impl.Argon2.Arm.Derive.addressCalls s fun t => Inv s₀ t ∧
+      (∀ q ∈ preserved, q ≠ .lr → t.gpr q = s.gpr q) ∧ Frame [scrR s₀] s.mem t.mem ∧
+      blk t.mem (scrP s₀) 6144 = addressBlock (prm s₀) pass lane slice c := by
+  unfold Impl.Argon2.Arm.Derive.addressCalls
+  refine WP.seq ((input_ok hp h ps hc h₁ h₂ h₃ h₄).mono fun t₁ ⟨i₁, g₁, f₁, b₁, z₁⟩ => ?_)
+  refine WP.seq ((stage_ok hp i₁ (x := 7168) (y := 5120) (o := 4096) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono
+    fun t₂ ⟨i₂, g₂, f₂, b₂⟩ => ?_)
+  refine (stage_ok hp i₂ (x := 7168) (y := 4096) (o := 6144) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono
+    fun t ⟨it, gt, ft, bt⟩ => ⟨it, fun q hq hl => ?_, ?_, ?_⟩
+  · rw [gt q hq hl, g₂ q hq hl]
+    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      first | exact g₁ _ (by decide) (by decide) | exact absurd rfl hl
+  · refine Frame.trans (f₁.sub fun r hr => ?_) ((stage_frame (by decide) f₂).trans (stage_frame (by decide) ft))
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨scrR s₀, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨scrR s₀, by simp, Offset.sub_base _ (by decide)⟩
+  · rw [bt, stage_keep hp (by decide) (by decide) f₂ (d := 7168) (by decide) (by decide) (by decide), b₂, z₁, b₁]
+    rfl
+
+end
+
+theorem and127 {n : Nat} (h : n < 2 ^ 32) : BitVec.ofNat 32 n &&& 127 = BitVec.ofNat 32 (n % 128) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, toNat32 h, toNat32 (by omega_arith),
+    show (127 : BitVec 32).toNat = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+
+theorem shr7 {n : Nat} (h : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 7 = BitVec.ofNat 32 (n / 128) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, toNat32 h, toNat32 (by omega_arith), Nat.shiftRight_eq_div_pow]
+
+section
+variable {s₀ : State} (hp : DPre s₀)
+include hp
+
+/-- `cacheWord`: J₁ and J₂ are word `index mod 128` of the cached address block. -/
+theorem cacheWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (hi : index < 2 ^ 30) :
+    WP isa (.block Impl.Argon2.Arm.Derive.cacheWord) s fun t => FS s₀ pass slice lane index ctr st t ∧
+      lw s₀ t j2Off ++ lw s₀ t j1Off = (blk s.mem (scrP s₀) 6144)[index % 128]'(Nat.mod_lt _ (by decide)) := by
+  have hs := hp.scr_fits
+  have e8 : 8 * (index % 128) < 1024 := by omega_arith
+  unfold Impl.Argon2.Arm.Derive.cacheWord
+  refine wp_ldloc hp h.inv (d := indexOff) (by decide) fun s₁ u₁ => wp_and (op2_imm (by decide)) fun s₂ u₂ => ?_
+  have o₂ := (Only.of_upd u₁).trans (Only.of_upd u₂)
+  have h₂ := h.of_only o₂ (by decide)
+  refine wp_ldarg hp h₂.inv (i := 15) (by decide) fun s₃ u₃ => wp_add (op2_lsl (by decide)) fun s₄ u₄ =>
+    wp_add (op2_imm (by decide)) fun s₅ u₅ => ?_
+  have h₅ := h₂.of_only (((Only.of_upd u₃).trans (Only.of_upd u₄)).trans (Only.of_upd u₅)) (by decide)
+  have a₅ : s₅.gpr .r0 = scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128)) := by
+    rw [u₅.gpr, u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.gpr, h.pos.index,
+      and127 (by omega_arith), ofNat_shl (by omega_arith), show (6144 : BitVec 32) = BitVec.ofNat 32 6144 from rfl,
+      BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    congr 2; omega_arith
+  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, o₂.mem]
+  have inS : ∀ t : State, Inv s₀ t → ∀ o, o + 4 ≤ 1024 →
+      InRegions (t.rd ++ t.wr) (State.addr (scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128) + o))) 4 :=
+    fun t it o ho => by
+      rw [scr_addr hp (by omega_arith), it.wr]
+      exact ⟨scrR s₀, List.mem_append_right _ (scr_mem hp), Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have ad : ∀ o, State.addr (s₅.gpr .r0 + BitVec.ofNat 32 o) =
+      State.addr (scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128) + o)) :=
+    fun o => by rw [a₅, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  refine wp_ldr (by decide) (ad 0) (inS _ h₅.inv 0 (by decide)) fun s₆ u₆ => ?_
+  have h₆ := h₅.of_only (Only.of_upd u₆) (by decide)
+  refine wp_stloc hp h₆.inv (d := j1Off) (by decide) fun s₇ i₇ v₇ o₇ g₇ m₇ => ?_
+  have h₇ := h₆.store hp i₇ (d := j1Off) (by decide) (by decide) (by decide) m₇
+  refine wp_ldr (by decide) (by rw [g₇, u₆.other _ (by decide)]; exact ad 4) (inS _ h₇.inv 4 (by decide))
+    fun s₈ u₈ => ?_
+  have h₈ := h₇.of_only (Only.of_upd u₈) (by decide)
+  refine wp_stloc hp h₈.inv (d := j2Off) (by decide) fun t it vt ot gt mt => WP.block_nil ⟨?_, ?_⟩
+  · exact h₈.store hp it (d := j2Off) (by decide) (by decide) (by decide) mt
+  · rw [vt, ot j1Off (by decide) (by decide), lw_mem u₈.mem, v₇, u₈.gpr, m₇,
+      scr_addr hp (o := 6144 + 8 * (index % 128) + 4) (by omega_arith), scr_loc hp (by decide) (by omega_arith),
+      ← scr_addr hp (by omega_arith), u₆.gpr, u₆.mem, m₅, blk_get _ _ _ _ (Nat.mod_lt _ (by decide)),
+      Nat.add_zero (6144 + 8 * (index % 128))]
+
+omit hp in
+/-- The cached address block is that of `c`. -/
+theorem cached {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) {c : Nat} (hc : 1 ≤ c) (hc' : c < 2 ^ 32)
+    (he : lw s₀ s counterOff = BitVec.ofNat 32 c) :
+    blk s.mem (scrP s₀) 6144 = addressBlock (prm s₀) pass lane slice c := by
+  obtain ⟨c0, c1, c2 | ⟨_, c4⟩⟩ := h.cache
+  · rw [he, c2] at c1
+    have := congrArg BitVec.toNat c1
+    rw [toNat32 hc'] at this
+    exact absurd this (by simp; omega_arith)
+  · rw [c4]
+    rw [he] at c1
+    have := congrArg BitVec.toNat c1
+    rw [toNat32 hc', toNat32 c0] at this
+    rw [this]
+
+/-- `cacheCheck`: `r0 :=` the counter of the index's group; Z if it is cached. -/
+theorem cacheCheck_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (hi : index < (prm s₀).segmentLen) :
+    WP isa (.block Impl.Argon2.Arm.Derive.cacheCheck) s fun t => FS s₀ pass slice lane index ctr st t ∧
+      t.gpr .r0 = BitVec.ofNat 32 (index / 128 + 1) ∧
+      VG.Arm.eval .eq t = some (BitVec.ofNat 32 (index / 128 + 1) - lw s₀ t counterOff == 0) := by
+  have sl := segLen_lt hp
+  unfold Impl.Argon2.Arm.Derive.cacheCheck
+  refine wp_ldloc hp h.inv (d := indexOff) (by decide) fun s₁ u₁ => wp_mov (op2_lsr (by decide)) fun s₂ u₂ =>
+    wp_add (op2_imm (by decide)) fun s₃ u₃ => ?_
+  have o₃ := ((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)
+  have h₃ := h.of_only o₃ (by decide)
+  have a₃ : s₃.gpr .r0 = BitVec.ofNat 32 (index / 128 + 1) := by
+    rw [u₃.gpr, u₂.gpr, u₁.gpr, h.pos.index, shr7 (by omega_arith), show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+      BitVec.ofNat_add_ofNat]
+  refine wp_ldloc hp h₃.inv (d := counterOff) (by decide) fun s₄ u₄ =>
+    wp_cmp (op2_reg _ _) fun t f z => WP.block_nil ?_
+  have o₄ := (Only.of_upd u₄).trans (Only.of_fupd f)
+  refine ⟨h₃.of_only o₄ (by decide), by rw [o₄.gpr _ (by decide), a₃], ?_⟩
+  rw [MdStream.Arm.eval_eq, z, u₄.other _ (by decide), a₃, u₄.gpr, lw_mem f.mem, lw_mem u₄.mem]
+
+/-- The address block of the index's group, regenerated unless it is cached. -/
+theorem cacheFill_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h₄ : FS s₀ pass slice lane index ctr st s) (hpass : pass < 2 ^ 32) (hl : lane < lanesN s₀) (hs : slice < 4)
+    (hi : index < (prm s₀).segmentLen) (a₃ : s.gpr .r0 = BitVec.ofNat 32 (index / 128 + 1))
+    (z₄ : VG.Arm.eval .eq s = some (BitVec.ofNat 32 (index / 128 + 1) - lw s₀ s counterOff == 0)) :
+    WP isa (.ite .eq (.block []) (.seq (.block [Impl.Argon2.Arm.Derive.st counterOff .r0])
+      Impl.Argon2.Arm.Derive.addressCalls)) s fun t => FS s₀ pass slice lane index (index / 128 + 1) st t ∧
+      blk t.mem (scrP s₀) 6144 = addressBlock (prm s₀) pass lane slice (index / 128 + 1) := by
+  have sl := segLen_lt hp
+  have hlt := hp.lanes_lt
+  refine WP.ite (BitVec.ofNat 32 (index / 128 + 1) - lw s₀ s counterOff == 0) z₄
+    (fun hb => ?_) fun hb => ?_
+  · have ce : lw s₀ s counterOff = BitVec.ofNat 32 (index / 128 + 1) := by
+      have e := beq_iff_eq.mp hb
+      exact ((BitVec.sub_eq_iff_eq_add.mp e).trans (by simp)).symm
+    have cb := cached h₄ (c := index / 128 + 1) (by omega_arith) (by omega_arith) ce
+    exact WP.block_nil ⟨⟨h₄.inv, h₄.pr, h₄.pos, ⟨by omega_arith, ce, .inr ⟨by omega_arith, cb⟩⟩, h₄.mem⟩, cb⟩
+  · refine WP.seq (wp_stloc hp h₄.inv (d := counterOff) (by decide) fun s₅ i₅ v₅ o₅ g₅ m₅ => WP.block_nil ?_)
+    have L₅ : ∀ d ∈ fsOffs, d ≠ counterOff → lw s₀ s₅ d = lw s₀ s d := fun d hd hd' => by
+      simp only [fsOffs, List.mem_cons, List.not_mem_nil, or_false] at hd
+      refine o₅ d ?_ ?_ <;>
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | exact absurd rfl hd'
+    refine (addressCalls_ok hp i₅ (index := index) (c := index / 128 + 1)
+      (h₄.pos.of_lw fun d hd => L₅ d (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+        rcases hd with rfl | rfl | rfl | rfl <;> decide) (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+        rcases hd with rfl | rfl | rfl | rfl <;> decide))
+      (by rw [v₅, a₃]) hpass (by omega_arith) (by omega_arith) (by omega_arith)).mono
+      fun t ⟨it, _, ft, bt⟩ => ⟨?_, bt⟩
+    have fsub : ∀ r ∈ [scrR s₀], ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' :=
+      fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩
+    have Lt : ∀ d, d + 4 ≤ 144 → lw s₀ t d = lw s₀ s₅ d := fun d hd => lw_keep hp ft fsub hd
+    refine ⟨it, Prm.of_lw h₄.pr fun d hd => ?_, h₄.pos.of_lw fun d hd => ?_, ⟨by omega_arith,
+      by rw [Lt _ (by decide), v₅, a₃], .inr ⟨by omega_arith, bt⟩⟩, Represents.keep h₄.mem fun k hk => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rw [Lt d (by rcases hd with rfl | rfl | rfl | rfl <;> decide)]
+      exact L₅ d (by simp only [fsOffs]; rcases hd with rfl | rfl | rfl | rfl <;> simp)
+        (by rcases hd with rfl | rfl | rfl | rfl <;> decide)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rw [Lt d (by rcases hd with rfl | rfl | rfl | rfl <;> decide)]
+      exact L₅ d (by simp only [fsOffs]; rcases hd with rfl | rfl | rfl | rfl <;> simp)
+        (by rcases hd with rfl | rfl | rfl | rfl <;> decide)
+    · have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
+      rw [blockAt_keep ft fun r hr => ?_, m₅, blockAt_keep (rs := [⟨State.addr (E s₀ + BitVec.ofNat 32 counterOff), 4⟩])
+        ((Frame.refl _ _).writeW (w := 32) (List.mem_singleton_self _) _ (Region.contains_self _ _)) fun r hr => ?_]
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact (loc_disj hp (d := counterOff) (by decide) (memR s₀) (by simp)).symm.sub_left (cell_in_mem hk')
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact hp.mem_scr.sub_left (cell_in_mem hk')
+
+/-- `addressCache`: J₁ and J₂ from the address block of the index's group of 128. -/
+theorem addressCache_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (hpass : pass < 2 ^ 32) (hl : lane < lanesN s₀) (hs : slice < 4)
+    (hi : index < (prm s₀).segmentLen) :
+    WP isa Impl.Argon2.Arm.Derive.addressCache s fun t => FS s₀ pass slice lane index (index / 128 + 1) st t ∧
+      lw s₀ t j2Off ++ lw s₀ t j1Off =
+        (addressBlock (prm s₀) pass lane slice (index / 128 + 1))[index % 128]'(Nat.mod_lt _ (by decide)) := by
+  have sl := segLen_lt hp
+  unfold Impl.Argon2.Arm.Derive.addressCache
+  refine WP.seq ((cacheCheck_ok hp h hi).mono fun s₄ ⟨h₄, a₄, z₄⟩ => ?_)
+  have M := cacheFill_ok hp h₄ hpass hl hs hi a₄ z₄
+  refine WP.seq (M.mono fun t ⟨ht, bt⟩ => (cacheWord_ok hp ht (by omega_arith)).mono fun u ⟨hu, wu⟩ => ⟨hu, ?_⟩)
+  rw [wu, bt]
+
+/-- `randomSource`: J₁ and J₂ are the step's random word. -/
+theorem randomSource_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
+    (h : FS s₀ pass slice lane index ctr st s) (hpass : pass < 2 ^ 32) (hl : lane < lanesN s₀) (hs : slice < 4)
+    (hi : index < (prm s₀).segmentLen) :
+    WP isa Impl.Argon2.Arm.Derive.randomSource s fun t =>
+      FS s₀ pass slice lane index (ctrNext (prm s₀) pass slice index ctr) st t ∧
+      lw s₀ t j2Off ++ lw s₀ t j1Off = Proof.Argon2.FillStep.random (prm s₀) pass lane slice index st.memory := by
+  unfold Impl.Argon2.Arm.Derive.randomSource
+  refine WP.seq ((addressMode_ok hp h.inv h.pos hpass hs).mono fun s₁ ⟨z₁, k₁⟩ => ?_)
+  have h₁ := h.of_only k₁ (by decide)
+  refine WP.ite (!Spec.Argon2.independent (prm s₀) pass slice) z₁ (fun hb => ?_) fun hb => ?_
+  · have hind : Spec.Argon2.independent (prm s₀) pass slice = false := by simpa using hb
+    refine (dependentWord_ok hp h₁ hl hs hi).mono fun t ⟨ht, wt⟩ => ⟨by rw [ctrNext, hind]; exact ht, ?_⟩
+    have cl := Proof.Argon2.previous_cell_lt (prm s₀) hp.lanes_pos hp.memory_ge
+      (column := slice * (prm s₀).segmentLen + index) hl
+    rw [wt, k₁.mem, h.mem.block _ cl, Proof.Argon2.FillStep.random, hind]
+    simp only [Bool.false_eq_true, ite_false]
+  · have hind : Spec.Argon2.independent (prm s₀) pass slice = true := by simpa using hb
+    refine (addressCache_ok hp h₁ hpass hl hs hi).mono fun t ⟨ht, wt⟩ => ⟨by rw [ctrNext, hind]; exact ht, ?_⟩
+    rw [wt, Proof.Argon2.FillStep.random, hind]
+    simp only [ite_true]
+
+end
+
+end VG.Proof.Argon2.Arm.Derive
+
+end
+
+end
 
 /-! ### `Argon2.Arm.Derive.FillPtr`, which this module and modules that import it used -/
 

@@ -5,14 +5,481 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
-import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Crypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Tail.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Tail
+import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+
+/-! ### `AesGcm.AArch64.Tail.Crypt`, which this module and modules that import it used -/
+
+section
+
+/-! ### `AesGcm.AArch64.Tail.Bytes`, which this module and modules that import it used -/
+
+section
+
+/-!
+# AES-GCM on AArch64, the last bytes: their bytes
+
+Untrusted: everything here is checked by Lean. The bytes `tbl` leaves with
+the indices of `Tail.ksTail` and `Tail.padVec`: the keystream block moved up
+by `16 - r` bytes, XORed into the 16 bytes that end the text and stored back,
+leaves the memory `crTail` leaves (`ks_mem`); and the 16 bytes that end the
+text moved down are its last `r` bytes padded with zeros, each doubleword's
+bytes reversed as `loadRev` leaves a block (`pad_vec`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.AArch64.Tail
+
+open VG VG.AArch64 VG.WriteBytes
+open VG.Impl.AesGcm.AArch64.Tail (idxTable)
+open VG.Spec.Aes (bytesAt)
+
+theorem ite_t {α : Sort _} {c : Prop} [Decidable c] {a b : α} (h : c) : (if c then a else b) = a := by
+  simp [h]
+
+theorem ite_f {α : Sort _} {c : Prop} [Decidable c] {a b : α} (h : ¬c) : (if c then a else b) = b := by
+  simp [h]
+
+/-- The indices `0, …, 15`, as `ldrqTbl` loads them. -/
+abbrev iotaV : BitVec 128 := idxTable.getD 1 0 ++ idxTable.getD 0 0
+
+/-- The indices of `rev64`, as `ldrqTbl` loads them. -/
+abbrev revV : BitVec 128 := idxTable.getD 3 0 ++ idxTable.getD 2 0
+
+/-- Byte `i` of a block, its doublewords' bytes reversed: byte `rv i`. -/
+def rv (i : Nat) : Nat := 8 * (i / 8) + 7 - i % 8
+
+theorem vbyte_iotaV : ∀ i < 16, vbyte iotaV i = BitVec.ofNat 8 i := by decide
+
+theorem vbyte_revV : ∀ i < 16, vbyte revV i = BitVec.ofNat 8 (rv i) := by decide
+
+theorem rv_lt : ∀ i < 16, rv i < 16 := by decide
+
+/-- The indices of `ksTail`: below `16 - r`, 16 or more; from there, `i - (16 - r)`. -/
+theorem up_idx : ∀ r < 16, ∀ i < 16,
+    ((BitVec.ofNat 8 i - BitVec.ofNat 8 (16 - r)).toNat < 16 ↔ 16 - r ≤ i) ∧
+    (16 - r ≤ i → (BitVec.ofNat 8 i - BitVec.ofNat 8 (16 - r)).toNat = i - (16 - r)) := by
+  decide
+
+/-- The indices of `padVec`: `rv i + 16 - r`, less than 16 exactly when `rv i < r`. -/
+theorem down_idx : ∀ r < 16, 0 < r → ∀ i < 16,
+    ((BitVec.ofNat 8 (rv i) + BitVec.ofNat 8 (16 - r)).toNat < 16 ↔ rv i < r) ∧
+    (rv i < r → (BitVec.ofNat 8 (rv i) + BitVec.ofNat 8 (16 - r)).toNat = rv i + (16 - r)) := by
+  decide
+
+/-- The keystream block `K` moved up by `16 - r` bytes, as `ksTail`'s `tbl`
+leaves it. -/
+def upV (K : BitVec 128) (r : Nat) : BitVec 128 :=
+  ofVBytes fun i =>
+    if (vbyte (VArr.b16.map2 (fun _ x y => x - y) iotaV
+        (ofVBytes fun _ => (BitVec.ofNat 64 (16 - r)).setWidth 8)) i).toNat < 16 then
+      vbyte K (vbyte (VArr.b16.map2 (fun _ x y => x - y) iotaV
+        (ofVBytes fun _ => (BitVec.ofNat 64 (16 - r)).setWidth 8)) i).toNat
+    else 0
+
+theorem setWidth_ofNat8 (k : Nat) : (BitVec.ofNat 64 k).setWidth 8 = BitVec.ofNat 8 k := by
+  simp only [BitVec.setWidth_ofNat_of_le (show 8 ≤ 64 by decide)]
+
+theorem vbyte_upV (K : BitVec 128) {r : Nat} (hr : r < 16) {i : Nat} (hi : i < 16) :
+    vbyte (upV K r) i = if 16 - r ≤ i then vbyte K (i - (16 - r)) else 0 := by
+  rw [upV, vbyte_ofVBytes _ hi]
+  simp only [VArr.map2, vbyte_ofVBytes _ hi, vbyte_iotaV i hi, setWidth_ofNat8]
+  obtain ⟨h₁, h₂⟩ := up_idx r hr i hi
+  by_cases h : 16 - r ≤ i
+  · rw [ite_t (h₁.mpr h), ite_t h, h₂ h]
+  · rw [ite_f (fun e => h (h₁.mp e)), ite_f h]
+
+/-- Distance from `E` to `x`, past `c` bytes. -/
+theorem toNat_sub_add (x E : Addr) {c : Nat} (hc : c < 16) :
+    (x - (E + BitVec.ofNat 64 c)).toNat < 16 - c ↔ c ≤ (x - E).toNat ∧ (x - E).toNat < 16 := by
+  have e : x - (E + BitVec.ofNat 64 c) = (x - E) - BitVec.ofNat 64 c := by
+    exact Offset.sub_add_eq _ _ _
+  rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  have := (x - E).isLt
+  rw [Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hc])]
+  constructor
+  · intro h
+    by_contra hn
+    have : (x - E).toNat < c ∨ 16 ≤ (x - E).toNat := by omega_using [hn]
+    rcases this with h' | h'
+    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 - (c - (x - E).toNat) by omega_using [h, hn],
+        Nat.mod_eq_of_lt (by omega_using [h'])] at h
+      omega_using [h]
+    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega_using [h], Nat.add_mod_left,
+        Nat.mod_eq_of_lt (by omega_using [])] at h
+      omega_using [h, h']
+  · rintro ⟨h₁, h₂⟩
+    rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega_using [h₁], Nat.add_mod_left,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hc, h₂]
+
+theorem toNat_sub_add_eq (x E : Addr) {c : Nat} (hc : c < 16) (h : c ≤ (x - E).toNat)
+    (h' : (x - E).toNat < 16) : (x - (E + BitVec.ofNat 64 c)).toNat = (x - E).toNat - c := by
+  have e : x - (E + BitVec.ofNat 64 c) = (x - E) - BitVec.ofNat 64 c := by
+    exact Offset.sub_add_eq _ _ _
+  rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega),
+    show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega, Nat.add_mod_left,
+    Nat.mod_eq_of_lt (by omega)]
+
+theorem eq_add_toNat (x E : Addr) : x = E + BitVec.ofNat 64 (x - E).toNat := by
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+
+theorem xorBytes_getD (m : Mem) (D S : Addr) {n k : Nat} (hk : k < n) :
+    (xorBytes m D S n).getD k 0 = m (D + BitVec.ofNat 64 k) ^^^ m (S + BitVec.ofNat 64 k) := by
+  simp [xorBytes, bytesAt, List.getD_eq_getElem?_getD, hk]
+
+/-- The 16 bytes at `E`, XORed with the block at `S` moved up by `16 - r`
+bytes and stored back: the `r` bytes from `E + 16 - r` XORed with the first
+`r` bytes at `S`. -/
+theorem ks_mem (m : Mem) (E S : Addr) {r : Nat} (hr : r < 16) :
+    m.write E 16 (m.read E 16 ^^^ upV (m.read S 16) r) =
+      writeBytes m (E + BitVec.ofNat 64 (16 - r)) (xorBytes m (E + BitVec.ofNat 64 (16 - r)) S r) := by
+  funext x
+  have hlen := length_xorBytes m (E + BitVec.ofNat 64 (16 - r)) S r
+  have hc : 16 - r < 16 ∨ r = 0 := by omega_using []
+  simp only [Mem.write, writeBytes, hlen]
+  by_cases ht : (x - E).toNat < 16
+  · rw [ite_t ( ht)]
+    have hb : (m.read E 16 ^^^ upV (m.read S 16) r).extractLsb' (8 * (x - E).toNat) 8 =
+        vbyte (m.read E 16) (x - E).toNat ^^^ vbyte (upV (m.read S 16) r) (x - E).toNat := by
+      apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [vbyte, hi]
+    rw [hb, vbyte, Mem.extractLsb'_read m E ht, vbyte_upV _ hr ht, ← eq_add_toNat]
+    by_cases hu : 16 - r ≤ (x - E).toNat
+    · rcases hc with hc | hc
+      · have hl : (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
+          have := (toNat_sub_add x E hc).mpr ⟨hu, ht⟩; omega_using [this]
+        rw [ite_t ( hu), ite_t ( hl), toNat_sub_add_eq x E hc hu ht, vbyte, Mem.extractLsb'_read m S (by omega_using [ht])]
+        rw [xorBytes_getD _ _ _ (by omega_using [ht, hu]), BitVec.add_assoc, ← BitVec.ofNat_add,
+          show 16 - r + ((x - E).toNat - (16 - r)) = (x - E).toNat by omega_using [hu], ← eq_add_toNat]
+      · subst hc; omega
+    · have hl : ¬ (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
+        rcases hc with hc | hc
+        · intro h; exact hu ((toNat_sub_add x E hc).mp (by omega_using [hr, h])).1
+        · omega_using [hc]
+      rw [ite_f ( hu), ite_f ( hl)]
+      exact BitVec.xor_zero
+  · rw [ite_f ( ht)]
+    have hl : ¬ (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
+      rcases hc with hc | hc
+      · intro h; exact ht ((toNat_sub_add x E hc).mp (by omega_using [hr, h])).2
+      · omega_using [hc]
+    rw [ite_f ( hl)]
+
+/-- The `r` bytes at `P` padded with zeros to a block, in a memory of their
+own (at address 0). -/
+def padMem (m : Mem) (P : Addr) (r : Nat) : Mem :=
+  writeBytes m 0 (bytesAt m P r ++ Spec.Gcm.zeros (16 - r))
+
+theorem blockAt_padMem (m : Mem) (P : Addr) {r : Nat} (hr : r ≤ 16) :
+    Spec.Gcm.blockAt (padMem m P r) 0 = Spec.Gcm.ofBytes (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)) := by
+  have hl : (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)).length = 16 := by
+    simp [length_bytesAt, Spec.Gcm.zeros]; omega_using [hr]
+  have e := bytesAt_writeBytes_self m 0 (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)) (by rw [hl]; decide)
+  rw [hl] at e
+  rw [Spec.Gcm.blockAt, padMem, e]
+
+/-- Byte `k` of the padded block. -/
+theorem padMem_at (m : Mem) (P : Addr) {r k : Nat} (hr : r ≤ 16) (hk : k < 16) :
+    padMem m P r (0 + BitVec.ofNat 64 k) = if k < r then m (P + BitVec.ofNat 64 k) else 0 := by
+  have hl : (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)).length = 16 := by
+    simp [length_bytesAt, Spec.Gcm.zeros]; omega_using [hr]
+  have ha : ((0 : Addr) + BitVec.ofNat 64 k - 0).toNat = k := by
+    simp [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk])]
+  simp only [padMem, writeBytes, hl, ha, hk, ↓reduceIte]
+  by_cases h : k < r
+  · rw [ite_t (h), List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [length_bytesAt]; exact h)]
+    simp [bytesAt, h]
+  · rw [ite_f (h), List.getD_eq_getElem?_getD,
+      List.getElem?_append_right (by rw [length_bytesAt]; omega_using [h])]
+    simp only [Spec.Gcm.zeros, length_bytesAt, List.getElem?_replicate]
+    rw [ite_t ((by omega_using [hk, h]))]
+    rfl
+
+/-- The 16 bytes `X` moved down by `16 - r` bytes into the bytes of a block
+padded with zeros, each doubleword's bytes reversed, as `padVec`'s `tbl`
+leaves them. -/
+def downV (X : BitVec 128) (r : Nat) : BitVec 128 :=
+  ofVBytes fun i =>
+    if (vbyte (VArr.b16.map2 (fun _ x y => x + y) revV
+        (ofVBytes fun _ => (BitVec.ofNat 64 (16 - r)).setWidth 8)) i).toNat < 16 then
+      vbyte X (vbyte (VArr.b16.map2 (fun _ x y => x + y) revV
+        (ofVBytes fun _ => (BitVec.ofNat 64 (16 - r)).setWidth 8)) i).toNat
+    else 0
+
+/-- The 16 bytes at `E`, moved down (`downV`): the `r` bytes from
+`E + 16 - r` padded, as `loadRev` leaves them. -/
+theorem pad_vec (m : Mem) (E : Addr) {r : Nat} (hr0 : 0 < r) (hr : r < 16) :
+    downV (m.read E 16) r = VRevOp.eval .rev64b ((padMem m (E + BitVec.ofNat 64 (16 - r)) r).read 0 16) := by
+  apply Tbl.vbyte_ext
+  intro i hi
+  rw [downV, vbyte_ofVBytes _ hi, VRevOp.eval, vbyte_ofVBytes _ hi]
+  simp only [VArr.map2, vbyte_ofVBytes _ hi, vbyte_revV i hi, setWidth_ofNat8]
+  have hrv : 8 * (i / 8) + (7 - i % 8) = rv i := by simp only [rv]; omega_using []
+  simp only [hrv, vbyte]
+  rw [Mem.extractLsb'_read (padMem m _ r) 0 (rv_lt i hi), padMem_at _ _ (by omega_using [hr]) (rv_lt i hi)]
+  obtain ⟨h₁, h₂⟩ := down_idx r hr hr0 i hi
+  by_cases h : rv i < r
+  · rw [ite_t (h₁.mpr h), ite_t h, h₂ h, Mem.extractLsb'_read _ _ (by omega_using [hr, h]), BitVec.add_assoc,
+      ← BitVec.ofNat_add, Nat.add_comm]
+  · rw [ite_f (fun e => h (h₁.mp e)), ite_f h]
+
+end VG.Proof.AesGcm.AArch64.Tail
+
+end
+
+end
+
+/-!
+# AES-GCM on AArch64: counter mode over a piece, the last bytes in place
+
+Untrusted: everything here is checked by Lean. `Tail.cryptAlT` is
+`cryptAl` with the keystream block zeroed by one store (`crSeg2T_ok`) and,
+when the text is at least a block long, its last bytes XORed in the 16
+bytes that end it (`ksTail_ok`), which leaves the memory `crTail` leaves
+(`Tail.ks_mem`), so the same `CrOut` (`crOut_of_xor`).
+-/
+
+@[expose] public section
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesGcm.AArch64
+
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.Impl.AesGcm.AArch64.Tail VG.WriteBytes
+open VG.Spec.Aes (bytesAt)
+open VG.Spec.Gcm (Block blockAt blocksAt aesWith)
+open VG.Proof.Gcm (Ctr xorKs)
+
+/-- A zero 16-byte store, as bytes. -/
+theorem write_zero16 (m : Mem) (a : Addr) :
+    m.write a 16 (0 : BitVec 128) = writeBytes m a (List.replicate 16 0) := by
+  rw [write_eq_writeBytes]
+  congr 1
+
+theorem syms_write (s : State) (sz : Size) (r : Reg) (x : BitVec sz.bits) : (s.write sz r x).syms = s.syms := rfl
+theorem syms_setV (s : State) (r : VReg) (x : BitVec 128) : (s.setV r x).syms = s.syms := rfl
+theorem idxTable_length : idxTable.length = 4 := rfl
+
+/-- The last 16 bytes of a writable text of `N` bytes at `D₀`, for the piece
+of it from byte `w` on (`cryptAlT_ok`'s `hbig`). -/
+theorem tail_big {rs : List Region} {D₀ D : Addr} {N w n : Nat} (hwr : Covers [⟨D₀, N⟩] rs) (hN : N < 2 ^ 64)
+    (hD : D = D₀ + BitVec.ofNat 64 w) (hn : w + n = N) :
+    16 ≤ N → n % 16 ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - n % 16) = D + BitVec.ofNat 64 (n - n % 16) ∧
+      InRegions rs E 16 := fun h16 _ =>
+  ⟨D₀ + BitVec.ofNat 64 (N - 16), by
+    rw [hD, Offset.add_add, Offset.add_add]; congr 2; omega_arith, in_off hwr (by omega_arith) hN⟩
+
+section
+variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+include L
+
+/-- `crSeg2T`: `crSeg2`, the keystream block zeroed by one store. -/
+theorem crSeg2T_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Ctx St W SP k R icb P D n m₀ j s) (hj : n - j < 16) :
+    WP isa crSeg2T s (Cr2 Ctx St W SP k R icb P D n m₀ j) := by
+  have hn' := h.data.ok.lt
+  have hle := h.le
+  have he := h.env
+  have w₁ := he.perm.stW (show 64 + 16 ≤ 80 by decide)
+  refine WP.seq (WP.mono (Q := fun (s₁ : State) => s₁.gpr .x4 = BitVec.ofNat 64 (if n - j = 0 then 0 else 1) ∧
+      Others [.x4, .x9] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧
+      (n - j = 0 → s₁.mem = s.mem) ∧
+      (n - j ≠ 0 → s₁.mem = s.mem.write (St + BitVec.ofNat 64 64) 16 0))
+    (WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by omega_arith)) (fun ht => ?_) (fun hf => ?_))
+    fun s₁ ⟨x4₁, g₁, sp₁, rd₁, wr₁, m0₁, m1₁⟩ => ?_)
+  · have h0 : n - j = 0 := by simpa using ht
+    exact WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => by
+      subst hs'
+      exact ⟨by simp [gpr_write, h0], by others_tac, rfl, rfl, rfl, fun _ => rfl, fun h' => absurd h0 h'⟩
+  · have h0 : n - j ≠ 0 := by simpa using hf
+    exact WP.run ⟨_, by arun [he.x20, w₁, VOp.eval, v_setV_self, gpr_setV, mem_setV, wr_setV, rd_setV, sp_setV], rfl⟩ fun s' hs' => by
+      subst hs'
+      refine ⟨by simp [gpr_write, h0], by others_tac, rfl, rfl, rfl, fun h' => absurd h' h0, fun _ => ?_⟩
+      simp only [mem_write, mem_setV, gpr_write, he.x20]
+  obtain ⟨s₂, run₂, x0₂, x1₂, x2₂, x5₂, x3₂, r₂⟩ : ∃ s₂, runBlock isa (ctrArgs ++ [ptr .x3 .x20 64]) s₁ =
+      some s₂ ∧ s₂.gpr .x0 = Ctx ∧ s₂.gpr .x1 = BitVec.ofNat 64 R ∧ s₂.gpr .x2 = St + BitVec.ofNat 64 48 ∧
+      s₂.gpr .x5 = W + BitVec.ofNat 64 512 ∧ s₂.gpr .x3 = St + BitVec.ofNat 64 64 ∧
+      Regs [.x0, .x1, .x2, .x5, .x3] s₁ s₂ := by
+    refine ⟨_, by rw [ctrArgs_eq]; arun [], ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    · simp [gpr_write, g₁ .x21 (by decide), he.x21]
+    · simp [gpr_write, g₁ .x22 (by decide), h.x22]
+    · simp [gpr_write, g₁ .x20 (by decide), he.x20]
+    · simp [gpr_write, g₁ .x19 (by decide), he.x19]
+    · simp [gpr_write, g₁ .x20 (by decide), he.x20]
+  refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+  have gg : ∀ r, r ∉ [Reg.x4, .x9] ++ [.x0, .x1, .x2, .x5, .x3] → s₂.gpr r = s.gpr r := fun r hr => by
+    rw [r₂.others r (fun h' => hr (List.mem_append_right _ h')), g₁ r (fun h' => hr (List.mem_append_left _ h'))]
+  have hsp : s₂.sp = s.sp := by rw [r₂.sp, sp₁]
+  have hrd : s₂.rd = s.rd := by rw [r₂.rd, rd₁]
+  have hwr : s₂.wr = s.wr := by rw [r₂.wr, wr₁]
+  have he₂ : Env Ctx St W SP s₂ := he.keep (fun r hr => gg r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
+  -- The memory: the keystream block zeroed if there are bytes left.
+  have fz : Frame [⟨St + BitVec.ofNat 64 64, 16⟩] s.mem s₂.mem := by
+    rw [r₂.mem]
+    by_cases h0 : n - j = 0
+    · rw [m0₁ h0]; exact Frame.refl _ _
+    · rw [m1₁ h0, write_zero16]
+      exact writeBytes_frame' _ (by simp)
+  have dD : ∀ r ∈ [(⟨St + BitVec.ofNat 64 64, 16⟩ : Region)], (⟨D, n⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.data.ok.st.sub_right (Lay.stSub (by decide))
+  have hdD : ∀ (q : Addr) (l : Nat), Region.Sub ⟨q, l⟩ ⟨D, n⟩ → l ≤ n → bytesAt s₂.mem q l = bytesAt s.mem q l :=
+    fun q l hs hl => bytesAt_frame fz (fun r hr => (dD r hr).sub_left hs) (by omega_arith)
+  refine ⟨he₂, h.kept.of_eq fun r hr => gg r (by
+      simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> decide),
+    by rw [gg _ (by decide), h.x22], h.rounds, h.le, hj, by rw [gg _ (by decide), h.x23],
+    by rw [gg _ (by decide), h.x24], by rw [gg _ (by decide), h.x25], h.data.of_eq hrd hwr, fun hc₀ => ?_, ?_,
+    fun hc₀ => by rw [hdD _ _ (Region.sub_prefix h.le) h.le]; exact h.done hc₀,
+    by rw [hdD _ _ (Offset.sub_base D (by omega_arith)) (by omega_arith)]; exact h.rest, h.whole,
+    h.frame.trans (fz.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub _ (by decide) (by decide)⟩), ?_, rfl⟩
+  · have hcb : blockAt s₂.mem (St + BitVec.ofNat 64 48) = blockAt s.mem (St + BitVec.ofNat 64 48) :=
+      blockAt_frame fz fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact L.st_st (.inl (by decide)) (by decide) (by decide)
+    by_cases h0 : n - j = 0
+    · exact (h.ctr hc₀).congr hcb (by rw [r₂.mem, m0₁ h0])
+    · exact Ctr.of_aligned (h.ctr hc₀) (h.whole.resolve_left h0) hcb
+  · intro h0
+    have e := bytesAt_writeBytes_self s.mem (St + BitVec.ofNat 64 64) (List.replicate 16 (0 : Byte)) (by decide)
+    simp only [List.length_replicate] at e
+    rw [r₂.mem, m1₁ h0, write_zero16, Spec.Gcm.blockAt, e]
+    rfl
+  · have hnb : (if n - j = 0 then 0 else 1) ≤ 1 := by split <;> omega_arith
+    exact ctrCall_of L he₂ h.rounds x0₂ x1₂ x2₂ x3₂ (by rw [r₂.others _ (by decide), x4₁]) x5₂
+      (by have := L.sw; rw [BitVec.toNat_add, toNat_ofNat_of_lt (by decide)]; omega_arith)
+      ((L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by omega_arith)))
+      (L.st_st (.inl (by decide)) (by decide) (by omega_arith))
+      (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)) (he₂.perm.stC (by omega_arith))
+
+omit L in
+/-- `ksTail` run: the 16 bytes at `E` (ending the `r` bytes at `x23`) XORed
+with the keystream block moved up. -/
+theorem ksTail_run {E : Addr} {r : Nat} (hr : r < 16) {s : State} (he : Env Ctx St W SP s)
+    (h23 : s.gpr .x23 = E + BitVec.ofNat 64 (16 - r)) (h24 : s.gpr .x24 = BitVec.ofNat 64 r)
+    (hE : InRegions s.wr E 16) :
+    ∃ s', runBlock isa ksTail s = some s' ∧
+      s'.mem = s.mem.write E 16 (s.mem.read E 16 ^^^ VG.Proof.AesGcm.AArch64.Tail.upV (s.mem.read (St + BitVec.ofNat 64 64) 16) r) ∧
+      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hks := he.perm.stR (show 64 + 16 ≤ 80 by decide)
+  have h16 : (BitVec.setWidth 64 (16#16) <<< 0 : BitVec 64) = BitVec.ofNat 64 16 := by decide
+  have hsub : BitVec.ofNat 64 16 - BitVec.ofNat 64 r = BitVec.ofNat 64 (16 - r) :=
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)
+  have hx10 : E + BitVec.ofNat 64 (16 - r) - BitVec.ofNat 64 (16 - r) = E := BitVec.add_sub_cancel _ _
+  have hEr := in_left (rd := s.rd) hE
+  refine ⟨_, by
+    simp only [ksTail, shift, List.cons_append, List.nil_append]
+    arun [he.x20, h23, h24, h16, hsub, hx10, hEr, hE, VOp.eval, v_setV, gpr_setV, mem_setV, wr_setV, rd_setV,
+      sp_setV, rd_write, hks, syms_write, syms_setV, idxTable_length, Nat.reduceDiv, Nat.zero_div, v_write, BitVec.add_zero]
+    , ?_⟩
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [mem_setV, mem_write]
+    rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp [gpr_write, gpr_setV, hr]
+
+omit L in
+/-- `Cr3` depends on no register but those it names. -/
+theorem Cr3.keep {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s s' : State} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s)
+    (hg : Others [.x9] s s') (hm : s'.mem = s.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : Cr3 Ctx St W SP k R icb P D n m₀ j s' :=
+  { env := h.env.keep (fun r hr => hg r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
+    kept := h.kept.of_others hg
+    le := h.le, lt16 := h.lt16
+    x23 := by rw [hg _ (by decide), h.x23]
+    x24 := by rw [hg _ (by decide), h.x24]
+    x25 := by rw [hg _ (by decide), h.x25]
+    data := h.data.of_eq hrd hwr
+    ctr0 := fun h0 hc => by rw [hm]; exact h.ctr0 h0 hc
+    ctr1 := fun h0 hc => by rw [hm]; exact h.ctr1 h0 hc
+    done := fun hc => by rw [hm]; exact h.done hc
+    rest := by rw [hm]; exact h.rest
+    whole := h.whole
+    frame := by rw [hm]; exact h.frame
+    outAt := rfl }
+
+omit L in
+/-- `crTailT`: `crTail`, or, for a text of `N` (at least 16) bytes whose last
+16 end the piece and may be written, `ksTail`. -/
+theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} {N : Nat} (h : Cr3 Ctx St W SP k R icb P D n m₀ j s)
+    (h26 : s.gpr .x26 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
+    (hbig : 16 ≤ N → n - j ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - (n - j)) = D + BitVec.ofNat 64 j ∧
+      InRegions s.wr E 16) :
+    WP isa crTailT s (CrOut Ctx St W SP k R icb P D n m₀) := by
+  have hj := h.lt16
+  refine WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by have := h.data.ok.lt; omega_arith)) (fun ht => ?_)
+    (fun hf' => ?_)
+  · have h0 : n - j = 0 := of_decide_eq_true ht
+    refine WP.block_nil (crOut_of_xor h ?_ (fun _ _ => rfl) rfl rfl rfl)
+    rw [h0]; exact (writeBytes_nil _ _).symm
+  have h0 : n - j ≠ 0 := of_decide_eq_false hf'
+  obtain ⟨s₁, run₁, x9₁, r₁⟩ : ∃ s₁, runBlock isa [.lsr .x .x9 .x26 4] s = some s₁ ∧
+      s₁.gpr .x9 = BitVec.ofNat 64 (N / 16) ∧ Regs [.x9] s s₁ := by
+    refine ⟨_, by arun [], ?_⟩
+    refine ⟨?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+    simp [gpr_write, h26, lsr_ofNat _ _ hN]
+  have h₁ := h.keep r₁.others r₁.mem r₁.sp r₁.rd r₁.wr
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega_arith)) (fun _ => crTail_ok h₁) (fun hf => ?_)
+  have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega_arith
+  obtain ⟨E, hE, hEw⟩ := hbig hbN h0
+  obtain ⟨s₂, run₂, m₂, g₂, sp₂, rd₂, wr₂⟩ := ksTail_run (r := n - j) (by omega_arith) h₁.env
+    (by rw [h₁.x23, hE]) h₁.x24 (by rw [r₁.wr]; exact hEw)
+  refine WP.of_runBlock ⟨s₂, run₂, crOut_of_xor h₁ ?_ (fun r hr => g₂ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂⟩
+  rw [m₂, Tail.ks_mem _ _ _ (by omega_arith), hE]
+
+/-- `cryptAlT`: `crypt` from the start of a keystream block, for a text of
+`N` bytes (in `x26`) whose last 16 bytes, if it is at least a block long and
+the piece ends in a partial block, end the piece and may be written. -/
+theorem cryptAlT_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Block} {D : Addr} {n : Nat}
+    {s : State} (h : CrIn Ctx St W SP k R P D n s) (hP : P % 16 = 0) {N : Nat}
+    (h26 : k .x26 = BitVec.ofNat 64 N) (hN : N < 2 ^ 64)
+    (hbig : 16 ≤ N → n % 16 ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - n % 16) = D + BitVec.ofNat 64 (n - n % 16) ∧
+      InRegions s.wr E 16) :
+    WP isa (cryptAlT v.callees) s (CrOut Ctx St W SP k R icb P D n s.mem) := by
+  have hc : ∀ {m' : Mem}, Frame (crFrame St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
+    fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
+  have hj : 0 + 16 * ((n - 0) / 16) = n - n % 16 := by omega_arith
+  exact WP.seq (WP.mono (WP.with_rdwr (crArgs_ok L (h.mid (icb := icb) hP))) fun s₁ ⟨h₁, _, w₁⟩ =>
+    WP.seq (WP.mono (WP.with_rdwr (ctrCall1_ok L v h₁ (hc h₁.frame))) fun s₂ ⟨⟨h₂, hlt⟩, _, w₂⟩ =>
+    WP.seq (WP.mono (WP.with_rdwr (crSeg2T_ok L h₂ hlt)) fun s₃ ⟨h₃, _, w₃⟩ =>
+    WP.seq (WP.mono (WP.with_rdwr (ctrCall2_ok L v h₃ (hc h₃.frame))) fun s₄ ⟨h₄, _, w₄⟩ =>
+      crTailT_ok h₄ ((h₄.kept .x26 (by decide)).trans h26) hN fun hb h0 => by
+        obtain ⟨E, hE, hw⟩ := hbig hb (by omega_arith)
+        refine ⟨E, ?_, by rw [w₄, w₃, w₂, w₁]; exact hw⟩
+        rw [hj, show n - (n - n % 16) = n % 16 by omega_arith, hE]))))
+
+end
+
+end VG.Proof.AesGcm.AArch64
+
+end
+
+end
 
 /-! ### `AesGcm.AArch64.Fast.PadT`, which this module and modules that import it used -/
 

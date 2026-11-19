@@ -9,12 +9,11 @@ public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.SealFused
 public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Groups
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Init
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTVerify
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTSeal
@@ -26,24 +25,22 @@ public import VerifiedGarbage.Impl.StackScratch.PPC64LE.Args
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchArgs
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTText
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTCrypt
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTText
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTJ0
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Cmac.Contract
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -22,8 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
-meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Cmac.Dbl32

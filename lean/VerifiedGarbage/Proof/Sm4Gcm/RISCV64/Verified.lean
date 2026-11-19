@@ -7,26 +7,23 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Sm4Gcm.RISCV64
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
 public import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
-import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.StreamCrypt
 import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.StreamFinish
 import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTOpen
-import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTFin
-import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Seal
+public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTFin
 import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
 import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTCrypt
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.CTText
 import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
 import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
 meta import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Crypt
-meta import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTCrypt
+meta import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTText
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
-meta import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.StreamCrypt
+meta import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Env
@@ -64,7 +61,7 @@ section
 
 Untrusted: everything here is checked by Lean. AES-GCM's `init`
 (`Proof/AesGcm/RISCV64/Init.lean`) with SM4's functions, as on PPC64LE
-(`Proof/Sm4Gcm/PPC64LE/InitCT.lean`): `init` saves our caller's registers in
+(`Proof/Sm4Gcm/PPC64LE/CTFin.lean`): `init` saves our caller's registers in
 `scratch` (`W`), expands the key into the context's schedule with
 `vg_sm4_expand_key`, and computes the hash subkey `CIPH_K(0¹²⁸)` into its
 bytes 240–255 with `vg_sm4_ctr32` on a zero block, from a zero counter block

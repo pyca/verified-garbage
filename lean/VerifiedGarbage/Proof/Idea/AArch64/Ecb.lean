@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Spec.Idea.Contract
-public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

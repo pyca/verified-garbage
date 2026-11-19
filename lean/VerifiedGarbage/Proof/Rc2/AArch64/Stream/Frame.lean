@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
 public import VerifiedGarbage.Proof.Rc2.Scratch
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Lit
@@ -31,6 +30,42 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 public import VerifiedGarbage.Spec.Rc2.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Lit
+meta import VerifiedGarbage.Impl.Rc2.AArch64.Stream
+
+/-! ### `Rc2.AArch64.Stream.ConstantTime`, which only this module used -/
+
+section
+
+/-! # Constant-time streaming RC2-CBC
+
+The taint analysis of `init`, the callee included,
+from the public arguments: all seven (pointers and lengths), and the stack
+pointer. -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc2.AArch64.Stream
+
+open VG VG.AArch64 VG.Impl.Rc2.AArch64.Stream
+
+/-- The public registers: all seven arguments. -/
+abbrev args : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5, .x6]
+
+theorem init_constantTime (pre : State → Prop) :
+    ConstantTime isa pre (PublicRegs args) init := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs args) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ hp
+  exact ⟨hp.1, fun r hr => hp.2 r (Taint.mem_ofRegs.mp hr)⟩
+
+end VG.Proof.Rc2.AArch64.Stream
+
+end
+
+end
 
 /-! ### `Rc2.AArch64.Stream.Contract`, which only this module used -/
 

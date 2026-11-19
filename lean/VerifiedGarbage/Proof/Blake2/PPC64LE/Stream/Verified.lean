@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Blake2.PPC64LE.Compress
+public import VerifiedGarbage.Proof.Blake2.PPC64LE.Compress
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -27,14 +27,13 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Blake2.Stream
-public import VerifiedGarbage.Proof.Blake2.PPC64LE.Contract
 public import VerifiedGarbage.Impl.Blake2.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Blake2.Stream
-meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.Blake2.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 meta import VerifiedGarbage.Impl.Blake2.PPC64LE.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes

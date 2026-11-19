@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
-public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops

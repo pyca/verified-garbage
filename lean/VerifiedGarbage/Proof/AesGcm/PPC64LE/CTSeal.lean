@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealEntry
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTOne
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Seal
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.SealFused
@@ -26,8 +26,6 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamFinish
 meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
-meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTFin
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 
 /-!
