@@ -738,7 +738,6 @@ end
 
 end
 
-/-! P521-SQUARE-BEGIN -/
 /-! # P-521's square: the products of different words, doubled, the squares, and the reduction -/
 
 @[expose] public section
@@ -1111,9 +1110,9 @@ theorem p521Fold_ok (hb : Bx s base size) {acc A : Nat} (hsz : acc + 4 * 37 ≤ 
   simp only [Nat.reduceAdd] at h18
   have hFD := (pow32_add 2 14).symm
   simp only [Nat.reduceAdd] at hFD
-  have hF64 : (2 : Nat) ^ (32 * 2) = 2 ^ 64 := two_pow_congr rfl
-  have h4 : (2 : Nat) ^ (32 * 4) = 2 ^ 128 := two_pow_congr rfl
-  generalize hF : (2 : Nat) ^ (32 * 2) = F at h18 hFD hF64
+  have h4 : (2 : Nat) ^ (32 * 4) = 340282366920938463463374607431768211456 := by decide
+  generalize hF : (2 : Nat) ^ (32 * 2) = F at h18 hFD
+  have hF64 : F = 18446744073709551616 := by rw [← hF]
   generalize hD : (2 : Nat) ^ (32 * 14) = D at hFD
   generalize hE : (2 : Nat) ^ (32 * 16) = E at h18 hFD hp1 hE0
   generalize hB : (2 : Nat) ^ (32 * 18) = B at h18
@@ -1191,7 +1190,7 @@ theorem p521Fold_ok (hb : Bx s base size) {acc A : Nat} (hsz : acc + 4 * 37 ≤ 
   rw [hYv₂, ecx₂] at V₃
   have V₃' : val32 u.mem base (acc + 128) 4 =
       val32 s₂.mem base (acc + 128) 4 + 512 * val32 s₂.mem base (acc + 64) 2 := V₃
-  generalize hB4 : (2 : Nat) ^ (32 * 4) = B4 at h4
+  generalize hB4 : (2 : Nat) ^ (32 * 4) = B4
   have dR : val32 u.mem base (acc + 72) 19 = val32 u.mem base (acc + 72) 14 + D *
       (val32 u.mem base (acc + 128) 4 + B4 * val32 u.mem base (acc + 144) 1) := by
     rw [show 19 = 14 + (4 + 1) from rfl, val32_split _ _ 14 (4 + 1) hD, val32_split _ _ 4 1 hB4,
@@ -1209,8 +1208,9 @@ theorem p521Fold_ok (hb : Bx s base size) {acc A : Nat} (hsz : acc + 4 * 37 ≤ 
   obtain ⟨heq, hlt⟩ := p521_fold_arith (p := p521Prime) hFD hp1 (by rw [hF64]; decide) hL0 hL1 d37.symm
     (V₂'.symm.trans d18) hR hA
   refine ⟨(O₂.mono (by omega_arith) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith)),
-    k₁.trans ((K₂.mono (by decide)).trans (K₃.mono (by decide))), hlt, ⟨_, ?_⟩⟩
-  rewrite [hB, h18]
+    k₁.trans ((K₂.mono (by decide)).trans (K₃.mono (by decide))), hlt,
+    ⟨val32 s.mem base acc 16 + E * val32 s₂.mem base (acc + 64) 2, ?_⟩⟩
+  rewrite [h18]
   exact heq
 
 /-- The squares' sum reads only the operand. -/
@@ -1329,8 +1329,6 @@ end VG.Proof.Weierstrass.X86.Mont
 
 end
 
-/-! P521-SQUARE-END -/
-
 /-! # Selecting the x86 P-256 square from public operand pointers -/
 
 @[expose] public section
@@ -1390,6 +1388,31 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
         (by rw [R.mem]; exact hB) 8 (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
       rw [R.mem] at O E
       exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
-  next _ => exact general
+  next _ =>
+    split
+    next he =>
+      obtain ⟨rfl, hm5⟩ := he
+      refine WP.seq (wp_cmp fun t R _ Z => ?_)
+      apply WP.block_nil
+      refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
+      · rewrite [hm5] at hB ⊢
+        have hpaFit := hL.pa; have hpbFit := hL.pb
+        have ho : own 9 = 3520 := rfl
+        have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32)
+          (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
+        subst pa
+        have K := R.keeps []
+        refine WP.mono (p521Square_ok (hb.of_keeps K (by decide))
+          (hpb.of_keeps K (by decide) (by decide)) hpbFit (by rw [R.mem]; exact hB))
+          fun u ⟨O, K', H, E⟩ => ?_
+        rewrite [R.mem] at O E
+        exact ⟨O, (K.mono (by decide)).trans (K'.mono (by decide)), H, E⟩
+      · have K := R.keeps []
+        refine WP.mono (rowsF_ok (hb.of_keeps K (by decide)) hM
+          (hpa.of_keeps K (by decide) (by decide)) (hpb.of_keeps K (by decide) (by decide)) hL
+          (by rw [R.mem]; exact hB) (2 * 9) (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
+        rewrite [R.mem] at O E
+        exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
+    next _ => exact general
 
 end VG.Proof.Weierstrass.X86.Mont
