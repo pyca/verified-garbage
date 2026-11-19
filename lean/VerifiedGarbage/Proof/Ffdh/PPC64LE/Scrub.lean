@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Verified
@@ -111,7 +112,7 @@ theorem exchangeOut (stack : Nat) (cs : List (String × List (BitVec 64)) := [])
 
 theorem derivePublicOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
     PostOut (Spec.Ffdh.derivePublicContract (abi.withConsts cs) stack) (Spec.Ffdh.derivePublicSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun
+  Proof.Rsa.PPC64LE.Scrub.postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun
     | [y, yLen, _, _, pLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.Ffdh.derivePublicSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
@@ -158,7 +159,7 @@ theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVe
 theorem cachedKeySearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
     PostOut (Spec.Ffdh.cachedKeySearchContract (abi.withConsts cs) stack)
       (Spec.Ffdh.cachedKeySearchSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hp hb h => by
+  Proof.Rsa.PPC64LE.Scrub.postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hp hb h => by
     obtain ⟨x, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 14) hlen
     replace hlen := Nat.succ.inj hlen
     obtain ⟨xLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
