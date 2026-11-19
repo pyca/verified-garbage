@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -21,15 +23,17 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
 bl {vg_aes_expand_key_scratch}
 .base64 "AAAAOPAAHfj4AB34YAAf+GgAH/h466N/eOOEf2AAvzjwAN04AQDgOAACHzk="
 bl {vg_aes_ctr32}
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4IACATg==""#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4AAAAOOH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+CAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxJxzEiAAgE4=""#,
+        vg_aes_expand_key_scratch = sym super::aes_ocb::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_ocb::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
 /// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -148,14 +152,16 @@ bl {vg_aes_encrypt_blocks}
 228:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 228b
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4IACATg==""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4AAAAOIH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+IAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxJxzEiAAgE4=""#,
+        vg_aes_encrypt_blocks = sym super::aes_ocb::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
 /// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -287,8 +293,24 @@ bne %cr0, 232b
 b 231f
 230:
 231:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4IACATg==""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4AAAAOIH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+IAKITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
+        vg_aes_encrypt_blocks = sym super::aes_ocb::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes_ocb::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks.rs"]
+pub(crate) mod vg_aes_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
