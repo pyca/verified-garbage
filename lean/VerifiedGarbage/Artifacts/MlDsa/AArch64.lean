@@ -281,25 +281,32 @@ end VG.Artifacts.MlDsa.AArch64.KeyGen
 -- ML-DSA (FIPS 204) public-key hash `tr = H(pk, 64)` on AArch64
 namespace VG.Artifacts.MlDsa.AArch64.PkTr
 
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.pkTr44Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ VG.Proof.Variants.Keccak.AArch64.variants) :
+    List Artifact := [
+  Spec.MlDsa.pkTr44Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
-  Spec.MlDsa.pkTr65Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) }
+      (AArch64.ScrubAll.clearUnion Proof.MlDsa.AArch64.Scrub.pkTrOwn v.clear)
+      (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16) (Proof.MlDsa.AArch64.Scrub.pkTrSide v hv (.inl rfl))),
+  Spec.MlDsa.pkTr65Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
-  Spec.MlDsa.pkTr87Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) }
+      (AArch64.ScrubAll.clearUnion Proof.MlDsa.AArch64.Scrub.pkTrOwn v.clear)
+      (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16) (Proof.MlDsa.AArch64.Scrub.pkTrSide v hv (.inr (.inl rfl)))),
+  Spec.MlDsa.pkTr87Api.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16))]
+    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }
+      (AArch64.ScrubAll.clearUnion Proof.MlDsa.AArch64.Scrub.pkTrOwn v.clear)
+      (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16) (Proof.MlDsa.AArch64.Scrub.pkTrSide v hv (.inr (.inr rfl))))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.MlDsa.AArch64.PkTr
 

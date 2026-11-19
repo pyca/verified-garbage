@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.ChaCha20.Contract
@@ -41,6 +42,10 @@ open VG VG.AArch64
 structure XorImpl where
   callee : Impl.ChaCha20.AArch64.XorCallee
   features : List String
+  /-- The registers `callee.code` writes: a caller's tail clears them with
+  its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this
+  to the code. -/
+  clear : Impl.Residue.AArch64.Clear
   ok : ∀ s, xorAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ xorAArch64.post s s'
   ct : ConstantTime isa xorAArch64.pre xorAArch64.pub callee.code
