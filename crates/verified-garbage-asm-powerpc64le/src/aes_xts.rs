@@ -91,14 +91,6 @@ bl {vg_aes_xts_decrypt}
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_decrypt_blocks.rs"]
-pub(crate) mod vg_aes_decrypt_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_encrypt_blocks.rs"]
-pub(crate) mod vg_aes_encrypt_blocks;
-
-#[rustfmt::skip]
 #[path = "internal/vg_aes_xts_decrypt.rs"]
 pub(crate) mod vg_aes_xts_decrypt;
 
