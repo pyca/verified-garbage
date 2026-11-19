@@ -233,13 +233,13 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
     · exact haad.st
-    · exact haad.w.sub_right (Lay.wSub (by decide))
-    · exact haad.w.sub_right (Lay.wSub (by decide))
-    · exact haad.w.sub_right (Lay.wSub (by decide))
+    · exact haad.w.sub_right (Lay.wSub (by have := L.hWn; omega))
+    · exact haad.w.sub_right (Lay.wSub (by have := L.hWn; omega))
+    · exact haad.w.sub_right (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega))
   obtain hA₆ : bytesAt s₆.mem A al = bytesAt s₀.mem A al := bytesAt_frame F₆ dA (by have := haad.lt; omega_using [hal])
   refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK he₆ hk₆ hy₆ x12₆ x13₆ hal
       (by rw [r₆.rd, r₆.wr, rd₅, wr₅, rd₄, wr₄, r₃.rd, r₃.wr, rd₂, wr₂, r₁'.rd, r₁'.wr, rd₁, wr₁]; exact haad.rd)
-      (haad.w.sub_right (Lay.wSub (by decide)))))
+      (haad.w.sub_right (Lay.wSub (by have := L.hWn; omega)))))
     fun s₇ ⟨⟨y₇, hk₇, he₇, og₇, f₇, v₇⟩, rd₇, wr₇⟩ => ?_)
   refine WP.mono (storeY_ok y₇ (by rw [he₇.x20]; exact he₇.perm.stW (by decide)))
     fun s₈ ⟨m₈, b₈, o₈⟩ => ?_
@@ -285,7 +285,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
       rcases hr with (rfl | rfl | rfl) | rfl
       · exact L.cs.sub_left (Lay.ctxSub (by decide))
       · exact L.ctx_w (by decide) (by decide)
-      · exact L.ctx_w (by decide) (by decide)
+      · exact L.ctx_wn (by decide) (by have := L.hWn; omega)
       · exact L.ctx_w (by decide) (by decide)), hJ.hH]
   · rw [show St = St + BitVec.ofNat 64 0 by simp, blockAt_frame F₂₈ (dJ (.inl rfl)), ← show St = St + BitVec.ofNat 64 0 by simp,
       h₂.j0]
