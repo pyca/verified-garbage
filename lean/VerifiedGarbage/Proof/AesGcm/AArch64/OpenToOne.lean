@@ -177,9 +177,9 @@ def openToSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 40⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 2560⟩]
 
-theorem openTo_verified (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem openTo_verified (v : GcmImpl) :
     Verified AArch64.target (openG v.callees true 4) (Proof.AesGcm.openToScratchContract AArch64.abi) :=
-  Verified.of_correct (openTo_correct v) (openTo_ct v) (by
+  Verified.of_correct (openTo_correct (Wn := 2560) v) (openTo_ct (Wn := 2560) v) (by
     sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
       Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
       openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
@@ -200,7 +200,7 @@ theorem openToFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.a
 
 /-- `open_to` in a frame of 2608 bytes holding its working space and copies of
 its four other stack arguments. -/
-theorem openTo_framed (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
+theorem openTo_framed (v : GcmImpl) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openG v.callees true 4))
       (Proof.AesGcm.openToRoundsContract AArch64.abi 2608) :=
