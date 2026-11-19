@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes, and aligned for `u64`.
@@ -23,16 +25,18 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64;
 call {vg_triple_des_expand_key_core}
 .base64 "gUIjgFQYgUKjgFQYgUIjgVQYgUKjgVQYgUIjglQYgUKjglQYgUIjg1QYgUKjg1QYJoWThQQYBUY="
 call {vg_triple_des_ecb_encrypt_serial}
-.base64 "A8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjgGQYcoMDziQYBgOTXn4AM2PTAaOAZBhygwPONBgGA5NefgAzY9MBI4FkGHKDA85EGAYDk15+ADNj0wGjgWQYcoMDzlQYBgOTXn4AM2PTASOCZBhygwPOZBgGA5NefgAzY9MBo4JkGHKDA850GAYDk15+ADNj0wEjg2QYcoMGAzNDcwCjg2QYA8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjhGQYcoMDziQYBgOTXn4AM2PTAaOEZBhygwPONBgGA5NefgAzY9MBI4VkGHKDA85EGAYDk15+ADNj0wGjhWQYcoMDzlQYBgOTXn4AM2PTASOGZBhygwPOZBgGA5NefgAzY9MBo4ZkGHKDA850GAYDk15+ADNj0wEjh2QYcoMGAzNDcwCjh2QYgUIjiFQYgUKjiFQYgUIjiVQYgUKjiVQYgUIjilQYgUKjilQYgUIji1QYgUKji1QYkwJ5AJPygv+DsAIAg7SCAAO5AgETAQEogoA="
+.base64 "A8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjgGQYcoMDziQYBgOTXn4AM2PTAaOAZBhygwPONBgGA5NefgAzY9MBI4FkGHKDA85EGAYDk15+ADNj0wGjgWQYcoMDzlQYBgOTXn4AM2PTASOCZBhygwPOZBgGA5NefgAzY9MBo4JkGHKDA850GAYDk15+ADNj0wEjg2QYcoMGAzNDcwCjg2QYA8MEGJNTcwD9E5PzswGTw7MBA84UGAYDk15+ADNj0wEjhGQYcoMDziQYBgOTXn4AM2PTAaOEZBhygwPONBgGA5NefgAzY9MBI4VkGHKDA85EGAYDk15+ADNj0wGjhWQYcoMDzlQYBgOTXn4AM2PTASOGZBhygwPOZBgGA5NefgAzY9MBo4ZkGHKDA850GAYDk15+ADNj0wEjh2QYcoMGAzNDcwCjh2QYgUIjiFQYgUKjiFQYgUIjiVQYgUKjiVQYgUIjilQYgUKjilQYgUIji1QYgUKji1QYkwJ5AJPygv+DsAIAg7SCAAO5AgETAQEogUITAQGdCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2ITAQFjAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_triple_des_expand_key_core = sym super::triple_des::vg_triple_des_expand_key_core::vg_triple_des_expand_key_core,
-        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
+        vg_triple_des_expand_key_core = sym super::cmac_triple_des::vg_triple_des_expand_key_core::vg_triple_des_expand_key_core,
+        vg_triple_des_ecb_encrypt_serial = sym super::cmac_triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
 
 /// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -91,15 +95,17 @@ j 214f
 213:
 214:
 23:
-.base64 "kwJ5AJPygv+DsAIAg7SCAAO5AgGDuYIBA7oCAoO6ggITAQErgoA="
+.base64 "kwJ5AJPygv+DsAIAg7SCAAO5AgGDuYIBA7oCAoO6ggITAQErgUITAQGaCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gjMFNaIzRTWiM4U1ojPFNaIzBTXCM0U1wjOFNcIzxTXCMwU14jNFNeIzhTXiM8U14jMFNgIzRTYCM4U2AjPFNgIzBTYiM0U2IjOFNiIzxTYiMwU2QjNFNkIzhTZCM8U2QTAQFmAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
-        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
+        vg_triple_des_ecb_encrypt_serial = sym super::cmac_triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
 
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -137,8 +143,16 @@ j 23f
 23:
 .base64 "E4UEGYNDBQADTg8As8PDASMAdQCDQxUAA04fALPDwwGjAHUAg0MlAANOLwCzw8MBIwF1AINDNQADTj8As8PDAaMBdQCDQ0UAA05PALPDwwEjAnUAg0NVAANOXwCzw8MBowJ1AINDZQADTm8As8PDASMDdQCDQ3UAA05/ALPDwwGjA3UAg0MFAAPODwCzw8MBIwB1AINDFQADzh8As8PDAaMAdQCDQyUAA84vALPDwwEjAXUAg0M1AAPOPwCzw8MBowF1AINDRQADzk8As8PDASMCdQCDQ1UAA85fALPDwwGjAnUAg0NlAAPObwCzw8MBIwN1AINDdQADzn8As8PDAaMDdQAmhZOFBBkFRg=="
 call {vg_triple_des_ecb_encrypt_serial}
-.base64 "g8IEGSOAWQCDwhQZo4BZAIPCJBkjgVkAg8I0GaOBWQCDwkQZI4JZAIPCVBmjglkAg8JkGSODWQCDwnQZo4NZAJMCeQCT8oL/g7ACAIO0ggADuQIBg7mCARMBASiCgA=="
+.base64 "g8IEGSOAWQCDwhQZo4BZAIPCJBkjgVkAg8I0GaOBWQCDwkQZI4JZAIPCVBmjglkAg8JkGSODWQCDwnQZo4NZAJMCeQCT8oL/g7ACAIO0ggADuQIBg7mCARMBASiBQhMBAZ0KgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYhMBAWMBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_triple_des_ecb_encrypt_serial = sym super::triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
+        vg_triple_des_ecb_encrypt_serial = sym super::cmac_triple_des::vg_triple_des_ecb_encrypt_serial::vg_triple_des_ecb_encrypt_serial,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_ecb_encrypt_serial.rs"]
+pub(crate) mod vg_triple_des_ecb_encrypt_serial;
+
+#[rustfmt::skip]
+#[path = "internal/vg_triple_des_expand_key_core.rs"]
+pub(crate) mod vg_triple_des_expand_key_core;

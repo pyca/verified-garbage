@@ -11,14 +11,8 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.CmacTripleDes.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Cmac.tdesStreamInitApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.streamInit
-    verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed },
-  Spec.Cmac.tdesAbsorbApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 688 .a4 Impl.CmacTripleDes.Stream.RISCV64.absorb
-    verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed },
-  Spec.Cmac.tdesFinishApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.finish
-    verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed }]
+  Spec.Cmac.tdesStreamInitApi.artifact RISCV64.target Proof.CmacTripleDes.Stream.RISCV64.Scrub.initReg,
+  Spec.Cmac.tdesAbsorbApi.artifact RISCV64.target Proof.CmacTripleDes.Stream.RISCV64.Scrub.absorbReg,
+  Spec.Cmac.tdesFinishApi.artifact RISCV64.target Proof.CmacTripleDes.Stream.RISCV64.Scrub.finishReg]
 
 end VG.Artifacts.CmacTripleDes.RISCV64
