@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Residue
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.Scrub.X86
@@ -1472,7 +1472,7 @@ theorem writtenWithin_mem {sig : Sig} {written : List (String × Nat)} {s u u' :
 /-- `r`, a registration of code that calls nothing, has no frame and no MMX
 instruction, scrubbed: its code followed by `tail`, which returns without
 secret residue. -/
-def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noCalls = true)
+def scrubReg {api : Api} (r : Unscrubbed api target) (hn : r.code.noCalls = true)
     (hm : r.code.allInstrs (fun i => !i.isMmx) = true) : Registration api target where
   suffix := r.suffix
   consts := r.consts
@@ -1480,11 +1480,15 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noCalls = tr
   stack := r.stack
   code := scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).1
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    rw [e] at hv ⊢
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := by
@@ -1506,11 +1510,6 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noCalls = tr
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).2⟩
 
 /-- `r`, a registration of code whose frames and calls, and those of the
 functions it calls indirectly, use at most the `stack` bytes its contract
@@ -1518,7 +1517,7 @@ reserves, which calls indirectly only the functions of its tables of
 functions (`tablesCall`) and has no MMX instruction, scrubbed: its code,
 then those bytes zeroed, then `tail`, which returns without secret residue,
 if its postcondition reads the memory on return only within the buffers. -/
-def scrubRegFT {api : Api} (r : Registration api target) (hd : stackUse r.code ≤ r.stack)
+def scrubRegFT {api : Api} (r : Unscrubbed api target) (hd : stackUse r.code ≤ r.stack)
     (htc : tablesCall r.code r.tables = true) (hm : r.code.allInstrs (fun i => !i.isMmx) = true)
     (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
@@ -1531,13 +1530,19 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : stackUse r.code �
   code := scrubF (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     r.stack r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
     exact (Verified.scrubFT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
-      (tablesCall_fnAddr htc) hm hn rfl hp).1
+      (tablesCall_fnAddr htc) hm hn rfl hp).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    rw [e] at hv hp ⊢
+    exact (Verified.scrubFT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
+      (tablesCall_fnAddr htc) hm hn rfl hp).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := by
@@ -1549,16 +1554,9 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : stackUse r.code �
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubFT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
-      (tablesCall_fnAddr htc) hm hn rfl hp).2⟩
 
 /-- `scrubRegFT` of a registration whose code makes no indirect call. -/
-def scrubRegF {api : Api} (r : Registration api target) (hd : stackUse r.code ≤ r.stack)
+def scrubRegF {api : Api} (r : Unscrubbed api target) (hd : stackUse r.code ≤ r.stack)
     (hni : noIcall r.code = true) (hm : r.code.allInstrs (fun i => !i.isMmx) = true)
     (hn : FrameOk r.stack)
     (hpost : PostOut r.contract

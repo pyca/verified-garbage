@@ -169,7 +169,7 @@ noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear)
 
 /-- `r`'s code, scrubbed with the stack and the registers stated, is
 verified against `r`'s contract and returns without secret residue. -/
-theorem scrubOf_ok {api : Api} (r : Registration api target) {d : Nat} {cl : Clear}
+theorem scrubOf_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {cl : Clear}
     (hs : scrubSide r.code d (retBitsOf r) cl r.tables = true) (hd : d ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrub (retBitsOf r) d cl r.code) r.contract ∧
@@ -195,7 +195,7 @@ needs of the code proved (`scrubSide`, which the kernel evaluates where the
 registration is defined) rather than found when the registration is
 evaluated. `rb` is the result's bits as `hpost` states them, so that `hs` is
 stated with it and not with a projection of `r`. -/
-def scrubOf {api : Api} (r : Registration api target) (d : Nat) (cl : Clear) {rb : Nat}
+def scrubOf {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
     (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
@@ -206,7 +206,7 @@ def scrubOf {api : Api} (r : Registration api target) (d : Nat) (cl : Clear) {rb
   tables := r.tables
   code := scrub (retBitsOf r) d cl r.code
   contract := r.contract
-  verified := (scrubOf_ok r hs hd hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubOf_ok r hs hd hpost).1, (scrubOf_ok r hs hd hpost).2⟩
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -216,8 +216,7 @@ def scrubOf {api : Api} (r : Registration api target) (d : Nat) (cl : Clear) {rb
   writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
   extra := r.extra
   vendor := r.vendor
-  notWith := r.notWith
-  residue := some ⟨(scrubOf_ok r hs hd hpost).2⟩ }
+  notWith := r.notWith }
 
 /-- What `scrubWipedOf` needs of code `c` that is
 `withStackScratchWiped bytes reg words body`: `withScrubWiped`'s conditions
@@ -230,7 +229,7 @@ noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Cle
 
 /-- `r`'s code, followed by the clearing of the registers stated alone, is
 verified against `r`'s contract and returns without secret residue. -/
-theorem scrubWipedOf_ok {api : Api} (r : Registration api target) {bytes : Nat} {reg : Reg} {words : Nat}
+theorem scrubWipedOf_ok {api : Api} (r : Unscrubbed api target) {bytes : Nat} {reg : Reg} {words : Nat}
     {body : Prog isa} {cl : Clear} (hc : r.code = withStackScratchWiped bytes reg words body)
     (hs : wipedSide r.code body bytes words (retBitsOf r) cl = true) (hst : bytes ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
@@ -254,7 +253,7 @@ returning without secret residue: `withScrubWiped`, for code that wipes its
 own frame, with the registers the tail clears stated and what it needs of
 the code proved (`wipedSide`) rather than found when the registration is
 evaluated. -/
-def scrubWipedOf {api : Api} (r : Registration api target) (bytes : Nat) (reg : Reg) (words : Nat)
+def scrubWipedOf {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg) (words : Nat)
     (body : Prog isa) (cl : Clear) {rb : Nat}
     (hc : r.code = withStackScratchWiped bytes reg words body) (hpost : PostOut r.contract rb)
     (hs : wipedSide r.code body bytes words rb cl = true)
@@ -267,7 +266,7 @@ def scrubWipedOf {api : Api} (r : Registration api target) (bytes : Nat) (reg : 
   tables := r.tables
   code := .seq r.code (scrubTail (retBitsOf r) [] cl)
   contract := r.contract
-  verified := (scrubWipedOf_ok r hc hs hst hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubWipedOf_ok r hc hs hst hpost).1, (scrubWipedOf_ok r hc hs hst hpost).2⟩
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -277,7 +276,6 @@ def scrubWipedOf {api : Api} (r : Registration api target) (bytes : Nat) (reg : 
   writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
   extra := r.extra
   vendor := r.vendor
-  notWith := r.notWith
-  residue := some ⟨(scrubWipedOf_ok r hc hs hst hpost).2⟩ }
+  notWith := r.notWith }
 
 end VG.PPC64LE.Scrub

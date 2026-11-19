@@ -50,7 +50,7 @@ open VG.X86_64 VG.X86_64.Scrub VG.Impl.Scrub.X86_64
 
 /-- The bits of the result of `f`'s function. -/
 abbrev StreamFn.retBits (f : StreamFn) : Nat :=
-  f.api.sig.retBits ((abi.withConsts f.reg.consts).withTables f.api.sig f.reg.tables).ptrBits
+  f.api.sig.retBits ((abi.withConsts f.unscrubbed.consts).withTables f.api.sig f.unscrubbed.tables).ptrBits
 
 /-- `f`, scrubbed at level `v`, wiping the granules `ks` of its stack. -/
 def StreamFn.scrub (f : StreamFn) (v : VecLevel) (ks : List Nat)
@@ -59,14 +59,14 @@ def StreamFn.scrub (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hrb : f.retBits ≤ 32 ∨ f.retBits = 64) (hpost : PostOut f.contract f.retBits)
     (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide) : StreamFn where
   api := f.api
-  code := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).code
+  code := (scrubReg f.unscrubbed v ks hd hst h8 hlv hrb hpost hres rfl hne).code
   contract := f.contract
   stack := f.stack
-  verified := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).verified
+  verified := (scrubReg f.unscrubbed v ks hd hst h8 hlv hrb hpost hres rfl hne).verified.verified
   ofSig := f.ofSig
   ofApi := f.ofApi
-  spSafe := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).spSafe
-  residue := (scrubReg f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne).residue
+  spSafe := (scrubReg f.unscrubbed v ks hd hst h8 hlv hrb hpost hres rfl hne).spSafe
+  residue := (scrubReg f.unscrubbed v ks hd hst h8 hlv hrb hpost hres rfl hne).residue?
 
 theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hd : f.code.x86_64Depth ≤ f.stack) (hst : f.stack + 8 < 2 ^ 64) (h8 : f.stack % 8 = 0)
@@ -75,7 +75,7 @@ theorem StreamFn.scrub_noResidue (f : StreamFn) (v : VecLevel) (ks : List Nat)
     (hres : ResOk f.code f.contract f.stack ks (chunks f.stack)) (hne : v ≠ .evex := by decide)
     (hic : tablesCall f.code [] = true := by lit_decide) :
     NoResidue (f.scrub v ks hd hst h8 hlv hrb hpost hres hne).code f.contract f.retBits :=
-  scrubReg_noResidue f.reg v ks hd hst h8 hlv hrb hpost hres rfl hne hic
+  scrubReg_noResidue f.unscrubbed v ks hd hst h8 hlv hrb hpost hres rfl hne hic
 
 /-- HMAC's `finalize`'s postcondition reads the memory on return only within
 `out`, the HMAC's bytes. -/
@@ -105,7 +105,7 @@ open RScrub in
 working space in a frame of its own, without secret residue where `v` gives
 its analysis (`MdHash.hmacFinRes`). -/
 def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
-  let r : Registration v.I.finalizeApi target := {
+  let r : Unscrubbed v.I.finalizeApi target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.H) .r8 v.H.hmacFin
     stack := 16 + hmacFrame v.H
@@ -113,7 +113,7 @@ def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
     spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp }
   if hD : v.I.S.digestBytes < 2 ^ 64 then
     withScrub r (hmacFinOut v.I hD _) [] (pubOk_nil _) v.hmacFinRes
-  else r
+  else r.registration
 
 /-- `c` followed by the clearing (`scrub`) at the level `v`, with every granule
 of its `stack` bytes of stack wiped: for code that is part of a function (a

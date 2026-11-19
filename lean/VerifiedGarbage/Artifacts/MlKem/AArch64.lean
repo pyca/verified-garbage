@@ -38,8 +38,8 @@ namespace VG.Artifacts.MlKem.AArch64
 def direct : List Artifact := [
   Spec.MlKem.checkEkApi.artifact AArch64.target {
     code := Proof.MlKem.AArch64.Residue.checkEk768Cleared
-    verified := Proof.MlKem.AArch64.Residue.checkEk768Cleared_verified
-    residue := some ⟨Proof.MlKem.AArch64.Residue.checkEk768Cleared_noResidue _⟩ }]
+    verified := .scrubbed ⟨Proof.MlKem.AArch64.Residue.checkEk768Cleared_verified,
+      Proof.MlKem.AArch64.Residue.checkEk768Cleared_noResidue _⟩ }]
 
 end VG.Artifacts.MlKem.AArch64
 
@@ -130,7 +130,7 @@ def artifacts : List Artifact :=
   [
     Spec.MlKem1024.checkEkApi.artifact AArch64.target {
       code := Proof.MlKem.AArch64.Residue.checkEk1024Cleared
-      verified := Proof.MlKem.AArch64.Residue.checkEk1024Cleared_verified
-      residue := some ⟨Proof.MlKem.AArch64.Residue.checkEk1024Cleared_noResidue _⟩ }]
+      verified := .scrubbed ⟨Proof.MlKem.AArch64.Residue.checkEk1024Cleared_verified,
+        Proof.MlKem.AArch64.Residue.checkEk1024Cleared_noResidue _⟩ }]
 
 end VG.Artifacts.MlKem.AArch64

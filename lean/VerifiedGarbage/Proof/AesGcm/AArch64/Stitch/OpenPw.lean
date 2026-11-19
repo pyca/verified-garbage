@@ -42,7 +42,7 @@ open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 
 /-- `pwTbl 16` writes the table, from the powers in `pw`. -/
 theorem pwTbl_forO {s : State} (hs : openPwN s) :
-    TbForOP (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
+    TbForOP 2560 (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallO_of hs (Y := stackArg s 3 + BitVec.ofNat 64 512)
       (S := stackArg s 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
@@ -225,9 +225,9 @@ def openToPwSAArch64 : Contract isa where
 space and `dst`: `pw` is at `[sp + 32]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
 theorem gwCallToS_of {σ s : State} {Y S : Addr} (hs : openToPwSN σ)
-    (sY : Region.Sub ⟨Y, 16⟩ (workR (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR (stackArg σ 5)))
+    (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 5))) (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 5)))
     (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR (stackArg σ 5), dstRT σ] σ.mem s.mem) :
+    (hf : Frame [workR 2560 (stackArg σ 5), dstRT σ] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 32) 64 = stackArg σ 4 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 32) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 4) := by
@@ -272,12 +272,12 @@ theorem gwCallToS_of {σ s : State} {Y S : Addr} (hs : openToPwSN σ)
 
 /-- `pwTbl 32` writes the table, from the powers in `pw`. -/
 theorem pwTbl_forT {s : State} (hs : openToPwSN s) :
-    TbForOP (Impl.AesGcm.AArch64.Stitch.pwTbl 32) (s.gpr .x0) (stackArg s 5) s.sp (stackArg s 0)
+    TbForOP 2560 (Impl.AesGcm.AArch64.Stitch.pwTbl 32) (s.gpr .x0) (stackArg s 5) s.sp (stackArg s 0)
       (s.gpr .x7).toNat s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallToS_of hs (Y := stackArg s 5 + BitVec.ofNat 64 512)
       (S := stackArg s 5 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
-    have T := openToLay hs.1.1
+    have T := openToLay (Wn := 2560) hs.1.1
     have hH : Spec.Gcm.blockAt u.mem (s.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem (s.gpr .x0) :=
       blockAt_frame hf fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -39,12 +39,13 @@ theorem tbl_post {W : Addr} {H : Block} {u s t : State} (hW : s.gpr .x19 = W)
     by rw [hT.wr, hwr]⟩
 
 /-- `pwTbl k`: the powers loaded from the buffer at `[sp + k]`, and the table written. -/
-theorem pwTbl_ok {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
-    {u : State} (he : Env Ctx St W SP u) (hpw : u.mem.readW (u.sp + BitVec.ofNat 64 k) 64 = pw)
+theorem pwTbl_ok {Wn : Nat} {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
+    {u : State} (he : Env Wn Ctx St W SP u) (hpw : u.mem.readW (u.sp + BitVec.ofNat 64 k) 64 = pw)
     (hsl : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 k) 8)
     (hin : Covers [⟨pw, 128⟩] (u.rd ++ u.wr))
     (hrep : Spec.Gcm.Powers8Repr u.mem pw H) :
     WP isa (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) u (TblPost W H u) := by
+  obtain hWn := he.perm.hWn
   unfold Impl.AesGcm.AArch64.Stitch.pwTbl
   rw [WP.block_append_iff, WP.block_append_iff]
   obtain ⟨s₁, run₁, x5₁, g₁, sp₁, m₁, rd₁, wr₁⟩ := ldrSp_ok (t := .x5) hk hpw hsl
@@ -54,7 +55,7 @@ theorem pwTbl_ok {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Nat} (hk : k 
       exact in_off hin (by unfold Impl.Gcm.AArch64.Pmull.pwOff; split <;> omega_arith) (by omega_using [])) 8 (Nat.le_refl _))
     fun s₂ ⟨hI₂, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have hw : InRegions s₂.wr (s₂.gpr .x19 + BitVec.ofNat 64 512) 192 := by
-    rw [wr₂, g₂, wr₁, g₁ _ (by decide), he.x19]; exact he.perm.wW (by decide)
+    rw [wr₂, g₂, wr₁, g₁ _ (by decide), he.x19]; exact he.perm.wWn (by have := he.perm.hWn; omega)
   exact WP.mono (tbl_ok hI₂ hw) fun t hT => tbl_post (by rw [g₂, g₁ _ (by decide), he.x19]) hT
     (fun r hr => by rw [g₂, g₁ r hr]) (by rw [m₂, m₁]) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
 

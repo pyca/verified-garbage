@@ -25,8 +25,8 @@ namespace VG.Artifacts.Dsa.AArch64
 def direct : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact AArch64.target {
     code := Impl.Dsa.AArch64.ParameterSearch.init
-    verified := Proof.Dsa.AArch64.ParameterSearchInit.init_verified
-    residue := some ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _⟩ }]
+    verified := .scrubbed ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_verified,
+      Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _⟩ }]
 
 end VG.Artifacts.Dsa.AArch64
 

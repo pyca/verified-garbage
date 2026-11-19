@@ -16,12 +16,12 @@ namespace VG.Artifacts.Aes.AArch64
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     code := Proof.Aes.AArch64.KeyResidue.expandKeyCode
-    verified := Proof.Aes.AArch64.KeyResidue.expandKeyCode_verified
-    residue := some ⟨Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Aes.AArch64.KeyResidue.expandKeyCode_verified,
+      Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue⟩ },
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     suffix := "_aes"
     code := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode
-    verified := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_verified
-    residue := some ⟨Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_verified,
+      Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue⟩ }]
 
 end VG.Artifacts.Aes.AArch64

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Residue
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -1103,7 +1103,7 @@ theorem writtenWithin_mem {sig : Sig} {written : List (String × Nat)} {s u u' :
 
 /-- `r`, a registration of code without frames, scrubbed: its code followed
 by `tail`, which returns without secret residue. -/
-def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = true) :
+def scrubReg {api : Api} (r : Unscrubbed api target) (hn : r.code.noFrames = true) :
     Registration api target where
   suffix := r.suffix
   consts := r.consts
@@ -1111,12 +1111,17 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
   stack := r.stack
   code := scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     rw [e] at hv ⊢
     exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).1
+      rfl).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    rw [e] at hv ⊢
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
+      rfl).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -1134,19 +1139,13 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
 its contract reserves and which calls indirectly only the functions of its
 tables (`tablesCall`), scrubbed: its code, then those bytes zeroed, then
 `tail`, which returns without secret residue, if its postcondition reads the
 memory on return only within the buffers. -/
-def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+def scrubRegFT {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
     (htc : tablesCall r.code r.tables = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
@@ -1158,13 +1157,19 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code �
   code := scrubF (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     r.stack r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
     exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).1
+      rfl hp).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    rw [e] at hv hp ⊢
+    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
+      rfl hp).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -1174,18 +1179,11 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code �
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
 its contract reserves and which makes no indirect call, scrubbed
 (`scrubRegFT`). -/
-def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+def scrubRegF {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
     (hni : noIcall r.code = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))

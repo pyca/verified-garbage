@@ -17,11 +17,11 @@ namespace VG.Artifacts.BlowfishOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.ofbCode
-    verified := Proof.Blowfish.AArch64.ModesResidue.ofbCode_verified
-    residue := some ⟨Proof.Blowfish.AArch64.ModesResidue.ofbCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.ofbCode_verified,
+      Proof.Blowfish.AArch64.ModesResidue.ofbCode_noResidue⟩ },
   Spec.Blowfish.ofbFinalApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode
-    verified := Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_verified
-    residue := some ⟨Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_verified,
+      Proof.Blowfish.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.BlowfishOfb.AArch64

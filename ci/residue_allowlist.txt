@@ -1,5 +1,5 @@
 # Functions that do not yet prove they return without secret residue
-# (Artifact.residue, lean/VerifiedGarbage/TCB/<ISA>/Residue.lean), as a target and a name.
+# (Verification.unscrubbed, lean/VerifiedGarbage/TCB/<ISA>/Residue.lean), as a target and a name.
 # The emitter fails if a function without a proof is not listed here, or if a listed one is
 # gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.

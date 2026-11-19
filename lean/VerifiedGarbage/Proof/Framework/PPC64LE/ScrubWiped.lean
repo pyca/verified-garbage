@@ -222,7 +222,7 @@ theorem WipedShape.agree {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
 
 /-- `r`'s code, followed by the clearing of the volatile registers alone, is
 verified against `r`'s contract and returns without secret residue. -/
-theorem scrubWipedCode_ok {api : Api} (r : Registration api target) (sh : WipedShape r.code r.stack)
+theorem scrubWipedCode_ok {api : Api} (r : Unscrubbed api target) (sh : WipedShape r.code r.stack)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract ∧
       NoResidue (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract (retBitsOf r) := by
@@ -238,14 +238,14 @@ theorem scrubWipedCode_ok {api : Api} (r : Registration api target) (sh : WipedS
 
 /-- `r`, its code followed by the clearing of the volatile registers alone:
 for code that wipes its own frame (`WipedShape`). -/
-def scrubWipedReg {api : Api} (r : Registration api target) (sh : WipedShape r.code r.stack)
+def scrubWipedReg {api : Api} (r : Unscrubbed api target) (sh : WipedShape r.code r.stack)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
     Registration api target where
   suffix := r.suffix
   tables := r.tables
   code := .seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))
   contract := r.contract
-  verified := (scrubWipedCode_ok r sh hrb hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubWipedCode_ok r sh hrb hpost).1, (scrubWipedCode_ok r sh hrb hpost).2⟩
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -256,7 +256,6 @@ def scrubWipedReg {api : Api} (r : Registration api target) (sh : WipedShape r.c
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨(scrubWipedCode_ok r sh hrb hpost).2⟩
 
 /-- `r`, returning without secret residue with the clearing of its volatile
 registers alone (`scrubWipedReg`), if its code is
@@ -264,7 +263,7 @@ registers alone (`scrubWipedReg`), if its code is
 the whole frame region, `body` makes no indirect call and has no frames, and
 `r` states no `written`; otherwise `r` itself, which then has no proof, as
 the emitter allows only of what `ci/residue_allowlist.txt` lists. -/
-def withScrubWiped {api : Api} (r : Registration api target) (bytes : Nat) (reg : Reg) (words : Nat)
+def withScrubWiped {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg) (words : Nat)
     (body : Prog isa) (hc : r.code = withStackScratchWiped bytes reg words body)
     (hpost : PostOut r.contract (retBitsOf r)) : Registration api target :=
   if hB : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 then
@@ -275,6 +274,7 @@ def withScrubWiped {api : Api} (r : Registration api target) (bytes : Nat) (reg 
   if hrb : retBitsOf r ≤ 64 then
   if hwr : r.written = [] then
     scrubWipedReg r ⟨bytes, reg, words, body, hc, hB, hw, hic, hd, hs⟩ hrb hpost hwr
-  else r else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration else r.registration
 
 end VG.PPC64LE.Scrub

@@ -17,12 +17,12 @@ namespace VG.Artifacts.Sha256.AArch64
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init224
-    verified := Proof.Sha256.AArch64.Shared.init224
-    residue := some ⟨Proof.Sha256.AArch64.Residue.init224_noResidue _⟩ },
+    verified := .scrubbed ⟨Proof.Sha256.AArch64.Shared.init224,
+      Proof.Sha256.AArch64.Residue.init224_noResidue _⟩ },
   Spec.Sha256.initApi.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init
-    verified := Proof.Sha256.AArch64.Shared.init
-    residue := some ⟨Proof.Sha256.AArch64.Residue.init_noResidue _⟩ }] ++
+    verified := .scrubbed ⟨Proof.Sha256.AArch64.Shared.init,
+      Proof.Sha256.AArch64.Residue.init_noResidue _⟩ }] ++
   ((VG.Proof.Variants.MdHash.AArch64.sha224Variants ++
       VG.Proof.Variants.MdHash.AArch64.sha256Variants).flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
     v.stream.map fun f =>

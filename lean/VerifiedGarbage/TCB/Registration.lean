@@ -11,8 +11,10 @@ public import VerifiedGarbage.TCB.Print
 target, the code and its proof, the stack it uses and the constant tables it
 reads (which `stack_of` and `consts_of` find in the contract the proof is
 of), the tables of functions it takes, how much
-of its writable arrays it writes (`written`, with its proof), the proof that
-it returns without secret residue (`residue`), and the suffix of its name. Everything else
+of its writable arrays it writes (`written`, with its proof), and the suffix
+of its name. The proof is also that the code returns without secret residue
+(`Verification.scrubbed`): the cleanup is part of the code it is of, like
+everything else the function does. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
 is of; or from the code: the CPU features it needs (`Code.requiresDedup`).
@@ -161,6 +163,25 @@ def Api.doc (api : Api) : String :=
   api.summary ++ "\n\n# Safety\n\n" ++
     "\n".intercalate (api.safety.map ("* " ++ ·))
 
+/-- The proof obligation for emitting `c` on target `T` with contract `k` and
+a result of `retBits` bits: `Verified`, and `c` returns without secret
+residue (`Target.noResidue`). It is one statement about the code that is
+emitted, whose cleanup is part of it. -/
+structure VerifiedScrubbed (T : Target) (c : Prog T.isa) (k : Contract T.isa) (retBits : Nat) :
+    Prop where
+  verified : Verified T c k
+  noResidue : T.noResidue.elim False fun R => R c k retBits
+
+/-- What is proven of an artifact's code: `VerifiedScrubbed`, or, of an
+`unscrubbed` artifact, only `Verified`. The emitter accepts an unscrubbed
+artifact only of a function `ci/residue_allowlist.txt` lists, a list that
+only shrinks (`Rust.checkResidue`); on a target that does not define what it
+means to return without secret residue, every artifact is one. -/
+inductive Verification (T : Target) (c : Prog T.isa) (k : Contract T.isa) (retBits : Nat) :
+    Bool → Prop where
+  | scrubbed : VerifiedScrubbed T c k retBits → Verification T c k retBits false
+  | unscrubbed : Verified T c k → Verification T c k retBits true
+
 /-- A verified function, ready to be emitted into the Rust crate. -/
 structure Artifact where
   target : EmitTarget
@@ -207,7 +228,15 @@ structure Artifact where
   tables : List (String × List FnTable) := []
   code : Prog target.isa
   contract : Contract target.isa
-  verified : Verified target.toTarget code contract
+  /-- Whether `verified` is only `Verified`, with no proof that the function
+  returns without secret residue (`Verification.unscrubbed`). `verified`
+  determines it (unification finds it in `verified`'s type): it is never
+  stated. -/
+  unscrubbed : Bool := false
+  /-- The proof, for a result of `sig.retBits` bits at the target's pointer
+  width (which `Abi.withConsts` and `Abi.withTables` leave as it is: they
+  change only what the calling convention reads and requires). -/
+  verified : Verification target.toTarget code contract (sig.retBits target.abi.ptrBits) unscrubbed
   /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
   writeArgs : Bool := false
   stack : Nat := 0
@@ -280,13 +309,6 @@ structure Artifact where
   implementation, and keeping one from being chosen can only leave another
   the CPU can run, the base at last, which needs no feature. -/
   notWith : List String := []
-  /-- A proof that the function returns without secret residue
-  (`Target.noResidue`), or `none`. Every artifact of a target that defines
-  it has one, but those `ci/residue_allowlist.txt` lists, as the emitter
-  checks (`Rust.checkResidue`); none is possible on a target that does not. -/
-  residue : Option (PLift (target.noResidue.elim False fun R =>
-      R code contract (sig.retBits ((target.abi.withConsts consts).withTables sig tables).ptrBits)))
-      := none
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
 implements it, with the proofs the kernel checks fastest on each ISA; how it
@@ -409,10 +431,18 @@ structure Registration (api : Api) (target : Target) where
   determine it, is `api`'s for no tables of constants and no stack. -/
   contract : Contract target.isa :=
     api.contract (target.abi.withTables api.sig tables) 0
-  verified : Verified target code contract
   /-- `Artifact.consts`: by default, those `contract` names (`consts_of`),
   so that a registration states them only where it does not. -/
   consts : ConstsOf contract := by consts_of
+  /-- `Artifact.unscrubbed`, which `verified` determines (unification finds
+  it in `verified`'s type, as it does `contract`): a registration never
+  states it. -/
+  unscrubbed : Bool := false
+  /-- The proof, `.scrubbed h` of an `h : VerifiedScrubbed …`; or, only of a
+  function `ci/residue_allowlist.txt` lists, `.unscrubbed h` of an
+  `h : Verified …`. Its result's bits are `api.sig.retBits` at the target's
+  pointer width, as `Artifact.verified`'s. -/
+  verified : Verification target code contract (api.sig.retBits target.abi.ptrBits) unscrubbed
   /-- `Artifact.stack`: by default, that of `contract` (`stack_of`), so that
   a registration never states it. -/
   stack : StackOf contract := by stack_of
@@ -438,10 +468,6 @@ structure Registration (api : Api) (target : Target) where
   vendor : Option String := none
   /-- `Artifact.notWith`. -/
   notWith : List String := []
-  /-- `Artifact.residue`. -/
-  residue : Option (PLift (target.noResidue.elim False fun R =>
-      R code contract (api.sig.retBits ((target.abi.withConsts consts).withTables api.sig tables).ptrBits)))
-      := none
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -462,6 +488,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   tables := r.tables
   code := r.code
   contract := r.contract
+  unscrubbed := r.unscrubbed
   verified := r.verified
   writeArgs := api.writeArgs
   stack := r.stack
@@ -478,6 +505,5 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := r.residue
 
 end VG

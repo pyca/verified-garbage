@@ -52,7 +52,7 @@ namespace VG.X86.Scrub
 open VG.Impl.Scrub.X86
 
 /-- The result's bits of `r`'s function, which the tail keeps. -/
-abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 /-- What `scrubOf` needs of code `c`: it calls nothing and has no frame,
@@ -85,7 +85,7 @@ theorem of_scrubFSide {c : Prog isa} {stack : Nat} (h : scrubFSide c stack = tru
 (`scrub`), returning without secret residue: `scrubReg`, with what it needs
 of the code proved as one Boolean (`scrubSide`), by default by the kernel's
 evaluation where the registration is defined. -/
-def scrubOf {api : Api} (r : Registration api target)
+def scrubOf {api : Api} (r : Unscrubbed api target)
     (hs : scrubSide r.code = true := by (try dsimp only); lit_decide) : Registration api target :=
   scrubReg r (of_scrubSide hs).1 (of_scrubSide hs).2
 
@@ -100,7 +100,7 @@ registration is defined.
 A registration generic over the implementations of what its code calls
 gives `W`, its stack, and `hs`, proved of every implementation of the list
 by one evaluation: `hs` is then stated with `W`, not with `r.stack`. -/
-def scrubFOf {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r))
+def scrubFOf {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
     (W : Nat := r.stack)
     (hs : scrubFSide r.code W = true := by (try dsimp only); lit_decide)
     (hW : r.stack = W := by rfl) (hw : r.written = [] := by rfl) : Registration api target :=

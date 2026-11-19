@@ -1131,7 +1131,7 @@ structure StreamFn where
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
-  /-- `Artifact.residue`. -/
+  /-- The proof that it returns without secret residue, if it has one. -/
   residue : Option (PLift (X86_64.NoResidue code contract (api.sig.retBits 64))) := none
 
 /-- `f` as a registration of its `Api` (`Api.artifact`). -/
@@ -1141,11 +1141,22 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
   code := f.code
   contract := f.contract
   stack := f.stack
+  verified := .ofOption f.verified f.residue
+  ofApi := f.ofApi
+  ofSig := f.ofSig
+  spSafe := f.spSafe
+
+/-- `f` as what a form that scrubs it takes. -/
+def StreamFn.unscrubbed (f : StreamFn) : Unscrubbed f.api X86_64.target where
+  consts := []
+  tables := []
+  code := f.code
+  contract := f.contract
+  stack := f.stack
   verified := f.verified
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
-  residue := f.residue
 
 /-- The bytes of the frame in which HMAC's `finalize` keeps the working space
 of its `_scratch` form (`H.W` words, the hash function's functions' with the

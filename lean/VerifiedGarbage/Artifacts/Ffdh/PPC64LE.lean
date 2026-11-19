@@ -16,12 +16,12 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 def direct : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
-    verified := Proof.Ffdh.PPC64LE.Generation.init_verified
-    residue := some ⟨Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.Generation.init_verified,
+      Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩ },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
-    verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified
-    residue := some ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified,
+      Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩ },
   Spec.Ffdh.checkPublicApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkPublicReg,
   Spec.Ffdh.checkDomainApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkDomainReg,
   Spec.Ffdh.exchangeApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.exchangeReg,

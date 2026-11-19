@@ -50,8 +50,8 @@ def artifacts : List Artifact := [
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16] [.v27]
       Proof.EcKey.Compressed.AArch64.P224Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.Residue.P224.verified hasLaw.law hasLaw.inv
-    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.P224.noResidue hasLaw.law hasLaw.inv⟩ },
+    verified := .scrubbed ⟨Proof.EcKey.Compressed.AArch64.Residue.P224.verified hasLaw.law hasLaw.inv,
+      Proof.EcKey.Compressed.AArch64.Residue.P224.noResidue hasLaw.law hasLaw.inv⟩ },
   Spec.EcKey.P224.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.EcKey.AArch64.publicKeyP224
     verified := Proof.EcKey.AArch64.P224.pk_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]

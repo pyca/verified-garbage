@@ -44,8 +44,8 @@ def artifacts : List Artifact := [
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
       Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.verified hasLaw.law hasLaw.inv
-    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.noResidue hasLaw.law hasLaw.inv⟩ },
+    verified := .scrubbed ⟨Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.verified hasLaw.law hasLaw.inv,
+      Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.noResidue hasLaw.law hasLaw.inv⟩ },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.EcKey.AArch64.publicKeySecp256k1
     verified := Proof.EcKey.AArch64.Secp256k1.pk_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.publicKeyOk _))]

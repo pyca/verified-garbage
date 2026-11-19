@@ -54,13 +54,143 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
 
 namespace VG
 
-/-- Temporary. `verified := .unscrubbed h` is how a registration will state
-that its function is one of those not yet proven to return without secret
-residue (`ci/residue_allowlist.txt`), once what a registration proves
-includes that (`Registration.verified`); until then it means `h`, so that
-the registrations can say it before the change that gives it a meaning. -/
-theorem Verified.unscrubbed {T : Target} {c : Prog T.isa} {k : Contract T.isa} (h : Verified T c k) :
-    Verified T c k := h
+/-- What a form that builds a scrubbed registration takes: code with its
+proof of `Verified`, and what else a `Registration` states, with the same
+fields and defaults, so that a call site writes it as it would a
+registration (`{ code := c, verified := h }`). It is not a registration: the
+form's result is, with the proof that the code it built returns without
+secret residue (`Verification.scrubbed`). -/
+structure Unscrubbed (api : Api) (target : Target) where
+  /-- `Registration.suffix`. -/
+  suffix : String := ""
+  /-- `Registration.tables`. -/
+  tables : List (String × List FnTable) := []
+  code : Prog target.isa
+  /-- `Registration.contract`. -/
+  contract : Contract target.isa :=
+    api.contract (target.abi.withTables api.sig tables) 0
+  verified : Verified target code contract
+  /-- `Registration.consts`. -/
+  consts : ConstsOf contract := by consts_of
+  /-- `Registration.stack`. -/
+  stack : StackOf contract := by stack_of
+  ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
+    exact rfl
+  /-- `Registration.ofSig`. -/
+  ofSig : ∃ pre post leak,
+      contract = api.sig.contract
+        ((target.abi.withConsts consts).withTables api.sig tables) pre post
+        api.writeArgs stack leak := by
+    of_sig
+  /-- `Registration.spSafe`. -/
+  spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe
+  /-- `Registration.written`. -/
+  written : List (String × Nat) := []
+  /-- `Registration.writtenOk`. -/
+  writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      Sig.writtenWithin target.abi api.sig written s s' := by
+    exact fun _ _ _ _ _ => True.intro
+  /-- `Registration.extra`. -/
+  extra : List String := []
+  /-- `Registration.vendor`. -/
+  vendor : Option String := none
+  /-- `Registration.notWith`. -/
+  notWith : List String := []
+
+/-- `r` as it is, registered without a proof that it returns without secret
+residue (`Verification.unscrubbed`): what a wrapper that scrubs only where
+its side conditions hold returns where they do not. -/
+def Unscrubbed.registration {api : Api} {target : Target} (r : Unscrubbed api target) :
+    Registration api target where
+  suffix := r.suffix
+  tables := r.tables
+  code := r.code
+  contract := r.contract
+  consts := r.consts
+  verified := .unscrubbed r.verified
+  stack := r.stack
+  ofApi := r.ofApi
+  ofSig := r.ofSig
+  spSafe := r.spSafe
+  written := r.written
+  writtenOk := r.writtenOk
+  extra := r.extra
+  vendor := r.vendor
+  notWith := r.notWith
+
+/-- `Abi.withConsts` leaves the pointer width as it is. -/
+theorem Abi.ptrBits_withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))) :
+    (A.withConsts cs).ptrBits = A.ptrBits := by
+  unfold Abi.withConsts
+  split <;> rfl
+
+/-- `Abi.withTables` leaves the pointer width as it is. -/
+theorem Abi.ptrBits_withTables {M : ISA} (A : Abi M) (sig : Sig) (ts : List (String × List FnTable)) :
+    (A.withTables sig ts).ptrBits = A.ptrBits := by
+  unfold Abi.withTables
+  split <;> rfl
+
+/-- A result's bits under a calling convention with tables of constants and
+of functions are its bits under the calling convention: what
+`Registration.verified` states them with. -/
+theorem Abi.retBits_withConsts_withTables {M : ISA} (A : Abi M) (sig sig' : Sig)
+    (cs : List (String × List (BitVec 64))) (ts : List (String × List FnTable)) :
+    sig.retBits ((A.withConsts cs).withTables sig' ts).ptrBits = sig.retBits A.ptrBits := by
+  rw [Abi.ptrBits_withTables, Abi.ptrBits_withConsts]
+
+/-- `VerifiedScrubbed` proven for the result's bits under the calling
+convention with its tables is `VerifiedScrubbed` as a registration states it
+(`Abi.retBits_withConsts_withTables`). -/
+theorem VerifiedScrubbed.abi {T : Target} {c : Prog T.isa} {k : Contract T.isa} {sig sig' : Sig}
+    {cs : List (String × List (BitVec 64))} {ts : List (String × List FnTable)}
+    (h : VerifiedScrubbed T c k (sig.retBits ((T.abi.withConsts cs).withTables sig' ts).ptrBits)) :
+    VerifiedScrubbed T c k (sig.retBits T.abi.ptrBits) :=
+  Abi.retBits_withConsts_withTables T.abi sig sig' cs ts ▸ h
+
+/-- `VerifiedScrubbed.abi`, of either proof. -/
+theorem Verification.abi {T : Target} {c : Prog T.isa} {k : Contract T.isa} {sig sig' : Sig}
+    {cs : List (String × List (BitVec 64))} {ts : List (String × List FnTable)} {u : Bool}
+    (h : Verification T c k (sig.retBits ((T.abi.withConsts cs).withTables sig' ts).ptrBits) u) :
+    Verification T c k (sig.retBits T.abi.ptrBits) u :=
+  Abi.retBits_withConsts_withTables T.abi sig sig' cs ts ▸ h
+
+/-- What is proven of code either way is `Verified`. -/
+theorem Verification.verified {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat} {u : Bool}
+    (h : Verification T c k rb u) : Verified T c k := by
+  cases h with
+  | scrubbed h => exact h.verified
+  | unscrubbed h => exact h
+
+/-- The proof of code with a proof that it returns without secret residue
+only where `b` holds, a test evaluated when the registration is. -/
+theorem Verification.ofBool {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat} (b : Bool)
+    (hv : Verified T c k) (hr : b = true → T.noResidue.elim False fun R => R c k rb) :
+    Verification T c k rb (!b) := by
+  cases b with
+  | true => exact .scrubbed ⟨hv, hr rfl⟩
+  | false => exact .unscrubbed hv
+
+/-- The proof that code returns without secret residue, of what is proven of
+scrubbed code. -/
+theorem Verification.noResidue {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat}
+    (h : Verification T c k rb false) : T.noResidue.elim False fun R => R c k rb := by
+  cases h with
+  | scrubbed h => exact h.noResidue
+
+/-- The proof of code with a proof that it returns without secret residue
+only where an implementation gives one (`o`). -/
+theorem Verification.ofOption {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat}
+    (hv : Verified T c k) (o : Option (PLift (T.noResidue.elim False fun R => R c k rb))) :
+    Verification T c k rb o.isNone := by
+  cases o with
+  | none => exact .unscrubbed hv
+  | some r => exact .scrubbed ⟨hv, r.down⟩
+
+/-- The proof that `r`'s code returns without secret residue, if `r` has one. -/
+def Registration.residue? {api : Api} {target : Target} (r : Registration api target) :
+    Option (PLift (target.noResidue.elim False fun R => R r.code r.contract
+      (api.sig.retBits target.abi.ptrBits))) :=
+  if h : r.unscrubbed = false then some ⟨(h ▸ r.verified).noResidue⟩ else none
 
 end VG
 

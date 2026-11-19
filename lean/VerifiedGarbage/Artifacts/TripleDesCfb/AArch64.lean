@@ -18,19 +18,19 @@ namespace VG.Artifacts.TripleDesCfb.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
   Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
   Spec.TripleDes.cfbEncryptFinalApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
   Spec.TripleDes.cfbDecryptFinalApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_verified
-    residue := some ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+      Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.TripleDesCfb.AArch64

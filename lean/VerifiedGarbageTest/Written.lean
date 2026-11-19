@@ -84,7 +84,7 @@ def artifact (w : List (String × Nat)) : Artifact where
   doc := "Writes nothing.\n\n# Safety\n\n* None."
   code := code
   contract := contract
-  verified := verified
+  verified := .unscrubbed verified
   written := w
   writtenOk := written_ok w
 

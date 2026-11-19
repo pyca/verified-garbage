@@ -98,10 +98,12 @@ instructions in an ISA model) go in their own PR before either.
    those of the functions it calls (`Code.requiresDedup`, from the ISA
    model's `requires`).
    A function also proves that it returns without secret residue
-   (`Registration.residue`, `TCB/<ISA>/Residue.lean`). On x86-64, build its
+   (`TCB/<ISA>/Residue.lean`), as part of what its registration proves:
+   `verified := .scrubbed h`, of an `h : VerifiedScrubbed …`
+   (`TCB/Registration.lean`). On x86-64, build its
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
-   hold secrets and which sets `residue`; the registration file binds the
+   hold secrets and which gives that proof; the registration file binds the
    result. On ARM, a function without frames (`Code.noFrames`: it writes
    memory only in its buffers) is scrubbed with `Arm.Scrub.scrubReg`
    (`Proof/Framework/Arm/Scrub.lean`), which sets the registers a callee may
@@ -125,7 +127,8 @@ instructions in an ISA model) go in their own PR before either.
    file maps over `variants.attach` to pass each variant's membership
    (`Proof/RsaOaep/AArch64/Scrub.lean`, `Artifacts/RsaOaep/AArch64.lean`).
    Only functions `ci/residue_allowlist.txt` already lists may go
-   without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
+   without (`verified := .unscrubbed h`, of an `h : Verified …`): the list
+   only shrinks (`ci/check_residue_allowlist.py`), and the
    emitter refuses a listed function that has a proof, so converting one
    removes its line. Where the analysis fails, its trace says at which
    instruction (an index it cannot bound, a value reloaded after a store it

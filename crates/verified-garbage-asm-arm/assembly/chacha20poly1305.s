@@ -101,7 +101,7 @@ vg_chacha20_poly1305_seal_umaal:
 	mov r7, r1
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4
@@ -630,7 +630,7 @@ vg_chacha20_poly1305_open_umaal:
 	str r12, [r7, #412]
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4
@@ -1209,7 +1209,7 @@ vg_chacha20_poly1305_open_to_umaal:
 	str r12, [r7, #412]
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4
@@ -2045,7 +2045,7 @@ vg_chacha20_poly1305_seal:
 	mov r7, r1
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4
@@ -2574,7 +2574,7 @@ vg_chacha20_poly1305_open:
 	str r12, [r7, #412]
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4
@@ -3153,7 +3153,7 @@ vg_chacha20_poly1305_open_to:
 	str r12, [r7, #412]
 	mov r0, r7
 	add r1, r7, #384
-	bl {vg_poly1305_init}
+	bl {vg_poly1305_init_core}
 	mov r7, r0
 	mov r1, r8
 	lsr r2, r9, #4

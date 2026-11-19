@@ -102,7 +102,7 @@ registers the tail clears stated and what it needs of the code proved
 rather than found when the registration is evaluated. `W` and `rb` are the
 stack and the result's bits as `hok` states them, so that `hs` is stated
 with them and not with projections of `r`. -/
-def scrubAllOf {api : Api} (r : Registration api target) (cl : Clear) {W rb : Nat}
+def scrubAllOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
     (hok : ScrubAllOk r.contract W rb)
     (hs : scrubSide r.code W rb cl r.tables = true := by
       (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
@@ -115,25 +115,14 @@ def scrubAllOf {api : Api} (r : Registration api target) (cl : Clear) {W rb : Na
   tables := r.tables
   code := scrubAll r.stack (retBitsOf r) cl r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨hwf, -, -, hrb⟩ := keeps_of_side h
     rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
     · rw [h0]; exact Verified.scrubAll0 hwf r.verified hrb (h0 ▸ hok)
     · have hs := h
       simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
         decide_eq_true_eq, beq_iff_eq] at hs
-      exact Verified.scrubAll hwf r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hrb hok
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := all_spSafe _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-  residue := some ⟨by
+      exact Verified.scrubAll hwf r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hrb hok), by
     obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side h
     rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
     · have hs := h
@@ -143,13 +132,23 @@ def scrubAllOf {api : Api} (r : Registration api target) (cl : Clear) {W rb : Na
       simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
         decide_eq_true_eq, beq_iff_eq] at hs
       exact noResidue_scrubAll hwf hkp r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hok.sp
-        hs.1.1.1.1.1.2 hdit (tablesCall_syms hs.1.1.1.1.2) hrb⟩ }
+        hs.1.1.1.1.1.2 hdit (tablesCall_syms hs.1.1.1.1.2) hrb⟩
+  consts := r.consts
+  stack := r.stack
+  ofApi := r.ofApi
+  ofSig := r.ofSig
+  spSafe := all_spSafe _
+  written := r.written
+  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
+  extra := r.extra
+  vendor := r.vendor
+  notWith := r.notWith }
 
 /-- `scrubAllOf` for code without frames (`scrubSide` with no stack, whose
 depth is then 0) that keeps what `r` states of `written`: `withScrubAllW`,
 with the registers the tail clears stated and what it needs of the code
 proved (`scrubSide` with no stack). -/
-def scrubAllWOf {api : Api} (r : Registration api target) (cl : Clear) {rb : Nat}
+def scrubAllWOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {rb : Nat}
     (hok : ScrubAllOk r.contract 0 rb)
     (hs : scrubSide r.code 0 rb cl r.tables = true := by
       (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
@@ -165,7 +164,8 @@ def scrubAllWOf {api : Api} (r : Registration api target) (cl : Clear) {rb : Nat
     tables := r.tables
     code := scrubAll 0 (retBitsOf r) cl r.code
     contract := r.contract
-    verified := Verified.scrubAll0 hk.1 r.verified hk.2.2.2 hok
+    verified := .scrubbed <| .abi ⟨Verified.scrubAll0 hk.1 r.verified hk.2.2.2 hok,
+      noResidue_scrubAll0 hk.1 hk.2.1 r.verified hd hk.2.2.1 hk.2.2.2⟩
     consts := r.consts
     stack := r.stack
     ofApi := r.ofApi
@@ -177,8 +177,7 @@ def scrubAllWOf {api : Api} (r : Registration api target) (cl : Clear) {rb : Nat
       exact writtenWithin_of_mem hm (r.writtenOk s t' u hs hc)
     extra := r.extra
     vendor := r.vendor
-    notWith := r.notWith
-    residue := some ⟨noResidue_scrubAll0 hk.1 hk.2.1 r.verified hd hk.2.2.1 hk.2.2.2⟩ }
+    notWith := r.notWith }
 
 /-- The registers of `a` and of `b`, in `Clear.all`'s order (which is
 `Clear.of`'s): what the tail of a caller clears, from the registers its own

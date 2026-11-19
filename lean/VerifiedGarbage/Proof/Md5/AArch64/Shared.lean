@@ -82,7 +82,7 @@ theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.updateContract AArch64.
     (Proof.Md5.updatePost_out _)
 
 /-- `update`, as it is. -/
-def updateReg₀ : Registration Spec.Md5.updateApi AArch64.target :=
+def updateReg₀ : Unscrubbed Spec.Md5.updateApi AArch64.target :=
   { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
     verified := update }
 
@@ -97,7 +97,7 @@ theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.finalizeContract AArc
     (Proof.Md5.finalizePost_out _)
 
 /-- `finalize`, as it is. -/
-def finalizeReg₀ : Registration Spec.Md5.finalizeApi AArch64.target :=
+def finalizeReg₀ : Unscrubbed Spec.Md5.finalizeApi AArch64.target :=
   { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
     verified := finalize }
 

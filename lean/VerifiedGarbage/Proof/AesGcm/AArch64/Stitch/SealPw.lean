@@ -98,7 +98,7 @@ theorem pwRestShort_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ 
 /-! ## `vg_aes_gcm_seal_with_powers` -/
 
 /-- `pwTbl 8` writes the table, from the powers in `pw`. -/
-theorem pwTbl_for {s : State} (hs : sealPwN s) : TbForP (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
+theorem pwTbl_for {s : State} (hs : sealPwN s) : TbForP 2560 (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCall_of hs (Y := stackArg s 2 + BitVec.ofNat 64 512)
       (S := stackArg s 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
