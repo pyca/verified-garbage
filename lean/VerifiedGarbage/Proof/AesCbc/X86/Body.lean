@@ -249,20 +249,28 @@ theorem UPre.blocksAt_step {m m' : Mem} {k : Nat} (hk : k < N s₀)
   · exact hp.b_data.symm.sub_left (UPre.data_sub hj)
 
 omit hp in
-/-- Block `k` before the step, from the invariant. -/
-theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
-    bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
+/-- Block `k` of a memory whose first `k` blocks are the mode's and whose
+others are still the original ones. -/
+theorem block_of_data {M : Mode} {k : Nat} {m : Mem}
+    (hd : Spec.Cbc.blocksAt m ((Dp s₀).setWidth 64) (N s₀) = outK M s₀ k ++ (blks s₀).drop k) (hk : k < N s₀) :
+    bytesAt m (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
   have hl : (outK M s₀ k).length = k := by
     rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
-  have := congrArg (·[k]?) h.data
-  simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀)).length by
+  have := congrArg (·[k]?) hd
+  simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt m ((Dp s₀).setWidth 64) (N s₀)).length by
       rw [length_blocksAt]; exact hk),
     List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega_using [hl]), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero,
     List.getElem?_eq_getElem (show k < (blks s₀).length by simp [Spec.Cbc.blocksAt]; exact hk)] at this
-  show bytesAt s.mem ((Dp s₀).setWidth 64 + BitVec.ofNat 64 (16 * k)) 16 = _
+  show bytesAt m ((Dp s₀).setWidth 64 + BitVec.ofNat 64 (16 * k)) 16 = _
   rw [← getElem_blocksAt _ _ hk]
   exact Option.some.inj this
+
+omit hp in
+/-- Block `k` before the step, from the invariant. -/
+theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
+    bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) :=
+  block_of_data h.data hk
 
 end
 
@@ -404,20 +412,6 @@ theorem loop_okB {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b) 
     rwa [← hz']
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hz'], h', hf.trans hf'⟩
-
-/-- No blocks, or `body`'s loop on all of them, changing memory only within
-`FB s₀ b`. -/
-theorem ends_mid_wpB {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b) {s₀ : State}
-    (hp : UPre s₀) {s₁ : State} (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ fun t =>
-      LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s₁.mem t.mem := by
-  have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
-    show VG.X86.eval .e s₁ = _; rw [eval_e, hz]
-  by_cases hn : N s₀ = 0
-  · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ⟨?_, Frame.refl _ _⟩) (fun h => by cases h)
-    rw [hn]; exact h
-  · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_okB hb hp (by omega_using [hn]) h
 
 /-- No blocks, or `mid` on all of them. -/
 theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
@@ -1041,19 +1035,31 @@ theorem zero4_at (m : Mem) (c : Addr) {j : Nat} (hj : j < 16) :
 theorem not_contains {x : Addr} {R : Region} (h : Region.Disjoint ⟨x, 1⟩ R) : ¬ R.Contains x 1 :=
   h x (Region.contains_self _ _)
 
-/-- `wholeZ body`, for a `body` that changes memory only within `FB s₀ b`:
-the contract, and every byte of the scratch buffer from offset `b` on
-unchanged or zero. -/
-theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
-    {s₀ : State} (h0 : (modeX86 M).pre s₀) :
-    WP isa (wholeZ body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
+/-- The prologue, no blocks or `mid` on all of them, and the epilogue that
+zeroes what was saved, for a `mid` that changes memory only within
+`FB s₀ b`: the contract, and every byte of the scratch buffer from offset
+`b` on unchanged or zero. -/
+theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (modeX86 M).pre s₀)
+    (hmid : ∀ {s₁ : State}, LInv M s₀ 0 s₁ → 0 < N s₀ →
+      WP isa mid s₁ fun t => LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s₁.mem t.mem) :
+    WP isa (.seq (.block Impl.CmacAes.X86.setup)
+      (.seq (.ite .e (.block []) mid) (.block (Impl.CmacAes.X86.restore 5 ++ zeroSaved)))) s₀ fun s' =>
+      abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
       ∀ i, b ≤ i → i < 2176 →
         s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
           s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 := by
   obtain hp := UPre.of h0
   have hsc := hp.scr_fit
   refine WP.seq (WP.mono (prologue_wp (M := M) hp) fun s₁ ⟨⟨h₁, hz⟩, hm₁⟩ => ?_)
-  refine WP.seq (WP.mono (ends_mid_wpB hb hp h₁ hz) fun t ⟨ht, hft⟩ => ?_)
+  obtain hite : WP isa (.ite .e (.block []) mid) s₁ fun t =>
+      LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s₁.mem t.mem := by
+    have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
+      show VG.X86.eval .e s₁ = _; rw [MdStream.X86.eval_e, hz]
+    by_cases hn : N s₀ = 0
+    · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ⟨?_, Frame.refl _ _⟩) (fun h => by cases h)
+      rw [hn]; exact h₁
+    · exact WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => hmid h₁ (by omega_using [hn])
+  refine WP.seq (WP.mono hite fun t ⟨ht, hft⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (epilogue_wp hp ht) fun s₂ ⟨⟨habi, hpost⟩, hm₂, hesp₂, hrd₂, hwr₂⟩ => ?_
   rw [zeroSaved, List.append_assoc, List.singleton_append]
@@ -1139,5 +1145,16 @@ theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
         · exact not_contains (Offset.disjoint_base _ h1 (by omega_using [h2]))
         · exact not_contains (Offset.disjoint _ (by omega_using [hzi]) (by omega_using [h2]) (by omega_using []))
         · exact fun hc => hp.b_scr _ hc hx1
+
+/-- `wholeZ body`, for a `body` that changes memory only within `FB s₀ b`:
+the contract, and every byte of the scratch buffer from offset `b` on
+unchanged or zero. -/
+theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
+    {s₀ : State} (h0 : (modeX86 M).pre s₀) :
+    WP isa (wholeZ body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
+      ∀ i, b ≤ i → i < 2176 →
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
+          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+  endsZ_wp h0 fun h hn => loop_okB hb (UPre.of h0) hn h
 
 end VG.Proof.AesCbc.X86
