@@ -85,7 +85,7 @@ include L
 /-- `cryptAlT`: `cryptAl_rel`, with the same length of the text in `x26`. -/
 theorem cryptAlT_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
     (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0)
-    (h26 : k₁ .x26 = k₂ .x26) :
+    (h26 : k₁ .x26 = k₂ .x26) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptAlT v.callees) TT := by
   have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Wn Ctx St W SP k R P D n σ) {m' : Mem},
       Frame (crFrame Wn St W D n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
@@ -168,7 +168,7 @@ theorem RelCT.seq_assoc3 {a b c r : Prog isa} {P Q : State → State → Prop}
 
 /-- A frame of the absorption of the whole blocks is one of the working
 space and the text. -/
-theorem absFrame_wd {Wn : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame (absFrame (W + BitVec.ofNat 64 16) W 16) m m') :
+theorem absFrame_wd {Wn : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame (absFrame (W + BitVec.ofNat 64 16) W 16) m m') (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     Frame [workR Wn W, ⟨D, n⟩] m m' := by
   refine h.sub fun r hr => ?_
   simp only [absFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -178,7 +178,7 @@ theorem absFrame_wd {Wn : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame (a
   · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
 
 /-- What `absFrame` writes is in the working space. -/
-theorem absFrame_w {Wn : Nat} {W : Addr} {m m' : Mem} (h : Frame (absFrame (W + BitVec.ofNat 64 16) W 16) m m') :
+theorem absFrame_w {Wn : Nat} {W : Addr} {m m' : Mem} (h : Frame (absFrame (W + BitVec.ofNat 64 16) W 16) m m') (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     Frame [workR Wn W] m m' := by
   refine h.sub fun r hr => ?_
   simp only [absFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -206,7 +206,7 @@ structure MidG (Wn : Nat) (to : Bool) (Ctx W SP : Addr) (H : Block) (R n : Nat) 
   wr : s.wr = ρ.wr
 
 /-- `MidG` in place. -/
-abbrev Mid (Ctx W SP : Addr) (H : Block) (R n : Nat) (D Tg X : Addr) (ρ s : State) : Prop :=
+abbrev Mid (Wn : Nat) (Ctx W SP : Addr) (H : Block) (R n : Nat) (D Tg X : Addr) (ρ s : State) : Prop :=
   MidG Wn false Ctx W SP H R n D Tg X ρ s
 
 section
@@ -215,8 +215,8 @@ include L
 
 /-- `Mid` after `cryptAl`. -/
 theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb : Block}
-    (h : Mid Ctx W SP H R n D Tg X ρ s) (o : CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
+    (h : Mid Wn Ctx W SP H R n D Tg X ρ s) (o : CrOut Wn Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : Mid Wn Ctx W SP H R n D Tg X ρ s' := by
   obtain dWK : ∀ r ∈ crFrame Wn (W + BitVec.ofNat 64 16) W D n, (keyR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -259,7 +259,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg)
     (hf : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₁.mem) (hrd : s₁.rd = ρ.rd) (hwr : s₁.wr = ρ.wr) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])) s₁
-      fun s₃ => Mid Ctx W SP H R n D Tg D ρ s₃ ∧ CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
+      fun s₃ => Mid Wn Ctx W SP H R n D Tg D ρ s₃ ∧ CrIn Wn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
   refine WP.seq (WP.mono (front_ok L hMK hJ haad hal h4 h5 h6 h7) fun s₂ h₂ => ?_)
   obtain ⟨s₃, run₃, x27₃, x24₃, x25₃, r₃⟩ : ∃ s₃, runBlock isa [mov .x27 .x23, mov .x24 .x26, imm .x25 0] s₂ =
       some s₃ ∧ s₃.gpr .x27 = D ∧ s₃.gpr .x24 = BitVec.ofNat 64 n ∧
@@ -282,7 +282,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hd₃, rfl⟩⟩
 
 /-- The arguments of the call on the whole blocks of the ciphertext. -/
-theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid Ctx W SP H R n D Tg D ρ s₄)
+theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid Wn Ctx W SP H R n D Tg D ρ s₄)
     (h25 : s₄.gpr .x25 = BitVec.ofNat 64 0) :
     WP isa (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16)) s₄
       (Abs3 Wn Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H [] D n 0 s₄.mem 0) := by
@@ -415,7 +415,7 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
       s₁.rd = ρ₁.rd → s₁.wr = ρ₁.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₁.mem s₁.mem →
       s₂.rd = ρ₂.rd → s₂.wr = ρ₂.wr → Frame [workR Wn W, ⟨D, n⟩] ρ₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) TT := by
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
   obtain ⟨x4₂, x5₂, x6₂, x7₂⟩ := hx₂
@@ -510,7 +510,7 @@ theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
       Region.Sub ⟨Dd, 16 * nb⟩ (⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩ : Region) →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   obtain h₁ := hpre _ p₁
@@ -613,7 +613,7 @@ theorem sealWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) cl TT) :
+      RelCT isa (Eq2 s₁ s₂) cl TT) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (onePub (w + 1)) (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) :=
   sealWithEX_ct v cl hMK hw hpre (ex := fun _ => []) (fun _ => by simp) (fun _ => by simp) (fun _ => rfl)
     (fun p c y z r w sp f _ => hgh p c y z r w sp f)
@@ -639,7 +639,7 @@ theorem sealWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : S
       Frame [workR Wn (stackArg σ₁ 1), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ 1), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
-      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+      RelCT isa (Eq2 s₁ s₂) (.call gh.name gh.code) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     ConstantTime isa pre (sealAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.sealWith v.callees gh) :=
   sealWithE_ct (w := 1) v _ hMK (.inl rfl) (fun s h => sealPreX_W (hpre s h))
     (fun p c y z r w _ f => hgh p c y z r w f)
