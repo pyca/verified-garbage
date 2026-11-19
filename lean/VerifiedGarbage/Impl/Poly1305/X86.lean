@@ -232,7 +232,7 @@ def lreg : Nat → XReg
   | _ => .xmm4
 
 /-- Limb `k` of a block is its 8 bytes from byte `lbyte k` on, shifted right
-by `lshift k` (and masked, but for the fifth). -/
+by `lshift k` and masked. -/
 def lbyte : Nat → Nat
   | 0 => 0
   | 1 => 0
@@ -251,8 +251,7 @@ holds the mask. -/
 def limb (b : Reg) (off k : Nat) (two : Bool) : List Instr :=
   ([.movqLoad .xmm6 (at_ b (off + lbyte k))] : List Instr) ++
   (if two then [.movqLoad .xmm7 (at_ b (off + 16 + lbyte k)), .xop (.bin .punpcklqdq .xmm6 .xmm7)] else []) ++
-  (if lshift k = 0 then [] else [.xop (.shift .psrlq .xmm6 (BitVec.ofNat 8 (lshift k)))]) ++
-  (if k < 4 then [.xop (.bin .pand .xmm6 .xmm5)] else [])
+  ([.xop (.shift .psrlq .xmm6 (BitVec.ofNat 8 (lshift k))), .xop (.bin .pand .xmm6 .xmm5)] : List Instr)
 
 /-- The limbs of the two blocks at `esi`, with their `2¹²⁸`, added to the
 lanes. -/
@@ -273,9 +272,9 @@ def initH : List Instr :=
 
 /-- The mask (also left in `xmm5`) and the bit `2²⁴`, in both lanes. -/
 def consts (o : Nat) : List Instr :=
-  [.mov .eax (.imm 0x3ffffff), .xop (.movd .xmm5 .eax), .xop (.pshufd .xmm5 .xmm5 0x44),
+  [.mov .eax (.imm 0x3ffffff), .xop (.movd .xmm5 .eax), .xop (.bin .punpcklqdq .xmm5 .xmm5),
    .movdquStore (fs o maskSlot) .xmm5,
-   .mov .eax (.imm 0x1000000), .xop (.movd .xmm6 .eax), .xop (.pshufd .xmm6 .xmm6 0x44),
+   .mov .eax (.imm 0x1000000), .xop (.movd .xmm6 .eax), .xop (.bin .punpcklqdq .xmm6 .xmm6),
    .movdquStore (fs o hibitSlot) .xmm6]
 
 /-- `x`, times 5, into the slot at `d` (through `xmm7`). -/
@@ -288,7 +287,7 @@ table 1). -/
 def tableLimb (o k : Nat) : List Instr :=
   limb .edi 0 k false ++ (if k = 4 then top .xmm7 ++ ([.xop (.bin .paddq .xmm6 .xmm7)] : List Instr) else []) ++
   ([.xop (.bin .movdqa .xmm0 .xmm6)] : List Instr) ++ limb .edi (rOff 0) k false ++
-  ([.xop (.pshufd .xmm1 .xmm0 0x44), .movdquStore (fs o (rSlot 0 k)) .xmm1,
+  ([.xop (.bin .movdqa .xmm1 .xmm0), .xop (.bin .punpcklqdq .xmm1 .xmm1), .movdquStore (fs o (rSlot 0 k)) .xmm1,
     .xop (.bin .punpcklqdq .xmm0 .xmm6), .movdquStore (fs o (rSlot 1 k)) .xmm0] : List Instr) ++
   (if k = 0 then [] else times5 o (sSlot 0 k) .xmm1 ++ times5 o (sSlot 1 k) .xmm0)
 
