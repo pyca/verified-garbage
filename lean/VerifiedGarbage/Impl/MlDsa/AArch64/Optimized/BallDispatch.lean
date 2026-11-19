@@ -12,6 +12,7 @@ def sha3Callee : Impl.Sha3.AArch64.Callee where
   name := "vg_keccak_f1600_sha3"
   code := Impl.Sha3.AArch64.Sha3.Vector.permute
   suffix := "_sha3"
+  clear := Impl.Sha3.AArch64.Callee.sha3Clear
   pairedSha3 := true
 
 /-- Match the registered SHA3 streaming entry points, including resident absorb. -/
