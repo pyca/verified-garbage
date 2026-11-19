@@ -69,34 +69,45 @@ namespace VG.Artifacts.AesGcm.AArch64
 
 open VG.Proof.AesGcm.AArch64
 
-/-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.Gcm.streamInitApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
-    verified := .unscrubbed (streamInit_framed v) },
-  Spec.Gcm.streamAadApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
-    verified := .unscrubbed (streamAad_framed v) },
-  Spec.Gcm.streamEncryptApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
-    verified := .unscrubbed (Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)) },
-  Spec.Gcm.streamDecryptApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
-    verified := .unscrubbed (Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)) },
-  Spec.Gcm.streamFinishApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
-      (Impl.AesGcm.AArch64.streamFinish v.callees)
-    verified := .unscrubbed (Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)) },
-  Spec.Gcm.streamVerifyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
-      (Impl.AesGcm.AArch64.streamVerify v.callees)
-    verified := .unscrubbed (Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)) }]
+/-- The stream functions of the variant `g`, in frames sized to its
+implementations, zeroed whole on return. -/
+def artifactsOf (g : GcmVariant) (hg : g ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact := [
+  Spec.Gcm.streamInitApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x4 (Impl.AesGcm.AArch64.streamInit g.impl.callees)
+    verified := streamInit_framedW g.impl }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamInitOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamInitSide g hg)),
+  Spec.Gcm.streamAadApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x5 (Impl.AesGcm.AArch64.streamAad g.impl.callees)
+    verified := streamAad_framedW g.impl }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamAadOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamAadSide g hg)),
+  Spec.Gcm.streamEncryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamEncrypt g.impl.callees)
+    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framedW g.impl) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamEncryptOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamEncryptSide g hg)),
+  Spec.Gcm.streamDecryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamDecrypt g.impl.callees)
+    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framedW g.impl) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamDecryptOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamDecryptSide g hg)),
+  Spec.Gcm.streamFinishApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x6 (Impl.AesGcm.AArch64.streamFinish g.impl.callees)
+    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framedW g.impl) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamFinishOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamFinishSide g hg)),
+  Spec.Gcm.streamVerifyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+    suffix := g.impl.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamVerify g.impl.callees)
+    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framedW g.impl) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.AesGcm.AArch64.Scrub.streamVerifyOk _ (gcmWn_pos g.impl))
+    (Proof.AesGcm.AArch64.Scrub.streamVerifySide g hg))]
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the variant `g`. -/
 def artifactsGather (g : GcmVariant) (hg : g ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact := [
@@ -190,7 +201,7 @@ do not use the stitched loops only for the variant without them, of which
 the variant with them would be the same functions. -/
 def artifactsFor (v : GcmVariant) (hv : v ∈ VG.Proof.Variants.AesGcm.AArch64.variants) : List Artifact :=
   (if v.stitch then [] else
-    artifactsScrubbed v hv ++ artifactsOf v.impl ++ artifactsGather v hv) ++
+    artifactsScrubbed v hv ++ artifactsOf v hv ++ artifactsGather v hv) ++
     (v.impl.gh.withPowers.attach.map fun ⟨w, hw⟩ => withPowersArtifacts v hv w hw).getD
       (if v.stitch then [] else basePwArtifacts v hv)
 

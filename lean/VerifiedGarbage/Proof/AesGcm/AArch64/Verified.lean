@@ -759,6 +759,94 @@ theorem streamVerify_verified (v : GcmImpl) :
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [verSat] using verSat)
 
+/-! ## The stream functions with `Wn` bytes of working space -/
+
+def streamInitSatW (F : Nat) : State := { streamInitSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, F⟩] }
+
+def streamAadSatW (F : Nat) : State := { streamAadSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, F⟩] }
+
+def streamCryptSatW (F : Nat) : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, F⟩] }
+
+def finSatW (F : Nat) : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, F⟩] }
+
+def verSatW (F : Nat) : State := { verSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, F⟩] }
+
+theorem streamInit_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamInit v.callees) (Proof.AesGcm.streamInitScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamInit_correct (Wn := 768) v) (streamInit_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, streamInitAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamInitSatW, streamInitSat] using streamInitSatW 768)
+  · exact Verified.of_correct (streamInit_correct (Wn := 2560) v) (streamInit_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, streamInitAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamInitSatW, streamInitSat] using streamInitSatW 2560)
+
+theorem streamAad_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamAad v.callees) (Proof.AesGcm.streamAadScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamAad_correct (Wn := 768) v) (streamAad_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, streamAadAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamAadSatW, streamAadSat] using streamAadSatW 768)
+  · exact Verified.of_correct (streamAad_correct (Wn := 2560) v) (streamAad_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, streamAadAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamAadSatW, streamAadSat] using streamAadSatW 2560)
+
+theorem streamEncrypt_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamEncrypt v.callees) (Proof.AesGcm.streamEncryptScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamEncrypt_correct (Wn := 768) v) (streamEncrypt_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamCryptSatW, streamCryptSat] using streamCryptSatW 768)
+  · exact Verified.of_correct (streamEncrypt_correct (Wn := 2560) v) (streamEncrypt_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamCryptSatW, streamCryptSat] using streamCryptSatW 2560)
+
+theorem streamDecrypt_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamDecrypt v.callees) (Proof.AesGcm.streamDecryptScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamDecrypt_correct (Wn := 768) v) (streamDecrypt_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamCryptSatW, streamCryptSat] using streamCryptSatW 768)
+  · exact Verified.of_correct (streamDecrypt_correct (Wn := 2560) v) (streamDecrypt_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [streamCryptSatW, streamCryptSat] using streamCryptSatW 2560)
+
+theorem streamFinish_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamFinish_correct (Wn := 768) v) (streamFinish_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
+          Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [finSatW, finSat] using finSatW 768)
+  · exact Verified.of_correct (streamFinish_correct (Wn := 2560) v) (streamFinish_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
+          Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [finSatW, finSat] using finSatW 2560)
+
+theorem streamVerify_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyScratchContract AArch64.abi (n := Wn / 8)) := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (streamVerify_correct (Wn := 768) v) (streamVerify_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
+          Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyAArch64, verPre, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [verSatW, verSat] using verSatW 768)
+  · exact Verified.of_correct (streamVerify_correct (Wn := 2560) v) (streamVerify_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
+          Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyAArch64, verPre, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [verSatW, verSat] using verSatW 2560)
+
 theorem seal_verified (v : GcmImpl) :
     Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (seal_correct (Wn := 2560) v) (seal_ct (Wn := 2560) v) (by
@@ -820,6 +908,9 @@ theorem gcmWn_cases (v : GcmImpl) : gcmWn v = 768 ∨ gcmWn v = 2560 := by
 
 theorem gcmWn_hv (v : GcmImpl) : v.ctr.scratch ≤ gcmWn v - 512 := by
   rcases v.ctr.scratch_ok with h | h <;> simp [gcmWn, h]
+
+theorem gcmWn_pos (v : GcmImpl) : 0 < gcmWn v := by
+  rcases gcmWn_cases v with h | h <;> rw [h] <;> decide
 
 def gcmInitWn (v : GcmImpl) : Nat := if v.ctr.scratch = 0 then 1024 else 2560
 
