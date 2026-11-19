@@ -2136,3 +2136,291 @@ call {vg_aes_ctr32_bs}
         vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
     )
 }
+
+/// `vg_aes_gcm_open` with the bitsliced form of the key context at `*bk` (`VG.Spec.Gcm.CtxSlicedRepr`), which it may read instead of computing it. Computes the same result as `vg_aes_gcm_open`. The buffer is secret, as the key context is: it may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openBitslicedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes, and aligned for `u64`.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `bk` must be valid for reads of 1248 bytes, and aligned for `u64`.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*bk` must be what `vg_aes_gcm_bitslice` wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.CtxSlicedRepr` of `bk` and the key context).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `bk` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `bk` may overlap the 4640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_bitsliced(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, bk: *const [u64; 156]) -> u32 {
+    core::arch::naked_asm!(
+        r#".option push
+.option arch, +m, +c
+.base64 "EwEBgRMBAd2KghODAn8DMwMjI7BiABODAn8DM4MjI7RiABODAn8DMwMkI7hiABODAgIjvGIACoMDM4MBIzCDCCM0kwgjOCMJIzwzCSMwQwsjNFMLIzhjCyM8cwsjMIMNIzSTDSM4ow0jPLMNIzATDhqEKomuiZMEBAEyiraKtot49D6NIzgED8aNCoODPAMAAzyDAIFKk1IsAA=="
+beqz t0, 20f
+.base64 "k1JMAA=="
+beqz t0, 22f
+.base64 "kwIM/w=="
+beqz t0, 24f
+j 25f
+24:
+.base64 "hUo="
+25:
+j 23f
+22:
+.base64 "hUo="
+23:
+j 21f
+20:
+21:
+beqz s5, 26f
+.base64 "3ooThkr/"
+beqz a2, 28f
+.base64 "gUIjsFQAI7RUAAFL"
+beqz s5, 210f
+beqz s6, 212f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 214f
+.base64 "s4bKQP2S"
+bnez a3, 216f
+j 217f
+216:
+.base64 "VoY="
+217:
+j 215f
+214:
+215:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+218:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 218b
+.base64 "kwYL/w=="
+beqz a3, 219f
+j 220f
+219:
+.base64 "EwUJD6aFE4YEAoVGEwcEIA=="
+call {vg_ghash}
+220:
+j 213f
+212:
+213:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 221f
+.base64 "EwUJD6aFEwcEIA=="
+call {vg_ghash}
+j 222f
+221:
+222:
+beqz s5, 223f
+.base64 "UoWThQQCVoY="
+225:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 225b
+j 224f
+223:
+224:
+j 211f
+210:
+211:
+.base64 "E/v7AA=="
+beqz s6, 226f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+228:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 228b
+.base64 "EwUJD6aFEwYEBoVGEwcEIA=="
+call {vg_ghash}
+j 227f
+226:
+227:
+.base64 "AUpeixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPpoUTBgQGhUYTBwQg"
+call {vg_ghash}
+j 29f
+28:
+.base64 "g0IKACOAVACDQhoAo4BUAINCKgAjgVQAg0I6AKOBVACDQkoAI4JUAINCWgCjglQAg0JqACODVACDQnoAo4NUAINCigAjhFQAg0KaAKOEVACDQqoAI4VUAINCugCjhVQAgUIjhlQAgUKjhlQAgUIjh1QAhUKjh1QA"
+29:
+.base64 "g7IEACO4VAKD4oQAI6xUAgPFxABiBYPC1ADCAjNlVQCDwuQAogIzZVUAg8L0ADNlVQAFBZNShQEjjlQCk1IFAaOOVAKTUoUAI49UApNSBQCjj1QCgUIjuFQAI7xUAAM6hA7qigFL"
+beqz s5, 229f
+beqz s6, 231f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 233f
+.base64 "s4bKQP2S"
+bnez a3, 235f
+j 236f
+235:
+.base64 "VoY="
+236:
+j 234f
+233:
+234:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+237:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 237b
+.base64 "kwYL/w=="
+beqz a3, 238f
+j 239f
+238:
+.base64 "EwUJD5OFBAEThgQChUYTBwQg"
+call {vg_ghash}
+239:
+j 232f
+231:
+232:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 240f
+.base64 "EwUJD5OFBAETBwQg"
+call {vg_ghash}
+j 241f
+240:
+241:
+beqz s5, 242f
+.base64 "UoWThQQCVoY="
+244:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 244b
+j 243f
+242:
+243:
+j 230f
+229:
+230:
+.base64 "E3v9AA=="
+beqz s6, 245f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+247:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 247b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQg"
+call {vg_ghash}
+j 246f
+245:
+246:
+.base64 "ioODuwMBAzoED+6KAUs="
+beqz s5, 248f
+beqz s6, 250f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 252f
+.base64 "s4bKQP2S"
+bnez a3, 254f
+j 255f
+254:
+.base64 "VoY="
+255:
+j 253f
+252:
+253:
+.base64 "k4UEAtqVUoUymrOKykAymw=="
+256:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 256b
+.base64 "kwYL/w=="
+beqz a3, 257f
+j 258f
+257:
+.base64 "EwUJD5OFBAEThgQChUYTBwQg"
+call {vg_ghash}
+258:
+j 251f
+250:
+251:
+.base64 "UoaT1koAk/f6ADOI+kBCmr6K"
+beqz a3, 259f
+.base64 "EwUJD5OFBAETBwQg"
+call {vg_ghash}
+j 260f
+259:
+260:
+beqz s5, 261f
+.base64 "UoWThQQCVoY="
+263:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 263b
+j 262f
+261:
+262:
+j 249f
+248:
+249:
+.base64 "E/v9AA=="
+beqz s6, 264f
+.base64 "gUIjMFQGIzRUBhOFBAKTBQQGWoY="
+266:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 266b
+.base64 "EwUJD5OFBAETBgQGhUYTBwQg"
+call {vg_ghash}
+j 265f
+264:
+265:
+.base64 "aopuixMVOgCTFTsAk1KFAyMAVAaTUgUDowBUBpNShQIjAVQGk1IFAqMBVAaTUoUBIwJUBpNSBQGjAlQGk1KFACMDVAaTUgUAowNUBpPShQMjBFQGk9IFA6MEVAaT0oUCIwVUBpPSBQKjBVQGk9KFASMGVAaT0gUBowZUBpPShQAjB1QGk9IFAKMHVAYTBQkPk4UEARMGBAaFRhMHBCA="
+call {vg_ghash}
+.base64 "g7IEASM4VAaDsoQBIzxUBl6FzoUmhpMGBAcFR5MHBCA="
+call {vg_aes_ctr32_bs}
+.base64 "gUIjMFQQIzRUEGaFkwUEEGKG"
+267:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 267b
+.base64 "gUIjOFQQIzxUEBMFBAeTBQQRYoY="
+268:
+.base64 "g0IFACOAVQAFBYUFfRY="
+bnez a2, 268b
+.base64 "AzUEEYM1BBAtjYM1hBEDNoQQsY1NjYFFiY1NjX2RhUUzhaVAKow="
+beqz s8, 269f
+.base64 "AzoED+6KAUs="
+beqz s5, 271f
+beqz s6, 273f
+.base64 "QUYzBmZBk9ZKAA=="
+bnez a3, 275f
+.base64 "s4bKQP2S"
+bnez a3, 277f
+j 278f
+277:
+.base64 "VoY="
+278:
+j 276f
+275:
+276:
+.base64 "E4UEBFqV0oUymrOKykA="
+279:
+.base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
+bnez a2, 279b
+j 274f
+273:
+274:
+.base64 "0oYT10oAk/f6ADOI+kBCmr6K"
+beqz a4, 280f
+.base64 "XoXOhROGBAOTBwQg"
+call {vg_aes_ctr32_bs}
+j 281f
+280:
+281:
+beqz s5, 282f
+.base64 "gUIjsFQEI7RUBJOGBAQFR16FzoUThgQDkwcEIA=="
+call {vg_aes_ctr32_bs}
+.base64 "E4UEBNKFVoY="
+284:
+.base64 "g8IFAINGBQCzwtIAI4BVAAUFhQV9Fg=="
+bnez a2, 284b
+j 283f
+282:
+283:
+j 272f
+271:
+272:
+j 270f
+269:
+270:
+.base64 "YoU="
+j 27f
+26:
+.base64 "AUU="
+27:
+.base64 "IoMDNAMIgzSDCAM5AwmDOYMJAzoDCoM6gwoDOwMLgzuDCwM8AwyDPIMMAz0DDYM9gw2DMAMOEwEBIxMBAX+BQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfnVxCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwhJYUEBEwEBf0EBEwEBfwIVAZGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
+.option pop"#,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_bs = sym super::aes::vg_aes_ctr32_bs::vg_aes_ctr32_bs,
+    )
+}
