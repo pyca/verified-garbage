@@ -507,9 +507,6 @@ powerpc64le vg_aes_gcm_stream_encrypt
 powerpc64le vg_aes_gcm_stream_finish
 powerpc64le vg_aes_gcm_stream_init
 powerpc64le vg_aes_gcm_stream_verify
-powerpc64le vg_aes_ocb_init
-powerpc64le vg_aes_ocb_open
-powerpc64le vg_aes_ocb_seal
 powerpc64le vg_aes_siv_decrypt
 powerpc64le vg_aes_siv_encrypt
 powerpc64le vg_aes_siv_init
@@ -523,15 +520,6 @@ powerpc64le vg_chacha20_set_nonce
 powerpc64le vg_ct_eq
 powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
-powerpc64le vg_sm4_gcm_init
-powerpc64le vg_sm4_gcm_open
-powerpc64le vg_sm4_gcm_seal
-powerpc64le vg_sm4_gcm_stream_aad
-powerpc64le vg_sm4_gcm_stream_decrypt
-powerpc64le vg_sm4_gcm_stream_encrypt
-powerpc64le vg_sm4_gcm_stream_finish
-powerpc64le vg_sm4_gcm_stream_init
-powerpc64le vg_sm4_gcm_stream_verify
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal
 riscv64 vg_aes_gcm_init
