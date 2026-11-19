@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha256.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
@@ -15,7 +16,11 @@ public import VerifiedGarbage.Proof.Variants.Sha1.X86
 namespace VG.Artifacts.Sha256.X86.Digest
 
 def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  Spec.Sha256.digest256Api.artifact X86.target (Proof.Sha256.X86.Scrub.digestReg v)]
+  Spec.Sha256.digest256Api.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
+    verified := .unscrubbed (Proof.MdStream.X86.Digest.sha256_digest v.stream)
+    spSafe := Proof.MdStream.X86.Digest.sha256_digestSp v.stream }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun v => artifactsFor v
@@ -26,7 +31,11 @@ end VG.Artifacts.Sha256.X86.Digest
 namespace VG.Artifacts.Sha256.X86.Sha224Digest
 
 def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  Spec.Sha256.digest224Api.artifact X86.target (Proof.Sha256.X86.Scrub.digest224Reg v)]
+  Spec.Sha256.digest224Api.artifact X86.target {
+    suffix := v.suffix
+    code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
+    verified := .unscrubbed (Proof.MdStream.X86.Digest.sha224_digest v.stream)
+    spSafe := Proof.MdStream.X86.Digest.sha224_digestSp v.stream }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun v => artifactsFor v
