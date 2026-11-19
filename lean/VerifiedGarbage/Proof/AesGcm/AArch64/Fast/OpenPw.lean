@@ -36,7 +36,7 @@ abbrev pwRO (s : State) : Region := ⟨stackArg s 2, 128⟩
 on: `openPreXW 3`, with `pw` readable, apart from the text and the working
 space, and holding the powers of the hash subkey. -/
 def openPwN (Wn : Nat) (s : State) : Prop :=
-  openPreXW 3 [pwRO s] s ∧ (pwRO s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
+  openPreXW (Wn := Wn) 3 [pwRO s] s ∧ (pwRO s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
     (pwRO s).Disjoint ⟨stackArg s 3, Wn⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 2) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 

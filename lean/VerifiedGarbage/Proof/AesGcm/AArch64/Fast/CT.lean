@@ -488,7 +488,7 @@ runs, called with memory changed since the entry only in the working space and
 the text. -/
 theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw : w = 1 ∨ w = 2)
     {extra extraW : State → List Region} {pre : State → Prop}
-    (hpre : ∀ s, pre s → sealPreXW w (extra s) s (extraW s))
+    (hpre : ∀ s, pre s → sealPreXW (Wn := Wn) w (extra s) s (extraW s))
     {ex : State → List Region}
     (hexW : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (workR Wn (stackArg σ w)).Disjoint r)
     (hexC : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (⟨σ.gpr .x0, 256⟩ : Region).Disjoint r)
@@ -597,7 +597,7 @@ theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
 
 /-- `sealWithEX_ct`, for a call that writes only what `vg_ghash` does. -/
 theorem sealWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw : w = 1 ∨ w = 2)
-    {extra : State → List Region} {pre : State → Prop} (hpre : ∀ s, pre s → sealPreXW w (extra s) s)
+    {extra : State → List Region} {pre : State → Prop} (hpre : ∀ s, pre s → sealPreXW (Wn := Wn) w (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →
@@ -624,7 +624,7 @@ constant time, for a `gh` that hashes as `vg_ghash` and leaks the same in two
 runs, called with memory changed since the entry only in the working space and
 the text. -/
 theorem sealWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : State → List Region}
-    {pre : State → Prop} (hpre : ∀ s, pre s → sealPreX (extra s) s)
+    {pre : State → Prop} (hpre : ∀ s, pre s → sealPreX (Wn := Wn) (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 1)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 1)) →

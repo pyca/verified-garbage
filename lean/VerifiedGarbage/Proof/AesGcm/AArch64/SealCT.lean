@@ -96,8 +96,8 @@ theorem streamFinish_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 25
     ConstantTime isa (streamFinishAArch64 Wn).pre (streamFinishAArch64 Wn).pub (streamFinish v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, qsp⟩ := hq
-  have p₁ : finPre σ₁ := h₁
-  have p₂ : finPre σ₂ := h₂
+  have p₁ : finPre (Wn := Wn) σ₁ := h₁
+  have p₂ : finPre (Wn := Wn) σ₂ := h₂
   obtain ⟨L, perm₁, hR, -, -⟩ := lay_of_fin p₁
   obtain ⟨-, perm₂, -, -, -⟩ := lay_of_fin p₂
   rw [← q0, ← q2, ← q6] at perm₂
@@ -128,8 +128,8 @@ theorem streamVerify_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 25
     ConstantTime isa (streamVerifyAArch64 Wn).pre (streamVerifyAArch64 Wn).pub (streamVerify v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩ := hq
-  have p₁ : verPre σ₁ := h₁
-  have p₂ : verPre σ₂ := h₂
+  have p₁ : verPre (Wn := Wn) σ₁ := h₁
+  have p₂ : verPre (Wn := Wn) σ₂ := h₂
   obtain ⟨L, perm₁, hR, tR₁, dtw⟩ := lay_of_ver p₁
   obtain ⟨-, perm₂, -, tR₂, -⟩ := lay_of_ver p₂
   rw [← q0, ← q2, ← q7] at perm₂
@@ -479,7 +479,7 @@ structure OneFacts (Wn : Nat) (σ σ₀ : State) (n w : Nat) : Prop where
   dataW : Covers [⟨σ₀.gpr .x6, (σ₀.gpr .x7).toNat⟩] σ.wr
   args : (args σ n).Disjoint (workR Wn (stackArg σ₀ w))
 
-theorem oneFacts {Wn : Nat} {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore n w σ₁) (h₂ : oneCore n w σ₂)
+theorem oneFacts {Wn : Nat} {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore (Wn := Wn) n w σ₁) (h₂ : oneCore (Wn := Wn) n w σ₂)
     (hq : onePub n σ₁ σ₂) : OneFacts Wn σ₁ σ₁ n w ∧ OneFacts Wn σ₂ σ₁ n w := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   obtain qw : stackArg σ₁ w = stackArg σ₂ w := qa w hw
@@ -556,7 +556,7 @@ abbrev SealEntered (Wn : Nat) (w : Nat) (σ σ₀ τ : State) : Prop :=
 
 /-- `seal` after its entry, in two runs. -/
 theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW₂ : List Region} {σ₁ σ₂ τ₁ τ₂ : State}
-    (h₁ : sealPreXW w extra₁ σ₁ extraW₁) (h₂ : sealPreXW w extra₂ σ₂ extraW₂)
+    (h₁ : sealPreXW (Wn := Wn) w extra₁ σ₁ extraW₁) (h₂ : sealPreXW (Wn := Wn) w extra₂ σ₂ extraW₂)
     (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered Wn w σ₁ σ₁ τ₁) (a₂ : SealEntered Wn w σ₂ σ₁ τ₂) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest

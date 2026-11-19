@@ -57,7 +57,7 @@ theorem verEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 =
     by rw [x12', x5₁], by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
 /-- What `verPre` gives. -/
-theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre s) :
+theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre (Wn := Wn) s) :
     Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧ Perm Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s ∧
       rounds (s.gpr .x1) ∧ Covers [⟨s.gpr .x5, (s.gpr .x6).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, Wn⟩ := by
@@ -90,7 +90,7 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
         if Spec.Gcm.tagLenOk (s.gpr .x6).toNat ∧ T.take (s.gpr .x6).toNat =
             bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat then (s'.gpr .x0).setWidth 32 = 1
         else (s'.gpr .x0).setWidth 32 = 0) := by
-  have hs' : verPre s := hs
+  have hs' : verPre (Wn := Wn) s := hs
   obtain ⟨L, perm, hR, tR, dtw⟩ := lay_of_ver hs'
   generalize hT : toBytes (ghashFrom (ctxH s.mem (s.gpr .x0)) (ghash (ctxH s.mem (s.gpr .x0)) (blocks (padded a c)))
       [ofBytes (lensBlock a.length c.length)] ^^^

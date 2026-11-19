@@ -154,7 +154,7 @@ the text. -/
 theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 1 ∨ w = 2)
     {extra extraW : State → List Region} {pre : State → Prop}
-    (hpre : ∀ s, pre s → sealPreXW w (extra s) s (extraW s))
+    (hpre : ∀ s, pre s → sealPreXW (Wn := Wn) w (extra s) s (extraW s))
     {ex : State → List Region}
     (hexW : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (workR Wn (stackArg σ w)).Disjoint r)
     (hexC : ∀ {σ : State}, pre σ → ∀ r ∈ ex σ, (⟨σ.gpr .x0, 256⟩ : Region).Disjoint r)
@@ -368,7 +368,7 @@ theorem sealWithShX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (
 /-- `sealWithShX_ct`, for a call that writes only what `vg_ghash` does. -/
 theorem sealWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 1 ∨ w = 2)
-    {extra : State → List Region} {pre : State → Prop} (hpre : ∀ s, pre s → sealPreXW w (extra s) s)
+    {extra : State → List Region} {pre : State → Prop} (hpre : ∀ s, pre s → sealPreXW (Wn := Wn) w (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →

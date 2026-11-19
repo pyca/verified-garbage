@@ -121,7 +121,7 @@ def CrRun (s : State) (a c : List Byte) (icb : Block) (e out : List Byte) (s' : 
 
 /-- The entry, `body`, and the exit: what `body` does, moved to the entry
 state. -/
-theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre s) {a c : List Byte}
+theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn := Wn) s) {a c : List Byte}
     (ha : a.length % 16 = (s.gpr .x3).toNat % 16) (hc : c.length = (s.gpr .x4).toNat) {icb : Block}
     {E O : Mem → List Byte}
     (hE : ∀ m, Frame [savedR (s.gpr .x7)] s.mem m → E m = E s.mem)
@@ -227,7 +227,7 @@ theorem st0_crRun {Wn : Nat} {Ctx St W D : Addr} {n : Nat} (L : Lay Wn Ctx St W)
     · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
 
 /-- What does not change in the entry's writes. -/
-theorem crypt_inv {s : State} (hs : streamCryptPre s) {m : Mem} (hf : Frame [savedR (s.gpr .x7)] s.mem m) :
+theorem crypt_inv {s : State} (hs : streamCryptPre (Wn := Wn) s) {m : Mem} (hf : Frame [savedR (s.gpr .x7)] s.mem m) :
     ciphOf m (s.gpr .x0) (s.gpr .x1).toNat = ciphOf s.mem (s.gpr .x0) (s.gpr .x1).toNat ∧
       bytesAt m (s.gpr .x5) (s.gpr .x6).toNat = bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat := by
   simp only [streamCryptPre] at hs
@@ -238,7 +238,7 @@ theorem crypt_inv {s : State} (hs : streamCryptPre s) {m : Mem} (hf : Frame [sav
     bytesAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [])⟩
 
-theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre s) : Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧
+theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s) : Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧
     (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x2, 80⟩ := by
   simp only [streamCryptPre] at hs
   obtain ⟨-, -, dcs, -, dcw, dsd, dsw, -, wc, ws, -, ww, -⟩ := hs
@@ -246,7 +246,7 @@ theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre s) : Lay Wn (s.
 
 theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (streamEncrypt v.callees) s fun s' => GprAbi s s' ∧ (streamEncryptAArch64 Wn).post s s' := by
-  have hs' : streamCryptPre s := hs
+  have hs' : streamCryptPre (Wn := Wn) s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
       c.length = (s.gpr .x4).toNat → WP isa (streamEncrypt v.callees) s (CrRun s a c icb
         (xorKs (ciphOf s.mem (s.gpr .x0) (s.gpr .x1).toNat) icb (s.gpr .x4).toNat
@@ -299,7 +299,7 @@ theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncry
 
 theorem streamDecrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (streamDecrypt v.callees) s fun s' => GprAbi s s' ∧ (streamDecryptAArch64 Wn).post s s' := by
-  have hs' : streamCryptPre s := hs
+  have hs' : streamCryptPre (Wn := Wn) s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
       c.length = (s.gpr .x4).toNat → WP isa (streamDecrypt v.callees) s (CrRun s a c icb
         (bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat)
@@ -413,7 +413,7 @@ theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} 
 end
 
 /-- The entry, a body and the exit, in two runs. -/
-theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : streamCryptPre σ₁) (h₂ : streamCryptPre σ₂)
+theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : streamCryptPre (Wn := Wn) σ₁) (h₂ : streamCryptPre (Wn := Wn) σ₂)
     (hq : streamCryptPub σ₁ σ₂)
     (hrel : ∀ {Ctx St W SP : Addr} {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
       {H₁ H₂ : Block} {τ₁ τ₂ : State}, Lay Wn Ctx St W → BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ τ₁ →

@@ -872,7 +872,7 @@ records (`sh`), `work` the stack argument `w`, for a `tb` that writes the
 table without `H'` (`TbForOP`). -/
 theorem openWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
     {tb : List Instr} {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
-    {s : State} (hs : openPreXW w extra s extraW)
+    {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
@@ -893,7 +893,7 @@ records (`sh`), `work` the stack argument `w`, for a `tb` that writes the
 table without `H'` (`TbForOP`), in one pass. -/
 theorem openToWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
     {tb : List Instr} {w : Nat} (hw : w = 4 ∨ w = 5) {extra extraW : List Region}
-    {s : State} (hs : openToPreXW w extra s extraW)
+    {s : State} (hs : openToPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →

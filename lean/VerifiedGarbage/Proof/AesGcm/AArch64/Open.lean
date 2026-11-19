@@ -1011,15 +1011,15 @@ theorem OpenInG.tagIn {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl
     o.sv.frame f (saved_tag16 L), o.sp₀, rd.trans o.rd₀, wr.trans o.wr₀, outG_of_eq o.out rd wr sO⟩
 
 /-- `openPre`'s common arguments. -/
-theorem openCore {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
-    oneCore (w + 1) w s := by
+theorem openCore {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW) :
+    oneCore (Wn := Wn) (w + 1) w s := by
   simp only [openPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
   exact ⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hwr]; simp,
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW w extra s extraW) :
+theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW) :
     OneLay Wn s (w + 1) w ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR Wn (stackArg s w)) := by
   have hs' := hs
@@ -1030,7 +1030,7 @@ theorem openLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (h
 /-- `open`'s first block: the entry, the tag length and the tag, with `work`
 the stack argument `w`. -/
 theorem openEntryW_ok {w : Nat} (hw : 2 ≤ w ∧ w ≤ 5) {extra extraW : List Region} {s : State}
-    (hs : openPreXW w extra s extraW) :
+    (hs : openPreXW (Wn := Wn) w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
@@ -1102,7 +1102,7 @@ theorem openEntryW_ok {w : Nat} (hw : 2 ≤ w ∧ w ≤ 5) {extra extraW : List 
 /-- `openEntryW_ok` for `vg_aes_gcm_open` (`w = 2`) and its instance with the
 powers (`w = 3`). -/
 theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region} {s : State}
-    (hs : openPreXW w extra s extraW) :
+    (hs : openPreXW (Wn := Wn) w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
@@ -1395,7 +1395,7 @@ structure ToLay (Wn : Nat) (s : State) (w : Nat) : Prop where
   dtW : (⟨stackArg s 2, (stackArg s 3).toNat⟩ : Region).Disjoint (workR Wn (stackArg s w))
   rounds : rounds (s.gpr .x1)
 
-theorem openToLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openToPreXW w extra s extraW) :
+theorem openToLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : openToPreXW (Wn := Wn) w extra s extraW) :
     ToLay Wn s w := by
   simp only [openToPreXW] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, dsd, dsw, ddt, ddw, ddg, dtw, dwg, wc, wn, wa, wsr, wds, wt,
@@ -1445,7 +1445,7 @@ theorem dstStash_ok {Wn : Nat} {s : State} {W : Addr} {V : BitVec 64} (h19 : s.g
 /-- `open_to`'s first block: the entry, `dst` kept at `W + dstO`, the tag
 length stashed and the tag in `x12`, with `work` the stack argument `w`. -/
 theorem openEntryTo_ok {Wn : Nat} {w : Nat} (hw : 4 ≤ w ∧ w ≤ 5) {extra extraW : List Region} {s : State}
-    (hs : openToPreXW w extra s extraW) :
+    (hs : openToPreXW (Wn := Wn) w extra s extraW) :
     WP isa (.block (openEntryG true w)) s fun s' =>
       OpenInG Wn true (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (stackArg s 2) (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
@@ -1561,7 +1561,7 @@ theorem openEntryTo_ok {Wn : Nat} {w : Nat} (hw : 4 ≤ w ∧ w ≤ 5) {extra ex
 /-- `vg_aes_gcm_open_to` (`openG c true w`, with `work` the stack argument
 `w`: 4, or 5 after the powers). -/
 theorem openTo_wp (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {extra extraW : List Region} {s : State}
-    (hs : openToPreXW w extra s extraW) :
+    (hs : openToPreXW (Wn := Wn) w extra s extraW) :
     WP isa (openG v.callees true w) s fun s' => GprAbi s s' ∧ openToPostOf s s' := by
   unfold openG openRestG
   refine WP.seq (WP.mono (openEntryTo_ok (by omega_using [hw]) hs) fun s₂ ⟨o₂, x12₂⟩ => ?_)

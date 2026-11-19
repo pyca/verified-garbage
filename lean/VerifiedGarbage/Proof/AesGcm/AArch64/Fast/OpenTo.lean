@@ -79,7 +79,7 @@ leaks the same in two runs, called with memory changed since the entry only
 in the working space. -/
 theorem openToWithE_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw : w = 4 ∨ w = 5)
     {pre : State → Prop} {extra extraW : State → List Region}
-    (hpre : ∀ s, pre s → openToPreXW w (extra s) s (extraW s))
+    (hpre : ∀ s, pre s → openToPreXW (Wn := Wn) w (extra s) s (extraW s))
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →
@@ -297,7 +297,7 @@ abbrev pwRT (s : State) : Region := ⟨stackArg s 4, 128⟩
 run on: `openToPreXW 5`, with `pw` readable, apart from the working space,
 and holding the powers of the hash subkey. -/
 def openToPwN (Wn : Nat) (s : State) : Prop :=
-  openToPreXW 5 [pwRT s] s ∧ (pwRT s).Disjoint ⟨stackArg s 5, Wn⟩ ∧
+  openToPreXW (Wn := Wn) 5 [pwRT s] s ∧ (pwRT s).Disjoint ⟨stackArg s 5, Wn⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 4) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- What `vg_aes_gcm_open_to_with_powers` needs: `openToPreXW 5`, with `pw`

@@ -455,7 +455,7 @@ changed since the entry only in the working space and the text, and a `tb`
 that writes the table and leaks the same in two runs. -/
 theorem openWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 2 ∨ w = 3)
-    {pre : State → Prop} {extra : State → List Region} (hpre : ∀ s, pre s → openPreXW w (extra s) s)
+    {pre : State → Prop} {extra : State → List Region} (hpre : ∀ s, pre s → openPreXW (Wn := Wn) w (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →
@@ -513,7 +513,7 @@ space and `dst`. -/
 theorem openToWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat}
     (hw : w = 4 ∨ w = 5)
     {pre : State → Prop} {extra extraW : State → List Region}
-    (hpre : ∀ s, pre s → openToPreXW w (extra s) s (extraW s))
+    (hpre : ∀ s, pre s → openToPreXW (Wn := Wn) w (extra s) s (extraW s))
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ w)) →

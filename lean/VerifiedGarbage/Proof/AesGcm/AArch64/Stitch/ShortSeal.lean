@@ -1164,7 +1164,7 @@ theorem tblOk_frame {m m' : Mem} {W : Addr} {H : Block} {rs : List Region} (h : 
 
 /-- `sealShort`, from the entry of `seal`, for a record of 17 to 96 bytes. -/
 theorem sealShort_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {w : Nat} {extra extraW : List Region} {s s₁ : State}
-    (hs : sealPreXW w extra s extraW) (htb : TbForP Wn tb w s)
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) (htb : TbForP Wn tb w s)
     (h₁ : SealEntry Wn w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16)
     (hlo : 17 ≤ (s.gpr .x7).toNat) (hhi : (s.gpr .x7).toNat ≤ 96) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :

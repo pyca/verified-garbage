@@ -433,7 +433,7 @@ theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : N
 runs from what the entry leaves (`OpenIn`, with the values of the first run),
 whose tags compare alike. -/
 theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State → Prop}
-    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openPreXW w (extra s) s (extraW s))
+    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openPreXW (Wn := Wn) w (extra s) s (extraW s))
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ →
       OpenIn (σ₁.gpr .x0) (stackArg σ₁ w) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁ →
@@ -508,7 +508,7 @@ theorem open_ct_ofW {X : Prog isa} {w : Nat} (hw : w = 2 ∨ w = 3) {pre : State
   · exact q7.symm
 
 theorem open_ct_of {Wn : Nat} {X : Prog isa} {pre : State → Prop} {extra : State → List Region}
-    (hpre : ∀ s, pre s → openPreX (extra s) s)
+    (hpre : ∀ s, pre s → openPreX (Wn := Wn) (extra s) s)
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub 3 σ₁ σ₂ →
       OpenIn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁ →

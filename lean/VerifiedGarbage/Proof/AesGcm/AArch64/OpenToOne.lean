@@ -109,7 +109,7 @@ theorem failTo_rel {Wn : Nat} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
 /-- `vg_aes_gcm_open_to` (`openG c true w`, with `work` the stack argument
 `w`: 4, or 5 after the powers) leaks only whether the tag is right. -/
 theorem openTo_ctW (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {pre : State → Prop}
-    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openToPreXW w (extra s) s (extraW s)) :
+    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openToPreXW (Wn := Wn) w (extra s) s (extraW s)) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (openG v.callees true w) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_

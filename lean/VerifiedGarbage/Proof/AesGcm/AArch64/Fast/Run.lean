@@ -701,7 +701,7 @@ working space, the text and the key context, and establish `I`, which what
 the rest writes keeps (`hI`). -/
 theorem runWithPX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {extra extraW : List Region} {s s₁ : State}
     {ex : List Region} {I : Mem → Prop}
-    (hs : sealPreXW w extra s extraW)
+    (hs : sealPreXW (Wn := Wn) w extra s extraW)
     (hexW : ∀ r ∈ ex, (workR Wn (stackArg s w)).Disjoint r)
     (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
@@ -1155,7 +1155,7 @@ theorem runWithPX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w 
 
 /-- `runWithPX_ok`, for a call that writes only what `vg_ghash` does. -/
 theorem runWithP_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {extra extraW : List Region} {s s₁ : State}
-    (hs : sealPreXW w extra s extraW)
+    (hs : sealPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →

@@ -762,7 +762,7 @@ argument `w`, and its whole blocks hashed by `cl`, which hashes as a call of
 `vg_ghash` when run with memory changed since the entry only in the working
 space and the text. -/
 theorem openWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Region}
-    {s : State} (hs : openPreXW w extra s extraW)
+    {s : State} (hs : openPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
@@ -795,7 +795,7 @@ theorem openWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w =
 by `gh`, which hashes as `vg_ghash` when called with memory changed since the
 entry only in the working space and the text. -/
 theorem openWith_wp {Wn : Nat} (gh : Fn) (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s : State}
-    (hs : openPreX extra s)
+    (hs : openPreX (Wn := Wn) extra s)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s 2)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s 2)) →
       s'.rd = s.rd → s'.wr = s.wr → Frame [workR Wn (stackArg s 2), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
@@ -811,7 +811,7 @@ w`), `work` the stack argument `w`, and its whole blocks hashed by `cl`,
 which hashes as a call of `vg_ghash` when run with memory changed since the
 entry only in the working space. -/
 theorem openToWithE_wp {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 4 ∨ w = 5)
-    {extra extraW : List Region} {s : State} (hs : openToPreXW w extra s extraW)
+    {extra extraW : List Region} {s : State} (hs : openToPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Frame [workR Wn (stackArg s w)] s.mem s'.mem →

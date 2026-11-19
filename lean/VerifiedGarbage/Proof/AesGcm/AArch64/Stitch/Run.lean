@@ -44,7 +44,7 @@ open VG.Proof.Gcm.AArch64.Stitch (TblOk Gh8Ok)
 /-- `runWithPX_ok` for `runWithS`. -/
 theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok) {tb : List Instr} {w : Nat} {extra extraW : List Region} {s s₁ : State}
     {ex : List Region} {I : Mem → Prop}
-    (hs : sealPreXW w extra s extraW)
+    (hs : sealPreXW (Wn := Wn) w extra s extraW)
     (hexW : ∀ r ∈ ex, (workR Wn (stackArg s w)).Disjoint r)
     (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)

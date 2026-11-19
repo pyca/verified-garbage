@@ -161,7 +161,7 @@ abbrev pwR (s : State) : Region := ⟨stackArg s 1, 128⟩
 on: `sealPreXW 2`, with `pw` readable, apart from the text and the working
 space, and holding the powers of the hash subkey. -/
 def sealPwN (Wn : Nat) (s : State) : Prop :=
-  sealPreXW 2 [pwR s] s ∧ (pwR s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
+  sealPreXW (Wn := Wn) 2 [pwR s] s ∧ (pwR s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
     (pwR s).Disjoint ⟨stackArg s 2, Wn⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 1) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 

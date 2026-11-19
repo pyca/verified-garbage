@@ -61,7 +61,7 @@ open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 theorem runWithSX_ok' {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
     {tb : List Instr} {w : Nat} {extra extraW : List Region} {s s₁ : State}
     {ex : List Region} {I : Mem → Prop}
-    (hs : sealPreXW w extra s extraW)
+    (hs : sealPreXW (Wn := Wn) w extra s extraW)
     (hexW : ∀ r ∈ ex, (workR Wn (stackArg s w)).Disjoint r)
     (hexD : ∀ r ∈ ex, (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint r)
     (hexC : ∀ r ∈ ex, (⟨s.gpr .x0, 256⟩ : Region).Disjoint r)
@@ -84,7 +84,7 @@ theorem runWithSX_ok' {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.
 writes the table without `H'` (`TbForP`). -/
 theorem sealWithSh_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
     {tb : List Instr} {w : Nat}
-    (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} (hs : sealPreXW w extra s extraW)
+    (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State} (hs : sealPreXW (Wn := Wn) w extra s extraW)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR Wn (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →

@@ -118,7 +118,7 @@ structure OneLay (Wn : Nat) (s : State) (n w : Nat) : Prop where
   aadR : Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr)
   dataW : Covers [⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.wr
 
-theorem oneLay {Wn : Nat} {s : State} {n w : Nat} (hs : oneCore n w s) : OneLay Wn s n w := by
+theorem oneLay {Wn : Nat} {s : State} {n w : Nat} (hs : oneCore (Wn := Wn) n w s) : OneLay Wn s n w := by
   simp only [oneCore] at hs
   sig_split hs
   rename_i mc mn ma mg md mw dcd dcw dnd dnw dad daw ddw dda dwa wc wn wa wd ww wsp
@@ -319,8 +319,8 @@ theorem entryStash_ok {Wn : Nat} {s : State} {Ctx W : Addr} {k j : Nat} {V : Bit
         exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide))
 
 /-- `sealPre`'s common arguments. -/
-theorem sealCore {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW w extra s extraW) :
-    oneCore (w + 1) w s := by
+theorem sealCore {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW (Wn := Wn) w extra s extraW) :
+    oneCore (Wn := Wn) (w + 1) w s := by
   simp only [sealPreXW] at hs
   sig_split hs
   rename_i hrd hwr dcd dcw dnd dnw dad daw hdrop8 ddw dda hdrop11 dwa wc wn wa wd ww wsp
@@ -331,7 +331,7 @@ theorem sealCore {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPr
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `sealPre` gives. -/
-theorem sealLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW w extra s extraW) :
+theorem sealLay {Wn : Nat} {w : Nat} {extra extraW : List Region} {s : State} (hs : sealPreXW (Wn := Wn) w extra s extraW) :
     OneLay Wn s (w + 1) w ∧ Covers [⟨stackArg s 0, 16⟩] s.wr ∧
       (⟨stackArg s 0, 16⟩ : Region).Disjoint (workR Wn (stackArg s w)) ∧
       (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 16⟩ := by
@@ -361,7 +361,7 @@ structure SealEntry (Wn : Nat) (w : Nat) (s s₁ : State) : Prop where
 
 /-- The entry of `seal`. -/
 theorem sealEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Region} {s : State}
-    (hs : sealPreXW w extra s extraW) :
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) :
     WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s (SealEntry Wn w s) := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
@@ -380,7 +380,7 @@ theorem sealEntry_ok {Wn : Nat} {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW :
 
 /-- `seal` after its entry. -/
 theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁ : State}
-    (hs : sealPreXW w extra s extraW) (h₁ : SealEntry Wn w s s₁) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+    (hs : sealPreXW (Wn := Wn) w extra s extraW) (h₁ : SealEntry Wn w s s₁) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ (sealAArch64 Wn).post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
