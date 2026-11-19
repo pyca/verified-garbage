@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha256
@@ -1056,7 +1057,7 @@ end
 # PBKDF2 on RISC-V, without secret residue
 
 Each hash's PBKDF2, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`). Its postcondition reads the memory on return
+(`RISCV64.Scrub.scrubOf`). Its postcondition reads the memory on return
 only within `out`, as on x86-64 (`Proof/Pbkdf2/Md/X86_64/ScrubAll.lean`).
 -/
 
@@ -1101,42 +1102,42 @@ theorem pbkdf2Out (I : Spec.Hmac.Instance) (stack : Nat) :
 
 /-- `Spec.Hmac.md5I.pbkdf2Api`. -/
 def md5Pbkdf2Reg : Registration Spec.Hmac.md5I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Md5.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Md5.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Md5.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Md5.pbkdf2 }
     (pbkdf2Out Spec.Hmac.md5I _)
 
 /-- `Spec.Hmac.sha1I.pbkdf2Api`. -/
 def sha1Pbkdf2Reg : Registration Spec.Hmac.sha1I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha1.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha1.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha1.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha1.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha1I _)
 
 /-- `Spec.Hmac.sha224I.pbkdf2Api`. -/
 def sha224Pbkdf2Reg : Registration Spec.Hmac.sha224I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha224.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha224.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha224I _)
 
 /-- `Spec.Hmac.sha256I.pbkdf2Api`. -/
 def sha256Pbkdf2Reg : Registration Spec.Hmac.sha256I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha256.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha256.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha256I _)
 
 /-- `Spec.Hmac.sha384I.pbkdf2Api`. -/
 def sha384Pbkdf2Reg : Registration Spec.Hmac.sha384I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha384.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha384.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha384.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha384.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha384I _)
 
 /-- `Spec.Hmac.sha512I.pbkdf2Api`. -/
 def sha512Pbkdf2Reg : Registration Spec.Hmac.sha512I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha512.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha512I _)
 
 /-- `Spec.Hmac.sha512_224I.pbkdf2Api`. -/
 def sha512_224Pbkdf2Reg : Registration Spec.Hmac.sha512_224I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha512_224I _)
 
 /-- `Spec.Hmac.sha512_256I.pbkdf2Api`. -/
 def sha512_256Pbkdf2Reg : Registration Spec.Hmac.sha512_256I.pbkdf2Api RISCV64.target :=
-  withScrub { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.pbkdf2 }
+  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.pbkdf2 }
     (pbkdf2Out Spec.Hmac.sha512_256I _)
 
 end VG.Proof.Pbkdf2.Whole.RISCV64.Scrub
