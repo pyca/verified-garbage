@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ct.Arm
+public import VerifiedGarbage.Proof.Ct.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ct.Common32
 public import VerifiedGarbage.Proof.Framework.AddrArith
@@ -19,7 +19,5 @@ namespace VG.Artifacts.Ct.Arm
 open VG.Arm
 
 def artifacts : List Artifact := [
-  Spec.Ct.eqApi.artifact target {
-    code := Impl.Ct.Arm.eq
-    verified := Proof.Ct.Arm.verified }]
+  Spec.Ct.eqApi.artifact target Proof.Ct.Arm.Scrub.eqRegArm]
 end VG.Artifacts.Ct.Arm

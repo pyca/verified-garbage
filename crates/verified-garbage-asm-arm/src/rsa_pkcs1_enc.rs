@@ -116,7 +116,7 @@ subs lr, lr, #1
 bne 21b
 add r12, sp, #0
 ldr r0, [sp, #220]
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #1552
@@ -125,20 +125,20 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
 ldr r2, [sp, #152]
 mov r3, #0
-bl {vg_sha256_finalize}
+bl {vg_sha256_finalize_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r1, [sp, #172]
@@ -147,7 +147,7 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #240
@@ -156,7 +156,7 @@ add r1, r0, #96
 ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 mov r0, #0
 str r0, [r12, #76]
@@ -192,7 +192,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -201,7 +201,7 @@ mov r1, #10
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -211,7 +211,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #74
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -259,7 +259,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -268,7 +268,7 @@ mov r1, #11
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -278,7 +278,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #75
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -417,11 +417,11 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
+        vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
     )
 }
 
@@ -726,7 +726,7 @@ subs lr, lr, #1
 bne 21b
 add r12, sp, #0
 ldr r0, [sp, #220]
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #1552
@@ -735,20 +735,20 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
 ldr r2, [sp, #152]
 mov r3, #0
-bl {vg_sha256_finalize}
+bl {vg_sha256_finalize_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r1, [sp, #172]
@@ -757,7 +757,7 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #240
@@ -766,7 +766,7 @@ add r1, r0, #96
 ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 mov r0, #0
 str r0, [r12, #76]
@@ -802,7 +802,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -811,7 +811,7 @@ mov r1, #10
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -821,7 +821,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #74
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -869,7 +869,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -878,7 +878,7 @@ mov r1, #11
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -888,7 +888,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #75
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -1027,11 +1027,11 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
+        vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
     )
 }
 

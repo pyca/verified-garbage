@@ -88,6 +88,7 @@ theorem openTaints : OpenTaint .scalar false ∧ OpenTaint .neon true ∧ OpenTa
 def scalar : XorImpl where
   callee := .scalar
   features := []
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩
   ok := Xor.xor_correct BlockImpl.scalar
   ct := Xor.xor_ct BlockImpl.scalar
   noFrames := BlockImpl.scalar.xorNoFrames
@@ -99,6 +100,10 @@ def scalar : XorImpl where
 def neon : XorImpl where
   callee := .neon
   features := []
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+    .v27, .v28, .v29, .v30, .v31],
+   [.v8, .v9]⟩
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames
@@ -111,6 +116,10 @@ vector blocks is one XAR. -/
 def sve2 : XorImpl where
   callee := .sve2
   features := ["sve2"]
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+    .v27, .v28, .v29, .v30, .v31],
+   [.v8, .v9]⟩
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames

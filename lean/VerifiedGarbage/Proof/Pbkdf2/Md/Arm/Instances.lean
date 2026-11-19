@@ -88,10 +88,10 @@ def sha512Md (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash wher
   compN := "vg_sha512_compress"
   compC := Impl.Sha512.Arm.compress
 
-def sha384Md : Hash := sha512Md 48 "vg_sha384_init" Spec.Sha512.H0_384
-def sha512Md' : Hash := sha512Md 64 "vg_sha512_init" Spec.Sha512.H0_512
-def sha512_224Md : Hash := sha512Md 28 "vg_sha512_224_init" Spec.Sha512.H0_512_224
-def sha512_256Md : Hash := sha512Md 32 "vg_sha512_256_init" Spec.Sha512.H0_512_256
+def sha384Md : Hash := sha512Md 48 "vg_sha384_init_core" Spec.Sha512.H0_384
+def sha512Md' : Hash := sha512Md 64 "vg_sha512_init_core" Spec.Sha512.H0_512
+def sha512_224Md : Hash := sha512Md 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
+def sha512_256Md : Hash := sha512Md 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
 
 /-! ## What the proofs need of them -/
 

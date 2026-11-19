@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.CallWipe
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-!
 # Returning without secret residue (ARMv7)
@@ -36,7 +37,9 @@ every run of it ends with the same values there: it returns without secret
 residue.
 
 `scrubReg` is a registration with its code scrubbed, which proves it;
-`scrubRegF` is the same for code with frames (see "Code with frames" below).
+`scrubRegF` is the same for code with frames (see "Code with frames" below),
+and `scrubRegFT` for code with frames that calls indirectly only the
+functions of its tables (`tablesCall`).
 -/
 
 @[expose] public section
@@ -214,6 +217,184 @@ theorem Exec.path {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ :
       exact ⟨rfl, pop_unknowns q q' hm⟩
   | icall => intro hc; simp [noIcall] at hc
   | icallNext => intro hc; simp [noIcall] at hc
+
+/-! ### Indirect calls
+The trace of an indirect call records the address it calls, so two runs
+that leak the same trace call the same function there if the functions it
+may call have the same addresses in both: those of a table of functions,
+whose addresses are public (`Abi.withTables`). Two such runs still take the
+same path (`Exec.pathS`).
+-/
+
+/-- The functions `c` may call indirectly. -/
+def inames : Prog isa → List String
+  | .block _ => []
+  | .seq a b => inames a ++ inames b
+  | .ite _ t e => inames t ++ inames e
+  | .loop b _ => inames b
+  | .call _ b => inames b
+  | .frame _ b _ => inames b
+  | .icall _ n b nx => n :: inames b ++ inames nx
+
+theorem inames_of_noIcall : ∀ {c : Prog isa}, noIcall c = true → inames c = []
+  | .block _, _ => rfl
+  | .seq a b, h => by
+    simp only [noIcall, Bool.and_eq_true] at h
+    simp only [inames, inames_of_noIcall h.1, inames_of_noIcall h.2, List.append_nil]
+  | .ite _ t e, h => by
+    simp only [noIcall, Bool.and_eq_true] at h
+    simp only [inames, inames_of_noIcall h.1, inames_of_noIcall h.2, List.append_nil]
+  | .loop b _, h => inames_of_noIcall (c := b) h
+  | .call _ b, h => inames_of_noIcall (c := b) h
+  | .frame _ b _, h => inames_of_noIcall (c := b) h
+  | .icall .., h => by simp [noIcall] at h
+
+/-- States that name the same addresses of statics give a function the same
+address. -/
+theorem fnAddr_of_syms {s s' : State} (h : s'.syms = s.syms) (n : String) :
+    isa.fnAddr s' n = isa.fnAddr s n := by
+  simp only [h]
+
+/-- The trace of an indirect call: the addresses its instruction reads, then
+the address it calls. -/
+theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t : List Leak}
+    (e : Exec isa (.icall i n b nx) s t s') :
+    ∃ a rest, isa.icall i s = some a ∧ t = (isa.addrs i s).map .addr ++ .addr a :: rest := by
+  cases e with
+  | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
+  | icallNext _ _ e' => exact icall_trace e'
+
+/-- `Exec.path`, for code whose functions called indirectly (`inames`) have
+the same addresses in both runs. -/
+theorem Exec.pathS {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec isa c s₁ t₁ s₁') :
+    ∀ {s₂ s₂' : State} {t₂ r₁ r₂ : List Leak}, Exec isa c s₂ t₂ s₂' →
+      (∀ n ∈ inames c, isa.fnAddr s₁ n = isa.fnAddr s₂ n) →
+      t₁ ++ r₁ = t₂ ++ r₂ → s₁.unknowns = s₂.unknowns → t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns := by
+  induction e₁ with
+  | block h =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ _ ht hu
+    cases e₂ with
+    | block h' =>
+      obtain ⟨hl, hk⟩ := execBlock_path h h'
+      exact ⟨(List.append_inj ht hl).1, hk hu⟩
+  | seq h₁ _ ih₁ ih₂ =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    simp only [inames, List.mem_append] at hf
+    cases e₂ with
+    | seq a b =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨rfl, hm⟩ := ih₁ a (fun n hn => hf n (.inl hn)) ht hu
+      obtain ⟨rfl, he⟩ := ih₂ b (fun n hn => by
+          rw [fnAddr_of_syms (Exec.syms h₁), fnAddr_of_syms (Exec.syms a)]; exact hf n (.inr hn))
+        (List.append_cancel_left ht) hm
+      exact ⟨rfl, he⟩
+  | iteT _ _ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | iteT _ b =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih b (fun n hn => hf n (List.mem_append_left _ hn)) ht hu
+      exact ⟨rfl, he⟩
+    | iteF _ b => simp at ht
+  | iteF _ _ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | iteT _ b => simp at ht
+    | iteF _ b =>
+      simp only [List.cons_append, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih b (fun n hn => hf n (List.mem_append_right _ hn)) ht hu
+      exact ⟨rfl, he⟩
+  | loopExit _ _ ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | loopExit b _ =>
+      simp only [List.append_assoc] at ht
+      obtain ⟨rfl, he⟩ := ih b hf ht hu
+      exact ⟨rfl, he⟩
+    | loopNext b _ _ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, -⟩ := ih b hf ht hu
+      simp at ht
+  | loopNext h₁ _ _ ih₁ ih₂ =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | loopExit b _ =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, -⟩ := ih₁ b hf ht hu
+      simp at ht
+    | loopNext b _ l =>
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨rfl, hm⟩ := ih₁ b hf ht hu
+      simp only [List.append_cancel_left_eq, List.cons.injEq, true_and] at ht
+      obtain ⟨rfl, he⟩ := ih₂ l (fun n hn => by
+          rw [fnAddr_of_syms (Exec.syms h₁), fnAddr_of_syms (Exec.syms b)]; exact hf n hn) ht hm
+      exact ⟨rfl, he⟩
+  | call k _ q ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | call k' b q' =>
+      simp only [isa, call, Option.some.injEq] at k k'
+      simp only [isa, ret] at q q'
+      split at q <;> [cases q; cases q]
+      split at q' <;> [cases q'; cases q']
+      subst k k'
+      simp only [List.map_nil, List.nil_append, List.append_nil] at ht ⊢
+      exact ih b hf ht (by simp only [hu])
+  | frame p _ q ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | frame p' b q' =>
+      rw [show isa.push = push from rfl] at p p'
+      simp only [List.append_assoc] at ht
+      obtain ⟨ha, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      obtain ⟨rfl, hm⟩ := ih b (fun n hn => by
+          rw [fnAddr_of_syms (push_syms p), fnAddr_of_syms (push_syms p')]; exact hf n hn) ht
+        (by rw [push_unknowns p, push_unknowns p', hu])
+      have ht' := List.append_cancel_left ht
+      obtain ⟨hb, -⟩ := List.append_inj ht' (by simp only [List.length_map]; exact addrs_length _ _ _)
+      rw [ha, hb]
+      exact ⟨rfl, pop_unknowns q q' hm⟩
+  | icall hi k _ q ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    have hn := hf _ (List.mem_cons_self ..)
+    cases e₂ with
+    | icall hi' k' b q' =>
+      simp only [isa, call, Option.some.injEq] at k k'
+      simp only [isa, ret] at q q'
+      split at q <;> [cases q; cases q]
+      split at q' <;> [cases q'; cases q']
+      subst k k'
+      simp only [List.map_nil, List.nil_append, List.append_nil, List.append_assoc,
+        List.cons_append] at ht ⊢
+      obtain ⟨ha, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      simp only [List.cons.injEq] at ht
+      obtain ⟨rfl, he⟩ := ih b (fun n hn => hf n (by simp [inames, hn])) ht.2 (by simp only [hu])
+      simp only at hn
+      rw [ha, hn]
+      exact ⟨rfl, he⟩
+    | icallNext hi' hne' x' =>
+      exfalso
+      obtain ⟨a₂, rest, hi₂, ht₂⟩ := icall_trace x'
+      rw [hi'] at hi₂; cases hi₂
+      rw [ht₂] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      exact hne' (ht.1 ▸ hn)
+  | icallNext hi hne x ih =>
+    intro s₂ s₂' t₂ r₁ r₂ e₂ hf ht hu
+    cases e₂ with
+    | icallNext hi' hne' x' =>
+      exact ih x' (fun m hm => hf m (List.mem_cons_of_mem _ (List.mem_append_right _ hm))) ht hu
+    | icall hi' k' b q' =>
+      exfalso
+      obtain ⟨a₁, rest, hi₁, ht₁⟩ := icall_trace x
+      rw [hi] at hi₁; cases hi₁
+      rw [ht₁] at ht
+      simp only [List.append_assoc, List.cons_append] at ht
+      obtain ⟨-, ht⟩ := List.append_inj ht (by simp only [List.length_map]; exact addrs_length _ _ _)
+      simp only [List.cons.injEq, Leak.addr.injEq] at ht
+      exact hne (ht.1.trans (hf _ (List.mem_cons_self ..)).symm)
 
 end VG.Arm
 
@@ -454,10 +635,11 @@ more (`Verified.stack_le`), and is registered with the next such size.
 What the release then leaves in those bytes is the model's (`pop`), which a
 proof may not read back: two releases leave the same bytes where they held
 the same bytes, at the same stack pointer and with the same unknowns
-(`pop_mem_congr`). Two runs of `c` without indirect calls (`noIcall`) whose
-traces agree, as constant time makes them, end with the same unknowns
-(`Exec.path`), so two runs of `scrubF rb n c` agree on those bytes on
-return. -/
+(`pop_mem_congr`). Two runs of `c` whose traces agree, as constant time
+makes them, and whose functions called indirectly have the same addresses in
+both (`inames`: none without indirect calls, `noIcall`; those of its tables,
+which are public, `tablesCall`), end with the same unknowns (`Exec.pathS`),
+so two runs of `scrubF rb n c` agree on those bytes on return. -/
 
 open VG.Impl.StackScratch.Arm VG.Arm.FrameStack
 
@@ -736,15 +918,18 @@ theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : Fra
   · rw [hm]; exact vf x fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
 
 /-- `scrubF rb stack c` meets the contract of `c`, whose frames use at most
-the `stack` bytes the contract reserves, which makes no indirect call, and
-whose postcondition reads the memory on return only within the buffers, and
+the `stack` bytes the contract reserves, whose functions called indirectly
+have the same addresses in two runs that agree on what is public, and whose
+postcondition reads the memory on return only within the buffers, and
 returns without secret residue. -/
-theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hv : Verified target c (sig.contract A pre post wa stack leak)) (hd : armStack c ≤ stack)
-    (hni : noIcall c = true) (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
+    (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
+      ∀ n ∈ inames c, isa.fnAddr s₁ n = isa.fnAddr s₂ n)
+    (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
     (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
     Verified target (scrubF rb stack c) (sig.contract A pre post wa stack leak) ∧
       NoResidue (scrubF rb stack c) (sig.contract A pre post wa stack leak) rb := by
@@ -786,7 +971,7 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     obtain ⟨ord, owr, oreg, -, osp, -, -, -, -, omem⟩ := ho
     -- The two runs of `c` leak the same trace, so end with the same unknowns.
     have hw : w₁.unknowns = w₂.unknowns :=
-      (Exec.path x₁ hni (r₁ := []) (r₂ := []) x₂
+      (Exec.pathS x₁ (r₁ := []) (r₂ := []) x₂ (hsy s₁ s₂ hp)
         (by rw [hv.2.1 s₁ s₂ a₁ a₂ w₁ w₂ p₁ p₂ hp x₁ x₂]) hu).2
     -- Each run keeps what the calling convention preserves.
     have abi₁ : ∀ r ∈ preserved, w₁.gpr r = s₁.gpr r := by
@@ -823,6 +1008,76 @@ theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
             · exact hx r (List.mem_append_right _ (owr ▸ hr))
             · simp only [List.mem_singleton] at hr; subst hr; exact osp ▸ hb]
         exact omem x hx
+
+/-- `Verified.scrubFS`, for code that makes no indirect call. -/
+theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
+    (hv : Verified target c (sig.contract A pre post wa stack leak)) (hd : armStack c ≤ stack)
+    (hni : noIcall c = true) (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
+    (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
+    Verified target (scrubF rb stack c) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (scrubF rb stack c) (sig.contract A pre post wa stack leak) rb :=
+  Verified.scrubFS hA hv hd (fun _ _ _ n hn => absurd hn (by rw [inames_of_noIcall hni]; exact List.not_mem_nil))
+    hn e hpost
+
+/-! ### Tables of functions
+Code that calls indirectly only the functions of its tables (`tablesCall`)
+calls functions whose addresses two runs that agree on what is public agree
+on (`tables_pub_syms`), as on RISC-V and PPC64LE.
+-/
+
+/-- The functions the tables `ts` name. -/
+def tableFns (ts : List (String × List FnTable)) : List String := ts.flatMap fun t => t.2.flatMap (·.fns)
+
+/-- The code calls indirectly only the functions of the tables `ts`. -/
+def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
+  (inames c).all fun f => decide (f ∈ tableFns ts)
+
+/-- Code without indirect calls calls indirectly only the functions of any
+tables. -/
+theorem tablesCall_of_noIcall {c : Prog isa} (h : noIcall c = true) (ts : List (String × List FnTable)) :
+    tablesCall c ts = true := by
+  simp only [tablesCall, inames_of_noIcall h, List.all_nil]
+
+/-- What is public of `Sig.contract` is its calling convention's. -/
+theorem contract_pub {A : Abi isa} {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
+    (h : (sig.contract A pre post wa stack leak).pub s₁ s₂) : A.pub s₁ s₂ := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  · cases leak with
+    | none => exact h.1
+    | some f => exact h.1.1
+
+/-- The functions of the tables have the same addresses in two runs that
+agree on what is public. -/
+theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)}
+    {s₁ s₂ : State} (h : (A.withTables sig ts).pub s₁ s₂) :
+    ∀ f ∈ tableFns ts, isa.fnAddr s₁ f = isa.fnAddr s₂ f := by
+  intro f hf
+  cases ts with
+  | nil => simp [tableFns] at hf
+  | cons t ts => exact h.2.1 f hf
+
+/-- Code that calls indirectly only the functions of the tables `ts` calls
+functions whose addresses two runs that agree on what is public agree on. -/
+theorem tablesCall_pub {A : Abi isa} {sig : Sig} {ts : List (String × List FnTable)}
+    {pre : Curry (sig.words (A.withTables sig ts).ptrBits) (Mem → Prop)}
+    {post : sig.Post (A.withTables sig ts).ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words (A.withTables sig ts).ptrBits) (Mem → List Nat))} {c : Prog isa}
+    (htc : tablesCall c ts = true) (s₁ s₂ : State)
+    (hp : (sig.contract (A.withTables sig ts) pre post wa stack leak).pub s₁ s₂) :
+    ∀ n ∈ inames c, isa.fnAddr s₁ n = isa.fnAddr s₂ n := by
+  intro n hn
+  have : n ∈ tableFns ts := by
+    simp only [tablesCall, List.all_eq_true, decide_eq_true_eq] at htc
+    exact htc n hn
+  exact tables_pub_syms (contract_pub hp) n this
 
 /-- No ARM instruction writes the stack pointer, other than a frame's. -/
 theorem spSafe_any (c : Prog isa) : c.all (fun i => !target.isa.writesSp i) = true := by
@@ -887,11 +1142,12 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
       rfl).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
-its contract reserves and which makes no indirect call, scrubbed: its code,
-then those bytes zeroed, then `tail`, which returns without secret residue,
-if its postcondition reads the memory on return only within the buffers. -/
-def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
-    (hni : noIcall r.code = true) (hn : FrameOk r.stack)
+its contract reserves and which calls indirectly only the functions of its
+tables (`tablesCall`), scrubbed: its code, then those bytes zeroed, then
+`tail`, which returns without secret residue, if its postcondition reads the
+memory on return only within the buffers. -/
+def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+    (htc : tablesCall r.code r.tables = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hw : r.written = []) : Registration api target where
@@ -907,7 +1163,7 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables) hv hd hni hn
+    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
       rfl hp).1
   ofApi := r.ofApi
   ofSig := r.ofSig
@@ -923,7 +1179,17 @@ def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code �
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
-    exact (Verified.scrubF (ScrubAbi.of r.consts api.sig r.tables) hv hd hni hn
+    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
       rfl hp).2⟩
+
+/-- `r`, a registration of code whose frames use at most the `stack` bytes
+its contract reserves and which makes no indirect call, scrubbed
+(`scrubRegFT`). -/
+def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+    (hni : noIcall r.code = true) (hn : FrameOk r.stack)
+    (hpost : PostOut r.contract
+      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (hw : r.written = []) : Registration api target :=
+  scrubRegFT r hd (tablesCall_of_noIcall hni r.tables) hn hpost hw
 
 end VG.Arm.Scrub

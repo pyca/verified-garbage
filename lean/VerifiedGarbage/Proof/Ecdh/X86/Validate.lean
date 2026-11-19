@@ -324,7 +324,7 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 /-!
 ## `[d]P` and `Z^(p-2)`
 
-The windows of `Cfg.winMul` on the point at `PX`, `PY` (`winMul_ok`,
+The windows of `Cfg.ecdhMul` on the point at `PX`, `PY` (`ecdhMul_ok`,
 `Proof/Ecdsa/X86/Window.lean`), then the signature's power (`ladPow_ok`, as
 `stage₂`): `R` represents `[k]P`. The signature's ladder with its point at
 `PX`, `PY`, `ONEP` (`ladderQ`), whose slots are apart as `ladder_ok` needs
@@ -410,10 +410,10 @@ structure LadPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : Stat
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s' RZ < c.C.p
 
-/-- `[k]P` by the windows (`winMul`), for the affine point `P` of the curve
+/-- `[k]P` by the windows (`ecdhMul`), for the affine point `P` of the curve
 at `PX`, `PY` and `k < 2^(8 len)` in table 0, then `Z^(p-2)`. -/
 theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (K : Keep c s₀ base s)
-    (hsp₁ : SpOk (c.winMul PX PY) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {P : Point c.C}
+    (hsp₁ : SpOk (c.ecdhMul PX PY) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {P : Point c.C}
     (hP : onCurve c.C P = true) (hk : k < 2 ^ (8 * c.C.len))
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hG : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
@@ -422,13 +422,13 @@ theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s 
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', LadPost c base k P s s' → Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem →
       WP isa rest s' R) :
-    WP isa (.seq (c.winMul PX PY) (.seq c.pPow rest)) s R := by
+    WP isa (.seq (c.ecdhMul PX PY) (.seq c.pPow rest)) s R := by
   have hs := K.scr
   have F := K.fixed
   have h7 := hc.n10
   have hn := hs.nowrap
   have hlen := hc.len_hi
-  refine WP.seq (K.withSp hsp₁ (WP.mono (winMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs
+  refine WP.seq (K.withSp hsp₁ (WP.mono (ecdhMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs
     F.mp F.ap F.b3p F.zero F.onep hpx hpy hP hG hk
     (fun t ht => ht₀ t (Nat.lt_of_lt_of_le ht (by omega_using [hlen]))))
     fun s₅ ⟨K₅, U₅, L₅, R₅⟩ f₅ => ?_))

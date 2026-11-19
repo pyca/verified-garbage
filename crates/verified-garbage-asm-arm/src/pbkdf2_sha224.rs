@@ -53,7 +53,7 @@ beq 20f
 movw r12, #1156
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha224_init}
+bl {vg_sha224_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -216,7 +216,7 @@ ldr lr, [r11, #860]
 ldr r11, [r11, #864]
 add sp, sp, #1632
 bx lr",
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,

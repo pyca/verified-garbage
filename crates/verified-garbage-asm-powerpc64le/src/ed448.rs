@@ -5,6 +5,8 @@
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -25,7 +27,7 @@ bl {vg_keccak_pad_scratch}
 bl {vg_keccak_squeeze_scratch}
 .base64 "AAAYiYLwCHlkFwh5AAAYmTcAGImAAAhhNwAYmQAAADk4ABiZAAB1OAAAmDgAALc4"
 bl {vg_ed448_scalar_base}
-.base64 "mAAY6HgAuOqAANjqiAD46pAAGOumAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPnAACE4IACATg==""#,
+.base64 "mAAY6HgAuOqAANjqiAD46pAAGOumAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPnAACE4AAAAOBH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjwACE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -34,6 +36,8 @@ bl {vg_ed448_scalar_base}
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -92,7 +96,7 @@ bl {vg_keccak_squeeze_scratch}
 bl {vg_ed448_scalar_reduce}
 .base64 "OQB0OAABlThAAbU4iADVOAAA9jg="
 bl {vg_ed448_scalar_mul_add}
-.base64 "AAAAORAAFfkYABX5IAAV+SgAFfkwABX5OAAV+UAAFflIABX5UAAV+VgAFflgABX5aAAV+XAAFfl4ABX5gAAV+YgAFfmQABX5mAAV+aAAFfmoABX5sAAV+bgAFfnAABX5yAAV+dAAFfnYABX54AAV+egAFfnwABX5+AAV+QABFfkIARX5EAEV+RgBFfkgARX5KAEV+TABFfk4ARX5QAEV+UgBFflQARX5WAEV+WABFfloARX5cAEV+XgBFfnIARXogAGV6ogB1eqQAfXqmAEV66ABNeuoAZXrsAG167gB1evAAbXqpgMIfEACITggAIBO""#,
+.base64 "AAAAORAAFfkYABX5IAAV+SgAFfkwABX5OAAV+UAAFflIABX5UAAV+VgAFflgABX5aAAV+XAAFfl4ABX5gAAV+YgAFfmQABX5mAAV+aAAFfmoABX5sAAV+bgAFfnAABX5yAAV+dAAFfnYABX54AAV+egAFfnwABX5+AAV+QABFfkIARX5EAEV+RgBFfkgARX5KAEV+TABFfk4ARX5QAEV+UgBFflQARX5WAEV+WABFfloARX5cAEV+XgBFfnIARXogAGV6ogB1eqQAfXqmAEV66ABNeuoAZXrsAG167gB1evAAbXqpgMIfEACITgAAAA4kf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPhwAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -103,6 +107,8 @@ bl {vg_ed448_scalar_mul_add}
 }
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -142,7 +148,7 @@ bl {vg_ed448_scalar_reduce}
 bl {vg_ed448_verify_equation}
 .base64 "CAEX6MgAl+rQALfq2ADX6uAAF+voADfr8ACX6/gAt+sAAffqpgMIfA=="
 21:
-.base64 "MAEhOCAAgE4=""#,
+.base64 "MAEhOAAAADih/iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhgASE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
