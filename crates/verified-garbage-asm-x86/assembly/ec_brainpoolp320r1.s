@@ -3157,12 +3157,10 @@ vg_ec_brainpoolp320r1_public_key:
 	mov esi, DWORD PTR [edx+4]
 	mov ebp, DWORD PTR [edx+12]
 	mov edi, DWORD PTR [edx+8]
-	lea esp, [esp-20]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp], ecx
-	mov DWORD PTR [esp+4], ecx
-	mov DWORD PTR [esp+8], ecx
-	mov DWORD PTR [esp+12], ecx
+	lea esp, [esp-20]
+	movdqu XMMWORD PTR [esp], xmm0
 	mov DWORD PTR [esp+16], ecx
 	lea esp, [esp+20]
 	mov edx, 0
