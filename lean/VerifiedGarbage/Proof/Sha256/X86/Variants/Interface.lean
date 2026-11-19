@@ -4,6 +4,14 @@ public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
+public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+import VerifiedGarbage.Proof.Sha256.PostOut
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+meta import VerifiedGarbage.Proof.Sha256.PostOut
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
@@ -683,18 +691,84 @@ structure StreamFn where
     contract = api.sig.contract (X86.abi) pre post api.writeArgs stack leak
   ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- Its postcondition reads the memory on return only within the buffers. -/
+  post : X86.Scrub.PostOut contract (api.sig.retBits 32)
+  /-- What `X86.Scrub.scrubFOf` needs of its code over its stack: from the
+  variant's facts of the code it wraps (`update_scrub`, …), not evaluated
+  again. -/
+  scrub : X86.Scrub.scrubFSide code [] stack = true
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
-  consts := []
-  tables := []
-  code := f.code
-  contract := f.contract
-  stack := f.stack
-  verified := .unscrubbed f.verified
-  ofApi := f.ofApi
-  ofSig := f.ofSig
-  spSafe := f.spSafe
+/-- `f` as a registration of its `Api` (`Api.artifact`), followed by the
+zeroing of its stack and the clearing of the registers a callee may change
+(`X86.Scrub.scrubFOf`): it returns without secret residue. -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86.target :=
+  X86.Scrub.scrubFOf {
+      consts := []
+      tables := []
+      code := f.code
+      contract := f.contract
+      stack := f.stack
+      verified := f.verified
+      ofApi := f.ofApi
+      ofSig := f.ofSig
+      spSafe := f.spSafe }
+    f.post f.stack f.scrub
+
+/-! ## What the cleanup of the streaming functions needs
+
+Their postconditions read the memory on return only within the buffers
+(`updateOut`, …). `update` and `finalize` are the code of the variant's
+streaming functions in a frame of working space: what `scrubFOf` needs of
+them (`update_scrub`, …) follows from that frame with an empty body,
+evaluated once here, and the variant's `calleeOk` and stack of the code
+(`Fill`, `Proof/Framework/X86/ScrubCall.lean`). -/
+
+theorem updateOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha256.updateContract X86.abi stack) (Spec.Sha256.updateSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.updatePost_out 32)
+
+theorem finalizeOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha256.finalizeContract X86.abi stack) (Spec.Sha256.finalizeSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.finalizePost_out 32)
+
+theorem finalize224Out (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha256.finalize224Contract X86.abi stack) (Spec.Sha256.finalize224Sig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha256.finalize224Post_out 32)
+
+theorem update_side :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 636 5 (.block [])) [] 636 = true := by
+  lit_decide
+
+/-- What `scrubFOf` needs of `update`'s code with the streaming `update` `c`, in its
+frame of 636 bytes, from `c`'s `calleeOk` and stack. -/
+theorem update_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 636 5 c) [] (20 + 636) = true := by
+  have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
+  exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) update_side
+
+theorem finalize_side :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (.block [])) [] 632 = true := by
+  lit_decide
+
+/-- What `scrubFOf` needs of `finalize`'s code with the streaming `finalize` `c`, in its
+frame of 632 bytes, from `c`'s `calleeOk` and stack. -/
+theorem finalize_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 c) [] (20 + 632) = true := by
+  have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
+  exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) finalize_side
+
+theorem finalize224_side :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 "" (.block [])))
+      [] (20 + 632) = true := by
+  lit_decide
+
+/-- What `scrubFOf` needs of SHA-224's `finalize` with the compression function
+`cmpN`/`cmpC`, from `cmpC`'s `calleeOk` and stack. -/
+theorem finalize224_scrub (cmpN : String) (cmpC : Prog isa) (hc : calleeOk cmpC = true) (hs : stackUse cmpC = 0) :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC))
+      [] (20 + 632) = true := by
+  have h := X86.Scrub.calleeSide_of_eq (n := 0) hs hc
+  exact X86.Scrub.scrubFSide_of_fill (n := 0) (by fill_calls) finalize224_side
 
 /-- The functions the whole of PBKDF2 calls, with the compression function
 `cmpN`/`cmpC` and the streaming functions `s`. -/
