@@ -197,9 +197,12 @@ own changes are rebuilt either way, on top of the restored build.
   anywhere else that is not its code and proofs.
 * **Functions return without secret residue.** Every artifact proves its
   ISA's `NoResidue` (`TCB/<ISA>/Residue.lean`) as part of what its
-  registration proves (`verified := .scrubbed …`, which
-  on x86-64 `X86_64.Scrub.scrubReg` provides, and on ARM `Arm.Scrub.scrubReg`, or
-  `scrubRegF` for code with frames), but those
+  registration proves (`verified := .scrubbed …`). The cleanup is part of
+  the function's code: the function as emitted, cleanup included, is a
+  definition in `Impl/`, one theorem in `Proof/` is about that definition,
+  and the registration file only binds the two, with no scrub wrapper,
+  register list or side condition in it (the `adding-a-primitive` skill).
+  The exception is those
   `ci/residue_allowlist.txt` lists (`<target> <function>`), which alone may be
   registered without it (`verified := .unscrubbed …`). The list only
   shrinks: never add a line (`ci/check_residue_allowlist.py`; only a target
