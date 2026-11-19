@@ -27,9 +27,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 mov r0, r5
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #64]
@@ -197,7 +197,7 @@ ldr r10, [r11, #296]
 ldr lr, [r11, #300]
 ldr r11, [r11, #304]
 bx lr",
-        vg_sha512_init = sym crate::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym crate::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

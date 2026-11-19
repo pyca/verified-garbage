@@ -44,9 +44,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 mov r0, r5
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #16]
@@ -182,7 +182,7 @@ beq 25f
 movw r12, #660
 add r4, r11, r12
 mov r0, r4
-bl {vg_md5_init}
+bl {vg_md5_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -484,7 +484,7 @@ str r2, [r12, #1016]
 str r2, [r12, #1020]
 add sp, sp, #1056
 b 21b",
-        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,

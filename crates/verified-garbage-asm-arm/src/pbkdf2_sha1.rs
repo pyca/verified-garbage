@@ -53,7 +53,7 @@ beq 20f
 movw r12, #736
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha1_init}
+bl {vg_sha1_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -216,7 +216,7 @@ ldr lr, [r11, #476]
 ldr r11, [r11, #480]
 add sp, sp, #1152
 bx lr",
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,

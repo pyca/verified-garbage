@@ -32,9 +32,9 @@ vg_hmac_sha512_224_init:
 	mov r7, r3
 	mov r11, r12
 	mov r0, r4
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	mov r0, r5
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	movw r1, #13878
 	movt r1, #13878
 	str r1, [r4, #64]
@@ -234,7 +234,7 @@ vg_hmac_sha512_224_init:
 	movw r12, #2484
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
