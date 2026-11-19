@@ -1697,7 +1697,7 @@ theorem winBit_ok {s : State} {base : Addr} (hs : Scr s base size) {k j N D t bi
     (hw : w < 2 ^ 32) (hj : j < 2 ^ 32) (hD : D + w * j = bits + t) (ht : t < N) (hN : bits + N ≤ size)
     (hx : s.gpr .esi = BitVec.ofNat 32 j)
     (hbits : ∀ t < N, s.mem (off base (bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (.block (winIndex w ++ [.movzx8 .ebx (winByte D)])) s fun u =>
+    WP isa (.block (winIndex w ++ ([.movzx8 .ebx (winByte D)] : List Instr))) s fun u =>
       u.gpr .ebx = BitVec.ofNat 32 (k.testBit t).toNat ∧ CKeeps [.eax, .ebx, .ecx, .edx] s u := by
   have hn := hs.nowrap
   rw [WP.block_append_iff]

@@ -101,7 +101,7 @@ theorem magH_fact : ∀ w < 9, ∀ v < 2 ^ w,
 /-- A window of four bits with its top bit flipped, plus 8, plus the bit
 below it: Booth's digit plus 16. -/
 theorem booth_fact : ∀ w < 16, ∀ c < 2,
-    (BitVec.ofNat 32 w ^^^ 8#32) + 8#32 + BitVec.ofNat 32 c =
+    (BitVec.ofNat 32 w ^^^ BitVec.ofNat 32 8) + 8#32 + BitVec.ofNat 32 c =
       BitVec.ofNat 32 ((if w < 8 then w + 16 else w) + c) := by
   decide +kernel
 
