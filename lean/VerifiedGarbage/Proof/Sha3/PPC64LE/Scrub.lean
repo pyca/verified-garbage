@@ -102,4 +102,101 @@ def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api PPC64LE.targe
       verified := Proof.Sha3.PPC64LE.Instances.squeeze_shake256 }
     (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.Instances.xofSqueezePostOut_local 64 Spec.Sha3.xofShake256))
 
+/-! ## `absorb`: `update` with its working space on the stack -/
+
+/-- `vg_sha3_224_absorb`: `update`, with its working space in a frame of 672
+bytes on the stack (`withStackScratch`), proven from `update`'s proof
+(`Verified.stackScratch`). -/
+theorem absorb_sha3_224 : Verified PPC64LE.target (Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_224.rate)
+    (Spec.Sha3.absorbContract PPC64LE.abi Spec.Sha3.hashSha3_224.rate (48 + 672)) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.absorbPre Spec.Sha3.hashSha3_224.rate PPC64LE.abi.ptrBits)
+    (post := Spec.Sha3.absorbPost Spec.Sha3.hashSha3_224.rate PPC64LE.abi.ptrBits) (wa := true)
+    (stack := 48) (bytes := 672) Proof.Sha3.PPC64LE.Instances.update_sha3_224 (by decide) (by decide)
+    (Proof.Sha3.PostOut.absorbPre_local _ _) (Proof.Sha3.PostOut.absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out _ _ vs m m₁ m₂ r hl hb h)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide) (by show _ < _; decide))
+
+def absorbSha3_224Reg : Registration Spec.Sha3.absorbSha3_224Api PPC64LE.target :=
+  withScrub {
+      code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_224.rate
+      verified := absorb_sha3_224 }
+    (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out Spec.Sha3.hashSha3_224.rate 64))
+
+/-- `vg_sha3_256_absorb`: `update`, with its working space in a frame of 672
+bytes on the stack (`withStackScratch`), proven from `update`'s proof
+(`Verified.stackScratch`). -/
+theorem absorb_sha3_256 : Verified PPC64LE.target (Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_256.rate)
+    (Spec.Sha3.absorbContract PPC64LE.abi Spec.Sha3.hashSha3_256.rate (48 + 672)) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.absorbPre Spec.Sha3.hashSha3_256.rate PPC64LE.abi.ptrBits)
+    (post := Spec.Sha3.absorbPost Spec.Sha3.hashSha3_256.rate PPC64LE.abi.ptrBits) (wa := true)
+    (stack := 48) (bytes := 672) Proof.Sha3.PPC64LE.Instances.update_sha3_256 (by decide) (by decide)
+    (Proof.Sha3.PostOut.absorbPre_local _ _) (Proof.Sha3.PostOut.absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out _ _ vs m m₁ m₂ r hl hb h)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide) (by show _ < _; decide))
+
+def absorbSha3_256Reg : Registration Spec.Sha3.absorbSha3_256Api PPC64LE.target :=
+  withScrub {
+      code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_256.rate
+      verified := absorb_sha3_256 }
+    (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out Spec.Sha3.hashSha3_256.rate 64))
+
+/-- `vg_sha3_384_absorb`: `update`, with its working space in a frame of 672
+bytes on the stack (`withStackScratch`), proven from `update`'s proof
+(`Verified.stackScratch`). -/
+theorem absorb_sha3_384 : Verified PPC64LE.target (Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_384.rate)
+    (Spec.Sha3.absorbContract PPC64LE.abi Spec.Sha3.hashSha3_384.rate (48 + 672)) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.absorbPre Spec.Sha3.hashSha3_384.rate PPC64LE.abi.ptrBits)
+    (post := Spec.Sha3.absorbPost Spec.Sha3.hashSha3_384.rate PPC64LE.abi.ptrBits) (wa := true)
+    (stack := 48) (bytes := 672) Proof.Sha3.PPC64LE.Instances.update_sha3_384 (by decide) (by decide)
+    (Proof.Sha3.PostOut.absorbPre_local _ _) (Proof.Sha3.PostOut.absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out _ _ vs m m₁ m₂ r hl hb h)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide) (by show _ < _; decide))
+
+def absorbSha3_384Reg : Registration Spec.Sha3.absorbSha3_384Api PPC64LE.target :=
+  withScrub {
+      code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_384.rate
+      verified := absorb_sha3_384 }
+    (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out Spec.Sha3.hashSha3_384.rate 64))
+
+/-- `vg_sha3_512_absorb`: `update`, with its working space in a frame of 672
+bytes on the stack (`withStackScratch`), proven from `update`'s proof
+(`Verified.stackScratch`). -/
+theorem absorb_sha3_512 : Verified PPC64LE.target (Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_512.rate)
+    (Spec.Sha3.absorbContract PPC64LE.abi Spec.Sha3.hashSha3_512.rate (48 + 672)) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.absorbPre Spec.Sha3.hashSha3_512.rate PPC64LE.abi.ptrBits)
+    (post := Spec.Sha3.absorbPost Spec.Sha3.hashSha3_512.rate PPC64LE.abi.ptrBits) (wa := true)
+    (stack := 48) (bytes := 672) Proof.Sha3.PPC64LE.Instances.update_sha3_512 (by decide) (by decide)
+    (Proof.Sha3.PostOut.absorbPre_local _ _) (Proof.Sha3.PostOut.absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out _ _ vs m m₁ m₂ r hl hb h)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide) (by show _ < _; decide))
+
+def absorbSha3_512Reg : Registration Spec.Sha3.absorbSha3_512Api PPC64LE.target :=
+  withScrub {
+      code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_512.rate
+      verified := absorb_sha3_512 }
+    (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out Spec.Sha3.hashSha3_512.rate 64))
+
+/-- `vg_shake128_absorb`: `update`, with its working space in a frame of 672
+bytes on the stack (`withStackScratch`), proven from `update`'s proof
+(`Verified.stackScratch`). -/
+theorem absorb_shake128 : Verified PPC64LE.target (Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.xofShake128.rate)
+    (Spec.Sha3.absorbContract PPC64LE.abi Spec.Sha3.xofShake128.rate (48 + 672)) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.absorbPre Spec.Sha3.xofShake128.rate PPC64LE.abi.ptrBits)
+    (post := Spec.Sha3.absorbPost Spec.Sha3.xofShake128.rate PPC64LE.abi.ptrBits) (wa := true)
+    (stack := 48) (bytes := 672) Proof.Sha3.PPC64LE.Instances.update_shake128 (by decide) (by decide)
+    (Proof.Sha3.PostOut.absorbPre_local _ _) (Proof.Sha3.PostOut.absorbPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out _ _ vs m m₁ m₂ r hl hb h)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide) (by show _ < _; decide))
+
+def absorbShake128Reg : Registration Spec.Sha3.absorbShake128Api PPC64LE.target :=
+  withScrub {
+      code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.xofShake128.rate
+      verified := absorb_shake128 }
+    (by exact postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.absorbPost_out Spec.Sha3.xofShake128.rate 64))
+
 end VG.Proof.Sha3.PPC64LE.Scrub

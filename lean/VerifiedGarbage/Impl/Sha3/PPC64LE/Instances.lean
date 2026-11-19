@@ -42,6 +42,13 @@ def updateArgs (rate : Nat) : List Instr :=
 
 def update (rate : Nat) : Prog isa := .seq (.block (updateArgs rate)) Stream.absorb
 
+/-- `absorb rate (state = r3, pos = r4, data = r5, len = r6)`: `update`, with
+its working space `scratch` in a frame of 672 bytes on the stack, at
+`r1 + 32`, passed in `r7` (`withStackScratch`), so that it is left in no memory
+of the caller's. -/
+def absorb (rate : Nat) : Prog isa :=
+  Impl.StackScratch.PPC64LE.withStackScratch 672 .r7 (update rate)
+
 /-- SHAKE's `finalize`'s arguments, with the working space in `r5`, moved to
 `pad`'s: the working space to `r7`, `pos` to `r5`, `rate` into `r4` and
 SHAKE's suffix into `r6`. -/

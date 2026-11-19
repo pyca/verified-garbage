@@ -113,6 +113,49 @@ theorem absorbPost_out (rate pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (abso
   rw [stateAgree hb.1]
   exact h.1 msg hr hc
 
+/-- `absorbPre` reads no memory. -/
+theorem absorbPre_local (rate pb : Nat) : ∀ vs m₁ m₂, vs.length = (absorbSig.words pb).length →
+    (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (absorbSig.words pb) (absorbPre rate pb) vs m₁ →
+      Curry.apply (absorbSig.words pb) (absorbPre rate pb) vs m₂ := by
+  intro vs m₁ m₂ hlen _ h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+  exact h
+
+/-- `absorbPost` reads the memory on entry only within the state and the
+data, with 64-bit pointers (`len` is then the length of the data). -/
+theorem absorbPost_local (rate : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (absorbSig.words 64).length →
+    (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (absorbSig.words 64) (absorbPost rate 64) vs m₁ m' r →
+      Curry.apply (absorbSig.words 64) (absorbPost rate 64) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ps, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ln, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
+  simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  refine ⟨fun msg hr hc => ?_, h.2⟩
+  have hd : bytesAt m₂ dt ln.toNat = bytesAt m₁ dt ln.toNat :=
+    bytesAt_congr (agreeBuf ln.isLt (by simpa [Elem.size] using hb.2))
+  show Spec.Sha3.Repr m' st rate (msg ++ bytesAt m₂ dt (ln.setWidth 64).toNat)
+  rw [BitVec.setWidth_eq, hd]
+  refine h.1 msg ?_ hc
+  show stateAt m₁ st = _
+  rw [← stateAgree hb.1]
+  exact hr
+
 /-- A fixed digest's postcondition reads only its output buffer. -/
 theorem finalizePost_out (H : HashFn) (pb : Nat) (hlen : H.len < 2 ^ 64) :
     ∀ vs m m₁ m₂ r, vs.length = ((finalizeSig H.len).words pb).length →
