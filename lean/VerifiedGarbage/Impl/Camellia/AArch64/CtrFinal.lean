@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 
 /-!
 # Camellia-CTR of a message's last piece: AArch64 implementation
@@ -84,3 +85,22 @@ def ctrFinal : Prog isa :=
     (.seq (.ite (.zero .x .x23) (.block []) ctrFinalTail) (.block finalRestore)))
 
 end VG.Impl.Camellia.AArch64
+
+namespace VG.Impl.Camellia.AArch64.Fn
+
+open VG.AArch64
+
+/-- The last blocks of Camellia-CTR as emitted: their code with the space
+for the saved registers on the stack
+(`Impl.StackScratch.AArch64.withStackScratchWiped`), then the registers it
+writes that the calling convention does not preserve cleared and its 3424
+bytes of stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns
+without secret residue. -/
+def ctrFinal : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 3424 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v26, .v27, .v28, .v29, .v30],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratchWiped 80 .x5 10 VG.Impl.Camellia.AArch64.ctrFinal)
+
+end VG.Impl.Camellia.AArch64.Fn
