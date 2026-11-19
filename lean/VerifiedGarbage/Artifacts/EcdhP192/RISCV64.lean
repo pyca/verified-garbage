@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.Ecdh.P192
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.EcdhLit
 public import VerifiedGarbage.Proof.P192.RISCV64.Law
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # ECDH over P-192 (SP 800-56A) on RISC-V -/
 
@@ -20,7 +21,7 @@ namespace VG.Artifacts.EcdhP192.RISCV64
 open VG.Proof.P192.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P192.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.Ecdh.P192.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.Ecdh.RISCV64.ecdhP192
     verified := Proof.Ecdh.RISCV64.P192.ecdh_verified hasLaw.law }
     (Proof.EcKey.RISCV64.Scrub.exchangeOut _ _ []))]
