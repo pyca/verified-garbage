@@ -533,7 +533,7 @@ theorem oneLay {c W : Addr} (fc : c.toNat + 256 ≤ 2 ^ 64) (fW : W.toNat + 2560
 theorem stackArgAddr_0 (s : State) : stackArgAddr s 0 = s.sp + BitVec.ofNat 64 0 := rfl
 
 /-- The stack arguments, in a state that may read them. -/
-theorem args_in {s : State} {n : Nat} (h : Covers [args s n] (s.rd ++ s.wr)) (hn : n ≤ 3) {i : Nat}
+theorem args_in {s : State} {n : Nat} (h : Covers [args s n] (s.rd ++ s.wr)) (hn : n ≤ 8) {i : Nat}
     (hi : i < n) : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * i)) 8 := by
   have := in_off h (d := 8 * i) (n := 8) (by omega_using [hi]) (by omega_using [hn])
   rwa [stackArgAddr_0, add_ofNat_assoc, Nat.zero_add] at this

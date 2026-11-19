@@ -171,7 +171,7 @@ theorem openToEntry_wp {s₀ : State} (h : openToPreR s₀) :
   obtain spa : s₀.sp.toNat % 8 = 0 := by have := hstk.1; omega_using [this]
   simp only [openEntryWith, openEntryWithB, ↓reduceIte, Bool.false_eq_true]
   refine WP.block_append (WP.mono (WP.keep [.t1, .s0, .s1, .s2, .s3, .s4, .s5, .s7, .s9, .s10, .s11]
-    (one1At_wp (off := 32) (tagO := 16) (W := stackArg s₀ 4) (T := stackArg s₀ 2) (.inr (.inr rfl)) (.inr rfl) hW
+    (one1At_wp (off := 32) (tagO := 16) (W := stackArg s₀ 4) (T := stackArg s₀ 2) (by decide) (.inr rfl) hW
       wa hstk.1 (ain 4 (by decide)) rfl (ain 2 (by decide)) rfl (dAi 2 (by decide))) (by rfl) rfl)
     fun s₁ ⟨h1, kp⟩ => ?_)
   have hk₁ := h1.keeps

@@ -395,4 +395,33 @@ def sealBsRISCV64 : Contract isa where
   post := sealRISCV64.post
   pub := onePub 3
 
+/-- What `vg_aes_gcm_open_bitsliced` needs: `openPre`'s, with `bk` a stack
+argument between `tag_len` and the working space, read only and apart from
+what the function writes, and the bitsliced form of the key context. -/
+def openBsPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let nonce : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+  let aad : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
+  let data : Region := ⟨s.gpr .a6, (s.gpr .a7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let bk : Region := ⟨stackArg s 2, 1248⟩
+  let scr : Region := ⟨stackArg s 3, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, bk, args s 4] ∧ s.wr = [data, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 4) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 4) ∧
+    bk.Disjoint data ∧ bk.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧ (s.gpr .a6).toNat + (s.gpr .a7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 3).toNat + 2560 ≤ 2 ^ 64 ∧
+    s.sp.toNat + 32 ≤ 2 ^ 64 ∧ rounds (s.gpr .a1) ∧ stkOk s [ctx, nonce, aad, data, tag, scr, args s 4, bk] ∧
+    (s.gpr .a0).toNat % 8 = 0 ∧ (stackArg s 3).toNat % 8 = 0 ∧ (stackArg s 2).toNat % 8 = 0 ∧
+    Spec.Gcm.CtxSlicedRepr s.mem (stackArg s 2) (s.gpr .a0)
+
+/-- `vg_aes_gcm_open_bitsliced`: `vg_aes_gcm_open`'s postcondition and leak. -/
+def openBsRISCV64 : Contract isa where
+  pre := openBsPre
+  post := openRISCV64.post
+  pub s₁ s₂ := onePub 4 s₁ s₂ ∧ (rounds (s₁.gpr .a1) → (openRes s₁).isSome = (openRes s₂).isSome)
+
 end VG.Proof.AesGcm.RISCV64

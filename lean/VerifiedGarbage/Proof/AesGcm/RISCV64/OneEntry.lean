@@ -60,7 +60,7 @@ structure SO1 (W T : Addr) (s₀ s₁ : State) : Prop where
   s9 : s₁.gpr .s9 = T
   t1 : s₁.gpr .t1 = s₀.sp
 
-theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off = 8 ∨ off = 16 ∨ off = 32)
+theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off % 8 = 0 ∧ off < 2048)
     (htag : tagO = 0 ∨ tagO = 16)
     (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWa : W.toNat % 8 = 0) (hsa : s₀.sp.toNat % 16 = 0)
     (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
@@ -71,8 +71,8 @@ theorem one1At_wp {s₀ : State} {off tagO : Nat} {W T : Addr} (hoff : off = 8 �
     WP isa (.block (oneEntryAt off tagO)) s₀ (SO1 W T s₀) := by
   simp only [oneEntryAt, List.cons_append, List.nil_append]
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
-  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff]) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
+  refine Steps.wp_ld (off := off) (a := s₀.sp + BitVec.ofNat 64 off) (by omega_using [hoff.2]) (by rw [uA.gpr, add_ofNat_zero])
+    (Spill.al8 (by omega_using [hsa]) (by omega_using [hoff.1])) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => ?_
   have b12 : sB.gpr .t1 = W := by rw [uB.gpr, uA.mem, hWv]
   rw [WP.block_append_iff]
   refine WP.mono (save_ok (b := .t1) (by rw [b12, uB.wr, uA.wr]; exact hW) (by rw [b12]; exact hWa))
@@ -157,6 +157,6 @@ theorem one1_wp {s₀ : State} {off : Nat} {W T : Addr} (hoff : off = 8 ∨ off 
     (hTv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 0) 64 = T)
     (hTd : (⟨s₀.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (oneR W)) :
     WP isa (.block (oneEntry off)) s₀ (SO1 W T s₀) :=
-  one1At_wp (hoff.elim .inl fun h => .inr (.inl h)) (.inl rfl) hW hWa hsa hWi hWv hTi hTv hTd
+  one1At_wp (by rcases hoff with rfl | rfl <;> decide) (.inl rfl) hW hWa hsa hWi hWv hTi hTv hTd
 
 end VG.Proof.AesGcm.RISCV64
