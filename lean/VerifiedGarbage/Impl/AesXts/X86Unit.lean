@@ -31,8 +31,8 @@ keeps `b = len mod 16` across the calls.
   tweak of block `m`.
 * `decrypt`: without a partial block, the `m` blocks from `T`. Otherwise
   the first `m - 1`, which leaves the tweak of block `m - 1`; the tweak of
-  block `m` (that times `α`, as the whole-block functions compute it:
-  `Impl.AesXts.X86.mulA`, on `ebx`) at `zO`; the last whole block
+  block `m` (that times `α`, in memory: `Impl.AesXts.X86.mulA`, on `ebx`)
+  at `zO`; the last whole block
   deciphered with it (`PP`); its first `b` bytes swapped with the `b`
   after it, making them `Pₘ` and the block `CC = Cₘ ‖ CP`; and that
   deciphered with the tweak of block `m - 1`.
