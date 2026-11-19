@@ -175,7 +175,7 @@ theorem absFrame_wd {Wn : Nat} {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame (a
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by omega)⟩
 
 /-- What `absFrame` writes is in the working space. -/
 theorem absFrame_w {Wn : Nat} {W : Addr} {m m' : Mem} (h : Frame (absFrame (W + BitVec.ofNat 64 16) W 16) m m') (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
@@ -185,7 +185,7 @@ theorem absFrame_w {Wn : Nat} {W : Addr} {m m' : Mem} (h : Frame (absFrame (W + 
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by omega)⟩
 
 /-- Between the calls of `run`: where everything is, the pointers and lengths
 in their registers, `H'` kept, and memory changed since `ρ` only in the
@@ -221,9 +221,9 @@ theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (h.data.ok.w.sub_right (Lay.wSub (by decide))).symm
+    · exact (h.data.ok.w.sub_right (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega))).symm
     · exact (L.st_w (a := 48) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+    · exact Offset.disjoint W (.inl (by decide)) (by decide) (by have := L.hWn; omega)
   refine ⟨o.env, by rw [o.kept .x22 (by decide), h.x22], h.rounds, by rw [o.kept .x26 (by decide), h.x26],
     by rw [o.kept .x27 (by decide), h.x27], by rw [o.kept .x28 (by decide), h.x28],
     by rw [hH_crFrame L h.data o.frame, h.hH], h.key.frame o.frame dWK, h.data.of_eq hrd hwr,
@@ -232,7 +232,7 @@ theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
   · exact ⟨_, List.mem_cons_self .., stW (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Lay.wSub (by have := L.hWn; omega)⟩
 
 /-- `Mid` after a call on the whole blocks that may also write `ex`, apart
 from where `H'` is kept: from the state after the call. -/
@@ -275,7 +275,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     rw [r₃.mem]
     refine hf.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., ?_⟩)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide)
+    rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega)
   exact ⟨⟨he₃, x22₃, hR, by rw [r₃.others _ (by decide), h₂.x26], x27₃, by rw [r₃.others _ (by decide), h₂.x28, h28],
     by rw [r₃.mem]; exact h₂.hH, by rw [r₃.mem]; exact h₂.key, hd₃, fr₃, by rw [r₃.rd, h₂.rd, hrd],
     by rw [r₃.wr, h₂.wr, hwr]⟩, ⟨he₃, fun _ _ => rfl, x22₃, hR,
@@ -342,7 +342,7 @@ theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H 
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega_using [hlt]) hdj.rd
-    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ (dataOk_of h.data).lt
+    (hdj.w.sub_right (Lay.wSub (by have := L.hWn; omega))) x26₁₀ (dataOk_of h.data).lt
     (pad_big ((dataOk_of h.data).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd (dataOk_of h.data).lt
       (by congr 2; omega_using [hjn]) (by omega_using [hlt]))))
     fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
@@ -446,12 +446,12 @@ theorem runWithPX_rel (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {k₁ k₂ : 
   obtain r₂ : t₅.rd = ρ₂.rd := rd₅'.trans M₂.rd
   obtain w₂ : t₅.wr = ρ₂.wr := wr₅'.trans M₂.wr
   obtain sY : Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩ (workR Wn W) := stW (by decide)
-  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by decide)
+  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ (workR Wn W) := Lay.wSub (by have := L.hWn; omega)
   obtain hexH : ∀ r ∈ ex, (⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))
   obtain hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
-  obtain hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
+  obtain hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by have := L.hWn; have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; omega))
   obtain hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [])
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
@@ -555,7 +555,7 @@ theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
   rw [← qsp] at i₂
   rw [hc.2] at i₁ i₂
   have ol := f₁.ol
-  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by decide)
+  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by have := L.hWn; omega)
   obtain hn := (σ₁.gpr .x7).isLt
   obtain g₁ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], u₁.gpr r = σ₁.gpr r := fun r hr => by
     rw [r₁.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), k₁ r hr]
@@ -572,7 +572,7 @@ theorem sealWithEX_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w
       by rw [wr]; exact f.dataW, ol.cd⟩
   obtain hf : ∀ {σ u : State}, Frame [entryR (stackArg σ₁ w)] σ.mem u.mem →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ.mem u.mem :=
-    fun f => f.sub fun r hr => ⟨_, List.mem_cons_self .., entryR_work _ r hr⟩
+    fun f => f.sub fun r hr => ⟨_, List.mem_cons_self .., entryR_work _ (hWn := hWn) r hr⟩
   obtain hgh₂ := @hgh σ₂
   rw [f₂.hW, ← q0, ← q6, ← q7] at hgh₂
   have e₁ := b₁
@@ -646,7 +646,7 @@ theorem sealWith_ct {Wn : Nat} (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : S
     (fun p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => hrel p₁ p₂ hq c₁ c₂ y z (sp₁.trans sp₂.symm) r₁ w₁ f₁ r₂ w₂ f₂)
 
 /-- `vg_aes_gcm_seal` with the path for TLS records is constant time. -/
-theorem seal_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem seal_ct {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
     ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.«seal» v.callees) :=
   sealWith_ct (extra := fun _ => []) v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fun _ _ _ c₁ c₂ _ _ sp _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ sp)
