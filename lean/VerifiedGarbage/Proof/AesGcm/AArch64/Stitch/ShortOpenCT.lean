@@ -92,7 +92,7 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
     (htbrel : ∀ v₁ v₂ : State, v₁.sp = SP → v₂.sp = SP → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, n⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, n⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Stitch.openShortG to tb) TT := by
   have L := o₁.lay
   obtain ⟨x4₁, x5₁, x6₁, x7₁⟩ := hx₁
@@ -104,11 +104,11 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
   obtain j0W : ∀ r ∈ j0Frame (W + BitVec.ofNat 64 16) W, ∃ r' ∈ [workR Wn W, (⟨O, n⟩ : Region)], Region.Sub r r' := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by omega)⟩
   obtain F₁ : Frame [workR Wn W, ⟨O, n⟩] σ₁.mem t₁.mem :=
-    o₁.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
+    o₁.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W (hWn := hWn) r hr⟩
   obtain F₂ : Frame [workR Wn W, ⟨O, n⟩] σ₂.mem t₂.mem :=
-    o₂.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W r hr⟩
+    o₂.fr.sub fun r hr => ⟨_, List.mem_cons_self .., entryFr_work to W (hWn := hWn) r hr⟩
   refine (openShort_split to tb).symm.rel (rel_seq ?_ (openShortA_ok gh o₁ x4₁ x5₁ x6₁ x7₁ h16 hhi rt₁ hok htb₁)
     (openShortA_ok gh o₂ x4₂ x5₂ x6₂ x7₂ h16 hhi rt₂ hok htb₂) fun m₁ m₂ hm₁ hm₂ => ?_)
   · unfold openShortA Impl.AesGcm.AArch64.Stitch.shortPre
@@ -187,8 +187,8 @@ theorem openShort_rel {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
         · unfold Impl.AesGcm.AArch64.Stitch.plainOutG
           refine WP.seq (WP.mono (pl hm) fun _ ⟨x11, x12, x13, sp, x24, rd, wr⟩ =>
             WP.mono (Stitch.copyQ_ok _ ⟨x12, x11, x13, by omega_using [hhi],
-              by rw [rd, wr]; exact covers_left (covers_off hm.env.perm.w (by omega_using [hhi]) (by decide)),
-              by rw [wr]; exact hm.ow.wr, (hm.ow.ok.w.sub_right (Lay.wSub (by omega_using [hhi]))).symm⟩)
+              by rw [rd, wr]; exact covers_left (covers_off hm.env.perm.w (by omega) (by omega)),
+              by rw [wr]; exact hm.ow.wr, (hm.ow.ok.w.sub_right (Lay.wSub (by omega))).symm⟩)
               fun _ ⟨_, g, sp', _, _⟩ => ⟨sp'.trans (sp.trans hm.env.sp), (g _ (by decide)).trans x24⟩)
       refine rel_seq (rel_ite (eval_zero hm₁.x24 (hlt σ₁)) (eval_zero x24₂ (hlt σ₁))
           (fun _ => wipeTo_rel hm₁.env hm₂.env ou₁.sO ou₂.sO hm₁.sN hm₂.sN) (fun _ => ?_))
@@ -254,7 +254,7 @@ theorem openSelS_rel {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
     (htbrelS : ∀ v₁ v₂ : State, v₁.sp = σ₁.sp → v₂.sp = σ₁.sp → (∀ r ∈ shRegs, v₁.gpr r = v₂.gpr r) →
       v₁.rd = σ₁.rd → v₁.wr = σ₁.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr → Frame [workR Wn W, ⟨O, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 s₁ s₂) (openSelS v.callees to tb cl true) TT := by
   obtain hdk := dataOk_of o₁.dat
   obtain hnb : (σ₁.gpr .x7).toNat + Wn ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
@@ -400,7 +400,7 @@ theorem openSelS_rel {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
     -- `shortThr`, on the length, which is public.
     refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
         (by agree_tac [kk₁ .x7 (by simp), kk₂ .x7 (by simp)]) ⟨_, by taint_decide⟩)
-      (shortThr_ok u₁ x7u₁ (by omega_using [hnb])) (shortThr_ok u₂ x7u₂ (by omega_using [hnb])) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
+      (shortThr_ok u₁ x7u₁ (by omega)) (shortThr_ok u₂ x7u₂ (by omega)) fun w₁ w₂ ⟨y9₁, s₁'⟩ ⟨y9₂, s₂'⟩ => ?_
     obtain v₁ := v₁.of_regs s₁'
     obtain v₂ := v₂.of_regs s₂'
     obtain y12₁ : w₁.gpr .x12 = Tg := by rw [s₁'.others _ (by decide), y12₁]
@@ -416,7 +416,7 @@ theorem openSelS_rel {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
       -- `shortMin`, on the length, which is public.
       refine rel_seq (rel_taint [.x7] (by rw [v₁.env.sp, v₂.env.sp])
           (by agree_tac [x7w₁, x7w₂]) ⟨_, by taint_decide⟩)
-        (shortMin_ok w₁ x7w₁ (by omega_using [hnb])) (shortMin_ok w₂ x7w₂ (by omega_using [hnb])) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
+        (shortMin_ok w₁ x7w₁ (by omega)) (shortMin_ok w₂ x7w₂ (by omega)) fun z₁ z₂ ⟨m9₁, t₁⟩ ⟨m9₂, t₂⟩ => ?_
       obtain v₁ := v₁.of_regs t₁
       obtain v₂ := v₂.of_regs t₂
       obtain y12₁ : z₁.gpr .x12 = Tg := by rw [t₁.others _ (by decide), y12₁]
@@ -486,7 +486,7 @@ theorem openWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (g
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees false w tb cl true) := by
   rw [openWithSG_eq, show openEntryG false w = oneEntry (8 * w) ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr) by
@@ -544,7 +544,7 @@ theorem openToWithSh_ct {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) 
       Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₁.mem v₁.mem →
       v₂.rd = σ₂.rd → v₂.wr = σ₂.wr →
       Frame [workR Wn (stackArg σ₁ w), ⟨stackArg σ₁ 0, (σ₁.gpr .x7).toNat⟩] σ₂.mem v₂.mem →
-      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) :
+      RelCT isa (Eq2 v₁ v₂) (.seq (.block tb) openRestZ) TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees true w tb cl true) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
