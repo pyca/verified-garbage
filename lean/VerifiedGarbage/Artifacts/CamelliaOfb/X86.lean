@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-import VerifiedGarbage.Proof.Camellia.X86.FbLit
-public import VerifiedGarbage.Proof.Camellia.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Camellia.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Camellia.X86.FbLit
 import VerifiedGarbage.Proof.Camellia.X86.FbFinalLit
 
 /-! # Camellia-OFB on x86 -/
@@ -14,11 +13,7 @@ import VerifiedGarbage.Proof.Camellia.X86.FbFinalLit
 namespace VG.Artifacts.CamelliaOfb.X86
 
 def artifacts : List Artifact := [
-  Spec.Camellia.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofb
-    verified := .unscrubbed Proof.Camellia.X86.Fb.ofb_framed },
-  Spec.Camellia.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofbFinal
-    verified := .unscrubbed Proof.Camellia.X86.FbFinal.ofbFinal_framed }]
+  Spec.Camellia.ofbApi.artifact X86.target Proof.Camellia.X86.Scrub.ofbReg,
+  Spec.Camellia.ofbFinalApi.artifact X86.target Proof.Camellia.X86.Scrub.ofbFinalReg]
 
 end VG.Artifacts.CamelliaOfb.X86

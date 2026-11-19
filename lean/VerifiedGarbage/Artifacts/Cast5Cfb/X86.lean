@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
-public import VerifiedGarbage.Proof.Cast5.X86.FbFinalVerified
-import VerifiedGarbage.Proof.Cast5.X86.ModesLit
-import VerifiedGarbage.Proof.Cast5.X86.FbFinalLit
+public import VerifiedGarbage.Proof.Cast5.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+import VerifiedGarbage.Proof.Cast5.X86.FbFinalLit
 
 /-! # CAST5-CFB64 on x86 -/
 
@@ -14,17 +13,9 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.Cast5Cfb.X86
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncrypt
-    verified := .unscrubbed (Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86.ModeFns.cfbEncrypt_framed) },
-  Spec.Cast5.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecrypt
-    verified := .unscrubbed (Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86.ModeFns.cfbDecrypt_framed) },
-  Spec.Cast5.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncryptFinal
-    verified := .unscrubbed (Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbEncryptFinal_framed) },
-  Spec.Cast5.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecryptFinal
-    verified := .unscrubbed (Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbDecryptFinal_framed) }]
+  Spec.Cast5.cfbEncryptApi.artifact X86.target Proof.Cast5.X86.Scrub.cfbEncryptReg,
+  Spec.Cast5.cfbDecryptApi.artifact X86.target Proof.Cast5.X86.Scrub.cfbDecryptReg,
+  Spec.Cast5.cfbEncryptFinalApi.artifact X86.target Proof.Cast5.X86.Scrub.cfbEncryptFinalReg,
+  Spec.Cast5.cfbDecryptFinalApi.artifact X86.target Proof.Cast5.X86.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.Cast5Cfb.X86

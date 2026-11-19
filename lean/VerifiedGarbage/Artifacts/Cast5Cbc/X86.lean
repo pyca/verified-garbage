@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
-import VerifiedGarbage.Proof.Cast5.X86.ModesLit
+public import VerifiedGarbage.Proof.Cast5.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 
 /-! # CAST5-CBC on x86 -/
 
@@ -12,11 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.Cast5Cbc.X86
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
-    verified := .unscrubbed (Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed) },
-  Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
-    verified := .unscrubbed (Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed) }]
+  Spec.Cast5.cbcEncryptChainedApi.artifact X86.target Proof.Cast5.X86.Scrub.cbcEncryptChainedReg,
+  Spec.Cast5.cbcDecryptChainedApi.artifact X86.target Proof.Cast5.X86.Scrub.cbcDecryptChainedReg]
 
 end VG.Artifacts.Cast5Cbc.X86

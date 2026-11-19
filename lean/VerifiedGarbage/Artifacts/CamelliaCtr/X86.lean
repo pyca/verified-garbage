@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.CtrVerified
-public import VerifiedGarbage.Proof.Camellia.X86.CtrFinal
-import VerifiedGarbage.Proof.Camellia.X86.CtrLit
+public import VerifiedGarbage.Proof.Camellia.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Camellia.X86.CtrLit
 
 /-! # Camellia-CTR on x86 -/
 
@@ -13,12 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.CamelliaCtr.X86
 
 def artifacts : List Artifact := [
-  Spec.Camellia.ctrApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ctr
-    verified := .unscrubbed Proof.Camellia.X86.Ctr.ctr_framed },
-  Spec.Camellia.ctrFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 60 5 8 Impl.Camellia.X86.ctrFinal
-    verified := .unscrubbed Proof.Camellia.X86.CtrFinal.ctrFinal_framed
-    spSafe := Proof.Camellia.X86.CtrFinal.ctrFinal_framed_spSafe }]
+  Spec.Camellia.ctrApi.artifact X86.target Proof.Camellia.X86.Scrub.ctrReg,
+  Spec.Camellia.ctrFinalApi.artifact X86.target Proof.Camellia.X86.Scrub.ctrFinalReg]
 
 end VG.Artifacts.CamelliaCtr.X86

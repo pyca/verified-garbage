@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.KeyVerified
-public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
@@ -12,14 +11,8 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.Cast5.X86
 
 def artifacts : List Artifact := [
-  Spec.Cast5.expandKeyApi.artifact X86.target {
-    code := Impl.Cast5.X86.expandKey
-    verified := .unscrubbed Proof.Cast5.X86.expandKey_verified },
-  Spec.Cast5.ecbEncryptApi.artifact X86.target {
-    code := Impl.Cast5.X86.ecbEncrypt
-    verified := .unscrubbed (Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86.ecbEncrypt_verified) },
-  Spec.Cast5.ecbDecryptApi.artifact X86.target {
-    code := Impl.Cast5.X86.ecbDecrypt
-    verified := .unscrubbed (Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86.ecbDecrypt_verified) }]
+  Spec.Cast5.expandKeyApi.artifact X86.target Proof.Cast5.X86.Scrub.expandKeyReg,
+  Spec.Cast5.ecbEncryptApi.artifact X86.target Proof.Cast5.X86.Scrub.ecbEncryptReg,
+  Spec.Cast5.ecbDecryptApi.artifact X86.target Proof.Cast5.X86.Scrub.ecbDecryptReg]
 
 end VG.Artifacts.Cast5.X86

@@ -41,7 +41,10 @@ open VG.Impl.AesCfb.X86 (finalSaved tailTest)
 open VG.Impl.AesCtr.X86 (zeroSlots)
 open VG.Impl.Modes.X86 (tailByte)
 
-/-- `vg_camellia_ctr`, with its working space on the stack. -/
+/-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
+internal function of its own, `vg_camellia_ctr_core`, rather than as
+`vg_camellia_ctr`, which also clears the registers and the stack it leaves
+(`Proof.Camellia.X86.Scrub.ctrReg`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ctr
 
 /-- `save` (our stack argument 5) to `eax`, and the registers saved there. -/
@@ -53,9 +56,9 @@ def ctrFinalArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (argOp 2), .mov .ebx (argOp 3), .mov .esi (argOp 4),
    .shift .shr .esi 4]
 
-/-- The call of `vg_camellia_ctr(eax, ecx, edx, ebx, esi)`, its arguments
-pushed last to first. -/
-def ctrCall : Prog isa := .frame (.push [.esi, .ebx, .edx, .ecx, .eax]) (.call "vg_camellia_ctr" ctrFramed) (.pop .eax 5)
+/-- The call of `vg_camellia_ctr(eax, ecx, edx, ebx, esi)`'s code, as
+`vg_camellia_ctr_core`, its arguments pushed last to first. -/
+def ctrCall : Prog isa := .frame (.push [.esi, .ebx, .edx, .ecx, .eax]) (.call "vg_camellia_ctr_core" ctrFramed) (.pop .eax 5)
 
 /-- The block after the registers in `save` zeroed, and the arguments of
 `vg_camellia_ctr` on it: the schedule, the rounds, the counter block, the

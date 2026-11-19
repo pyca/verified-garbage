@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.X86.FbFinalVerified
-import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
-import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
+public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 
 /-! # Blowfish-CFB64 on x86 -/
 
@@ -14,17 +13,9 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.BlowfishCfb.X86
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
-    verified := .unscrubbed Proof.Blowfish.X86.Fb.cfbEncrypt_framed },
-  Spec.Blowfish.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
-    verified := .unscrubbed Proof.Blowfish.X86.Fb.cfbDecrypt_framed },
-  Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
-    verified := .unscrubbed Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed },
-  Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
-    verified := .unscrubbed Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }]
+  Spec.Blowfish.cfbEncryptApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbEncryptReg,
+  Spec.Blowfish.cfbDecryptApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbDecryptReg,
+  Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbEncryptFinalReg,
+  Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbDecryptFinalReg]
 
 end VG.Artifacts.BlowfishCfb.X86
