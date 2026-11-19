@@ -848,7 +848,7 @@ theorem forall_app {l₁ l₂ : List Region} {P : Region → Prop} (h₁ : ∀ r
 
 /-! ## `seal` -/
 
-theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre s) :
+theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : sealPre Wn s) :
     WP isa (Impl.AesGcmSiv.AArch64.Stitch.«seal» e3 v.callees) s fun s' =>
       GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.sealAArch64.post s s' := by
   obtain ⟨L, P, hTw, hA⟩ := args_of_seal h
@@ -998,7 +998,7 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
         (by simp [Spec.GcmSiv.le64])]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre s) :
+theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : TagInputEq) {s : State} (h : openPre Wn s) :
     WP isa (Impl.AesGcmSiv.AArch64.Stitch.«open» e3 v.callees) s fun s' =>
       GprAbi s s' ∧ Proof.AesGcmSiv.AArch64.openAArch64.post s s' := by
   obtain ⟨L, P, hA⟩ := args_of_open h
