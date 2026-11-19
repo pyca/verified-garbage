@@ -11,7 +11,7 @@ The postcondition of `vg_ecdsa_<curve>_sign` reads the memory on return only
 within `out` (`RISCV64.Scrub.PostOut`), as on AArch64
 (`Proof/Ecdsa/Rfc6979/AArch64/Scrub.lean`): each implementation, generic
 over the HMAC implementations its table holds, which it calls indirectly,
-followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`),
+followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`),
 returns with the caller-saved registers cleared and its whole stack zeroed.
 -/
 
