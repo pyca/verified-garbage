@@ -122,14 +122,17 @@ theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : c
   · simpa using hv
 
 /-- `Verified.scrub`, with the registers the tail clears given: any `cl`
-that is well-formed for the levels and that the code keeps. -/
+that is well-formed for the levels and that the code keeps. The functions
+the code calls indirectly have the same addresses in two runs that agree on
+what is public (`hsy`). -/
 theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {cl : Clear}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
     (hd : c.ppc64leDepth ≤ stack) (h16 : c.ppc64leDepth % 16 = 0)
     (h48 : c.ppc64leDepth = 0 ∨ 48 ≤ c.ppc64leDepth)
-    (hic : icallFree c = true) (hrb : sig.retBits A.ptrBits ≤ 64)
+    (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
+      ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
     (hwf : cl.WF (chunks c.ppc64leDepth)) (hk : cl.Keeps c) :
     Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
@@ -146,30 +149,33 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
   have hL : (s₁.sp - BitVec.ofNat 64 c.ppc64leDepth).toNat = s₁.sp.toNat - c.ppc64leDepth :=
     toNat_sub_ofNat _ _ hD₁
   obtain ⟨-, hwr, -, -, -, -, hsp, -, hm⟩ := ho
-  obtain ⟨-, hU, hA'⟩ := Exec.agree (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
-    (T := s₁.sp) a₁ hic [] [] a₂ hsp hwr hun (fun r hr => .inl (List.mem_append_right _ hr))
+  obtain ⟨-, hU, hA'⟩ := Exec.agreeS (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
+    (T := s₁.sp) a₁ [] [] a₂ (hsy _ _ hp) hsp hwr hun (fun r hr => .inl (List.mem_append_right _ hr))
     (by rw [hL]; omega_using [hD₁]) (Nat.le_refl _) (fun x hx _ => hm x hx)
     (by rw [List.append_nil, List.append_nil]; exact (h.2.1) _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
   refine ⟨hU, fun x hx hc => hA' x hx fun hz => hc ?_⟩
   simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
 
-/-- What `scrubOf` needs of code `c` run by `scrub rb d cl`: `withScrub`'s
-conditions on its frames (which use `d` bytes) and its calls, that the
-result has at most 64 bits, and that `cl` is a `Clear` the tail can run that
-has every volatile register `c` may write. -/
-noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear) : Bool :=
-  c.ppc64leDepth == d && d % 16 == 0 && (d == 0 || decide (48 ≤ d)) && icallFree c &&
+/-- What `scrubOf` needs of code `c` run by `scrub rb d cl`, with the tables
+`ts` (none by default): `withScrub`'s conditions on its frames (which use
+`d` bytes) and its calls (indirectly, only of functions of `ts`:
+`tablesCall`, which with no table is that it makes no indirect call), that
+the result has at most 64 bits, and that `cl` is a `Clear` the tail can run
+that has every volatile register `c` may write. -/
+noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear)
+    (ts : List (String × List FnTable) := []) : Bool :=
+  c.ppc64leDepth == d && d % 16 == 0 && (d == 0 || decide (48 ≤ d)) && tablesCall c ts &&
     decide (rb ≤ 64) && wfB cl (chunks d) && keepsB c cl
 
 /-- `r`'s code, scrubbed with the stack and the registers stated, is
 verified against `r`'s contract and returns without secret residue. -/
 theorem scrubOf_ok {api : Api} (r : Registration api target) {d : Nat} {cl : Clear}
-    (hs : scrubSide r.code d (retBitsOf r) cl = true) (hd : d ≤ r.stack)
+    (hs : scrubSide r.code d (retBitsOf r) cl r.tables = true) (hd : d ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrub (retBitsOf r) d cl r.code) r.contract ∧
       NoResidue (scrub (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
   simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, hic⟩, hrb⟩, hwf⟩, hk⟩ := hs
+  obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩ := hs
   subst hde
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -177,8 +183,10 @@ theorem scrubOf_ok {api : Api} (r : Registration api target) {d : Nat} {cl : Cle
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  exact Verified.scrubWith (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48 hic hrb' hp
+  refine Verified.scrubWith (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48
+    (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
     (wf_of_wfB hwf) (keeps_of_keepsB hk)
+  simpa using List.all_eq_true.mp htc n hn
 
 /-- `r`, its code followed by the clearing of `d` bytes of stack and of the
 registers `cl`, returning without secret residue: `withScrub`, with the
@@ -188,11 +196,11 @@ registration is defined) rather than found when the registration is
 evaluated. `rb` is the result's bits as `hpost` states them, so that `hs` is
 stated with it and not with a projection of `r`. -/
 def scrubOf {api : Api} (r : Registration api target) (d : Nat) (cl : Clear) {rb : Nat}
-    (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl = true)
+    (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
     (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
   have hpost : PostOut r.contract (retBitsOf r) := by rw [hb]; exact hpost
-  have hs : scrubSide r.code d (retBitsOf r) cl = true := by rw [hb]; exact hs
+  have hs : scrubSide r.code d (retBitsOf r) cl r.tables = true := by rw [hb]; exact hs
   {
   suffix := r.suffix
   tables := r.tables
