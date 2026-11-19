@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_hmac_sha224_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -27,6 +29,8 @@ pub unsafe fn vg_hmac_sha224_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inne
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// It runs `vg_hmac_sha224_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

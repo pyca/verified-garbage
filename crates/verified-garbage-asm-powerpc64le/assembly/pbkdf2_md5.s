@@ -26,7 +26,7 @@ vg_pbkdf2_hmac_md5:
 	addi %r6, %r4, 0
 	addi %r3, %r21, 432
 	addi %r4, %r21, 512
-	bl {vg_hmac_md5_init}
+	bl {vg_hmac_md5_init_core}
 	li %r12, 1
 	li %r11, 704
 	stwbrx %r12, %r21, %r11

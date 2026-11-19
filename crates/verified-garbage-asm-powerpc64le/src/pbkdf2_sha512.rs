@@ -19,7 +19,7 @@
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "kfIh+CAAQTmmAgh80f8h+CAAAfgAAIr6CACq+hAAyvoYAOr6IAAK+ygAKvsAAKo6AACGOgAAxzoAAOg6AAAJOwAAJTsAAKM4AADEOIAHdThACJU4"
-bl {vg_hmac_sha512_init}
+bl {vg_hmac_sha512_init_core}
 .base64 "AQCAOUAKYDksXZV9AAA4KA=="
 beq %cr0, 20f
 22:
@@ -47,7 +47,7 @@ b 21f
 20:
 21:
 .base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8cA0hOCAAgE4=""#,
-        vg_hmac_sha512_init = sym super::hmac_sha512::vg_hmac_sha512_init,
+        vg_hmac_sha512_init_core = sym super::hmac_sha512::vg_hmac_sha512_init_core::vg_hmac_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch::vg_hmac_sha512_finalize_scratch,
         vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate::vg_pbkdf2_hmac_sha512_iterate,

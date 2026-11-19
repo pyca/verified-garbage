@@ -26,7 +26,7 @@ vg_pbkdf2_hmac_sha384:
 	addi %r6, %r4, 0
 	addi %r3, %r21, 1920
 	addi %r4, %r21, 2112
-	bl {vg_hmac_sha384_init}
+	bl {vg_hmac_sha384_init_core}
 	li %r12, 1
 	li %r11, 2592
 	stwbrx %r12, %r21, %r11

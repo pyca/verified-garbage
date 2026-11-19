@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha512_update_scratch}
 .base64 "4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOGH4IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPiwAgz4uAIM+MACDPjIAgz40AIM+NgCDPjgAgz46AIM+PACDPj4Agz4AAMM+AgDDPgQAwz4GAMM+CADDPgoAwz4MAMM+DgDDPhAAwz4SAMM+FADDPhYAwz4YAMM+GgDDPhwAwz4eAMM+IADDPiIAwz4kAMM+JgDDPigAwz4qAMM+LADDPi4Awz4wAMM+MgDDPjQAwz42AMM+OADDPjoAwz48AMM+PgDDPgABAz4CAQM+BAEDPgYBAz4IAQM+CgEDPgwBAz4OAQM+EAEDPhIBAz4UAQM+FgEDPhgBAz4aAQM+HAEDPh4BAz4gAQM+IgEDPiQBAz4mAQM+KAEDPioBAz4sAQM+LgEDPjABAz4yAQM+NAEDPjYBAz44AQM+OgEDPjwBAz4+AQM+AAFDPgIBQz4EAUM+BgFDPggBQz4KAUM+DAFDPg4BQz4QAUM+EgFDPhQBQz4WAUM+GAFDPhoBQz4cAUM+HgFDPiABQz4iAUM+JAFDPiYBQz4oAUM+KgFDPiwBQz4uAUM+MAFDPjIBQz40AUM+NgFDPjgBQz46AUM+PAFDPj4BQz4AAYM+AgGDPgQBgz4GAYM+CAGDPgoBgz4MAYM+DgGDPhABgz4SAYM+FAGDPhYBgz4YAYM+GgGDPhwBgz4eAYM+IAGDPiIBgz4kAYM+JgGDPigBgz4qAYM+LAGDPi4Bgz4wAYM+MgGDPjQBgz42AYM+OAGDPjoBgz48AYM+PgGDPgABwz4CAcM+BAHDPgYBwz4IAcM+CgHDPgwBwz4OAcM+EAHDPhIBwz4UAcM+FgHDPhgBwz4aAcM+HAHDPh4Bwz4oAchOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4="
 20:
 .base64 "wfgh+CAA4TimAgh80f8h+CAAAfgQAof6GAKn+iACx/ooAuf6MAIH+zgCJ/sAAKc6AADDOgAA5DoAAAY7AAAlOxABhzoAAHQ4"
 bl {vg_sha384_init}
@@ -84,6 +86,8 @@ b 21b"#,
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha384I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 192 bytes.
@@ -101,7 +105,7 @@ bl {vg_sha512_finalize_scratch}
 bl {vg_sha512_update_scratch}
 .base64 "AAB0OLAAgDgQAbU4AADVOA=="
 bl {vg_sha512_finalize_scratch}
-.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeR4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOCAAgE4=""#,
+.base64 "EAEVgQAAF5EUARWBBAAXkRgBFYEIABeRHAEVgQwAF5EgARWBEAAXkSQBFYEUABeRKAEVgRgAF5EsARWBHAAXkTABFYEgABeRNAEVgSQAF5E4ARWBKAAXkTwBFYEsABeR4ACV6vAA1er4APXqAAEV6wgBNevoALXqIAAB6DAAITimAwh8cAchOAAAADhh+CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPhwBAz4eAQM+IAEDPiIBAz4kAQM+JgEDPigBAz4qAQM+LAEDPi4BAz4wAQM+MgEDPjQBAz42AQM+OAEDPjoBAz48AQM+PgEDPgABQz4CAUM+BAFDPgYBQz4IAUM+CgFDPgwBQz4OAUM+EAFDPhIBQz4UAUM+FgFDPhgBQz4aAUM+HAFDPh4BQz4gAUM+IgFDPiQBQz4mAUM+KAFDPioBQz4sAUM+LgFDPjABQz4yAUM+NAFDPjYBQz44AUM+OgFDPjwBQz4+AUM+AAGDPgIBgz4EAYM+BgGDPggBgz4KAYM+DAGDPg4Bgz4QAYM+EgGDPhQBgz4WAYM+GAGDPhoBgz4cAYM+HgGDPiABgz4iAYM+JAGDPiYBgz4oAYM+KgGDPiwBgz4uAYM+MAGDPjIBgz40AYM+NgGDPjgBgz46AYM+PAGDPj4Bgz4AAcM+AgHDPgQBwz4GAcM+CAHDPgoBwz4MAcM+DgHDPhABwz4SAcM+FAHDPhYBwz4YAcM+GgHDPhwBwz4eAcM+KAHITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
     )
@@ -110,6 +114,10 @@ bl {vg_sha512_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha384_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha384_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha384_init_core.rs"]
+pub(crate) mod vg_hmac_sha384_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha384_init_scratch.rs"]
