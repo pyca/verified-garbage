@@ -232,4 +232,140 @@ preserve public, and at most the `r` low bits of `a0` secret. -/
 def done (r : Nat) (τ : T) : Bool :=
   τ.ok && τ.nf == 0 && τ.sp == τ.W && τ.sec == 0 && scratch.all (pubR τ) && Nat.ble τ.lo r
 
+/-! ## The step the kernel finds again
+
+`step` gives a taint whose fields are terms in the taint before
+(`{ τ with pub := … }`): no two taints of a check are the same term, a field is
+read through every taint since it last changed, and the kernel, which
+remembers the value of every term it has evaluated, by the term, evaluates
+every instruction of the code. `stepK` is `step` (`stepK_eq`) giving a taint
+whose fields are evaluated (`forceT`), but the mask of the window's bytes: a
+numeral wider than 64 bits, of which the kernel's hash is of the low 64, so
+that taints that differ only above them would have one hash. The mask stays
+the term it was where the step leaves it the same number, and is the term the
+step gives where it changes (`forceTS`). `stepK` matches on the instruction
+once, with its cases closed (`inline_match%`); `callK`, `pushK`, `popK` and
+`meetK` are `call`, `push`, `pop` and `meet`, evaluated likewise. `rtaint`
+takes them; the soundness proofs stay about `step` and the others. See "An
+analysis the kernel finds again" in the `proof-performance` skill. -/
+
+/-- `k n`, with the number `n` evaluated (as `RegSet.force` evaluates a set). -/
+def forceNat {α : Type} (n : Nat) (k : Nat → α) : α :=
+  Nat.casesOn (motive := fun _ => α) (Nat.succ n) (k n) (fun m => k m)
+
+theorem forceNat_eq {α : Type} (n : Nat) (k : Nat → α) : forceNat n k = k n := rfl
+
+/-- `k b`, with `b` evaluated. -/
+def forceBool {α : Type} (b : Bool) (k : Bool → α) : α :=
+  Bool.casesOn (motive := fun _ => α) b (k false) (k true)
+
+theorem forceBool_eq {α : Type} (b : Bool) (k : Bool → α) : forceBool b k = k b := by
+  cases b <;> rfl
+
+/-- `k l`, with the list `l` and the number of each of its registers evaluated. -/
+def forceRegs {α : Type} : List (Reg × Nat) → (List (Reg × Nat) → α) → α
+  | [], k => k []
+  | (r, n) :: l, k => forceNat n fun n => forceRegs l fun l => k ((r, n) :: l)
+
+theorem forceRegs_eq {α : Type} (l : List (Reg × Nat)) (k : List (Reg × Nat) → α) :
+    forceRegs l k = k l := by
+  induction l generalizing k with
+  | nil => rfl
+  | cons e l ih =>
+    obtain ⟨r, n⟩ := e
+    rw [forceRegs, forceNat_eq, ih]
+
+/-- `k τ`, with every field of `τ` evaluated but the mask. -/
+def forceT {α : Type} (τ : T) (k : T → α) : α :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ =>
+    forceBool ok fun ok => forceNat W fun W => pub.force fun pub => forceNat lo fun lo =>
+      forceNat sp fun sp => forceNat nf fun nf => forceRegs wp fun wp => forceRegs bp fun bp =>
+        k ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩
+
+/-- `forceT`, the mask being the term `sec0` if it is that number. -/
+def forceTS {α : Type} (sec0 : Nat) (τ : T) (k : T → α) : α :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ =>
+    Bool.casesOn (motive := fun _ => α) (Nat.beq sec sec0) (forceT ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ k)
+      (forceT ⟨ok, W, pub, lo, sp, nf, wp, bp, sec0⟩ k)
+
+theorem forceTS_eq {α : Type} (sec0 : Nat) (τ : T) (k : T → α) : forceTS sec0 τ k = forceT τ k := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  show Bool.casesOn (motive := fun _ => α) (Nat.beq sec sec0) (forceT ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ k)
+    (forceT ⟨ok, W, pub, lo, sp, nf, wp, bp, sec0⟩ k) = _
+  cases h : Nat.beq sec sec0
+  · rfl
+  · rw [Nat.eq_of_beq_eq_true h]
+
+theorem forceT_eq {α : Type} (τ : T) (k : T → α) : forceT τ k = k τ := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  rw [forceT, forceBool_eq, forceNat_eq, RegSet.force_eq, forceNat_eq, forceNat_eq, forceNat_eq,
+    forceRegs_eq, forceRegs_eq]
+
+/-- `o`, its taint evaluated, the mask being the term `sec0` if it is that number. -/
+def forceO (sec0 : Nat) (o : Option T) : Option T :=
+  match o with
+  | some τ => forceTS sec0 τ some
+  | none => none
+
+theorem forceO_eq (sec0 : Nat) (o : Option T) : forceO sec0 o = o := by
+  cases o with
+  | none => rfl
+  | some τ => exact (forceTS_eq sec0 τ some).trans (forceT_eq τ some)
+
+/-- `step`, as a function of the instruction first. -/
+def stepFn (i : Instr) : T → Option T := fun τ => step τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T := inline_match% stepFn step stepB base
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, giving a taint that is evaluated. -/
+def stepK (τ : T) (i : Instr) : Option T :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ => forceO sec (stepFnK i ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩)
+
+theorem stepK_eq (τ : T) (i : Instr) : stepK τ i = step τ i := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  rw [stepK, forceO_eq, stepFnK_eq]
+  rfl
+
+/-- `call`, giving a taint that is evaluated. -/
+def callK (τ : T) : Option T :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ => forceO sec (call ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩)
+
+theorem callK_eq (τ : T) : callK τ = call τ := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  exact forceO_eq _ _
+
+/-- `push`, giving a taint that is evaluated. -/
+def pushK (τ : T) (i : Instr) : Option T :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ => forceO sec (push ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ i)
+
+theorem pushK_eq (τ : T) (i : Instr) : pushK τ i = push τ i := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  exact forceO_eq _ _
+
+/-- `pop`, giving a taint that is evaluated. -/
+def popK (τ : T) (i : Instr) : Option T :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ => forceO sec (pop ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ i)
+
+theorem popK_eq (τ : T) (i : Instr) : popK τ i = pop τ i := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  exact forceO_eq _ _
+
+/-- `meet`, giving a taint that is evaluated. -/
+def meetK (τ σ : T) : T :=
+  match τ with
+  | ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ => forceTS sec (meet ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ σ) id
+
+theorem meetK_eq (τ σ : T) : meetK τ σ = meet τ σ := by
+  obtain ⟨ok, W, pub, lo, sp, nf, wp, bp, sec⟩ := τ
+  exact (forceTS_eq _ _ id).trans (forceT_eq _ id)
+
 end VG.RISCV64.RTaint

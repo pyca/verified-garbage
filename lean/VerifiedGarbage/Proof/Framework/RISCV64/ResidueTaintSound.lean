@@ -1076,24 +1076,24 @@ open RTaint in
 def rtaint : VG.TaintCT isa where
   T := RTaint.T
   Agree := RTaint.Agree
-  step := RTaint.step
-  step_sound ha hs e₁ e₂ hadr := RTaint.step_sound ha hs e₁ e₂ hadr
+  step := RTaint.stepK
+  step_sound ha hs e₁ e₂ hadr := RTaint.step_sound ha ((RTaint.stepK_eq _ _).symm.trans hs) e₁ e₂ hadr
   addrs_length := RTaint.addrs_length
-  meet := RTaint.meet
-  meet_left := RTaint.meet_left
-  meet_right := RTaint.meet_right
+  meet := RTaint.meetK
+  meet_left h := (RTaint.meetK_eq _ _).symm ▸ RTaint.meet_left h
+  meet_right h := (RTaint.meetK_eq _ _).symm ▸ RTaint.meet_right h
   le := RTaint.le
   le_sound := RTaint.le_sound
-  call := RTaint.call
-  call_sound ha hs e₁ e₂ hadr := RTaint.call_sound ha hs e₁ e₂ hadr
+  call := RTaint.callK
+  call_sound ha hs e₁ e₂ hadr := RTaint.call_sound ha ((RTaint.callK_eq _).symm.trans hs) e₁ e₂ hadr
   callAddrs_length _ _ := rfl
   ret := RTaint.ret
   ret_sound ha hs e₁ e₂ hadr := RTaint.ret_sound ha hs e₁ e₂ hadr
   retAddrs_length _ _ := rfl
-  push := RTaint.push
-  push_sound ha hs e₁ e₂ hadr := RTaint.push_sound ha hs e₁ e₂ hadr
-  pop := RTaint.pop
-  pop_sound ha hs e₁ e₂ hadr := RTaint.pop_sound ha hs e₁ e₂ hadr
+  push := RTaint.pushK
+  push_sound ha hs e₁ e₂ hadr := RTaint.push_sound ha ((RTaint.pushK_eq _ _).symm.trans hs) e₁ e₂ hadr
+  pop := RTaint.popK
+  pop_sound ha hs e₁ e₂ hadr := RTaint.pop_sound ha ((RTaint.popK_eq _ _).symm.trans hs) e₁ e₂ hadr
 
 namespace RTaint
 
