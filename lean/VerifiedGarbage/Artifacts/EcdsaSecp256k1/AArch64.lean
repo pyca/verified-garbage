@@ -55,19 +55,20 @@ open VG.Proof.Secp256k1.AArch64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK secp256k1 secp256k1T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if hv : OK vs then [
-    Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor : List Artifact :=
+  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants then [
+    Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
-      verified := secp256k1T_verified hasLaw.law hasLaw.inv vs hv }
+      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
+      code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries VG.Proof.Variants.MdHash.AArch64.variants
+      verified := secp256k1T_verified hasLaw.law hasLaw.inv VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.secp256k1SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
-        Spec.Ecdsa.Rfc6979.Curves.secp256k1 [] vs))]
+        Spec.Ecdsa.Rfc6979.Curves.secp256k1 [] VG.Proof.Variants.MdHash.AArch64.variants)
+      Proof.Ecdsa.Rfc6979.AArch64.secp256k1SignSide)]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.AArch64.variants
+  artifactsFor
 
 end VG.Artifacts.EcdsaSecp256k1.AArch64.Rfc6979
 
@@ -76,10 +77,11 @@ namespace VG.Artifacts.EcdsaSecp256k1.AArch64
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.verifyHashOk _))] ++
+    verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hasLaw.law hasLaw.inv } Proof.Ecdsa.Rfc6979.AArch64.secp256k1VerifyClear
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) Proof.Ecdsa.Rfc6979.AArch64.secp256k1VerifySide)] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.AArch64

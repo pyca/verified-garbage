@@ -12,6 +12,17 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P224.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Proof.P224.AArch64.Law
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.P224.Comb7
 
 /-!
 # Deterministic ECDSA on AArch64: P-224
@@ -61,5 +72,37 @@ theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p224) h.1 Proof.Ecdsa.AArch64.P224.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.P224.p224_combWords_length]; decide) Proof.Ecdsa.AArch64.P224.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_p224_sign` and `vg_ecdsa_p224_verify`
+clear, and what `ScrubAll.scrubAllOf` needs of their code
+(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- The registers the tail of `vg_ecdsa_p224_sign` clears: those its code,
+with the HMAC implementations of its table, may write. -/
+def p224SignClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
+   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+   .v27, .v28, .v29, .v30, .v31], []⟩
+
+theorem p224SignSide :
+    AArch64.ScrubAll.scrubSide
+      (signCodeT (p224 Proof.P224.AArch64.hasLaw.law Proof.P224.AArch64.hasLaw.inv (Proof.P224.combOk7 Proof.P224.AArch64.hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries Proof.Variants.MdHash.AArch64.variants)
+      stackT
+      (Spec.Ecdsa.Rfc6979.Curves.p224.signSig.retBits
+        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p224.signSig
+          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
+      p224SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+
+/-- The registers the tail of `vg_ecdsa_p224_verify` clears: those its code may write. -/
+def p224VerifyClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [.v28, .v29], []⟩
+
+theorem p224VerifySide :
+    AArch64.ScrubAll.scrubSide
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.AArch64.verifyP224)
+      80 (Spec.Ecdsa.P224.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p224VerifyClear [] = true := by lit_decide
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

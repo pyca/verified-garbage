@@ -148,18 +148,19 @@ open VG.Proof.P256.AArch64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p256 p256T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if hv : OK vs ∧ "VG_P256_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor : List Artifact :=
+  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants ∧ "VG_P256_COMB" ∉ names VG.Proof.Variants.MdHash.AArch64.variants then [
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (p256 hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
-      verified := p256T_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) vs hv }
-      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts vs))]
+      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
+      code := signCodeT (p256 hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries VG.Proof.Variants.MdHash.AArch64.variants
+      verified := p256T_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p256SignClear
+      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
+      Proof.Ecdsa.Rfc6979.AArch64.p256SignSide)]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.AArch64.variants
+  artifactsFor
 
 end VG.Artifacts.EcdsaP256.AArch64.Rfc6979
 
@@ -168,10 +169,11 @@ namespace VG.Artifacts.EcdsaP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) } Proof.Ecdsa.Rfc6979.AArch64.p256VerifyClear
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) Proof.Ecdsa.Rfc6979.AArch64.p256VerifySide)] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.AArch64

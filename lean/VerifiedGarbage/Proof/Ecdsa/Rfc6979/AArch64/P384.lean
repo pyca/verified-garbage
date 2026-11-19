@@ -21,6 +21,15 @@ meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
+public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+public import VerifiedGarbage.Proof.P384.AArch64.Law
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.P384.Comb7
 
 /-!
 # Deterministic ECDSA on AArch64: P-384
@@ -75,5 +84,38 @@ theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p384) h.1 Proof.Ecdsa.AArch64.P384.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.P384.p384_combWords_length]; decide) Proof.Ecdsa.AArch64.P384.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_p384_sign` and `vg_ecdsa_p384_verify`
+clear, and what `ScrubAll.scrubAllOf` needs of their code
+(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- The registers the tail of `vg_ecdsa_p384_sign` clears: those its code,
+with the HMAC implementations of its table, may write. -/
+def p384SignClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
+   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+   .v27, .v28, .v29, .v30, .v31], []⟩
+
+theorem p384SignSide :
+    AArch64.ScrubAll.scrubSide
+      (signCodeT (p384 Proof.P384.AArch64.hasLaw.law Proof.P384.AArch64.hasLaw.inv (Proof.P384.combOk7 Proof.P384.AArch64.hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p384.tries Proof.Variants.MdHash.AArch64.variants)
+      stackT
+      (Spec.Ecdsa.Rfc6979.Curves.p384.signSig.retBits
+        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p384.signSig
+          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
+      p384SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+
+/-- The registers the tail of `vg_ecdsa_p384_verify` clears: those its code may write. -/
+def p384VerifyClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16,
+   .v17, .v18, .v19, .v28, .v29], []⟩
+
+theorem p384VerifySide :
+    AArch64.ScrubAll.scrubSide
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false Impl.Ecdsa.Verify.AArch64.verifyP384)
+      80 (Spec.Ecdsa.P384.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p384VerifyClear [] = true := by lit_decide
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

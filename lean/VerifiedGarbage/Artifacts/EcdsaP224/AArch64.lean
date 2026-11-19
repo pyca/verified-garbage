@@ -60,19 +60,20 @@ open VG.Proof.P224.AArch64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p224 p224T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if hv : OK vs ∧ "VG_P224_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifactsFor : List Artifact :=
+  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants ∧ "VG_P224_COMB" ∉ names VG.Proof.Variants.MdHash.AArch64.variants then [
+    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (p224 hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
-      verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) vs hv }
+      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
+      code := signCodeT (p224 hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries VG.Proof.Variants.MdHash.AArch64.variants
+      verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p224SignClear
       (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
-        Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.AArch64.p224.combConsts vs))]
+        Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.AArch64.p224.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
+      Proof.Ecdsa.Rfc6979.AArch64.p224SignSide)]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.AArch64.variants
+  artifactsFor
 
 end VG.Artifacts.EcdsaP224.AArch64.Rfc6979
 
@@ -81,10 +82,11 @@ namespace VG.Artifacts.EcdsaP224.AArch64
 open VG.Proof.P224.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP224
-    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _))] ++
+    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) } Proof.Ecdsa.Rfc6979.AArch64.p224VerifyClear
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) Proof.Ecdsa.Rfc6979.AArch64.p224VerifySide)] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.AArch64

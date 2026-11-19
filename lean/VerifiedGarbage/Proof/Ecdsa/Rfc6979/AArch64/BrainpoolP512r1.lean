@@ -23,6 +23,13 @@ meta import Mathlib.Tactic.SetLike
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.AArch64.Joint
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
+public import VerifiedGarbage.Proof.BrainpoolP512r1.AArch64.Law
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: brainpoolP512r1
@@ -75,5 +82,38 @@ theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.cur
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1) h.1 Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.satMem h.2
     (by rw [Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.combCfg_combWords_length]; decide) Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_brainpoolp512r1_sign` and `vg_ecdsa_brainpoolp512r1_verify`
+clear, and what `ScrubAll.scrubAllOf` needs of their code
+(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- The registers the tail of `vg_ecdsa_brainpoolp512r1_sign` clears: those its code,
+with the HMAC implementations of its table, may write. -/
+def brainpoolp512r1SignClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
+   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+   .v27, .v28, .v29, .v30, .v31], []⟩
+
+theorem brainpoolp512r1SignSide :
+    AArch64.ScrubAll.scrubSide
+      (signCodeT (brainpoolp512r1 Proof.BrainpoolP512r1.AArch64.hasLaw.law Proof.BrainpoolP512r1.AArch64.hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries Proof.Variants.MdHash.AArch64.variants)
+      stackT
+      (Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.signSig.retBits
+        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.BrainpoolP512r1.combCfg.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.signSig
+          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
+      brainpoolp512r1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+
+/-- The registers the tail of `vg_ecdsa_brainpoolp512r1_verify` clears: those its code may write. -/
+def brainpoolp512r1VerifyClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16,
+   .v17, .v18, .v24, .v25, .v26, .v28, .v29], []⟩
+
+theorem brainpoolp512r1VerifySide :
+    AArch64.ScrubAll.scrubSide
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verify)
+      80 (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashSig.retBits AArch64.abi.ptrBits) brainpoolp512r1VerifyClear [] = true := by lit_decide
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

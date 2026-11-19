@@ -21,6 +21,13 @@ meta import Mathlib.Tactic.SetLike
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.Proof.Secp256k1.AArch64.Law
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64.Joint
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: secp256k1
@@ -75,5 +82,37 @@ theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : We
       (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 [] vs) := by
   have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.secp256k1) h (by decide) rfl
   exact signT_verified_nil ⟨rfl, by decide, by decide⟩ rfl rfl rfl h hsat
+
+/-! ## What the scrubbed functions clear
+
+The registers the tails of `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
+clear, and what `ScrubAll.scrubAllOf` needs of their code
+(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+works out nothing. -/
+
+/-- The registers the tail of `vg_ecdsa_secp256k1_sign` clears: those its code,
+with the HMAC implementations of its table, may write. -/
+def secp256k1SignClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
+   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+   .v27, .v28, .v29, .v30, .v31], []⟩
+
+theorem secp256k1SignSide :
+    AArch64.ScrubAll.scrubSide
+      (signCodeT (secp256k1 Proof.Secp256k1.AArch64.hasLaw.law Proof.Secp256k1.AArch64.hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries Proof.Variants.MdHash.AArch64.variants)
+      stackT
+      (Spec.Ecdsa.Rfc6979.Curves.secp256k1.signSig.retBits
+        ((AArch64.abi.withConsts []).withTables Spec.Ecdsa.Rfc6979.Curves.secp256k1.signSig
+          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
+      secp256k1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by lit_decide
+
+/-- The registers the tail of `vg_ecdsa_secp256k1_verify` clears: those its code may write. -/
+def secp256k1VerifyClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [.v28, .v29], []⟩
+
+theorem secp256k1VerifySide :
+    AArch64.ScrubAll.scrubSide
+      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify)
+      80 (Spec.Ecdsa.Secp256k1.inst.verifyHashSig.retBits AArch64.abi.ptrBits) secp256k1VerifyClear [] = true := by lit_decide
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
