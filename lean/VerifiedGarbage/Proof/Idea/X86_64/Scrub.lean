@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.Spec.Idea.Cbc
 public import VerifiedGarbage.Spec.Idea.Cfb
@@ -885,10 +886,11 @@ theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_expand_key`. -/
 def expandKeyReg : Registration Spec.Idea.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 0
-    verified := Proof.Idea.X86_64.expandKey_verified } (expandKeyOut _) [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.Idea.X86_64.expandKey_verified } .sse false [.rcx, .rdx] (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_invert_key`'s code. -/
 abbrev invertKeyCode : Prog isa :=
@@ -904,10 +906,11 @@ theorem invertKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_invert_key`. -/
 def invertKeyReg : Registration Spec.Idea.invertKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := invertKeyCode
     stack := 0
-    verified := Proof.Idea.X86_64.invertKey_verified } (invertKeyOut _) [] (pubOk_nil _) (some ⟨invertKeyKs, invertKeyOk⟩)
+    verified := Proof.Idea.X86_64.invertKey_verified } .sse false [.rcx, .rdx, .r8, .r9, .r10, .r11] (invertKeyOut _) [] (pubOk_nil _) ⟨invertKeyKs, invertKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_ecb`'s code. -/
 abbrev ecbCode : Prog isa :=
@@ -923,10 +926,11 @@ theorem ecbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_ecb`. -/
 def ecbReg : Registration Spec.Idea.ecbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbCode
     stack := 24
-    verified := Proof.Idea.X86_64.ecb_framed } (ecbOut _) [] (pubOk_nil _) (some ⟨ecbKs, ecbOk⟩)
+    verified := Proof.Idea.X86_64.ecb_framed } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ecbOut _) [] (pubOk_nil _) ⟨ecbKs, ecbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -942,10 +946,11 @@ theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cbc_encrypt_chained`. -/
 def cbcEncryptReg : Registration Spec.Idea.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptCode
     stack := 184
-    verified := Proof.Idea.X86_64.cbcEncryptChained_framed } (cbcEncryptOut _) [] (pubOk_nil _) (some ⟨cbcEncryptKs, cbcEncryptOk⟩)
+    verified := Proof.Idea.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cbcEncryptOut _) [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
@@ -961,10 +966,11 @@ theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cbc_decrypt_chained`. -/
 def cbcDecryptReg : Registration Spec.Idea.cbcDecryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcDecryptCode
     stack := 184
-    verified := Proof.Idea.X86_64.cbcDecryptChained_framed } (cbcDecryptOut _) [] (pubOk_nil _) (some ⟨cbcDecryptKs, cbcDecryptOk⟩)
+    verified := Proof.Idea.X86_64.cbcDecryptChained_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cbcDecryptOut _) [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cfb64_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
@@ -980,10 +986,11 @@ theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cfb64_encrypt`. -/
 def cfbEncryptReg : Registration Spec.Idea.cfbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptCode
     stack := 184
-    verified := Proof.Idea.X86_64.cfbEncrypt_framed } (cfbEncryptOut _) [] (pubOk_nil _) (some ⟨cfbEncryptKs, cfbEncryptOk⟩)
+    verified := Proof.Idea.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbEncryptOut _) [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cfb64_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
@@ -999,10 +1006,11 @@ theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cfb64_decrypt`. -/
 def cfbDecryptReg : Registration Spec.Idea.cfbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptCode
     stack := 184
-    verified := Proof.Idea.X86_64.cfbDecrypt_framed } (cfbDecryptOut _) [] (pubOk_nil _) (some ⟨cfbDecryptKs, cfbDecryptOk⟩)
+    verified := Proof.Idea.X86_64.cfbDecrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbDecryptOut _) [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cfb64_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
@@ -1018,10 +1026,11 @@ theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cfb64_encrypt_final`. -/
 def cfbEncryptFinalReg : Registration Spec.Idea.cfbEncryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptFinalCode
     stack := 184
-    verified := Proof.Idea.X86_64.cfbEncryptFinal_framed } (cfbEncryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩)
+    verified := Proof.Idea.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbEncryptFinalOut _) [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_cfb64_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
@@ -1037,10 +1046,11 @@ theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_cfb64_decrypt_final`. -/
 def cfbDecryptFinalReg : Registration Spec.Idea.cfbDecryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptFinalCode
     stack := 184
-    verified := Proof.Idea.X86_64.cfbDecryptFinal_framed } (cfbDecryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩)
+    verified := Proof.Idea.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (cfbDecryptFinalOut _) [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
@@ -1056,10 +1066,11 @@ theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_ofb`. -/
 def ofbReg : Registration Spec.Idea.ofbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbCode
     stack := 184
-    verified := Proof.Idea.X86_64.ofb_framed } (ofbOut _) [] (pubOk_nil _) (some ⟨ofbKs, ofbOk⟩)
+    verified := Proof.Idea.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ofbOut _) [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_idea_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
@@ -1075,9 +1086,10 @@ theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_idea_ofb_final`. -/
 def ofbFinalReg : Registration Spec.Idea.ofbFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbFinalCode
     stack := 184
-    verified := Proof.Idea.X86_64.ofbFinal_framed } (ofbFinalOut _) [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+    verified := Proof.Idea.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ofbFinalOut _) [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Idea.X86_64.Scrub

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -96,19 +98,21 @@ theorem expandKeyAesniOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_aes_expand_key`. -/
 def expandKeyReg : Registration Spec.Aes.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 520
-    verified := Proof.Aes.X86_64.scalar_expandKey_framed }
-    (expandKeyOut _) [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.Aes.X86_64.scalar_expandKey_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
+    (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_aes_expand_key_aesni`. -/
 def expandKeyAesniReg : Registration Spec.Aes.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_aesni"
     code := Impl.Aes.X86_64.AesNi.expandKey
-    verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified }
-    (expandKeyOut _) [] (pubOk_nil _) (some ⟨expandKeyAesniKs, expandKeyAesniOk⟩)
+    verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified } .sse true [.rsi]
+    (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyAesniKs, expandKeyAesniOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Aes.X86_64.Scrub

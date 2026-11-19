@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Contract
@@ -2099,11 +2101,12 @@ theorem streamVerifyOut (stack : Nat) :
 
 /-- `vg_sm4_gcm_init`, its whole stack cleared. -/
 def initReg : Registration Spec.Sm4.Gcm.initApi X86_64.target :=
-  withScrubAll {
+  scrubAllOf {
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init
     stack := 5792
     verified := init_framed
-    spSafe := X86_64.withStackScratch_spSafe_of init_spSafe } (initOut _)
+    spSafe := X86_64.withStackScratch_spSafe_of init_spSafe } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (initOut _)
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_sm4_gcm_seal` over `v`, its whole stack cleared. -/
 def sealReg : Registration Spec.Sm4.Gcm.sealApi X86_64.target :=

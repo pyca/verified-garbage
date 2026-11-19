@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 
@@ -138,11 +140,12 @@ theorem finalizeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `finalizeShake128Api`'s function. -/
 def finalizeShake128Reg : Registration Spec.Sha3.finalizeShake128Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate
     stack := 656
-    verified := Proof.Sha3.X86_64.Instances.finalize_shake128 } (xofFinalizeOut _ _) [] (pubOk_nil _)
-    (some ⟨finalizeShake128Ks, finalizeShake128Ok⟩)
+    verified := Proof.Sha3.X86_64.Instances.finalize_shake128 } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (xofFinalizeOut _ _) [] (pubOk_nil _)
+    ⟨finalizeShake128Ks, finalizeShake128Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 def squeezeShake128Ks : List Nat := keep_for% Spec.Sha3.squeezeShake128Api.sig 656 (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate) []
 
 theorem squeezeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
@@ -153,11 +156,12 @@ theorem squeezeShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `squeezeShake128Api`'s function. -/
 def squeezeShake128Reg : Registration Spec.Sha3.squeezeShake128Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
     stack := 656
-    verified := Proof.Sha3.X86_64.Instances.squeeze_shake128 } (xofSqueezeOut _ _) [] (pubOk_nil _)
-    (some ⟨squeezeShake128Ks, squeezeShake128Ok⟩)
+    verified := Proof.Sha3.X86_64.Instances.squeeze_shake128 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (xofSqueezeOut _ _) [] (pubOk_nil _)
+    ⟨squeezeShake128Ks, squeezeShake128Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 def finalizeShake256Ks : List Nat := keep_for% Spec.Sha3.finalizeShake256Api.sig 656 (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate) []
 
 theorem finalizeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
@@ -168,11 +172,12 @@ theorem finalizeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `finalizeShake256Api`'s function. -/
 def finalizeShake256Reg : Registration Spec.Sha3.finalizeShake256Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate
     stack := 656
-    verified := Proof.Sha3.X86_64.Instances.finalize_shake256 } (xofFinalizeOut _ _) [] (pubOk_nil _)
-    (some ⟨finalizeShake256Ks, finalizeShake256Ok⟩)
+    verified := Proof.Sha3.X86_64.Instances.finalize_shake256 } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (xofFinalizeOut _ _) [] (pubOk_nil _)
+    ⟨finalizeShake256Ks, finalizeShake256Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 def squeezeShake256Ks : List Nat := keep_for% Spec.Sha3.squeezeShake256Api.sig 656 (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) []
 
 theorem squeezeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
@@ -183,11 +188,12 @@ theorem squeezeShake256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `squeezeShake256Api`'s function. -/
 def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
     stack := 656
-    verified := Proof.Sha3.X86_64.Instances.squeeze_shake256 } (xofSqueezeOut _ _) [] (pubOk_nil _)
-    (some ⟨squeezeShake256Ks, squeezeShake256Ok⟩)
+    verified := Proof.Sha3.X86_64.Instances.squeeze_shake256 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (xofSqueezeOut _ _) [] (pubOk_nil _)
+    ⟨squeezeShake256Ks, squeezeShake256Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- SHA3-224's finalizer, with its whole stack cleared after the digest is written. -/
 def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api X86_64.target :=
@@ -224,11 +230,12 @@ theorem absorbSha3_224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `absorbSha3_224Api`'s function. -/
 def absorbSha3_224Reg : Registration Spec.Sha3.absorbSha3_224Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate
     stack := 656
-    verified := absorb_sha3_224 } (absorbOut _ _) [] (pubOk_nil _)
-    (some ⟨absorbSha3_224Ks, absorbSha3_224Ok⟩)
+    verified := absorb_sha3_224 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (absorbOut _ _) [] (pubOk_nil _)
+    ⟨absorbSha3_224Ks, absorbSha3_224Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def absorbSha3_256Ks : List Nat := keep_for% Spec.Sha3.absorbSha3_256Api.sig 656 (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate) []
 
@@ -240,11 +247,12 @@ theorem absorbSha3_256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `absorbSha3_256Api`'s function. -/
 def absorbSha3_256Reg : Registration Spec.Sha3.absorbSha3_256Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate
     stack := 656
-    verified := absorb_sha3_256 } (absorbOut _ _) [] (pubOk_nil _)
-    (some ⟨absorbSha3_256Ks, absorbSha3_256Ok⟩)
+    verified := absorb_sha3_256 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (absorbOut _ _) [] (pubOk_nil _)
+    ⟨absorbSha3_256Ks, absorbSha3_256Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def absorbSha3_384Ks : List Nat := keep_for% Spec.Sha3.absorbSha3_384Api.sig 656 (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate) []
 
@@ -256,11 +264,12 @@ theorem absorbSha3_384Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `absorbSha3_384Api`'s function. -/
 def absorbSha3_384Reg : Registration Spec.Sha3.absorbSha3_384Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate
     stack := 656
-    verified := absorb_sha3_384 } (absorbOut _ _) [] (pubOk_nil _)
-    (some ⟨absorbSha3_384Ks, absorbSha3_384Ok⟩)
+    verified := absorb_sha3_384 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (absorbOut _ _) [] (pubOk_nil _)
+    ⟨absorbSha3_384Ks, absorbSha3_384Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def absorbSha3_512Ks : List Nat := keep_for% Spec.Sha3.absorbSha3_512Api.sig 656 (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate) []
 
@@ -272,11 +281,12 @@ theorem absorbSha3_512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `absorbSha3_512Api`'s function. -/
 def absorbSha3_512Reg : Registration Spec.Sha3.absorbSha3_512Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate
     stack := 656
-    verified := absorb_sha3_512 } (absorbOut _ _) [] (pubOk_nil _)
-    (some ⟨absorbSha3_512Ks, absorbSha3_512Ok⟩)
+    verified := absorb_sha3_512 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (absorbOut _ _) [] (pubOk_nil _)
+    ⟨absorbSha3_512Ks, absorbSha3_512Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def absorbShake128Ks : List Nat := keep_for% Spec.Sha3.absorbShake128Api.sig 656 (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate) []
 
@@ -288,10 +298,11 @@ theorem absorbShake128Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `absorbShake128Api`'s function. -/
 def absorbShake128Reg : Registration Spec.Sha3.absorbShake128Api X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate
     stack := 656
-    verified := absorb_shake128 } (absorbOut _ _) [] (pubOk_nil _)
-    (some ⟨absorbShake128Ks, absorbShake128Ok⟩)
+    verified := absorb_shake128 } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (absorbOut _ _) [] (pubOk_nil _)
+    ⟨absorbShake128Ks, absorbShake128Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Sha3.X86_64.Scrub

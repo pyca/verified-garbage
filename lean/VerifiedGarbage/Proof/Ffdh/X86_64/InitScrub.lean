@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -68,8 +70,9 @@ theorem parameterInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `Spec.Ffdh.parameterInitApi` without secret residue. -/
 def parameterInitReg : Registration Spec.Ffdh.parameterInitApi X86_64.target :=
-  withScrub { code := Impl.Ffdh.X86_64.Generation.init, verified := Generation.init_verified } parameterInitOut [] (pubOk_nil _)
-    (some ⟨parameterInitKs, parameterInitOk⟩)
+  scrubOf { code := Impl.Ffdh.X86_64.Generation.init, verified := Generation.init_verified } .sse false [.rcx, .rdx, .rsi] parameterInitOut [] (pubOk_nil _)
+    ⟨parameterInitKs, parameterInitOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 theorem keyInitOut : PostOut (Spec.Ffdh.keyInitContract abi) (Spec.Ffdh.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -95,7 +98,8 @@ theorem keyInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `Spec.Ffdh.keyInitApi` without secret residue. -/
 def keyInitReg : Registration Spec.Ffdh.keyInitApi X86_64.target :=
-  withScrub { code := Impl.Ffdh.X86_64.KeyGeneration.init, verified := KeyGeneration.init_verified } keyInitOut [] (pubOk_nil _)
-    (some ⟨keyInitKs, keyInitOk⟩)
+  scrubOf { code := Impl.Ffdh.X86_64.KeyGeneration.init, verified := KeyGeneration.init_verified } .sse false [.rsi] keyInitOut [] (pubOk_nil _)
+    ⟨keyInitKs, keyInitOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Ffdh.X86_64.Scrub

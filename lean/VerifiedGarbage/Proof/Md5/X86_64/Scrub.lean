@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -82,23 +84,26 @@ theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_md5_init`. -/
 def initReg : Registration Spec.Md5.initApi X86_64.target :=
-  withScrub { code := Impl.Md5.X86_64.Stream.init, verified := Shared.init } initOut []
-    (pubOk_nil _) (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.Md5.X86_64.Stream.init, verified := Shared.init } .sse false [.r11] initOut []
+    (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_md5_update`. -/
 def updateReg : Registration Spec.Md5.updateApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := updateCode
     stack := 8 + 56
-    verified := Shared.update } (updateOut _) [] (pubOk_nil _) (some ⟨updateKs, updateOk⟩)
+    verified := Shared.update } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (updateOut _) [] (pubOk_nil _) ⟨updateKs, updateOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_md5_finalize`. -/
 def finalizeReg : Registration Spec.Md5.finalizeApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := finalizeCode
     stack := 8 + 56
-    verified := Shared.finalize } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
+    verified := Shared.finalize } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (finalizeOut _) [] (pubOk_nil _) ⟨finalizeKs, finalizeOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Md5.X86_64

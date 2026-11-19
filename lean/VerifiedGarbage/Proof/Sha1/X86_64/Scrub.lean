@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -47,7 +49,8 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha1_init`. -/
 def initReg : Registration Spec.Sha1.initApi X86_64.target :=
-  withScrub { code := Impl.Sha1.X86_64.Stream.init, verified := Shared.init } initOut []
-    (pubOk_nil _) (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.Sha1.X86_64.Stream.init, verified := Shared.init } .sse false [.r11] initOut []
+    (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Sha1.X86_64

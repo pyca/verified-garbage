@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -56,8 +58,9 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha256_init`. -/
 def initReg : Registration Spec.Sha256.initApi X86_64.target :=
-  withScrub { code := Impl.Sha256.X86_64.Stream.init, verified := Shared.init } (initOut Spec.Sha256.H0 _ rfl) []
-    (pubOk_nil _) (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.Sha256.X86_64.Stream.init, verified := Shared.init } .sse true [.r11] (initOut Spec.Sha256.H0 _ rfl) []
+    (pubOk_nil _) ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def init224Ks : List Nat := keep_for% Spec.Sha256.init224Api.sig 0 Impl.Sha256.X86_64.Stream.init224 []
 
@@ -69,7 +72,8 @@ theorem init224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha224_init`. -/
 def init224Reg : Registration Spec.Sha256.init224Api X86_64.target :=
-  withScrub { code := Impl.Sha256.X86_64.Stream.init224, verified := Shared.init224 } (initOut Spec.Sha256.H0_224 _ rfl) []
-    (pubOk_nil _) (some ⟨init224Ks, init224Ok⟩)
+  scrubOf { code := Impl.Sha256.X86_64.Stream.init224, verified := Shared.init224 } .sse true [.r11] (initOut Spec.Sha256.H0_224 _ rfl) []
+    (pubOk_nil _) ⟨init224Ks, init224Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Sha256.X86_64

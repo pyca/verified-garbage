@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -247,10 +248,11 @@ theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
 (`X86_64.RScrub.withScrub`): it returns without secret residue. -/
 def scrubReg (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Registration Spec.EcKey.P192.publicKeyApi X86_64.target :=
-  RScrub.withScrub {
+  RScrub.scrubOf {
     code := publicKeyP192
     stack := 8
-    verified := pk_verified hL hI }
-    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+    verified := pk_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
+    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) ⟨scrubKs, scrubOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.EcKey.X86_64.P192
