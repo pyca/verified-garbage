@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -9,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Poly1305.X86.Sse2
+import VerifiedGarbage.Proof.Framework.X86.Rel2
+meta import VerifiedGarbage.Proof.Framework.X86.Rel2
 meta import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
@@ -40,6 +44,8 @@ abbrev dp : BitVec 32 := arg s₀ 3
 abbrev dl : Nat := (arg s₀ 4).toNat
 abbrev dR : Region := ⟨(dp s₀).setWidth 64, dl s₀⟩
 abbrev scR : Region := ⟨(arg s₀ 5).setWidth 64, 128⟩
+/-- The stack `pairs` uses. -/
+abbrev stkR : Region := ⟨(s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524, 524⟩
 /-- The first `c` bytes of data. -/
 abbrev Dt (c : Nat) : List Byte := bytesAt s₀.mem ((dp s₀).setWidth 64) c
 end
@@ -56,14 +62,18 @@ structure UPre (s₀ : State) : Prop where
   arg_sc : Region.Disjoint ⟨argAddr s₀ 0, 24⟩ (scR s₀)
   ret_st : (retR s₀).Disjoint (sR (stp s₀))
   ret_sc : (retR s₀).Disjoint (scR s₀)
+  stk_st : (stkR s₀).Disjoint (sR (stp s₀))
+  stk_d : (stkR s₀).Disjoint (dR s₀)
+  stk_sc : (stkR s₀).Disjoint (scR s₀)
   st_fit : (stp s₀).toNat + 128 ≤ 2 ^ 32
   d_fit : (dp s₀).toNat + dl s₀ ≤ 2 ^ 32
   sc_fit : (arg s₀ 5).toNat + 128 ≤ 2 ^ 32
+  sp_stk : 524 ≤ (s₀.gpr .esp).toNat
   sp_fit : (s₀.gpr .esp).toNat + 28 ≤ 2 ^ 32
 
 theorem UPre.of (s₀ : State) (h : Proof.Poly1305.updateX86.pre s₀) : UPre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
 
 namespace UPre
 variable {s₀ : State} (hp : UPre s₀)
@@ -310,7 +320,8 @@ theorem absorbBuf_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Set
   refine WP.mono (absorbAtFull_ok hc (bp := stp s₀ + BitVec.ofNat 32 56) (absorbBuf_okList 1)
     (fun h => absurd h (by decide)) (by decide) (fun k _ => by rw [hc.edi, buf_ea])
     (fun k hk => by rw [← buf_ea]; exact hc.inRW (by omega_using [hk]) (by decide))
-    (fun k _ => .inr (by rw [← buf_ea]; congr 1; omega_using [])) (by decide) (C := A0 s₀ < P)
+    (fun k hk => .inr ⟨14 + k, by omega_arith, by omega_using [hk], by rw [← buf_ea]; congr 1; omega_using []⟩)
+    (by decide) (C := A0 s₀ < P)
     (fun hA => ⟨hF.coefs.congr fun k h₁ h₂ => h.keep k (by omega_using [h₁, h₂]) (not_hS (.inl ⟨by omega_using [h₁, h₂], h₂⟩)) (.inr h₁),
       (h.acc hA).1⟩))
     fun s' ⟨S, ha⟩ => ?_
@@ -511,9 +522,13 @@ theorem whole_loop {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : Setup
   · exact .inl ⟨by simp [eval, hcf, hl], c + 16, h', hl⟩
   · exact .inr ⟨by simp [eval, hcf, hl], _, by omega_using [hl], c + 16, rfl, h', by omega_using [hl]⟩
 
-theorem whole_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
+/-- The whole blocks left, one at a time. -/
+theorem whole16_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
     (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) :
-    WP isa whole s fun s' => (∃ c, Cons s₀ F c s' ∧ dl s₀ - c < 16) ∨ Done s₀ F s' := by
+    WP isa (.seq (.block (left ++ ([.alu .cmp .eax (.imm 16)] : List Instr)))
+      (.ite .b (.block []) (.loop (.block (absorb 1 ++ ([.alu .add .esi (.imm 16)] : List Instr) ++ left ++
+        ([.alu .cmp .eax (.imm 16)] : List Instr))) .ae))) s
+      fun s' => (∃ c, Cons s₀ F c s' ∧ dl s₀ - c < 16) ∨ Done s₀ F s' := by
   obtain ⟨c, hcl, hesi⟩ := Pos.whole h
   obtain hU : UCommon s₀ F s := by rcases h with ⟨_, hc⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
   refine WP.seq (WP.mono (Q := fun s₂ : State => Keeps [.eax, .ecx] s s₂ ∧ s₂.cf = some (decide (dl s₀ - c < 16)))
@@ -542,6 +557,350 @@ theorem whole_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF 
     · have := hd.esi; rw [hesi] at this
       have := add_ofNat_inj hcl (Nat.le_refl _) (dl_lt s₀) this
       omega_using [hb, this]
+
+/-! ## The stack below `esp`
+
+`pairs` leaves other bytes in the 524 bytes below `esp`. What follows it is
+proved as from a state `t₀` that is `s₀` with those bytes (`Rebase`): the
+precondition, the words `setup` left and the invariant hold of `t₀` as of
+`s₀`, since nothing they say reads the stack. -/
+
+namespace UPre
+variable {s₀ : State} (hp : UPre s₀)
+include hp
+
+theorem stk_eq : below (s₀.gpr .esp) 524 = stkR s₀ := by
+  show (⟨(s₀.gpr .esp - BitVec.ofNat 32 524).setWidth 64, 524⟩ : Region) = _
+  rw [VG.X86.Taint.sub_setWidth hp.sp_stk]
+
+/-- The stack is apart from the arguments and the return address. -/
+theorem stk_args : (stkR s₀).Disjoint ⟨argAddr s₀ 0, 24⟩ ∧ (stkR s₀).Disjoint (retR s₀) := by
+  have hn := hp.sp_stk
+  have hf := hp.sp_fit
+  have hS : (s₀.gpr .esp - BitVec.ofNat 32 524).toNat + 552 ≤ 2 ^ 32 := by
+    rw [sub_toNat hn]; omega_using [hn, hf]
+  have e1 : stkR s₀ = ⟨addr (s₀.gpr .esp - BitVec.ofNat 32 524) 0, 524⟩ := by
+    rw [Proof.Aes.X86.addr_zero, ← hp.stk_eq]
+  have e2 : argAddr s₀ 0 = addr (s₀.gpr .esp - BitVec.ofNat 32 524) 528 := by
+    have := Proof.Aes.X86.addr_add (s₀.gpr .esp - BitVec.ofNat 32 524) 524 4
+    rw [BitVec.sub_add_cancel] at this
+    exact this
+  have e3 : (s₀.gpr .esp).setWidth 64 = addr (s₀.gpr .esp - BitVec.ofNat 32 524) 524 := by
+    have := Proof.Aes.X86.addr_add (s₀.gpr .esp - BitVec.ofNat 32 524) 524 0
+    rw [BitVec.sub_add_cancel, Proof.Aes.X86.addr_zero] at this
+    exact this
+  rw [e1, e2, show retR s₀ = ⟨(s₀.gpr .esp).setWidth 64, 4⟩ from rfl, e3]
+  exact ⟨Proof.Aes.X86.part_disj hS (by decide) (by decide) (.inl (by decide)),
+    Proof.Aes.X86.part_disj hS (by decide) (by decide) (.inl (by decide))⟩
+
+end UPre
+
+/-- The precondition holds of a state with the same `esp`, arguments and
+regions. -/
+theorem UPre.congr {s₀ t₀ : State} (hp : UPre s₀) (g : t₀.gpr .esp = s₀.gpr .esp) (hrd : t₀.rd = s₀.rd)
+    (hwr : t₀.wr = s₀.wr) (ha : ∀ i < 6, arg t₀ i = arg s₀ i) : UPre t₀ := by
+  have a0 := ha 0 (by decide)
+  have a3 := ha 3 (by decide)
+  have a4 := ha 4 (by decide)
+  have a5 := ha 5 (by decide)
+  have eD : dR t₀ = dR s₀ := by
+    show (⟨(arg t₀ 3).setWidth 64, (arg t₀ 4).toNat⟩ : Region) = _; rw [a3, a4]
+  have eS : sR (stp t₀) = sR (stp s₀) := by show sR (arg t₀ 0) = _; rw [a0]
+  have eC : scR t₀ = scR s₀ := by show (⟨(arg t₀ 5).setWidth 64, 128⟩ : Region) = _; rw [a5]
+  have eA : argAddr t₀ 0 = argAddr s₀ 0 := by
+    show (t₀.gpr .esp + _).setWidth 64 = _; rw [g]; rfl
+  have eR : retR t₀ = retR s₀ := by show (⟨(t₀.gpr .esp).setWidth 64, 4⟩ : Region) = _; rw [g]
+  have eK : stkR t₀ = stkR s₀ := by
+    show (⟨(t₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524, 524⟩ : Region) = _; rw [g]
+  exact
+    { rd := by rw [hrd, eD, eA]; exact hp.rd
+      wr := by rw [hwr, eS, eC]; exact hp.wr
+      st_d := by rw [eS, eD]; exact hp.st_d
+      st_sc := by rw [eS, eC]; exact hp.st_sc
+      d_sc := by rw [eD, eC]; exact hp.d_sc
+      arg_st := by rw [eA, eS]; exact hp.arg_st
+      arg_sc := by rw [eA, eC]; exact hp.arg_sc
+      ret_st := by rw [eR, eS]; exact hp.ret_st
+      ret_sc := by rw [eR, eC]; exact hp.ret_sc
+      stk_st := by rw [eK, eS]; exact hp.stk_st
+      stk_d := by rw [eK, eD]; exact hp.stk_d
+      stk_sc := by rw [eK, eC]; exact hp.stk_sc
+      st_fit := by show (arg t₀ 0).toNat + 128 ≤ _; rw [a0]; exact hp.st_fit
+      d_fit := by show (arg t₀ 3).toNat + (arg t₀ 4).toNat ≤ _; rw [a3, a4]; exact hp.d_fit
+      sc_fit := by rw [a5]; exact hp.sc_fit
+      sp_stk := by rw [g]; exact hp.sp_stk
+      sp_fit := by rw [g]; exact hp.sp_fit }
+
+/-- A state in the middle of `update` satisfies the precondition, with the
+arguments of the state on entry. -/
+theorem UCommon.mid {s₀ s : State} {F : Nat → Nat} (hp : UPre s₀) (h : UCommon s₀ F s) :
+    UPre s ∧ ∀ i < 6, arg s i = arg s₀ i := by
+  have ha : ∀ i < 6, arg s i = arg s₀ i := fun i hi => by
+    show s.mem.readW (addr (s.gpr .esp) (4 + 4 * i)) 32 = _
+    rw [h.esp]; exact hp.arg_same h.frame hi
+  exact ⟨hp.congr h.esp h.rd h.wr ha, ha⟩
+
+/-- `t₀` is `s₀` with other bytes in the stack below `esp`. -/
+structure Rebase (s₀ t₀ : State) : Prop where
+  gpr : t₀.gpr = s₀.gpr
+  rd : t₀.rd = s₀.rd
+  wr : t₀.wr = s₀.wr
+  frame : Frame [stkR s₀] s₀.mem t₀.mem
+
+theorem Rebase.refl (s₀ : State) : Rebase s₀ s₀ := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+
+namespace Rebase
+variable {s₀ t₀ : State} (h : Rebase s₀ t₀) (hp : UPre s₀)
+include h hp
+
+theorem arg_eq {i : Nat} (hi : i < 6) : arg t₀ i = arg s₀ i := by
+  show t₀.mem.readW (addr (t₀.gpr .esp) (4 + 4 * i)) 32 = s₀.mem.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32
+  rw [h.gpr]
+  exact h.frame.readW (arg_contains (n := 24) (by have := hp.sp_fit; omega_using [this]) (by omega_using [hi]))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.stk_args.1.symm) (by decide)
+
+theorem stp_eq : stp t₀ = stp s₀ := h.arg_eq hp (by decide)
+theorem dp_eq : dp t₀ = dp s₀ := h.arg_eq hp (by decide)
+theorem dl_eq : dl t₀ = dl s₀ := congrArg BitVec.toNat (h.arg_eq hp (i := 4) (by decide))
+theorem kb_eq : kb t₀ = kb s₀ := congrArg (fun x : BitVec 32 => x.toNat % 16) (h.arg_eq hp (i := 1) (by decide))
+
+/-- Bytes of the state. -/
+theorem stBytes {d n : Nat} (hd : d + n ≤ 128) :
+    bytesAt t₀.mem (addr (stp s₀) d) n = bytesAt s₀.mem (addr (stp s₀) d) n :=
+  Sse2.bytesAt_frame h.frame (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact hp.stk_st.symm.sub_left (Proof.Aes.X86.part_sub_reg hp.st_fit hd)) (by omega_using [hd])
+
+/-- Bytes of the data. -/
+theorem dBytes {n : Nat} (hn : n ≤ dl s₀) :
+    bytesAt t₀.mem ((dp s₀).setWidth 64) n = bytesAt s₀.mem ((dp s₀).setWidth 64) n :=
+  Sse2.bytesAt_frame h.frame (fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact hp.stk_d.symm.sub_left (Region.sub_prefix hn)) (by have := dl_lt s₀; omega_using [hn, this])
+
+theorem words_eq {k : Nat} (hk : k < 32) : words t₀.mem (stp s₀) k = words s₀.mem (stp s₀) k :=
+  congrArg BitVec.toNat (wd_frame h.frame (x := stp s₀) (d := 4 * k) fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact hp.stk_st.symm.sub_left (Proof.Aes.X86.part_sub_reg hp.st_fit (by omega_using [hk])))
+
+theorem Dt_eq {c : Nat} (hc : c ≤ dl s₀) : Dt t₀ c = Dt s₀ c := by
+  show bytesAt t₀.mem ((dp t₀).setWidth 64) c = _
+  rw [h.dp_eq hp]; exact h.dBytes hp hc
+
+theorem Bf_eq : Bf t₀ = Bf s₀ := by
+  show bytesAt t₀.mem (addr (stp t₀) 56) (kb t₀) = _
+  rw [h.stp_eq hp, h.kb_eq hp]
+  exact h.stBytes hp (by have := kb_lt s₀; omega_using [this])
+
+theorem A0_eq : A0 t₀ = A0 s₀ := by
+  show leNum (bytesAt t₀.mem ((stp t₀).setWidth 64) 24) = _
+  rw [h.stp_eq hp, ← Proof.Aes.X86.addr_zero, h.stBytes hp (by decide), Proof.Aes.X86.addr_zero]
+
+theorem Rn_eq : Rn t₀ = Rn s₀ := by
+  simp only [Rn, r0v, qv, h.stp_eq hp, h.words_eq hp (show 6 < 32 by decide),
+    h.words_eq hp (show 6 + 1 < 32 by decide), h.words_eq hp (show 6 + 2 < 32 by decide),
+    h.words_eq hp (show 6 + 3 < 32 by decide)]
+
+theorem upre : UPre t₀ :=
+  hp.congr (by rw [h.gpr]) h.rd h.wr fun _ hi => h.arg_eq hp hi
+
+theorem setupF {F : Nat → Nat} (hF : SetupF s₀ F) : SetupF t₀ F := by
+  refine ⟨fun k h₁ h₂ => ?_, ?_, ?_⟩
+  · rw [h.stp_eq hp, h.words_eq hp (by omega_using [h₁])]; exact hF.low k h₁ h₂
+  · have := hF.saved
+    unfold SavedIn at this ⊢
+    simp only [v, h.gpr]; exact this
+  · have e := hF.coefs
+    simp only [r0v, qv, h.stp_eq hp, h.words_eq hp (show 6 < 32 by decide),
+      h.words_eq hp (show 6 + 1 < 32 by decide), h.words_eq hp (show 6 + 2 < 32 by decide),
+      h.words_eq hp (show 6 + 3 < 32 by decide)] at e ⊢
+    exact e
+
+/-- The invariant of `t₀`, from what holds in terms of `s₀`. -/
+theorem cons {F : Nat → Nat} {c : Nat} {s : State} (hctx : Ctx (stp s₀) s) (hesp : s.gpr .esp = s₀.gpr .esp)
+    (hfr : Frame [sR (stp s₀)] t₀.mem s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    (hkeep : ∀ k < 32, k ∉ hS → (k < 14 ∨ 18 ≤ k) → words s.mem (stp s₀) k = F k) (hcl : c ≤ dl s₀)
+    (hwh : (kb s₀ + c) % 16 = 0) (hesi : s.gpr .esi = dp s₀ + BitVec.ofNat 32 c)
+    (hacc : Acc s₀ (Bf s₀ ++ Dt s₀ c) s.mem) : Cons t₀ F c s :=
+  { ctx := by rw [h.stp_eq hp]; exact hctx
+    esp := by rw [h.gpr]; exact hesp
+    frame := by rw [h.stp_eq hp]; exact hfr
+    rd := by rw [h.rd]; exact hrd
+    wr := by rw [h.wr]; exact hwr
+    keep := by rw [h.stp_eq hp]; exact hkeep
+    c_le := by rw [h.dl_eq hp]; exact hcl
+    whole := by rw [h.kb_eq hp]; exact hwh
+    esi := by rw [h.dp_eq hp]; exact hesi
+    acc := by
+      unfold Acc
+      rw [h.A0_eq hp, h.Rn_eq hp, h.Bf_eq hp, h.Dt_eq hp hcl, h.stp_eq hp]
+      exact hacc }
+
+theorem abi {s' : State} (hab : abiPreserved t₀ s') : abiPreserved s₀ s' := by
+  obtain ⟨h1, h2⟩ := hab
+  refine ⟨fun r hr => by rw [← h.gpr]; exact h1 r hr, ?_⟩
+  rw [h.gpr] at h2
+  rw [h2]
+  exact h.frame.readW (r := retR s₀) (Region.contains_self _ _)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.stk_args.2.symm) (by decide)
+
+theorem post {s' : State} (hpost : Proof.Poly1305.updateX86.post t₀ s') :
+    Proof.Poly1305.updateX86.post s₀ s' := by
+  intro key msg hbuf hcnt
+  have a0 := h.arg_eq hp (i := 0) (by decide)
+  have a1 := h.arg_eq hp (i := 1) (by decide)
+  have a2 := h.arg_eq hp (i := 2) (by decide)
+  have a3 := h.arg_eq hp (i := 3) (by decide)
+  have a4 := h.arg_eq hp (i := 4) (by decide)
+  have hb : Buffered t₀.mem ((arg t₀ 0).setWidth 64) key msg := by
+    rw [a0]
+    exact Proof.Poly1305.buffered_congr (fun i hi => h.frame _ fun r hr hc => by
+      rw [List.mem_singleton.mp hr] at hc
+      exact hp.stk_st _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))) hbuf
+  have hc : Proof.Poly1305.countX86 t₀ = BitVec.ofNat 64 msg.length := by
+    have e : Proof.Poly1305.countX86 t₀ = Proof.Poly1305.countX86 s₀ := by
+      simp only [Proof.Poly1305.countX86, a2, a1]
+    exact e.trans hcnt
+  have := hpost key msg hb hc
+  rw [a0, a3, a4] at this
+  rw [← h.dBytes hp (Nat.le_refl _)]
+  exact this
+
+end Rebase
+
+theorem ofNat_shr5 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 5 = BitVec.ofNat 32 (n / 32) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by omega_using [hn])]
+
+/-- The number of pairs into `ecx`: what `pairs` starts from. -/
+private theorem pairsArg_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {c : Nat} {s : State}
+    (h : Cons s₀ F c s) (hc : 256 ≤ dl s₀ - c) (heax : s.gpr .eax = BitVec.ofNat 32 (dl s₀ - c)) :
+    WP isa (.block [.mov .ecx (.reg .eax), .shift .shr .ecx 5]) s fun s₂ =>
+      Cons s₀ F c s₂ ∧ Sse2.PPre (stp s₀) (dp s₀ + BitVec.ofNat 32 c) ((dl s₀ - c) / 32) s₂ := by
+  have hdl := dl_lt s₀
+  have hdf := hp.d_fit
+  have hcl := h.c_le
+  obtain ⟨p, hpdef⟩ : ∃ p, p = (dl s₀ - c) / 32 := ⟨_, rfl⟩
+  rw [← hpdef]
+  have hp8 : 2 ≤ p := by omega_using [hpdef, hc]
+  have hpl : c + 32 * p ≤ dl s₀ := by omega_using [hpdef, hc]
+  refine wp_mov fun s₁ u₁ _ => wp_shr (by decide) fun s₂ u₂ => WP.block_nil ?_
+  have hC₂ : Cons s₀ F c s₂ := h.regs (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
+    (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
+    (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]) (by rw [u₂.mem, u₁.mem]) (by rw [u₂.rd, u₁.rd])
+    (by rw [u₂.wr, u₁.wr])
+  have hdn : (dp s₀ + BitVec.ofNat 32 c).toNat = (dp s₀).toNat + c := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega_using [hcl, hdl]),
+      Nat.mod_eq_of_lt (by omega_using [hdf, hpl, hp8])]
+  have hsub : Region.Sub (Proof.Aes.X86.reg32 (dp s₀ + BitVec.ofNat 32 c) (32 * p)) (dR s₀) :=
+    Proof.Aes.X86.part_sub_reg (b := dp s₀) (a := c) hdf hpl
+  exact ⟨hC₂,
+    { ctx := hC₂.ctx, esi := hC₂.esi
+      ecx := by rw [u₂.gpr, u₁.gpr, heax, ofNat_shr5 (by omega_using [hdl]), hpdef]
+      two := hp8
+      dfit := by rw [hdn]; omega_using [hdf, hpl]
+      din := fun d hd => by
+        rw [hC₂.rd, hC₂.wr, hp.rd, hp.data_addr (by omega_using [hd, hpl])]
+        exact ⟨dR s₀, by simp, hp.dR_contains (by omega_using [hd, hpl])⟩
+      sp := by rw [hC₂.esp]; exact hp.sp_stk
+      ss := by rw [hC₂.esp, hp.stk_eq]; exact hp.stk_st
+      sd := by rw [hC₂.esp, hp.stk_eq]; exact hp.stk_d.sub_right hsub
+      ds := hp.st_d.sub_right hsub }⟩
+
+/-- The pairs of blocks: the invariant then holds of a state `t₀` that is
+`s₀` with the bytes `pairs` left in the stack. -/
+private theorem pairsRun_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {c p : Nat} {s₂ : State}
+    (hC₂ : Cons s₀ F c s₂) (hP : Sse2.PPre (stp s₀) (dp s₀ + BitVec.ofNat 32 c) p s₂) (hpl : c + 32 * p ≤ dl s₀) :
+    WP isa pairs s₂ fun s' => ∃ t₀, Rebase s₀ t₀ ∧ Cons t₀ F (c + 32 * p) s' := by
+  have hdl := dl_lt s₀
+  have hsub : Region.Sub (Proof.Aes.X86.reg32 (dp s₀ + BitVec.ofNat 32 c) (32 * p)) (dR s₀) :=
+    Proof.Aes.X86.part_sub_reg (b := dp s₀) (a := c) hp.d_fit hpl
+  refine WP.mono (Sse2.pairs_ok hP.ctx hP.esi hP.ecx hP.two hP.dfit hP.din hP.sp hP.ss hP.sd hP.ds
+    (C := A0 s₀ < P) (X := Poly1305.absorbAll (Rn s₀) (A0 s₀) (Bf s₀ ++ Dt s₀ c))
+    (fun hA => ⟨hF.coefs.congr fun k h₁ h₂ => hC₂.keep k (by omega_using [h₁, h₂])
+      (not_hS (.inl ⟨by omega_using [h₁, h₂], h₂⟩)) (.inr h₁), (hC₂.acc hA).1, (hC₂.acc hA).2⟩))
+    fun s' ⟨g, esi, rd, wr, fr, same, hv⟩ => ?_
+  rw [hC₂.esp, hp.stk_eq] at fr
+  -- `s₀` with the stack's bytes of `s'`.
+  obtain ⟨t₀, ht⟩ : ∃ t₀ : State, t₀ = { s₀ with
+      mem := fun x => if (stkR s₀).Contains x 1 then s'.mem x else s₀.mem x } := ⟨_, rfl⟩
+  have hR : Rebase s₀ t₀ := by
+    subst ht
+    exact ⟨rfl, rfl, rfl, fun x hx => ite_eq_right (hx _ (List.mem_singleton_self _))⟩
+  have hfr : Frame [sR (stp s₀)] t₀.mem s'.mem := fun x hx => by
+    subst ht
+    show s'.mem x = if (stkR s₀).Contains x 1 then s'.mem x else s₀.mem x
+    by_cases hx' : (stkR s₀).Contains x 1
+    · rw [ite_eq_left hx']
+    · rw [ite_eq_right hx', fr x (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact hx _ (List.mem_singleton_self _)
+        · exact hx'), hC₂.frame x hx]
+  refine ⟨t₀, hR, hR.cons hp (hC₂.ctx.keep (g _ (by decide) (by decide)) wr)
+    (by rw [g _ (by decide) (by decide)]; exact hC₂.esp) hfr (by rw [rd]; exact hC₂.rd) (by rw [wr]; exact hC₂.wr)
+    (fun k hk hS' h' => (same k hk hS').trans (hC₂.keep k hk hS' h')) hpl
+    (by have := hC₂.whole; omega_using [this])
+    (by rw [esi, BitVec.add_assoc, ← BitVec.ofNat_add]) fun hA => ?_⟩
+  obtain ⟨h4, hv'⟩ := hv hA
+  refine ⟨h4, ?_⟩
+  have h16 : (Bf s₀ ++ Dt s₀ c).length % 16 = 0 := by
+    simp only [List.length_append, Dt, Bf, Poly1305.length_bytesAt]; exact hC₂.whole
+  have eb : bytesAt s₂.mem ((dp s₀ + BitVec.ofNat 32 c).setWidth 64) (32 * p) =
+      bytesAt s₀.mem ((dp s₀).setWidth 64 + BitVec.ofNat 64 c) (32 * p) := by
+    rw [Sse2.bytesAt_frame hC₂.frame (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (hp.st_d.sub_right hsub).symm) (by omega_using [hpl, hdl]),
+      hp.data_bytes hpl]
+  rw [hv', eb, Dt_add, ← List.append_assoc, Poly1305.absorbAll_append h16]
+
+/-- The data left, compared with 16 blocks. -/
+theorem leftCmp_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} {s : State}
+    (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) :
+    WP isa (.block (left ++ ([.alu .cmp .eax (.imm 256)] : List Instr))) s fun s₂ =>
+      ∃ c, c ≤ dl s₀ ∧ s.gpr .esi = dp s₀ + BitVec.ofNat 32 c ∧ Keeps [.eax, .ecx] s s₂ ∧
+        s₂.gpr .eax = BitVec.ofNat 32 (dl s₀ - c) ∧ s₂.cf = some (decide (dl s₀ - c < 256)) := by
+  obtain ⟨c, hcl, hesi⟩ := Pos.whole h
+  obtain hU : UCommon s₀ F s := by rcases h with ⟨_, hc⟩ | hd; exacts [hc.toUCommon, hd.toUCommon]
+  refine WP.block_append (WP.mono (left_ok hp hU hcl hesi) fun s₁ ⟨k₁, heax₁, _⟩ =>
+    wp_cmpx (readSrc_imm _ _) fun s₂ k₂ _ cf₂ => WP.block_nil
+      ⟨c, hcl, hesi, (k₁.trans k₂).mono, by rw [k₂.gpr']; exact heax₁, ?_⟩)
+  rw [cf₂, heax₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := dl_lt s₀; omega_using [hcl, this])]; rfl
+
+/-- From 16 blocks on, the pairs of blocks. -/
+theorem pairsPart_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s s₂ : State}
+    (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) {c : Nat} (hcl : c ≤ dl s₀)
+    (hesi : s.gpr .esi = dp s₀ + BitVec.ofNat 32 c) (k₂ : Keeps [.eax, .ecx] s s₂)
+    (heax₂ : s₂.gpr .eax = BitVec.ofNat 32 (dl s₀ - c)) (cf₂ : s₂.cf = some (decide (dl s₀ - c < 256))) :
+    WP isa (.ite .b (.block []) (.seq (.block [.mov .ecx (.reg .eax), .shift .shr .ecx 5]) pairs)) s₂ fun s₃ =>
+      ∃ t₀, Rebase s₀ t₀ ∧ ((∃ c, Cons t₀ F c s₃) ∨ Done t₀ F s₃) := by
+  refine WP.ite (decide (dl s₀ - c < 256)) (by simp only [eval, cf₂]) (fun hb => ?_) (fun hb => ?_)
+  · refine WP.block_nil ⟨s₀, Rebase.refl s₀, ?_⟩
+    rcases h with ⟨c', hc⟩ | hd
+    · exact .inl ⟨c', hc.regs (k₂.gpr') (k₂.gpr') (k₂.gpr') k₂.2.1 k₂.2.2.1 k₂.2.2.2⟩
+    · exact .inr (hd.regs (k₂.gpr') (k₂.gpr') (k₂.gpr') k₂.2.1 k₂.2.2.1 k₂.2.2.2)
+  · simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
+    rcases h with ⟨c', hc⟩ | hd
+    · have e : c' = c := by
+        have := hc.esi; rw [hesi] at this
+        exact (add_ofNat_inj hcl hc.c_le (dl_lt s₀) this).symm
+      subst e
+      refine WP.seq (WP.mono (pairsArg_ok hp (hc.regs (k₂.gpr') (k₂.gpr') (k₂.gpr') k₂.2.1 k₂.2.2.1 k₂.2.2.2)
+        hb heax₂) fun s₃ ⟨hC₃, hP₃⟩ => WP.mono (pairsRun_ok (p := (dl s₀ - c') / 32) hp hF hC₃ hP₃
+          (by omega_using [hb]))
+          fun s' ⟨t₀, hR, h'⟩ => ⟨t₀, hR, .inl ⟨_, h'⟩⟩)
+    · have := hd.esi; rw [hesi] at this
+      have := add_ofNat_inj hcl (Nat.le_refl _) (dl_lt s₀) this
+      omega_using [hb, this]
+
+/-- The whole blocks of the data. -/
+theorem whole_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
+    (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) :
+    WP isa whole s fun s' => ∃ t₀, Rebase s₀ t₀ ∧
+      ((∃ c, Cons t₀ F c s' ∧ dl t₀ - c < 16) ∨ Done t₀ F s') := by
+  refine WP.seq (WP.mono (leftCmp_ok hp h) fun s₂ ⟨c, hcl, hesi, k₂, heax₂, cf₂⟩ => ?_)
+  exact WP.seq (WP.mono (pairsPart_ok hp hF h hcl hesi k₂ heax₂ cf₂) fun s₃ ⟨t₀, hR, h₃⟩ =>
+    WP.mono (whole16_ok (hR.upre hp) (hR.setupF hp hF) h₃) fun s₄ h₄ => ⟨t₀, hR, h₄⟩)
 
 /-! ## The rest of the data -/
 
@@ -657,45 +1016,141 @@ theorem Pre1.cons {s₀ s : State} {F : Nat → Nat} (h : Pre1 s₀ F s) (hk : k
       obtain e : Bf s₀ ++ Dt s₀ 0 = [] := by simp only [Bf, Dt, hk]; rfl
       rw [e]; exact h.acc }
 
+/-- The buffered bytes, if any, with the first of the data. -/
+theorem fillPart_ok {s₀ : State} (hp : UPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s₁ : State}
+    (h₁ : Pre1 s₀ F s₁) (hedx : s₁.gpr .edx = BitVec.ofNat 32 (kb s₀))
+    (hz : s₁.zf = some (BitVec.ofNat 32 (kb s₀) &&& BitVec.ofNat 32 (kb s₀) == 0)) :
+    WP isa (.ite .e (.block []) fill) s₁ fun s => (∃ c, Cons s₀ F c s) ∨ Done s₀ F s := by
+  refine WP.ite (BitVec.ofNat 32 (kb s₀) &&& BitVec.ofNat 32 (kb s₀) == 0) (by simp [eval, hz])
+    (fun h => ?_) (fun _ => fill_ok hp hF h₁ hedx)
+  rw [BitVec.and_self, ofNat32_beq_zero (by have := kb_lt s₀; omega_using [this])] at h
+  simp only [decide_eq_true_eq] at h
+  exact WP.block_nil (.inl ⟨0, h₁.cons h⟩)
+
 theorem update_correct {s₀ : State} (hp : UPre s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.updateX86.post s₀ s' := by
   rw [update_eq]
   refine WP.seq (WP.mono (uprologue_ok hp) fun s₁ ⟨F, hF, h₁, hedx, hz⟩ => ?_)
-  refine WP.seq (WP.mono (Q := fun s : State => (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) ?_ fun s₂ h₂ => ?_)
-  · refine WP.ite (BitVec.ofNat 32 (kb s₀) &&& BitVec.ofNat 32 (kb s₀) == 0) (by simp [eval, hz])
-      (fun h => ?_) (fun _ => fill_ok hp hF h₁ hedx)
-    rw [BitVec.and_self, ofNat32_beq_zero (by have := kb_lt s₀; omega_using [this])] at h
-    simp only [decide_eq_true_eq] at h
-    exact WP.block_nil (.inl ⟨0, h₁.cons h⟩)
-  refine WP.seq (WP.mono (whole_ok hp hF h₂) fun s₃ h₃ => ?_)
-  exact WP.seq (WP.mono (rest_ok hp h₃) fun s₄ h₄ => uepilogue_ok hp hF h₄)
+  refine WP.seq (WP.mono (fillPart_ok hp hF h₁ hedx hz) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (whole_ok hp hF h₂) fun s₃ ⟨t₀, hR, h₃⟩ => ?_)
+  have hp' := hR.upre hp
+  exact WP.seq (WP.mono (rest_ok hp' h₃) fun s₄ h₄ =>
+    WP.mono (uepilogue_ok hp' (hR.setupF hp hF) h₄) fun s₅ ⟨ha, hpo⟩ => ⟨hR.abi hp ha, hR.post hp hpo⟩)
 
 /-! ## Constant time and satisfiability -/
 
-/-- The taint analysis starts with the stack arguments public. -/
-def updateτ₀ : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 28 }
+/-- The taint with the stack arguments public, and the registers `rs`
+besides `esp` (and the flags, if `fl`). The analysis starts from
+`updateτ [] false`. -/
+def updateτ (rs : List Reg) (fl : Bool) : VG.X86.Taint.T :=
+  { regs := .ofList (.esp :: rs), flags := fl, argLen := 28 }
 
-theorem update_wf₀ {s : State} (hp : UPre s) : VG.X86.Taint.Wf updateτ₀ s := by
+theorem update_wf {s : State} (hp : UPre s) (rs : List Reg) (fl : Bool) : VG.X86.Taint.Wf (updateτ rs fl) s := by
   have hs := hp.sp_fit
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [updateτ₀]; omega_using [hs], ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨by simp only [updateτ]; omega_using [hs], ?_⟩,
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [hs]) hp.ret_st hp.arg_st
   · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_using [hs]) hp.ret_sc hp.arg_sc
 
-theorem update_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateX86.pre s₁)
-    (h₂ : Proof.Poly1305.updateX86.pre s₂) (hpub : Proof.Poly1305.updateX86.pub s₁ s₂) :
-    VG.X86.Taint.Agree updateτ₀ s₁ s₂ := by
-  obtain ⟨hesp, ha⟩ := hpub
-  obtain hp₁ := UPre.of _ h₁; have hp₂ := UPre.of _ h₂
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, update_wf₀ hp₁, update_wf₀ hp₂,
-    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
+/-- Two states that satisfy the precondition, with the same `esp`,
+arguments and registers `rs`, agree on what `updateτ rs false` says is public. -/
+theorem update_agree {s₁ s₂ : State} (hp₁ : UPre s₁) (hp₂ : UPre s₂) (hesp : s₁.gpr .esp = s₂.gpr .esp)
+    (ha : ∀ i < 6, arg s₁ i = arg s₂ i) {rs : List Reg} (hr : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) :
+    VG.X86.Taint.Agree (updateτ rs false) s₁ s₂ := by
+  refine ⟨⟨fun r hr' => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, update_wf hp₁ rs false,
+    update_wf hp₂ rs false, VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => (Nat.zero_add k).symm ▸ argMem_eq hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega_using [hi]))
       h4 hk⟩
-  simp only [updateτ₀, RegSet.mem_ofList, List.mem_singleton] at hr
-  subst hr; exact hesp
+  simp only [updateτ, RegSet.mem_ofList, List.mem_cons] at hr'
+  rcases hr' with rfl | hr'
+  · exact hesp
+  · exact hr r hr'
+
+/-- Two runs of `update` from states that satisfy the precondition, with
+the same `esp` and arguments, leak the same. The taint analysis checks the
+code before, between and after the pairs of blocks, from taints that it shows
+the states to agree on (`rel_check`): `esp`, the pointers `esi` and `edi`,
+and the stack arguments; the two runs of `pairs` are related by
+`Sse2.pairs_rel`, from states the correctness proof describes, and the
+states they end in satisfy the precondition again, with the same arguments
+(`UCommon.mid`). -/
+private theorem update_rel {a b : State} (ha : UPre a) (hb : UPre b) (hesp : a.gpr .esp = b.gpr .esp)
+    (harg : ∀ i < 6, arg a i = arg b i) : RelCT isa (Eq2 a b) update (fun _ _ => True) := by
+  have est : stp b = stp a := (harg 0 (by decide)).symm
+  have edp : dp b = dp a := (harg 3 (by decide)).symm
+  have edl : dl b = dl a := congrArg BitVec.toNat (harg 4 (by decide)).symm
+  have tEnd : ∃ h, (VG.X86.taint.check (updateτ [.esi, .edi] false)
+      (.seq rest (.block (reduce ++ restore))) h).isSome = true := ⟨_, by taint_decide⟩
+  have t16 : ∃ h, (VG.X86.taint.check (updateτ [.esi, .edi] false)
+      (.seq (.block (left ++ ([.alu .cmp .eax (.imm 16)] : List Instr)))
+        (.ite .b (.block []) (.loop (.block (absorb 1 ++ ([.alu .add .esi (.imm 16)] : List Instr) ++ left ++
+          ([.alu .cmp .eax (.imm 16)] : List Instr))) .ae))) h).map
+      (VG.X86.taint.le (updateτ [.esi, .edi] false)) = some true := ⟨_, by taint_decide⟩
+  rw [update_eq]
+  refine rel_seqR (rel_check (updateτ [.esi, .edi, .edx] true)
+      (update_agree ha hb hesp harg (rs := []) fun _ h => absurd h List.not_mem_nil) ⟨_, by taint_decide⟩)
+    (uprologue_ok ha) (uprologue_ok hb) fun x₁ y₁ A₁ ⟨F₁, hF₁, p₁, dx₁, z₁⟩ ⟨F₂, hF₂, p₂, dx₂, z₂⟩ => ?_
+  refine rel_seqR (rel_check (updateτ [.esi, .edi] false) A₁ ⟨_, by taint_decide⟩)
+    (fillPart_ok ha hF₁ p₁ dx₁ z₁) (fillPart_ok hb hF₂ p₂ dx₂ z₂) fun x₂ y₂ A₂ g₁ g₂ => ?_
+  refine rel_then (Q := fun _ _ => True) (R := VG.X86.Taint.Agree (updateτ [.esi, .edi] false)) ?_
+    fun x₃ y₃ A₃ => rel_checkT A₃ tEnd
+  -- `whole`.
+  unfold whole
+  refine rel_seqR (rel_check (updateτ [.esi, .edi, .eax] true) A₂ ⟨_, by taint_decide⟩)
+    (leftCmp_ok ha g₁) (leftCmp_ok hb g₂)
+    fun x y A ⟨c₁, hc₁, si₁, k₁, ax₁, cf₁⟩ ⟨c₂, hc₂, si₂, k₂, ax₂, cf₂⟩ => ?_
+  have ec : c₂ = c₁ := by
+    have e := A₂.reg (r := .esi) rfl
+    rw [si₁, si₂, edp] at e
+    exact (add_ofNat_inj hc₁ (edl ▸ hc₂) (dl_lt a) e).symm
+  subst ec
+  rw [edl] at cf₂ ax₂
+  refine rel_then (R := VG.X86.Taint.Agree (updateτ [.esi, .edi] false)) ?_
+    fun x₃ y₃ A₃ => rel_check (updateτ [.esi, .edi] false) A₃ t16
+  -- The pairs, taken by both runs or by neither.
+  refine rel_iteR (b := decide (dl a - c₂ < 256)) cf₁ cf₂ (fun _ => RelCT.nil fun u v huv => by
+    obtain ⟨rfl, rfl⟩ := huv
+    exact VG.X86.taint.le_sound (τ := updateτ [.esi, .edi] false) (by decide) A) fun hbq => ?_
+  have hb256 : 256 ≤ dl a - c₂ := by simpa using hbq
+  -- Both runs are in the middle of the data.
+  have hcons : ∀ {s₀ s s' : State} {F : Nat → Nat}, (∃ c, Cons s₀ F c s) ∨ Done s₀ F s → c₂ ≤ dl s₀ →
+      s.gpr .esi = dp s₀ + BitVec.ofNat 32 c₂ → 256 ≤ dl s₀ - c₂ → Keeps [.eax, .ecx] s s' → Cons s₀ F c₂ s' :=
+    fun {s₀ s s' F} g hc hsi h256 k => by
+      rcases g with ⟨c', hC⟩ | hd
+      · have e : c' = c₂ := by
+          have := hC.esi; rw [hsi] at this
+          exact (add_ofNat_inj hc hC.c_le (dl_lt s₀) this).symm
+        subst e
+        exact hC.regs (k.gpr') (k.gpr') (k.gpr') k.2.1 k.2.2.1 k.2.2.2
+      · have := hd.esi; rw [hsi] at this
+        have := add_ofNat_inj hc (Nat.le_refl _) (dl_lt s₀) this
+        omega_using [h256, this]
+  have C₁ := hcons g₁ hc₁ si₁ hb256 k₁
+  have C₂ := hcons g₂ hc₂ si₂ (by rw [edl]; exact hb256) k₂
+  refine rel_seqR (rel_taint [] (fun _ h => absurd h List.not_mem_nil) ⟨_, by taint_decide⟩)
+    (pairsArg_ok ha C₁ hb256 ax₁) (pairsArg_ok hb C₂ (by rw [edl]; exact hb256) (by rw [edl]; exact ax₂))
+    fun x₄ y₄ _ ⟨D₁, P₁⟩ ⟨D₂, P₂⟩ => ?_
+  rw [est, edp, edl] at P₂
+  have hpl : c₂ + 32 * ((dl a - c₂) / 32) ≤ dl a := by omega_using [hb256]
+  refine ((Sse2.pairs_rel P₁ P₂ (by rw [D₁.esp, D₂.esp]; exact hesp)).wp
+    (F₁ := fun s' => ∃ t₀, Rebase a t₀ ∧ Cons t₀ F₁ (c₂ + 32 * ((dl a - c₂) / 32)) s')
+    (F₂ := fun s' => ∃ t₀, Rebase b t₀ ∧ Cons t₀ F₂ (c₂ + 32 * ((dl a - c₂) / 32)) s')
+    fun u v huv => by
+      obtain ⟨rfl, rfl⟩ := huv
+      exact ⟨pairsRun_ok ha hF₁ D₁ P₁ hpl, pairsRun_ok hb hF₂ D₂ (by rw [est, edp]; exact P₂) (by rw [edl]; exact hpl)⟩).mono
+    (fun _ _ h => h) fun x' y' ⟨_, ⟨t₁, R₁, K₁⟩, ⟨t₂, R₂, K₂⟩⟩ => ?_
+  -- The states after the pairs satisfy the precondition, with the same arguments.
+  obtain ⟨hx', ax'⟩ := K₁.toUCommon.mid (R₁.upre ha)
+  obtain ⟨hy', ay'⟩ := K₂.toUCommon.mid (R₂.upre hb)
+  refine update_agree hx' hy' (by rw [K₁.esp, K₂.esp, R₁.gpr, R₂.gpr]; exact hesp)
+    (fun i hi => by rw [ax' i hi, ay' i hi, R₁.arg_eq ha hi, R₂.arg_eq hb hi]; exact harg i hi) fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [K₁.esi, K₂.esi, R₁.dp_eq ha, R₂.dp_eq hb, edp]
+  · rw [K₁.ctx.edi, K₂.ctx.edi, R₁.stp_eq ha, R₂.stp_eq hb, est]
 
 /-- Memory holding the arguments `0x1000, 0, 0, 0x2000, 0, 0x3000` at `0x4004`. -/
 def updateSatMem : Mem := fun a =>
@@ -719,11 +1174,10 @@ theorem update_ok (s : State) (hs : Proof.Poly1305.updateX86.pre s) :
 
 theorem update_ct : ConstantTime isa Proof.Poly1305.updateX86.pre Proof.Poly1305.updateX86.pub
     update :=
-  VG.Taint.constantTime (A := taint) updateτ₀ (fun _ _ h₁ h₂ hp => update_agree₀ h₁ h₂ hp)
-    (by taint_decide)
+  ct_of fun _ _ h₁ h₂ hp => update_rel (UPre.of _ h₁) (UPre.of _ h₂) hp.1 hp.2
 
 theorem update_verified :
-    Verified X86.target Impl.Poly1305.X86.update (Proof.Poly1305.updateScratchContract X86.abi) :=
+    Verified X86.target Impl.Poly1305.X86.update (Proof.Poly1305.updateScratchContract X86.abi 524) :=
   Verified.of_correct update_ok update_ct (by
     obtain a0 : arg updateSat 0 = 0x1000 := by decide
     obtain a3 : arg updateSat 3 = 0x2000 := by decide
@@ -763,7 +1217,7 @@ working space. -/
 def updateFrameSat : State :=
   { updateSat with rd := [⟨0x2000, 0⟩, ⟨0x4004, 20⟩], wr := [⟨0x1000, 128⟩] }
 
-theorem updateFrameSat_pre : ∃ s, (Spec.Poly1305.updateContract X86.abi 156).pre s := by
+theorem updateFrameSat_pre : ∃ s, (Spec.Poly1305.updateContract X86.abi 680).pre s := by
   implies_sat [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, Spec.Poly1305.updatePost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateFrameSat, updateSat, updateSatMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
@@ -771,9 +1225,9 @@ theorem updateFrameSat_pre : ∃ s, (Spec.Poly1305.updateContract X86.abi 156).p
 
 theorem update_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update)
-      (Spec.Poly1305.updateContract X86.abi 156) :=
+      (Spec.Poly1305.updateContract X86.abi 680) :=
   X86.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
-    (n := 16) (post := Spec.Poly1305.updatePost X86.abi.ptrBits) (wa := false) (stack := 0)
+    (n := 16) (post := Spec.Poly1305.updatePost X86.abi.ptrBits) (wa := false) (stack := 524)
     (bytes := 156) update_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (updatePost_local _)
     (fun vs m m₁ m₂ r hl _ hb => updatePostOut_local _ vs m m₁ m₂ r hl hb)
