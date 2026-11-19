@@ -3,52 +3,6 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 144.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "TYnBSYnISInRSInyvpAAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
-je 20f
-22:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 23f
-.base64 "QQ+2RQBCD7YMI0gxyEKIBCNJg8UBSYPEAUmD7gFJOew="
-jmp 24f
-23:
-.base64 "SYtFAEozBCNKiQQjSYPFCEmDxAhJg+4ISTns"
-24:
-je 25f
-jmp 26f
-25:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-26:
-.base64 "TYX2"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
-}
-
 /// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
@@ -115,52 +69,6 @@ call {vg_keccak_pad_scratch}
 .base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRCLRxiJRRhJi6wkiAIAAE2LpCSAAgAASI2kJJgCAABmD+/ARTHbSI1kJPhMiRwkSI2kJGD9///zD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSgAgAASI1kJAgxwDHJMdIx9kUxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-    )
-}
-
-/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "TYnBSYnISInRSInyvogAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
-je 20f
-22:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 23f
-.base64 "QQ+2RQBCD7YMI0gxyEKIBCNJg8UBSYPEAUmD7gFJOew="
-jmp 24f
-23:
-.base64 "SYtFAEozBCNKiQQjSYPFCEmDxAhJg+4ISTns"
-24:
-je 25f
-jmp 26f
-25:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-26:
-.base64 "TYX2"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
@@ -233,52 +141,6 @@ call {vg_keccak_pad_scratch}
     )
 }
 
-/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 104.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "TYnBSYnISInRSInyvmgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
-je 20f
-22:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 23f
-.base64 "QQ+2RQBCD7YMI0gxyEKIBCNJg8UBSYPEAUmD7gFJOew="
-jmp 24f
-23:
-.base64 "SYtFAEozBCNKiQQjSYPFCEmDxAhJg+4ISTns"
-24:
-je 25f
-jmp 26f
-25:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-26:
-.base64 "TYX2"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
-}
-
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
@@ -348,52 +210,6 @@ call {vg_keccak_pad_scratch}
     )
 }
 
-/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 72.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "TYnBSYnISInRSInyvkgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
-je 20f
-22:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 23f
-.base64 "QQ+2RQBCD7YMI0gxyEKIBCNJg8UBSYPEAUmD7gFJOew="
-jmp 24f
-23:
-.base64 "SYtFAEozBCNKiQQjSYPFCEmDxAhJg+4ISTns"
-24:
-je 25f
-jmp 26f
-25:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-26:
-.base64 "TYX2"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
-    )
-}
-
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
@@ -460,52 +276,6 @@ call {vg_keccak_pad_scratch}
 .base64 "SIsHSIlFAEiLRwhIiUUISItHEEiJRRBIi0cYSIlFGEiLRyBIiUUgSItHKEiJRShIi0cwSIlFMEiLRzhIiUU4SYusJIgCAABNi6QkgAIAAEiNpCSYAgAAZg/vwEUx20iNZCT4TIkcJEiNpCRg/f//8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkoAIAAEiNZCQIMcAxyTHSMfZFMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-    )
-}
-
-/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 168.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r#".base64 "TYnBSYnISInRSInyvqgAAABJiZkAAgAASYmpCAIAAE2JoRACAABNiakYAgAATYmxIAIAAE2JuSgCAABIiftIifVJidRJic1NicZNic9NhfY="
-je 20f
-22:
-.base64 "TYniQbsHAAAATSHaTYnzSYPrCEnB6z9NCdpNhdI="
-je 23f
-.base64 "QQ+2RQBCD7YMI0gxyEKIBCNJg8UBSYPEAUmD7gFJOew="
-jmp 24f
-23:
-.base64 "SYtFAEozBCNKiQQjSYPFCEmDxAhJg+4ISTns"
-24:
-je 25f
-jmp 26f
-25:
-.base64 "QbwAAAAASInfTIn+"
-call {vg_keccak_f1600}
-.base64 "SIn7SYn3"
-26:
-.base64 "TYX2"
-jne 22b
-jmp 21f
-20:
-21:
-.base64 "TIngSYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI1kJPhIjWQkCDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
-.p2align 6"#,
-        vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
 
