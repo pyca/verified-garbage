@@ -8519,6 +8519,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 96 bytes.
@@ -9461,6 +9463,34 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
+sub sp, sp, #536
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+27:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 27b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #536
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ecdsa_brainpoolp384r1_sign_k = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_k::vg_ecdsa_brainpoolp384r1_sign_k,
     )
@@ -9473,6 +9503,8 @@ pub const VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES: verified_garbage_cpu::Fe
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10418,6 +10450,34 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
+sub sp, sp, #536
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+27:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 27b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #536
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ecdsa_brainpoolp384r1_sign_k_umaal = sym super::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_k_umaal::vg_ecdsa_brainpoolp384r1_sign_k_umaal,
     )

@@ -17,20 +17,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Comb
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.Arm
 
 open VG.Proof.BrainpoolP256r1.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT brainpoolp256r1CombCurve brainpoolp256r1T_verified brainpoolp256r1CombCurveU brainpoolp256r1UT_verified)
-open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.BrainpoolP256r1.Scrub.verifyReg hasLaw.law),
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.BrainpoolP256r1.Scrub.verifyUReg hasLaw.law),
-  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
-    tables := [("hmac", tables vars)]
-    code := signCodeT (brainpoolp256r1CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    verified := .unscrubbed (brainpoolp256r1T_verified hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target {
-    suffix := "_umaal"
-    tables := [("hmac", tables vars)]
-    code := signCodeT (brainpoolp256r1CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-    verified := .unscrubbed (brainpoolp256r1UT_verified hasLaw.law) }]
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.BrainpoolP256r1.Scrub.signReg hasLaw.law),
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.BrainpoolP256r1.Scrub.signUReg hasLaw.law)]
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.Arm

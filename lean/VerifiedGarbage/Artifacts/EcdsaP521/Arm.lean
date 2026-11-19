@@ -17,20 +17,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
 namespace VG.Artifacts.EcdsaP521.Arm
 
 open VG.Proof.P521.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p521CombCurve p521T_verified p521CombCurveU p521UT_verified)
-open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.verifyReg hasLaw.law),
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.verifyUReg hasLaw.law),
-  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
-    tables := [("hmac", tables vars)]
-    code := signCodeT (p521CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-    verified := .unscrubbed (p521T_verified hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
-    suffix := "_umaal"
-    tables := [("hmac", tables vars)]
-    code := signCodeT (p521CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-    verified := .unscrubbed (p521UT_verified hasLaw.law) }]
+  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.signReg hasLaw.law),
+  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.signUReg hasLaw.law)]
 
 end VG.Artifacts.EcdsaP521.Arm

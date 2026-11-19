@@ -9383,6 +9383,34 @@ vg_ecdsa_brainpoolp384r1_sign:
 	ldr lr, [r12, #496]
 	ldr r8, [r12, #500]
 	add sp, sp, #512
+	sub sp, sp, #536
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #16
+27:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 27b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #536
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ecdsa_brainpoolp384r1_sign_umaal:
@@ -10312,4 +10340,32 @@ vg_ecdsa_brainpoolp384r1_sign_umaal:
 	ldr lr, [r12, #496]
 	ldr r8, [r12, #500]
 	add sp, sp, #512
+	sub sp, sp, #536
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #16
+27:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 27b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #536
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

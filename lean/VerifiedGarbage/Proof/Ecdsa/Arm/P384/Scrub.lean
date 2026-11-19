@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Comb
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Scrub
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Comb
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Scrub
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombLit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -18,6 +20,13 @@ evaluation of the code, with the literal of the verification core), and
 their postcondition does not read the memory on return
 (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): each is registered followed by a
 wipe of that stack (`Arm.Scrub.scrubRegF`).
+`vg_ecdsa_p384_sign` and its `_umaal` variant call indirectly only the HMAC
+functions of their table, from frames within the stack their contract
+reserves, and their postcondition reads the memory on return only at
+`out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is registered followed
+by a wipe of that stack (`Arm.Scrub.scrubRegFT`). The code's facts are
+proved of `signCfg`, the configuration `cfgT` builds, written without the
+group law that the curve's `RfcCurve` carries proofs of.
 All are then followed by instructions that set the registers a callee may
 change, but the result, and the flags to constants.
 -/
@@ -27,6 +36,9 @@ change, but the result, and the flags to constants.
 namespace VG.Proof.Ecdsa.Arm.P384.Scrub
 
 open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p384CombCurve p384T_verified
+  p384CombCurveU p384UT_verified stackT)
+open VG.Proof.HmacTable.Arm (tables vars)
 
 /-- Verification's code, with the comb, with `umaal` if `u`. -/
 abbrev verifyCode (u : Bool) : Prog isa :=
@@ -49,6 +61,8 @@ theorem verifyU_code : armStack (verifyCode true) ≤ 96 ∧ noIcall (verifyCode
 
 theorem frameOk_96 : FrameOk 96 := by decide
 
+theorem frameOk_stackT : FrameOk stackT := by decide
+
 /-- `vg_ecdsa_p384_verify`, given the group law. -/
 def verifyReg (hC : Weierstrass.Law Spec.P384.curve) :
     Registration Spec.Ecdsa.P384.verifyHashApi target :=
@@ -69,5 +83,47 @@ def verifyUReg (hC : Weierstrass.Law Spec.P384.curve) :
     verifyU_code.1 verifyU_code.2 frameOk_96
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P384.inst
       Impl.Weierstrass.Arm.p384CombConsts 96) rfl
+
+/-- The configuration of signing's code, with `umaal` if `u`: the code is that
+of `p384CombCurve`'s, whose other fields are proofs. -/
+def signCfg (u : Bool) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
+  f := Proof.HmacTable.Arm.fnsOf vars
+  w := 2 * Impl.Ecdsa.Arm.p384.n - (if Impl.Ecdsa.Arm.p384.C.len = 28 then 1 else 0)
+  len := Impl.Ecdsa.Arm.p384.C.len
+  big := false
+  sh := 0
+  n := Impl.Ecdsa.Arm.p384.C.n
+  tries := Spec.Ecdsa.Rfc6979.Curves.p384.tries
+  coreN := bif u then "vg_ecdsa_p384_sign_k" ++ "_umaal" else "vg_ecdsa_p384_sign_k"
+  coreC := bif u then Impl.Ecdsa.Arm.signP384CombU else Impl.Ecdsa.Arm.signP384Comb
+
+theorem signCfg_code (u : Bool) :
+    armStack (signCfg u).sign ≤ stackT ∧ tablesCall (signCfg u).sign [("hmac", tables vars)] = true := by
+  cases u <;> lit_decide
+
+/-- `vg_ecdsa_p384_sign`, given the group law. -/
+def signReg (hC : Weierstrass.Law Spec.P384.curve) :
+    Registration Spec.Ecdsa.Rfc6979.Curves.p384SignApi target :=
+  Arm.Scrub.scrubRegFT {
+      tables := [("hmac", tables vars)]
+      code := signCodeT (p384CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
+      verified := p384T_verified hC }
+    (by exact (signCfg_code false).1) (by exact (signCfg_code false).2)
+    frameOk_stackT
+    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p384
+      (p384CombCurve hC).coreConsts vars) rfl
+
+/-- `vg_ecdsa_p384_sign_umaal`, given the group law. -/
+def signUReg (hC : Weierstrass.Law Spec.P384.curve) :
+    Registration Spec.Ecdsa.Rfc6979.Curves.p384SignApi target :=
+  Arm.Scrub.scrubRegFT {
+      suffix := "_umaal"
+      tables := [("hmac", tables vars)]
+      code := signCodeT (p384CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
+      verified := p384UT_verified hC }
+    (by exact (signCfg_code true).1) (by exact (signCfg_code true).2)
+    frameOk_stackT
+    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p384
+      (p384CombCurveU hC).coreConsts vars) rfl
 
 end VG.Proof.Ecdsa.Arm.P384.Scrub
