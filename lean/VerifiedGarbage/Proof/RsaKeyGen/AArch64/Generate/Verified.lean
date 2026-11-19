@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Generate.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -1465,5 +1468,21 @@ registration file imports). -/
 theorem gen_verified [Key.KeyProof] (v : RoundImpl) :
     Verified target (genCode v) (Spec.RsaKeyGen.keySearchContract abi stackUse) :=
   Verified.of_correct (gen_correct v) (gen_constantTime v) gen_implies
+
+/-- The registers the key search writes, with every Miller–Rabin round. -/
+def genClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v31],
+   []⟩
+
+/-- What `ScrubAll.scrubAllOf` needs of the key search with each
+Miller–Rabin round: evaluated here. -/
+theorem genSide (v : RoundImpl) (hv : v ∈ Proof.Variants.MillerRabin.AArch64.variants) :
+    ScrubAll.scrubSide (genCode v) stackUse (Spec.RsaKeyGen.keySearchSig.retBits abi.ptrBits)
+      genClear [] = true := by
+  have e : (Proof.Variants.MillerRabin.AArch64.variants.all fun v =>
+      ScrubAll.scrubSide (genCode v) stackUse (Spec.RsaKeyGen.keySearchSig.retBits abi.ptrBits)
+        genClear []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 end VG.Proof.RsaKeyGen.AArch64.Generate

@@ -1,5 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
@@ -439,3 +446,39 @@ theorem code_verified (c : PdChecked) :
   ⟨code_correct c, code_constantTime c, sat c.stack c.le⟩
 
 end VG.Proof.RsaPkcs1Sig.AArch64.RecPc
+
+/-! ## What the tails of the two functions clear -/
+
+namespace VG.Proof.RsaPkcs1Sig.AArch64.Scrub
+
+open VG VG.AArch64 VG.AArch64.ScrubAll
+
+/-- The registers `vg_rsa_pkcs1_verify_precomputed` and
+`vg_rsa_pkcs1_recover_precomputed` write, with every public operation. -/
+def publicClear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v31],
+   []⟩
+
+/-- What `scrubAllOf` needs of the verification with each public operation:
+evaluated here. -/
+theorem verifySide (v : Proof.Rsa.AArch64.PublicImpl)
+    (hv : v ∈ Proof.Variants.RsaPublicPrecomputed.AArch64.variants) :
+    scrubSide (Impl.RsaPkcs1Sig.AArch64.Precomputed.code (pdOf v).name (pdOf v).code) 2144
+      (Spec.RsaPkcs1Sig.verifyPrecomputedSig.retBits abi.ptrBits) publicClear [] = true := by
+  have e : (Proof.Variants.RsaPublicPrecomputed.AArch64.variants.all fun v =>
+      scrubSide (Impl.RsaPkcs1Sig.AArch64.Precomputed.code (pdOf v).name (pdOf v).code) 2144
+        (Spec.RsaPkcs1Sig.verifyPrecomputedSig.retBits abi.ptrBits) publicClear []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
+/-- Of the recovery. -/
+theorem recoverSide (v : Proof.Rsa.AArch64.PublicImpl)
+    (hv : v ∈ Proof.Variants.RsaPublicPrecomputed.AArch64.variants) :
+    scrubSide (Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed.code (pdOf v).name (pdOf v).code) 2144
+      (Spec.RsaPkcs1Sig.recoverPrecomputedSig.retBits abi.ptrBits) publicClear [] = true := by
+  have e : (Proof.Variants.RsaPublicPrecomputed.AArch64.variants.all fun v =>
+      scrubSide (Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed.code (pdOf v).name (pdOf v).code) 2144
+        (Spec.RsaPkcs1Sig.recoverPrecomputedSig.retBits abi.ptrBits) publicClear []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
+end VG.Proof.RsaPkcs1Sig.AArch64.Scrub
