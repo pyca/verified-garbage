@@ -438,13 +438,13 @@ theorem openRunAX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {to : Bool} {O : Ad
   obtain hc₁₄ : ciphOf s₁₄.mem Ctx R = ciphOf t.mem Ctx R := ciph_frame F₁₄ (disj_ex dCf hexC) hRb
   obtain hD₃ : bytesAt s₃.mem D n = bytesAt t.mem D n := by rw [r₃.mem]; exact bytesAt_frame Fa dDf (by omega_arith)
   obtain ht₁₀ : bytesAt s₁₀.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt s₃.mem (D + BitVec.ofNat 64 j) (n - j) := by
-    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame (.inr rfl) (hdat₃.drop hjn))
+    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame L (.inr rfl) (hdat₃.drop hjn))
       fun r hr => (hexD r hr).sub_left (Offset.sub_base D (by omega_arith))) (by omega_arith)]
   obtain hsplit : bytesAt s₃.mem D n = bytesAt s₃.mem D j ++ bytesAt s₃.mem (D + BitVec.ofNat 64 j) (n - j) := by
     rw [← bytesAt_add, Nat.add_sub_cancel' hjn]
   -- `J₀`, still at the state, and the first counter block.
   obtain dT : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r :=
-    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by decide⟩
+    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
   obtain hJ₁₄ : blockAt s₁₄.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 H (bytesAt t.mem Np 12) := by
     obtain e₇ : blockAt s₇.mem (W + BitVec.ofNat 64 16) = blockAt s₃.mem (W + BitVec.ofNat 64 16) :=
       blockAt_frame h₇.frame fun r hr => by
@@ -452,7 +452,7 @@ theorem openRunAX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) {to : Bool} {O : Ad
         rcases hr with rfl | rfl | rfl | hr
         · exact st0_disj L (by decide) (by decide)
         · exact st0_disj L (by decide) (by decide)
-        · exact st0_w L ⟨by decide, by decide⟩
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
         · exact exW (Lay.wSub (by decide)) r hr
     rw [blockAt_frame fY₁₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact st0_disj L (by decide) (by decide)),

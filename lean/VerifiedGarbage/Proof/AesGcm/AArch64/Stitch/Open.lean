@@ -978,7 +978,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
       bytesAt_frame Fa (fun r hr => (dDf r hr).sub_left hsubD) (by omega_arith)]
   obtain ht₁₀ : bytesAt s₁₀.mem (D' + BitVec.ofNat 64 j) (n - P - j) =
       bytesAt s₃.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
-    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame (.inr rfl) (hdat₃.drop hjn))
+    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame L (.inr rfl) (hdat₃.drop hjn))
       fun r hr => (hexD r hr).sub_left (fun x hx => hsubD x (Offset.sub_base D' (by omega_arith) x hx))) (by omega_arith)]
   obtain hsplit : bytesAt t.mem D n =
       (C₀ ++ bytesAt s₃.mem D' j) ++ bytesAt s₃.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
@@ -986,7 +986,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
       Nat.add_sub_cancel' hPn]
   -- `J₀`, still at the state, and the first counter block.
   obtain dT : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r :=
-    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by decide⟩
+    fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
   obtain hJ₁₄ : blockAt s₁₄.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 H (bytesAt t.mem Np 12) := by
     obtain e₇ : blockAt s₇.mem (W + BitVec.ofNat 64 16) = blockAt s₃.mem (W + BitVec.ofNat 64 16) :=
       blockAt_frame h₇.frame fun r hr => by
@@ -994,7 +994,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
         rcases hr with rfl | rfl | rfl | hr
         · exact st0_disj L (by decide) (by decide)
         · exact st0_disj L (by decide) (by decide)
-        · exact st0_w L ⟨by decide, by decide⟩
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
         · exact exW (Lay.wSub (by decide)) r hr
     rw [blockAt_frame fY₁₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact st0_disj L (by decide) (by decide)),
@@ -1005,8 +1005,8 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
         · exact st0_disj L (by decide) (by decide)
         · exact (ow.ok.st.symm.sub_left (Region.sub_prefix (by decide))).sub_right
             (Region.sub_prefix (Nat.mul_div_le n 128))
-        · exact st0_w L ⟨by decide, by decide⟩),
-      blockAt_frame fcb (cbF_disj (st0_w L ⟨by decide, by decide⟩)), j0₂, ← hJ0]
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩),
+      blockAt_frame fcb (cbF_disj (st0_w L ⟨by decide, by have := L.hWn; omega⟩)), j0₂, ← hJ0]
   obtain hcb : blockAt s₂₀.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
       Nat.repeat inc32 (P / 16) (inc32 J0) := by
     obtain d₄₈ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)],

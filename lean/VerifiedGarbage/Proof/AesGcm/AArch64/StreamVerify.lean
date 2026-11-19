@@ -63,7 +63,7 @@ theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre s) :
       (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, Wn⟩ := by
   simp only [verPre] at hs
   obtain ⟨hrd, hwr, dcs, dcw, -, dsw, dtw, wc, ws, -, ww, hR⟩ := hs
-  exact ⟨Lay.of wc ws ww dcs dcw dsw,
+  exact ⟨Lay.of wc ws ww dcs dcw dsw hWn,
     ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩, hR,
     covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 

@@ -116,7 +116,7 @@ theorem aad_run (v : GcmImpl) {s : State} (hs : streamAadAArch64.pre s) {x : Lis
   generalize hD : s.gpr .x3 = D at *
   generalize hn : (s.gpr .x4).toNat = n at *
   generalize hW : s.gpr .x5 = W at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
     ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x4).isLt
@@ -231,7 +231,7 @@ theorem streamAad_ct (v : GcmImpl) :
   generalize hn : (σ₁.gpr .x4).toNat = n at *
   generalize hW : σ₁.gpr .x5 = W at *
   generalize ho : (σ₁.gpr .x2).toNat % 16 = o at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have hlt : n < 2 ^ 64 := hn ▸ (σ₁.gpr .x4).isLt
   have ho₂ : (σ₂.gpr .x2).toNat % 16 = o := by rw [← q2, ho]
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨D, n⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨W, Wn⟩]) :
@@ -300,7 +300,7 @@ theorem streamInit_ct (v : GcmImpl) :
   generalize hn : (σ₁.gpr .x2).toNat = n at *
   generalize hSt : σ₁.gpr .x3 = St at *
   generalize hW : σ₁.gpr .x4 = W at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have hlt : n < 2 ^ 64 := hn ▸ (σ₁.gpr .x2).isLt
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩, ⟨Np, n⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨W, Wn⟩]) :
       Perm Wn Ctx St W σ :=

@@ -142,7 +142,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre s) 
   generalize hW : s.gpr .x7 = W at *
   generalize hRR : (s.gpr .x1).toNat = R at *
   generalize hP : (s.gpr .x4).toNat = P at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
     ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x6).isLt
@@ -213,18 +213,18 @@ theorem st0_crRun {Wn : Nat} {Ctx St W D : Addr} {n : Nat} (L : Lay Wn Ctx St W)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩
-      · exact st0_w L ⟨by decide, by decide⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact (hd.sub_right (Region.sub_prefix (by decide))).symm
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact st0_disj L (by decide) (by decide)
     · exact st0_disj L (by decide) (by decide)
-    · exact st0_w L ⟨by decide, by decide⟩
+    · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
 
 /-- What does not change in the entry's writes. -/
 theorem crypt_inv {s : State} (hs : streamCryptPre s) {m : Mem} (hf : Frame [savedR (s.gpr .x7)] s.mem m) :
@@ -242,7 +242,7 @@ theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre s) : Lay Wn (s.
     (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x2, 80⟩ := by
   simp only [streamCryptPre] at hs
   obtain ⟨-, -, dcs, -, dcw, dsd, dsw, -, wc, ws, -, ww, -⟩ := hs
-  exact ⟨Lay.of wc ws ww dcs dcw dsw, dsd.symm⟩
+  exact ⟨Lay.of wc ws ww dcs dcw dsw hWn, dsd.symm⟩
 
 theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hs : streamEncryptAArch64.pre s) :
     WP isa (streamEncrypt v.callees) s fun s' => GprAbi s s' ∧ streamEncryptAArch64.post s s' := by
@@ -433,7 +433,7 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
   generalize hD : σ₁.gpr .x5 = D at *
   generalize hn : (σ₁.gpr .x6).toNat = n at *
   generalize hW : σ₁.gpr .x7 = W at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have hlt : n < 2 ^ 64 := hn ▸ (σ₁.gpr .x6).isLt
   have perm (σ : State) (hrd : σ.rd = [⟨Ctx, 256⟩]) (hwr : σ.wr = [⟨St, 80⟩, ⟨D, n⟩, ⟨W, Wn⟩]) :
       Perm Wn Ctx St W σ :=

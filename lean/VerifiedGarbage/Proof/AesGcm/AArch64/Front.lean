@@ -159,7 +159,7 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
       rcases hr with rfl | rfl | rfl
       · exact st0_disj L (by decide) (by decide)
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩), r₂.mem, h₁.j0]
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩), r₂.mem, h₁.j0]
   · rw [r₄.mem, blockAt_frame h₃.frame (ctx_absFrame L (.inr rfl)), r₂.mem, h₁.hH]
   · rw [r₄.mem, blockAt_frame h₃.frame (fun r hr => (ctr_absFrame L r hr).sub_left
       (Region.sub_prefix (by decide))), r₂.mem, h₁.cb]

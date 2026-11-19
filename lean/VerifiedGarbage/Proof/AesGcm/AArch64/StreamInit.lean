@@ -62,7 +62,7 @@ theorem streamInit_wp (v : GcmImpl) {s : State} (hs : streamInitAArch64.pre s) :
   generalize hn : (s.gpr .x2).toNat = n at *
   generalize hSt : s.gpr .x3 = St at *
   generalize hW : s.gpr .x4 = W at *
-  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw
+  have L : Lay Wn Ctx St W := Lay.of wc ws ww dcs dcw dsw hWn
   have perm : Perm Wn Ctx St W s :=
     ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .x2).isLt

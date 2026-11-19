@@ -561,7 +561,7 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
       bytesAt_frame F₄₁₇ (disj_ex dWS₁ hexD) (by omega_arith), ← r₅.mem, hc₅]
   obtain ht₁₀ : bytesAt s₁₀.mem (D' + BitVec.ofNat 64 j) (n - P - j) =
       bytesAt s₅.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
-    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame (.inr rfl) (hdat₅.drop hjn))
+    rw [m₁₀, bytesAt_frame h₇.frame (disj_absEx (data_absFrame L (.inr rfl) (hdat₅.drop hjn))
       fun r hr => (hexD r hr).sub_left (fun x hx => hsubD x (Offset.sub_base D' (by omega_arith) x hx))) (by omega_arith)]
   obtain hsplit : bytesAt s₅.mem D n =
       (C₀ ++ bytesAt s₅.mem D' j) ++ bytesAt s₅.mem (D' + BitVec.ofNat 64 j) (n - P - j) := by
@@ -575,24 +575,24 @@ theorem runWithSX_ok {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh
         · exact st0_disj L (by decide) (by decide)
         · exact st0_disj L (by decide) (by decide)
         · exact (hdat₂.ok.st.sub_left hsubP').symm.sub_left (Region.sub_prefix (by decide))
-        · exact st0_w L ⟨by decide, by decide⟩), j0₂]
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩), j0₂]
     obtain e₄ : blockAt s₄.mem (W + BitVec.ofNat 64 16) = blockAt s₃.mem (W + BitVec.ofNat 64 16) :=
       blockAt_frame h₄.frame fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact (hdat₃.ok.st.symm).sub_left (Region.sub_prefix (by decide))
         · exact st0_disj L (by decide) (by decide)
-        · exact st0_w L ⟨by decide, by decide⟩
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
     obtain e₇ : blockAt s₇.mem (W + BitVec.ofNat 64 16) = blockAt s₅.mem (W + BitVec.ofNat 64 16) :=
       blockAt_frame h₇.frame fun r hr => by
         simp only [List.mem_cons] at hr
         rcases hr with rfl | rfl | rfl | hr
         · exact st0_disj L (by decide) (by decide)
         · exact st0_disj L (by decide) (by decide)
-        · exact st0_w L ⟨by decide, by decide⟩
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
         · exact exW (Lay.wSub (by decide)) r hr
     obtain dT : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r :=
-      fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by decide⟩
+      fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
     rw [blockAt_frame fY₁₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact st0_disj L (by decide) (by decide)),
       blockAt_frame fT₁₂ dT, blockAt_frame f₁₁ dT, m₁₀, e₇, r₅.mem, e₄, r₃.mem, j₂]

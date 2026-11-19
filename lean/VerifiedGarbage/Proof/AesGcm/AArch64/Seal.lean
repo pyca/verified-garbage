@@ -213,18 +213,18 @@ theorem st0_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W +
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩
-      · exact st0_w L ⟨by decide, by decide⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact (hd.sub_right (Lay.wSub (by decide))).symm
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact st0_disj L (by decide) (by decide)
     · exact st0_disj L (by decide) (by decide)
-    · exact st0_w L ⟨by decide, by decide⟩
+    · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
 
 theorem ofNat_toNat' (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]

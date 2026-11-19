@@ -67,7 +67,7 @@ theorem decAbs_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R n P : Nat
   obtain hk₃ := hk₂.of_others r₃.others
   have m₃ : s₃.mem = s₂.mem := r₃.mem
   obtain hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
-    rw [m₃]; exact bytesAt_frame f₂ (dataOk_tFrame hd) (by omega_arith)
+    rw [m₃]; exact bytesAt_frame f₂ (dataOk_tFrame hd L.hWn) (by omega_arith)
   obtain hd₃ : DataOk Wn St W s₃ D n := hd.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   obtain F₃ : Frame (tFrame St W 16 ++ absFrame St W 16) s.mem s₃.mem := by
     rw [m₃]; exact f₂.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩

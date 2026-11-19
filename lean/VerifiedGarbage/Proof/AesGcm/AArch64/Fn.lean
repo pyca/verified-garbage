@@ -42,9 +42,9 @@ theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop}
 /-- The layout, from disjointness of the context, the state and `W`. -/
 theorem Lay.of {Wn : Nat} {Ctx St W : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
     (ww : W.toNat + Wn ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
-    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, Wn⟩) :
-    Lay Wn Ctx St W :=
-  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide))⟩
+    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, Wn⟩)
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560) : Lay Wn Ctx St W :=
+  ⟨hWn, cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by omega)), sW.sub_right (Lay.wSub (by omega))⟩
 
 theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
@@ -59,7 +59,7 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFram
   rcases hr with rfl | rfl | rfl
   · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St W yo, (savedR W).Disjoint r := by
   intro r hr
@@ -67,7 +67,7 @@ theorem saved_tFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ tFrame St
   rcases hr with rfl | rfl | rfl
   · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame Wn St W o, (savedR W).Disjoint r := by
   intro r hr
@@ -76,7 +76,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame W
   · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
   intro r hr
@@ -84,16 +84,16 @@ theorem saved_j0Frame : ∀ r ∈ j0Frame St W, (savedR W).Disjoint r := by
   rcases hr with rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem saved_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Wn Ctx St W s D n) :
     ∀ r ∈ crFrame Wn St W D n, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by decide))).symm
+  · exact (hd.ok.w.sub_right (Lay.wSub (by have := L.hWn; omega))).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem saved_cmp : ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 32⟩ : Region)], (savedR W).Disjoint r := by
   intro r hr

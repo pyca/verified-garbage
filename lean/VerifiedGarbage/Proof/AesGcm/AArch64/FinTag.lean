@@ -119,8 +119,8 @@ theorem finBody_ok (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k : Reg →
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact st0_disj L (by decide) (by decide)
-        · exact st0_w L ⟨by decide, by decide⟩
-        · exact st0_w L ⟨by decide, by decide⟩)]
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩
+        · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩)]
     rfl
 
 theorem saved_finFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ finFrame St W o, (savedR W).Disjoint r := by
