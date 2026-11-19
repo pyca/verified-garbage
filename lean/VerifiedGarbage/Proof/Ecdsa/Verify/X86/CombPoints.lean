@@ -95,7 +95,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
     rw [v₄ (by decide), v₄ (by decide), W₃ (by decide) (by decide), W₃ (by decide) (by decide)]
     exact hQ
   have hlen := hc.len_hi
-  refine WP.seq (WP.mono (winMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs₄ F₄.mp F₄.ap
+  refine WP.seq (WP.mono (ecdhMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs₄ F₄.mp F₄.ap
     F₄.b3p F₄.zero F₄.onep
     (by rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt) hPc hG₄

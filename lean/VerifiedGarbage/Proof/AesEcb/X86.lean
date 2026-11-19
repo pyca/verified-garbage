@@ -185,13 +185,13 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi X86
   if h : v.encWritten = 0 then [{
     suffix := v.suffix
     code := v.enc.code
-    verified := encrypt_free v h
+    verified := .unscrubbed (encrypt_free v h)
     spSafe := v.encSpSafe }]
   else [{
     suffix := v.suffix
     code := Impl.AesEcb.X86.wiped v.enc v.encWritten
     stack := 32
-    verified := encrypt_verified v
+    verified := .unscrubbed (encrypt_verified v)
     spSafe := encrypt_spSafe v }]
 
 /-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted: its
@@ -201,13 +201,13 @@ def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi X86
   if h : v.decWritten = 0 then [{
     suffix := v.suffix
     code := v.dec.code
-    verified := decrypt_free v h
+    verified := .unscrubbed (decrypt_free v h)
     spSafe := v.decSpSafe }]
   else [{
     suffix := v.suffix
     code := Impl.AesEcb.X86.wiped v.dec v.decWritten
     stack := 32
-    verified := decrypt_verified v
+    verified := .unscrubbed (decrypt_verified v)
     spSafe := decrypt_spSafe v }]
 
 end VG.Proof.AesEcb.X86

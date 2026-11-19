@@ -23,20 +23,20 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.Arm.verifyP521Comb
-    verified := Proof.Ecdsa.Verify.Arm.P521.verifyHash_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.P521.verifyHash_verified hasLaw.law) },
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
       Impl.Ecdsa.Arm.verifyP521CombU
-    verified := Proof.Ecdsa.Verify.Arm.P521.verifyHashU_verified hasLaw.law },
+    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.P521.verifyHashU_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (p521CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-    verified := p521T_verified hasLaw.law },
+    verified := .unscrubbed (p521T_verified hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", tables vars)]
     code := signCodeT (p521CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-    verified := p521UT_verified hasLaw.law }]
+    verified := .unscrubbed (p521UT_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdsaP521.Arm

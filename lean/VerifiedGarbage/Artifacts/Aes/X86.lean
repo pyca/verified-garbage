@@ -14,10 +14,10 @@ namespace VG.Artifacts.Aes.X86
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey
-    verified := Proof.Aes.X86.scalar_expandKey_framed },
+    verified := .unscrubbed Proof.Aes.X86.scalar_expandKey_framed },
   Spec.Aes.expandKeyApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey
-    verified := Proof.Aes.X86.aesni_expandKey_framed }]
+    verified := .unscrubbed Proof.Aes.X86.aesni_expandKey_framed }]
 
 end VG.Artifacts.Aes.X86

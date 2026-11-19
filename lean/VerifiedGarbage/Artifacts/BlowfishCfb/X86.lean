@@ -16,15 +16,15 @@ namespace VG.Artifacts.BlowfishCfb.X86
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
-    verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed },
+    verified := .unscrubbed Proof.Blowfish.X86.Fb.cfbEncrypt_framed },
   Spec.Blowfish.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
-    verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed },
+    verified := .unscrubbed Proof.Blowfish.X86.Fb.cfbDecrypt_framed },
   Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
-    verified := Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed },
   Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
-    verified := Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.BlowfishCfb.X86

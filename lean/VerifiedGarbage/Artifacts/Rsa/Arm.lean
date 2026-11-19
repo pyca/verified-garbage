@@ -25,17 +25,17 @@ def direct : List Artifact := [
   Spec.Rsa.checkKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Rsa.Arm.CheckKey.codeU
-    verified := Proof.Rsa.Arm.CheckKey.check_key_umaal_verified },
+    verified := .unscrubbed Proof.Rsa.Arm.CheckKey.check_key_umaal_verified },
   Spec.Rsa.checkKeyApi.artifact Arm.target {
     code := Impl.Rsa.Arm.CheckKey.code
-    verified := Proof.Rsa.Arm.CheckKey.check_key_verified },
+    verified := .unscrubbed Proof.Rsa.Arm.CheckKey.check_key_verified },
   Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Bignum.Arm.PrivPreFn.codeU
-    verified := Proof.Bignum.Arm.privPre_umaal_verified },
+    verified := .unscrubbed Proof.Bignum.Arm.privPre_umaal_verified },
   Spec.Rsa.privatePrecomputeApi.artifact Arm.target {
     code := Impl.Bignum.Arm.PrivPreFn.code
-    verified := Proof.Bignum.Arm.privPre_verified }]
+    verified := .unscrubbed Proof.Bignum.Arm.privPre_verified }]
 
 end VG.Artifacts.Rsa.Arm
 
@@ -48,16 +48,16 @@ def artifacts : List Artifact :=
     Spec.Rsa.crtValuesApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Rsa.Arm.CrtValues.codeFor v.um
-      verified := Proof.Rsa.Arm.CrtValues.crt_values_for_verified v.um },
+      verified := .unscrubbed (Proof.Rsa.Arm.CrtValues.crt_values_for_verified v.um) },
     Spec.Rsa.recoverPrimesDetApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Rsa.Arm.RecoverDet.codeFor v.um
-      verified := Proof.Rsa.Arm.Recover.recover_primes_det_for_verified v.um }]) ++
+      verified := .unscrubbed (Proof.Rsa.Arm.Recover.recover_primes_det_for_verified v.um) }]) ++
   direct ++
   (VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
       suffix := v.suffix
       code := v.pc
-      verified := v.pcVerified }])
+      verified := .unscrubbed v.pcVerified }])
 
 end VG.Artifacts.Rsa.Arm

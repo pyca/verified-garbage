@@ -16,9 +16,9 @@ open VG.Proof.AesCtr.Arm
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact Arm.target {
     code := Impl.AesCtr.Arm.crypt
-    verified := Proof.AesCtr.keyed crypt_verified },
+    verified := .unscrubbed (Proof.AesCtr.keyed crypt_verified) },
   Spec.Ctr.aesFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 72 2 14 Impl.AesCtr.Arm.cryptFinal
-    verified := Proof.AesCtr.final_keyed cryptFinal_framed }]
+    verified := .unscrubbed (Proof.AesCtr.final_keyed cryptFinal_framed) }]
 
 end VG.Artifacts.AesCtr.Arm

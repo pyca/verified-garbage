@@ -16,15 +16,15 @@ open VG.Proof.AesCfb.Arm
 def artifacts : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact Arm.target {
     code := Impl.AesCfb.Arm.encrypt
-    verified := Proof.AesCfb.encrypt_keyed encrypt_verified },
+    verified := .unscrubbed (Proof.AesCfb.encrypt_keyed encrypt_verified) },
   Spec.Cfb.aesDecryptApi.artifact Arm.target {
     code := Impl.AesCfb.Arm.decrypt
-    verified := Proof.AesCfb.decrypt_keyed decrypt_verified },
+    verified := .unscrubbed (Proof.AesCfb.decrypt_keyed decrypt_verified) },
   Spec.Cfb.aesEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.encryptFinal
-    verified := Proof.AesCfb.encryptFinal_keyed encryptFinal_framed },
+    verified := .unscrubbed (Proof.AesCfb.encryptFinal_keyed encryptFinal_framed) },
   Spec.Cfb.aesDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.decryptFinal
-    verified := Proof.AesCfb.decryptFinal_keyed decryptFinal_framed }]
+    verified := .unscrubbed (Proof.AesCfb.decryptFinal_keyed decryptFinal_framed) }]
 
 end VG.Artifacts.AesCfb.Arm

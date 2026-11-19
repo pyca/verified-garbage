@@ -390,7 +390,7 @@ structure VerifyLadderCT (c : Cfg) : Prop where
   ladder : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false c.stk))
     (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save c))
       (.seq (Impl.Weierstrass.X86.bits (c.sl V) (bitsAt c.n 0) (8 * c.n))
-        (.seq (c.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
+        (.seq (c.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
           (Impl.Ecdsa.Verify.X86.Cfg.sum c)))) (fun _ _ => True)
 
 /-- `[u]G + [v]Q` by the comb and ECDH's windows leaks the same in two runs, whatever their

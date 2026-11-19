@@ -33,7 +33,7 @@ vg_argon2_hprime:
 	mov r0, r4
 	mov r2, r4
 	mov r3, #0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	mov r2, #0
 	mov r3, #0
 	add r9, r4, #832
@@ -84,7 +84,7 @@ vg_argon2_hprime:
 	mov r0, r4
 	mov r2, r4
 	mov r3, #0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	mov r2, #0
 	mov r3, #0
 	add r9, r4, #768
@@ -123,7 +123,7 @@ vg_argon2_hprime:
 	mov r0, r4
 	mov r2, r4
 	mov r3, #0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	mov r2, #0
 	mov r3, #0
 	add r9, r4, #768

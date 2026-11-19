@@ -14,24 +14,24 @@ namespace VG.Artifacts.Sha256.Arm
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.init224
-    verified := Proof.Sha256.Arm.Shared.init224 },
+    verified := .unscrubbed Proof.Sha256.Arm.Shared.init224 },
   Spec.Sha256.finalize224Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224
-    verified := Proof.Sha256.Arm.Shared.finalize224 },
+    verified := .unscrubbed Proof.Sha256.Arm.Shared.finalize224 },
   Spec.Sha256.digest224Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha224H
-    verified := Proof.MdStream.Arm.Digest.sha224_digest },
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha224_digest },
   Spec.Sha256.initApi.artifact Arm.target {
     code := Impl.Sha256.Arm.Stream.init
-    verified := Proof.Sha256.Arm.Shared.init },
+    verified := .unscrubbed Proof.Sha256.Arm.Shared.init },
   Spec.Sha256.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
-    verified := Proof.Sha256.Arm.Shared.update },
+    verified := .unscrubbed Proof.Sha256.Arm.Shared.update },
   Spec.Sha256.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
-    verified := Proof.Sha256.Arm.Shared.finalize },
+    verified := .unscrubbed Proof.Sha256.Arm.Shared.finalize },
   Spec.Sha256.digest256Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha256H
-    verified := Proof.MdStream.Arm.Digest.sha256_digest }]
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha256_digest }]
 
 end VG.Artifacts.Sha256.Arm

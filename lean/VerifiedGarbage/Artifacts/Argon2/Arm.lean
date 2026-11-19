@@ -15,6 +15,6 @@ namespace VG.Artifacts.Argon2.Arm
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact Arm.target {
     code := Impl.Argon2.Arm.Derive.derive
-    verified := Proof.Argon2.Arm.Derive.deriveShared_verified }]
+    verified := .unscrubbed Proof.Argon2.Arm.Derive.deriveShared_verified }]
 
 end VG.Artifacts.Argon2.Arm

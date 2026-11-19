@@ -19,24 +19,24 @@ open VG.Proof.BrainpoolP512r1.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.publicKeyBrainpoolP512r1Comb
-    verified := Proof.EcKey.Arm.BrainpoolP512r1.combPk_verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Arm.BrainpoolP512r1.combPk_verified hasLaw.law) },
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.publicKeyBrainpoolP512r1CombU
-    verified := Proof.EcKey.Arm.BrainpoolP512r1.combPkU_verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Arm.BrainpoolP512r1.combPkU_verified hasLaw.law) },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.code
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verified },
+    verified := .unscrubbed Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verified },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.code
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verified hasLaw.law) },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verifiedU },
+    verified := .unscrubbed Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verifiedU },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verifiedU hasLaw.law }]
+    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verifiedU hasLaw.law) }]
 
 end VG.Artifacts.EcBrainpoolP512r1.Arm

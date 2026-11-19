@@ -69,7 +69,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save p384Comb))
     (.seq (Impl.Weierstrass.X86.bits (p384Comb.sl V) (bitsAt p384Comb.n 0) (8 * p384Comb.n))
-      (.seq (p384Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
+      (.seq (p384Comb.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum p384Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode

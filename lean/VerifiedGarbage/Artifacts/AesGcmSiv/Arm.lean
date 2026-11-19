@@ -23,9 +23,9 @@ open VG.Proof.AesGcmSiv.Arm
 def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
-    verified := Proof.AesGcmSiv.seal_keyed seal_framed },
+    verified := .unscrubbed (Proof.AesGcmSiv.seal_keyed seal_framed) },
   Spec.GcmSiv.openApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
-    verified := Proof.AesGcmSiv.open_keyed open_framed }]
+    verified := .unscrubbed (Proof.AesGcmSiv.open_keyed open_framed) }]
 
 end VG.Artifacts.AesGcmSiv.Arm

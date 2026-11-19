@@ -19,12 +19,12 @@ open VG.Proof.CmacTripleDes.X86
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit
-    verified := Proof.CmacTripleDes.Stream.X86.init_framed },
+    verified := .unscrubbed Proof.CmacTripleDes.Stream.X86.init_framed },
   Spec.Cmac.tdesAbsorbApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb
-    verified := Proof.CmacTripleDes.Stream.X86.absorb_framed },
+    verified := .unscrubbed Proof.CmacTripleDes.Stream.X86.absorb_framed },
   Spec.Cmac.tdesFinishApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish
-    verified := Proof.CmacTripleDes.Stream.X86.finish_framed }]
+    verified := .unscrubbed Proof.CmacTripleDes.Stream.X86.finish_framed }]
 
 end VG.Artifacts.CmacTripleDes.X86

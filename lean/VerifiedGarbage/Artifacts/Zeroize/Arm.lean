@@ -19,5 +19,5 @@ open VG.Arm
 def artifacts : List Artifact := [
   Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.Arm.zeroize
-    verified := Proof.Zeroize.Arm.verified }]
+    verified := .unscrubbed Proof.Zeroize.Arm.verified }]
 end VG.Artifacts.Zeroize.Arm

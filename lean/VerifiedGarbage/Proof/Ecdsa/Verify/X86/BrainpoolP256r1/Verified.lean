@@ -69,7 +69,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save brainpoolp256r1Comb))
     (.seq (Impl.Weierstrass.X86.bits (brainpoolp256r1Comb.sl V) (bitsAt brainpoolp256r1Comb.n 0) (8 * brainpoolp256r1Comb.n))
-      (.seq (brainpoolp256r1Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
+      (.seq (brainpoolp256r1Comb.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum brainpoolp256r1Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode

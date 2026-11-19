@@ -14,12 +14,12 @@ namespace VG.Artifacts.Cast5.X86
 def artifacts : List Artifact := [
   Spec.Cast5.expandKeyApi.artifact X86.target {
     code := Impl.Cast5.X86.expandKey
-    verified := Proof.Cast5.X86.expandKey_verified },
+    verified := .unscrubbed Proof.Cast5.X86.expandKey_verified },
   Spec.Cast5.ecbEncryptApi.artifact X86.target {
     code := Impl.Cast5.X86.ecbEncrypt
-    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86.ecbEncrypt_verified },
+    verified := .unscrubbed (Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86.ecbEncrypt_verified) },
   Spec.Cast5.ecbDecryptApi.artifact X86.target {
     code := Impl.Cast5.X86.ecbDecrypt
-    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86.ecbDecrypt_verified }]
+    verified := .unscrubbed (Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86.ecbDecrypt_verified) }]
 
 end VG.Artifacts.Cast5.X86
