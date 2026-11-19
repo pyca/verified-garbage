@@ -297,6 +297,11 @@ theorem wR {d n : Nat} (h : d + n ≤ T) : InRegions (s.rd ++ s.wr) (W + BitVec.
 theorem wC {d n : Nat} (h : d + n ≤ T) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by have := P.hT; omega)
 
+/-- The first 512 bytes of the working space, which hold everything but the
+callee's. -/
+theorem w5 (L : Lay T K W) : Covers [⟨W, 512⟩] s.wr :=
+  Proof.AesGcm.AArch64.covers_prefix P.w L.hT.1
+
 end Perm
 
 /-! ## Buffers -/
