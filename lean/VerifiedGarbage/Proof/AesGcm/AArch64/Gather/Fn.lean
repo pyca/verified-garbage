@@ -372,7 +372,7 @@ structure Lay (C : CtxSpec) (s : State) : Prop where
   hgl : gl s (Cnt s) = L s
   ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
 
-theorem lay {Wn : Nat} {s : State} (hs : gatherPre C s) : Lay Wn C s := by
+theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
   sig_split hs
   rename_i rd wr kd kt nd nt ad at_ dsd dst lsdt dt darg targ bk bn ba bds bl barg bd bt ok on oa ods ol od ot
     w₁ w₂ hR
@@ -400,7 +400,7 @@ theorem frame_eMem (s : State) : Frame [FR s] s.mem (eMem s) :=
 
 namespace Lay
 
-variable {Wn : Nat} {s : State} (h : Lay Wn C s)
+variable {s : State} (h : Lay C s)
 include h
 
 theorem hA (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (2592 + 8 * i) := stackArgAddr_eq s h.hB i
@@ -477,13 +477,11 @@ structure Entered (s e : State) : Prop where
   wr : e.wr = FR s :: s.wr
   v : ∀ r ∈ preservedV, (e.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
-theorem allocated_sp {Wn : Nat} {s : State} (h : Lay Wn C s) : (allocated 16 s).sp = Bs s + BitVec.ofNat 64 2576 := by
-  obtain hWn := h.hWn
+theorem allocated_sp {s : State} (h : Lay C s) : (allocated 16 s).sp = Bs s + BitVec.ofNat 64 2576 := by
   show s.sp - BitVec.ofNat 64 16 = _
   rw [h.hB, add_ofNat_sub_ofNat _ (by decide)]
 
-theorem entered_wp {Wn : Nat} {s : State} (h : Lay Wn C s) : WP isa (.block entry) (allocated 16 s) (Entered s) := by
-  obtain hWn := h.hWn
+theorem entered_wp {s : State} (h : Lay C s) : WP isa (.block entry) (allocated 16 s) (Entered s) := by
   have asp := allocated_sp h
   have awr : (allocated 16 s).wr = FR s :: s.wr := by
     show (⟨s.sp - BitVec.ofNat 64 16, 16⟩ :: s.wr : List Region) = _
@@ -502,8 +500,7 @@ theorem entered_wp {Wn : Nat} {s : State} (h : Lay Wn C s) : WP isa (.block entr
   exact h.eArg 0 (by decide)
 
 /-- `gather`'s precondition after the entry. -/
-theorem gatherPre_of {Wn : Nat} {s e : State} (h : Lay Wn C s) (he : Entered s e) : GatherPre e (Src s) (Dst s) (Cnt s) (L s) := by
-  obtain hWn := h.hWn
+theorem gatherPre_of {s e : State} (h : Lay C s) (he : Entered s e) : GatherPre e (Src s) (Dst s) (Cnt s) (L s) := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   obtain ⟨hls, -⟩ := Proof.AesGcm.listed_congr_le (Nat.le_refl _) h.hag
@@ -531,8 +528,7 @@ structure Gathered (s g : State) : Prop where
   wr : g.wr = FR s :: s.wr
   v : ∀ r ∈ preservedV, (g.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
-theorem gathered_wp {Wn : Nat} {s e : State} (h : Lay Wn C s) (he : Entered s e) : WP isa gather e (Gathered s) := by
-  obtain hWn := h.hWn
+theorem gathered_wp {s e : State} (h : Lay C s) (he : Entered s e) : WP isa gather e (Gathered s) := by
   refine WP.mono (WP.preservedV (gather_wp e (gatherPre_of h he)) (by lit_decide)) fun g ⟨⟨mg, kg⟩, vg⟩ => ?_
   rw [he.mem, h.hpt] at mg
   exact ⟨mg, fun r hg h₁₁ h₁₆ h₁₇ => (kg.gpr r hg).trans (he.gpr r h₁₁ h₁₆ h₁₇), kg.sp.trans he.sp,
@@ -549,8 +545,7 @@ structure Ready (s c : State) : Prop where
   wr : c.wr = FR s :: s.wr
   v : ∀ r ∈ preservedV, (c.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
-theorem ready_wp {Wn : Nat} {s g : State} (h : Lay Wn C s) (hg : Gathered s g) : WP isa (.block callArgs) g (Ready s) := by
-  obtain hWn := h.hWn
+theorem ready_wp {s g : State} (h : Lay C s) (hg : Gathered s g) : WP isa (.block callArgs) g (Ready s) := by
   refine WP.mono (callArgs_ok g
       (by rw [hg.sp, Offset.add_ofNat_add_ofNat, hg.rd, hg.wr]; exact h.inArg 2592 (by decide) (by decide) _)
       (by rw [hg.sp, Offset.add_ofNat_add_ofNat, hg.rd, hg.wr]; exact h.inArg 2600 (by decide) (by decide) _))
@@ -577,18 +572,16 @@ theorem Ready.callGpr {s c : State} (hc : Ready s c) :
     by rw [c.callEntry_gpr (by decide), hc.x6], by rw [c.callEntry_gpr (by decide), hc.x7]⟩
 
 /-- `tag`, the call's stack argument. -/
-theorem Ready.stackArg0 {Wn : Nat} {s c : State} (h : Lay Wn C s) (hc : Ready s c) (rd' wr' : List Region) :
+theorem Ready.stackArg0 {s c : State} (h : Lay C s) (hc : Ready s c) (rd' wr' : List Region) :
     stackArg ((c.callEntry).withRegions rd' wr') 0 = Tg s := by
-  obtain hWn := h.hWn
   have cTg : c.mem.read (Bs s + BitVec.ofNat 64 2576) 8 = Tg s := by
     rw [hc.mem, h.gFrame 2576 (by decide)]; exact read_write_self _ _ _
   rw [← cTg, ← hc.sp]; simp [stackArg, stackArgAddr, Mem.readW]
 
 /-- What the call needs. -/
-theorem Ready.call {Wn : Nat} {s c : State} (h : Lay Wn C s) (hc : Ready s c) :
+theorem Ready.call {s c : State} (h : Lay C s) (hc : Ready s c) :
     callPre C ((c.callEntry).withRegions (rdC C s) (wrC s)) ∧ Covers (rdC C s ++ wrC s) (c.rd ++ c.wr) ∧
       Covers (wrC s) c.wr := by
-  obtain hWn := h.hWn
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   obtain ⟨c0, c1, c2, c3, c4, c5, c6, c7⟩ := hc.callGpr
@@ -639,13 +632,12 @@ structure Called (s s' : State) : Prop where
   v : ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
 /-- The memory the call finds, changed since the entry only in the frame and at `dst`. -/
-theorem frame_gMem' {Wn : Nat} {s : State} (h : Lay Wn C s) : Frame [FR s, dR s] s.mem (gMem s) :=
+theorem frame_gMem' {s : State} (h : Lay C s) : Frame [FR s, dR s] s.mem (gMem s) :=
   ((frame_eMem s).mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp)).trans
     (h.frame_gMem.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp))
 
 /-- `C.inv` of the key context, kept until the call. -/
-theorem inv_gMem {Wn : Nat} {s : State} (h : Lay Wn C s) (hi : C.inv s.mem (K s)) : C.inv (gMem s) (K s) := by
-  obtain hWn := h.hWn
+theorem inv_gMem {s : State} (h : Lay C s) (hi : C.inv s.mem (K s)) : C.inv (gMem s) (K s) := by
   obtain ⟨-, -, kd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ok, -⟩ := h.pre
   refine C.congr (fun i hi' => frame_gMem' h _ fun r hr hcon => ?_) hi
   have hx : (kR C s).Contains (K s + BitVec.ofNat 64 i) 1 :=
@@ -655,9 +647,8 @@ theorem inv_gMem {Wn : Nat} {s : State} (h : Lay Wn C s) (hi : C.inv s.mem (K s)
   · exact h.bk.sub_left (stk_sub s 2576 16 (by decide)) _ hcon hx
   · exact kd _ hx hcon
 
-theorem called_wp {Wn : Nat} (F : SealFn C) {s c : State} (h : Lay Wn C s) (hi : C.inv s.mem (K s)) (hc : Ready s c) :
+theorem called_wp (F : SealFn C) {s c : State} (h : Lay C s) (hi : C.inv s.mem (K s)) (hc : Ready s c) :
     WP isa (.call F.fn.name F.fn.code) c (Called s) := by
-  obtain hWn := h.hWn
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c0, c1, c2, c3, c4, c5, c6, c7⟩ := hc.callGpr
   have hdep := F.depth
@@ -692,11 +683,10 @@ theorem called_wp {Wn : Nat} (F : SealFn C) {s c : State} (h : Lay Wn C s) (hi :
     sp'.trans hc.sp, rd'.trans hc.rd, wr'.trans hc.wr, fun r hr => (presV' r hr).trans (hc.v r hr)⟩
 
 /-- The return address back in `x30`, and the frame freed. -/
-theorem ret_wp {Wn : Nat} {s s' : State} (h : Lay Wn C s) (hc : Called s s') :
+theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
     WP isa (.block [.ldrSp .x30 8]) s' fun z => ∀ m u, Frame [⟨s.sp - BitVec.ofNat 64 16, 16⟩] z.mem m →
       abiPreserved s { freed 16 z with mem := m, unknowns := u } ∧
         gatherPost s { freed 16 z with mem := m, unknowns := u } := by
-  obtain hWn := h.hWn
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, -, -, -, -, -, -, -, -,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := h.pre
   refine WP.mono (ldrSp_ok (t := .x30) (k := 8) s' (by decide) ?_) fun z ⟨x30z, gz, mz, spz, rdz, wrz, vz⟩ => ?_
