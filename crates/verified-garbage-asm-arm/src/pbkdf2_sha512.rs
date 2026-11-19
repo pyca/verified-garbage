@@ -53,7 +53,7 @@ beq 20f
 movw r12, #2484
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -216,7 +216,7 @@ ldr lr, [r11, #1900]
 ldr r11, [r11, #1904]
 add sp, sp, #3456
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch::vg_hmac_sha512_init_scratch,

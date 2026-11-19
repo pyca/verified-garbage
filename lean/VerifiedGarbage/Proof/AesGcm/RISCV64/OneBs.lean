@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesGcm.Bitsliced
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -58,6 +59,7 @@ meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 meta import VerifiedGarbage.Proof.AesGcm.Bitsliced
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -630,7 +632,7 @@ theorem sealBsOut :
 
 /-- `Spec.Gcm.sealBitslicedApi`. -/
 def sealBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.sealBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs
       verified := Proof.AesGcm.sealBitsliced_keyed sealBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])]

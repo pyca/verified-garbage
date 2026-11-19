@@ -152,7 +152,7 @@ vg_sha224_digest:
 	movw r12, #196
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha224_init}
+	bl {vg_sha224_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -563,7 +563,7 @@ vg_sha256_digest:
 	movw r12, #196
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha256_init}
+	bl {vg_sha256_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9

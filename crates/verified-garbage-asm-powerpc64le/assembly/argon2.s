@@ -390,7 +390,7 @@ vg_argon2:
 	addi %r3, %r31, 0
 	addi %r5, %r31, 832
 	li %r6, 0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	lwz %r3, 200(%r30)
 	stw %r3, 896(%r31)
 	lwz %r3, 504(%r30)

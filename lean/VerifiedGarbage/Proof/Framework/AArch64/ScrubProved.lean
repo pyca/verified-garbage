@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAllW
+public import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Scrubbed code registered with its facts proved (AArch64)
@@ -102,7 +103,9 @@ rather than found when the registration is evaluated. `W` and `rb` are the
 stack and the result's bits as `hok` states them, so that `hs` is stated
 with them and not with projections of `r`. -/
 def scrubAllOf {api : Api} (r : Registration api target) (cl : Clear) {W rb : Nat}
-    (hok : ScrubAllOk r.contract W rb) (hs : scrubSide r.code W rb cl r.tables = true)
+    (hok : ScrubAllOk r.contract W rb)
+    (hs : scrubSide r.code W rb cl r.tables = true := by
+      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
   have hok : ScrubAllOk r.contract r.stack (retBitsOf r) := by rw [hW, hb]; exact hok
@@ -141,5 +144,50 @@ def scrubAllOf {api : Api} (r : Registration api target) (cl : Clear) {W rb : Na
         decide_eq_true_eq, beq_iff_eq] at hs
       exact noResidue_scrubAll hwf hkp r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hok.sp
         hs.1.1.1.1.1.2 hdit (tablesCall_syms hs.1.1.1.1.2) hrb⟩ }
+
+/-- `scrubAllOf` for code without frames (`scrubSide` with no stack, whose
+depth is then 0) that keeps what `r` states of `written`: `withScrubAllW`,
+with the registers the tail clears stated and what it needs of the code
+proved (`scrubSide` with no stack). -/
+def scrubAllWOf {api : Api} (r : Registration api target) (cl : Clear) {rb : Nat}
+    (hok : ScrubAllOk r.contract 0 rb)
+    (hs : scrubSide r.code 0 rb cl r.tables = true := by
+      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
+    (hb : retBitsOf r = rb := by rfl) : Registration api target :=
+  have hok : ScrubAllOk r.contract 0 (retBitsOf r) := by rw [hb]; exact hok
+  have h : scrubSide r.code 0 (retBitsOf r) cl r.tables = true := by rw [hb]; exact hs
+  have hk := keeps_of_side h
+  have hd : r.code.aarch64Depth = 0 := by
+    have hs := h
+    simp only [scrubSide, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hs
+    exact hs.1.1.1.1
+  { suffix := r.suffix
+    tables := r.tables
+    code := scrubAll 0 (retBitsOf r) cl r.code
+    contract := r.contract
+    verified := Verified.scrubAll0 hk.1 r.verified hk.2.2.2 hok
+    consts := r.consts
+    stack := r.stack
+    ofApi := r.ofApi
+    ofSig := r.ofSig
+    spSafe := all_spSafe _
+    written := r.written
+    writtenOk := fun s t s' hs he => by
+      obtain ⟨t', u, hc, hm⟩ := scrubAll0_mem hk.1 hk.2.2.2 he
+      exact writtenWithin_of_mem hm (r.writtenOk s t' u hs hc)
+    extra := r.extra
+    vendor := r.vendor
+    notWith := r.notWith
+    residue := some ⟨noResidue_scrubAll0 hk.1 hk.2.1 r.verified hd hk.2.2.1 hk.2.2.2⟩ }
+
+/-- The registers of `a` and of `b`, in `Clear.all`'s order (which is
+`Clear.of`'s): what the tail of a caller clears, from the registers its own
+instructions write and those the implementation it calls states it writes
+(a field of the variant), so that neither is found from the code when the
+registration is evaluated. -/
+def clearUnion (a b : Clear) : Clear where
+  gprs := allGprs.filter fun q => a.gprs.contains q || b.gprs.contains q
+  vecs := allVecs.filter fun w => a.vecs.contains w || b.vecs.contains w
+  his := hiVecs.filter fun w => a.his.contains w || b.his.contains w
 
 end VG.AArch64.ScrubAll

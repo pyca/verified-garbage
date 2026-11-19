@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Framework.Contract
@@ -220,6 +221,14 @@ structure Permutation where
   /-- The `target_vendor` of the CPUs it is faster on, which callers that are
   faster with it only there give their implementations (`Artifact.vendor`). -/
   vendor : Option String := none
+  /-- The registers its code (`callee.code`) writes, of those the calling
+  convention does not preserve: what the tail of a function that calls it
+  clears for it, with the registers the function's own code writes
+  (`ScrubAll.clearUnion`), so that neither is found from the code when the
+  function's registration is evaluated. A caller's side condition
+  (`ScrubAll.scrubSide`), proved of every implementation it is registered
+  with, is what holds this to the code. -/
+  clear : Impl.Residue.AArch64.Clear
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
@@ -361,6 +370,7 @@ theorem scalarSums : Taint.AllOk VectorTaint.taint (Callers.sums .scalar) :=
 def Permutation.scalar : Permutation where
   callee := .scalar
   features := []
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15], [], []⟩
   ok := permute_correct
   noFrames := permute_noFrames
   noDit := by lit_decide

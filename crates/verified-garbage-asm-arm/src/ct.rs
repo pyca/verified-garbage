@@ -7,11 +7,13 @@
 ///
 /// Contract: `VG.Spec.Ct.eqContract`. Constant time: only the pointers, `a_len` and `b_len` may affect timing, not the bytes compared; only the result depends on them.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `a` must be valid for reads of `a_len` bytes.
 /// * `b` must be valid for reads of `b_len` bytes.
-/// * Neither `a` nor `b` may overlap the 4 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `a` nor `b` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -40,6 +42,17 @@ sub r3, r3, #1
 lsr r0, r3, #31
 21:
 ldr r4, [sp], #4
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }

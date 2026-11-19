@@ -40,7 +40,7 @@ vg_pbkdf2_hmac_sha1:
 	movw r12, #736
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha1_init}
+	bl {vg_sha1_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9

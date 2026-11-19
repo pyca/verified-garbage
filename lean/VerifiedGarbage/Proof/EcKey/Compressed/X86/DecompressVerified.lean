@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Front
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
+public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.EcKey.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
@@ -200,6 +201,14 @@ theorem rootPower_ok {c : Cfg} (hc : CfgOk c) {e j : Nat}
     rw [keep₂ (by decide) (by decide) (by decide)] at v₃
     exact v₃
 
+theorem p521Root_exponent : chainExponents Impl.EcKey.Compressed.X86.p521RootOps (1, 1) =
+    ((Impl.Weierstrass.X86.Mont.p521Prime + 1) / 4, 1) := by
+  decide +kernel
+
+theorem p521Root_bound : ∀ op ∈ Impl.EcKey.Compressed.X86.p521RootOps, powerOpBound op := by
+  simp only [Impl.EcKey.Compressed.X86.p521RootOps, List.mem_singleton, forall_eq, powerOpBound]
+  decide
+
 /-- The three-mod-four candidate uses an exponent derived from the prime. -/
 theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
     {base : Addr} {s : State} (hs : Scr s base size)
@@ -213,8 +222,18 @@ theorem rootThree_ok {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 = 3)
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) ^ ((c.C.p + 1) / 4) := by
   simp only [Impl.EcKey.Compressed.X86.rootCandidate, hp, ↓reduceIte]
-  exact rootPower_ok hc (by decide)
-    (by have := hc.p_lt; have := hc.p_ge; omega_arith) hs _hM hB hO
+  split
+  next h521 =>
+    have he : (c.C.p + 1) / 4 = (Impl.Weierstrass.X86.Mont.p521Prime + 1) / 4 := by rw [h521]
+    refine WP.mono (chainPower_ok (rootPow_lay hc (j := 2) (by decide)) (rootPow_wk hc (by decide))
+      (unitMod_pow_two hc.p_odd (64 * c.n)) Impl.EcKey.Compressed.X86.p521RootOps p521Root_bound
+      p521Root_exponent hs _hM hB) fun s' ⟨K, U, L, V⟩ =>
+      ⟨K, U.mono (fun w hw => List.mem_append_right _ hw), L, ?_⟩
+    rw [he]
+    exact V
+  next _ =>
+    exact rootPower_ok hc (by decide)
+      (by have := hc.p_lt; have := hc.p_ge; omega_arith) hs _hM hB hO
 
 end VG.Proof.EcKey.Compressed.X86
 

@@ -23,7 +23,9 @@ space it uses, as on x86-64 and AArch64 (`Impl/Ecdh/AArch64.lean`):
    always runs on a point of the curve), to the slots it takes its point
    from;
 5. `[d]P` by windows of `d`, from a table of the point's multiples that is
-   read whole for each window (`Cfg.winMul`, `Impl/Ecdsa/X86/Window.lean`),
+   read whole for each window (`Cfg.ecdhMul`, `Impl/Ecdsa/X86/Window.lean`:
+   `winMul`, or `swinMul`'s signed windows of four bits for coordinates of
+   more than six words),
    and `Z^(p-2)` by the signature's power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
@@ -151,7 +153,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.winMul PX PY) <| .seq c.pPow (middle c)
+  .seq (c.ecdhMul PX PY) <| .seq c.pPow (middle c)
 
 end Cfg
 

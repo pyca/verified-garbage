@@ -832,7 +832,7 @@ vg_sha384_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha384_init}
+	bl {vg_sha384_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1037,7 +1037,7 @@ vg_sha512_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1242,7 +1242,7 @@ vg_sha512_224_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_224_init}
+	bl {vg_sha512_224_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -1447,7 +1447,7 @@ vg_sha512_256_digest:
 	movw r12, #308
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha512_256_init}
+	bl {vg_sha512_256_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9

@@ -133,6 +133,23 @@ vg_x448_exchange:
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
+	li %r0, 0
+	stdu %r1, -48(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	addi %r1, %r1, 48
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
 
 vg_x448_base:
@@ -20110,4 +20127,15 @@ vg_x448_base:
 	and %r7, %r7, %r11
 	xor %r5, %r5, %r7
 	stw %r5, 52(%r3)
+	li %r0, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
