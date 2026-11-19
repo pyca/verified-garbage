@@ -1,6 +1,6 @@
 //! ECDH over brainpoolP320r1.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
 
 use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdh_brainpoolp320r1::vg_ecdh_brainpoolp320r1_auto;

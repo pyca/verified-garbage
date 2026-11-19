@@ -1,6 +1,6 @@
 //! SEC 1 conversions over brainpoolP320r1: the public keys of `ecdsa_brainpoolP320r1_sha384_p1363_test.json`.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
 
 use verified_garbage::ec::BrainpoolP320r1;
 

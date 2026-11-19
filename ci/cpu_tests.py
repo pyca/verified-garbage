@@ -125,6 +125,14 @@ GROUPS = {
             "wycheproof::ecdsa_brainpoolp256r1",
         ],
     },
+    "brainpoolp320r1": {
+        "lib": ["ec::validate::tests::brainpoolp320r1", "ec::compressed::tests::brainpoolp320r1"],
+        "tests": [
+            "wycheproof::ec_compressed::brainpoolp320r1",
+            "wycheproof::ecdh_brainpoolp320r1",
+            "wycheproof::ecdsa_brainpoolp320r1",
+        ],
+    },
     "brainpoolp384r1": {
         "lib": ["ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
         "tests": [

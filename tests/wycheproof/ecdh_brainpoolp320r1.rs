@@ -10,7 +10,7 @@
 //! curve, a compressed point, malformed DER) cannot be passed, and its vector
 //! must not be valid.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "powerpc64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm", target_arch = "powerpc64"))]
 
 use verified_garbage::ec::{BrainpoolP320r1, PrivateKey, PublicKey};
 use verified_garbage::error::InvalidKey;
