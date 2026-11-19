@@ -26,8 +26,8 @@ bl {vg_cmac_aes_subkeys}
 .base64 "FHpufHh75H0QAbA4eIsmfg=="
 bl {vg_aes_expand_key_scratch}
 .base64 "oAgR6IAI0emICPHpkAgR6pgIMeqmAwh8IAohOAAAADjh9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPggCiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEnHMSIACATg==""#,
-        vg_aes_expand_key_scratch = sym super::aes_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::aes_siv::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -136,9 +136,9 @@ b 216f
 215:
 216:
 .base64 "AAAu6QAAOPkIAC7pCAA4+eAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pMAohOAAAADjR9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+DAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxJxzEiAAgE4=""#,
-        vg_cmac_aes_finalize = sym super::aes_siv::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::aes_siv::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes_siv::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -255,32 +255,8 @@ b 224f
 223:
 224:
 .base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pMAohOAAAADjR9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+DAKITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcSccxIgAIBO""#,
-        vg_cmac_aes_finalize = sym super::aes_siv::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::aes_siv::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes_siv::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32.rs"]
-pub(crate) mod vg_aes_ctr32;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_encrypt_blocks.rs"]
-pub(crate) mod vg_aes_encrypt_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch.rs"]
-pub(crate) mod vg_aes_expand_key_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_finalize.rs"]
-pub(crate) mod vg_cmac_aes_finalize;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_subkeys.rs"]
-pub(crate) mod vg_cmac_aes_subkeys;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_update.rs"]
-pub(crate) mod vg_cmac_aes_update;
