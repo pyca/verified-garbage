@@ -146,7 +146,7 @@ jne 20b
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 21b
 .base64 "i7wk0AAAAIPHAFc="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WIu8JNAAAACDxwC+AAAAALgAAAAAi5Qk0AAAAIHCEAYAAIuMJIwAAACLrCTQAAAAgcUQCgAAVVFSUFZX"
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi7wk0AAAAIPHAIuEJIwAAAC5AAAAAIuUJNAAAACBwtAAAACLrCTQAAAAgcUQCgAAVVJRUFc="
@@ -196,7 +196,7 @@ jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -250,7 +250,7 @@ jne 20b
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 21b
 .base64 "i7wk0AAAAIPHAFc="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WIu8JNAAAACDxwC+AAAAALgAAAAAi5Qk0AAAAIHCEAYAAIuMJIwAAACLrCTQAAAAgcUQCgAAVVFSUFZX"
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi7wk0AAAAIPHAIuEJIwAAAC5AAAAAIuUJNAAAACBwtAAAACLrCTQAAAAgcUQCgAAVVJRUFc="
@@ -300,7 +300,7 @@ jne 27b
 .base64 "i0QkUI1kJGiLPCSLdCQEi2wkCFtbW1vD"
 .p2align 6"#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

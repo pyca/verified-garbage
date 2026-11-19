@@ -33,6 +33,8 @@ call {vg_keccak_absorb_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -50,7 +52,7 @@ pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "i4QknAIAAIkEJLiQAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuBwAAACJRCQQieCDwBiJRCQU"
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -87,6 +89,8 @@ call {vg_keccak_absorb_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -104,7 +108,7 @@ pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "i4QknAIAAIkEJLiIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuCAAAACJRCQQieCDwBiJRCQU"
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -141,6 +145,8 @@ call {vg_keccak_absorb_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -158,7 +164,7 @@ pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "i4QknAIAAIkEJLhoAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuDAAAACJRCQQieCDwBiJRCQU"
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -195,6 +201,8 @@ call {vg_keccak_absorb_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -212,7 +220,7 @@ pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "i4QknAIAAIkEJLhIAAAAiUQkBLgAAAAAiUQkCIuEJKQCAACJRCQMuEAAAACJRCQQieCDwBiJRCQU"
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -249,6 +257,8 @@ call {vg_keccak_absorb_scratch}
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -261,7 +271,7 @@ pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos:
     core::arch::naked_asm!(
         r#".base64 "jaQkbP3//4uEJJgCAACJBCS4qAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
 call {vg_keccak_pad_scratch}
-.base64 "jaQklAIAAMM="
+.base64 "jaQklAIAAGYP78C5AAAAAI2kJFz9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACNpCSkAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
@@ -270,6 +280,8 @@ call {vg_keccak_pad_scratch}
 /// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -285,7 +297,7 @@ pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: 
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJBCS4qAAAAIlEJASLhCSgAgAAiUQkCIuEJKQCAACJRCQMi4QkqAIAAIlEJBCJ4IPAGIlEJBQ="
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -294,6 +306,8 @@ call {vg_keccak_squeeze_scratch}
 /// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_sha3_256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -307,7 +321,7 @@ pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos:
     core::arch::naked_asm!(
         r#".base64 "jaQkbP3//4uEJJgCAACJBCS4iAAAAIlEJASLhCScAgAAiUQkCLgfAAAAiUQkDIngg8AUiUQkEA=="
 call {vg_keccak_pad_scratch}
-.base64 "jaQklAIAAMM="
+.base64 "jaQklAIAAGYP78C5AAAAAI2kJFz9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACNpCSkAgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
@@ -316,6 +330,8 @@ call {vg_keccak_pad_scratch}
 /// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -331,7 +347,7 @@ pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: 
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJBCS4iAAAAIlEJASLhCSgAgAAiUQkCIuEJKQCAACJRCQMi4QkqAIAAIlEJBCJ4IPAGIlEJBQ="
 call {vg_keccak_squeeze_scratch}
-.base64 "jaQkmAIAAMM="
+.base64 "jaQkmAIAAGYP78C5AAAAAI2kJFj9///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAImMJKACAACJjCSkAgAAjaQkqAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

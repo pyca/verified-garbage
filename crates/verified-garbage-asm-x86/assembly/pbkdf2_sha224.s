@@ -38,7 +38,7 @@ vg_pbkdf2_hmac_sha224_shani:
 	mov edi, ebp
 	add edi, 1136
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -290,7 +290,7 @@ vg_pbkdf2_hmac_sha224:
 	mov edi, ebp
 	add edi, 1136
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

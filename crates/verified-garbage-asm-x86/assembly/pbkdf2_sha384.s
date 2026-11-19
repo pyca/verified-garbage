@@ -38,7 +38,7 @@ vg_pbkdf2_hmac_sha384:
 	mov edi, ebp
 	add edi, 2464
 	push edi
-	call {vg_sha384_init}
+	call {vg_sha384_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

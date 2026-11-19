@@ -26,7 +26,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx4ACAABX"
-call {vg_md5_init}
+call {vg_md5_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_md5_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwvACAABVUlFQVw=="
@@ -75,7 +75,7 @@ jmp 24f
 24:
 .base64 "ieiLmIABAACLsIQBAACLuIgBAACLqIwBAACNpCQkBAAAww=="
 .p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch::vg_hmac_md5_init_scratch,

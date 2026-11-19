@@ -38,7 +38,7 @@ vg_pbkdf2_hmac_md5:
 	mov edi, ebp
 	add edi, 640
 	push edi
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

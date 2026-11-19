@@ -30,7 +30,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx8wCAABX"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha1_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwkgDAABVUlFQVw=="
@@ -79,7 +79,7 @@ jmp 24f
 24:
 .base64 "ieiLmMABAACLsMQBAACLuMgBAACLqMwBAACNpCSEBAAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_scratch_shani = sym super::hmac_sha1::vg_hmac_sha1_init_scratch_shani::vg_hmac_sha1_init_scratch_shani,
@@ -111,7 +111,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx8wCAABX"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha1_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwkgDAABVUlFQVw=="
@@ -160,7 +160,7 @@ jmp 24f
 24:
 .base64 "ieiLmMABAACLsMQBAACLuMgBAACLqMwBAACNpCSEBAAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init_scratch = sym super::hmac_sha1::vg_hmac_sha1_init_scratch::vg_hmac_sha1_init_scratch,

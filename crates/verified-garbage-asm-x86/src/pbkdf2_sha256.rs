@@ -30,7 +30,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx3AEAABX"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhAFAABVUlFQVw=="
@@ -79,7 +79,7 @@ jmp 24f
 24:
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAACNpCRkBgAAww=="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha256_init_scratch_shani = sym super::hmac_sha256::vg_hmac_sha256_init_scratch_shani::vg_hmac_sha256_init_scratch_shani,
@@ -111,7 +111,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx3AEAABX"
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhAFAABVUlFQVw=="
@@ -160,7 +160,7 @@ jmp 24f
 24:
 .base64 "ieiLmEADAACLsEQDAACLuEgDAACLqEwDAACNpCRkBgAAww=="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch::vg_hmac_sha256_init_scratch,

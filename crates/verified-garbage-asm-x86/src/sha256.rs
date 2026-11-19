@@ -21,7 +21,7 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "C" fn vg_sha256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -32,7 +32,7 @@ call {vg_sha256_finalize_scratch_shani}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
     )
@@ -52,7 +52,7 @@ jne 20b
 pub(crate) unsafe extern "C" fn vg_sha256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha256_init}
+call {vg_sha256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -63,7 +63,7 @@ call {vg_sha256_finalize_scratch}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
 .p2align 6"#,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -87,7 +87,7 @@ pub const VG_SHA224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "C" fn vg_sha224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -98,7 +98,7 @@ call {vg_sha256_finalize_scratch_shani}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
     )
@@ -118,7 +118,7 @@ jne 20b
 pub(crate) unsafe extern "C" fn vg_sha224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r#".base64 "jaQkvP7//4uEJEgBAACJRCQEi4QkTAEAAIlEJAiLhCRQAQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha256_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwhABAABVUlFQVw=="
@@ -129,7 +129,7 @@ call {vg_sha256_finalize_scratch}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACNpCREAQAAww=="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
     )
@@ -139,6 +139,8 @@ jne 20b
 ///
 /// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -147,7 +149,7 @@ jne 20b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLnYngXBiQi5B9V8NolIBLkX3XAwiUgIuTlZDveJSAy5MQvA/4lIELkRFVhoiUgUuaeP+WSJSBi5pE/6volIHMM="
+        r#".base64 "i0QkBLnYngXBiQi5B9V8NolIBLkX3XAwiUgIuTlZDveJSAy5MQvA/4lIELkRFVhoiUgUuaeP+WSJSBi5pE/6volIHLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -155,6 +157,8 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 /// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
 ///
 /// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -164,7 +168,7 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLln5glqiQi5ha5nu4lIBLly8248iUgIuTr1T6WJSAy5f1IOUYlIELmMaAWbiUgUuavZgx+JSBi5Gc3gW4lIHMM="
+        r#".base64 "i0QkBLln5glqiQi5ha5nu4lIBLly8248iUgIuTr1T6WJSAy5f1IOUYlIELmMaAWbiUgUuavZgx+JSBi5Gc3gW4lIHLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -570,6 +574,10 @@ pub(crate) mod vg_sha256_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha256_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha256_init_core.rs"]
+pub(crate) mod vg_sha256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha256_state_digest.rs"]

@@ -29,10 +29,10 @@ vg_hmac_sha224_init_shani:
 	mov ebx, DWORD PTR [esp+4]
 	mov esi, DWORD PTR [esp+8]
 	push ebx
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	push esi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov ecx, 909522486
 	mov DWORD PTR [ebx+32], ecx
@@ -177,7 +177,7 @@ vg_hmac_sha224_init_shani:
 	mov edi, ebp
 	add edi, 1136
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -811,10 +811,10 @@ vg_hmac_sha224_init:
 	mov ebx, DWORD PTR [esp+4]
 	mov esi, DWORD PTR [esp+8]
 	push ebx
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	push esi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov ecx, 909522486
 	mov DWORD PTR [ebx+32], ecx
@@ -959,7 +959,7 @@ vg_hmac_sha224_init:
 	mov edi, ebp
 	add edi, 1136
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

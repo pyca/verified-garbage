@@ -24,7 +24,7 @@ vg_sha256_digest_shani:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -176,7 +176,7 @@ vg_sha256_digest:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -328,7 +328,7 @@ vg_sha224_digest_shani:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -480,7 +480,7 @@ vg_sha224_digest:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha224_init}
+	call {vg_sha224_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -630,6 +630,17 @@ vg_sha224_init:
 	mov DWORD PTR [eax+24], ecx
 	mov ecx, -1090891868
 	mov DWORD PTR [eax+28], ecx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -651,6 +662,17 @@ vg_sha256_init:
 	mov DWORD PTR [eax+24], ecx
 	mov ecx, 1541459225
 	mov DWORD PTR [eax+28], ecx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 

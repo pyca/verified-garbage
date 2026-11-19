@@ -26,7 +26,7 @@ jae 20f
 jmp 21f
 20:
 .base64 "ie+Bx6AJAABX"
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha512_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwqAKAABVUlFQVw=="
@@ -75,7 +75,7 @@ jmp 24f
 24:
 .base64 "ieiLmFAHAACLsFQHAACLuFgHAACLqFwHAACNpCR0DQAAww=="
 .p2align 6"#,
-        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
+        vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch::vg_hmac_sha512_256_init_scratch,

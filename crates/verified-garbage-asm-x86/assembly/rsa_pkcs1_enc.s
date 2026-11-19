@@ -248,7 +248,7 @@ vg_rsa_pkcs1_decrypt_precomputed_sha256_shani:
 	mov edi, DWORD PTR [esp+208]
 	add edi, 0
 	push edi
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	pop eax
 	mov edi, DWORD PTR [esp+208]
 	add edi, 0
@@ -772,7 +772,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	mov edi, DWORD PTR [esp+208]
 	add edi, 0
 	push edi
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	pop eax
 	mov edi, DWORD PTR [esp+208]
 	add edi, 0

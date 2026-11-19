@@ -29,10 +29,10 @@ vg_hmac_md5_init:
 	mov ebx, DWORD PTR [esp+4]
 	mov esi, DWORD PTR [esp+8]
 	push ebx
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	pop eax
 	push esi
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	pop eax
 	mov ecx, 909522486
 	mov DWORD PTR [ebx+16], ecx
@@ -177,7 +177,7 @@ vg_hmac_md5_init:
 	mov edi, ebp
 	add edi, 640
 	push edi
-	call {vg_md5_init}
+	call {vg_md5_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

@@ -24,7 +24,7 @@ vg_sha1_digest_shani:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -170,7 +170,7 @@ vg_sha1_digest:
 	mov edi, ebp
 	add edi, 176
 	push edi
-	call {vg_sha1_init}
+	call {vg_sha1_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0
@@ -308,6 +308,17 @@ vg_sha1_init:
 	mov DWORD PTR [eax+12], ecx
 	mov ecx, -1009589776
 	mov DWORD PTR [eax+16], ecx
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 

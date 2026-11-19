@@ -22,12 +22,12 @@
 pub(crate) unsafe extern "C" fn vg_ed25519_key_pair(out: *mut [u8; 32], expanded: *mut [u8; 64], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "i0QkDLkgAAAAi1QkCFJRUA=="
-call {vg_sha512_digest}
+call {vg_sha512_digest_core}
 .base64 "WFhYi0QkBItMJAiLVCQQUlFQ"
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYww=="
 .p2align 6"#,
-        vg_sha512_digest = sym super::sha512::vg_sha512_digest,
+        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -52,7 +52,7 @@ call {vg_ed25519_public_key_expanded}
 pub(crate) unsafe extern "C" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuMJAgBAACLAYmEJMAAAACLQQSJhCTEAAAAi0EIiYQkyAAAAItBDImEJMwAAACLQRCJhCTQAAAAi0EUiYQk1AAAAItBGImEJNgAAACLQRyJhCTcAAAAi0EgiYQk4AAAAItBJImEJOQAAACLQSiJhCToAAAAi0EsiYQk7AAAAItBMImEJPAAAACLQTSJhCT0AAAAi0E4iYQk+AAAAItBPImEJPwAAACLhCTAAAAAg+D4iUQkIIuEJMQAAACJRCQki4QkyAAAAIlEJCiLhCTMAAAAiUQkLIuEJNAAAACJRCQwi4Qk1AAAAIlEJDSLhCTYAAAAiUQkOIuEJNwAAAAl////Pw0AAABAiUQkPIuEJOAAAACJRCRAi4Qk5AAAAIlEJESLhCToAAAAiUQkSIuEJOwAAACJRCRMi4Qk8AAAAIlEJFCLhCT0AAAAiUQkVIuEJPgAAACJRCRYi4Qk/AAAAIlEJFyLhCQYAQAAg8AAiQQk"
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "i4QkGAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIngg8BAiUQkDLggAAAAiUQkEIuEJBgBAAAFwAAAAIlEJBQ="
 call {vg_sha512_update_scratch}
 .base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIuEJBABAACDwACJRCQMi4QkFAEAAIPAAIlEJBCLhCQYAQAABcAAAACJRCQU"
@@ -64,7 +64,7 @@ call {vg_ed25519_scalar_reduce}
 .base64 "i4QkBAEAAIPAAIkEJIngg8BgiUQkBIuEJBgBAACDwACJRCQI"
 call {vg_ed25519_scalar_base}
 .base64 "i4QkGAEAAIPAAIkEJA=="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "i4QkGAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIuEJAQBAACDwACJRCQMuCAAAACJRCQQi4QkGAEAAAXAAAAAiUQkFA=="
 call {vg_sha512_update_scratch}
 .base64 "i4QkGAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIuEJAwBAACDwACJRCQMuCAAAACJRCQQi4QkGAEAAAXAAAAAiUQkFA=="
@@ -79,7 +79,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "uAAAAACJRCQguAAAAACJRCQkuAAAAACJRCQouAAAAACJRCQsuAAAAACJRCQwuAAAAACJRCQ0uAAAAACJRCQ4uAAAAACJRCQ8uAAAAACJRCRAuAAAAACJRCREuAAAAACJRCRIuAAAAACJRCRMuAAAAACJRCRQuAAAAACJRCRUuAAAAACJRCRYuAAAAACJRCRcuAAAAACJRCRguAAAAACJRCRkuAAAAACJRCRouAAAAACJRCRsuAAAAACJRCRwuAAAAACJRCR0uAAAAACJRCR4uAAAAACJRCR8uAAAAACJhCSAAAAAuAAAAACJhCSEAAAAuAAAAACJhCSIAAAAuAAAAACJhCSMAAAAuAAAAACJhCSQAAAAuAAAAACJhCSUAAAAuAAAAACJhCSYAAAAuAAAAACJhCScAAAAuAAAAACJhCSgAAAAuAAAAACJhCSkAAAAuAAAAACJhCSoAAAAuAAAAACJhCSsAAAAuAAAAACJhCSwAAAAuAAAAACJhCS0AAAAuAAAAACJhCS4AAAAuAAAAACJhCS8AAAAuAAAAACJhCTAAAAAuAAAAACJhCTEAAAAuAAAAACJhCTIAAAAuAAAAACJhCTMAAAAuAAAAACJhCTQAAAAuAAAAACJhCTUAAAAuAAAAACJhCTYAAAAuAAAAACJhCTcAAAAuAAAAACJhCTgAAAAuAAAAACJhCTkAAAAuAAAAACJhCToAAAAuAAAAACJhCTsAAAAuAAAAACJhCTwAAAAuAAAAACJhCT0AAAAuAAAAACJhCT4AAAAuAAAAACJhCT8AAAAWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWMM="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
@@ -105,7 +105,7 @@ call {vg_ed25519_scalar_mul_add}
 pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "UFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUIuEJBQBAACDwACJBCQ="
-call {vg_sha512_init}
+call {vg_sha512_init_core}
 .base64 "i4QkFAEAAIPAAIkEJLgAAAAAiUQkBLgAAAAAiUQkCIuEJBABAACDwACJRCQMuCAAAACJRCQQi4QkFAEAAAXAAAAAiUQkFA=="
 call {vg_sha512_update_scratch}
 .base64 "i4QkFAEAAIPAAIkEJLggAAAAiUQkBLgAAAAAiUQkCIuEJAQBAACDwACJRCQMuCAAAACJRCQQi4QkFAEAAAXAAAAAiUQkFA=="
@@ -120,7 +120,7 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "WlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWsM="
 .p2align 6"#,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,

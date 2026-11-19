@@ -21,7 +21,7 @@ pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 pub(crate) unsafe extern "C" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha1_update_scratch_shani}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
@@ -32,7 +32,7 @@ call {vg_sha1_finalize_scratch_shani}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
     )
@@ -52,7 +52,7 @@ jne 20b
 pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
 call {vg_sha1_update_scratch}
 .base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
@@ -63,7 +63,7 @@ call {vg_sha1_finalize_scratch}
 jne 20b
 .base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym super::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
@@ -73,6 +73,8 @@ jne 20b
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -81,7 +83,7 @@ jne 20b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
+        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIELgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -381,6 +383,10 @@ pub(crate) mod vg_sha1_finalize_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init_core.rs"]
+pub(crate) mod vg_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_state_digest.rs"]

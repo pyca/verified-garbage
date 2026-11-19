@@ -11,7 +11,7 @@ vg_ed25519_key_pair:
 	push edx
 	push ecx
 	push eax
-	call {vg_sha512_digest}
+	call {vg_sha512_digest_core}
 	pop eax
 	pop eax
 	pop eax
@@ -164,7 +164,7 @@ vg_ed25519_sign_expanded:
 	mov eax, DWORD PTR [esp+280]
 	add eax, 0
 	mov DWORD PTR [esp], eax
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov eax, DWORD PTR [esp+280]
 	add eax, 0
 	mov DWORD PTR [esp], eax
@@ -241,7 +241,7 @@ vg_ed25519_sign_expanded:
 	mov eax, DWORD PTR [esp+280]
 	add eax, 0
 	mov DWORD PTR [esp], eax
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov eax, DWORD PTR [esp+280]
 	add eax, 0
 	mov DWORD PTR [esp], eax
@@ -584,7 +584,7 @@ vg_ed25519_verify:
 	mov eax, DWORD PTR [esp+276]
 	add eax, 0
 	mov DWORD PTR [esp], eax
-	call {vg_sha512_init}
+	call {vg_sha512_init_core}
 	mov eax, DWORD PTR [esp+276]
 	add eax, 0
 	mov DWORD PTR [esp], eax
