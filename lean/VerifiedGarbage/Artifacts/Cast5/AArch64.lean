@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Cast5.AArch64.Scrub
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblKey
@@ -15,9 +16,13 @@ import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 namespace VG.Artifacts.Cast5.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Cast5.expandKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Cast5.expandKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Cast5.AArch64.Tbl.expandKey
-    verified := Proof.Cast5.AArch64.Tbl.expandKey_verified } Proof.Cast5.AArch64.Scrub.expandKeyOk),
+    verified := Proof.Cast5.AArch64.Tbl.expandKey_verified }
+      ⟨[.x1, .x2, .x4, .x6, .x9, .x10, .x15, .x16, .x17],
+       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+       .v26, .v28, .v29, .v30, .v31],
+       []⟩ Proof.Cast5.AArch64.Scrub.expandKeyOk),
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.Tbl.ecbEncryptCleared
     verified := Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified
