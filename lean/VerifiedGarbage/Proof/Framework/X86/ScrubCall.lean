@@ -129,6 +129,18 @@ theorem calleeOk (h : Fill n a b) (ha : calleeOk a = true) : VG.X86.calleeOk b =
     simp only [VG.X86.calleeOk, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ih ha.1.2⟩, ha.2⟩
   | icall => simp only [VG.X86.calleeOk, Bool.false_eq_true] at ha
 
+/-- The functions `b` may call indirectly are `a`'s: an implementation
+calls none (`calleeOk`). -/
+theorem inames_eq (h : Fill n a b) : inames b = inames a := by
+  induction h with
+  | block => rfl
+  | hole hd =>
+    simp only [calleeSide, Bool.and_eq_true] at hd
+    exact (inames_of_noIcall ((calleeOk_iff _).mp hd.2).1).trans rfl
+  | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [inames, iha, ihb]
+  | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [inames, ih]
+  | icall _ _ _ _ ihb ihx => simp only [inames, ihb, ihx]
+
 theorem mono {m : Nat} (hm : n ≤ m) (h : Fill n a b) : Fill m a b := by
   induction h with
   | block is => exact .block is
