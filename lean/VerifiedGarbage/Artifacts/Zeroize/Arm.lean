@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Zeroize.Arm
+public import VerifiedGarbage.Proof.Zeroize.ArmScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -17,7 +17,5 @@ namespace VG.Artifacts.Zeroize.Arm
 open VG.Arm
 
 def artifacts : List Artifact := [
-  Spec.Zeroize.zeroizeApi.artifact target {
-    code := Impl.Zeroize.Arm.zeroize
-    verified := .unscrubbed Proof.Zeroize.Arm.verified }]
+  Spec.Zeroize.zeroizeApi.artifact target Proof.Zeroize.Arm.Scrub.zeroizeRegArm]
 end VG.Artifacts.Zeroize.Arm
