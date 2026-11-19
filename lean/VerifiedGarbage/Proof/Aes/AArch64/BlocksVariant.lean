@@ -51,6 +51,22 @@ structure BlocksImpl where
   decCt : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pub dec.code
   decKeepsV : dec.code.allInstrs keepsV = true
+  /-- The bytes of `scratch` both functions need: none, or
+  `blocksAArch64`'s 2048. A caller allocates only these
+  (`blocksAArch64With`), so that it has less of its stack to zero on
+  return. -/
+  scratch : Nat
+  scratch_ok : scratch = 0 ∨ scratch = 2048
+  encOkW : ∀ s, (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).pre s →
+    ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).post s s'
+  encCtW : ConstantTime isa (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).pre
+    (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).pub enc.code
+  decOkW : ∀ s, (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).pre s →
+    ∃ t s', Exec isa dec.code s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).post s s'
+  decCtW : ConstantTime isa (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).pre
+    (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).pub dec.code
   /-- Whether both functions write nothing in `scratch` (`encFree`,
   `decFree`), so that a caller that leaves nothing written there need not
   wipe it. -/
@@ -103,6 +119,12 @@ def scalar : BlocksImpl where
   decOk := OneBlock.decryptBlocksN_correct
   decCt := OneBlock.decryptBlocksN_ct
   decKeepsV := by lit_decide
+  scratch := 2048
+  scratch_ok := .inr rfl
+  encOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.encryptBlocksN_correct
+  encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.encryptBlocksN_ct
+  decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.decryptBlocksN_correct
+  decCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.decryptBlocksN_ct
   free := false
   encFree := nofun
   decFree := nofun
@@ -128,6 +150,12 @@ def aese : BlocksImpl where
   decOk := Aese.decryptBlocks_correct
   decCt := Aese.decryptBlocks_ct
   decKeepsV := by lit_decide
+  scratch := 0
+  scratch_ok := .inl rfl
+  encOkW := Aese.encryptBlocks_correctW 0
+  encCtW := Aese.encryptBlocks_ctW 0
+  decOkW := Aese.decryptBlocks_correctW 0
+  decCtW := Aese.decryptBlocks_ctW 0
   free := true
   encFree := fun _ => Aese.encryptBlocks_written
   decFree := fun _ => Aese.decryptBlocks_written

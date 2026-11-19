@@ -29,6 +29,12 @@ def neon : BlocksImpl where
   decOk := Neon.decryptBlocks_correct
   decCt := Neon.decryptBlocks_ct
   decKeepsV := by lit_decide
+  scratch := 2048
+  scratch_ok := .inr rfl
+  encOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.encryptBlocks_correct
+  encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.encryptBlocks_ct
+  decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.decryptBlocks_correct
+  decCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.decryptBlocks_ct
   free := false
   encFree := nofun
   decFree := nofun
