@@ -25,7 +25,7 @@ evaluates once (`sign_side`), holds of the code with every implementation
 
 @[expose] public section
 
-namespace VG.Proof.RsaPkcs1Sig.X86.Scrub
+namespace VG.Proof.RsaPkcs1Sig.X86.SignScrub
 
 open VG.X86 VG.X86.Scrub
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline)
@@ -56,4 +56,4 @@ theorem sign_scrub (v : CrtImpl) :
   scrubFSide_of_fillB (sign_fill v (calleeSide_of_le v.pcStack v.pcScrub)
     (calleeSide_of_le v.pdStack v.pdScrub)) sign_side
 
-end VG.Proof.RsaPkcs1Sig.X86.Scrub
+end VG.Proof.RsaPkcs1Sig.X86.SignScrub

@@ -24,7 +24,7 @@ holds of the code with every implementation (`gen_scrub`).
 
 @[expose] public section
 
-namespace VG.Proof.RsaKeyGen.X86.Scrub
+namespace VG.Proof.RsaKeyGen.X86.GenScrub
 
 open VG.X86 VG.X86.Scrub
 open VG.Proof.MillerRabin.X86 (RoundImpl montName montCode)
@@ -51,4 +51,4 @@ Miller–Rabin round. -/
 theorem gen_scrub (v : RoundImpl) : scrubFSide (Proof.RsaKeyGen.X86.Generate.genCode v) [] 284 = true :=
   scrubFSide_of_fillB (gen_fill v (calleeSide_of_le v.stack v.scrub)) gen_side
 
-end VG.Proof.RsaKeyGen.X86.Scrub
+end VG.Proof.RsaKeyGen.X86.GenScrub
