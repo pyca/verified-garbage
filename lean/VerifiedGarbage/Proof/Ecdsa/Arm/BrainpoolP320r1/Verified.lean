@@ -1,0 +1,312 @@
+module
+
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.MulLit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.MulLit
+import VerifiedGarbage.Proof.BrainpoolP320r1.Point
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.BrainpoolP320r1.Point
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.Law
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.Arm
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Spec.BrainpoolP320r1
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Spec.BrainpoolP320r1
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+
+/-! ### `Weierstrass.Arm.MontBrainpoolP320r1`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo brainpoolP320r1's `p` and `n`, as functions, on 32-bit ARM: verified
+
+brainpoolP320r1's moduli, in five 64-bit words, are ones the functions support
+(`ModOk`), so each of their functions meets the contract of its `Api`, as
+the other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Mont
+
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp320r1p_ok : ModOk brainpoolp320r1p.k brainpoolp320r1p.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+theorem brainpoolp320r1n_ok : ModOk brainpoolp320r1n.k brainpoolp320r1n.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+end VG.Proof.Weierstrass.Arm.Mont
+
+end
+
+end
+
+/-! ### `Ecdsa.Arm.BrainpoolP320r1.Contract`, which this module and modules that import it used -/
+
+section
+
+/-!
+# ECDSA over brainpoolP320r1 on 32-bit ARM: the contract the proof is written against
+
+The facts of `Proof.Ecdsa.Instance.signContract Spec.Ecdsa.BrainpoolP320r1.inst` for 32-bit ARM, by name:
+`vg_ecdsa_brainpoolp320r1_sign(out, d, digest, k, scratch)`, with `out`, `d`, `digest`
+and `k` in `r0`–`r3` and `scratch` on the stack (AAPCS), the result in `r0`
+(the low word of `r1:r0`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Arm.BrainpoolP320r1
+
+open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
+
+/-- The signature of the arguments, as the specification computes it. -/
+abbrev sig (m : Mem) (d digest k : Addr) : Option (Nat × Nat) :=
+  signWith Spec.BrainpoolP320r1.curve (ofBytes (bytesAt m d 40)) (hashToInt Spec.BrainpoolP320r1.curve (bytesAt m digest 40))
+    (ofBytes (bytesAt m k 40))
+
+def signArm : Contract Arm.isa where
+  pre s :=
+    let out : Region := ⟨State.addr (s.gpr .r0), 80⟩
+    let d : Region := ⟨State.addr (s.gpr .r1), 40⟩
+    let digest : Region := ⟨State.addr (s.gpr .r2), 40⟩
+    let k : Region := ⟨State.addr (s.gpr .r3), 40⟩
+    let scratch : Region := ⟨State.addr (stackArg s 0), 8192⟩
+    let args : Region := ⟨State.addr s.sp, 4⟩
+    s.rd = [d, digest, k, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+      d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
+      out.Disjoint args ∧ scratch.Disjoint args ∧
+      (s.gpr .r0).toNat + 80 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 40 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 40 ≤ 2 ^ 32 ∧
+      (s.gpr .r3).toNat + 40 ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 8192 ≤ 2 ^ 32 ∧ s.sp.toNat + 4 ≤ 2 ^ 32
+  post s s' :=
+    match sig s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) (State.addr (s.gpr .r3)) with
+    | some rs => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 80 = encode Spec.BrainpoolP320r1.curve rs
+    | none => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 0 ∧
+      bytesAt s'.mem (State.addr (s.gpr .r0)) 80 = List.replicate 80 0
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
+    s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
+
+end VG.Proof.Ecdsa.Arm.BrainpoolP320r1
+
+end
+
+end
+
+/-!
+# ECDSA over brainpoolP320r1 on 32-bit ARM: `Verified`
+
+brainpoolP320r1 is a curve the proof supports (`brainpoolp320r1_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.BrainpoolP320r1.law`), so `sign_ok` gives
+the contract's postcondition; `r4`–`r11` and `lr` are restored and `sp`
+kept. Constant time by taint tracking: the only branches are on loop
+counters, and every address is `r12` (the working space, from the stack
+argument) or `lr` (`out`) plus a constant or a counter.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Arm.BrainpoolP320r1
+
+open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.Arm
+open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass Spec.Weierstrass
+
+theorem brainpoolp320r1_nBits : 64 * brainpoolp320r1.n ≤ Spec.Ecdsa.nBits brainpoolp320r1.C := by
+  show 320 ≤ Spec.BrainpoolP320r1.curve.n.log2 + 1
+  have : 319 ≤ Spec.BrainpoolP320r1.curve.n.log2 :=
+    (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
+  omega_using [this]
+
+/-- No bit of a hash of `40` bytes is dropped. -/
+theorem brainpoolp320r1_sh : brainpoolp320r1.sh = 0 := by
+  have h : 64 * 5 ≤ Spec.Ecdsa.nBits brainpoolp320r1.C := brainpoolp320r1_nBits
+  show 8 * 40 - Spec.Ecdsa.nBits brainpoolp320r1.C = 0; omega_using [h]
+
+theorem brainpoolp320r1_ok : CfgOk brainpoolp320r1 where
+  n0 := by decide
+  n10 := by decide
+  onG := Proof.BrainpoolP320r1.onCurve_G
+  p_odd := by decide +kernel
+  n_odd := by decide +kernel
+  p_lt := by decide +kernel
+  n_lt := by decide +kernel
+  n_enc := by decide +kernel
+  p_ge := by decide +kernel
+  n_ge := by decide +kernel
+  p_lt_2n := by decide +kernel
+  minv_p := by decide +kernel
+  minv_n := by decide +kernel
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by rw [brainpoolp320r1_sh]; decide
+  fp := ⟨rfl, rfl, Mont.brainpoolp320r1p_ok, rfl⟩
+  fn := ⟨rfl, rfl, Mont.brainpoolp320r1n_ok, rfl⟩
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP320r1_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP320r1_noFrames
+
+
+set_option exponentiation.threshold 512 in
+/-- brainpoolp320r1 with its field multiplications by `vg_brainpoolp320r1_mul_mod_<p|n>_umaal`:
+what `brainpoolp320r1_ok` states. -/
+theorem brainpoolp320r1u_ok : CfgOk (brainpoolp320r1With true) where
+  n0 := brainpoolp320r1_ok.n0
+  n10 := brainpoolp320r1_ok.n10
+  onG := brainpoolp320r1_ok.onG
+  p_odd := brainpoolp320r1_ok.p_odd
+  n_odd := brainpoolp320r1_ok.n_odd
+  p_lt := brainpoolp320r1_ok.p_lt
+  n_lt := brainpoolp320r1_ok.n_lt
+  n_enc := brainpoolp320r1_ok.n_enc
+  p_ge := brainpoolp320r1_ok.p_ge
+  n_ge := brainpoolp320r1_ok.n_ge
+  p_lt_2n := brainpoolp320r1_ok.p_lt_2n
+  minv_p := brainpoolp320r1_ok.minv_p
+  minv_n := brainpoolp320r1_ok.minv_n
+  len8 := brainpoolp320r1_ok.len8
+  len_lo := brainpoolp320r1_ok.len_lo
+  len_hi := brainpoolp320r1_ok.len_hi
+  sh := brainpoolp320r1_ok.sh
+  fp := brainpoolp320r1_ok.fp
+  fn := brainpoolp320r1_ok.fn
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulBrainpoolP320r1U_noFrames
+  pubNf := fun _ _ => Impl.Ecdsa.Arm.mulPubBrainpoolP320r1U_noFrames
+
+/-- Either configuration. -/
+theorem brainpoolp320r1With_ok (u : Bool) : CfgOk (brainpoolp320r1With u) := by
+  cases u
+  · exact brainpoolp320r1_ok
+  · exact brainpoolp320r1u_ok
+theorem pre_of {s : State} (h : signArm.pre s) : Pre brainpoolp320r1 s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+
+theorem sign_arm (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (s : State) (hs : signArm.pre s) :
+    ∃ t s', Exec isa signBrainpoolP320r1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
+  have hp := pre_of hs
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok brainpoolp320r1_ok hL hp
+  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
+  swap
+  · simp only [signArm, BitVec.setWidth_append_eq_right]
+    exact hpost
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact K.saved (.r4, 0) (by decide)
+  · exact K.saved (.r5, 4) (by decide)
+  · exact K.saved (.r6, 8) (by decide)
+  · exact K.saved (.r7, 12) (by decide)
+  · exact K.saved (.r8, 16) (by decide)
+  · exact K.saved (.r9, 20) (by decide)
+  · exact K.saved (.r10, 24) (by decide)
+  · exact K.saved (.r11, 28) (by decide)
+  · exact K.saved (.lr, 32) (by decide)
+
+/-- The taint analysis starts with the register arguments public, the stack
+argument too, and that word known to be the base address of `scratch`. -/
+def τ₀ : VG.Arm.Taint.T :=
+  { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [80, 8192], argLen := 4,
+    argBases := [(0, 1)] }
+
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (brainpoolp320r1With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
+  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, brainpoolp320r1With, show Spec.BrainpoolP320r1.curve.len = 40 from rfl], ?_, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
+  · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+      List.Pairwise.nil, false_implies, implies_true, and_true]
+    exact hp.out_sc
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · simpa only [State.addr, BitVec.toNat_setWidth_of_le (by decide : 32 ≤ 64)] using hp.out_fit
+    · simpa only [State.addr, BitVec.toNat_setWidth_of_le (by decide : 32 ≤ 64)] using hp.sc_fit
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.out_args.symm
+    · exact hp.sc_args.symm
+  · intro p hm
+    simp only [τ₀, List.mem_singleton] at hm
+    subst hm
+    refine ⟨by decide, ?_⟩
+    simp only [VG.Arm.Taint.region, hp.wr]
+    rfl
+
+theorem argByte_eq (s : State) (k : Nat) :
+    VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
+  simp [VG.Arm.Taint.argByte, stackArgAddr]
+
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (brainpoolp320r1With u) s extraS) (ht : Pre (brainpoolp320r1With u) t extraT) (pub : signArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => hsp, fun k hk => ?_⟩
+  · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact h0
+    · exact h1
+    · exact h2
+    · exact h3
+  · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
+  · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
+    exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
+
+/-- `τ₀` without the regions, which the code's timing does not need (no address or branch is
+read back from memory): the analysis from it does not track the public bytes of `scratch`. -/
+def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
+
+/-- `τ₁` says no more than `τ₀`. -/
+theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint.Agree τ₁ s t :=
+  VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
+    fun _ h => (List.not_mem_nil h).elim⟩ h
+
+theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP320r1 :=
+  VG.Taint.constantTime (A := taint) τ₁
+    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
+
+end VG.Proof.Ecdsa.Arm.BrainpoolP320r1

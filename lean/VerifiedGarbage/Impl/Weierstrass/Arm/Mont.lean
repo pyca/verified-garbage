@@ -125,7 +125,7 @@ def mulFn16 (n m : Nat) : Prog isa := fn n m .r4 (mulR (mod n m) (own n) 0 0 0 .
 
 /-- Larger curves scan packed 32-bit words, preserving the curve calling convention. -/
 def mulFn (n m : Nat) : Prog isa :=
-  if n = 6 ∨ n = 8 ∨ n = 9 then fn n m .r4 (Packed.mulR (mod n m) (own n)) else mulFn16 n m
+  if n = 5 ∨ n = 6 ∨ n = 8 ∨ n = 9 then fn n m .r4 (Packed.mulR (mod n m) (own n)) else mulFn16 n m
 
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 def addFn (n m : Nat) : Prog isa := fn n m .r2 (.block (addR (mod n m) (own n) 0 0 0 .r1 .r2 .lr))
