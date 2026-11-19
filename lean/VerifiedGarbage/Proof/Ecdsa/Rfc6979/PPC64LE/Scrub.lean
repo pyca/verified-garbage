@@ -184,11 +184,13 @@ def brainpoolp256r1Sign (hL : Law Spec.BrainpoolP256r1.curve) (hv : OK vars ∧ 
 `HmacTable.PPC64LE.vars`. -/
 def brainpoolp320r1Sign (hL : Law Spec.BrainpoolP320r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP320R1_COMB" ∉ names vars) :
     Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hmac", tables vars)]
       code := signCodeT (brainpoolp320r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars
       verified := brainpoolp320r1T_verified hL vars hv }
+    736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1 Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts vars)
+    (by dsimp only [signCodeT, cfgT, brainpoolp320r1R, brainpoolp320r1Core, RfcCurve.Q]; lit_decide)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
