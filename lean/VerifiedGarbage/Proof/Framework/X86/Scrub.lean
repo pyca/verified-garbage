@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.X86.Mmx
@@ -52,20 +53,8 @@ namespace VG.X86
 
 /-! ## What a run keeps -/
 
-/-- An MMX instruction, or the push or pop of an MMX frame. -/
-def Instr.isMmx : Instr → Bool
-  | .mop _ | .mmxStore .. | .mmxEnter | .emms => true
-  | _ => false
-
-/-- `c`, and the functions it calls, make no indirect call. -/
-def noIcall : Prog isa → Bool
-  | .block _ => true
-  | .seq a b => noIcall a && noIcall b
-  | .ite _ t e => noIcall t && noIcall e
-  | .loop b _ => noIcall b
-  | .call _ b => noIcall b
-  | .frame _ b _ => noIcall b
-  | .icall .. => false
+-- `Instr.isMmx` and `noIcall` are in `ScrubSide.lean`, which the variants
+-- that callers' cleanups need facts of import without this module.
 
 /-- The functions `c`, and the functions it calls, may call indirectly. -/
 def inames : Prog isa → List String

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Aes.X86.Callee
 public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 
 /-! Contracts and execution properties that every x86 AES variant supplies to callers. -/
 
@@ -20,6 +21,11 @@ structure Ctr32Impl where
   ct : ConstantTime isa Proof.Aes.ctr32X86.pre Proof.Aes.ctr32X86.pub callee.code
   nosp : NoSp callee.code
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code, and the code it calls, has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own
+  code, whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk callee.code = true
   suffix : String
   features : List String
   /-- The same code out of place. -/
@@ -34,4 +40,6 @@ structure Ctr32Impl where
   expandCt : ConstantTime isa Proof.Aes.expandKeyX86.pre Proof.Aes.expandKeyX86.pub expand.code
   expandNosp : NoSp expand.code
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
+  /-- `scrub`, of `expand`. -/
+  expandScrub : calleeOk expand.code = true
 end VG.Proof.Aes.X86
