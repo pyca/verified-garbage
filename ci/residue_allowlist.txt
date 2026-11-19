@@ -592,12 +592,6 @@ powerpc64le vg_chacha20_poly1305_open_to
 powerpc64le vg_chacha20_poly1305_seal
 powerpc64le vg_chacha20_poly1305_seal_gather
 powerpc64le vg_chacha20_set_nonce
-powerpc64le vg_cmac_aes_absorb
-powerpc64le vg_cmac_aes_finish
-powerpc64le vg_cmac_aes_init
-powerpc64le vg_cmac_triple_des_absorb
-powerpc64le vg_cmac_triple_des_finish
-powerpc64le vg_cmac_triple_des_stream_init
 powerpc64le vg_ct_eq
 powerpc64le vg_dsa_derive_key
 powerpc64le vg_dsa_generate_key
