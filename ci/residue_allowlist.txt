@@ -499,8 +499,6 @@ powerpc64le vg_aes_gcm_open
 powerpc64le vg_aes_gcm_open_to
 powerpc64le vg_aes_gcm_seal
 powerpc64le vg_aes_gcm_seal_gather
-powerpc64le vg_aes_gcm_siv_open
-powerpc64le vg_aes_gcm_siv_seal
 powerpc64le vg_aes_gcm_stream_aad
 powerpc64le vg_aes_gcm_stream_decrypt
 powerpc64le vg_aes_gcm_stream_encrypt
