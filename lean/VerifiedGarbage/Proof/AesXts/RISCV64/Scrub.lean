@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Verified
 import VerifiedGarbage.Proof.Aes.ScrubLocal
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Aes.ScrubLocal
 # XTS-AES on RISC-V, without secret residue
 
 `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
 caller-saved registers and the stack its frames used. Their postconditions
 read the memory on return only within the data (`RISCV64.Scrub.PostOut`),
 as on x86-64 (`Proof/AesXts/X86_64/Scrub.lean`).
@@ -54,14 +55,14 @@ theorem decryptUnitOut (stack : Nat) :
 
 /-- `vg_aes_xts_encrypt_unit`. -/
 def encryptUnitReg : Registration Spec.Xts.aesEncryptUnitApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesXts.RISCV64Unit.encrypt
       verified := Proof.AesXts.RISCV64.Unit.encrypt_verified }
     (encryptUnitOut _)
 
 /-- `vg_aes_xts_decrypt_unit`. -/
 def decryptUnitReg : Registration Spec.Xts.aesDecryptUnitApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.AesXts.RISCV64Unit.decrypt
       verified := Proof.AesXts.RISCV64.Unit.decrypt_verified }
     (decryptUnitOut _)

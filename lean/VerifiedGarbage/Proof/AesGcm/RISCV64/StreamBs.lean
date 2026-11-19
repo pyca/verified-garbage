@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesGcm.Bitsliced
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -29,6 +30,7 @@ meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 meta import VerifiedGarbage.Proof.AesGcm.Bitsliced
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -874,7 +876,7 @@ theorem streamVerifyBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
 
 Each function, followed by the clearing of the caller-saved registers and of
 the doublewords of its stack that the residue analysis (`RISCV64.rtaint`)
-finds may differ between two runs (`RISCV64.Scrub.withScrubSel`,
+finds may differ between two runs (`RISCV64.Scrub.scrubSelOf`,
 `scrubSel_noResidue`): all of those below the working space, which
 `vg_aes_ctr32_bs` and `vg_ghash` use, and the working space past its first
 16 bytes, which holds the keystream and the tag. -/
@@ -899,7 +901,7 @@ theorem streamVerifyBsOut :
 
 /-- `Spec.Gcm.streamEncryptBitslicedApi`. -/
 def streamEncryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamEncryptBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamEncryptBs
       verified := Proof.AesGcm.streamEncryptBitsliced_keyed streamEncryptBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]
@@ -910,7 +912,7 @@ def streamEncryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.s
 
 /-- `Spec.Gcm.streamDecryptBitslicedApi`. -/
 def streamDecryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamDecryptBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamDecryptBs
       verified := Proof.AesGcm.streamDecryptBitsliced_keyed streamDecryptBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]
@@ -921,7 +923,7 @@ def streamDecryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.s
 
 /-- `Spec.Gcm.streamFinishBitslicedApi`. -/
 def streamFinishBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamFinishBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamFinishBs
       verified := Proof.AesGcm.streamFinishBitsliced_keyed streamFinishBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
@@ -932,7 +934,7 @@ def streamFinishBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.st
 
 /-- `Spec.Gcm.streamVerifyBitslicedApi`. -/
 def streamVerifyBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamVerifyBitslicedApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamVerifyBs
       verified := Proof.AesGcm.streamVerifyBitsliced_keyed streamVerifyBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]

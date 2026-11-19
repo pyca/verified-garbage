@@ -30,9 +30,11 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.StackScratch.RISCV64
 
@@ -49,7 +51,7 @@ its algebra), and of `copyLoopW` (`copyLoopW_ok`). Then constant time (only
 the pointers reach addresses and branches), the shared contract with the
 working space in a frame of its own (`bitslice_framed`), and that frame,
 which holds the bitsliced round keys, cleared on return with the
-caller-saved registers (`bitsliceReg`, `RISCV64.Scrub.withScrubSel`).
+caller-saved registers (`bitsliceReg`, `RISCV64.Scrub.scrubSelOf`).
 -/
 
 @[expose] public section
@@ -478,7 +480,7 @@ open VG.RISCV64.Scrub in
 /-- `vg_aes_gcm_bitslice`, followed by the clearing of the caller-saved registers and of
 its working space, which holds the bitsliced round keys. -/
 def bitsliceReg [Proof.Gcm.RISCV64.PrepLaw] : Registration Spec.Gcm.bitsliceApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 Impl.AesGcm.RISCV64.Bitslice.bitslice, verified := bitslice_framed } [(2048, [(0, 256)])]
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 Impl.AesGcm.RISCV64.Bitslice.bitslice, verified := bitslice_framed } [(2048, [(0, 256)])]
     bitsliceOut
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb bitsliceOut (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 bitslice) 2048 0 rfl rfl rfl

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
@@ -18,6 +19,7 @@ import VerifiedGarbage.Proof.Seed.RISCV64.Lit
 import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Seed.Contract
 meta import VerifiedGarbage.Spec.Seed.Cbc
@@ -2012,14 +2014,14 @@ end
 # Seed on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Seed/X86_64/Scrub.lean`).
 
 The key expansion and ECB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -2068,7 +2070,7 @@ theorem ofbFinalOut (stack : Nat) : PostOut (Spec.Seed.ofbFinalContract RISCV64.
 
 /-- `Spec.Seed.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Seed.expandKeyApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey, verified := Proof.Seed.RISCV64.expandKey_framed } [(1040, [(129, 1)])]
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey, verified := Proof.Seed.RISCV64.expandKey_framed } [(1040, [(129, 1)])]
     (expandKeyOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey) 1040 0
@@ -2076,7 +2078,7 @@ def expandKeyReg : Registration Spec.Seed.expandKeyApi RISCV64.target :=
 
 /-- `Spec.Seed.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt), verified := Proof.Seed.RISCV64.ecb_framed .encrypt } [(1040, [(129, 1)])]
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt), verified := Proof.Seed.RISCV64.ecb_framed .encrypt } [(1040, [(129, 1)])]
     (ecbEncryptOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt)) 1040 0
@@ -2084,7 +2086,7 @@ def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi RISCV64.target :=
 
 /-- `Spec.Seed.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt), verified := Proof.Seed.RISCV64.ecb_framed .decrypt } [(1040, [(129, 1)])]
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt), verified := Proof.Seed.RISCV64.ecb_framed .decrypt } [(1040, [(129, 1)])]
     (ecbDecryptOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt)) 1040 0
@@ -2092,42 +2094,42 @@ def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi RISCV64.target :=
 
 /-- `Spec.Seed.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Seed.cbcEncryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cbcEncryptChained, verified := Proof.Seed.RISCV64.Modes.cbcEncryptChained_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cbcEncryptChained, verified := Proof.Seed.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
 /-- `Spec.Seed.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Seed.cbcDecryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cbcDecryptChained, verified := Proof.Seed.RISCV64.Modes.cbcDecryptChained_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cbcDecryptChained, verified := Proof.Seed.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _)
 
 /-- `Spec.Seed.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Seed.cfbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cfbEncrypt, verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cfbEncrypt, verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.Seed.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Seed.cfbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cfbDecrypt, verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cfbDecrypt, verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.Seed.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Seed.cfbEncryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cfbEncryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbEncryptFinal_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cfbEncryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _)
 
 /-- `Spec.Seed.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Seed.cfbDecryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.cfbDecryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbDecryptFinal_verified }
+  scrubOf { code := Impl.Seed.RISCV64.cfbDecryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _)
 
 /-- `Spec.Seed.ofbApi`. -/
 def ofbReg : Registration Spec.Seed.ofbApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.ofb, verified := Proof.Seed.RISCV64.Modes.ofb_verified }
+  scrubOf { code := Impl.Seed.RISCV64.ofb, verified := Proof.Seed.RISCV64.Modes.ofb_verified }
     (ofbOut _)
 
 /-- `Spec.Seed.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Seed.ofbFinalApi RISCV64.target :=
-  withScrub { code := Impl.Seed.RISCV64.ofbFinal, verified := Proof.Seed.RISCV64.Modes.ofbFinal_verified }
+  scrubOf { code := Impl.Seed.RISCV64.ofbFinal, verified := Proof.Seed.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
 
 end VG.Proof.Seed.RISCV64.Scrub

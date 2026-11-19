@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Cbc
@@ -22,6 +23,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Sm4.Contract
 meta import VerifiedGarbage.Spec.Sm4.Cbc
@@ -1247,14 +1249,14 @@ end
 # Sm4 on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Sm4/X86_64/Scrub.lean`).
 
 The key expansion and ECB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -1309,7 +1311,7 @@ theorem ctrFinalOut (stack : Nat) : PostOut (Spec.Sm4.ctrFinalContract RISCV64.a
 
 /-- `Spec.Sm4.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Sm4.expandKeyApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey, verified := Proof.Sm4.RISCV64.expandKey_framed } []
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey, verified := Proof.Sm4.RISCV64.expandKey_framed } []
     (expandKeyOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey) 3168 0
@@ -1317,7 +1319,7 @@ def expandKeyReg : Registration Spec.Sm4.expandKeyApi RISCV64.target :=
 
 /-- `Spec.Sm4.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Sm4.ecbEncryptApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt), verified := Proof.Sm4.RISCV64.ecb_framed .encrypt } []
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt), verified := Proof.Sm4.RISCV64.ecb_framed .encrypt } []
     (ecbEncryptOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)) 3168 0
@@ -1325,7 +1327,7 @@ def ecbEncryptReg : Registration Spec.Sm4.ecbEncryptApi RISCV64.target :=
 
 /-- `Spec.Sm4.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Sm4.ecbDecryptApi RISCV64.target :=
-  withScrubSel { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt), verified := Proof.Sm4.RISCV64.ecb_framed .decrypt } []
+  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt), verified := Proof.Sm4.RISCV64.ecb_framed .decrypt } []
     (ecbDecryptOut _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)) 3168 0
@@ -1333,52 +1335,52 @@ def ecbDecryptReg : Registration Spec.Sm4.ecbDecryptApi RISCV64.target :=
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Sm4.cbcEncryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cbcEncryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcEncryptChained_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cbcEncryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
 /-- `Spec.Sm4.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Sm4.cbcDecryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cbcDecryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcDecryptChained_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cbcDecryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _)
 
 /-- `Spec.Sm4.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Sm4.cfbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cfbEncrypt, verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cfbEncrypt, verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.Sm4.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Sm4.cfbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cfbDecrypt, verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cfbDecrypt, verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.Sm4.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Sm4.cfbEncryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cfbEncryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cfbEncryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _)
 
 /-- `Spec.Sm4.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Sm4.cfbDecryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.cfbDecryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.cfbDecryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _)
 
 /-- `Spec.Sm4.ctrApi`. -/
 def ctrReg : Registration Spec.Sm4.ctrApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.ctr, verified := Proof.Sm4.RISCV64.Modes.ctr_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.ctr, verified := Proof.Sm4.RISCV64.Modes.ctr_verified }
     (ctrOut _)
 
 /-- `Spec.Sm4.ctrFinalApi`. -/
 def ctrFinalReg : Registration Spec.Sm4.ctrFinalApi RISCV64.target :=
-  withScrub { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 Impl.Sm4.RISCV64.ctrFinal, verified := Proof.Sm4.RISCV64.CtrFinal.ctrFinal_framed }
+  scrubOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 Impl.Sm4.RISCV64.ctrFinal, verified := Proof.Sm4.RISCV64.CtrFinal.ctrFinal_framed }
     (ctrFinalOut _)
 
 /-- `Spec.Sm4.ofbApi`. -/
 def ofbReg : Registration Spec.Sm4.ofbApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.ofb, verified := Proof.Sm4.RISCV64.Modes.ofb_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.ofb, verified := Proof.Sm4.RISCV64.Modes.ofb_verified }
     (ofbOut _)
 
 /-- `Spec.Sm4.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Sm4.ofbFinalApi RISCV64.target :=
-  withScrub { code := Impl.Sm4.RISCV64.ofbFinal, verified := Proof.Sm4.RISCV64.Modes.ofbFinal_verified }
+  scrubOf { code := Impl.Sm4.RISCV64.ofbFinal, verified := Proof.Sm4.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
 
 end VG.Proof.Sm4.RISCV64.Scrub
