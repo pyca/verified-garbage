@@ -58,7 +58,7 @@ section
 
 section
 
-/-! # The two powers and final reductions of x86 DSA verification -/
+/-! # The product of two powers and the final reduction of x86 DSA verification -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86
@@ -85,40 +85,21 @@ theorem verifyPowers_ok {base : Addr} {size pLen qLen p q g y uv vv : Nat} {s0 :
   have pp : 0 < p := by have := M.pLarge; omega_using [this]
   unfold Core.verifyPowers Core.sequence
   dsimp only [List.foldr]
-  refine WP.seq (WP.mono (stagePowerP_ok M (G.ready (M.context np)) (M.scalarReady (by decide) np)
-    (by decide) (M.wideFit (by decide))) fun s1 ⟨M1, R1⟩ => ?_)
+  refine WP.seq (WP.mono (stagePower2P_ok M (G.ready (M.context np)) (M.scalarReady (by decide) np)
+    (Y.ready (M.context np)) (M.scalarReady (by decide) np) (by decide) (M.wideFit (by decide)))
+    fun s1 ⟨M1, R1⟩ => ?_)
   have E1 := R1.toStageFrame.execution (.inl ⟨by decide, M.wideFit (by decide)⟩)
-  have T1 : operandValue s1 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ uv % p := by
+  have T1 : operandValue s1 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ uv * y ^ vv % p := by
     have V := R1.wide_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
-    rw [hg, hu] at V
+    rw [hg, hu, hy, hv] at V
     exact V
-  have V1 : operandValue s1 base (.local v) qLen = vv := by
-    rw [R1.toStageFrame.scalar_keep_wide M (by decide) (by decide), hv]
-  have Y1 := E1.buffer Y (by decide)
-  refine WP.seq (WP.mono (stagePowerP_ok M1 (Y1.ready (M1.context np)) (M1.scalarReady (by decide) np)
-    (by decide) (M1.wideFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
-  have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.wideFit (by decide)⟩)
-  have E12 := E1.trans E2
-  have T2 : operandValue s2 base (.local t2) pLen = y ^ vv % p := by
-    have V := R2.wide_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
-    rw [E1.value Y (by decide) M.extent, hy, V1] at V
-    exact V
-  have T12 : operandValue s2 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ uv % p := by
-    rw [R2.toStageFrame.wide_keep M1 (by decide) (by decide) (by decide), T1]
-  refine WP.seq (WP.mono (stageProductP_ok M2 (M2.wideReady (by decide) np) (M2.wideReady (by decide) np)
-    (by decide) (M2.wideFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
-  have E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.wideFit (by decide)⟩)
-  have T3 : operandValue s3 base (.local VG.Impl.Dsa.Layout.t) pLen = g ^ uv % p * (y ^ vv % p) % p := by
-    have V := R3.wide_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
-    rw [T12, T2] at V
-    exact V
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M3 (M3.wideStream (by decide) nq) (M3.wideStack (by decide)) (by omega_using [L])
-    (by decide) (M3.scalarFit (by decide))) fun sf ⟨Mf, R4⟩ => ?_)
-  refine WP.block_nil ⟨Mf, ?_, ⟨(E12.trans E3).trans (R4.toStageFrame.execution (.inl ⟨by decide, M3.scalarFit (by decide)⟩)), ?_⟩⟩
-  · have V := R4.scalar_value M3 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
-    rw [T3] at V
-    exact V
-  · rw [R4.toStageFrame.mask_keep (by decide), R3.toStageFrame.mask_keep (by decide), R2.toStageFrame.mask_keep (by decide), R1.toStageFrame.mask_keep (by decide)]
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M1 (M1.wideStream (by decide) nq) (M1.wideStack (by decide)) (by omega_using [L])
+    (by decide) (M1.scalarFit (by decide))) fun sf ⟨Mf, R4⟩ => ?_)
+  refine WP.block_nil ⟨Mf, ?_, ⟨E1.trans (R4.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)), ?_⟩⟩
+  · have V := R4.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
+    rw [T1] at V
+    rw [V, Nat.mul_mod]
+  · rw [R4.toStageFrame.mask_keep (by decide), R1.toStageFrame.mask_keep (by decide)]
 
 
 end VG.Proof.Dsa.X86

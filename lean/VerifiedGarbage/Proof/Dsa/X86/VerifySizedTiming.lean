@@ -783,6 +783,29 @@ theorem callVerifyScalars_relCT (L : CallLayout)
     (RelCT.seq (callProductQ_relCT L (.input .signature) (.local inverse) v Q R I (by decide) (by change 14848 + L.qLen ≤ 15712; omega_using [W]))
     (RelCT.block_nil (fun _ _ h => h)))))
 
+/-- The product of two powers modulo p keeps the public call layout. -/
+theorem callPower2P_relCT (L : CallLayout) (a b a2 b2 : Pointer) (output : Nat)
+    (P : CallOperand L (.input .p) L.pLen) (A : CallOperand L a L.pLen) (B : CallOperand L b L.qLen)
+    (A2 : CallOperand L a2 L.pLen) (B2 : CallOperand L b2 L.qLen)
+    (ho : r ≤ output) (hb : output + L.pLen ≤ usedBytes) :
+    RelCT isa (CallPair L) (Core.power2 L.pLen L.qLen .p a b a2 b2 output) (CallPair L) := by
+  have W := L.lengths
+  refine call_stage (Q := VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint true)) ?_ ?_
+  · apply (corePower2_relCT L.base L.size L.pLen L.qLen output .p a b a2 b2 L.saved
+      (by omega_using [W]) (by omega_using [W]) L.aligned.1 (by omega_using [W]) (by omega_using [W]) L.aligned.2).mono ?_
+      (fun _ _ h => h)
+    intro s t H
+    exact ⟨⟨⟨H.1.arithmeticP A B (by omega_using [W]), H.2.arithmeticP A B (by omega_using [W]), H.pointer P,
+        H.pointer A, H.pointer B⟩, H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩,
+      H.1.operand A2 (by omega_using [W]) (by omega_using [W]), H.2.operand A2 (by omega_using [W]) (by omega_using [W]),
+      H.1.operand B2 (by omega_using [W]) (by omega_using [W]), H.2.operand B2 (by omega_using [W]) (by omega_using [W]),
+      H.pointer A2, H.pointer B2⟩
+  · intro s R
+    exact WP.mono (stagePower2P_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
+      (R.operand B (by omega_using [W]) (by omega_using [W])) (R.operand A2 (by omega_using [W]) (by omega_using [W]))
+      (R.operand B2 (by omega_using [W]) (by omega_using [W])) ho hb)
+      fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
+
 theorem callVerifyPowers_relCT (L : CallLayout)
     (P : CallOperand L (.input .p) L.pLen) (Q : CallOperand L (.input .q) L.qLen)
     (G : CallOperand L (.input .g) L.pLen) (Y : CallOperand L (.input .y) L.pLen) :
@@ -791,13 +814,11 @@ theorem callVerifyPowers_relCT (L : CallLayout)
   have U := CallOperand.localBuffer L u L.qLen (by decide) (by change 14816 + L.qLen ≤ 15712; omega_using [W])
   have V := CallOperand.localBuffer L v L.qLen (by decide) (by change 14848 + L.qLen ≤ 15712; omega_using [W])
   have T := CallOperand.localBuffer L t L.pLen (by decide) (by change 14944 + L.pLen ≤ 15712; omega_using [W])
-  have T2 := CallOperand.localBuffer L t2 L.pLen (by decide) (by change 15328 + L.pLen ≤ 15712; omega_using [W])
-  exact RelCT.seq (callPowerP_relCT L (.input .g) (.local u) t P G U (by decide) (by change 14944 + L.pLen ≤ 15712; omega_using [W]))
-    (RelCT.seq (callPowerP_relCT L (.input .y) (.local v) t2 P Y V (by decide) (by change 15328 + L.pLen ≤ 15712; omega_using [W]))
-    (RelCT.seq (callProductP_relCT L (.local t) (.local t2) t P T T2 (by decide) (by change 14944 + L.pLen ≤ 15712; omega_using [W]))
+  exact RelCT.seq (callPower2P_relCT L (.input .g) (.local u) (.input .y) (.local v) t P G U Y V (by decide)
+      (by change 14944 + L.pLen ≤ 15712; omega_using [W]))
     (RelCT.seq (callReduce_relCT (hl := fun _ _ => by have := L.lengths; omega_using [W]) L (.local t) (.imm (BitVec.ofNat 32 L.pLen)) L.pLen u (.inl ⟨_, rfl⟩)
       (fun s _ => LenOperand.imm _ _ _ s _) Q T (by omega_using [W]) (by decide) (by change 14816 + L.qLen ≤ 15712; omega_using [W]))
-    (RelCT.block_nil (fun _ _ h => h)))))
+    (RelCT.block_nil (fun _ _ h => h)))
 
 theorem callVerify_relCT (L : CallLayout)
     (P : CallOperand L (.input .p) L.pLen) (Q : CallOperand L (.input .q) L.qLen)
