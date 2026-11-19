@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Arm.P256.Comb -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Proof.EcKey.Arm.P256.Scrub -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P256.Arm.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P256
-public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P256Decompress
-public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
@@ -17,26 +14,11 @@ namespace VG.Artifacts.EcP256.Arm
 open VG.Proof.P256.Arm (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.P256.code
-    verified := .unscrubbed Proof.EcKey.Compressed.Arm.P256.verified },
-  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target {
-    code := Proof.EcKey.Compressed.Arm.P256Decompress.code
-    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.P256Decompress.verified hasLaw.law) },
-  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.P256.codeU
-    verified := .unscrubbed Proof.EcKey.Compressed.Arm.P256.verifiedU },
-  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Proof.EcKey.Compressed.Arm.P256Decompress.codeU
-    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.P256Decompress.verifiedU hasLaw.law) },
-  Spec.EcKey.P256.publicKeyApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.publicKeyP256Comb
-    verified := .unscrubbed (Proof.EcKey.Arm.P256.combPk_verified hasLaw.law) },
-  Spec.EcKey.P256.publicKeyApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.publicKeyP256CombU
-    verified := .unscrubbed (Proof.EcKey.Arm.P256.combPkU_verified hasLaw.law) }]
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.P256.Scrub.compressReg,
+  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P256.Scrub.decompressReg hasLaw.law),
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.P256.Scrub.compressUReg,
+  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P256.Scrub.decompressUReg hasLaw.law),
+  Spec.EcKey.P256.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P256.Scrub.publicKeyReg hasLaw.law),
+  Spec.EcKey.P256.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P256.Scrub.publicKeyUReg hasLaw.law)]
 
 end VG.Artifacts.EcP256.Arm

@@ -1584,6 +1584,11 @@ vg_ec_p224_public_key:
 	ldr r10, [r12, #24]
 	ldr r11, [r12, #28]
 	ldr lr, [r12, #32]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ec_p224_public_key_umaal:
@@ -3166,4 +3171,9 @@ vg_ec_p224_public_key_umaal:
 	ldr r10, [r12, #24]
 	ldr r11, [r12, #28]
 	ldr lr, [r12, #32]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
