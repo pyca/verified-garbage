@@ -270,22 +270,30 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *con
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
@@ -549,22 +557,30 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCRMiUQkEItEJFCJRCQUi0QkVIlEJBiLdCREi1wkSItUJEyD+wA="
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
