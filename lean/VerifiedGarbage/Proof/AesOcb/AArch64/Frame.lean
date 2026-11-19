@@ -599,8 +599,8 @@ theorem entry_rel {σ₁ σ₂ : State} {W : Addr} (hW₁ : stackArg σ₁ 2 = W
     exact hq r (by simp only [List.mem_cons, List.not_mem_nil, or_false, h9, false_or] at hr ⊢; exact hr)
 
 /-- `entry`, `nonce` and `hash`, in two runs with the same public arguments. -/
-theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (A₁ : Args σ₁ K W N A D R nl al n tl T) (A₂ : Args σ₂ K W N A D R nl al n tl T)
+theorem pre_rel (v : BlocksImpl) {σ₁ σ₂ : State} {K W N A D : Addr} {R nl al n tl : Nat} {Tg : Addr}
+    (A₁ : Args σ₁ K W N A D R nl al n tl Tg) (A₂ : Args σ₂ K W N A D R nl al n tl Tg)
     (hW₁ : stackArg σ₁ 2 = W) (htl₁ : stackArg σ₁ 1 = BitVec.ofNat 64 tl)
     (h0₁ : σ₁.gpr .x0 = K) (h1₁ : σ₁.gpr .x1 = BitVec.ofNat 64 R) (h2₁ : σ₁.gpr .x2 = N)
     (h3₁ : σ₁.gpr .x3 = BitVec.ofNat 64 nl) (h4₁ : σ₁.gpr .x4 = A) (h5₁ : σ₁.gpr .x5 = BitVec.ofNat 64 al)
@@ -683,13 +683,13 @@ theorem rel_front {P Q : State → State → Prop} {e n h b t tail : Prog isa}
 /-- `tagOut` in two runs: its first block loads the tag's address from the
 stack, and the copy runs from it. -/
 theorem tagOut_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {T : Addr} {tl : Nat}
+    (E₂ : Env K W D R n SP σ₂) {Tg : Addr} {tl : Nat}
     (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hT₁ : stackArg σ₁ 0 = T)
-    (hT₂ : stackArg σ₂ 0 = T) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hTg₁ : stackArg σ₁ 0 = Tg)
+    (hTg₂ : stackArg σ₂ 0 = Tg) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
     (ha₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 (8 * 0)) 8) : RelCT isa (Eq2 σ₁ σ₂) tagOut TT := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := tagOutHead_ok E₁ htl₁ hT₁ ha₁
-  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := tagOutHead_ok E₂ htl₂ hT₂ ha₂
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := tagOutHead_ok E₁ htl₁ hTg₁ ha₁
+  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := tagOutHead_ok E₂ htl₂ hTg₂ ha₂
   unfold tagOut
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨s₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
@@ -699,15 +699,15 @@ theorem tagOut_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} 
 
 /-- The state after `front`, in a run with the arguments: the address of the
 tag on the stack, where the state may read it. -/
-theorem front_tag {s : State} {K W N A D : Addr} {R nl al n tl : Nat} {T : Addr}
-    (Ar : Args s K W N A D R nl al n tl T) (hT : stackArg s 0 = T) {s₃ s₄ s₅ : State} {d : Nat} (hd : d + 16 ≤ 160)
+theorem front_tag {s : State} {K W N A D : Addr} {R nl al n tl : Nat} {Tg : Addr}
+    (Ar : Args s K W N A D R nl al n tl Tg) (hTg : stackArg s 0 = Tg) {s₃ s₄ s₅ : State} {d : Nat} (hd : d + 16 ≤ 160)
     (P : Pre K W D R n N A nl al tl s s₃) {out : List Byte} {ofs ck : Spec.Ocb.Block}
     {SP SP' : Addr} (B : BodyPost K W D R n SP' out ofs ck s₃ s₄) (T₅ : TagPost K W D R n SP d s₄ s₅)
     (hsp : SP = s.sp) :
-    stackArg s₅ 0 = T ∧ InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
+    stackArg s₅ 0 = Tg ∧ InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
   have sp₅ : s₅.sp = s.sp := T₅.env.sp.trans hsp
   refine ⟨?_, ?_⟩
-  · rw [← hT]; simp only [stackArg, stackArgAddr, sp₅]
+  · rw [← hTg]; simp only [stackArg, stackArgAddr, sp₅]
     exact args_kept Ar.argsW Ar.argsD (front_frame hd P.frame B.frame T₅.frame) (i := 0) (by decide)
   · rw [T₅.rd, B.rd, P.rd, T₅.wr, B.wr, P.wr, sp₅]
     exact in_off Ar.args (by decide) (by decide)
@@ -1246,15 +1246,15 @@ open VG.Spec.Ocb (Block blockAtMem lAt ctxCiph ctxLstar pad zeros)
 open VG.Proof.Ocb (offAt length_bytesAt blockAtMem_frame)
 open VG.Proof.Aes.AArch64 (BlocksImpl)
 
-/-- `recv`: the `tl` bytes of the tag at `T` copied to `W`. -/
-theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) {T : Addr}
+/-- `recv`: the `tl` bytes of the tag at `Tg` copied to `W`. -/
+theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W D R n SP s) {Tg : Addr}
     {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (hT : stackArg s 0 = T) (ha : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 0)) 8)
-    (hTr : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem T tl) ∧
+    (hTg : stackArg s 0 = Tg) (ha : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (hTr : Covers [⟨Tg, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨Tg, tl⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem Tg tl) ∧
       (∀ r, r ∉ Proof.AesGcm.AArch64.loopRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧
       t.wr = s.wr := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E htl hT ha
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E htl hTg ha
   unfold recv
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.mono (Proof.AesGcm.AArch64.copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega_using [h1])
@@ -1269,14 +1269,14 @@ theorem recv_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State} (E : Env K W 
 
 /-- `vg_aes_ocb_open`, for its arguments. -/
 theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl : Nat}
-    {T : Addr} (Ar : Args s K W N A D R nl al n tl T) (hW : stackArg s 2 = W) (hT : stackArg s 0 = T)
+    {Tg : Addr} (Ar : Args s K W N A D R nl al n tl Tg) (hW : stackArg s 2 = W) (hTg : stackArg s 0 = Tg)
     (htl : stackArg s 1 = BitVec.ofNat 64 tl)
     (h0 : s.gpr .x0 = K) (h1 : s.gpr .x1 = BitVec.ofNat 64 R) (h2 : s.gpr .x2 = N)
     (h3 : s.gpr .x3 = BitVec.ofNat 64 nl) (h4 : s.gpr .x4 = A) (h5 : s.gpr .x5 = BitVec.ofNat 64 al)
     (h6 : s.gpr .x6 = D) (h7 : s.gpr .x7 = BitVec.ofNat 64 n) :
     WP isa («open» (callees v)) s fun s' => GprAbi s s' ∧
       match Spec.Ocb.decryptWith (ctxCiph s.mem K R) (Spec.Ocb.ctxInv s.mem K R) (ctxLstar s.mem K) tl
-          (bytesAt s.mem N nl) (bytesAt s.mem A al) (bytesAt s.mem D n) (bytesAt s.mem T tl) with
+          (bytesAt s.mem N nl) (bytesAt s.mem A al) (bytesAt s.mem D n) (bytesAt s.mem Tg tl) with
       | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
       | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n := by
   have L := Ar.lay
@@ -1304,13 +1304,13 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   obtain Ff := front_frame (by decide) P₃.frame B.frame T₅.frame
   have sp₅ : s₅.sp = s.sp := T₅.env.sp
   -- The received tag, to `W`.
-  obtain hT₅ : stackArg s₅ 0 = T := by
-    rw [← hT]; simp only [stackArg, stackArgAddr, sp₅]
+  obtain hTg₅ : stackArg s₅ 0 = Tg := by
+    rw [← hTg]; simp only [stackArg, stackArgAddr, sp₅]
     exact args_kept Ar.argsW Ar.argsD Ff (i := 0) (by decide)
   obtain ha₅ : InRegions (s₅.rd ++ s₅.wr) (s₅.sp + BitVec.ofNat 64 (8 * 0)) 8 := by
     rw [T₅.rd, B.rd, P₃.rd, T₅.wr, B.wr, P₃.wr, sp₅]
     exact Proof.AesGcm.AArch64.in_off Ar.args (by decide) (by decide)
-  refine WP.seq (WP.mono (recv_ok T₅.env Ar.t1 Ar.t16 S₅.tl hT₅ ha₅
+  refine WP.seq (WP.mono (recv_ok T₅.env Ar.t1 Ar.t16 S₅.tl hTg₅ ha₅
     (by rw [T₅.rd, B.rd, P₃.rd, T₅.wr, B.wr, P₃.wr]; exact Ar.tag.rd) Ar.tag.w)
     fun s₅' ⟨mr, gr, spr, rdr, wrr⟩ => ?_)
   obtain E₅' := T₅.env.others gr spr rdr wrr
@@ -1373,7 +1373,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   have hck := B.ck
   rw [c₃, i₃, l₃, d₃] at hck
   have hTn := Ar.tag.lt
-  obtain recv : bytesAt s₅'.mem W tl = bytesAt s.mem T tl := by
+  obtain recv : bytesAt s₅'.mem W tl = bytesAt s.mem Tg tl := by
     rw [mr, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]) (by omega_using [hTn]), length_bytesAt,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil]
     exact Proof.Cmac.bytesAt_frame Ff (fun r hr => by
@@ -1402,7 +1402,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W N A D : Addr} {R nl al n tl :
   rw [x0₉, d₉, hout, Proof.Ocb.decryptWith_eq]
   simp only [length_bytesAt, List.length_drop]
   obtain hc : ∀ x : Block, bytesAt s₅.mem (W + BitVec.ofNat 64 t2O) tl = (Spec.Ocb.toBytes x).take tl →
-      (c = true ↔ (Spec.Ocb.toBytes x).take tl = bytesAt s.mem T tl) := fun x hx => by
+      (c = true ↔ (Spec.Ocb.toBytes x).take tl = bytesAt s.mem Tg tl) := fun x hx => by
     show decide (_ = _) = true ↔ _
     rw [recv, t2₅, hx, decide_eq_true_iff, eq_comm]
   by_cases hr : 0 < n % 16
@@ -1472,13 +1472,13 @@ theorem cmp_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E�
 /-- `recv` in two runs: its first block loads the tag's address from the
 stack, and the copy runs from it. -/
 theorem recv_rel {K W D : Addr} {R n : Nat} {SP : Addr} {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁)
-    (E₂ : Env K W D R n SP σ₂) {T : Addr} {tl : Nat}
+    (E₂ : Env K W D R n SP σ₂) {Tg : Addr} {tl : Nat}
     (htl₁ : σ₁.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hT₁ : stackArg σ₁ 0 = T)
-    (hT₂ : stackArg σ₂ 0 = T) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
+    (htl₂ : σ₂.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl) (hTg₁ : stackArg σ₁ 0 = Tg)
+    (hTg₂ : stackArg σ₂ 0 = Tg) (ha₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 (8 * 0)) 8)
     (ha₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 (8 * 0)) 8) : RelCT isa (Eq2 σ₁ σ₂) recv TT := by
-  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E₁ htl₁ hT₁ ha₁
-  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := recvHead_ok E₂ htl₂ hT₂ ha₂
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, -, g₁, sp₁, rd₁, wr₁⟩ := recvHead_ok E₁ htl₁ hTg₁ ha₁
+  obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, -, g₂, sp₂, rd₂, wr₂⟩ := recvHead_ok E₂ htl₂ hTg₂ ha₂
   unfold recv
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨s₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨s₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
