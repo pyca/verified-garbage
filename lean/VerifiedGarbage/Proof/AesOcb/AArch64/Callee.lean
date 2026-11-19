@@ -134,21 +134,21 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   blk_callLe (M := 2048) ok nf (Nat.le_refl _) h
 
 /-- Block `i` after `vg_aes_encrypt_blocks`. -/
-theorem BPost.enc {s s' : State} {K D S : Addr} {R n : Nat} (h : BPost Spec.Aes.cipher s K D S R n s') {i : Nat}
+theorem BPost.enc {s s' : State} {K D S : Addr} {R n N : Nat} (h : BPost Spec.Aes.cipher s K D S R n s' N) {i : Nat}
     (hi : i < n) :
     blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) =
       aesWith R (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))) :=
   blockAtMem_of_state _ (stateAt_of_statesAt h.out hi)
 
 /-- Block `i` after `vg_aes_decrypt_blocks`. -/
-theorem BPost.dec {s s' : State} {K D S : Addr} {R n : Nat} (h : BPost Spec.Aes.invCipher s K D S R n s') {i : Nat}
+theorem BPost.dec {s s' : State} {K D S : Addr} {R n N : Nat} (h : BPost Spec.Aes.invCipher s K D S R n s' N) {i : Nat}
     (hi : i < n) :
     blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) =
       aesInvWith R (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))) :=
   blockAtMem_of_state _ (stateAt_of_statesAt h.out hi)
 
 /-- The one block of a call on one block. -/
-theorem BPost.enc0 {s s' : State} {K D S : Addr} {R : Nat} (h : BPost Spec.Aes.cipher s K D S R 1 s') :
+theorem BPost.enc0 {s s' : State} {K D S : Addr} {R N : Nat} (h : BPost Spec.Aes.cipher s K D S R 1 s' N) :
     blockAtMem s'.mem D = aesWith R (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem D) := by
   have := h.enc (i := 0) (by decide)
   simpa using this

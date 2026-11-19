@@ -167,6 +167,12 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesOcb.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.AArch64 (covers_off in_off in_left covers_left)
 
+/-- The offsets of the working space, for `omega`, which does not unfold them. -/
+theorem ocbOffs : tagO = 0 ∧ ofsO = 16 ∧ ckO = 32 ∧ sumO = 48 ∧ ldO = 64 ∧ l0O = 80 ∧ lO = 96 ∧
+    tmpO = 112 ∧ t2O = 128 ∧ ohO = 144 ∧ savO = 160 ∧ tlO = 248 ∧ aadO = 256 ∧ alenO = 264 ∧ nO = 272 ∧
+    nlO = 280 ∧ botO = 288 ∧ o0O = 304 ∧ bufO = 384 ∧ scrO = 512 :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
 theorem write8 (m : Mem) (a : Addr) (v : BitVec (8 * 8)) : m.write a 8 v = m.writeW a v := by
   simp [Mem.writeW]
 
