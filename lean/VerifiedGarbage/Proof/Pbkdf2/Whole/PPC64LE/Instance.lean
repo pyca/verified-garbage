@@ -117,7 +117,7 @@ working space. -/
 def fnsOf (H : Hash) (I : Spec.Hmac.Instance) (b : Nat) (itC : Prog isa) (itW : Nat) : Fns where
   H := H
   Wc := 8 * I.scratch
-  hiN := I.initAnyKeyApi.name
+  hiN := I.initAnyKeyApi.name ++ "_core"
   hiC := initCode H I b
   hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
   itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
