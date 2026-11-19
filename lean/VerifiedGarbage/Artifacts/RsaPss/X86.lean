@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPss.X86.Scrub
 public import VerifiedGarbage.Proof.RsaPss.X86.Inst
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -15,20 +16,11 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 
-open VG.Proof.RsaPss.X86 (verify_ok)
-open VG.Proof.MdHashTable.X86 (mvars)
-open VG.Proof.HashTable.X86 (vars)
+open VG.Proof.RsaPss.X86.Scrub (allMVars allVars verifyReg)
 
-def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
-    List Artifact :=
-  if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
-    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86.target {
-      suffix := qualifiedName "" []
-      tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
-        ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
-      code := Proof.RsaPss.X86.Vf.verifyCode (mvars vs1 vs256) (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := .unscrubbed (verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline)
-      spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline }]
+def artifacts : List Artifact :=
+  if h : Proof.RsaPss.X86.Sg.OK allMVars allVars then
+    [Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86.target (verifyReg h)]
   else []
 
 end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
@@ -58,7 +50,7 @@ end VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
 namespace VG.Artifacts.RsaPss.X86
 
 def artifacts : List Artifact :=
-  AllSha1AllSha256.artifacts VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants ++
+  AllSha1AllSha256.artifacts ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants)
 
 end VG.Artifacts.RsaPss.X86

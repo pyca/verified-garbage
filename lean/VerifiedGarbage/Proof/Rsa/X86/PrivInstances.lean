@@ -108,7 +108,7 @@ def baseline : CrtImpl where
   stack := by rw [RtShape.privateCrt_stack]
   noSp := allStack_noSp RtShape.privateCrt_spSafe
   scrub := by lit_decide
-  pcName := "vg_rsa_public_precompute"
+  pcName := "vg_rsa_public_precompute_core"
   pc := Impl.Bignum.X86.PrecomputeFn.code
   pcVerified := Bignum.X86.precompute_verified
   pcStack := by decide +kernel

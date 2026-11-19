@@ -40,7 +40,7 @@ theorem pc_all : Impl.Bignum.X86.PrecomputeFn.code.allInstrs noSp = true := by r
 theorem pc_noSp : NoSp Impl.Bignum.X86.PrecomputeFn.code := NoSp.of_all pc_all
 
 theorem code_spSafe :
-    (code "vg_rsa_public_precompute" Impl.Bignum.X86.PrecomputeFn.code "vg_rsa_private_precompute_primes"
+    (code "vg_rsa_public_precompute_core" Impl.Bignum.X86.PrecomputeFn.code "vg_rsa_private_precompute_primes"
       primes).all (fun i => !isa.writesSp i) = true :=
   Rsa.X86.RtShape.all_spSafe (by rsa_stack_shape)
 
@@ -52,8 +52,10 @@ end
 
 /-! # `vg_rsa_private_precompute` on x86: the code and its proof
 
-With `vg_rsa_public_precompute` and `primes` (emitted as the internal
-function `vg_rsa_private_precompute_primes`) as its callees.
+With `vg_rsa_public_precompute`'s code (emitted as the internal function
+`vg_rsa_public_precompute_core`, since the public function is registered
+with its cleanup) and `primes` (emitted as the internal function
+`vg_rsa_private_precompute_primes`) as its callees.
 -/
 
 @[expose] public section
@@ -61,7 +63,7 @@ namespace VG.Proof.Bignum.X86.PrivPre
 open VG VG.X86
 
 def ppCode : Prog isa :=
-  Impl.Bignum.X86.PrivPre.code "vg_rsa_public_precompute" Impl.Bignum.X86.PrecomputeFn.code
+  Impl.Bignum.X86.PrivPre.code "vg_rsa_public_precompute_core" Impl.Bignum.X86.PrecomputeFn.code
     "vg_rsa_private_precompute_primes" Impl.Bignum.X86.PrivPre.primes
 
 theorem pp_verified : Verified target ppCode (Spec.Rsa.privatePrecomputeContract abi stackBytes) :=
