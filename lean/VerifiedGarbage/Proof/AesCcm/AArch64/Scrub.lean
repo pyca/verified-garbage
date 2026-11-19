@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-CCM on AArch64, without secret residue
@@ -10,7 +14,7 @@ The postconditions of `vg_aes_ccm_seal` and `vg_aes_ccm_open` read the memory
 on return only within the data and the tag (`ScrubAll.ScrubAllOk`): each
 implementation, generic over the CMAC implementation it calls and its counter
 mode, returns with every register it may leave secret cleared and its whole
-stack zeroed (`ScrubAll.withScrubAll`). Its frame is sized to what its
+stack zeroed (`ScrubAll.scrubAllOf`). Its frame is sized to what its
 callees need (`Frame.lean`: 416 bytes with the Cryptographic Extension, 2592
 otherwise), so that the zeroing costs little where the callees need no
 working space.
@@ -62,5 +66,43 @@ theorem openOk (stack : Nat) :
       intro key hk
       rw [bytesAt_of hb.2.2.2.1 (by simp)]
       exact h key hk
+
+/-- The registers `vg_aes_ccm_seal` writes itself: its tail clears them with
+those its `vg_aes_ctr32` writes (`Ctr32Impl.clear`). -/
+def sealOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- Of `vg_aes_ccm_seal`. -/
+theorem sealSide (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2
+        (Impl.AesCcm.AArch64.«seal» v.callee v.ctr.callee)) (416 + v.scratch)
+      (Spec.Ccm.sealSig.retBits abi.ptrBits) (clearUnion sealOwn v.ctr.clear) [] = true := by
+  have e : (Proof.Variants.CmacAesUpdate.AArch64.variants.all fun v =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2
+        (Impl.AesCcm.AArch64.«seal» v.callee v.ctr.callee)) (416 + v.scratch)
+        (Spec.Ccm.sealSig.retBits abi.ptrBits) (clearUnion sealOwn v.ctr.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
+
+/-- The registers `vg_aes_ccm_open` writes itself: its tail clears them with
+those its `vg_aes_ctr32` writes (`Ctr32Impl.clear`). -/
+def openOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- Of `vg_aes_ccm_open`. -/
+theorem openSide (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : v ∈ Proof.Variants.CmacAesUpdate.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2
+        (Impl.AesCcm.AArch64.«open» v.callee v.ctr.callee)) (416 + v.scratch)
+      (Spec.Ccm.openSig.retBits abi.ptrBits) (clearUnion openOwn v.ctr.clear) [] = true := by
+  have e : (Proof.Variants.CmacAesUpdate.AArch64.variants.all fun v =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2
+        (Impl.AesCcm.AArch64.«open» v.callee v.ctr.callee)) (416 + v.scratch)
+        (Spec.Ccm.openSig.retBits abi.ptrBits) (clearUnion openOwn v.ctr.clear) []) = true := by lit_decide
+  exact List.all_eq_true.mp e v hv
 
 end VG.Proof.AesCcm.AArch64.Scrub

@@ -15,14 +15,19 @@ namespace VG.Artifacts.AesCfb8.AArch64
 open VG.Proof.AesCfb8.AArch64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
-    Spec.Cfb8.aesEncryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.AesCfb8.AArch64.encrypt v.enc
-      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) } Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk),
-    Spec.Cfb8.aesDecryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-      suffix := v.suffix
-      code := Impl.AesCfb8.AArch64.decrypt v.enc
-      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) } Proof.Aes.AArch64.ModesScrub.cfb8DecryptOk)]
+  VG.Proof.Variants.AesBlocks.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.Aes.AArch64.BlocksImpl // v ∈ VG.Proof.Variants.AesBlocks.AArch64.variants }) => [
+    Spec.Cfb8.aesEncryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.AesCfb8.AArch64.encrypt v.1.enc
+      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v.1) }
+      (AArch64.ScrubAll.clearUnion Proof.Aes.AArch64.ModesScrub.cfb8EncryptOwn v.1.encClear)
+      Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk (Proof.Aes.AArch64.ModesScrub.cfb8EncryptSide v.1 v.2)),
+    Spec.Cfb8.aesDecryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
+      suffix := v.1.suffix
+      code := Impl.AesCfb8.AArch64.decrypt v.1.enc
+      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v.1) }
+      (AArch64.ScrubAll.clearUnion Proof.Aes.AArch64.ModesScrub.cfb8DecryptOwn v.1.encClear)
+      Proof.Aes.AArch64.ModesScrub.cfb8DecryptOk (Proof.Aes.AArch64.ModesScrub.cfb8DecryptSide v.1 v.2))]
 
 end VG.Artifacts.AesCfb8.AArch64
