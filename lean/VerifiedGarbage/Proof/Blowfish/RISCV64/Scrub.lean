@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Blowfish.Cbc
@@ -1057,7 +1058,7 @@ end
 # Blowfish on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Blowfish/X86_64/Scrub.lean`).
@@ -1238,57 +1239,57 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract RISCV64.abi stack)
 
 /-- `Spec.Blowfish.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Blowfish.expandKeyApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.expandKey, verified := Proof.Blowfish.RISCV64.expandKey_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.expandKey, verified := Proof.Blowfish.RISCV64.expandKey_verified }
     (expandKeyOut _)
 
 /-- `Spec.Blowfish.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Blowfish.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.encrypt, verified := Proof.Blowfish.RISCV64.encrypt_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.encrypt, verified := Proof.Blowfish.RISCV64.encrypt_verified }
     (ecbOut .encrypt _)
 
 /-- `Spec.Blowfish.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Blowfish.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.decrypt, verified := Proof.Blowfish.RISCV64.decrypt_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.decrypt, verified := Proof.Blowfish.RISCV64.decrypt_verified }
     (ecbOut .decrypt _)
 
 /-- `Spec.Blowfish.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Blowfish.cbcEncryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cbcEncryptChained, verified := Proof.Blowfish.RISCV64.Modes.cbcEncryptChained_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cbcEncryptChained, verified := Proof.Blowfish.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
 /-- `Spec.Blowfish.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Blowfish.cbcDecryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cbcDecryptChained, verified := Proof.Blowfish.RISCV64.Modes.cbcDecryptChained_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cbcDecryptChained, verified := Proof.Blowfish.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _)
 
 /-- `Spec.Blowfish.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Blowfish.cfbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cfbEncrypt, verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cfbEncrypt, verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.Blowfish.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Blowfish.cfbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cfbDecrypt, verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cfbDecrypt, verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Blowfish.cfbEncryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cfbEncryptFinal, verified := Proof.Blowfish.RISCV64.Modes.cfbEncryptFinal_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cfbEncryptFinal, verified := Proof.Blowfish.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _)
 
 /-- `Spec.Blowfish.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Blowfish.cfbDecryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.cfbDecryptFinal, verified := Proof.Blowfish.RISCV64.Modes.cfbDecryptFinal_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.cfbDecryptFinal, verified := Proof.Blowfish.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _)
 
 /-- `Spec.Blowfish.ofbApi`. -/
 def ofbReg : Registration Spec.Blowfish.ofbApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.ofb, verified := Proof.Blowfish.RISCV64.Modes.ofb_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.ofb, verified := Proof.Blowfish.RISCV64.Modes.ofb_verified }
     (ofbOut _)
 
 /-- `Spec.Blowfish.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Blowfish.ofbFinalApi RISCV64.target :=
-  withScrub { code := Impl.Blowfish.RISCV64.ofbFinal, verified := Proof.Blowfish.RISCV64.Modes.ofbFinal_verified }
+  scrubOf { code := Impl.Blowfish.RISCV64.ofbFinal, verified := Proof.Blowfish.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
 
 end VG.Proof.Blowfish.RISCV64.Scrub

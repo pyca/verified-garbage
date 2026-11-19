@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -2122,7 +2123,7 @@ end VG.Proof.CmacTripleDes.Stream.RISCV64
 # Streaming TDEA-CMAC on RISC-V, without secret residue
 
 `vg_cmac_triple_des_stream_init`, `_absorb` and `_finish`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
 caller-saved registers and the whole stack its frames used: their working
 space, and the frame of ECB's serial code below it, which holds a copy of
 the key schedule. Their postconditions read the memory on return only within
@@ -2151,21 +2152,21 @@ theorem finishOut (stack : Nat) :
 
 /-- `vg_cmac_triple_des_stream_init`. -/
 def initReg : Registration Spec.Cmac.tdesStreamInitApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.streamInit
       verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed }
     (initOut _)
 
 /-- `vg_cmac_triple_des_absorb`. -/
 def absorbReg : Registration Spec.Cmac.tdesAbsorbApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 688 .a4 Impl.CmacTripleDes.Stream.RISCV64.absorb
       verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed }
     (absorbOut _)
 
 /-- `vg_cmac_triple_des_finish`. -/
 def finishReg : Registration Spec.Cmac.tdesFinishApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.finish
       verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed }
     (finishOut _)

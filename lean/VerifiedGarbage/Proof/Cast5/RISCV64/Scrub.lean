@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Cast5.Ofb
 public import VerifiedGarbage.Spec.Cast5.CfbFinal
 public import VerifiedGarbage.Spec.Cast5.OfbFinal
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
@@ -21,7 +22,7 @@ import VerifiedGarbage.Proof.Cast5.ScrubLocal
 # CAST5 on RISC-V, without secret residue
 
 The eleven CAST5 functions, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used: none for key expansion and ECB, whose working space
 is their caller's `scratch`, and the 128-byte frame of the modes, which holds
 the chaining block. Their postconditions read the memory on return only
@@ -187,57 +188,57 @@ theorem ofbFinalOut (stack : Nat) :
 
 /-- `Spec.Cast5.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Cast5.expandKeyApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.expandKey, verified := Proof.Cast5.RISCV64.expandKey_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.expandKey, verified := Proof.Cast5.RISCV64.expandKey_verified }
     (expandKeyOut _)
 
 /-- `Spec.Cast5.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.Cast5.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.RISCV64.ecbEncrypt_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.RISCV64.ecbEncrypt_verified }
     (ecbOut .encrypt _)
 
 /-- `Spec.Cast5.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.Cast5.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.RISCV64.ecbDecrypt_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.RISCV64.ecbDecrypt_verified }
     (ecbOut .decrypt _)
 
 /-- `Spec.Cast5.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Cast5.cbcEncryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cbcEncryptChained, verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcEncryptChained_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cbcEncryptChained, verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
 /-- `Spec.Cast5.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Cast5.cbcDecryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cbcDecryptChained, verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcDecryptChained_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cbcDecryptChained, verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _)
 
 /-- `Spec.Cast5.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Cast5.cfbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cfbEncrypt, verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.RISCV64.Modes.cfbEncrypt_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cfbEncrypt, verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.Cast5.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Cast5.cfbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cfbDecrypt, verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.RISCV64.Modes.cfbDecrypt_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cfbDecrypt, verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.Cast5.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Cast5.cfbEncryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cfbEncryptFinal, verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbEncryptFinal_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cfbEncryptFinal, verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _)
 
 /-- `Spec.Cast5.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Cast5.cfbDecryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.cfbDecryptFinal, verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbDecryptFinal_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.cfbDecryptFinal, verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _)
 
 /-- `Spec.Cast5.ofbApi`. -/
 def ofbReg : Registration Spec.Cast5.ofbApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.ofb, verified := Proof.Cast5.ofb_keyed Proof.Cast5.RISCV64.Modes.ofb_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.ofb, verified := Proof.Cast5.ofb_keyed Proof.Cast5.RISCV64.Modes.ofb_verified }
     (ofbOut _)
 
 /-- `Spec.Cast5.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Cast5.ofbFinalApi RISCV64.target :=
-  withScrub { code := Impl.Cast5.RISCV64.ofbFinal, verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.RISCV64.Modes.ofbFinal_verified }
+  scrubOf { code := Impl.Cast5.RISCV64.ofbFinal, verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
 
 end VG.Proof.Cast5.RISCV64.Scrub

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Spec.TripleDes.Cbc
@@ -614,7 +615,7 @@ end
 # TripleDes on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/TripleDes/X86_64/Scrub.lean`).
@@ -668,67 +669,67 @@ theorem ecbOut (d : Spec.TripleDes.Direction) (stack : Nat) : PostOut (Spec.Trip
 
 /-- `Spec.TripleDes.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.TripleDes.expandKeyApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.Key.expandKey, verified := Proof.TripleDes.RISCV64.Key.verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.Key.expandKey, verified := Proof.TripleDes.RISCV64.Key.verified }
     (expandKeyOut _)
 
 /-- `Spec.TripleDes.ecbEncryptApi`. -/
 def ecbEncryptReg : Registration Spec.TripleDes.ecbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.Bitslice.encrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.Bitslice.encrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified }
     (ecbOut .encrypt _)
 
 /-- `Spec.TripleDes.ecbDecryptApi`. -/
 def ecbDecryptReg : Registration Spec.TripleDes.ecbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.Bitslice.decrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.Bitslice.decrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }
     (ecbOut .decrypt _)
 
 /-- `Spec.TripleDes.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.TripleDes.cbcEncryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cbcEncryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cbcEncryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _)
 
 /-- `Spec.TripleDes.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.TripleDes.cbcDecryptChainedApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cbcDecryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cbcDecryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _)
 
 /-- `Spec.TripleDes.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfbEncrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfbEncrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _)
 
 /-- `Spec.TripleDes.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.TripleDes.cfbDecryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfbDecrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfbDecrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _)
 
 /-- `Spec.TripleDes.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfbEncryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbEncryptFinal_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfbEncryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _)
 
 /-- `Spec.TripleDes.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.TripleDes.cfbDecryptFinalApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfbDecryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbDecryptFinal_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfbDecryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _)
 
 /-- `Spec.TripleDes.cfb8EncryptApi`. -/
 def cfb8EncryptReg : Registration Spec.TripleDes.cfb8EncryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfb8Encrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Encrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfb8Encrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Encrypt_verified }
     (cfb8EncryptOut _)
 
 /-- `Spec.TripleDes.cfb8DecryptApi`. -/
 def cfb8DecryptReg : Registration Spec.TripleDes.cfb8DecryptApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.cfb8Decrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Decrypt_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.cfb8Decrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Decrypt_verified }
     (cfb8DecryptOut _)
 
 /-- `Spec.TripleDes.ofbApi`. -/
 def ofbReg : Registration Spec.TripleDes.ofbApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.ofb, verified := Proof.TripleDes.RISCV64.Modes.ofb_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.ofb, verified := Proof.TripleDes.RISCV64.Modes.ofb_verified }
     (ofbOut _)
 
 /-- `Spec.TripleDes.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi RISCV64.target :=
-  withScrub { code := Impl.TripleDes.RISCV64.ofbFinal, verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }
+  scrubOf { code := Impl.TripleDes.RISCV64.ofbFinal, verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _)
 
 end VG.Proof.TripleDes.RISCV64.Scrub
