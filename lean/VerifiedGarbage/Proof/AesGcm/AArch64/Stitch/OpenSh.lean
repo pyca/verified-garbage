@@ -120,7 +120,7 @@ theorem openShortA_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
     (h7 : t.gpr .x7 = BitVec.ofNat 64 n) (h16 : al ≤ 16) (hhi : n ≤ 96)
     (hT : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl) (hok : Spec.Gcm.tagLenOk tl = true)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = s₀.rd → u.wr = s₀.wr →
-      Frame [workR Wn W, ⟨O, n⟩] s₀.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH s₀.mem Ctx) u)) :
+      Frame [workR Wn W, ⟨O, n⟩] s₀.mem u.mem → WP isa (.block tb) u (Stitch.TblPost W (ctxH s₀.mem Ctx) u)) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hWs : 1024 ≤ Wn := by first | assumption | decide | omega) :
     WP isa (openShortA tb) t (ShortMid Wn to Ctx W SP Np A D O Tg R al n tl s₀) := by
   have L := o.lay
   have he₁ := o.env
@@ -542,7 +542,7 @@ theorem openShortA_ok {Wn : Nat} (gh : Gh8Ok) {tb : List Instr} {to : Bool} {Ctx
 /-- `openShortB to`, from what `openShortA` leaves. -/
 theorem openShortB_ok {Wn : Nat} {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R al n tl : Nat} {s₀ t u : State}
     (o : OpenInG Wn to Ctx W SP Np A D O Tg R 12 al n tl s₀ t) (hhi : n ≤ 96) (hok : Spec.Gcm.tagLenOk tl = true)
-    (m : ShortMid Wn to Ctx W SP Np A D O Tg R al n tl s₀ u) :
+    (m : ShortMid Wn to Ctx W SP Np A D O Tg R al n tl s₀ u) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (openShortB to) u (OpenPostG Wn Ctx W SP Np A O Tg R 12 al n tl (bytesAt s₀.mem D n)
       (fun m => bytesAt m O n = cond to (List.replicate n 0) (bytesAt s₀.mem D n)) s₀) := by
   obtain hnlt : n < 2 ^ 64 := (dataOk_of o.dat).lt
@@ -769,7 +769,7 @@ theorem openSelS_wp {Wn : Nat} (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AA
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR Wn W, ⟨O, (s.gpr .x7).toNat⟩] s.mem s'.mem →
       WP isa cl s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
-    (htb : TbForOP Wn tb (s.gpr .x0) W s.sp O (s.gpr .x7).toNat s) :
+    (htb : TbForOP Wn tb (s.gpr .x0) W s.sp O (s.gpr .x7).toNat s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (openSelS v.callees to tb cl sh) s₁ (OpenSPost to O Tg tl s) := by
   obtain hdk := dataOk_of o₁.dat
   obtain hnb : (s.gpr .x7).toNat + Wn ≤ 2 ^ 64 := len_of_disjoint hdk.w hdk.wrap o₁.lay.ww
