@@ -16,6 +16,8 @@ import VerifiedGarbage.Spec.Secp256k1
 meta import VerifiedGarbage.Spec.Secp256k1
 import VerifiedGarbage.Spec.BrainpoolP256r1
 meta import VerifiedGarbage.Spec.BrainpoolP256r1
+import VerifiedGarbage.Spec.BrainpoolP320r1
+meta import VerifiedGarbage.Spec.BrainpoolP320r1
 import VerifiedGarbage.Spec.BrainpoolP384r1
 meta import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Spec.BrainpoolP512r1
@@ -43,7 +45,7 @@ instance (C : Curve) (bs : List Byte) (Q : Point C) :
 def curves : List Curve :=
   [Spec.P192.curve, Spec.P224.curve, Spec.P256.curve, Spec.P384.curve,
     Spec.P521.curve, Spec.Secp256k1.curve, Spec.BrainpoolP256r1.curve,
-    Spec.BrainpoolP384r1.curve, Spec.BrainpoolP512r1.curve]
+    Spec.BrainpoolP320r1.curve, Spec.BrainpoolP384r1.curve, Spec.BrainpoolP512r1.curve]
 
 /-- The base point and its negative both compress to validated encodings,
 with opposite parity tags and unchanged `x`, for every supported curve. -/

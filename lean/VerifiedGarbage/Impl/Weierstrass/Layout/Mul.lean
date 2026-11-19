@@ -118,6 +118,13 @@ def brainpoolp256r1 : Curve :=
   { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
     tmp := 2 }
 
+/-- brainpoolP320r1's numbers have five words, for which no target's products
+move the temporary area out of slot 2 (`Impl.Ecdsa.X86_64.Cfg.sl` moves it
+only for six and nine words). -/
+def brainpoolp320r1 : Curve :=
+  { W := Spec.BrainpoolP320r1.curve, curve := "brainpoolp320r1", k := 5, desc := "brainpoolP320r1",
+    tmp := 2 }
+
 /-- brainpoolP384r1's temporary area is in slot 83's place, as P-384's is for six
 words (`Impl.Ecdsa.X86_64.Cfg.sl`). -/
 def brainpoolp384r1 : Curve :=
@@ -130,6 +137,7 @@ def brainpoolp512r1 : Curve :=
 
 /-- Every curve. -/
 def curves : List Curve :=
-  [p192, p224, p256, p384, p521, secp256k1, brainpoolp256r1, brainpoolp384r1, brainpoolp512r1]
+  [p192, p224, p256, p384, p521, secp256k1, brainpoolp256r1, brainpoolp320r1, brainpoolp384r1,
+    brainpoolp512r1]
 
 end VG.Impl.Weierstrass.Mul
