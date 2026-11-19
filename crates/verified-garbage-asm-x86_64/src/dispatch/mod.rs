@@ -114,6 +114,15 @@ pub mod ec_brainpoolp256r1_compressed;
 pub mod ec_brainpoolp256r1_validate;
 
 #[rustfmt::skip]
+pub mod ec_brainpoolp320r1;
+
+#[rustfmt::skip]
+pub mod ec_brainpoolp320r1_compressed;
+
+#[rustfmt::skip]
+pub mod ec_brainpoolp320r1_validate;
+
+#[rustfmt::skip]
 pub mod ec_brainpoolp384r1;
 
 #[rustfmt::skip]
@@ -189,6 +198,9 @@ pub mod ec_secp256k1_validate;
 pub mod ecdh_brainpoolp256r1;
 
 #[rustfmt::skip]
+pub mod ecdh_brainpoolp320r1;
+
+#[rustfmt::skip]
 pub mod ecdh_brainpoolp384r1;
 
 #[rustfmt::skip]
@@ -214,6 +226,9 @@ pub mod ecdh_secp256k1;
 
 #[rustfmt::skip]
 pub mod ecdsa_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub mod ecdsa_brainpoolp320r1;
 
 #[rustfmt::skip]
 pub mod ecdsa_brainpoolp384r1;

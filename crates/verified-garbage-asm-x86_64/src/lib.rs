@@ -197,6 +197,18 @@ pub mod ec_brainpoolp256r1_validate;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod ec_brainpoolp320r1;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
+pub mod ec_brainpoolp320r1_compressed;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
+pub mod ec_brainpoolp320r1_validate;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod ec_brainpoolp384r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
@@ -297,6 +309,10 @@ pub mod ecdh_brainpoolp256r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod ecdh_brainpoolp320r1;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod ecdh_brainpoolp384r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
@@ -330,6 +346,10 @@ pub mod ecdh_secp256k1;
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
 pub mod ecdsa_brainpoolp256r1;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
+pub mod ecdsa_brainpoolp320r1;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
