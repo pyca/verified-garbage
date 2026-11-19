@@ -20,12 +20,14 @@ modulus is in the code (immediates), so it is not stored.
   `edi` and `ebp` are saved in the own working space, `ebp` holds `ws`,
   `esi` points to `[b]` and `edi` to `[a]`; row `i` adds `a_i [b]`
   (`mulRowB`) and `q m` (`redRowI`: P-256's
-  sparse reduction for its `p`, else a row of the modulus's words as
-  immediates) to the accumulator's words from `i`, whose low word becomes
-  zero. The accumulator's words from `N` are then below `2m`, reduced by a
-  conditional subtraction (`diffsI`, `maskTop`, `selectsP`) into `[o]`,
-  through `ecx`. `esi` and `edi` are restored before the result is stored,
-  `ebx` and `ebp` after. For P-256 field squaring, equal public operand
+  sparse reduction for its `p`; for P-521's `p = 2⁵²¹ - 1`, whose `q` is the
+  low word, that word cleared and `2⁹ q` added at word 16, `p521Red`; else a
+  row of the modulus's words as immediates) to the accumulator's words from
+  `i`, whose low word becomes zero. The accumulator's words from `N` are
+  then below `2m`, reduced by a conditional subtraction (`diffsI`, `maskTop`,
+  `selectsP`) into `[o]`, through `ecx`. `esi` and `edi` are restored
+  before the result is stored, `ebx` and `ebp` after. For P-256 field
+  squaring, equal public operand
   pointers select a full-width Comba square (36 word products) followed by
   eight sparse REDC rounds; the common final subtraction is unchanged.
 * `addFn`, `subFn`: `[a] ± [b]` into the accumulator through pointers in
@@ -135,10 +137,30 @@ def bWord (j : Nat) : Src := .mem (at_ .esi (4 * j))
 /-- `m_j`. -/
 def mWord (m j : Nat) : Src := .imm (mw m j)
 
+/-- P-521's field modulus. -/
+def p521Prime : Nat := 2 ^ 521 - 1
+
+/-- P-521's field, on its eighteen 32-bit words. -/
+def p521RedEnabled (M : Mod) (m : Nat) : Bool := M.n == 9 && m == p521Prime
+
+/-- `edx:ecx = 2^9 ecx`, through `eax`. -/
+def shift9 : List Instr := [.mov .eax (.reg .ecx), .mov .edx (.imm 512), .mul .edx, .mov .ecx (.reg .eax)]
+
+/-- `T + q p` for `p = 2^521 - 1` and `q` (in `ecx`) the low word of the
+window `T` at `[ebp + acc]`, of twenty words: the low word cleared (minus
+`q`), and `q 2^9` added at word 16 (`2^521 = 2^9 2^512`), its low word and
+then its high word (`shift9`), the carry through words 18 and 19. -/
+def p521Red (acc : Nat) : List Instr :=
+  ([.mov .eax (.imm 0), .store (bp acc) .eax] : List Instr) ++ shift9 ++
+    sparseStep acc 16 .add true ++ ([.mov .ecx (.reg .edx)] : List Instr) ++
+    sparseStep acc 17 .adc true ++ sparseStep acc 18 .adc false ++ sparseStep acc 19 .adc false
+
 /-- The window `+= q m`, `q` in `ecx`: P-256's sparse identity when certified,
-else a row of the modulus's words. -/
+P-521's shift, else a row of the modulus's words. -/
 def redRowI (M : Mod) (m acc : Nat) : List Instr :=
-  if p256RedEnabled M then p256Red acc else rowG (mWord m) acc (words M) (carryUp acc (words M))
+  if p256RedEnabled M then p256Red acc
+  else if p521RedEnabled M m then p521Red acc
+  else rowG (mWord m) acc (words M) (carryUp acc (words M))
 
 /-- Row `i`: `ecx = a_i` (through `edi`), the window at `own + 4i`
 `+= a_i [b]` (row 0 writes it), then `+= q m` for `q = t₀ m' mod 2³²`. -/
