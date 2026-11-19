@@ -222,10 +222,6 @@ structure Permutation where
   /-- The `target_vendor` of the CPUs it is faster on, which callers that are
   faster with it only there give their implementations (`Artifact.vendor`). -/
   vendor : Option String := none
-  /-- `callee.clear`: the registers its code writes, of those the calling
-  convention does not preserve, which the tail of a function that calls it
-  clears for it. -/
-  clear : Impl.Residue.AArch64.Clear := callee.clear
   /-- Its code writes, of the registers the calling convention does not
   preserve, only those `callee.clear` lists, writes no PSTATE.DIT and calls
   nothing indirectly (`ScrubAll.calleeSide`, which the kernel evaluates where
