@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP512r1.Verified
 import Mathlib.Data.Finset.Card
@@ -37,14 +38,23 @@ namespace VG.Artifacts.EcBrainpoolP512r1.AArch64
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.EcKey.AArch64.publicKeyBrainpoolP512r1
-    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.publicKeyOk _)),
-  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v16, .v17, .v18, .v29],
+       []⟩ (Proof.EcKey.AArch64.Scrub.publicKeyOk _)),
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
-  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v24, .v25, .v26, .v28],
+       []⟩ (Proof.EcKey.AArch64.Scrub.compressOk _)),
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.decompressOk _))]
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v16, .v17, .v18, .v29],
+       []⟩ (Proof.EcKey.AArch64.Scrub.decompressOk _))]
 
 end VG.Artifacts.EcBrainpoolP512r1.AArch64
