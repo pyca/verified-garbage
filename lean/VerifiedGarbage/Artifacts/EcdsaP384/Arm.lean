@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Comb -- shake: keep (proof bi
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Comb -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P384.Arm.Law
@@ -20,15 +21,8 @@ open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p384CombCurve p384T_verified p384Comb
 open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
-      Impl.Ecdsa.Arm.verifyP384Comb
-    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.P384.verifyHash_verified hasLaw.law) },
-  Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
-      Impl.Ecdsa.Arm.verifyP384CombU
-    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.P384.verifyHashU_verified hasLaw.law) },
+  Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P384.Scrub.verifyReg hasLaw.law),
+  Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P384.Scrub.verifyUReg hasLaw.law),
   Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (p384CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
