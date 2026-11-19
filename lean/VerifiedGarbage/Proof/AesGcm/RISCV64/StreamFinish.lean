@@ -176,7 +176,7 @@ theorem finTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho :
   refine WP.mono (tagB_ok L ho he₅ h28 hR (H := H) (by rw [hk₅.mem]; exact hfl.hH) rfl (S := S) (D := D) (n := n)
     fun hbs => by
       obtain hb := hb hbs
-      refine ⟨by rw [hk₅.rd, hk₅.wr, rd₄, wr₄, hk₂.rd, hk₂.wr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src, ?_⟩
+      refine ⟨by rw [hk₅.rd, hk₅.wr, rd₄, wr₄, hk₂.rd, hk₂.wr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, ?_⟩
       rw [hk₅.mem]
       exact keysAt_ctx_frame hR hf₄ (bk_tFrame hb) (ctx_tFrame L he.stk') hb.keys) fun s₆ tg => ?_
   rw [h24₅, h26₅, hP, hk₅.mem] at tg
@@ -341,7 +341,7 @@ theorem BsAtW.bkIn {s₀ s₁ : State} {w : Reg} (hb : BsAtW s₀ w) (L₀ : Lay
     BkIn (s₀.gpr .t2) (s₀.gpr .a0) (s₀.gpr .a2) (s₀.gpr w) s₀.sp (s₀.gpr .a1).toNat s₁.mem (s₀.gpr w) (s₀.gpr w)
       16 s₁ :=
   ⟨covers_appL (by rw [hrd]; exact hb.rd), hb.al, hb.st, hb.w, hb.sk,
-    hb.w.sub_right (Region.sub_prefix (by decide)), hb.w.sub_right (Region.sub_prefix (by decide)),
+    hb.w.sub_right (Region.sub_prefix (by decide)),
     keysAt_ctx_frame hR hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hb.w.sub_right (Lay.wSub (by decide)))
       (ctx_saved L₀) hb.keys⟩

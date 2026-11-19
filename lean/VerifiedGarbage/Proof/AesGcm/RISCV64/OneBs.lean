@@ -197,7 +197,7 @@ theorem sealBs_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealBsRISC
     rw [h1.s2, h1.s1, h1.s0, h1.s11]
     refine ⟨?_, ba, ?_, dbW.sub_left (Region.sub_prefix (by decide)),
       (stkAll_mem hstk.2.2 (r := ⟨stackArg s₀ 1, 1248⟩) (by simp)).symm.sub_left (Region.sub_prefix (by decide)),
-      dbd.sub_left (Region.sub_prefix (by decide)), dbd.sub_left (Region.sub_prefix (by decide)), ?_⟩
+      dbd.sub_left (Region.sub_prefix (by decide)), ?_⟩
     · rw [k₂'.rd, k₂'.wr, rd₂, wr₂, hk₁.rd, hk₁.wr]
       exact covers_appL (covers_prefix (k := 1248) (covers_mem (by rw [hrd]; simp)) (by decide))
     · exact (dbW.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
@@ -367,7 +367,7 @@ theorem sealBsEntry_wp {s₀ : State} (h : sealBsPre s₀) :
   · rw [hk₁.rd, hk₁.wr]; exact args_in hA (by decide) (i := 1) (by decide)
   · refine ⟨?_, ba, (db.sub_right (Lay.wSub (by decide))), db,
       (stkAll_mem hstk.2.2 (r := ⟨stackArg s₀ 1, 1248⟩) (by simp)).symm.sub_left (Region.sub_prefix (by decide)),
-      dbd.sub_left (Region.sub_prefix (by decide)), dbd.sub_left (Region.sub_prefix (by decide)), ?_⟩
+      dbd.sub_left (Region.sub_prefix (by decide)), ?_⟩
     · rw [hk₁.rd, hk₁.wr]
       exact covers_appL (covers_prefix (k := 1248) (covers_mem (by rw [hrd]; simp)) (by decide))
     · refine keysAt_ctx_frame hR f₁ (fun r hr => ?_) (fun r hr => ?_) (keysAt_of_sliced hR14 hsl)

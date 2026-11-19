@@ -299,7 +299,7 @@ theorem enc_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
     obtain hb₀ := hbs hb
     rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
     exact ⟨covers_appL (by rw [hk₂.rd, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al, hb₀.st, hb₀.w,
-      hb₀.sk, hb₀.d, hb₀.d, keysAt_ctx_frame hR f₂ hb₀.saved (ctx_saved L₀) hb₀.keys⟩
+      hb₀.sk, hb₀.d, keysAt_ctx_frame hR f₂ hb₀.saved (ctx_saved L₀) hb₀.keys⟩
   refine WP.seq (WP.mono (WP.with_rdwr (cryptB_ok L ci hbk)) fun s₃ ⟨co, rd₃, wr₃, sp₃⟩ => ?_)
   obtain hd₃ := hd₂.ok.of_eq rd₃ wr₃ sp₃
   have cf := co.frame
@@ -404,7 +404,7 @@ theorem dec_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
     obtain hb₀ := hbs hb
     rw [h17 hb, h1.s2, h1.s1, h1.s0, h1.s9, h1.s8]
     refine ⟨covers_appL (by rw [hk₅.rd, rd₄, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al, hb₀.st,
-      hb₀.w, hb₀.sk, hb₀.d, hb₀.d, ?_⟩
+      hb₀.w, hb₀.sk, hb₀.d, ?_⟩
     rw [hk₅.mem]
     exact keysAt_ctx_frame hR tf hb₀.taFrame (ctx_taFrame L₀ hk₀)
       (keysAt_ctx_frame hR f₁ hb₀.saved (ctx_saved L₀) hb₀.keys)

@@ -212,8 +212,7 @@ theorem ver_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
         obtain hb₀ := hbs hb
         rw [h17 hb, h1.s2, h1.s1, h1.s0]
         refine ⟨covers_appL (by rw [k₄.rd, k₃.rd, h1.en.keeps.rd]; exact hb₀.rd), hb₀.al,
-          hb₀.st, hb₀.w, hb₀.sk, hb₀.w.sub_right (Region.sub_prefix (by decide)),
-          hb₀.w.sub_right (Region.sub_prefix (by decide)), ?_⟩
+          hb₀.st, hb₀.w, hb₀.sk, hb₀.w.sub_right (Region.sub_prefix (by decide)), ?_⟩
         refine keysAt_ctx_frame hR f₀₄ (fun r hr => ?_) dc₀₄ hb₀.keys
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl

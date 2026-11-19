@@ -476,7 +476,7 @@ theorem openBsPre.bkpre {s₀ : State} (h : openBsPre s₀) :
     dbW.sub_left (Region.sub_prefix (by decide))
   refine ⟨⟨?_, ba, db.sub_right (Lay.wSub (by decide)), db,
     (stkAll_mem hstk.2.2 (r := ⟨stackArg s₀ 2, 1248⟩) (by simp)).symm.sub_left (Region.sub_prefix (by decide)),
-    dbd.sub_left (Region.sub_prefix (by decide)), dbd.sub_left (Region.sub_prefix (by decide)),
+    dbd.sub_left (Region.sub_prefix (by decide)),
     keysAt_of_sliced hR14 hsl⟩, rfl, args_in hA (by decide) (i := 2) (by decide), fun r hr => ?_⟩
   · exact covers_appL (covers_prefix (k := 1248) (covers_mem (by rw [hrd]; simp)) (by decide))
   · refine Region.Disjoint.sub_left ?_ (Offset.sub s₀.sp (d := 16) (n := 8) (e := 0) (k := 32) (by decide) (by decide))

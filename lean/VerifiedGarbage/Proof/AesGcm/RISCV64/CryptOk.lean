@@ -393,7 +393,7 @@ theorem BkIn.mid {B : Addr} {o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : 
     {j : Nat} {s : State} (L : Lay (V .s2) (V .s1) (V .s0)) (h : CrMid o V sp R icb P S D n m₀ j s)
     (hb : BkIn B (V .s2) (V .s1) (V .s0) sp R m₀ S D n s) :
     BkIn B (V .s2) (V .s1) (V .s0) sp R s.mem S D n s :=
-  ⟨hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src,
+  ⟨hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d,
     keysAt_ctx_frame h.rounds h.frame hb.crFrame (ctx_crFrame L h.data) hb.keys⟩
 
 /-- Whole blocks. -/
@@ -724,7 +724,7 @@ theorem BkIn.tailArgs {o : Bool} {R : Nat} {icb : Block} {P : Nat} {S D : Addr} 
   obtain fz : Frame [⟨V .s1 + BitVec.ofNat 64 64, 16⟩] s.mem s₂.mem := by
     rw [hm₂]; exact Proof.Cmac.frame_store2 _ _ _
   obtain hb₀ := hb.mid L h
-  refine ⟨by rw [hrd, hwr]; exact hb₀.rd, hb₀.al, hb₀.st, hb₀.w, hb₀.sk, hb₀.d, hb₀.src, ?_⟩
+  refine ⟨by rw [hrd, hwr]; exact hb₀.rd, hb₀.al, hb₀.st, hb₀.w, hb₀.sk, hb₀.d, ?_⟩
   exact keysAt_ctx_frame h.rounds fz (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hb₀.st.sub_right (Lay.stSub (by decide)))
     (fun r hr => by

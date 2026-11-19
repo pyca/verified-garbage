@@ -231,7 +231,7 @@ theorem scB_DIB {ex : List Region} {s₀ : State} (h : streamCryptPreX ex s₀) 
     by rw [h1.s3, BitVec.ofNat_toNat, BitVec.setWidth_eq], hR, sc_env h h1,
     sc_dataW h h1.en.keeps.wr h1.en.keeps.sp, fun _ => ⟨h17 rfl, ?_⟩⟩
   rw [h17 rfl, h1.s2, h1.s1, h1.s0]
-  exact ⟨covers_appL (by rw [h1.en.keeps.rd]; exact hb.rd), hb.al, hb.st, hb.w, hb.sk, hb.d, hb.d,
+  exact ⟨covers_appL (by rw [h1.en.keeps.rd]; exact hb.rd), hb.al, hb.st, hb.w, hb.sk, hb.d,
     keysAt_ctx_frame hR f₁ hb.saved (ctx_saved L₀) hb.keys⟩
 
 section

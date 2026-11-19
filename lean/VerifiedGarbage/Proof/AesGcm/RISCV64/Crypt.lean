@@ -149,8 +149,9 @@ in the context `c` (`KeysAt`), which no piece writes. -/
 
 /-- With the round keys bitsliced, their buffer `B`: the code may read it, it
 is a multiple of 8, apart from the state, `W`, the stack below `sp` that
-`vg_ghash`'s frame uses, and the text (`S` and `D`, `n` bytes); in `m₀`, it
-holds the round keys of the schedule in `c` for `R` rounds. -/
+`vg_ghash`'s frame uses, and the text written (`D`, `n` bytes; the text read,
+`S`, which the calls never write, may overlap it); in `m₀`, it holds the
+round keys of the schedule in `c` for `R` rounds. -/
 structure BkIn (B c st w sp : Addr) (R : Nat) (m₀ : Mem) (S D : Addr) (n : Nat) (s : State) : Prop where
   rd : Covers [⟨B, 960⟩] (s.rd ++ s.wr)
   al : B.toNat % 8 = 0
@@ -158,20 +159,18 @@ structure BkIn (B c st w sp : Addr) (R : Nat) (m₀ : Mem) (S D : Addr) (n : Nat
   w : (⟨B, 960⟩ : Region).Disjoint ⟨w, 2560⟩
   sk : (⟨B, 960⟩ : Region).Disjoint (below sp 2048)
   d : (⟨B, 960⟩ : Region).Disjoint ⟨D, n⟩
-  src : (⟨B, 960⟩ : Region).Disjoint ⟨S, n⟩
   keys : Proof.Aes.RISCV64.KeysAt m₀ B R (bytesAt m₀ c (16 * (R + 1)))
 
 theorem BkIn.of_eq {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s s' : State}
     (h : BkIn B c st w sp R m₀ S D n s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     BkIn B c st w sp R m₀ S D n s' :=
-  ⟨by rw [hrd, hwr]; exact h.rd, h.al, h.st, h.w, h.sk, h.d, h.src, h.keys⟩
+  ⟨by rw [hrd, hwr]; exact h.rd, h.al, h.st, h.w, h.sk, h.d, h.keys⟩
 
 /-- Part of the text. -/
 theorem BkIn.sub {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s : State}
     (h : BkIn B c st w sp R m₀ S D n s) {j k : Nat} (hjk : j + k ≤ n) :
     BkIn B c st w sp R m₀ (S + BitVec.ofNat 64 j) (D + BitVec.ofNat 64 j) k s :=
-  ⟨h.rd, h.al, h.st, h.w, h.sk, h.d.sub_right (Offset.sub_base _ hjk), h.src.sub_right (Offset.sub_base _ hjk),
-    h.keys⟩
+  ⟨h.rd, h.al, h.st, h.w, h.sk, h.d.sub_right (Offset.sub_base _ hjk), h.keys⟩
 
 /-- The round keys' words, all in the buffer. -/
 theorem keysIn960 (B : Addr) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
@@ -208,7 +207,7 @@ theorem BkIn.frame {B c st w sp : Addr} {R : Nat} {m m' : Mem} {S D : Addr} {n :
     (hb : BkIn B c st w sp R m S D n s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {rs : List Region} (hf : Frame rs m m')
     (hbr : ∀ r ∈ rs, (⟨B, 960⟩ : Region).Disjoint r) (hc : ∀ r ∈ rs, (⟨c, 256⟩ : Region).Disjoint r)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : BkIn B c st w sp R m' S D n s' :=
-  ⟨by rw [hrd, hwr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src, keysAt_ctx_frame hR hf hbr hc hb.keys⟩
+  ⟨by rw [hrd, hwr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, keysAt_ctx_frame hR hf hbr hc hb.keys⟩
 
 /-- Code never changes the permissions. -/
 theorem WP.with_rdwr' {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :

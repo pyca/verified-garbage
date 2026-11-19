@@ -339,7 +339,7 @@ theorem tagCallB_ok {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Bl
     rw [ciph_frame f₂ dcW hR, h.hc]
   obtain hb := hb rfl
   obtain hb₂ : BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s₂.mem S D n s₂ :=
-    ⟨by rw [hk₂.rd, hk₂.wr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d, hb.src,
+    ⟨by rw [hk₂.rd, hk₂.wr]; exact hb.rd, hb.al, hb.st, hb.w, hb.sk, hb.d,
       keysAt_ctx_frame hR f₂ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact hb.w.sub_right (Lay.wSub (by omega_using [ho])))
         dcW (keysAt_ctx_frame hR h.frame (bk_tFrame hb) (ctx_tFrame L he.stk') hb.keys)⟩
