@@ -246,7 +246,7 @@ theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s)
   obtain ⟨-, -, dcs, -, dcw, dsd, dsw, -, wc, ws, -, ww, -⟩ := hs
   exact ⟨Lay.of wc ws ww dcs dcw dsw hWn, dsd.symm⟩
 
-theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (streamEncrypt v.callees) s fun s' => GprAbi s s' ∧ (streamEncryptAArch64 Wn).post s s' := by
   have hs' : streamCryptPre (Wn := Wn) s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
@@ -299,7 +299,7 @@ theorem streamEncrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamEncry
   · rw [List.length_append, hlen, Proof.Gcm.length_xorKs, length_bytesAt]; exact o₂
   · rw [List.drop_left' (by rw [hlen, hp]), o₃]
 
-theorem streamDecrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+theorem streamDecrypt_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamDecryptAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (streamDecrypt v.callees) s fun s' => GprAbi s s' ∧ (streamDecryptAArch64 Wn).post s s' := by
   have hs' : streamCryptPre (Wn := Wn) s := hs
   have run : ∀ (a c : List Byte) (icb : Block), a.length % 16 = (s.gpr .x3).toNat % 16 →
@@ -390,7 +390,7 @@ theorem decAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {
 /-- `decBody` in two runs. -/
 theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
     {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (decBody v.callees) TT := by
   have k22₁ : k₁ .x22 = BitVec.ofNat 64 R := (h₁.kept .x22 (by decide)).symm.trans h₁.x22
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
@@ -466,12 +466,12 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
     (hw L b₁) (hw L b₂) fun τ₁ τ₂ e₁ e₂ => ?_
   exact rel_taint [.x19] (by rw [e₁.sp, e₂.sp]) (by agree_tac [e₁.x19, e₂.x19]) ⟨_, by taint_decide⟩
 
-theorem streamEncrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+theorem streamEncrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (streamEncryptAArch64 Wn).pre (streamEncryptAArch64 Wn).pub (streamEncrypt v.callees) :=
   ct_of fun _ _ h₁ h₂ hq => cr_rel h₁ h₂ hq (fun L b₁ b₂ hq => encBody_rel L v b₁ b₂ hq)
     (fun L b => WP.mono (encBody_ok L v b 0) fun _ h => h.env)
 
-theorem streamDecrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+theorem streamDecrypt_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ConstantTime isa (streamDecryptAArch64 Wn).pre (streamDecryptAArch64 Wn).pub (streamDecrypt v.callees) :=
   ct_of fun _ _ h₁ h₂ hq => cr_rel h₁ h₂ hq (fun L b₁ b₂ hq => decBody_rel L v b₁ b₂ hq)
     (fun L b => WP.mono (decBody_ok L v b 0) fun _ h => h.env)

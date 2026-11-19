@@ -132,7 +132,7 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {
 
 /-- The call of `tag o`: `CIPH_K(J)` XORed into the copy. -/
 theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
-    {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    {m₀ : Mem} {s : State} (h : Tag1 Wn Ctx St W SP k o R Y J m₀ s) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (ctrCall v.callees) s (TagOut Wn Ctx St W SP k o R Y J m₀) := by
   refine WP.mono (ctr_callLe v.ctr hv h.call) fun s₃ g => ?_
   have gout := g.out
@@ -154,7 +154,7 @@ theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0
 /-- `tag o`, for `o` of 0 or 112. -/
 theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' R : Nat} (ho : o = 0 ∨ o = 112) {s : State}
     (he : Env Wn Ctx St W SP s) (hk : Kept k s) (h22 : s.gpr .x22 = BitVec.ofNat 64 R)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (h25 : s.gpr .x25 = BitVec.ofNat 64 o') (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (h25 : s.gpr .x25 = BitVec.ofNat 64 o') (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     WP isa (tag v.callees o) s (TagOut Wn Ctx St W SP k o R
       (ghashFrom (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blockAt s.mem (St + BitVec.ofNat 64 16))
         [ofBytes (lensBlock (s.gpr .x26).toNat (s.gpr .x27).toNat)]) (blockAt s.mem St) s.mem) := by

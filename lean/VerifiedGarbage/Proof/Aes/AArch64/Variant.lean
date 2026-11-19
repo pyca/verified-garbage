@@ -85,6 +85,10 @@ structure Ctr32Impl where
 
 namespace Ctr32Impl
 
+/-- At most `ctr32AArch64`'s 2048 bytes. -/
+theorem scratch_le (c : Ctr32Impl) : c.scratch ≤ 2048 := by
+  rcases c.scratch_ok with h | h <;> omega
+
 /-- The implementation in the baseline ISA, `vg_aes_ctr32`: each
 block encrypted by vector permutations (`OneBlock.lean`). -/
 def scalar : Ctr32Impl where

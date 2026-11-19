@@ -123,7 +123,7 @@ theorem lens_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Re
 
 /-- `crypt`. -/
 theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (crypt v.callees) TT := by
   have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Wn Ctx St W SP k R P D n σ) {m' : Mem},
       Frame (crFrame Wn St W D n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
@@ -148,7 +148,7 @@ out of place, whose whole blocks out of place a call of `vg_aes_ctr32_to`
 decrypts (`ctrTo_rel`). -/
 theorem cryptAlG_rel (v : GcmImpl) (to : Bool) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D O : Addr} {n : Nat}
     {σ₁ σ₂ : State} (h₁ : CrInG Wn to Ctx St W SP k₁ R P D O n σ₁) (h₂ : CrInG Wn to Ctx St W SP k₂ R P D O n σ₂)
-    (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptAlG v.callees to) TT := by
   have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrInG Wn to Ctx St W SP k R P D O n σ) {m' : Mem},
       Frame (crFrame Wn St W O n) σ.mem m' → ciphOf m' Ctx R = ciphOf σ.mem Ctx R :=
@@ -188,7 +188,7 @@ theorem cryptAlG_rel (v : GcmImpl) (to : Bool) {k₁ k₂ : Reg → BitVec 64} {
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
 theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
-    (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (h₁ : CrIn Wn Ctx St W SP k₁ R P D n σ₁) (h₂ : CrIn Wn Ctx St W SP k₂ R P D n σ₂) (hP : P % 16 = 0) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
   rw [← cryptAlG_false]
   exact cryptAlG_rel L v false h₁ h₂ hP
@@ -206,7 +206,7 @@ theorem lens_ok (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Reg
 theorem tag_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ : Reg → BitVec 64} {R o₁ o₂ : Nat}
     {σ₁ σ₂ : State} (he₁ : Env Wn Ctx St W SP σ₁) (he₂ : Env Wn Ctx St W SP σ₂) (hk₁ : Kept k₁ σ₁) (hk₂ : Kept k₂ σ₂)
     (h22₁ : σ₁.gpr .x22 = BitVec.ofNat 64 R) (h22₂ : σ₂.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (h25₁ : σ₁.gpr .x25 = BitVec.ofNat 64 o₁) (h25₂ : σ₂.gpr .x25 = BitVec.ofNat 64 o₂) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) :
+    (h25₁ : σ₁.gpr .x25 = BitVec.ofNat 64 o₁) (h25₂ : σ₂.gpr .x25 = BitVec.ofNat 64 o₂) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     RelCT isa (Eq2 σ₁ σ₂) (tag v.callees o) TT := by
   obtain hWn := he₁.perm.hWn
   have t₁ : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21]) (.block (tagSeg o)) h).isSome = true := by
