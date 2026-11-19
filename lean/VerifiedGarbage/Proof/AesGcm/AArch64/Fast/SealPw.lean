@@ -98,6 +98,34 @@ theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
   · exact fastSeal_verified v hMK
   · exact seal_verified v
 
+theorem sealCode_verifiedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {Wn : Nat}
+    (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (sealCode v) (Proof.AesGcm.sealScratchContract AArch64.abi (n := Wn / 8)) := by
+  unfold sealCode
+  split
+  · exact fastSeal_verifiedW v hMK h hv
+  · exact seal_verifiedW v h hv
+
+/-- `seal` in a frame of `gcmWn v + 16` bytes holding its working space and a
+copy of its stack argument before it: 784 bytes over an implementation of
+counter mode that needs no working space, else 2576. -/
+theorem sealCode_framedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn v + 16) 1 (sealCode v))
+      (Proof.AesGcm.sealRoundsContract AArch64.abi (gcmWn v + 16)) := by
+  obtain hv := sealCode_verifiedW v hMK (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 784)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre784
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
+
 theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v))

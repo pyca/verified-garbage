@@ -806,4 +806,27 @@ theorem open_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv
           List.range.loop]
           [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560)
 
+/-! ## The working space of each implementation
+
+512 bytes the code uses itself, then what its callees need: the 256 bytes of
+the hash, over an implementation of counter mode that needs none
+(`Ctr32Impl.scratch`), else counter mode's 2048; key setup needs the 512
+bytes of the key expansion instead of the hash's. -/
+
+def gcmWn (v : GcmImpl) : Nat := if v.ctr.scratch = 0 then 768 else 2560
+
+theorem gcmWn_cases (v : GcmImpl) : gcmWn v = 768 ∨ gcmWn v = 2560 := by
+  unfold gcmWn; split <;> simp
+
+theorem gcmWn_hv (v : GcmImpl) : v.ctr.scratch ≤ gcmWn v - 512 := by
+  rcases v.ctr.scratch_ok with h | h <;> simp [gcmWn, h]
+
+def gcmInitWn (v : GcmImpl) : Nat := if v.ctr.scratch = 0 then 1024 else 2560
+
+theorem gcmInitWn_cases (v : GcmImpl) : gcmInitWn v = 1024 ∨ gcmInitWn v = 2560 := by
+  unfold gcmInitWn; split <;> simp
+
+theorem gcmInitWn_hv (v : GcmImpl) : v.ctr.scratch ≤ gcmInitWn v - 512 := by
+  rcases v.ctr.scratch_ok with h | h <;> simp [gcmInitWn, h]
+
 end VG.Proof.AesGcm.AArch64

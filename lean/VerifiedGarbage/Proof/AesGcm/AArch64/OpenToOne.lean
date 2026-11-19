@@ -216,6 +216,12 @@ theorem openToFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.a
     AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openToFrameSat, openToSat, stackArg,
     stackArgAddr, Mem.readW, Mem.read] using openToFrameSat
 
+theorem openToFrameSat_pre816 : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.abi 816).pre s := by
+  implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre,
+    Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+    AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openToFrameSat, openToSat, stackArg,
+    stackArgAddr, Mem.readW, Mem.read] using openToFrameSat
+
 /-- `open_to` in a frame of 2608 bytes holding its working space and copies of
 its four other stack arguments. -/
 theorem openTo_framed (v : GcmImpl) :

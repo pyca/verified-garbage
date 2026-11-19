@@ -40,6 +40,26 @@ theorem init_framed (v : GcmImpl) :
     (Proof.AesGcm.initPostOut_local _)
     initFrameSat_pre
 
+theorem initFrameSat_pre1024 : ∃ s, (Spec.Gcm.initContract AArch64.abi 1024).pre s := by
+  implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
+    AArch64.abi, AArch64.argRegs] [initFrameSat, initSat] using initFrameSat
+
+/-- `init` in a frame of `gcmInitWn v` bytes: 1024 over an implementation of
+counter mode that needs no working space, else 2560. -/
+theorem init_framedW (v : GcmImpl) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (gcmInitWn v) .x3 (init v.callees))
+      (Spec.Gcm.initContract AArch64.abi (gcmInitWn v)) := by
+  obtain hv := init_verifiedW v (gcmInitWn_cases v) (gcmInitWn_hv v)
+  rcases gcmInitWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 128)
+      (pre := Spec.Gcm.initPre AArch64.abi.ptrBits) (post := Spec.Gcm.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 1024) hv (by decide) (by decide)
+      (Proof.AesGcm.initPostOut_local _) initFrameSat_pre1024
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+      (pre := Spec.Gcm.initPre AArch64.abi.ptrBits) (post := Spec.Gcm.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 2560) hv (by decide) (by decide)
+      (Proof.AesGcm.initPostOut_local _) initFrameSat_pre
+
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/
 def streamInitFrameSat : State := { streamInitSat with wr := [⟨0x3000, 80⟩] }
@@ -156,6 +176,12 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract AArch64.abi 2
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
+theorem sealFrameSat_pre784 : ∃ s, (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: `tag` at 0 and `tag_len` 0, its two stack arguments. -/
 def openFrameSat : State :=
@@ -163,6 +189,12 @@ def openFrameSat : State :=
                  wr := [⟨0x4000, 0⟩] }
 
 theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract AArch64.abi 2592).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
+    Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop] [openFrameSat, openSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+theorem openFrameSat_pre800 : ∃ s, (Proof.AesGcm.openRoundsContract AArch64.abi 800).pre s := by
   implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
     Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, openSat, stackArg, stackArgAddr,
