@@ -101,7 +101,7 @@ theorem savedR_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) :
   obtain hWn := L.hWn
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨L.sb.sub_right (Lay.bSub (by decide) (by decide)), Lay.wSub (by decide)⟩
+  exact ⟨L.sb.sub_right (Lay.bSub (by decide) (by have := L.hWn; omega)), Lay.wSub (by have := L.hWn; omega)⟩
 
 /-- One run of `stream_finish`, for a message `a`, `c` of those lengths. -/
 theorem fin_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamFinishAArch64 Wn).pre s) {a c : List Byte}

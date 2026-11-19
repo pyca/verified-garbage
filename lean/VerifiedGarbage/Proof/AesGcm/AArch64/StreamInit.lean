@@ -69,7 +69,7 @@ theorem streamInit_wp {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamInitAArc
   refine WP.seq (WP.mono (siEntry_ok hCtx hNp hn hSt hW perm)
     fun s₁ ⟨he₁, hk₁, x23₁, x24₁, x26₁, x27₁, m₁, rd₁, wr₁⟩ => ?_)
   have fsv : Frame [savedR W] s.mem s₁.mem := by rw [m₁]; exact savedMem_frame _ _ _
-  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by decide)
+  have sW : Region.Sub (savedR W) ⟨W, Wn⟩ := Lay.wSub (by omega)
   have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n :=
     bytesAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega_using [hn])
