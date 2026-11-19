@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -68,6 +70,13 @@ theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)
   rw [c₁] at ht
   have h1 : n ≠ 1 := by simpa using ht
   exact ⟨n - 1, by omega_using [hn], i₁ h1, i₂ h1⟩
+
+/-- Code with SSE instructions that the taint analysis proves constant time
+from the registers `rs`, on which any two states satisfying `I` agree. -/
+theorem CT.taintSse {I : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.sseTaint.T}
+    (h : (VG.X86.sseTaint.check (τr rs) c hc).isSome = true) : CT I c :=
+  RelCT.taint (A := VG.X86.sseTaint) (τr rs) (fun _ _ hp => agree_regs (hr _ _ hp.1 hp.2)) h
 
 theorem CT.of_empty {I : State → Prop} {c : Prog isa} (h : ∀ s, ¬ I s) : CT I c :=
   RelCT.of_false fun s₁ _ hp => h s₁ hp.1
@@ -535,7 +544,7 @@ def BlocksI (p : Prm) (j : Nat) (s : State) : Prop :=
   ∃ t ciph icb x, x.length = p.n ∧ Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph ∧
     BlocksPost p ciph icb x j t s
 
-theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
+theorem callBlocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
     CT (BlocksI p 0) (.loop (cryptBlock v.callees) .ne) := by
   refine (CT.loopN (fun k s => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BlocksI p j s) (fun k => ?_)
     (fun k s ⟨j, hk, hj, t, ciph, icb, x, hxl, hc, P⟩ => ?_) (p.n / 16)).mono
@@ -549,6 +558,36 @@ theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
     refine WP.mono (cryptBlock_ok v L P.env hxl (j := j) (by omega_using [hj]) P.esi P.n P.ctr P.data hc') fun t'' Q => ?_
     refine ⟨by omega_using [hk, hj], by rw [eval_ne Q.z]; simp; omega_using [hk, hj], fun hk1 => ⟨j + 1, by omega_using [hk], by omega, t, ciph, icb, x, hxl, hc,
       ⟨Q.env, Q.rd.trans P.rd, Q.wr.trans P.wr, Q.esi, Q.n, Q.ctr, Q.data, P.frame.trans Q.frame⟩⟩⟩
+
+/-- The whole blocks with AES-NI: the registers the loop branches on and
+addresses memory with are public after `niPre`, and the counter in `edx`
+is only data. -/
+theorem niBlocks_ct {p : Prm} (L : Lay p) : CT (BlocksI p 0) niBlocks := by
+  refine CT.seq (J := fun s => s.gpr .ebp = p.W ∧ s.gpr .esi = p.D ∧ s.gpr .edi = BitVec.ofNat 32 p.n ∧
+      s.gpr .eax = p.W + BitVec.ofNat 32 512 ∧ s.gpr .ecx = BitVec.ofNat 32 p.R)
+    (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, _, P⟩ => P.env.ebp) (by taint_decide))
+    (fun s ⟨t, ciph, icb, x, _, _, P⟩ => by
+      obtain ⟨t₁, run₁, _, _, ax, cx, di, bp, _, si, _⟩ :=
+        niPre_ok L P.env (by rw [P.n, Nat.mul_zero, Nat.sub_zero])
+      exact WP.of_runBlock ⟨t₁, run₁, bp, by rw [si, P.esi, Nat.mul_zero, BitVec.add_zero], di, ax, cx⟩) ?_
+  exact CT.taintSse [.ebp, .esi, .edi, .eax, .ecx] (fun s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    obtain ⟨a₁, b₁, c₁, d₁, e₁⟩ := h₁
+    obtain ⟨a₂, b₂, c₂, d₂, e₂⟩ := h₂
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [a₁, a₂]
+    · rw [b₁, b₂]
+    · rw [c₁, c₂]
+    · rw [d₁, d₂]
+    · rw [e₁, e₂]) (by taint_decide)
+
+/-- The whole blocks, with either code. -/
+theorem blocks_ct (v : GcmImpl) {p : Prm} (L : Lay p) (hb1 : 1 ≤ p.n / 16) :
+    CT (BlocksI p 0) (blocks v.callees) := by
+  unfold blocks
+  split
+  · exact niBlocks_ct L
+  · exact callBlocks_ct v L hb1
 
 /-! ## The last bytes -/
 
