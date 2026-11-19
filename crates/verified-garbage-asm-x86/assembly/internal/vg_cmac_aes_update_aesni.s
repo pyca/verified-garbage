@@ -14,59 +14,62 @@ vg_cmac_aes_update_aesni:
 	mov eax, DWORD PTR [esp+20]
 	test eax, eax
 	je 20f
-22:
-	mov ebx, DWORD PTR [esp+12]
-	mov ebp, DWORD PTR [esp+24]
-	mov eax, DWORD PTR [ebx]
-	mov ecx, DWORD PTR [esi]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2048], eax
-	mov eax, DWORD PTR [ebx+4]
-	mov ecx, DWORD PTR [esi+4]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2052], eax
-	mov eax, DWORD PTR [ebx+8]
-	mov ecx, DWORD PTR [esi+8]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2056], eax
-	mov eax, DWORD PTR [ebx+12]
-	mov ecx, DWORD PTR [esi+12]
-	xor eax, ecx
-	mov DWORD PTR [ebp+2060], eax
-	mov eax, 0
-	mov DWORD PTR [ebx], eax
-	mov DWORD PTR [ebx+4], eax
-	mov DWORD PTR [ebx+8], eax
-	mov DWORD PTR [ebx+12], eax
+	mov edi, DWORD PTR [esp+20]
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
-	mov edx, ebp
-	add edx, 2048
-	mov edi, 1
-	push ebx
-	push ebp
-	push edi
-	push ebx
-	push edx
-	push ecx
-	push eax
-	call {vg_aes_ctr32_to_aesni}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	pop eax
+	mov edx, DWORD PTR [esp+12]
+	movdqu xmm0, XMMWORD PTR [edx]
+22:
+	movdqu xmm7, XMMWORD PTR [esi]
+	pxor xmm0, xmm7
+	movdqu xmm6, XMMWORD PTR [eax]
+	pxor xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+16]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+32]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+48]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+64]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+80]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+96]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+112]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+128]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+144]
+	aesenc xmm0, xmm6
+	cmp ecx, 10
+	je 23f
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+176]
+	aesenc xmm0, xmm6
+	cmp ecx, 12
+	je 25f
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+208]
+	aesenc xmm0, xmm6
+	movdqu xmm6, XMMWORD PTR [eax+224]
+	aesenclast xmm0, xmm6
+	jmp 26f
+25:
+	movdqu xmm6, XMMWORD PTR [eax+192]
+	aesenclast xmm0, xmm6
+26:
+	jmp 24f
+23:
+	movdqu xmm6, XMMWORD PTR [eax+160]
+	aesenclast xmm0, xmm6
+24:
 	add esi, 16
-	mov eax, DWORD PTR [esp+20]
-	add eax, eax
-	add eax, eax
-	add eax, eax
-	add eax, eax
-	add eax, DWORD PTR [esp+16]
-	cmp esi, eax
+	sub edi, 1
 	jne 22b
+	movdqu XMMWORD PTR [edx], xmm0
 	jmp 21f
 20:
 21:

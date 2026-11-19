@@ -177,7 +177,7 @@ theorem eq_ofNat {x : BitVec 32} {n : Nat} (h : x = BitVec.ofNat 32 n) (hn : n <
 /-! ## The callees -/
 
 theorem upd_nosp : NoSp (Impl.CmacAes.X86.update v.callee) := Proof.CmacAes.X86.update_nosp v
-theorem upd_stack : stackUse (Impl.CmacAes.X86.update v.callee) = 32 := Proof.CmacAes.X86.update_stack v
+theorem upd_stack : stackUse (Impl.CmacAes.X86.update v.callee) ≤ 32 := Proof.CmacAes.X86.update_stack v
 theorem sub_nosp : NoSp (Impl.CmacAes.X86.subkeys v.callee) := Proof.CmacAes.X86.subkeys_nosp v
 theorem sub_stack : stackUse (Impl.CmacAes.X86.subkeys v.callee) = 32 := Proof.CmacAes.X86.subkeys_stack v
 theorem fin_nosp : NoSp (Impl.CmacAes.X86.finalize v.callee) := Proof.CmacAes.X86.finalize_nosp v
@@ -286,11 +286,12 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
   have hN : (BitVec.ofNat 32 n).toNat = n := eq_ofNat rfl (by have := h.hn; omega_arith)
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   have he := h.esp
+  have hst := upd_stack v
   refine WP.callWith (rs := rs6) (k := updateX86) (fun _ hs => update_wp v hs) (upd_nosp v) (by simp) hrs6
-    (by rw [(upd_stack v)]; simp only [List.length_cons, List.length_nil]; omega_arith) h.callPre
+    (by simp only [List.length_cons, List.length_nil]; omega_using [hst, he]) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
-  rw [(upd_stack v)] at f'
+  obtain f' := Frame.below_mono (b := 60) f' (by simp only [List.length_cons, List.length_nil]; omega_using [hst]) he
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
   have keep : ∀ {p : BitVec 32} {k : Nat}, (below (s.gpr .esp) 60).Disjoint ⟨p.setWidth 64, k⟩ → k ≤ 2 ^ 64 →
       Spec.Aes.bytesAt (pushed rs6 s).callEntry.mem (p.setWidth 64) k = Spec.Aes.bytesAt s.mem (p.setWidth 64) k :=

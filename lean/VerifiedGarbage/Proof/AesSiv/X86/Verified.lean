@@ -712,15 +712,21 @@ theorem decrypt_noEsp : (decrypt v.callee v.suffix).allInstrs (fun i => !Taint.c
   decide +kernel
 
 theorem encrypt_stackUse : stackUse (encrypt v.callee v.suffix) ≤ 60 := by
+  have h := Proof.CmacAes.X86.update_stack v
   simp only [encrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
     Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
-    ctrCall, sivOut, stackUse, Proof.CmacAes.X86.update_stack v, Proof.CmacAes.X86.finalize_stack v, v.stack]
+    ctrCall, sivOut, stackUse, Proof.CmacAes.X86.finalize_stack v, v.stack]
+  generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
+  revert x
   decide +kernel
 
 theorem decrypt_stackUse : stackUse (decrypt v.callee v.suffix) ≤ 60 := by
+  have h := Proof.CmacAes.X86.update_stack v
   simp only [decrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
     Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
-    ctrCall, mask, sivIn, stackUse, Proof.CmacAes.X86.update_stack v, Proof.CmacAes.X86.finalize_stack v, v.stack]
+    ctrCall, mask, sivIn, stackUse, Proof.CmacAes.X86.finalize_stack v, v.stack]
+  generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
+  revert x
   decide +kernel
 
 theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86.abi 2672).pre s := by
