@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Arm.Law
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo
-public import VerifiedGarbage.Proof.AesGcm.RoundsTo
+public import VerifiedGarbage.Proof.AesGcm.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-
-import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 /-! # AES-GCM (NIST SP 800-38D) on ARMv7 -/
 
@@ -15,41 +11,17 @@ import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 namespace VG.Artifacts.AesGcm.Arm
 
-open VG.Proof.AesGcm.Arm
-
 def artifacts : List Artifact := [
-  Spec.Gcm.initApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
-    verified := .unscrubbed init_framed },
-  Spec.Gcm.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»
-    verified := .unscrubbed (Proof.AesGcm.seal_keyed seal_framed) },
-  Spec.Gcm.openApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»
-    verified := .unscrubbed (Proof.AesGcm.open_keyed open_framed) },
-  Spec.Gcm.streamInitApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2576 0 Impl.AesGcm.Arm.streamInit
-    verified := .unscrubbed streamInit_framed },
-  Spec.Gcm.streamAadApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2576 2 Impl.AesGcm.Arm.streamAad
-    verified := .unscrubbed streamAad_framed },
-  Spec.Gcm.streamEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamEncrypt
-    verified := .unscrubbed (Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed) },
-  Spec.Gcm.streamDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamDecrypt
-    verified := .unscrubbed (Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed) },
-  Spec.Gcm.streamFinishApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.streamFinish
-    verified := .unscrubbed (Proof.AesGcm.streamFinish_keyed streamFinish_framed) },
-  Spec.Gcm.streamVerifyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamVerify
-    verified := .unscrubbed (Proof.AesGcm.streamVerify_keyed streamVerify_framed) },
-  Spec.Gcm.sealGatherApi.artifact Arm.target {
-    code := Impl.AesGcm.Arm.SealGather.sealGather Gather.sealFn.name Gather.sealFn.code
-    verified := .unscrubbed (Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified Gather.sealFn)) },
-  Spec.Gcm.openToApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2608 8 Impl.AesGcm.Arm.openTo
-    verified := .unscrubbed (Proof.AesGcm.openTo_keyed openTo_framed) }]
+  Spec.Gcm.initApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.initReg,
+  Spec.Gcm.sealApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.sealReg,
+  Spec.Gcm.openApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.openReg,
+  Spec.Gcm.streamInitApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamInitReg,
+  Spec.Gcm.streamAadApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamAadReg,
+  Spec.Gcm.streamEncryptApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamEncryptReg,
+  Spec.Gcm.streamDecryptApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamDecryptReg,
+  Spec.Gcm.streamFinishApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamFinishReg,
+  Spec.Gcm.streamVerifyApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.streamVerifyReg,
+  Spec.Gcm.sealGatherApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.sealGatherReg,
+  Spec.Gcm.openToApi.artifact Arm.target Proof.AesGcm.Arm.Scrub.openToReg]
 
 end VG.Artifacts.AesGcm.Arm

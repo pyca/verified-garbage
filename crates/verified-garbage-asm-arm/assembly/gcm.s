@@ -50,6 +50,33 @@ vg_aes_gcm_init:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2560
+	sub sp, sp, #2576
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #80
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2576
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_seal:
@@ -628,6 +655,33 @@ vg_aes_gcm_seal:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+265:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 265b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_open:
@@ -1269,6 +1323,32 @@ vg_aes_gcm_open:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+271:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 271b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_init:
@@ -1473,6 +1553,29 @@ vg_aes_gcm_stream_init:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2576
+	sub sp, sp, #2592
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+219:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 219b
+	add sp, sp, #2592
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_aad:
@@ -1591,6 +1694,29 @@ vg_aes_gcm_stream_aad:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2576
+	sub sp, sp, #2592
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+214:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 214b
+	add sp, sp, #2592
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_encrypt:
@@ -1851,6 +1977,33 @@ vg_aes_gcm_stream_encrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+233:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 233b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_decrypt:
@@ -2111,6 +2264,33 @@ vg_aes_gcm_stream_decrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+233:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 233b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_finish:
@@ -2245,6 +2425,33 @@ vg_aes_gcm_stream_finish:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_stream_verify:
@@ -2435,6 +2642,32 @@ vg_aes_gcm_stream_verify:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #2592
+	sub sp, sp, #2608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #81
+29:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 29b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2608
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_seal_gather:
@@ -2501,10 +2734,37 @@ vg_aes_gcm_seal_gather:
 	ldr r1, [r12, #28]
 	ldr r2, [r12, #32]
 	ldr r3, [r12, #36]
-	bl {vg_aes_gcm_seal}
+	bl {vg_aes_gcm_seal_entry}
 	add r12, sp, #0
 	ldr lr, [r12, #20]
 	add sp, sp, #40
+	sub sp, sp, #2640
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #82
+29:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 29b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2640
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_gcm_open_to:
@@ -3142,4 +3402,26 @@ vg_aes_gcm_open_to:
 269:
 267:
 	add sp, sp, #2608
+	sub sp, sp, #2624
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #82
+271:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 271b
+	add sp, sp, #2624
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
