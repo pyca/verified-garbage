@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 67 bytes.
@@ -36,7 +38,7 @@ bl {vg_p521_add_mod_p}
 bl {vg_p521_add_mod_p}
 .base64 "yAuAOKgKoDgQDMA4"
 bl {vg_p521_sub_mod_p}
-.base64 "yAuj6NALg+h4I6V82AuD6HgjpXzgC4PoeCOlfOgLg+h4I6V88AuD6HgjpXz4C4PoeCOlfAAMg+h4I6V8CAyD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTigDIPoOCiEfKAMg/igDEPpgAKD6NAJo+h4IqV8OFClfHgqhHzwCoP4iAKD6NgJo+h4IqV8OFClfHgqhHz4CoP4kAKD6OAJo+h4IqV8OFClfHgqhHwAC4P4mAKD6OgJo+h4IqV8OFClfHgqhHwIC4P4oAKD6PAJo+h4IqV8OFClfHgqhHwQC4P4qAKD6PgJo+h4IqV8OFClfHgqhHwYC4P4sAKD6AAKo+h4IqV8OFClfHgqhHwgC4P4uAKD6AgKo+h4IqV8OFClfHgqhHwoC4P4wAKD6BAKo+h4IqV8OFClfHgqhHwwC4P4yAKD6BgKo+h4IqV8OFClfHgqhHxYDIP40AKD6CAKo+h4IqV8OFClfHgqhHxgDIP42AKD6CgKo+h4IqV8OFClfHgqhHxoDIP44AKD6DAKo+h4IqV8OFClfHgqhHxwDIP46AKD6DgKo+h4IqV8OFClfHgqhHx4DIP48AKD6EAKo+h4IqV8OFClfHgqhHyADIP4+AKD6EgKo+h4IqV8OFClfHgqhHyIDIP4AAOD6FAKo+h4IqV8OFClfHgqhHyQDIP4CAOD6FgKo+h4IqV8OFClfHgqhHyYDIP4oAxD6WAKg+gBAKA4OCiEfAIAhDg4UIR8AACOmIgJg+g4UIR8OwDAOCg1jnyQCYPoOFCEfDMAwDgoNY58mAmD6DhQhHwrAMA4KDWOfKAJg+g4UIR8IwDAOCg1jnyoCYPoOFCEfBsAwDgoNY58sAmD6DhQhHwTAMA4KDWOfLgJg+g4UIR8CwDAOCg1jnzACYPoOFCEfAMAwDgoNY58yAmD6DhQhHwCwoV4AQCumAIAjpgBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
+.base64 "yAuj6NALg+h4I6V82AuD6HgjpXzgC4PoeCOlfOgLg+h4I6V88AuD6HgjpXz4C4PoeCOlfAAMg+h4I6V8CAyD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTigDIPoOCiEfKAMg/igDEPpgAKD6NAJo+h4IqV8OFClfHgqhHzwCoP4iAKD6NgJo+h4IqV8OFClfHgqhHz4CoP4kAKD6OAJo+h4IqV8OFClfHgqhHwAC4P4mAKD6OgJo+h4IqV8OFClfHgqhHwIC4P4oAKD6PAJo+h4IqV8OFClfHgqhHwQC4P4qAKD6PgJo+h4IqV8OFClfHgqhHwYC4P4sAKD6AAKo+h4IqV8OFClfHgqhHwgC4P4uAKD6AgKo+h4IqV8OFClfHgqhHwoC4P4wAKD6BAKo+h4IqV8OFClfHgqhHwwC4P4yAKD6BgKo+h4IqV8OFClfHgqhHxYDIP40AKD6CAKo+h4IqV8OFClfHgqhHxgDIP42AKD6CgKo+h4IqV8OFClfHgqhHxoDIP44AKD6DAKo+h4IqV8OFClfHgqhHxwDIP46AKD6DgKo+h4IqV8OFClfHgqhHx4DIP48AKD6EAKo+h4IqV8OFClfHgqhHyADIP4+AKD6EgKo+h4IqV8OFClfHgqhHyIDIP4AAOD6FAKo+h4IqV8OFClfHgqhHyQDIP4CAOD6FgKo+h4IqV8OFClfHgqhHyYDIP4oAxD6WAKg+gBAKA4OCiEfAIAhDg4UIR8AACOmIgJg+g4UIR8OwDAOCg1jnyQCYPoOFCEfDMAwDgoNY58mAmD6DhQhHwrAMA4KDWOfKAJg+g4UIR8IwDAOCg1jnyoCYPoOFCEfBsAwDgoNY58sAmD6DhQhHwTAMA4KDWOfLgJg+g4UIR8CwDAOCg1jnzACYPoOFCEfAMAwDgoNY58yAmD6DhQhHwCwoV4AQCumAIAjpgBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8AAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
         vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
         vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
@@ -46,6 +48,8 @@ bl {vg_p521_sub_mod_p}
 /// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -92,7 +96,7 @@ bl {vg_p521_mul_mod_p}
 bl {vg_p521_mul_mod_p}
 .base64 "8AqAOMgLoDgQDMA4"
 bl {vg_p521_sub_mod_p}
-.base64 "8Aqj6PgKg+h4I6V8AAuD6HgjpXwIC4PoeCOlfBALg+h4I6V8GAuD6HgjpXwgC4PoeCOlfCgLg+h4I6V8MAuD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTigDIPoOCiEfKAMg/hgCoPoQAmj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8oAyD6DgohHygDIP4oAxD6QQAgDg4UIR8AACOmIgJg+g4UIR8OwDAOCg1jnyQCYPoOFCEfDMAwDgoNY58mAmD6DhQhHwrAMA4KDWOfKAJg+g4UIR8IwDAOCg1jnyoCYPoOFCEfBsAwDgoNY58sAmD6DhQhHwTAMA4KDWOfLgJg+g4UIR8CwDAOCg1jnzACYPoOFCEfAMAwDgoNY58yAmD6DhQhHwCwoV4AQCumAIAjphgCoPoOFCEfH0AwDgoNY58aAqD6DhQhHx1AMA4KDWOfHAKg+g4UIR8bQDAOCg1jnx4CoPoOFCEfGUAwDgoNY58gAqD6DhQhHxdAMA4KDWOfIgKg+g4UIR8VQDAOCg1jnyQCoPoOFCEfE0AwDgoNY58mAqD6DhQhHxFAMA4KDWOfKAKg+g4UIR8AsKFeEMArphEAI6YAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
+.base64 "8Aqj6PgKg+h4I6V8AAuD6HgjpXwIC4PoeCOlfBALg+h4I6V8GAuD6HgjpXwgC4PoeCOlfCgLg+h4I6V8MAuD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTigDIPoOCiEfKAMg/hgCoPoQAmj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8oAyD6DgohHygDIP4oAxD6QQAgDg4UIR8AACOmIgJg+g4UIR8OwDAOCg1jnyQCYPoOFCEfDMAwDgoNY58mAmD6DhQhHwrAMA4KDWOfKAJg+g4UIR8IwDAOCg1jnyoCYPoOFCEfBsAwDgoNY58sAmD6DhQhHwTAMA4KDWOfLgJg+g4UIR8CwDAOCg1jnzACYPoOFCEfAMAwDgoNY58yAmD6DhQhHwCwoV4AQCumAIAjphgCoPoOFCEfH0AwDgoNY58aAqD6DhQhHx1AMA4KDWOfHAKg+g4UIR8bQDAOCg1jnx4CoPoOFCEfGUAwDgoNY58gAqD6DhQhHxdAMA4KDWOfIgKg+g4UIR8VQDAOCg1jnyQCoPoOFCEfE0AwDgoNY58mAqD6DhQhHxFAMA4KDWOfKAKg+g4UIR8AsKFeEMArphEAI6YAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfAAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
         vg_p521_mul_mod_p = sym super::ec_p521::vg_p521_mul_mod_p::vg_p521_mul_mod_p,
         vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,

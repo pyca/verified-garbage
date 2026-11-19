@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 49 bytes.
@@ -438,7 +440,7 @@ bl {vg_p192_mul_mod_p}
 bl {vg_p192_mul_mod_p}
 .base64 "SASAONADoDigAMA4"
 bl {vg_p192_mul_mod_p}
-.base64 "AAAAOP//AGD//wBkAQDAOEAD44BYAAOBFALnfFA46HwUMud8IgDmeEQD44BcAAOBFALnfFA46HwUMud8IgDmeEgD44BgAAOBFALnfFA46HwUMud8IgDmeEwD44BkAAOBFALnfFA46HwUMud8IgDmeFAD44BoAAOBFALnfFA46HwUMud8IgDmeFQD44BsAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAOj6EgDg+h4I6V8UAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8YASD6DgohHxgBIP4wAGj6MgBg+h4I6V80AGD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hgBEPpBACAODhQhHwAAI6YiAOD6DhQhHwRAMA4KDWOfJADg+g4UIR8CQDAOCg1jnyYA4PoOFCEfAEAwDgoNY58SASD6DhQhHwpAMA4KDWOfFAEg+g4UIR8IQDAOCg1jnxYBIPoOFCEfBkAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
+.base64 "AAAAOP//AGD//wBkAQDAOEAD44BYAAOBFALnfFA46HwUMud8IgDmeEQD44BcAAOBFALnfFA46HwUMud8IgDmeEgD44BgAAOBFALnfFA46HwUMud8IgDmeEwD44BkAAOBFALnfFA46HwUMud8IgDmeFAD44BoAAOBFALnfFA46HwUMud8IgDmeFQD44BsAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAOj6EgDg+h4I6V8UAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8YASD6DgohHxgBIP4wAGj6MgBg+h4I6V80AGD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/hgBEPpBACAODhQhHwAAI6YiAOD6DhQhHwRAMA4KDWOfJADg+g4UIR8CQDAOCg1jnyYA4PoOFCEfAEAwDgoNY58SASD6DhQhHwpAMA4KDWOfFAEg+g4UIR8IQDAOCg1jnxYBIPoOFCEfBkAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfAAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
         vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
         vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
