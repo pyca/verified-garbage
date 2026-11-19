@@ -21,16 +21,16 @@ with an implementation. A function proves it once of every implementation,
 by `fill_calls` (which walks the function's code, not the
 implementation's), from what the implementation states of its own code:
 `calleeOk`, a field of the variant proved where it is defined, and its stack.
-`scrubFSide_of_fill` then gives `scrubFSide b W` from `scrubFSide a m`, which
+`scrubFSide_of_fill` then gives `scrubFSide b ts W` from `scrubFSide a ts m`, which
 the kernel evaluates once, of the stub's code, and `m + n ≤ W`:
 
     theorem init_fill (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String)
         (he : calleeSide e.code 0 = true) (hc : calleeSide c.code 0 = true) :
         Fill 0 (init stubExpand stubCtr "") (init e c sfx) := by fill_calls
 
-    theorem init_side : scrubFSide (init stubExpand stubCtr "") 2336 = true := by lit_decide
+    theorem init_side : scrubFSide (init stubExpand stubCtr "") [] 2336 = true := by lit_decide
 
-    theorem init_scrub (v : Ctr32Impl) : scrubFSide (init v.expand v.callee v.suffix) 2336 = true :=
+    theorem init_scrub (v : Ctr32Impl) : scrubFSide (init v.expand v.callee v.suffix) [] 2336 = true :=
       scrubFSide_of_fill (init_fill _ _ _ (calleeSide_of_eq v.expandStack v.expandScrub)
         (calleeSide_of_eq v.stack v.scrub)) init_side
 
@@ -116,18 +116,22 @@ theorem stackUse_le (h : Fill n a b) : stackUse b ≤ stackUse a + n := by
   | frame _ _ _ ih => simp only [stackUse]; omega
   | icall _ _ _ _ ihb ihx => simp only [stackUse]; omega
 
-theorem calleeOk (h : Fill n a b) (ha : calleeOk a = true) : VG.X86.calleeOk b = true := by
+/-- `b` has no MMX instruction if `a` has none: an implementation has none
+(`calleeOk`). -/
+theorem noMmx (h : Fill n a b) (ha : a.allInstrs (fun i => !i.isMmx) = true) :
+    b.allInstrs (fun i => !i.isMmx) = true := by
   induction h with
   | block => exact ha
   | hole hd =>
     simp only [calleeSide, Bool.and_eq_true] at hd
-    exact hd.2
+    exact ((calleeOk_iff _).mp hd.2).2
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
-    simp only [VG.X86.calleeOk, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
-  | loop _ _ ih | call _ _ _ ih => simp only [VG.X86.calleeOk] at ha ⊢; exact ih ha
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
+  | loop _ _ ih | call _ _ _ ih => simp only [Code.allInstrs] at ha ⊢; exact ih ha
   | frame _ _ _ ih =>
-    simp only [VG.X86.calleeOk, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ih ha.1.2⟩, ha.2⟩
-  | icall => simp only [VG.X86.calleeOk, Bool.false_eq_true] at ha
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ih ha.1.2⟩, ha.2⟩
+  | icall _ _ _ _ ihb ihx =>
+    simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨⟨ha.1.1, ihb ha.1.2⟩, ihx ha.2⟩
 
 /-- The functions `b` may call indirectly are `a`'s: an implementation
 calls none (`calleeOk`). -/
@@ -169,18 +173,18 @@ theorem if_neg {p : Prop} [Decidable p] {x y : Prog isa} (h : Fill n a y) (hp : 
 
 end Fill
 
-/-- `scrubFSide` of a function's code `b` over `W` bytes, whatever the
-implementations it calls (`Fill n a b`), from `scrubFSide` of its code `a`
-with a stub, which the kernel evaluates once, over `m` bytes, `m + n ≤ W`,
-and `W` a multiple of 4. -/
-theorem scrubFSide_of_fill {n m W : Nat} {a b : Prog isa} (hf : Fill n a b)
-    (ha : scrubFSide a m = true) (hW : m + n ≤ W ∧ W % 4 = 0 := by decide) : scrubFSide b W = true := by
-  obtain ⟨hs, hi, hm, hp, -⟩ := of_scrubFSide ha
-  have ho := hf.calleeOk ((calleeOk_iff a).mpr ⟨hi, hm⟩)
-  obtain ⟨hi', hm'⟩ := (calleeOk_iff b).mp ho
+/-- `scrubFSide` of a function's code `b` over `W` bytes with the tables
+`ts`, whatever the implementations it calls (`Fill n a b`), from
+`scrubFSide` of its code `a` with a stub, which the kernel evaluates once,
+over `m` bytes, `m + n ≤ W`, and `W` a multiple of 4. -/
+theorem scrubFSide_of_fill {n m W : Nat} {ts : List (String × List FnTable)} {a b : Prog isa}
+    (hf : Fill n a b) (ha : scrubFSide a ts m = true) (hW : m + n ≤ W ∧ W % 4 = 0 := by decide) :
+    scrubFSide b ts W = true := by
+  obtain ⟨hs, ht, hm, hp, -⟩ := of_scrubFSide ha
   have hsb := hf.stackUse_le
+  have ht' : tablesCall b ts = true := by rw [tablesCall, hf.inames_eq]; exact ht
   simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
-  exact ⟨⟨⟨⟨by omega, hi'⟩, hm'⟩, by omega⟩, hW.2⟩
+  exact ⟨⟨⟨⟨by omega, ht'⟩, hf.noMmx hm⟩, by omega⟩, hW.2⟩
 
 /-- Proves `Fill n a b` of a function's code with a stub (`a`) and with
 implementations (`b`), from hypotheses `calleeSide c n = true` of each
