@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignVerified
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.RISCV64.Scrub
 
 /-! # Ed448 (RFC 8032) on RISC-V -/
 
@@ -22,14 +23,17 @@ public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.VerifyVerified
 namespace VG.Artifacts.Ed448.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact RISCV64.target {
+  Spec.Ed448.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ed448.RISCV64.Whole.publicKeyCode
-    verified := Proof.Ed448.RISCV64.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok },
-  Spec.Ed448.signCachedApi.artifact RISCV64.target {
+    verified := Proof.Ed448.RISCV64.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }
+    (Proof.Ed448.RISCV64.Scrub.publicKeyOut _)),
+  Spec.Ed448.signCachedApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ed448.RISCV64.Whole.signCachedCode
-    verified := Proof.Ed448.RISCV64.Whole.signCached_framed Proof.Ed448.baseLadder2_ok },
-  Spec.Ed448.verifyApi.artifact RISCV64.target {
+    verified := Proof.Ed448.RISCV64.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }
+    (Proof.Ed448.RISCV64.Scrub.signCachedOut _)),
+  Spec.Ed448.verifyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
     code := Impl.Ed448.RISCV64.Whole.verifyCode
-    verified := Proof.Ed448.RISCV64.Whole.verify_framed Proof.Ed448.recover_ok }]
+    verified := Proof.Ed448.RISCV64.Whole.verify_framed Proof.Ed448.recover_ok }
+    (Proof.Ed448.RISCV64.Scrub.verifyOut _))]
 
 end VG.Artifacts.Ed448.RISCV64
