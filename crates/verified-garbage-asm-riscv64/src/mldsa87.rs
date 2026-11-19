@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -720,7 +722,7 @@ call {vg_keccak_absorb}
 call {vg_keccak_pad}
 .base64 "AUZuhZMFgAiTBgwEEwcABA=="
 call {vg_keccak_squeeze}
-.base64 "UoWDsA1Vg7mNUAO6DVGDuo1RA7sNUoO7jVIDvA1Tg7yNUwO9DVSDvY1UgoA="
+.base64 "UoWDsA1Vg7mNUAO6DVGDuo1RA7sNUoO7jVIDvA1Tg7yNUwO9DVSDvY1UgUITAQG3CoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUkCFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
@@ -741,6 +743,8 @@ call {vg_keccak_squeeze}
 /// ML-DSA-87 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa87_verify_message_cached` takes.
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -763,7 +767,7 @@ call {vg_keccak_absorb}
 call {vg_keccak_pad}
 .base64 "AUZuhZMFgAjihhMHAAQ="
 call {vg_keccak_squeeze}
-.base64 "UoWDsA1Vg7mNUAO6DVGDuo1RA7sNUoO7jVIDvA1Tg7yNUwO9DVSDvY1UgoA="
+.base64 "UoWDsA1Vg7mNUAO6DVGDuo1RA7sNUoO7jVIDvA1Tg7yNUwO9DVSDvY1UgUITAQG3CoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSBMBAUkBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
@@ -774,6 +778,8 @@ call {vg_keccak_squeeze}
 /// ML-DSA-87 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa87_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -856,7 +862,7 @@ call {vg_mldsa_ntt}
 28:
 .base64 "g0YFACOA1QAFBYUFfRY="
 bnez a2, 28b
-.base64 "g7ANQgO8DUCDvI1AA70NQYO9jUEKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nIzj/JyM8/ycjMP8pIzT/KSM4/ykjPP8pIzD/KyM0/ysjOP8rIzz/KyMw/y0jNP8tIzj/LSM8/y0jMP8vIzT/LyM4/y8jPP8vIzD/MSM0/zEjOP8xIzz/MSMw/zMjNP8zIzj/MyM8/zMjMP81IzT/NSM4/zUjPP81IzD/NyM0/zcjOP83Izz/NyMw/zkjNP85Izj/OSM8/zkjMP87IzT/OyM4/zsjPP87IzD/PSM0/z0jOP89Izz/PSMw/z8jNP8/Izj/PyM8/z8jMP9BIzT/QSM4/0EjPP9BIzD/QyM0/0MTAQFDgoA="
+.base64 "g7ANQgO8DUCDvI1AA70NQYO9jUEKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nIzj/JyM8/ycjMP8pIzT/KSM4/ykjPP8pIzD/KyM0/ysjOP8rIzz/KyMw/y0jNP8tIzj/LSM8/y0jMP8vIzT/LyM4/y8jPP8vIzD/MSM0/zEjOP8xIzz/MSMw/zMjNP8zIzj/MyM8/zMjMP81IzT/NSM4/zUjPP81IzD/NyM0/zcjOP83Izz/NyMw/zkjNP85Izj/OSM8/zkjMP87IzT/OyM4/zsjPP87IzD/PSM0/z0jOP89Izz/PSMw/z8jNP8/Izj/PyM8/z8jMP9BIzT/QSM4/0EjPP9BIzD/QyM0/0MTAQFDgUITAQG9CoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQhMBAUMBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -866,6 +872,8 @@ bnez a2, 28b
 /// ML-DSA-87 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa87_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1069,7 +1077,7 @@ call {vg_mldsa_ntt}
 223:
 .base64 "g0YFACOA1QAFBYUFfRY="
 bnez a2, 223b
-.base64 "g7ANQgO8DUCDvI1AA70NQYO9jUEKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nIzj/JyM8/ycjMP8pIzT/KSM4/ykjPP8pIzD/KyM0/ysjOP8rIzz/KyMw/y0jNP8tIzj/LSM8/y0jMP8vIzT/LyM4/y8jPP8vIzD/MSM0/zEjOP8xIzz/MSMw/zMjNP8zIzj/MyM8/zMjMP81IzT/NSM4/zUjPP81IzD/NyM0/zcjOP83Izz/NyMw/zkjNP85Izj/OSM8/zkjMP87IzT/OyM4/zsjPP87IzD/PSM0/z0jOP89Izz/PSMw/z8jNP8/Izj/PyM8/z8jMP9BIzT/QSM4/0EjPP9BIzD/QyM0/0MTAQFDgoA="
+.base64 "g7ANQgO8DUCDvI1AA70NQYO9jUEKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HIzz/ByMw/wkjNP8JIzj/CSM8/wkjMP8LIzT/CyM4/wsjPP8LIzD/DSM0/w0jOP8NIzz/DSMw/w8jNP8PIzj/DyM8/w8jMP8RIzT/ESM4/xEjPP8RIzD/EyM0/xMjOP8TIzz/EyMw/xUjNP8VIzj/FSM8/xUjMP8XIzT/FyM4/xcjPP8XIzD/GSM0/xkjOP8ZIzz/GSMw/xsjNP8bIzj/GyM8/xsjMP8dIzT/HSM4/x0jPP8dIzD/HyM0/x8jOP8fIzz/HyMw/yEjNP8hIzj/ISM8/yEjMP8jIzT/IyM4/yMjPP8jIzD/JSM0/yUjOP8lIzz/JSMw/ycjNP8nIzj/JyM8/ycjMP8pIzT/KSM4/ykjPP8pIzD/KyM0/ysjOP8rIzz/KyMw/y0jNP8tIzj/LSM8/y0jMP8vIzT/LyM4/y8jPP8vIzD/MSM0/zEjOP8xIzz/MSMw/zMjNP8zIzj/MyM8/zMjMP81IzT/NSM4/zUjPP81IzD/NyM0/zcjOP83Izz/NyMw/zkjNP85Izj/OSM8/zkjMP87IzT/OyM4/zsjPP87IzD/PSM0/z0jOP89Izz/PSMw/z8jNP8/Izj/PyM8/z8jMP9BIzT/QSM4/0EjPP9BIzD/QyM0/0MTAQFDgUITAQG9CoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQhMBAUMBRYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
