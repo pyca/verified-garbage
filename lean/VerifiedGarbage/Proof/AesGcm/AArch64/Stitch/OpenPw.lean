@@ -143,7 +143,7 @@ theorem openPwS_ct :
 theorem openPwS_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn)
       (Proof.AesGcm.openWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openPwS_correct v g hMK gh) (openPwS_ct v g hMK gh)
+  Verified.of_correct (openPwS_correct (Wn := 2560) v g hMK gh) (openPwS_ct (Wn := 2560) v g hMK gh)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
           Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
@@ -368,7 +368,7 @@ theorem openToPwS_ct :
 theorem openToPwS_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.openToWithPw v.callees g.fn)
       (Proof.AesGcm.openToWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openToPwS_correct v g hMK gh) (openToPwS_ct v g hMK gh)
+  Verified.of_correct (openToPwS_correct (Wn := 2560) v g hMK gh) (openToPwS_ct (Wn := 2560) v g hMK gh)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openToWithPowersScratchContract, Proof.AesGcm.openToWithPowersScratchSig,
           Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToPre, Proof.AesGcm.openToWithPowersRoundsPost,

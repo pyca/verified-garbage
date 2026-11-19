@@ -191,7 +191,7 @@ theorem sealPwS_ct :
 theorem sealPwS_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn)
       (Proof.AesGcm.sealWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (sealPwS_correct v g hMK gh) (sealPwS_ct v g hMK gh)
+  Verified.of_correct (sealPwS_correct (Wn := 2560) v g hMK gh) (sealPwS_ct (Wn := 2560) v g hMK gh)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
           Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,

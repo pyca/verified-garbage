@@ -210,7 +210,7 @@ theorem openPw_ct :
 theorem openPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
       (Proof.AesGcm.openWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openPw_correct v g hMK) (openPw_ct v g hMK)
+  Verified.of_correct (openPw_correct (Wn := 2560) v g hMK) (openPw_ct (Wn := 2560) v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
           Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,

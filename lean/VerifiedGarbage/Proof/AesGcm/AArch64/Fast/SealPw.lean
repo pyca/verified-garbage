@@ -69,7 +69,7 @@ theorem fastSeal_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull
 theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
+  Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
@@ -337,7 +337,7 @@ theorem sealPw_ct :
 theorem sealPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.sealWithPw v.callees g.fn)
       (Proof.AesGcm.sealWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (sealPw_correct v g hMK) (sealPw_ct v g hMK)
+  Verified.of_correct (sealPw_correct (Wn := 2560) v g hMK) (sealPw_ct (Wn := 2560) v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
           Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,

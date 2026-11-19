@@ -59,7 +59,7 @@ theorem fastOpen_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull
 theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«open» v.callees)
       (Proof.AesGcm.openScratchContract AArch64.abi) :=
-  Verified.of_correct (fastOpen_correct v hMK) (Fast.open_fast_ct v hMK) (by
+  Verified.of_correct (fastOpen_correct (Wn := 2560) v hMK) (Fast.open_fast_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
       Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,

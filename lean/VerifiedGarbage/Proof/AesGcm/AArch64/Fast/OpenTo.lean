@@ -249,7 +249,7 @@ theorem fastOpenTo_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first |
 theorem fastOpenTo_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openTo v.callees)
       (Proof.AesGcm.openToScratchContract AArch64.abi) :=
-  Verified.of_correct (fastOpenTo_correct v hMK) (fastOpenTo_ct v hMK) (by
+  Verified.of_correct (fastOpenTo_correct (Wn := 2560) v hMK) (fastOpenTo_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
       Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
       openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
@@ -464,7 +464,7 @@ theorem openToPw_ct :
 theorem openToPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openToWithPw v.callees g.fn)
       (Proof.AesGcm.openToWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openToPw_correct v g hMK) (openToPw_ct v g hMK)
+  Verified.of_correct (openToPw_correct (Wn := 2560) v g hMK) (openToPw_ct (Wn := 2560) v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openToWithPowersScratchContract, Proof.AesGcm.openToWithPowersScratchSig,
           Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToPre, Proof.AesGcm.openToWithPowersRoundsPost,
