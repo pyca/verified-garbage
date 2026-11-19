@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Verified
 import Mathlib.Data.Finset.Card
@@ -38,16 +39,22 @@ namespace VG.Artifacts.EcSecp256k1.AArch64
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Proof.EcKey.Compressed.AArch64.Secp256k1.code
-    verified := Proof.EcKey.Compressed.AArch64.Secp256k1.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
+    verified := Proof.EcKey.Compressed.AArch64.Secp256k1.verified hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17],
+       [.v28],
+       []⟩ (Proof.EcKey.AArch64.Scrub.compressOk _)),
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
       Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.code
     verified := Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.verified hasLaw.law hasLaw.inv
     residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.noResidue hasLaw.law hasLaw.inv⟩ },
-  Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.EcKey.AArch64.publicKeySecp256k1
-    verified := Proof.EcKey.AArch64.Secp256k1.pk_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.publicKeyOk _))]
+    verified := Proof.EcKey.AArch64.Secp256k1.pk_verified hasLaw.law hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17],
+       [.v29],
+       []⟩ (Proof.EcKey.AArch64.Scrub.publicKeyOk _))]
 
 end VG.Artifacts.EcSecp256k1.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
@@ -63,16 +64,23 @@ namespace VG.Artifacts.EcP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Proof.EcKey.Compressed.AArch64.P256.code
-    verified := Proof.EcKey.Compressed.AArch64.P256.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
+    verified := Proof.EcKey.Compressed.AArch64.P256.verified hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v28],
+       []⟩ (Proof.EcKey.AArch64.Scrub.compressOk _)),
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x14, .x15, .x16, .x17] []
       Proof.EcKey.Compressed.AArch64.P256Decompress.code
     verified := Proof.EcKey.Compressed.AArch64.Residue.P256.verified hasLaw.law hasLaw.inv
     residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.P256.noResidue hasLaw.law hasLaw.inv⟩ },
-  Spec.EcKey.P256.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.EcKey.P256.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.P256.Booth.publicKey
-    verified := Proof.EcKey.AArch64.booth_pk_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]
+    verified := Proof.EcKey.AArch64.booth_pk_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+       .v26, .v27, .v28, .v30, .v31],
+       []⟩ (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]
 
 end VG.Artifacts.EcP256.AArch64
