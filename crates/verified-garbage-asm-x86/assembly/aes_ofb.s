@@ -65,6 +65,24 @@ vg_aes_ofb_aesni:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -103,7 +121,7 @@ vg_aes_ofb_final_aesni:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ofb_aesni}
+	call {vg_aes_ofb_aesni_core}
 	pop eax
 	pop eax
 	pop eax
@@ -160,6 +178,28 @@ vg_aes_ofb_final_aesni:
 	mov DWORD PTR [esp+40], ecx
 	mov DWORD PTR [esp+44], ecx
 	lea esp, [esp+48]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-100]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	mov DWORD PTR [esp+96], ecx
+	lea esp, [esp+100]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -224,6 +264,24 @@ vg_aes_ofb:
 	mov esi, DWORD PTR [eax+2068]
 	mov edi, DWORD PTR [eax+2072]
 	mov ebp, DWORD PTR [eax+2076]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-24]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	lea esp, [esp+24]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -262,7 +320,7 @@ vg_aes_ofb_final:
 	push edx
 	push ecx
 	push eax
-	call {vg_aes_ofb}
+	call {vg_aes_ofb_core}
 	pop eax
 	pop eax
 	pop eax
@@ -319,5 +377,27 @@ vg_aes_ofb_final:
 	mov DWORD PTR [esp+40], ecx
 	mov DWORD PTR [esp+44], ecx
 	lea esp, [esp+48]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-100]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
+	movdqu XMMWORD PTR [esp+64], xmm0
+	movdqu XMMWORD PTR [esp+80], xmm0
+	mov DWORD PTR [esp+96], ecx
+	lea esp, [esp+100]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

@@ -1,44 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Frame
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.AesOcb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-public import VerifiedGarbage.Proof.Aes.X86.Decrypt
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-public import VerifiedGarbage.Proof.AesOcb.X86.Blk
-public import VerifiedGarbage.Proof.AesOcb.X86.Calls
-public import VerifiedGarbage.Proof.AesOcb.X86.Entry
-public import VerifiedGarbage.Proof.AesOcb.X86.Init
-public import VerifiedGarbage.Proof.AesOcb.X86.LNtz
-public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-public import VerifiedGarbage.Proof.AesOcb.X86.Offset0
-public import VerifiedGarbage.Proof.AesOcb.X86.Run
-public import VerifiedGarbage.Proof.AesOcb.X86.Setup
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-public import VerifiedGarbage.Proof.CmacAes.X86.Verified
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Ocb.Spec
-public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
@@ -48,24 +11,12 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesOcb.X86
 
-open VG.Proof.AesOcb.X86
+open VG.Proof.AesOcb.X86.Scrub
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
-    Spec.Ocb.initApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
-      verified := .unscrubbed (init_framed v)
-      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v) },
-    Spec.Ocb.sealApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
-      verified := .unscrubbed (Proof.AesOcb.seal_keyed (seal_framed v))
-      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) },
-    Spec.Ocb.openApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
-      verified := .unscrubbed (Proof.AesOcb.open_keyed (open_framed v))
-      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }]
+    Spec.Ocb.initApi.artifact X86.target (initReg v),
+    Spec.Ocb.sealApi.artifact X86.target (sealReg v),
+    Spec.Ocb.openApi.artifact X86.target (openReg v)]
 
 end VG.Artifacts.AesOcb.X86
