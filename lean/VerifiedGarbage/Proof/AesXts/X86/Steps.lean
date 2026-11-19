@@ -26,7 +26,8 @@ canonical words of `mulAlpha_words32` (`Proof/AesXts/Alpha.lean`), from
 whose 16 bytes (`bx`) are then `Spec.Xts.mulAlpha` of the bytes it had
 (`bx_alphaX`). `mulX_val` is the value its instructions compute, doubleword
 by doubleword (`dword_alphaX_0`, `dword_alphaX_succ`, and `mask32` for the
-mask of the carried bit).
+mask of the carried bit). `mul8_val` is the value `mul8`'s instructions
+compute: `alphaX` eight times.
 -/
 
 @[expose] public section
@@ -241,5 +242,91 @@ theorem mulX_val (x : BitVec 128) :
   · rw [dword_pxor, dword_paddd _ _ (by decide), dword_pandn _ _ (by decide), dword_paddd _ _ (by decide),
       dword_psrld _ _ (by decide) (by decide), dword_shufDwords _ _ (by decide), s3, n31, onesX, cX, dword_ofDwords_3,
       dword_ofDwords_3, mask32, add_self, dword_alphaX_succ x (j := 2) (by decide)]
+
+/-! ## `α⁸`
+
+`mul8` multiplies by `α⁸` at once. `x ⊗ αᵏ`, for `k ≤ 8`, is `x` shifted
+left by `k` bits, XORed with the `k` bits shifted out times `0x87` without
+carries (`jumpX`, `redX`), by induction on `k` (`jump_succ`: one more
+`alphaX`, whose carried bit is bit `127 − k` of `x`, `jump_msb`); for
+`k = 8` the bits shifted out are the top byte, which the quadword shifts of
+`mul8` shift as 128-bit shifts would (`psllq_small`, checked for each
+byte). -/
+
+/-- The carry-less product of `h` and `0x87`. -/
+def redX (h : BitVec 128) : BitVec 128 := h ^^^ (h <<< 1) ^^^ (h <<< 2) ^^^ (h <<< 7)
+
+/-- `x ⊗ αᵏ`, for `k ≤ 8`: `x` shifted left by `k` bits, and the `k` bits shifted out times `0x87`. -/
+def jumpX (k : Nat) (x : BitVec 128) : BitVec 128 := (x <<< k) ^^^ redX (x >>> (128 - k))
+
+theorem redX_xor (u v : BitVec 128) : redX (u ^^^ v) = redX u ^^^ redX v := by
+  simp only [redX, BitVec.shiftLeft_xor_distrib]; ac_rfl
+
+theorem redX_shl (h : BitVec 128) : redX h <<< 1 = redX (h <<< 1) := by
+  simp only [redX, BitVec.shiftLeft_xor_distrib, ← BitVec.shiftLeft_add]
+
+theorem redX_bit (b : Bool) : redX (if b then 1 else 0) = if b then 0x87 else 0 := by
+  cases b <;> decide
+
+theorem jump_msb (x : BitVec 128) {k : Nat} (hk : k < 8) : (jumpX k x).msb = x.getLsbD (127 - k) := by
+  simp only [jumpX, redX, BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_ushiftRight]
+  have o (m : Nat) (hm : 120 ≤ m) : x.getLsbD (128 - k + m) = false := BitVec.getLsbD_of_ge _ _ (by omega_arith)
+  simp [o, show ¬ 127 < k by omega_arith]
+
+theorem shr_succ (x : BitVec 128) {k : Nat} (hk : k < 8) :
+    x >>> (127 - k) = ((x >>> (128 - k)) <<< 1) ^^^ (if x.getLsbD (127 - k) then 1 else 0) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  by_cases hi0 : i = 0
+  · subst hi0; cases hb : x.getLsbD (127 - k) <;> simp [hb]
+  · have e : 128 - k + (i - 1) = 127 - k + i := by omega_arith
+    cases hb : x.getLsbD (127 - k) <;> simp [hi, hi0, e, show ¬ i < 1 by omega_arith]
+
+theorem jump_succ (x : BitVec 128) {k : Nat} (hk : k < 8) : alphaX (jumpX k x) = jumpX (k + 1) x := by
+  rw [alphaX, jump_msb x hk, ← redX_bit]
+  rw [jumpX, BitVec.shiftLeft_xor_distrib, ← BitVec.shiftLeft_add, redX_shl, BitVec.xor_assoc, ← redX_xor,
+    ← shr_succ x hk, jumpX, show 128 - (k + 1) = 127 - k by omega_arith]
+
+theorem jump_zero (x : BitVec 128) : jumpX 0 x = x := by
+  have z : x >>> 128 = 0 := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge _ _ (by omega_arith)]; simp
+  simp [jumpX, redX, z]
+
+theorem alphaX_iter (x : BitVec 128) : ∀ k, k ≤ 8 → Nat.repeat alphaX k x = jumpX k x
+  | 0, _ => (jump_zero x).symm
+  | k + 1, h => by
+    show alphaX (Nat.repeat alphaX k x) = _
+    rw [alphaX_iter x k (by omega_arith), jump_succ x (by omega_arith)]
+
+theorem shr120 (x : BitVec 128) : x >>> 120 = (x.extractLsb' 120 8).setWidth 128 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', hi, decide_true,
+    Bool.true_and]
+  by_cases h : i < 8
+  · simp only [h, decide_true, Bool.true_and]
+  · simp only [h, decide_false, Bool.false_and]; exact BitVec.getLsbD_of_ge _ _ (by omega_arith)
+
+theorem psllq_small : ∀ b : BitVec 8,
+    XShiftOp.eval .psllq (b.setWidth 128) 1 = b.setWidth 128 <<< 1 ∧
+    XShiftOp.eval .psllq (b.setWidth 128 <<< 1) 1 = b.setWidth 128 <<< 2 ∧
+    XShiftOp.eval .psllq (b.setWidth 128 <<< 2) 5 = b.setWidth 128 <<< 7 := by decide
+
+/-- What `mul8` computes is `x ⊗ α⁸`. -/
+theorem mul8_val (x : BitVec 128) :
+    XBinOp.eval .pxor (XBinOp.eval .pxor (XBinOp.eval .pxor (XBinOp.eval .pxor (XShiftOp.eval .pslldq x 1)
+      (XShiftOp.eval .psrldq x 15)) (XShiftOp.eval .psllq (XShiftOp.eval .psrldq x 15) 1))
+      (XShiftOp.eval .psllq (XShiftOp.eval .psllq (XShiftOp.eval .psrldq x 15) 1) 1))
+      (XShiftOp.eval .psllq (XShiftOp.eval .psllq (XShiftOp.eval .psllq (XShiftOp.eval .psrldq x 15) 1) 1) 5) =
+      Nat.repeat alphaX 8 x := by
+  obtain ⟨p1, p2, p3⟩ := psllq_small (x.extractLsb' 120 8)
+  have eh : XShiftOp.eval .psrldq x 15 = (x.extractLsb' 120 8).setWidth 128 := shr120 x
+  rw [eh, p1, p2, p3, ← shr120, alphaX_iter x 8 (by decide), jumpX, redX]
+  show x <<< 8 ^^^ x >>> 120 ^^^ x >>> 120 <<< 1 ^^^ x >>> 120 <<< 2 ^^^ x >>> 120 <<< 7 = _
+  ac_rfl
+
+/-- The bytes of `x ⊗ α⁸`. -/
+theorem bx_iter8 (x : BitVec 128) : bx (Nat.repeat alphaX 8 x) = Nat.repeat mulAlpha 8 (bx x) := by
+  simp only [Nat.repeat, bx_alphaX]
 
 end VG.Proof.AesXts.X86

@@ -36,6 +36,16 @@ with the doublewords `0x87, 1, 1, 1` (`xmm7`) keeps those where it was set.
 `consts` sets up the two constants for each pass, as the block function may
 change every SSE register.
 
+One multiplication follows another only after five instructions on the
+tweak, one after the other, so a pass takes eight blocks at a time while
+eight are left (`octBody`): the eight tweaks are computed in `xmm4`, from a
+copy of `xmm0`, by seven `mulX`, and `xmm0` itself is multiplied by `α⁸`
+(`mul8`), which is all that one iteration waits for from the one before:
+the tweak shifted left by one byte (`pslldq`), XORed with the byte shifted
+out (`psrldq` by 15 bytes) times `0x87` without carries, as that byte and
+the same shifted left by 1, 2 and 7 bits (`psllq`). The blocks left, fewer
+than eight, go one at a time (`singleBody`).
+
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
@@ -82,23 +92,53 @@ block (ZF set after the last). -/
 def singleBody : List Instr :=
   xorBlk .xmm0 0 ++ mulX .xmm0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr)
 
-/-- The constants, the first block in `esi`, the tweak in `xmm0` and the
-number of blocks in `edi`. -/
+/-- The first block in `esi`, `tweak` in `ebx`, the number of blocks in
+`edi`, the constants, and the tweak in `xmm0`. -/
 def passPro : List Instr :=
-  consts ++ ([.mov .esi (argOp 3), .mov .ebx (argOp 2), .movdquLoad .xmm0 (at_ .ebx 0), .mov .edi (argOp 4)] : List Instr)
+  ([.mov .esi (argOp 3), .mov .ebx (argOp 2), .mov .edi (argOp 4)] : List Instr) ++ consts ++
+    ([.movdquLoad .xmm0 (at_ .ebx 0)] : List Instr)
 
-/-- Each block (at least one) with its tweak XORed in, from the tweak at
-`tweak`, which is left as it is: the tweak after the last block is in
-`xmm0`. -/
-def pass : Prog isa := .seq (.block passPro) (.loop (.block singleBody) .ne)
+/-- `xmm0` times `α⁸`, with `xmm3`: shifted left by one byte, and XORed with
+the byte shifted out times `0x87`, without carries, which is that byte
+XORed with itself shifted left by 1, 2 and 7 bits. -/
+def mul8 : List Instr :=
+  [.xop (.bin .movdqa .xmm3 .xmm0), .xop (.shift .psrldq .xmm3 15), .xop (.shift .pslldq .xmm0 1),
+   .xop (.bin .pxor .xmm0 .xmm3), .xop (.shift .psllq .xmm3 1), .xop (.bin .pxor .xmm0 .xmm3),
+   .xop (.shift .psllq .xmm3 1), .xop (.bin .pxor .xmm0 .xmm3), .xop (.shift .psllq .xmm3 5),
+   .xop (.bin .pxor .xmm0 .xmm3)]
+
+/-- Block `j` of eight: its tweak, in `xmm4`, XORed in, and that tweak times
+`α`. -/
+def octStep (j : Nat) : List Instr := xorBlk .xmm4 j ++ mulX .xmm4
+
+/-- `k` blocks of eight, from block `j` of them. -/
+def octSteps : Nat → Nat → List Instr
+  | _, 0 => []
+  | j, k + 1 => octStep j ++ octSteps (j + 1) k
+
+/-- Eight blocks: their tweaks in `xmm4`, from the first's in `xmm0`, which
+is then multiplied by `α⁸`; on to the next eight, and CF set if fewer than
+eight blocks are left. -/
+def octBody : List Instr :=
+  ([.xop (.bin .movdqa .xmm4 .xmm0)] : List Instr) ++ octSteps 0 7 ++ xorBlk .xmm4 7 ++ mul8 ++
+    ([.alu .add .esi (.imm 128), .alu .sub .edi (.imm 8), .alu .cmp .edi (.imm 8)] : List Instr)
+
+/-- Each block with its tweak XORed in, from the tweak at `tweak`, which is
+left as it is: eight blocks at a time while eight are left, then one at a
+time. The tweak after the last block is in `xmm0`, and `tweak` in `ebx`. -/
+def pass : Prog isa :=
+  .seq (.block passPro)
+    (.seq (.block [.alu .cmp .edi (.imm 8)])
+      (.seq (.ite .b (.block []) (.loop (.block octBody) .ae))
+        (.seq (.block [.alu .test .edi (.reg .edi)]) (.ite .e (.block []) (.loop (.block singleBody) .ne)))))
 
 /-- The arguments of the block function on all the blocks: the schedule, the
 rounds, the blocks, their number and the working space. -/
 def callArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (argOp 3), .mov .ebx (argOp 4), .mov .ebp (argOp 5)]
 
-/-- The tweak in `xmm0` stored at `tweak`. -/
-def storeT : List Instr := [.mov .ebx (argOp 2), .movdquStore (at_ .ebx 0) .xmm0]
+/-- The tweak in `xmm0` stored at `tweak`, which a pass leaves in `ebx`. -/
+def storeT : List Instr := [.movdquStore (at_ .ebx 0) .xmm0]
 
 /-- The blocks (at least one): the tweaks XORed in, enciphered (or
 deciphered) by `b`, the tweaks XORed in again, and the tweak after the last
