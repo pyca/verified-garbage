@@ -26,7 +26,96 @@ vg_aes_xts_decrypt:
 	psrld xmm5, 31
 	pxor xmm7, xmm5
 	movdqu xmm0, XMMWORD PTR [ebx]
+	cmp edi, 8
+	jb 22f
+24:
+	movdqa xmm4, xmm0
+	movdqu xmm1, XMMWORD PTR [esi]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+16]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+16], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+32]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+32], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+48]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+48], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+64]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+64], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+80]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+80], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+96]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+96], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+112]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+112], xmm1
+	movdqa xmm3, xmm0
+	psrldq xmm3, 15
+	pslldq xmm0, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 5
+	pxor xmm0, xmm3
+	add esi, 128
+	sub edi, 8
+	cmp edi, 8
+	jae 24b
+	jmp 23f
 22:
+23:
+	test edi, edi
+	je 25f
+27:
 	movdqu xmm1, XMMWORD PTR [esi]
 	pxor xmm1, xmm0
 	movdqu XMMWORD PTR [esi], xmm1
@@ -38,7 +127,10 @@ vg_aes_xts_decrypt:
 	pxor xmm0, xmm2
 	add esi, 16
 	sub edi, 1
-	jne 22b
+	jne 27b
+	jmp 26f
+25:
+26:
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [esp+8]
 	mov edx, DWORD PTR [esp+16]
@@ -67,7 +159,96 @@ vg_aes_xts_decrypt:
 	psrld xmm5, 31
 	pxor xmm7, xmm5
 	movdqu xmm0, XMMWORD PTR [ebx]
-23:
+	cmp edi, 8
+	jb 28f
+210:
+	movdqa xmm4, xmm0
+	movdqu xmm1, XMMWORD PTR [esi]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+16]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+16], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+32]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+32], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+48]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+48], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+64]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+64], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+80]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+80], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+96]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+96], xmm1
+	pshufd xmm2, xmm4, 147
+	psrld xmm2, 31
+	paddd xmm2, xmm6
+	pandn xmm2, xmm7
+	paddd xmm4, xmm4
+	pxor xmm4, xmm2
+	movdqu xmm1, XMMWORD PTR [esi+112]
+	pxor xmm1, xmm4
+	movdqu XMMWORD PTR [esi+112], xmm1
+	movdqa xmm3, xmm0
+	psrldq xmm3, 15
+	pslldq xmm0, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 1
+	pxor xmm0, xmm3
+	psllq xmm3, 5
+	pxor xmm0, xmm3
+	add esi, 128
+	sub edi, 8
+	cmp edi, 8
+	jae 210b
+	jmp 29f
+28:
+29:
+	test edi, edi
+	je 211f
+213:
 	movdqu xmm1, XMMWORD PTR [esi]
 	pxor xmm1, xmm0
 	movdqu XMMWORD PTR [esi], xmm1
@@ -79,7 +260,10 @@ vg_aes_xts_decrypt:
 	pxor xmm0, xmm2
 	add esi, 16
 	sub edi, 1
-	jne 23b
+	jne 213b
+	jmp 212f
+211:
+212:
 	movdqu XMMWORD PTR [ebx], xmm0
 	jmp 21f
 20:
