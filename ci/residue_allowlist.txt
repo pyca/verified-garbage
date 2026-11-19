@@ -283,9 +283,6 @@ arm vg_seed_ecb_encrypt
 arm vg_seed_expand_key
 arm vg_seed_ofb
 arm vg_seed_ofb_final
-arm vg_sm3_finalize
-arm vg_sm3_init
-arm vg_sm3_update
 arm vg_sm4_cbc_decrypt_chained
 arm vg_sm4_cbc_encrypt_chained
 arm vg_sm4_cfb128_decrypt

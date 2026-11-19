@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm3.Arm.Shared
+public import VerifiedGarbage.Proof.Sm3.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,14 +11,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Sm3.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact Arm.target {
-    code := Impl.Sm3.Arm.Stream.init
-    verified := .unscrubbed Proof.Sm3.Arm.Shared.init },
-  Spec.Sm3.updateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 168 2 Impl.Sm3.Arm.Stream.update
-    verified := .unscrubbed Proof.Sm3.Arm.Shared.update },
-  Spec.Sm3.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 168 1 Impl.Sm3.Arm.Stream.finalize
-    verified := .unscrubbed Proof.Sm3.Arm.Shared.finalize }]
+  Spec.Sm3.initApi.artifact Arm.target Proof.Sm3.Arm.Scrub.initReg,
+  Spec.Sm3.updateApi.artifact Arm.target Proof.Sm3.Arm.Scrub.updateReg,
+  Spec.Sm3.finalizeApi.artifact Arm.target Proof.Sm3.Arm.Scrub.finalizeReg]
 
 end VG.Artifacts.Sm3.Arm
