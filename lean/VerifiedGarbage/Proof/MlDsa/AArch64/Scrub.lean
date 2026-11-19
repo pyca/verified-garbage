@@ -4,7 +4,14 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Prepare
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.SignEntryTiming
@@ -20,7 +27,9 @@ outputs, and those of verifying a message not at all (`ScrubAll.ScrubAllOk`,
 as x86-64's `Proof/MlDsa/X86_64/Scrub.lean` proves them): each
 implementation, generic over the Keccak-f[1600] implementation it calls,
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.withScrubAll`).
+zeroed (`ScrubAll.scrubAllOf`, with the registers `clear` and the `…Side`
+theorems below; `pk_tr`, whose registers differ with the permutation, by
+`ScrubAll.withScrubAll` still).
 -/
 
 @[expose] public section
@@ -251,15 +260,26 @@ theorem dle_scrubAll {c : Prog VG.AArch64.isa} (cl : VG.Impl.Residue.AArch64.Cle
 
 open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_sign_fn message_verify_fn)
 
+/-- The registers the tails of key generation, signing and verification
+clear: every register the calling convention does not preserve, which their
+code, with each permutation, may write (`keyGenSide` and the theorems after
+it). -/
+def clear : VG.Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
+
+theorem clear_wf : clear.WF := wf_of_wfB (by decide)
+
 /-- What a message signing function calls: the signing entry, scrubbed whole. -/
 theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageSignFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32
-        (VG.Impl.Residue.AArch64.Clear.of (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared))
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 clear
         (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
   obtain h := message_sign_fn v hp name prepared
-  refine ⟨Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
+  refine ⟨Verified.scrubAll clear_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact signPairedOk p
   · exact preparedSignPairedOk p
@@ -268,11 +288,10 @@ theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.M
 theorem message_verify_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageVerifyFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32
-        (VG.Impl.Residue.AArch64.Clear.of (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared))
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 clear
         (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
   obtain h := message_verify_fn v hp name prepared
-  refine ⟨Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
+  refine ⟨Verified.scrubAll clear_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact verifySelectedOk p
   · exact preparedVerifySelectedOk p
@@ -351,5 +370,144 @@ theorem prepareSecretOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = m
         (by simp only [preparedSecretKeyBytes]
             have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.ℓ + 2 * p.k by omega_using [hi])
             rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
+
+/-! ## What `scrubAllOf` needs of the code
+
+`ScrubAll.scrubSide` of each function, with each permutation and each
+parameter set it is registered with: evaluated here, by the kernel, so that
+the emitter works out nothing. -/
+
+open VG.Proof.MlDsa (signWithCacheName verifyWithCacheName preparedSignName preparedVerifyName)
+
+/-- The parameter sets, each with the name of its module and its label, as
+the registration file names them. -/
+def sets : List (Params × String × String) :=
+  [(mlDsa44, "mldsa44", "ML-DSA-44"), (mlDsa65, "mldsa65", "ML-DSA-65"), (mlDsa87, "mldsa87", "ML-DSA-87")]
+
+/-- The registers the tail of preparing a verifying key clears: those its code may write. -/
+def preparePublicClear : VG.Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18], []⟩
+
+/-- The registers the tail of preparing a signing key clears: those its code may write. -/
+def prepareSecretClear : VG.Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18], []⟩
+
+/-- Of key generation. -/
+theorem keyGenSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    scrubSide (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee p)
+      16 ((keyGenSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => [mlDsa44, mlDsa65, mlDsa87].all fun p =>
+      scrubSide (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee p)
+      16 ((keyGenSig p).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) p (mem_of hp)
+
+/-- Of signing `μ` with a key. -/
+theorem signSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) false)
+      64 ((signSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) false)
+      64 ((signSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of signing `μ` with a prepared key. -/
+theorem preparedSignSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) true)
+      64 ((preparedSignSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) true)
+      64 ((preparedSignSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of signing a message with a key, which calls the scrubbed entry. -/
+theorem signMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee ((signApi p module label).name ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p)
+      64 ((signMessageSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee ((signApi s.1 s.2.1 s.2.2).name ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) false)) s.1)
+      64 ((signMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of signing a message with a prepared key. -/
+theorem preparedSignMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee (preparedSignName module ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p)
+      64 ((preparedSignMessageSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee (preparedSignName s.2.1 ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) true)) s.1)
+      64 ((preparedSignMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of verifying `μ` with a key. -/
+theorem verifySide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)
+      64 ((verifySig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) false)
+      64 ((verifySig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of verifying `μ` with a prepared key. -/
+theorem preparedVerifySide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)
+      64 ((preparedVerifySig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) true)
+      64 ((preparedVerifySig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of verifying a message with a key, which calls the scrubbed entry. -/
+theorem verifyMessageCachedSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee ((verifyApi p module label).name ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p)
+      64 ((verifyMessageCachedSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee ((verifyApi s.1 s.2.1 s.2.2).name ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) false)) s.1)
+      64 ((verifyMessageCachedSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of verifying a message with a prepared key. -/
+theorem preparedVerifyMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
+    (hs : (p, module, label) ∈ sets) :
+    scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (preparedVerifyName module ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p)
+      64 ((preparedVerifyMessageSig p).retBits abi.ptrBits) clear [] = true := by
+  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
+      scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (preparedVerifyName s.2.1 ++ v.callee.suffix)
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) true)) s.1)
+      64 ((preparedVerifyMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+
+/-- Of preparing a verifying key. -/
+theorem preparePublicSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    scrubSide (Impl.MlDsa.AArch64.PreparedKey.preparePublic p)
+      80 ((preparePublicKeySig p).retBits abi.ptrBits) preparePublicClear [] = true := by
+  have e : ([mlDsa44, mlDsa65, mlDsa87].all fun p =>
+      scrubSide (Impl.MlDsa.AArch64.PreparedKey.preparePublic p)
+      80 ((preparePublicKeySig p).retBits abi.ptrBits) preparePublicClear []) = true := by lit_decide
+  exact List.all_eq_true.mp e p (mem_of hp)
+
+/-- Of preparing a signing key. -/
+theorem prepareSecretSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    scrubSide (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p)
+      80 ((prepareSecretKeySig p).retBits abi.ptrBits) prepareSecretClear [] = true := by
+  have e : ([mlDsa44, mlDsa65, mlDsa87].all fun p =>
+      scrubSide (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p)
+      80 ((prepareSecretKeySig p).retBits abi.ptrBits) prepareSecretClear []) = true := by lit_decide
+  exact List.all_eq_true.mp e p (mem_of hp)
 
 end VG.Proof.MlDsa.AArch64.Scrub
