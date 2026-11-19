@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+import VerifiedGarbage.Proof.Framework.X86.Rel2
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
@@ -914,7 +915,8 @@ namespace VG.Proof.ChaCha20Poly1305.X86.Gather
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86.SealGather
 open VG.Proof.AesGcm.X86 (w64)
-open VG.Proof.AesGcm.X86.Gather (Eq2 TT rel_seq rel_taint rel_alloc ct_of gather_rel)
+open VG.Proof.AesGcm.X86.Gather (rel_alloc gather_rel)
+open VG.X86 (Eq2 TT rel_seq rel_taint ct_of)
 
 theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealGather F.name F.code) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_

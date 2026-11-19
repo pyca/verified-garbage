@@ -111,7 +111,7 @@ section
 /-! # Relating two runs through frames and narrowed permissions
 
 `relCT_of_wp`: two runs leak the same, and their final states are related by
-what each satisfies by correctness. `relCT_frame`: a frame whose push and pop
+what each satisfies by correctness. `RelCT.frameOf`: a frame whose push and pop
 leak only addresses of `esp`, around a body whose runs leak the same, leaves
 `esp` the same (frames of registers, `push_frame`, and MCDT frames,
 `mcdt_frame`). `relCT_nar`: code that writes only the working space `⟨W, L⟩`
@@ -137,32 +137,6 @@ theorem relCT_of_wp {P Q : State → State → Prop} {c : Prog isa} (h : RelCT i
   obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
   exact ⟨ht, hq _ _ g₁ g₂⟩
 
-/-- A frame whose push leaks the same addresses and leaves `esp` and the
-frame's size the same in both runs, and whose pop leaks addresses of `esp`. -/
-theorem relCT_frame {i j : Instr} {body : Prog isa} {P R : State → State → Prop}
-    (hpush : ∀ s₁ s₂ a₁ a₂, P s₁ s₂ → isa.push i s₁ = some a₁ → isa.push i s₂ = some a₂ →
-      isa.addrs i s₁ = isa.addrs i s₂ ∧ a₁.gpr .esp = a₂.gpr .esp ∧
-        a₁.wr.head?.map Region.len = a₂.wr.head?.map Region.len)
-    (hpop : ∀ b₁ b₂ : State, b₁.gpr .esp = b₂.gpr .esp → isa.addrs j b₁ = isa.addrs j b₂)
-    (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ isa.push i s₁ = some a ∧ isa.push i s₂ = some b) body R) :
-    RelCT isa P (.frame i body j) fun c₁ c₂ => c₁.gpr .esp = c₂.gpr .esp := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  cases e₁ with
-  | frame p₁ b₁ q₁ =>
-    cases e₂ with
-    | frame p₂ b₂ q₂ =>
-      obtain ⟨ha, hsp, hl⟩ := hpush _ _ _ _ hp p₁ p₂
-      obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨_, _, hp, p₁, p₂⟩ b₁ b₂
-      obtain ⟨-, -, -, -, e₁', k₁, l₁, hk₁, hk₁', hh₁, g₁⟩ := pop_eq q₁
-      obtain ⟨-, -, -, -, e₂', k₂, l₂, hk₂, hk₂', hh₂, g₂⟩ := pop_eq q₂
-      have hb' := e₁'.trans (hsp.trans e₂'.symm)
-      rw [hh₁, hh₂] at hl
-      simp only [Option.map_some, Option.some.injEq] at hl
-      have hk : k₁ = k₂ := by omega_using [hk₁, hk₁', hk₂, hk₂', hl]
-      refine ⟨by rw [ha, hpop _ _ hb'], ?_⟩
-      show s₁'.gpr .esp = s₂'.gpr .esp
-      rw [g₁, g₂, hb', hk]
-
 /-- A frame of registers' push, for runs with the same `esp`. -/
 theorem push_frame {rs : List Reg} {P : State → State → Prop}
     (hsp : ∀ s₁ s₂, P s₁ s₂ → s₁.gpr .esp = s₂.gpr .esp) :
@@ -177,30 +151,6 @@ theorem push_frame {rs : List Reg} {P : State → State → Prop}
 
 theorem pop_addrs (r : Reg) (k : Nat) : ∀ b₁ b₂ : State, b₁.gpr .esp = b₂.gpr .esp →
     isa.addrs (.pop r k) b₁ = isa.addrs (.pop r k) b₂ := by
-  intro b₁ b₂ h; simp only [addrs, h]
-
-theorem mcdt_push_eq {r : Reg} {s a : State} (h : isa.push (.mcdtEnter r) s = some a) :
-    r ≠ .esp ∧ a = mcdtPushed r s := by
-  simp only [isa, push] at h
-  split at h <;> [rename_i hc; cases h]
-  cases h
-  exact ⟨hc.1, rfl⟩
-
-/-- An MCDT frame's push, for runs with the same `esp`. -/
-theorem mcdt_frame {r : Reg} {P : State → State → Prop}
-    (hsp : ∀ s₁ s₂, P s₁ s₂ → s₁.gpr .esp = s₂.gpr .esp) :
-    ∀ s₁ s₂ a₁ a₂, P s₁ s₂ → isa.push (.mcdtEnter r) s₁ = some a₁ → isa.push (.mcdtEnter r) s₂ = some a₂ →
-      isa.addrs (.mcdtEnter r) s₁ = isa.addrs (.mcdtEnter r) s₂ ∧ a₁.gpr .esp = a₂.gpr .esp ∧
-        a₁.wr.head?.map Region.len = a₂.wr.head?.map Region.len := by
-  intro s₁ s₂ a₁ a₂ hp h₁ h₂
-  obtain ⟨hr, rfl⟩ := mcdt_push_eq h₁
-  obtain ⟨-, rfl⟩ := mcdt_push_eq h₂
-  have e := hsp _ _ hp
-  exact ⟨by simp only [addrs, e], by rw [mcdtPushed_esp _ _ hr, mcdtPushed_esp _ _ hr, e],
-    by rw [mcdtPushed_wr, mcdtPushed_wr]; rfl⟩
-
-theorem mcdtLeave_addrs : ∀ b₁ b₂ : State, b₁.gpr .esp = b₂.gpr .esp →
-    isa.addrs .mcdtLeave b₁ = isa.addrs .mcdtLeave b₂ := by
   intro b₁ b₂ h; simp only [addrs, h]
 
 /-- `s` with only the working space `⟨W, L⟩` writable, and every region readable. -/
@@ -417,7 +367,7 @@ def MPair (W : Addr) (L N S mo inv o a b : Nat) (v₁ v₂ : State) : Prop :=
 theorem frame_relCT :
     RelCT isa (KPair W L N S mo inv o a b) (.frame (.mcdtEnter .eax) columns .mcdtLeave)
       (MPair W L N S mo inv o a b) := by
-  refine relCT_of_wp ((relCT_frame (mcdt_frame fun _ _ h => ?_) mcdtLeave_addrs columns_relCT).mono
+  refine relCT_of_wp ((RelCT.frameOf (mcdt_frame fun _ _ h => ?_) mcdtLeave_addrs columns_relCT).mono
     (fun _ _ h => h) fun _ _ _ => trivial) ?_
   · obtain ⟨_, _, _, _, h⟩ := h; exact h
   · rintro s₁ s₂ ⟨V, V', K₁, K₂, sp⟩
@@ -471,7 +421,7 @@ theorem body_relCT {params : List Instr} {P : State → State → Prop}
       (.block params) fun _ _ => True) :
     RelCT isa P (body params) fun _ _ => True := by
   unfold body
-  refine (relCT_frame (R := fun _ _ => True) (push_frame fun _ _ h => (hP _ _ h).2.2) (pop_addrs .ebx 4) ?_).mono
+  refine (RelCT.frameOf (R := fun _ _ => True) (push_frame fun _ _ h => (hP _ _ h).2.2) (pop_addrs .ebx 4) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   simp only [seqs]
   refine RelCT.seq (R := PPair params W L N S mo inv o a b) ?_
@@ -483,7 +433,7 @@ theorem body_relCT {params : List Instr} {P : State → State → Prop}
       have B := hP _ _ B'
       rw [(push_some h₁).2.2.2, (push_some h₂).2.2.2]
       exact ⟨_, _, B.1.par, B.2.1.par, fun _ _ H₁ H₂ => ⟨s₁, s₂, B, H₁, H₂⟩⟩
-  · refine relCT_frame (push_frame ?_) (pop_addrs .eax 7)
+  · refine RelCT.frameOf (push_frame ?_) (pop_addrs .eax 7)
       ((kernel_relCT (W := W) (L := L) (N := N) (S := S) (mo := mo) (inv := inv) (o := o) (a := a) (b := b)).mono ?_
         fun _ _ _ => trivial)
     · rintro u₁ u₂ ⟨s₁, s₂, B, H₁, H₂⟩
