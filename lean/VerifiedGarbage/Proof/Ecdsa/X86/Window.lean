@@ -1895,6 +1895,288 @@ theorem zeroMask_ok (s : State) {m : Nat} (hm : m < 17) (ha : s.gpr .eax = BitVe
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
+/-- The negation of a point on numbered slots (zero at `14 … 16`). -/
+def negN : List FOp := [.add 6 11 14, .sub 7 15 12, .add 8 13 16]
+
+theorem negN_ok : NumOk negN := ⟨by decide, by decide, by decide⟩
+
+theorem negN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    (runOps negN e 6, runOps negN e 7, runOps negN e 8) = (e 11 + e 14, e 15 - e 12, e 13 + e 16) := rfl
+
+theorem swMag_le (k j : Nat) : magH 16 (swV k j) ≤ 8 := by
+  have hw := combWin4_lt k j
+  unfold magH swV
+  obtain ⟨cc, hc, hc1⟩ : ∃ cc, (if 0 < j ∧ k.testBit (4 * j - 1) = true then 1 else 0) = cc ∧ cc ≤ 1 :=
+    ⟨_, rfl, by split <;> decide⟩
+  rw [hc]
+  by_cases h8 : combWin 4 k j < 8 <;> simp only [h8, ↓reduceIte] <;> split <;> omega_arith
+
+/-- The signed windows' table: `[e]P` in entry `e`, and `[2^winW]P` in entry 0. -/
+def STblOk (c : Cfg) (base : Addr) (P : Point c.C) (m : Mem) : Prop :=
+  ∀ e < 2 ^ c.winW, (∀ j < 3, wordsVal m base (tblAt c e (c.n * j)) c.n < c.C.p) ∧
+    Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (tblAt c e (c.n * 0)) c.n))
+      (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (tblAt c e (c.n * 1)) c.n))
+      (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (tblAt c e (c.n * 2)) c.n))
+      (mul (if e = 0 then 2 ^ c.winW else e) P)
+
+theorem STblOk.unch {base : Addr} {P : Point c.C} {W : List (Nat × Nat)} {m m' : Mem}
+    (h : STblOk c base P m) (h7 : c.n < 10) (hu : Unch base W m m')
+    (hfit : c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ 8192)
+    (hW : ∀ w ∈ W, w.1 + w.2 ≤ c.winTbl ∨ c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ w.1) :
+    STblOk c base P m' := by
+  intro e he
+  obtain ⟨hl, hr⟩ := h e he
+  refine ⟨fun j hj => by rw [winTbl_unch hu h7 he hj hfit hW]; exact hl j hj, ?_⟩
+  rw [winTbl_unch hu h7 he (by decide) hfit hW, winTbl_unch hu h7 he (by decide) hfit hW,
+    winTbl_unch hu h7 he (by decide) hfit hW]
+  exact hr
+
+/-- The signed windows' invariant: `R = [swPre k j]P`. -/
+structure SWinInv (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s₀ s : State) (j : Nat) : Prop where
+  ctx : WinCtx c base k s
+  esi : s.gpr .esi = BitVec.ofNat 32 j
+  keep : Keeps powClob s₀ s
+  unch : Unch base (pW c winWr) s₀.mem s.mem
+  tbl : STblOk c base P s.mem
+  lt : ∀ i ∈ [RX, RY, RZ], sv c base s i < c.C.p
+  rep : Rep c.C (fv c base s RX) (fv c base s RY) (fv c base s RZ) (mul (swPre k j) P)
+
+/-! SW6-BEGIN -/
+/-- A signed window. -/
+theorem swinStep_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {base : Addr} {P : Point c.C}
+    (hP : onCurve c.C P = true) {k : Nat} (hk : k < 2 ^ (8 * c.C.len)) {s₀ s : State} {j : Nat}
+    (hj : 1 ≤ j) (hjn : j ≤ c.swinJ) (I : SWinInv c base P k s₀ s j) :
+    WP isa c.swinStep s fun s' => SWinInv c base P k s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
+  have h7 := hc.n10
+  have hlen := hc.len_hi
+  have hJ : c.swinJ = 2 * c.C.len := rfl
+  have hbit0 := bitsAt_le c h7 (j := 0) (by decide)
+  have hfit := winTbl_fit (c := c) hc.n10
+  have hn := I.ctx.scr.nowrap
+  have h8 : 2 ^ c.winW = 8 := by rw [h3]; rfl
+  have mul0 : mul 0 P = .infinity := by rw [Spec.Weierstrass.mul]; simp
+  obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [hj]⟩
+  rw [Nat.add_sub_cancel]
+  have hQ := hC.onCurve_mul hP (swPre k (i + 1))
+  have below : ∀ {l : List Nat}, (∀ i ∈ l, i < 45) → ∀ w ∈ pW c l,
+      w.1 + w.2 ≤ c.winTbl ∨ c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ w.1 :=
+    fun hl => pW_tbl h7 hl hfit
+  obtain ⟨m, hm⟩ : ∃ m, magH 16 (swV k i) = m := ⟨_, rfl⟩
+  have hm8 : m ≤ 8 := hm ▸ swMag_le k i
+  rw [Cfg.swinStep]
+  refine WP.seq (wp_decCounter hj I.esi fun s₁ g₁ k₁ m₁ => WP.block_nil ?_)
+  rw [Nat.add_sub_cancel] at g₁
+  obtain ctx₁ := I.ctx.same hc k₁ (by decide) (by decide) m₁
+  -- `R = 16 R`.
+  refine WP.seq (WP.mono (winQuadN_ok hc hC 4 ctx₁ hQ
+    (fun i hi => by show wordsVal s₁.mem _ _ _ < _; rw [m₁]; exact I.lt i hi)
+    (by show Rep _ (toM _ _ (wordsVal s₁.mem _ _ _)) (toM _ _ (wordsVal s₁.mem _ _ _))
+          (toM _ _ (wordsVal s₁.mem _ _ _)) _
+        rw [m₁]; exact I.rep)) fun s₂ ⟨K₂, U₂, L₂, R₂⟩ => ?_)
+  obtain ctx₂ := ctx₁.next hc K₂ edi_clob esp_clob U₂ (winW_winWr h7)
+  obtain g₂ : s₂.gpr .esi = BitVec.ofNat 32 i := by rw [K₂.1 _ esi_clob, g₁]
+  obtain U₂' : Unch base (pW c winWr) s.mem s₂.mem := by rw [← m₁]; exact U₂
+  obtain tbl₂ : STblOk c base P s₂.mem := I.tbl.unch h7 U₂' hfit (below (by decide))
+  -- The digit's magnitude, and its entry.
+  refine WP.seq (WP.mono (swinDigit_ok hc ctx₂ hk (j := i) (by omega_using [hjn]) g₂)
+    fun s₃ ⟨a₃, g₃, k₃⟩ => ?_)
+  rw [hm] at a₃ g₃
+  obtain m₃ : s₃.mem = s₂.mem := k₃.2.1
+  obtain ctx₃ := ctx₂.same hc k₃.keeps (by decide) (by decide) m₃
+  have ha8 : m % 8 < 2 ^ c.winW := by rw [h8]; exact Nat.mod_lt _ (by decide)
+  refine WP.seq (WP.mono (winSel_ok hc ctx₃.scr ha8 g₃) fun s₄ ⟨V₄, k₄, O₄⟩ => ?_)
+  obtain ctx₄ := ctx₃.next hc k₄ (by decide) (by decide) O₄.unch (winW_sel h7)
+  rw [m₃] at V₄ O₄
+  obtain U₄' : Unch base (pW c winWr) s₂.mem s₄.mem := unch_winWr_sel h7 O₄
+  obtain ⟨tl, tr⟩ := tbl₂ (m % 8) ha8
+  obtain r₄ : ∀ i ∈ [RX, RY, RZ], sv c base s₄ i = sv c base s₂ i := fun i hi =>
+    O₄.wordsVal (d := c.sl i) (k := c.n)
+      (Or.inl (sl_lt c (i := i) (j := TX) ((by decide : ∀ i ∈ [RX, RY, RZ], i < TX) i hi)))
+      (by
+        have := sl_le c h7 ((by decide : ∀ i ∈ [RX, RY, RZ], i < 45) i hi)
+        have hsz : size = 8192 := rfl
+        omega_using [this, hsz])
+  -- `T = O` where the magnitude is zero.
+  have a₄ : s₄.gpr .eax = BitVec.ofNat 32 m := by rw [k₄.1 _ (by decide), a₃]
+  rw [Cfg.swinZero]
+  refine WP.seq (WP.block_append (WP.mono (zeroMask_ok s₄ (by omega_using [hm8]) a₄) fun s₅ ⟨c₅, k₅⟩ => ?_))
+  obtain m₅ : s₅.mem = s₄.mem := k₅.2.1
+  obtain ctx₅ := ctx₄.same hc k₅.keeps (by decide) (by decide) m₅
+  refine WP.mono (selSelf3_ok hc ctx₅.scr (decide (m = 0)) c₅ (o₁ := TX) (o₂ := TY) (o₃ := TZ)
+    (x₁ := ZERO) (x₂ := ONEP) (x₃ := ZERO) (by decide) (by decide) (by decide))
+    fun s₆ ⟨ex₆, ey₆, ez₆, k₆, U₆⟩ => ?_
+  obtain ctx₆ := ctx₅.next hc k₆ (by decide) (by decide) U₆ (winW_slW h7 (by decide))
+  have e45 : ∀ {i : Nat}, sv c base s₅ i = sv c base s₄ i := fun {i} => by
+    show wordsVal s₅.mem _ _ _ = _; rw [m₅]
+  obtain ⟨ltT₆, repT₆⟩ : (∀ i ∈ [TX, TY, TZ], sv c base s₆ i < c.C.p) ∧
+      Rep c.C (fv c base s₆ TX) (fv c base s₆ TY) (fv c base s₆ TZ) (mul m P) := by
+    by_cases h0 : m = 0
+    · rw [decide_eq_true h0] at ex₆ ey₆ ez₆
+      simp only [↓reduceIte] at ex₆ ey₆ ez₆
+      refine ⟨fun i hi => ?_, ?_⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with rfl | rfl | rfl
+        · rw [ex₆]; exact ctx₅.lt hc _ (by decide)
+        · rw [ey₆]; exact ctx₅.lt hc _ (by decide)
+        · rw [ez₆]; exact ctx₅.lt hc _ (by decide)
+      · show Rep _ (toM _ _ (sv c base s₆ TX)) (toM _ _ (sv c base s₆ TY)) (toM _ _ (sv c base s₆ TZ)) _
+        rw [ex₆, ey₆, ez₆, h0, mul0]
+        exact ⟨ctx₅.fv_zero, by
+          rw [show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₅ ONEP) = fv c base s₅ ONEP from rfl,
+            ctx₅.fv_onep hc]
+          exact hC.one_ne_zero, ctx₅.fv_zero⟩
+    · rw [decide_eq_false h0] at ex₆ ey₆ ez₆
+      simp only [Bool.false_eq_true, ↓reduceIte] at ex₆ ey₆ ez₆
+      obtain vx : sv c base s₄ TX = _ := V₄ 0 (by decide)
+      obtain vy : sv c base s₄ TY = _ := V₄ 1 (by decide)
+      obtain vz : sv c base s₄ TZ = _ := V₄ 2 (by decide)
+      rw [e45, vx] at ex₆
+      rw [e45, vy] at ey₆
+      rw [e45, vz] at ez₆
+      have he : (if m % 8 = 0 then 2 ^ c.winW else m % 8) = m := by
+        rw [h8]
+        by_cases hz : m % 8 = 0 <;> simp only [hz, ↓reduceIte] <;> omega_using [hm8, h0, hz]
+      rw [he] at tr
+      refine ⟨fun i hi => ?_, ?_⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+        rcases hi with rfl | rfl | rfl
+        · rw [ex₆]; exact tl 0 (by decide)
+        · rw [ey₆]; exact tl 1 (by decide)
+        · rw [ez₆]; exact tl 2 (by decide)
+      · show Rep _ (toM _ _ (sv c base s₆ TX)) (toM _ _ (sv c base s₆ TY)) (toM _ _ (sv c base s₆ TZ)) _
+        rw [ex₆, ey₆, ez₆]; exact tr
+  -- `-T`, into `D`.
+  rw [Cfg.swinNeg]
+  rw [show fprog c.SP [.add (c.sl DX) (c.sl TX) (c.sl ZERO), .sub (c.sl DY) (c.sl ZERO) (c.sl TY),
+      .add (c.sl DZ) (c.sl TZ) (c.sl ZERO)] =
+    fprog c.SP (ofN negN c.rcbSlots (c.pt TX TY TZ) (c.pt ZERO ZERO ZERO) (c.pt DX DY DZ)) from rfl]
+  refine WP.seq (WP.seq (WP.mono (ptOp_ok hc negN_ok (p₁ := TX) (p₂ := TY) (p₃ := TZ) (q₁ := ZERO)
+    (q₂ := ZERO) (q₃ := ZERO) (o₁ := DX) (o₂ := DY) (o₃ := DZ) (by decide) (by decide) (by decide) ctx₆.scr
+    ctx₆.mp (ctx₆.lt8 hc ltT₆ (fun i hi => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, or_self] at hi
+      rw [hi]; exact ctx₆.lt hc _ (by decide)))) fun s₇ ⟨K₇, U₇, L₇, V₇⟩ => ?_))
+  obtain ctx₇ := ctx₆.next hc K₇ edi_clob esp_clob U₇ (winW_pW h7 (by decide))
+  obtain g₇ : s₇.gpr .esi = BitVec.ofNat 32 i := by
+    rw [K₇.1 _ esi_clob, k₆.1 _ (by decide), k₅.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), g₂]
+  obtain V₇' := V₇.trans (negN_run _)
+  simp only [Prod.mk.injEq] at V₇'
+  obtain dy₇ : fv c base s₇ DY = -fv c base s₆ TY := by
+    rw [V₇'.2.1]
+    show fv c base s₆ ZERO - fv c base s₆ TY = _
+    rw [ctx₆.fv_zero]; grind
+  obtain t₇ : ∀ i ∈ [TX, TY, TZ], sv c base s₇ i = sv c base s₆ i := fun i hi =>
+    sv_pW U₇ h7 hn ((by decide : ∀ i ∈ [TX, TY, TZ], i < 45) i hi)
+      ((by decide : ∀ i ∈ [TX, TY, TZ], i ∉ [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) i hi)
+  -- `T`'s `y` kept where the digit is not negative.
+  have hw4 : c.winScan.w = 4 := by show c.winW + 1 = 4; rw [h3]
+  refine WP.block_append (WP.mono (signMask_ok c.winScan ctx₇.scr (k := k) (j := i) (N := 8 * c.C.len)
+    (by rw [hw4]; decide) (by rw [hw4]; decide) (by rw [hw4]; omega_using [hjn, hJ])
+    (by show bitsAt c.n 0 + _ ≤ _; omega_using [hbit0, hlen]) g₇ ctx₇.bits) fun s₈ ⟨c₈, k₈⟩ => ?_)
+  rw [hw4] at c₈
+  obtain m₈ : s₈.mem = s₇.mem := k₈.2.1
+  obtain ctx₈ := ctx₇.same hc k₈.keeps (by decide) (by decide) m₈
+  refine WP.mono (selSlot_ok hc ctx₈.scr (decide (combWin 4 k i < 8)) c₈ (o := TY) (a := DY) (x := TY)
+    (by decide) (by decide) (by decide)) fun s₉ ⟨ey₉, k₉, U₉⟩ => ?_
+  obtain ctx₉ := ctx₈.next hc k₉ (by decide) (by decide) U₉ (winW_slW h7 (by decide))
+  have e78 : ∀ {i : Nat}, sv c base s₈ i = sv c base s₇ i := fun {i} => by
+    show wordsVal s₈.mem _ _ _ = _; rw [m₈]
+  obtain o₉ : ∀ {i}, i < 45 → i ≠ TY → sv c base s₉ i = sv c base s₇ i := fun {i} hi hne =>
+    (sv_unch U₉ h7 hn hi (apart_slW (l := [TY]) (by simpa using hne))).trans e78
+  obtain ltT₉ : ∀ i ∈ [TX, TY, TZ], sv c base s₉ i < c.C.p := fun i hi => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl
+    · rw [o₉ (by decide) (by decide), t₇ _ (by decide)]; exact ltT₆ _ (by decide)
+    · rw [ey₉, e78, e78]
+      split
+      · rw [t₇ _ (by decide)]; exact ltT₆ _ (by decide)
+      · exact L₇ _ (by decide)
+    · rw [o₉ (by decide) (by decide), t₇ _ (by decide)]; exact ltT₆ _ (by decide)
+  obtain repT₉ : Rep c.C (fv c base s₉ TX) (fv c base s₉ TY) (fv c base s₉ TZ)
+      (if combWin 4 k i < 8 then mul m P else negPt (mul m P)) := by
+    show Rep _ (toM _ _ (sv c base s₉ TX)) (toM _ _ (sv c base s₉ TY)) (toM _ _ (sv c base s₉ TZ)) _
+    rw [o₉ (by decide) (by decide), t₇ _ (by decide), o₉ (i := TZ) (by decide) (by decide),
+      t₇ TZ (by decide), ey₉, e78, e78]
+    by_cases hw8 : combWin 4 k i < 8
+    · simp only [hw8, decide_true, ↓reduceIte]
+      rw [t₇ _ (by decide)]; exact repT₆
+    · simp only [hw8, decide_false, Bool.false_eq_true, ↓reduceIte]
+      have := repT₆.negY
+      rw [← dy₇] at this
+      exact this
+  obtain r₉ : ∀ i ∈ [RX, RY, RZ], sv c base s₉ i = sv c base s₂ i := fun i hi => by
+    have h45 := (by decide : ∀ i ∈ [RX, RY, RZ], i < 45) i hi
+    exact (o₉ h45 ((by decide : ∀ i ∈ [RX, RY, RZ], i ≠ TY) i hi)).trans
+      ((sv_pW U₇ h7 hn h45
+        ((by decide : ∀ i ∈ [RX, RY, RZ], i ∉ [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) i hi)).trans
+      ((sv_unch U₆ h7 hn h45 (apart_slW ((by decide : ∀ i ∈ [RX, RY, RZ], i ∉ [TX, TY, TZ]) i hi))).trans
+        (e45.trans (r₄ i hi))))
+  obtain ltR₉ : ∀ i ∈ [RX, RY, RZ], sv c base s₉ i < c.C.p := fun i hi => by rw [r₉ i hi]; exact L₂ i hi
+  obtain repR₉ : Rep c.C (fv c base s₉ RX) (fv c base s₉ RY) (fv c base s₉ RZ)
+      (dblPt (mul (swPre k (i + 1)) P) 4) := by
+    show Rep _ (toM _ _ (sv c base s₉ RX)) (toM _ _ (sv c base s₉ RY)) (toM _ _ (sv c base s₉ RZ)) _
+    rw [r₉ RX (by decide), r₉ RY (by decide), r₉ RZ (by decide)]; exact R₂
+  have hTon : onCurve c.C (if combWin 4 k i < 8 then mul m P else negPt (mul m P)) = true := by
+    split
+    · exact hC.onCurve_mul hP _
+    · exact onCurve_negPt (hC.onCurve_mul hP _)
+  -- `D = R + T`.
+  obtain ⟨N, hN, eN, hadd⟩ := winAdd_ok (c := c) hC
+  rw [eN]
+  refine WP.seq (WP.mono (ptOp_ok hc hN (p₁ := RX) (p₂ := RY) (p₃ := RZ) (q₁ := TX) (q₂ := TY)
+    (q₃ := TZ) (o₁ := DX) (o₂ := DY) (o₃ := DZ) (by decide) (by decide) (by decide) ctx₉.scr
+    ctx₉.mp (ctx₉.lt8 hc ltR₉ ltT₉)) fun s₁₀ ⟨K₁₀, U₁₀, L₁₀, V₁₀⟩ => ?_)
+  obtain ctx₁₀ := ctx₉.next hc K₁₀ edi_clob esp_clob U₁₀ (winW_pW h7 (by decide))
+  obtain repD₁₀ : Rep c.C (fv c base s₁₀ DX) (fv c base s₁₀ DY) (fv c base s₁₀ DZ) (mul (swPre k i) P) := by
+    rw [← swin_pt hC hP k i, hm]
+    have := hadd (fun y => tmv c.C c.n base s₉ (rcbσ c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ)
+      (c.pt DX DY DZ) y)) (onCurve_dblPt hC _ hQ) hTon (ctx₉.fv_ap hc) (ctx₉.fv_b3p hc)
+      nofun repR₉ repT₉
+    simp only [Prod.mk.injEq] at V₁₀
+    rw [V₁₀.1, V₁₀.2.1, V₁₀.2.2]; exact this
+  -- `R = D`.
+  refine WP.block_append (WP.mono (copySlots_ok hc ctx₁₀.scr (o₁ := RX) (o₂ := RY) (o₃ := RZ)
+    (a₁ := DX) (a₂ := DY) (a₃ := DZ) (by decide) (by decide) (by decide))
+    fun s₁₁ ⟨ex₁₁, ey₁₁, ez₁₁, k₁₁, U₁₁⟩ => ?_)
+  obtain ctx₁₁ := ctx₁₀.next hc k₁₁ (by decide) (by decide) U₁₁ (winW_slW h7 (by decide))
+  obtain g₁₁ : s₁₁.gpr .esi = BitVec.ofNat 32 i := by
+    rw [k₁₁.1 _ (by decide), K₁₀.1 _ esi_clob, k₉.1 _ (by decide), k₈.1 _ (by decide), g₇]
+  have U₆' := unch_winWr_slW (c := c) (base := base) (by decide) U₆
+  have U₇' := unch_winWr_pW (c := c) (base := base) (by decide) U₇
+  have U₉' := unch_winWr_slW (c := c) (base := base) (by decide) U₉
+  have U₁₀' := unch_winWr_pW (c := c) (base := base) (by decide) U₁₀
+  have U₁₁' := unch_winWr_slW (c := c) (base := base) (by decide) U₁₁
+  rw [← m₅] at U₄'
+  rw [← m₈] at U₇'
+  refine wp_testCounter (by omega_using [hjn, hJ, hlen, h7]) g₁₁ fun s₁₂ f₁₂ z₁₂ =>
+    WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, z₁₂⟩
+  · exact ctx₁₁.same hc (f₁₂.keeps []) (by decide) (by decide) f₁₂.mem
+  · rw [f₁₂.gpr, g₁₁]
+  · exact (((((((((((I.keep.trans (k₁.mono (by decide))).trans (K₂.mono esi_powClob)).trans
+      (k₃.keeps.mono (by decide))).trans (k₄.mono (by decide))).trans (k₅.keeps.mono (by decide))).trans
+      (k₆.mono (by decide))).trans (K₇.mono esi_powClob)).trans (k₈.keeps.mono (by decide))).trans
+      (k₉.mono (by decide))).trans (K₁₀.mono esi_powClob)).trans (k₁₁.mono (by decide))).trans (f₁₂.keeps _)
+  · rw [f₁₂.mem]
+    exact unch_winWr_trans I.unch (unch_winWr_trans U₂' (unch_winWr_trans U₄' (unch_winWr_trans U₆'
+      (unch_winWr_trans U₇' (unch_winWr_trans U₉' (unch_winWr_trans U₁₀' U₁₁'))))))
+  · rw [f₁₂.mem]
+    exact ((((((tbl₂.unch h7 U₄' hfit (below (by decide))).unch h7 U₆' hfit (below (by decide))).unch h7
+      U₇' hfit (below (by decide))).unch h7 U₉' hfit (below (by decide))).unch h7 U₁₀' hfit
+      (below (by decide))).unch h7 U₁₁' hfit (below (by decide)))
+  · intro i hi
+    show wordsVal s₁₂.mem _ _ _ < _
+    rw [f₁₂.mem]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl
+    · exact lt_of_eq_of_lt ex₁₁ (L₁₀ _ (by decide))
+    · exact lt_of_eq_of_lt ey₁₁ (L₁₀ _ (by decide))
+    · exact lt_of_eq_of_lt ez₁₁ (L₁₀ _ (by decide))
+  · show Rep _ (toM _ _ (wordsVal s₁₂.mem _ _ _)) (toM _ _ (wordsVal s₁₂.mem _ _ _))
+      (toM _ _ (wordsVal s₁₂.mem _ _ _)) _
+    rw [f₁₂.mem]
+    show Rep _ (toM _ _ (sv c base s₁₁ RX)) (toM _ _ (sv c base s₁₁ RY)) (toM _ _ (sv c base s₁₁ RZ)) _
+    rw [ex₁₁, ey₁₁, ez₁₁]; exact repD₁₀
+/-! SW6-END -/
+
 /-! SWIN-END -/
 
 end VG.Proof.Ecdsa.X86
