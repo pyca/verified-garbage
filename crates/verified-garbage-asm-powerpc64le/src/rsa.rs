@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -88,13 +90,15 @@ bne %cr0, 216b
 bne %cr0, 217b
 .base64 "AQBgOA=="
 27:
-.base64 "gADV6YgA9emQABXqmAA16qAAVeqoAHXqsACV6rgA1erAALXqIACATg==""#,
+.base64 "gADV6YgA9emQABXqmAA16qAAVeqoAHXqsACV6rgA1erAALXqAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
     )
 }
 
 /// The values of an RSA private key that its operations need and that do not depend on their input, so that they are computed once per key rather than once per operation: what the `_precomputed` private-key operations take. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, and the factors `p` (`p_len` bytes) and `q` (`q_len` bytes), most significant first, writes to `pre`, least significant word first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the key is checked when it is loaded (`vg_rsa_check_key`).
 ///
 /// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -615,7 +619,7 @@ bne %cr0, 2133b
 2134:
 .base64 "AAAO6DjQAHwAAA74CADOOf//MToAADEo"
 bne %cr0, 2134b
-.base64 "AQBgODjQY3xwANfpeAD36YAAF+qIADfqkABX6pgAd+qgAJfqqAC36rAA1+q4ABfrwAA368gAV+vQAHfr2ACX6+AAt+voANfr8AD36/gA9+ogAIBO""#,
+.base64 "AQBgODjQY3xwANfpeAD36YAAF+qIADfqkABX6pgAd+qgAJfqqAC36rAA1+q4ABfrwAA368gAV+vQAHfr2ACX6+AAt+voANfr8AD36/gA9+oAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShEgAIBO""#,
         vg_rsa_mont_kernel = sym super::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }
@@ -623,6 +627,8 @@ bne %cr0, 2134b
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_checked` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1466,13 +1472,15 @@ bne %cr0, 2227b
 bne %cr0, 2228b
 .base64 "mAB/gA=="
 25:
-.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAL/rYADf62gA/+sgAIBO""#,
+.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAL/rYADf62gA/+sAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
     )
 }
 
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2792,13 +2800,15 @@ b 22f
 21:
 .base64 "AABgOA=="
 22:
-.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAF/rYAC/62gA3+twAP/rIACATg==""#,
+.base64 "AADf6QgA/+kQAB/qGAA/6iAAX+ooAH/qMACf6jgAv+pAAN/qSAD/6lAAH+tYAF/rYAC/62gA3+twAP/rAAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
     )
 }
 
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.2's deterministic method. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or the method fails. It finds the factors of a valid two-prime key whenever `K (p + q − 1) ≤ n` for `a = K φ(n)` (Appendix C.2's step 1): with the least private exponent, whenever the smaller prime exceeds `e²`, and in practice for every key whose primes are not tiny.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3848,7 +3858,7 @@ bne %cr0, 2286b
 bne %cr0, 2287b
 .base64 "mAB/gA=="
 25:
-.base64 "LABgOdLxa30U+mt9oABrOQAAy+kIAOvpEAAL6hgAK+ogAEvqKABr6jAAi+o4AKvqQADL6kgA6+pQAAvrWAAr62AAS+toAGvrcACL63gAq+uAAMvriADr6yAAgE4=""#,
+.base64 "LABgOdLxa30U+mt9oABrOQAAy+kIAOvpEAAL6hgAK+ogAEvqKABr6jAAi+o4AKvqQADL6kgA6+pQAAvrWAAr62AAS+toAGvrcACL63gAq+uAAMvriADr6wAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
     )
 }
 

@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
-public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Generate.Verified
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.IbInverse
-public import VerifiedGarbage.Proof.Divstep.TcSBounds
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on PPC64LE -/
@@ -18,16 +12,11 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 namespace VG.Artifacts.RsaKeyGen.PPC64LE
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target {
-    code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
-    verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }]
+  Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target Proof.RsaKeyGen.PPC64LE.Scrub.keyInitReg]
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
-    Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
-      suffix := v.suffix
-      code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
-      verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }])
+    Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target (Proof.RsaKeyGen.PPC64LE.Scrub.keySearchReg v)])
 
 end VG.Artifacts.RsaKeyGen.PPC64LE
