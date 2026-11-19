@@ -1345,32 +1345,46 @@ vg_chacha20_poly1305_seal_gather_ssse3:
 22:
 	mov edi, DWORD PTR [esi]
 	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
+	shr ecx, 4
 	cmp ecx, 0
 	je 23f
 25:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
+	movdqu xmm0, XMMWORD PTR [edi]
+	movdqu XMMWORD PTR [edx], xmm0
+	add edi, 16
+	add edx, 16
 	sub ecx, 1
 	jne 25b
 	jmp 24f
 23:
 24:
 	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
 	and ecx, 3
 	je 26f
 28:
-	movzx eax, BYTE PTR [edi]
-	mov BYTE PTR [edx], al
-	add edi, 1
-	add edx, 1
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
 	sub ecx, 1
 	jne 28b
 	jmp 27f
 26:
 27:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 29f
+211:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 211b
+	jmp 210f
+29:
+210:
 	add esi, 8
 	sub ebx, 1
 	jne 22b
@@ -2726,32 +2740,46 @@ vg_chacha20_poly1305_seal_gather:
 22:
 	mov edi, DWORD PTR [esi]
 	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
+	shr ecx, 4
 	cmp ecx, 0
 	je 23f
 25:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
+	movdqu xmm0, XMMWORD PTR [edi]
+	movdqu XMMWORD PTR [edx], xmm0
+	add edi, 16
+	add edx, 16
 	sub ecx, 1
 	jne 25b
 	jmp 24f
 23:
 24:
 	mov ecx, DWORD PTR [esi+4]
+	shr ecx, 2
 	and ecx, 3
 	je 26f
 28:
-	movzx eax, BYTE PTR [edi]
-	mov BYTE PTR [edx], al
-	add edi, 1
-	add edx, 1
+	mov eax, DWORD PTR [edi]
+	mov DWORD PTR [edx], eax
+	add edi, 4
+	add edx, 4
 	sub ecx, 1
 	jne 28b
 	jmp 27f
 26:
 27:
+	mov ecx, DWORD PTR [esi+4]
+	and ecx, 3
+	je 29f
+211:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 211b
+	jmp 210f
+29:
+210:
 	add esi, 8
 	sub ebx, 1
 	jne 22b
