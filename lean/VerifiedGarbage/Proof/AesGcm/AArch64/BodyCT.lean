@@ -114,8 +114,8 @@ theorem padArgs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {
 
 /-- `padArgs_relG` in place, with what `crypt` needs. -/
 theorem padArgs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16)
     {rest : Prog isa}
     (hr : ∀ τ₁ τ₂, CrIn Wn Ctx St W SP k₁ R P D n τ₁ → CrIn Wn Ctx St W SP k₂ R P D n τ₂ →
       RelCT isa (Eq2 τ₁ τ₂) rest TT) :
@@ -146,8 +146,8 @@ theorem textAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
 
 /-- `encBody` in two runs. -/
 theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
     RelCT isa (Eq2 σ₁ σ₂) (encBody v.callees) TT := by
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
   have k28₁ : k₁ .x28 = D := (h₁.kept .x28 (by decide)).symm.trans h₁.x28

@@ -108,7 +108,7 @@ theorem crEntry_ok {Wn : Nat} {s : State} {Ctx St D W : Addr} {n : Nat} (hCtx : 
 /-- What a run of `encrypt` or `decrypt` leaves, for the message `a`, `c` so far. -/
 def CrRun (s : State) (a c : List Byte) (icb : Block) (e out : List Byte) (s' : State) : Prop :=
   GprAbi s s' ∧
-  Frame (savedR (s.gpr .x7) :: bodyFrame (s.gpr .x2) (s.gpr .x7) (s.gpr .x5) (s.gpr .x6).toNat) s.mem s'.mem ∧
+  Frame (savedR (s.gpr .x7) :: bodyFrame Wn (s.gpr .x2) (s.gpr .x7) (s.gpr .x5) (s.gpr .x6).toNat) s.mem s'.mem ∧
   (Absorbed s.mem (s.gpr .x2 + BitVec.ofNat 64 16) (s.gpr .x2 + BitVec.ofNat 64 32)
       (Spec.Gcm.ctxH s.mem (s.gpr .x0)) (ghashInput a c) →
     Ctr s.mem (s.gpr .x2 + BitVec.ofNat 64 48) (s.gpr .x2 + BitVec.ofNat 64 64)
@@ -127,7 +127,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn
     (hE : ∀ m, Frame [savedR (s.gpr .x7)] s.mem m → E m = E s.mem)
     (hO : ∀ m, Frame [savedR (s.gpr .x7)] s.mem m → O m = O s.mem)
     (hb : ∀ {k : Reg → BitVec 64} {s₁ : State}, Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) →
-      BodyIn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp k (s.gpr .x1).toNat (s.gpr .x6).toNat (s.gpr .x4).toNat
+      BodyIn Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp k (s.gpr .x1).toNat (s.gpr .x6).toNat (s.gpr .x4).toNat
         (s.gpr .x5) a c (Spec.Gcm.ctxH s.mem (s.gpr .x0)) s₁ →
       WP isa body s₁ (BodyOut Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp k (s.gpr .x1).toNat (s.gpr .x6).toNat
         (s.gpr .x4).toNat (s.gpr .x5) a c (Spec.Gcm.ctxH s.mem (s.gpr .x0)) icb (E s₁.mem) (O s₁.mem) s₁.mem))
@@ -160,7 +160,7 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn
   have hdat : DataW Wn Ctx St W s₁ D n :=
     ⟨⟨covers_left (by rw [wr₁, hwr]; exact covers_of_mem (by simp)), hlt, wd, dsd.symm, ddw⟩,
       by rw [wr₁, hwr]; exact covers_of_mem (by simp), dcd⟩
-  have hIn : BodyIn Ctx St W s.sp s₁.gpr R n P D a c (Spec.Gcm.ctxH s.mem Ctx) s₁ :=
+  have hIn : BodyIn Wn Ctx St W s.sp s₁.gpr R n P D a c (Spec.Gcm.ctxH s.mem Ctx) s₁ :=
     ⟨he₁, hk₁, x22₁, hRR ▸ hR, by rw [x25₁, ha], x26₁, x27₁, x28₁, hc, hPlt, hdat, hH⟩
   refine WP.seq (WP.mono (hb L hIn) fun s₂ h₂ => ?_)
   have hsv : SavedAt s₂.mem W s := by
@@ -204,7 +204,7 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
 /-- `J₀` is apart from what a run of `encrypt` or `decrypt` writes. -/
 theorem st0_crRun {Wn : Nat} {Ctx St W D : Addr} {n : Nat} (L : Lay Wn Ctx St W) (hd : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩) :
-    ∀ r ∈ savedR W :: bodyFrame St W D n, (⟨St, 16⟩ : Region).Disjoint r := by
+    ∀ r ∈ savedR W :: bodyFrame Wn St W D n, (⟨St, 16⟩ : Region).Disjoint r := by
   obtain hWn := L.hWn
   intro r hr
   rcases List.mem_cons.mp hr with h | hr
@@ -382,15 +382,15 @@ theorem decAbs_relG (v : GcmImpl) {to : Bool} {k₁ k₂ : Reg → BitVec 64} {R
 
 /-- `decAbs` in two runs. -/
 theorem decAbs_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
     RelCT isa (Eq2 σ₁ σ₂) (decAbs v.callees) TT :=
   decAbs_relG L v h₁ h₂ hq
 
 /-- `decBody` in two runs. -/
 theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
-    (h₂ : BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
+    {H₁ H₂ : Block} {σ₁ σ₂ : State} (h₁ : BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ σ₁)
+    (h₂ : BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ σ₂) (hq : a₁.length % 16 = a₂.length % 16) :
     RelCT isa (Eq2 σ₁ σ₂) (decBody v.callees) TT := by
   have k22₁ : k₁ .x22 = BitVec.ofNat 64 R := (h₁.kept .x22 (by decide)).symm.trans h₁.x22
   have k26₁ : k₁ .x26 = BitVec.ofNat 64 n := (h₁.kept .x26 (by decide)).symm.trans h₁.x26
@@ -418,11 +418,11 @@ end
 theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : streamCryptPre (Wn := Wn) σ₁) (h₂ : streamCryptPre (Wn := Wn) σ₂)
     (hq : streamCryptPub σ₁ σ₂)
     (hrel : ∀ {Ctx St W SP : Addr} {k₁ k₂ : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a₁ a₂ c₁ c₂ : List Byte}
-      {H₁ H₂ : Block} {τ₁ τ₂ : State}, Lay Wn Ctx St W → BodyIn Ctx St W SP k₁ R n P D a₁ c₁ H₁ τ₁ →
-      BodyIn Ctx St W SP k₂ R n P D a₂ c₂ H₂ τ₂ → a₁.length % 16 = a₂.length % 16 →
+      {H₁ H₂ : Block} {τ₁ τ₂ : State}, Lay Wn Ctx St W → BodyIn Wn Ctx St W SP k₁ R n P D a₁ c₁ H₁ τ₁ →
+      BodyIn Wn Ctx St W SP k₂ R n P D a₂ c₂ H₂ τ₂ → a₁.length % 16 = a₂.length % 16 →
       RelCT isa (Eq2 τ₁ τ₂) body TT)
     (hw : ∀ {Ctx St W SP : Addr} {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-      {τ : State}, Lay Wn Ctx St W → BodyIn Ctx St W SP k R n P D a c H τ →
+      {τ : State}, Lay Wn Ctx St W → BodyIn Wn Ctx St W SP k R n P D a c H τ →
       WP isa body τ fun τ' => Env Wn Ctx St W SP τ')
     (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block crEntry) (.seq body (.block restore))) TT := by
@@ -446,7 +446,7 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
         σ'.gpr .x25 = BitVec.ofNat 64 ((σ.gpr .x3).toNat % 16) ∧ σ'.gpr .x26 = BitVec.ofNat 64 n ∧
         σ'.gpr .x27 = BitVec.ofNat 64 (σ.gpr .x4).toNat ∧ σ'.gpr .x28 = D ∧ σ'.mem = savedMem σ.mem W σ.gpr ∧
         σ'.rd = σ.rd ∧ σ'.wr = σ.wr) :
-      BodyIn Ctx St W σ.sp σ'.gpr (σ.gpr .x1).toNat n (σ.gpr .x4).toNat D
+      BodyIn Wn Ctx St W σ.sp σ'.gpr (σ.gpr .x1).toNat n (σ.gpr .x4).toNat D
         (Spec.Gcm.zeros ((σ.gpr .x3).toNat % 16)) (Spec.Gcm.zeros (σ.gpr .x4).toNat)
         (blockAt σ'.mem (Ctx + BitVec.ofNat 64 240)) σ' := by
     obtain ⟨he, hk, x22, x25, x26, x27, x28, _, rd, wr⟩ := h

@@ -102,7 +102,7 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs)
 /-- The regions `openMain` writes, but the data. -/
 abbrev omFrame (W : Addr) : List Region :=
   frontFrame (W + BitVec.ofNat 64 16) W ++ (tFrame (W + BitVec.ofNat 64 16) W 16 ++
-    absFrame (W + BitVec.ofNat 64 16) W 16) ++ finFrame (W + BitVec.ofNat 64 16) W 112 ++
+    absFrame (W + BitVec.ofNat 64 16) W 16) ++ finFrame Wn (W + BitVec.ofNat 64 16) W 112 ++
     [⟨W + BitVec.ofNat 64 256, 32⟩]
 
 theorem omFrame_work {Wn : Nat} (W : Addr) : ∀ r ∈ omFrame W, Region.Sub r (workR Wn W) := by
@@ -456,7 +456,7 @@ theorem openMainAG_ok {Wn : Nat} (v : GcmImpl) (to : Bool) {Ctx W SP D O Np A : 
       rcases List.mem_append.mp hr with hr | hr
       · exact (acc_tFrame_free L r hr).sub_left (Region.sub_prefix (by decide))
       · exact (ctr_absFrame L r hr).sub_left (Region.sub_prefix (by decide))
-    obtain d₂ : ∀ r ∈ finFrame (W + BitVec.ofNat 64 16) W 112,
+    obtain d₂ : ∀ r ∈ finFrame Wn (W + BitVec.ofNat 64 16) W 112,
         (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact (acc_tFrame_free L r hr).sub_left (Region.sub_prefix (by decide))

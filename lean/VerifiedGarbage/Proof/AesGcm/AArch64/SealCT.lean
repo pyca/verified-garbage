@@ -86,7 +86,7 @@ theorem finBody_env {Wn : Nat} (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Wn Ct
     (h22 : τ.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h26 : τ.gpr .x26 = BitVec.ofNat 64 A) (h27 : τ.gpr .x27 = BitVec.ofNat 64 P) (hP : P < 2 ^ 64) :
     WP isa (finBody v.callees o) τ fun τ' => Env Wn Ctx St W SP τ' ∧ Kept k τ' ∧
-      Frame (finFrame St W o) τ.mem τ'.mem :=
+      Frame (finFrame Wn St W o) τ.mem τ'.mem :=
   WP.mono (finBody_ok L v ho (a := Spec.Gcm.zeros A) (c := Spec.Gcm.zeros P)
     (H := blockAt τ.mem (Ctx + BitVec.ofNat 64 240)) he hk h22 hR
     (by rw [Proof.Gcm.length_zeros]; exact h26) (by rw [Proof.Gcm.length_zeros]; exact h27)
@@ -580,7 +580,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   obtain mkB : ∀ {σ τ u : State}, OneFacts Wn σ σ₁ (w + 1) w → τ.gpr .x22 = σ₁.gpr .x1 → τ.wr = σ.wr →
       FrontOut Wn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      BodyIn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
+      BodyIn Wn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp u.gpr (σ₁.gpr .x1).toNat
         (σ₁.gpr .x7).toNat 0 (σ₁.gpr .x6) (Spec.Gcm.zeros (σ₁.gpr .x5).toNat) []
         (blockAt u.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240)) u := fun f x22 wr o =>
     ⟨o.env, fun _ _ => rfl, by rw [o.x22, x22, ofNat_toNat'], hRb, by rw [o.x25, Proof.Gcm.length_zeros],
@@ -594,7 +594,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   obtain sl : ∀ {σ τ u ω : State}, OneFacts Wn σ σ₁ (w + 1) w →
       FrontOut Wn (σ₁.gpr .x0) (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) σ₁.sp τ.gpr (σ₁.gpr .x6)
         (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat τ u →
-      Frame (bodyFrame (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
+      Frame (bodyFrame Wn (stackArg σ₁ w + BitVec.ofNat 64 16) (stackArg σ₁ w) (σ₁.gpr .x6) (σ₁.gpr .x7).toNat)
         u.mem ω.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
       ω.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ w + BitVec.ofNat 64 d) 64 :=
     fun _ o fb d h₁ h₂ => by

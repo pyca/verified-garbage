@@ -61,7 +61,7 @@ theorem frontFrame_work {Wn : Nat} (W : Addr) : ∀ r ∈ frontFrame (W + BitVec
   · exact Lay.wSub (by decide)
 
 theorem finFrame_work {Wn : Nat} (W : Addr) {o : Nat} (ho : o = 0 ∨ o = 112) :
-    ∀ r ∈ finFrame (W + BitVec.ofNat 64 16) W o, Region.Sub r (workR Wn W) := by
+    ∀ r ∈ finFrame Wn (W + BitVec.ofNat 64 16) W o, Region.Sub r (workR Wn W) := by
   intro r hr
   simp only [finFrame, tFrame, tagFrame, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
@@ -76,7 +76,7 @@ theorem finFrame_work {Wn : Nat} (W : Addr) {o : Nat} (ho : o = 0 ∨ o = 112) :
 
 /-- The regions a body writes: in `work`, or the data. -/
 theorem bodyFrame_work {Wn : Nat} (W D : Addr) (n : Nat) :
-    ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, Region.Sub r (workR Wn W) ∨ r = ⟨D, n⟩ := by
+    ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, Region.Sub r (workR Wn W) ∨ r = ⟨D, n⟩ := by
   intro r hr
   simp only [bodyFrame, tFrame, crFrame, absFrame, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
@@ -92,7 +92,7 @@ theorem bodyFrame_work {Wn : Nat} (W D : Addr) (n : Nat) :
   · exact .inl (Lay.wSub (by decide))
 
 theorem keep_body {Wn : Nat} {W D : Addr} {n : Nat} {X : Region} (hX : X.Disjoint (workR Wn W)) (hD : X.Disjoint ⟨D, n⟩) :
-    ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, X.Disjoint r := fun r hr => by
+    ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, X.Disjoint r := fun r hr => by
   rcases bodyFrame_work W D n r hr with h | rfl
   · exact hX.sub_right h
   · exact hD
@@ -171,7 +171,7 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
 theorem slots_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W)
     (hd : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) :
-    ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
+    ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
   obtain hWn := L.hWn
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -190,7 +190,7 @@ theorem slots_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W
 
 theorem saved_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W)
     (hd : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) :
-    ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, (savedR W).Disjoint r := by
+    ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, (savedR W).Disjoint r := by
   obtain hWn := L.hWn
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -205,7 +205,7 @@ theorem saved_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W
 
 theorem st0_bodyFrame {Wn : Nat} {Ctx W D : Addr} {n : Nat} (L : Lay Wn Ctx (W + BitVec.ofNat 64 16) W)
     (hd : (⟨D, n⟩ : Region).Disjoint (workR Wn W)) :
-    ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r := by
+    ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r := by
   obtain hWn := L.hWn
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -422,7 +422,7 @@ theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Regi
   obtain hdat₂ : DataW Wn Ctx (W + BitVec.ofNat 64 16) W s₂ D n :=
     ⟨⟨covers_left (by rw [h₂.wr, wr₁]; exact dW), hnlt, wd, ddW.sub_right sub16, ddW⟩,
       by rw [h₂.wr, wr₁]; exact dW, dcd⟩
-  obtain hB : BodyIn Ctx (W + BitVec.ofNat 64 16) W s.sp s₂.gpr R n 0 D (bytesAt s.mem A al) [] (ctxH s.mem Ctx) s₂ :=
+  obtain hB : BodyIn Wn Ctx (W + BitVec.ofNat 64 16) W s.sp s₂.gpr R n 0 D (bytesAt s.mem A al) [] (ctxH s.mem Ctx) s₂ :=
     ⟨h₂.env, fun _ _ => rfl, x22₂, hRb, h₂.x25, h₂.x26, h₂.x27, h₂.x28, rfl, by decide, hdat₂, h₂.hH⟩
   refine WP.seq (WP.mono (WP.with_rdwr (encBody_ok L v hB (inc32 (Spec.Gcm.j0 (ctxH s.mem Ctx)
     (bytesAt s.mem Np nl))))) fun s₃ ⟨h₃, rd₃, wr₃⟩ => ?_)
@@ -442,7 +442,7 @@ theorem sealRest_ok {Wn : Nat} (v : GcmImpl) {w : Nat} {extra extraW : List Regi
   obtain x26₄' : s₄'.gpr .x26 = BitVec.ofNat 64 al := by rw [r₄'.others _ (by decide), x26₄]
   obtain x27₄' : s₄'.gpr .x27 = BitVec.ofNat 64 n := by rw [r₄'.others _ (by decide), x27₄]
   obtain m₄ : s₄'.mem = s₃.mem := by rw [r₄'.mem, r₄.mem]
-  obtain kcd : ∀ r ∈ bodyFrame (W + BitVec.ofNat 64 16) W D n, (⟨Ctx, 256⟩ : Region).Disjoint r :=
+  obtain kcd : ∀ r ∈ bodyFrame Wn (W + BitVec.ofNat 64 16) W D n, (⟨Ctx, 256⟩ : Region).Disjoint r :=
     keep_body dcW dcd
   obtain hc₃ : ciphOf s₃.mem Ctx R = ciphOf s.mem Ctx R := by
     rw [ciph_frame h₃.frame kcd hRb, ciph_frame h₂.frame (keep_of_sub (frontFrame_work W) dcW) hRb,

@@ -168,7 +168,7 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
     have hT₅ : bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) 16 = T := by
       rw [out₅ (hA₄ ha), hc₄, hj₄, ← hT]
     have hW₅ : bytesAt s₅.mem (s.gpr .x7) tl = bytesAt s.mem (s.gpr .x5) tl := by
-      have dW : ∀ r ∈ finFrame (s.gpr .x2) (s.gpr .x7) 112, (⟨s.gpr .x7, tl⟩ : Region).Disjoint r := by
+      have dW : ∀ r ∈ finFrame Wn (s.gpr .x2) (s.gpr .x7) 112, (⟨s.gpr .x7, tl⟩ : Region).Disjoint r := by
         intro r hr
         refine Region.Disjoint.sub_left ?_ (Region.sub_prefix hle)
         have ww : ∀ e j, 16 ≤ e → e + j ≤ Wn →
@@ -189,7 +189,7 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
       rw [bytesAt_frame f₅ dW (by omega_using [htl]), in₄, m₃]
       refine bytesAt_frame fsv (fun r hr => ?_) (by omega_using [htl])
       simp only [List.mem_singleton] at hr; subst hr
-      exact dtw.sub_right (Lay.wSub (by decide))
+      exact dtw.sub_right (Lay.wSub (by omega))
     have hb : (bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) tl = bytesAt s₅.mem (s.gpr .x7) tl) ↔
         T.take tl = bytesAt s.mem (s.gpr .x5) tl := by
       rw [← bytesAt_take _ _ hle, hT₅, hW₅]
