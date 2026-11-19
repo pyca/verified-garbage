@@ -23,9 +23,9 @@ here, for all code. The clearing clears only the volatile registers the code
 may write (`Clear.of`, `Proof/Framework/PPC64LE/Writes.lean`): one it never
 writes holds on return what it held on entry, on which the two runs of
 `NoResidue` agree (`Clear.Keeps`). The code must use no more stack than its contract
-reserves, call indirectly only the functions of its tables of functions,
-whose addresses two runs agree on (`tablesCall`), as on RISC-V, and its
-postcondition read the memory on return only within the buffers (`PostOut`).
+reserves, call indirectly only functions of its tables, whose addresses
+two runs agree on (`tablesCall`), and its postcondition read the memory on
+return only within the buffers (`PostOut`).
 
 A frame's region starts 32 bytes above its stack pointer, past a header no
 frame makes writable, so neither the code nor the clearing can write the
@@ -69,16 +69,6 @@ def _root_.VG.Code.ppc64leDepth : Prog isa → Nat
 
 namespace Scrub
 
-/-- The functions `c` may call indirectly. -/
-def inames : Prog isa → List String
-  | .block _ => []
-  | .seq a b => inames a ++ inames b
-  | .ite _ t e => inames t ++ inames e
-  | .loop b _ => inames b
-  | .call _ b => inames b
-  | .frame _ b _ => inames b
-  | .icall _ n b nx => n :: inames b ++ inames nx
-
 /-- Code without indirect calls (`Code.icall`). -/
 def icallFree : Prog isa → Bool
   | .block _ => true
@@ -89,7 +79,16 @@ def icallFree : Prog isa → Bool
   | .frame _ b _ => icallFree b
   | .icall .. => false
 
-/-- Code without indirect calls calls no function indirectly. -/
+/-- The functions `c` may call indirectly. -/
+def inames : Prog isa → List String
+  | .block _ => []
+  | .seq a b => inames a ++ inames b
+  | .ite _ t e => inames t ++ inames e
+  | .loop b _ => inames b
+  | .call _ b => inames b
+  | .frame _ b _ => inames b
+  | .icall _ n b nx => n :: inames b ++ inames nx
+
 theorem inames_of_icallFree : ∀ {c : Prog isa}, icallFree c = true → inames c = []
   | .block _, _ => rfl
   | .seq a b, h => by
@@ -107,7 +106,7 @@ theorem inames_of_icallFree : ∀ {c : Prog isa}, icallFree c = true → inames 
 def tableFns (ts : List (String × List FnTable)) : List String := ts.flatMap fun t => t.2.flatMap (·.fns)
 
 /-- The code calls indirectly only the functions of the tables `ts`, whose
-addresses two runs agree on (`tables_pub_syms`). -/
+addresses two runs agree on (`tables_pub_syms`), as on RISC-V. -/
 def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
   (inames c).all fun f => decide (f ∈ tableFns ts)
 
@@ -320,15 +319,16 @@ theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t
   | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
   | icallNext _ _ e' => exact icall_trace e'
 
-/-- Two runs of code from states with the same stack pointer, writable
-regions, unknowns and addresses of the functions the code calls indirectly
-(`inames`), whose memories agree outside the
+/-- Two runs of code whose functions called indirectly have the same
+addresses in both (`inames`), from states with the same stack
+pointer, writable regions and unknowns, whose memories agree outside the
 regions `R` and the stack `InZ L T` (`Agr`), and one of whose traces is a
 prefix of the other's continued, have the same trace, and end with the same
 unknowns and memories that agree, if the stack the code's frames use is
 between `L` and `T` and its writable regions are `R`'s or within that stack
-(`WrOk`). -/
-theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak}
+(`WrOk`). The trace says which function each indirect call called, as on
+RISC-V (`RISCV64.Scrub.Exec.unknowns_agree`). -/
+theorem Exec.agreeS {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak}
     (e₁ : Exec isa c s₁ t₁ s₁') :
     ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
       (∀ n ∈ inames c, s₁.syms n = s₂.syms n) → s₁.sp = s₂.sp → s₁.wr = s₂.wr → s₁.unknowns = s₂.unknowns → WrOk R L T s₁.wr →
@@ -351,7 +351,8 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
     cases e₂ with
     | seq a₂ b₂ =>
       rw [List.append_assoc, List.append_assoc] at ht
-      obtain ⟨rfl, hu', hA'⟩ := ih₁ _ _ a₂ (fun n hn => hf n (.inl hn)) hsp hw hu hwr (by omega_using [hL]) hT hA ht
+      obtain ⟨rfl, hu', hA'⟩ := ih₁ _ _ a₂ (fun n hn => hf n (.inl hn)) hsp hw hu hwr
+        (by omega_using [hL]) hT hA ht
       obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
       obtain ⟨-, w₂, p₂⟩ := Exec.rdwr a₂
       obtain ⟨rfl, hu'', hA''⟩ := ih₂ _ _ b₂
@@ -361,23 +362,21 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
       exact ⟨rfl, hu'', hA''⟩
   | iteT _ _ ih =>
     intro _ _ _ r₁ r₂ e₂ hf hsp hw hu hwr hL hT hA ht
-    simp only [inames, List.mem_append] at hf
     simp only [Code.ppc64leDepth] at hL
     cases e₂ with
     | iteT _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu', hA'⟩ := ih _ _ a₂ (fun n hn => hf n (.inl hn)) hsp hw hu hwr (by omega_using [hL]) hT hA ht
+      obtain ⟨rfl, hu', hA'⟩ := ih _ _ a₂ (fun n hn => hf n (List.mem_append_left _ hn)) hsp hw hu hwr (by omega_using [hL]) hT hA ht
       exact ⟨rfl, hu', hA'⟩
     | iteF _ _ => exact absurd ht branch_ne
   | iteF _ _ ih =>
     intro _ _ _ r₁ r₂ e₂ hf hsp hw hu hwr hL hT hA ht
-    simp only [inames, List.mem_append] at hf
     simp only [Code.ppc64leDepth] at hL
     cases e₂ with
     | iteT _ _ => exact absurd ht.symm branch_ne
     | iteF _ a₂ =>
       simp only [List.cons_append, List.cons.injEq, true_and] at ht
-      obtain ⟨rfl, hu', hA'⟩ := ih _ _ a₂ (fun n hn => hf n (.inr hn)) hsp hw hu hwr (by omega_using [hL]) hT hA ht
+      obtain ⟨rfl, hu', hA'⟩ := ih _ _ a₂ (fun n hn => hf n (List.mem_append_right _ hn)) hsp hw hu hwr (by omega_using [hL]) hT hA ht
       exact ⟨rfl, hu', hA'⟩
   | loopExit _ _ ih =>
     intro _ _ _ r₁ r₂ e₂ hf hsp hw hu hwr hL hT hA ht
@@ -419,7 +418,7 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
       rw [ret_eq hr, ret_eq hr₂]
       exact ⟨rfl, hu', hA'⟩
   | @frame i j _ s₀ sf s₂ _ _ hp b₁ hq ih =>
-    intro s₀' _ _ r₁ r₂ e₂ hfs hsp hw hu hwr hL hT hA ht
+    intro s₀' _ _ r₁ r₂ e₂ hy hsp hw hu hwr hL hT hA ht
     simp only [Code.ppc64leDepth] at hL
     cases e₂ with
     | @frame _ _ _ _ sf' s₂' _ _ hp₂ b₂ hq₂ =>
@@ -436,7 +435,7 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
         · exact hwr r hr
       have hfb : frameBytes i ≤ s₀.sp.toNat := by omega_using [hL]
       have hsp' := toNat_sub_ofNat _ _ hfb
-      obtain ⟨rfl, hu', hA'⟩ := ih _ _ b₂ (by rw [push_syms hp, push_syms hp₂]; exact hfs) sp₁ w₁ u₁ hwr₁
+      obtain ⟨rfl, hu', hA'⟩ := ih _ _ b₂ (by rw [push_syms hp, push_syms hp₂]; exact hy) sp₁ w₁ u₁ hwr₁
         (by rw [hsp₁, hsp']; omega_using [hL, hfb]) (by rw [hsp₁, hsp']; omega_using [hT, hfb]) hA₁ ht'
       have hl' : (List.map Leak.addr (isa.addrs j s₂)).length = (List.map Leak.addr (isa.addrs j s₂')).length := by
         simp only [List.length_map, addrs_length j s₂ s₂']
@@ -445,25 +444,25 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
       obtain ⟨-, -, p₂'⟩ := Exec.rdwr b₂
       obtain ⟨q₁, q₂, hA''⟩ := pop_agr hq hq₂ (by rw [p₂, p₂', sp₁]) hu' hA'
       refine ⟨by rw [h₀, h₃], by rw [q₁, q₂, hu'], hA''⟩
-  | @icall i _ _ _ s₀ _ s₂ _ _ hi₁ hc₁ _ hr₁ ih =>
+  | @icall i _ _ _ s₀ _ _ _ _ hi₁ hc₁ _ hr₁ ih =>
     intro s₀' _ _ r₁ r₂ e₂ hf hsp hw hu hwr hL hT hA ht
     have hn := hf _ (List.mem_cons_self ..)
+    simp only [Code.ppc64leDepth] at hL
     cases e₂ with
-    | @icall _ _ _ _ _ _ s₂' _ _ hi₂ hc₂ x₂ hr₂ =>
+    | icall hi₂ hc₂ x₂ hr₂ =>
       simp only [List.append_assoc, List.cons_append] at ht
       have hl : (List.map Leak.addr (isa.addrs i s₀)).length = (List.map Leak.addr (isa.addrs i s₀')).length := by
         simp only [List.length_map, addrs_length i s₀ s₀']
       obtain ⟨h₀, ht'⟩ := List.append_inj ht hl
       simp only [List.cons.injEq] at ht'
       obtain ⟨ha, ht'⟩ := ht'
-      simp only [List.map_nil, List.nil_append, List.append_nil] at ht' ⊢
+      simp only [List.map_nil, List.nil_append] at ht'
       simp only [isa, call, Option.some.injEq] at hc₁ hc₂
       subst hc₁ hc₂
       obtain ⟨rfl, hu', hA'⟩ := ih _ _ x₂ (fun m hm => hf m (by simp [inames, hm])) hsp hw
         (by simp only [hu]) hwr (Nat.le_trans (Nat.add_le_add_left (Nat.le_max_left _ _) _) hL) hT hA ht'
-      refine ⟨by rw [h₀, ha], ?_⟩
       rw [ret_eq hr₁, ret_eq hr₂]
-      exact ⟨hu', hA'⟩
+      exact ⟨by rw [h₀, ha], hu', hA'⟩
     | icallNext hi₂ hne₂ x₂ =>
       exfalso
       obtain ⟨a₂, rest, hi₂', ht₂⟩ := icall_trace x₂
@@ -479,7 +478,7 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
     cases e₂ with
     | icallNext hi₂ hne₂ x₂ =>
       exact ih _ _ x₂ (fun m hm => hf m (List.mem_cons_of_mem _ (List.mem_append_right _ hm))) hsp hw hu
-        hwr (Nat.le_trans (Nat.add_le_add_left (Nat.le_max_right _ _) _) hL) hT hA ht
+        hwr (by simp only [Code.ppc64leDepth] at hL ⊢; omega_using [hL]) hT hA ht
     | icall hi₂ hc₂ x₂ hr₂ =>
       exfalso
       obtain ⟨a₁, rest, hi₁', ht₁⟩ := icall_trace x₁
@@ -490,6 +489,17 @@ theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : S
       simp only [List.cons.injEq, Leak.addr.injEq] at ht
       apply hne₁
       rw [ht.1]; exact (hf _ (List.mem_cons_self ..)).symm
+
+/-- `Exec.agreeS`, for code without indirect calls. -/
+theorem Exec.agree {R : List Region} {L T : Addr} {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak}
+    (e₁ : Exec isa c s₁ t₁ s₁') :
+    icallFree c = true → ∀ {s₂ s₂' : State} {t₂ : List Leak} (r₁ r₂ : List Leak), Exec isa c s₂ t₂ s₂' →
+      s₁.sp = s₂.sp → s₁.wr = s₂.wr → s₁.unknowns = s₂.unknowns → WrOk R L T s₁.wr →
+      L.toNat + c.ppc64leDepth ≤ s₁.sp.toNat → s₁.sp.toNat ≤ T.toNat →
+      Agr R L T s₁.mem s₂.mem → t₁ ++ r₁ = t₂ ++ r₂ →
+      t₁ = t₂ ∧ s₁'.unknowns = s₂'.unknowns ∧ Agr R L T s₁'.mem s₂'.mem :=
+  fun hic _ _ _ r₁ r₂ e₂ => Exec.agreeS e₁ r₁ r₂ e₂ (by simp [inames_of_icallFree hic])
+
 
 /-! ## The clearing's run -/
 
@@ -1495,7 +1505,7 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
   have hL : (s₁.sp - BitVec.ofNat 64 c.ppc64leDepth).toNat = s₁.sp.toNat - c.ppc64leDepth :=
     toNat_sub_ofNat _ _ hD₁
   obtain ⟨-, hwr, -, -, -, -, hsp, -, hm⟩ := ho
-  obtain ⟨-, hU, hA'⟩ := Exec.agree (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
+  obtain ⟨-, hU, hA'⟩ := Exec.agreeS (R := s₁.rd ++ s₁.wr) (L := s₁.sp - BitVec.ofNat 64 c.ppc64leDepth)
     (T := s₁.sp) a₁ [] [] a₂ (hsy _ _ hp) hsp hwr hun (fun r hr => .inl (List.mem_append_right _ hr))
     (by rw [hL]; omega_using [hD₁]) (Nat.le_refl _) (fun x hx _ => hm x hx)
     (by rw [List.append_nil, List.append_nil]; exact (h.2.1) _ _ _ _ _ _ h₁ h₂ hp a₁ a₂)
@@ -1507,10 +1517,6 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
 /-- No modelled instruction writes `r1` but as a frame's push or pop. -/
 theorem spSafe_all (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
   induction c <;> simp_all [Code.all]
-
-/-- The result's width, of `r`'s function. -/
-abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
-  api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
@@ -1532,6 +1538,10 @@ theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnT
   cases ts with
   | nil => simp [tableFns] at hf
   | cons t ts => exact h.2.1 f hf
+
+/-- The result's width, of `r`'s function. -/
+abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+  api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 /-- `r`'s code, scrubbed, is verified against `r`'s contract and returns
 without secret residue. -/
@@ -1579,8 +1589,9 @@ def scrubReg {api : Api} (r : Registration api target)
 
 /-- `r`, returning without secret residue (`scrubReg`) if `scrub`'s side
 conditions hold: its frames use at most `r.stack` bytes, it calls
-indirectly only the functions of its tables (`tablesCall`), and it states
-no `written`; otherwise `r` itself, which then has no proof (`Registration.residue`), as the emitter
+indirectly only functions of its tables (`tablesCall`), and it states no
+`written`; otherwise `r`
+itself, which then has no proof (`Registration.residue`), as the emitter
 allows only of what `ci/residue_allowlist.txt` lists. -/
 def withScrub {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r)) :
     Registration api target :=

@@ -129,8 +129,8 @@ theorem Exec.agreeWiped {R : List Region} {B w : Nat} {r : Reg} {body : Prog isa
     rcases List.mem_cons.mp hq with rfl | hq
     · exact .inr hf
     · exact .inl (hwrR q hq)
-  obtain ⟨-, hU, hAy⟩ := Exec.agree (R := R) (L := L) (T := s₁.sp) b₁ [] [] b₂
-    (fun n hn => by simp [inames, inames_of_icallFree hic] at hn) sp₁ w₁ uk₁ hwrf
+  obtain ⟨-, hU, hAy⟩ := Exec.agree (R := R) (L := L) (T := s₁.sp) b₁
+    (by simp [icallFree, hic]) [] [] b₂ sp₁ w₁ uk₁ hwrf
     (by simp only [Code.ppc64leDepth, hd]; omega_using [hfT, hL, hBs])
     (by omega_using [hfT]) hA₁ (by rw [List.append_nil, List.append_nil, ht'])
   -- The wipe leaves the frame's region zero in each run.
