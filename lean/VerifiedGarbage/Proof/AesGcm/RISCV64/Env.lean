@@ -69,6 +69,9 @@ theorem covers_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r] t
 theorem covers_left {rd wr rs : List Region} (h : Covers rs wr) : Covers rs (rd ++ wr) :=
   fun a n hi => in_left (h a n hi)
 
+theorem covers_appL {rd wr rs : List Region} (h : Covers rs rd) : Covers rs (rd ++ wr) :=
+  fun a n hi => let ⟨r, hr, hc⟩ := h a n hi; ⟨r, List.mem_append_left _ hr, hc⟩
+
 theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
     Covers [⟨p, n⟩] rs := by
   intro a m ⟨r, hr, hc⟩

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3.Instances
+public import VerifiedGarbage.Spec.Zeroize
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -24,6 +25,56 @@ only its 200 bytes.
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Sha3
+
+open VG.Spec.Sha3
+
+/-! ## `update` with its working space an argument
+
+Each target's `update` (`Spec.Sha3.updateApi`) is code written for a working
+space `scratch` that its caller provides (`Impl.Sha3.<Target>.Instances.update`),
+run in a frame of its own on the stack that holds it (`withStackScratch`). Its
+contract is `Spec.Sha3.updateContract` with `scratch` after its parameters
+(`Sig.scratchContract`): nothing calls it but that frame, so it is no `Api`'s.
+-/
+
+/-- `update`'s parameters and `scratch`, 640 bytes. -/
+def updateScratchSig : Sig where
+  params := [("state", .array true .u64 25), ("pos", .int .usize true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 80)]
+  ret := some .usize
+
+/-- `pos < rate`. -/
+def updateScratchPre (rate pb : Nat) : Curry (updateScratchSig.words pb) (Mem → Prop) :=
+  fun _state pos _data _len _scratch _ => pos.toNat < rate
+
+/-- `Spec.Sha3.updatePost`, whatever `scratch` is. -/
+def updateScratchPost (rate pb : Nat) : updateScratchSig.Post pb :=
+  fun state pos data len _scratch m m' ret =>
+    (∀ msg, Repr m state rate msg → pos.toNat = msg.length % rate →
+      Repr m' state rate (msg ++ bytesAt m data len.toNat)) ∧
+    ret.toNat = (pos.toNat + len.toNat) % rate
+
+/-- `updateScratchPre` and `updateScratchPost`, for the rate `rate`. -/
+def updateScratchContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) : Contract M :=
+  updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
+    (post := updateScratchPost rate A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `updateScratchPost`, and each byte of `scratch` on return is unchanged or
+zero (`Spec.Zeroize.scrubbed`): what RISC-V's `update` proves. -/
+def updateScratchScrubbedPost (rate pb : Nat) : updateScratchSig.Post pb :=
+  fun state pos data len scratch m m' ret =>
+    updateScratchPost rate pb state pos data len scratch m m' ret ∧
+      Spec.Zeroize.scrubbed m m' scratch 640
+
+/-- `updateScratchPre` and `updateScratchScrubbedPost`, for the rate `rate`. -/
+def updateScratchScrubbedContract {M : ISA} (A : Abi M) (rate : Nat) (stack : Nat := 0) :
+    Contract M :=
+  updateScratchSig.contract A (pre := updateScratchPre rate A.ptrBits)
+    (post := updateScratchScrubbedPost rate A.ptrBits) (writeArgs := true) (stack := stack)
+
+end VG.Proof.Sha3
 
 namespace VG.Proof.Sha3.Instances
 

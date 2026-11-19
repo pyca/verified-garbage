@@ -146,18 +146,18 @@ theorem update_verified' {rate : Nat} (hr : rate ∈ rates) :
     exact ⟨p1, trivial, p2, p3, p4, p5, p6⟩
 
 theorem update_verified {rate : Nat} (hr : rate ∈ rates) :
-    Verified X86_64.target (update rate) (Spec.Sha3.updateContract X86_64.abi rate 8) := by
+    Verified X86_64.target (update rate) (Proof.Sha3.updateScratchContract X86_64.abi rate 8) := by
   obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine (update_verified' hr).of_implies
-    { pre := by sig_implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86_64, X86_64.abi, X86_64.argRegs]
-      post := by sig_implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86_64, X86_64.abi, X86_64.argRegs]
-      pub := by sig_implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateX86_64, X86_64.abi, X86_64.argRegs]
+    { pre := by sig_implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86_64, X86_64.abi, X86_64.argRegs]
+      post := by sig_implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86_64, X86_64.abi, X86_64.argRegs]
+      pub := by sig_implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateX86_64, X86_64.abi, X86_64.argRegs]
       sat := ?_ }
   refine ⟨updateSat, ?_⟩
-  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
+  sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost,
     X86_64.abi, X86_64.argRegs, updateSat, Stream.Absorb.sat]
   sig_and_intros
   all_goals first
@@ -1224,23 +1224,23 @@ theorem finalize_sha3_512 :
       using { finSat 64 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 64⟩] })
 
 theorem update_sha3_224 :
-    Verified X86_64.target (update Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.hashSha3_224.rate 8) :=
+    Verified X86_64.target (update Spec.Sha3.hashSha3_224.rate) (Proof.Sha3.updateScratchContract X86_64.abi Spec.Sha3.hashSha3_224.rate 8) :=
   update_verified (by decide)
 
 theorem update_sha3_256 :
-    Verified X86_64.target (update Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.hashSha3_256.rate 8) :=
+    Verified X86_64.target (update Spec.Sha3.hashSha3_256.rate) (Proof.Sha3.updateScratchContract X86_64.abi Spec.Sha3.hashSha3_256.rate 8) :=
   update_verified (by decide)
 
 theorem update_sha3_384 :
-    Verified X86_64.target (update Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.hashSha3_384.rate 8) :=
+    Verified X86_64.target (update Spec.Sha3.hashSha3_384.rate) (Proof.Sha3.updateScratchContract X86_64.abi Spec.Sha3.hashSha3_384.rate 8) :=
   update_verified (by decide)
 
 theorem update_sha3_512 :
-    Verified X86_64.target (update Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.hashSha3_512.rate 8) :=
+    Verified X86_64.target (update Spec.Sha3.hashSha3_512.rate) (Proof.Sha3.updateScratchContract X86_64.abi Spec.Sha3.hashSha3_512.rate 8) :=
   update_verified (by decide)
 
 theorem update_shake128 :
-    Verified X86_64.target (update Spec.Sha3.xofShake128.rate) (Spec.Sha3.updateContract X86_64.abi Spec.Sha3.xofShake128.rate 8) :=
+    Verified X86_64.target (update Spec.Sha3.xofShake128.rate) (Proof.Sha3.updateScratchContract X86_64.abi Spec.Sha3.xofShake128.rate 8) :=
   update_verified (by decide)
 
 theorem finalize_shake128 :

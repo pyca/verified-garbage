@@ -140,18 +140,18 @@ theorem update_verified' {rate : Nat} (hr : rate ∈ rates) :
     exact ⟨p1, trivial, p2, p3, p4, p5, p6⟩
 
 theorem update_verified {rate : Nat} (hr : rate ∈ rates) :
-    Verified PPC64LE.target (update rate) (Spec.Sha3.updateContract PPC64LE.abi rate 48) := by
+    Verified PPC64LE.target (update rate) (Proof.Sha3.updateScratchContract PPC64LE.abi rate 48) := by
   obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine (update_verified' hr).of_implies
-    { pre := by sig_implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      post := by sig_implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
-      pub := by sig_implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
+    { pre := by sig_implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
+      post := by sig_implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
+      pub := by sig_implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updatePPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       sat := ?_ }
   refine ⟨updateSat, ?_⟩
-  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
+  sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost,
     PPC64LE.abi, PPC64LE.argRegs, updateSat, Stream.absorbSat]
   sig_and_intros
   all_goals first
@@ -872,7 +872,7 @@ macro "fin_ct" : term => `(finBody_ct (by decide) (by decide) (by taint_decide) 
   (by taint_decide))
 
 theorem update_sha3_224 :
-    Verified PPC64LE.target (update Spec.Sha3.hashSha3_224.rate) (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_224.rate 48) :=
+    Verified PPC64LE.target (update Spec.Sha3.hashSha3_224.rate) (Proof.Sha3.updateScratchContract PPC64LE.abi Spec.Sha3.hashSha3_224.rate 48) :=
   update_verified (by decide)
 
 theorem finalize_sha3_224 :
@@ -888,7 +888,7 @@ theorem finalize_sha3_224 :
       using { finSat 28 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 28⟩] })
 
 theorem update_sha3_256 :
-    Verified PPC64LE.target (update Spec.Sha3.hashSha3_256.rate) (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_256.rate 48) :=
+    Verified PPC64LE.target (update Spec.Sha3.hashSha3_256.rate) (Proof.Sha3.updateScratchContract PPC64LE.abi Spec.Sha3.hashSha3_256.rate 48) :=
   update_verified (by decide)
 
 theorem finalize_sha3_256 :
@@ -904,7 +904,7 @@ theorem finalize_sha3_256 :
       using { finSat 32 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 32⟩] })
 
 theorem update_sha3_384 :
-    Verified PPC64LE.target (update Spec.Sha3.hashSha3_384.rate) (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_384.rate 48) :=
+    Verified PPC64LE.target (update Spec.Sha3.hashSha3_384.rate) (Proof.Sha3.updateScratchContract PPC64LE.abi Spec.Sha3.hashSha3_384.rate 48) :=
   update_verified (by decide)
 
 theorem finalize_sha3_384 :
@@ -920,7 +920,7 @@ theorem finalize_sha3_384 :
       using { finSat 48 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 48⟩] })
 
 theorem update_sha3_512 :
-    Verified PPC64LE.target (update Spec.Sha3.hashSha3_512.rate) (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_512.rate 48) :=
+    Verified PPC64LE.target (update Spec.Sha3.hashSha3_512.rate) (Proof.Sha3.updateScratchContract PPC64LE.abi Spec.Sha3.hashSha3_512.rate 48) :=
   update_verified (by decide)
 
 theorem finalize_sha3_512 :
@@ -936,7 +936,7 @@ theorem finalize_sha3_512 :
       using { finSat 64 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 64⟩] })
 
 theorem update_shake128 :
-    Verified PPC64LE.target (update Spec.Sha3.xofShake128.rate) (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.xofShake128.rate 48) :=
+    Verified PPC64LE.target (update Spec.Sha3.xofShake128.rate) (Proof.Sha3.updateScratchContract PPC64LE.abi Spec.Sha3.xofShake128.rate 48) :=
   update_verified (by decide)
 
 theorem finalize_shake128 :

@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_sha3_224_absorb:
+vg_sha3_224_update:
 	.option push
 	.option arch, +m, +c
 	addi a4, a3, 0
@@ -298,7 +298,7 @@ vg_sha3_224_finalize:
 	ret
 	.option pop
 
-vg_sha3_256_absorb:
+vg_sha3_256_update:
 	.option push
 	.option arch, +m, +c
 	addi a4, a3, 0
@@ -592,7 +592,7 @@ vg_sha3_256_finalize:
 	ret
 	.option pop
 
-vg_sha3_384_absorb:
+vg_sha3_384_update:
 	.option push
 	.option arch, +m, +c
 	addi a4, a3, 0
@@ -886,7 +886,7 @@ vg_sha3_384_finalize:
 	ret
 	.option pop
 
-vg_sha3_512_absorb:
+vg_sha3_512_update:
 	.option push
 	.option arch, +m, +c
 	addi a4, a3, 0
@@ -1180,7 +1180,7 @@ vg_sha3_512_finalize:
 	ret
 	.option pop
 
-vg_shake128_absorb:
+vg_shake128_update:
 	.option push
 	.option arch, +m, +c
 	addi a4, a3, 0

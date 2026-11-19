@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_sha3_224_absorb:
+vg_sha3_224_update:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -257,7 +257,7 @@ vg_sha3_224_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_256_absorb:
+vg_sha3_256_update:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -510,7 +510,7 @@ vg_sha3_256_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_384_absorb:
+vg_sha3_384_update:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -763,7 +763,7 @@ vg_sha3_384_finalize:
 	ret
 	.p2align 6
 
-vg_sha3_512_absorb:
+vg_sha3_512_update:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -1016,7 +1016,7 @@ vg_sha3_512_finalize:
 	ret
 	.p2align 6
 
-vg_shake128_absorb:
+vg_shake128_update:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
