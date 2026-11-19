@@ -700,10 +700,6 @@ powerpc64le vg_pbkdf2_hmac_sha512_224
 powerpc64le vg_pbkdf2_hmac_sha512_256
 powerpc64le vg_rc4_apply
 powerpc64le vg_rc4_init
-powerpc64le vg_rsa_check_key
-powerpc64le vg_rsa_crt_values
-powerpc64le vg_rsa_generate
-powerpc64le vg_rsa_generate_init
 powerpc64le vg_rsa_oaep_decrypt_precomputed
 powerpc64le vg_rsa_oaep_encrypt_precomputed
 powerpc64le vg_rsa_pkcs1_decrypt_precomputed
@@ -711,11 +707,8 @@ powerpc64le vg_rsa_pkcs1_encrypt_random
 powerpc64le vg_rsa_pkcs1_recover_precomputed
 powerpc64le vg_rsa_pkcs1_sign_precomputed
 powerpc64le vg_rsa_pkcs1_verify_precomputed
-powerpc64le vg_rsa_private_precompute
 powerpc64le vg_rsa_pss_sign_precomputed
 powerpc64le vg_rsa_pss_verify_precomputed
-powerpc64le vg_rsa_public_precompute
-powerpc64le vg_rsa_recover_primes_det
 powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
 powerpc64le vg_sm4_gcm_init
