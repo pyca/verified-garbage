@@ -320,7 +320,7 @@ theorem lshift_le (k : Nat) : (BitVec.ofNat 8 (lshift k)).toNat = lshift k ∧ l
   · decide
   · decide
   · obtain ⟨j, rfl⟩ : ∃ j, k = j + 4 := ⟨k - 4, by omega_using [h]⟩
-    exact ⟨rfl, by decide⟩
+    exact ⟨rfl, by show (40 : Nat) ≤ 63; decide⟩
 
 theorem setXmm_xk (s : State) (x : XReg) (v : BitVec 128) : Xk [x] s (s.setXmm x v) :=
   ⟨rfl, rfl, rfl, rfl, fun r hr => xmm_setXmm_of_ne _ _ (by simpa only [List.mem_singleton] using hr)⟩
@@ -361,7 +361,7 @@ theorem limb_ok (b : Reg) (off k : Nat) (two : Bool) (s : State)
     simp only [limb, ↓reduceIte, List.append_nil, List.nil_append, List.cons_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load64, e0, h0, Option.map_some,
       Option.some.injEq, exists_eq_left', e1, rd_setXmm, wr_setXmm, mem_setXmm, h1']
-    refine ⟨?_, ?_, rfl, ?_⟩
+    refine ⟨?_, ?_, trivial, ?_⟩
     · simp only [ln, xmm_setXmm_self, xmm_setXmm, reduceCtorEq, ↓reduceIte, lane_pand, lane_psrlq _ _ hsh
         (show 0 < 2 by decide), (lane_punpcklqdq _ _).1, (lane_movq _).1, limbv, hs, and_mask,
         show lane (s.xmm .xmm5) 0 = 2 ^ 26 - 1 from m0]
