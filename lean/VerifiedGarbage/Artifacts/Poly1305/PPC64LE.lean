@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Shared
+public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -11,14 +11,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.Poly1305.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Poly1305.initApi.artifact PPC64LE.target {
-    code := Impl.Poly1305.PPC64LE.init
-    verified := Proof.Poly1305.PPC64LE.Shared.init },
-  Spec.Poly1305.updateApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.Poly1305.PPC64LE.update
-    verified := Proof.Poly1305.PPC64LE.Shared.update },
-  Spec.Poly1305.finalizeApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.finalize
-    verified := Proof.Poly1305.PPC64LE.Shared.finalize }]
+  Spec.Poly1305.initApi.artifact PPC64LE.target Proof.Poly1305.PPC64LE.Scrub.initReg,
+  Spec.Poly1305.updateApi.artifact PPC64LE.target Proof.Poly1305.PPC64LE.Scrub.updateReg,
+  Spec.Poly1305.finalizeApi.artifact PPC64LE.target Proof.Poly1305.PPC64LE.Scrub.finalizeReg]
 
 end VG.Artifacts.Poly1305.PPC64LE

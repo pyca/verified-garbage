@@ -855,9 +855,6 @@ powerpc64le vg_pbkdf2_hmac_sha384
 powerpc64le vg_pbkdf2_hmac_sha512
 powerpc64le vg_pbkdf2_hmac_sha512_224
 powerpc64le vg_pbkdf2_hmac_sha512_256
-powerpc64le vg_poly1305_finalize
-powerpc64le vg_poly1305_init
-powerpc64le vg_poly1305_update
 powerpc64le vg_rc2_cbc_decrypt_chained
 powerpc64le vg_rc2_cbc_encrypt_chained
 powerpc64le vg_rc2_cbc_init

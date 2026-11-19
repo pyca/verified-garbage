@@ -291,7 +291,7 @@ theorem init_call {s : State} {P K : Addr} (h3 : s.gpr .r3 = P) (h4 : s.gpr .r4 
     (hc : Covers ([⟨K, 32⟩] ++ [⟨P, 128⟩]) (s.rd ++ s.wr))
     (hw : Covers [⟨P, 128⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨P, 128⟩] s s' → Repr s'.mem P (bytesAt s.mem K 32) [] → Q s') :
-    WP isa (.call "vg_poly1305_init" Impl.Poly1305.PPC64LE.init) s Q := by
+    WP isa (.call "vg_poly1305_init_core" Impl.Poly1305.PPC64LE.init) s Q := by
   refine WP.call (k := Proof.Poly1305.initPPC64LE) Proof.Poly1305.PPC64LE.init_verified.1
     (rd := [⟨K, 32⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
   · simp only [Proof.Poly1305.initPPC64LE, State.withRegions_gpr, State.withRegions_rd,
