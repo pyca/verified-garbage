@@ -37,24 +37,24 @@ namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 
 /-- `vg_aes_gcm_open_to_prepared` with `work: *mut [u64; 320]`. -/
-def openToPreparedScratchSig : Sig where
+def openToPreparedScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
-    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `vg_aes_gcm_open_to` with `work: *mut [u64; 320]`. -/
-def openToScratchSig : Sig where
+def openToScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
-    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openToRoundsContract`, whatever `work` is. -/
-def openToScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToScratchSig.contract A
+def openToScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openToScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       openToPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
@@ -64,16 +64,16 @@ def openToScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
       openToLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
 
 /-- `vg_aes_gcm_open_to_with_powers` with `work: *mut [u64; 320]`. -/
-def openToWithPowersScratchSig : Sig where
+def openToWithPowersScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("src", .slice false .u8 "len"), ("dst", .slice true .u8 "dst_len"),
-    ("tag", .slice false .u8 "tag_len"), ("pw", .array false .u64 16), ("work", .array true .u64 320)]
+    ("tag", .slice false .u8 "tag_len"), ("pw", .array false .u64 16), ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openToWithPowersRoundsContract`, whatever `work` is. -/
-def openToWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToWithPowersScratchSig.contract A
+def openToWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openToWithPowersScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen pw _work =>
       openToWithPowersPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen pw)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen pw _work =>
@@ -83,8 +83,8 @@ def openToWithPowersScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
       openToWithPowersLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen pw)
 
 /-- `openToPreparedRoundsContract`, whatever `work` is. -/
-def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPreparedScratchSig.contract A
+def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openToPreparedScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       Proof.Gcm.openToPowersPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
@@ -94,8 +94,8 @@ def openToPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
       openToLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
 
 /-- `openToPrepared16RoundsContract`, whatever `work` is. -/
-def openToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPreparedScratchSig.contract A
+def openToPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openToPreparedScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>
       Proof.Gcm.openToPrepared16Pre A.ptrBits ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _work =>

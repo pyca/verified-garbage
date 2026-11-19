@@ -32,13 +32,13 @@ namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 
 /-- `vg_aes_gcm_init` with `scratch: *mut [u64; 320]`. -/
-def initScratchSig : Sig where
+def initScratchSig (n : Nat := 320) : Sig where
   params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 32),
-    ("scratch", .array true .u64 320)]
+    ("scratch", .array true .u64 n)]
 
 /-- `initContract`, whatever `scratch` is. -/
-def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initScratchSig.contract A
+def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (initScratchSig n).contract A
     (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
     (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
     (writeArgs := true) (stack := stack)
@@ -57,40 +57,40 @@ def initScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_init` with `scratch: *mut [u64; 320]`. -/
-def streamInitScratchSig : Sig where
+def streamInitScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("nonce", .slice false .u8 "nonce_len"),
-    ("state", .array true .u64 10), ("scratch", .array true .u64 320)]
+    ("state", .array true .u64 10), ("scratch", .array true .u64 n)]
 
 /-- `streamInitContract`, whatever `scratch` is. -/
-def streamInitScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamInitScratchSig.contract A
+def streamInitScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamInitScratchSig n).contract A
     (post := fun ctx nonce nonceLen state _scratch =>
       streamInitPost A.ptrBits ctx nonce nonceLen state)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_aad` with `scratch: *mut [u64; 320]`. -/
-def streamAadScratchSig : Sig where
+def streamAadScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
     ("aad_len", .int .u64 true), ("data", .slice false .u8 "len"),
-    ("scratch", .array true .u64 320)]
+    ("scratch", .array true .u64 n)]
 
 /-- `streamAadContract`, whatever `scratch` is. -/
-def streamAadScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamAadScratchSig.contract A
+def streamAadScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamAadScratchSig n).contract A
     (post := fun ctx state aadLen data len _scratch =>
       streamAadPost A.ptrBits ctx state aadLen data len)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` with
 `scratch: *mut [u64; 320]`. -/
-def streamCryptScratchSig : Sig where
+def streamCryptScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("data", .slice true .u8 "len"), ("scratch", .array true .u64 320)]
+    ("data", .slice true .u8 "len"), ("scratch", .array true .u64 n)]
 
 /-- `streamEncryptRoundsContract`, whatever `scratch` is. -/
-def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptScratchSig.contract A
+def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamCryptScratchSig n).contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
@@ -98,8 +98,8 @@ def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (writeArgs := true) (stack := stack)
 
 /-- `streamDecryptRoundsContract`, whatever `scratch` is. -/
-def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptScratchSig.contract A
+def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamCryptScratchSig n).contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
       streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
@@ -107,14 +107,14 @@ def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_finish` with `work: *mut [u64; 320]`. -/
-def streamFinishScratchSig : Sig where
+def streamFinishScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("tag", .array true .u8 16), ("work", .array true .u64 320)]
+    ("tag", .array true .u8 16), ("work", .array true .u64 n)]
 
 /-- `streamFinishRoundsContract`, whatever `work` is. -/
-def streamFinishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamFinishScratchSig.contract A
+def streamFinishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamFinishScratchSig n).contract A
     (pre := fun ctx rounds state aadLen textLen tag _work =>
       streamFinishPre A.ptrBits ctx rounds state aadLen textLen tag)
     (post := fun ctx rounds state aadLen textLen tag _work =>
@@ -122,15 +122,15 @@ def streamFinishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_verify` with `work: *mut [u64; 320]`. -/
-def streamVerifyScratchSig : Sig where
+def streamVerifyScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 320)]
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `streamVerifyRoundsContract`, whatever `work` is. -/
-def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamVerifyScratchSig.contract A
+def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (streamVerifyScratchSig n).contract A
     (pre := fun ctx rounds state aadLen textLen tag tagLen _work =>
       streamVerifyPre A.ptrBits ctx rounds state aadLen textLen tag tagLen)
     (post := fun ctx rounds state aadLen textLen tag tagLen _work =>
@@ -138,14 +138,14 @@ def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_seal` with `work: *mut [u64; 320]`. -/
-def sealScratchSig : Sig where
+def sealScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
-    ("data", .slice true .u8 "len"), ("tag", .array true .u8 16), ("work", .array true .u64 320)]
+    ("data", .slice true .u8 "len"), ("tag", .array true .u8 16), ("work", .array true .u64 n)]
 
 /-- `sealRoundsContract`, whatever `work` is. -/
-def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealScratchSig.contract A
+def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (sealScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
@@ -153,16 +153,16 @@ def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_open` with `work: *mut [u64; 320]`. -/
-def openScratchSig : Sig where
+def openScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openRoundsContract`, whatever `work` is. -/
-def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openScratchSig.contract A
+def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
