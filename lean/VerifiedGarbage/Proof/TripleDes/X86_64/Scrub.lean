@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 public import VerifiedGarbage.Spec.TripleDes.Cfb
@@ -134,10 +136,11 @@ theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_expand_key`. -/
 def expandKeyReg : Registration Spec.TripleDes.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 520
-    verified := Proof.TripleDes.X86_64.expandKey_framed } expandKeyOut [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.TripleDes.X86_64.expandKey_framed } .sse false [.rcx, .rsi, .r11] expandKeyOut [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -153,10 +156,11 @@ theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 def cbcEncryptReg : Registration Spec.TripleDes.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cbcEncryptChained_framed } cbcEncryptOut [] (pubOk_nil _) (some ⟨cbcEncryptKs, cbcEncryptOk⟩)
+    verified := Proof.TripleDes.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cbcEncryptOut [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cfb64_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
@@ -172,10 +176,11 @@ theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cfb64_encrypt`. -/
 def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfbEncrypt_framed } cfbEncryptOut [] (pubOk_nil _) (some ⟨cfbEncryptKs, cfbEncryptOk⟩)
+    verified := Proof.TripleDes.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptOut [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cfb64_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
@@ -191,10 +196,11 @@ theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cfb64_encrypt_final`. -/
 def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptFinalCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfbEncryptFinal_framed } cfbEncryptFinalOut [] (pubOk_nil _) (some ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩)
+    verified := Proof.TripleDes.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptFinalOut [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cfb64_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
@@ -210,10 +216,11 @@ theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cfb64_decrypt_final`. -/
 def cfbDecryptFinalReg : Registration Spec.TripleDes.cfbDecryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptFinalCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfbDecryptFinal_framed } cfbDecryptFinalOut [] (pubOk_nil _) (some ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩)
+    verified := Proof.TripleDes.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbDecryptFinalOut [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cfb8_encrypt`'s code. -/
 abbrev cfb8EncryptCode : Prog isa :=
@@ -229,10 +236,11 @@ theorem cfb8EncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cfb8_encrypt`. -/
 def cfb8EncryptReg : Registration Spec.TripleDes.cfb8EncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfb8EncryptCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfb8Encrypt_framed } cfb8EncryptOut [] (pubOk_nil _) (some ⟨cfb8EncryptKs, cfb8EncryptOk⟩)
+    verified := Proof.TripleDes.X86_64.cfb8Encrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfb8EncryptOut [] (pubOk_nil _) ⟨cfb8EncryptKs, cfb8EncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_cfb8_decrypt`'s code. -/
 abbrev cfb8DecryptCode : Prog isa :=
@@ -248,10 +256,11 @@ theorem cfb8DecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_cfb8_decrypt`. -/
 def cfb8DecryptReg : Registration Spec.TripleDes.cfb8DecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfb8DecryptCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.cfb8Decrypt_framed } cfb8DecryptOut [] (pubOk_nil _) (some ⟨cfb8DecryptKs, cfb8DecryptOk⟩)
+    verified := Proof.TripleDes.X86_64.cfb8Decrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfb8DecryptOut [] (pubOk_nil _) ⟨cfb8DecryptKs, cfb8DecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
@@ -267,10 +276,11 @@ theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ofb`. -/
 def ofbReg : Registration Spec.TripleDes.ofbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.ofb_framed } ofbOut [] (pubOk_nil _) (some ⟨ofbKs, ofbOk⟩)
+    verified := Proof.TripleDes.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbOut [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
@@ -286,10 +296,11 @@ theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ofb_final`. -/
 def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbFinalCode
     stack := 984
-    verified := Proof.TripleDes.X86_64.ofbFinal_framed } ofbFinalOut [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+    verified := Proof.TripleDes.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbFinalOut [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_encrypt_avx512`'s code. -/
 abbrev ecbEncryptAvx512Code : Prog isa := Batch.avx512.code .encrypt
@@ -304,13 +315,14 @@ theorem ecbEncryptAvx512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_encrypt_avx512`. -/
 def ecbEncryptAvx512Reg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_avx512"
     code := ecbEncryptAvx512Code
     stack := 1040
     verified := Batch.avx512.verified .encrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
-    (some ⟨ecbEncryptAvx512Ks, ecbEncryptAvx512Ok⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .encrypt) } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .encrypt) [] (pubOk_nil _)
+    ⟨ecbEncryptAvx512Ks, ecbEncryptAvx512Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_encrypt_avx2`'s code. -/
 abbrev ecbEncryptAvx2Code : Prog isa := Batch.avx2.code .encrypt
@@ -325,13 +337,14 @@ theorem ecbEncryptAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_encrypt_avx2`. -/
 def ecbEncryptAvx2Reg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_avx2"
     code := ecbEncryptAvx2Code
     stack := 1040
     verified := Batch.avx2.verified .encrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
-    (some ⟨ecbEncryptAvx2Ks, ecbEncryptAvx2Ok⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .encrypt) } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .encrypt) [] (pubOk_nil _)
+    ⟨ecbEncryptAvx2Ks, ecbEncryptAvx2Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_encrypt`'s code. -/
 abbrev ecbEncryptSseCode : Prog isa := Batch.sse.code .encrypt
@@ -346,13 +359,14 @@ theorem ecbEncryptSseOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_encrypt`. -/
 def ecbEncryptSseReg : Registration Spec.TripleDes.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := ""
     code := ecbEncryptSseCode
     stack := 1040
     verified := Batch.sse.verified .encrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .encrypt) } (ecbOut .encrypt) [] (pubOk_nil _)
-    (some ⟨ecbEncryptSseKs, ecbEncryptSseOk⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .encrypt) } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .encrypt) [] (pubOk_nil _)
+    ⟨ecbEncryptSseKs, ecbEncryptSseOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_decrypt_avx512`'s code. -/
 abbrev ecbDecryptAvx512Code : Prog isa := Batch.avx512.code .decrypt
@@ -367,13 +381,14 @@ theorem ecbDecryptAvx512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_decrypt_avx512`. -/
 def ecbDecryptAvx512Reg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_avx512"
     code := ecbDecryptAvx512Code
     stack := 1040
     verified := Batch.avx512.verified .decrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
-    (some ⟨ecbDecryptAvx512Ks, ecbDecryptAvx512Ok⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx512_sp .decrypt) } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .decrypt) [] (pubOk_nil _)
+    ⟨ecbDecryptAvx512Ks, ecbDecryptAvx512Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_decrypt_avx2`'s code. -/
 abbrev ecbDecryptAvx2Code : Prog isa := Batch.avx2.code .decrypt
@@ -388,13 +403,14 @@ theorem ecbDecryptAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_decrypt_avx2`. -/
 def ecbDecryptAvx2Reg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := "_avx2"
     code := ecbDecryptAvx2Code
     stack := 1040
     verified := Batch.avx2.verified .decrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
-    (some ⟨ecbDecryptAvx2Ks, ecbDecryptAvx2Ok⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.avx2_sp .decrypt) } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .decrypt) [] (pubOk_nil _)
+    ⟨ecbDecryptAvx2Ks, ecbDecryptAvx2Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_triple_des_ecb_decrypt`'s code. -/
 abbrev ecbDecryptSseCode : Prog isa := Batch.sse.code .decrypt
@@ -409,12 +425,13 @@ theorem ecbDecryptSseOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_triple_des_ecb_decrypt`. -/
 def ecbDecryptSseReg : Registration Spec.TripleDes.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     suffix := ""
     code := ecbDecryptSseCode
     stack := 1040
     verified := Batch.sse.verified .decrypt
-    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .decrypt) } (ecbOut .decrypt) [] (pubOk_nil _)
-    (some ⟨ecbDecryptSseKs, ecbDecryptSseOk⟩)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (EcbCall.sse_sp .decrypt) } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (ecbOut .decrypt) [] (pubOk_nil _)
+    ⟨ecbDecryptSseKs, ecbDecryptSseOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.TripleDes.X86_64.Scrub

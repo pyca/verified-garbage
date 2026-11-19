@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Blowfish.Cbc
 public import VerifiedGarbage.Spec.Blowfish.Cfb
@@ -1723,10 +1724,11 @@ theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_expand_key`. -/
 def expandKeyReg : Registration Spec.Blowfish.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 40
-    verified := Proof.Blowfish.X86_64.expandKey_framed } (expandKeyOut _) [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.Blowfish.X86_64.expandKey_framed } .sse true [.rcx, .rsi, .rdi, .r8, .r9, .r10, .r11] (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
@@ -1742,10 +1744,11 @@ theorem ecbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_ecb_encrypt`. -/
 def ecbEncryptReg : Registration Spec.Blowfish.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbEncryptCode
     stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified } (ecbOut .encrypt _) [] (pubOk_nil _) (some ⟨ecbEncryptKs, ecbEncryptOk⟩)
+    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ecbOut .encrypt _) [] (pubOk_nil _) ⟨ecbEncryptKs, ecbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
@@ -1761,10 +1764,11 @@ theorem ecbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_ecb_decrypt`. -/
 def ecbDecryptReg : Registration Spec.Blowfish.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbDecryptCode
     stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified } (ecbOut .decrypt _) [] (pubOk_nil _) (some ⟨ecbDecryptKs, ecbDecryptOk⟩)
+    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ecbOut .decrypt _) [] (pubOk_nil _) ⟨ecbDecryptKs, ecbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -1780,10 +1784,11 @@ theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cbc_encrypt_chained`. -/
 def cbcEncryptReg : Registration Spec.Blowfish.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cbcEncryptChained_framed } (cbcEncryptOut _) [] (pubOk_nil _) (some ⟨cbcEncryptKs, cbcEncryptOk⟩)
+    verified := Proof.Blowfish.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cbcEncryptOut _) [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
@@ -1799,10 +1804,11 @@ theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cbc_decrypt_chained`. -/
 def cbcDecryptReg : Registration Spec.Blowfish.cbcDecryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcDecryptCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cbcDecryptChained_framed } (cbcDecryptOut _) [] (pubOk_nil _) (some ⟨cbcDecryptKs, cbcDecryptOk⟩)
+    verified := Proof.Blowfish.X86_64.cbcDecryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cbcDecryptOut _) [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
@@ -1818,10 +1824,11 @@ theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cfb64_encrypt`. -/
 def cfbEncryptReg : Registration Spec.Blowfish.cfbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cfbEncrypt_framed } (cfbEncryptOut _) [] (pubOk_nil _) (some ⟨cfbEncryptKs, cfbEncryptOk⟩)
+    verified := Proof.Blowfish.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbEncryptOut _) [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
@@ -1837,10 +1844,11 @@ theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cfb64_decrypt`. -/
 def cfbDecryptReg : Registration Spec.Blowfish.cfbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cfbDecrypt_framed } (cfbDecryptOut _) [] (pubOk_nil _) (some ⟨cfbDecryptKs, cfbDecryptOk⟩)
+    verified := Proof.Blowfish.X86_64.cfbDecrypt_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbDecryptOut _) [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
@@ -1856,10 +1864,11 @@ theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cfb64_encrypt_final`. -/
 def cfbEncryptFinalReg : Registration Spec.Blowfish.cfbEncryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptFinalCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cfbEncryptFinal_framed } (cfbEncryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩)
+    verified := Proof.Blowfish.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbEncryptFinalOut _) [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
@@ -1875,10 +1884,11 @@ theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_cfb64_decrypt_final`. -/
 def cfbDecryptFinalReg : Registration Spec.Blowfish.cfbDecryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptFinalCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.cfbDecryptFinal_framed } (cfbDecryptFinalOut _) [] (pubOk_nil _) (some ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩)
+    verified := Proof.Blowfish.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbDecryptFinalOut _) [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
@@ -1894,10 +1904,11 @@ theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_ofb`. -/
 def ofbReg : Registration Spec.Blowfish.ofbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.ofb_framed } (ofbOut _) [] (pubOk_nil _) (some ⟨ofbKs, ofbOk⟩)
+    verified := Proof.Blowfish.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ofbOut _) [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
@@ -1913,9 +1924,10 @@ theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blowfish_ofb_final`. -/
 def ofbFinalReg : Registration Spec.Blowfish.ofbFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbFinalCode
     stack := 96
-    verified := Proof.Blowfish.X86_64.ofbFinal_framed } (ofbFinalOut _) [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+    verified := Proof.Blowfish.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ofbFinalOut _) [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Blowfish.X86_64.Scrub

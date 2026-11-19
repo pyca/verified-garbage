@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.Spec.Seed.Cfb
@@ -112,10 +114,11 @@ theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_expand_key`. -/
 def expandKeyReg : Registration Spec.Seed.expandKeyApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := expandKeyCode
     stack := 1064
-    verified := Proof.Seed.X86_64.expandKey_framed } expandKeyOut [] (pubOk_nil _) (some ⟨expandKeyKs, expandKeyOk⟩)
+    verified := Proof.Seed.X86_64.expandKey_framed } .sse false [.rcx, .rdx, .rsi, .r9, .r10, .r11] expandKeyOut [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
@@ -131,10 +134,11 @@ theorem ecbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_ecb_encrypt`. -/
 def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbEncryptCode
     stack := 1104
-    verified := Proof.Seed.X86_64.ecbCall_framed .encrypt } ecbEncryptOut [] (pubOk_nil _) (some ⟨ecbEncryptKs, ecbEncryptOk⟩)
+    verified := Proof.Seed.X86_64.ecbCall_framed .encrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ecbEncryptOut [] (pubOk_nil _) ⟨ecbEncryptKs, ecbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
@@ -150,10 +154,11 @@ theorem ecbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_ecb_decrypt`. -/
 def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ecbDecryptCode
     stack := 1104
-    verified := Proof.Seed.X86_64.ecbCall_framed .decrypt } ecbDecryptOut [] (pubOk_nil _) (some ⟨ecbDecryptKs, ecbDecryptOk⟩)
+    verified := Proof.Seed.X86_64.ecbCall_framed .decrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ecbDecryptOut [] (pubOk_nil _) ⟨ecbDecryptKs, ecbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
@@ -169,10 +174,11 @@ theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptReg : Registration Spec.Seed.cbcEncryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcEncryptCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cbcEncryptChained_framed } cbcEncryptOut [] (pubOk_nil _) (some ⟨cbcEncryptKs, cbcEncryptOk⟩)
+    verified := Proof.Seed.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cbcEncryptOut [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
@@ -188,10 +194,11 @@ theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cbc_decrypt_chained`. -/
 def cbcDecryptReg : Registration Spec.Seed.cbcDecryptChainedApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cbcDecryptCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cbcDecryptChained_framed } cbcDecryptOut [] (pubOk_nil _) (some ⟨cbcDecryptKs, cbcDecryptOk⟩)
+    verified := Proof.Seed.X86_64.cbcDecryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cbcDecryptOut [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
@@ -207,10 +214,11 @@ theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cfb128_encrypt`. -/
 def cfbEncryptReg : Registration Spec.Seed.cfbEncryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cfbEncrypt_framed } cfbEncryptOut [] (pubOk_nil _) (some ⟨cfbEncryptKs, cfbEncryptOk⟩)
+    verified := Proof.Seed.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptOut [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
@@ -226,10 +234,11 @@ theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cfb128_encrypt_final`. -/
 def cfbEncryptFinalReg : Registration Spec.Seed.cfbEncryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbEncryptFinalCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cfbEncryptFinal_framed } cfbEncryptFinalOut [] (pubOk_nil _) (some ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩)
+    verified := Proof.Seed.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptFinalOut [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
@@ -245,10 +254,11 @@ theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cfb128_decrypt`. -/
 def cfbDecryptReg : Registration Spec.Seed.cfbDecryptApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cfbDecrypt_framed } cfbDecryptOut [] (pubOk_nil _) (some ⟨cfbDecryptKs, cfbDecryptOk⟩)
+    verified := Proof.Seed.X86_64.cfbDecrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbDecryptOut [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
@@ -264,10 +274,11 @@ theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_cfb128_decrypt_final`. -/
 def cfbDecryptFinalReg : Registration Spec.Seed.cfbDecryptFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := cfbDecryptFinalCode
     stack := 1552
-    verified := Proof.Seed.X86_64.cfbDecryptFinal_framed } cfbDecryptFinalOut [] (pubOk_nil _) (some ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩)
+    verified := Proof.Seed.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbDecryptFinalOut [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
@@ -283,10 +294,11 @@ theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_ofb`. -/
 def ofbReg : Registration Spec.Seed.ofbApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbCode
     stack := 1552
-    verified := Proof.Seed.X86_64.ofb_framed } ofbOut [] (pubOk_nil _) (some ⟨ofbKs, ofbOk⟩)
+    verified := Proof.Seed.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbOut [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
@@ -302,10 +314,11 @@ theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_seed_ofb_final`. -/
 def ofbFinalReg : Registration Spec.Seed.ofbFinalApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := ofbFinalCode
     stack := 1552
-    verified := Proof.Seed.X86_64.ofbFinal_framed } ofbFinalOut [] (pubOk_nil _) (some ⟨ofbFinalKs, ofbFinalOk⟩)
+    verified := Proof.Seed.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbFinalOut [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Seed.X86_64.Scrub
 
