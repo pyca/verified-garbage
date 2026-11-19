@@ -50,8 +50,29 @@ def p256Power (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base))
     (powerChain P F p256PowerOps)
 
-/-- Fixed field exponent for P-256, with the generic exponentiation fallback. -/
+/-- `[acc] = [base]^e` for the exponent `e` that the chain `ops` reaches from
+`(1, 1)`: the accumulator and the saved power start as the base. -/
+def chainPower (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (ops : List PowerOp) : Prog isa :=
+  .seq (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base))
+    (powerChain P F ops)
+
+/-- P-521's `p - 2 = 4 (2^519 - 1) + 1`: `x^(2^k - 1)` for `k` = 2, 4, …, 128,
+129, 258, 259, 518 and 519, each from the one before it (by `k` squarings
+and the saved `x^(2^k - 1)`, or a squaring and the base), then the two low
+bits. This uses 520 squares and 13 other multiplications. -/
+def p521PowerOps : List PowerOp :=
+  [.squares 1, .mulSaved, .save, .squares 2, .mulSaved, .save, .squares 4, .mulSaved,
+   .save, .squares 8, .mulSaved, .save, .squares 16, .mulSaved, .save, .squares 32, .mulSaved,
+   .save, .squares 64, .mulSaved, .squares 1, .mulBase,
+   .save, .squares 129, .mulSaved, .squares 1, .mulBase,
+   .save, .squares 259, .mulSaved, .squares 1, .mulBase,
+   .squares 2, .mulBase]
+
+/-- Fixed field exponents for P-256 and P-521, with the generic
+exponentiation fallback. -/
 def powField (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (m : Nat) : Prog isa :=
-  if m = p256Prime then p256Power P F else pow P F
+  if m = p256Prime then p256Power P F
+  else if m = Mont.p521Prime then chainPower P F p521PowerOps
+  else pow P F
 
 end VG.Impl.Weierstrass.X86
