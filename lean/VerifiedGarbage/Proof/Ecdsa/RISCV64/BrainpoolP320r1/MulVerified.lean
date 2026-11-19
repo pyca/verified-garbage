@@ -51,7 +51,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.RISCV64
 open VG.Spec.Weierstrass (Curve Fe Point)
 
 /-- brainpoolP320r1's curve of `Proof/Weierstrass/MulContract.lean`, as RISC-V's
-windows use it: as P-320's (`Impl.Weierstrass.Mul.p384`), its temporary area is
+windows use it: as P-384's (`Impl.Weierstrass.Mul.p384`), its temporary area is
 slot 2 and its working space is every byte from slot 45 on too (`tail`), where
 the ladder keeps its saves, and the result is stated for `k` in `[1, n - 1]`
 (`inRange`). -/
