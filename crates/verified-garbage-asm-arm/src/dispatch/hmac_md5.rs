@@ -8,13 +8,15 @@
 ///
 /// It runs `vg_hmac_md5_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
 /// * `outer` must be valid for reads and writes of 80 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 1080 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 1088 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_hmac_md5_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
@@ -27,6 +29,8 @@ pub unsafe fn vg_hmac_md5_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inner: 
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// It runs `vg_hmac_md5_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

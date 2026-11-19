@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,12 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.HmacMd5.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.initAnyKeyApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Proof.Pbkdf2.Md.Arm.md5Md.hmacInit Proof.Pbkdf2.Whole.Arm.md5F
-    verified := .unscrubbed Proof.Pbkdf2.Whole.Arm.Any.md5_initF },
-  Spec.Hmac.md5I.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.md5I) 1 Proof.Pbkdf2.Md.Arm.md5Md.hmacFin
-    verified := .unscrubbed (Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.md5_finalize
-      Proof.Hmac.md5_local Proof.Pbkdf2.Md.Arm.md5_finFrameSat) }]
+  Spec.Hmac.md5I.initAnyKeyApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.md5InitRegArm,
+  Spec.Hmac.md5I.finalizeApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.md5FinRegArm]
 
 end VG.Artifacts.HmacMd5.Arm

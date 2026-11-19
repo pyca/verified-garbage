@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,12 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.HmacSha512.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha512I.initAnyKeyApi.artifact Arm.target {
-    code := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Proof.Pbkdf2.Md.Arm.sha512Md'.hmacInit Proof.Pbkdf2.Whole.Arm.sha512F
-    verified := .unscrubbed Proof.Pbkdf2.Whole.Arm.Any.sha512_initF },
-  Spec.Hmac.sha512I.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1 Proof.Pbkdf2.Md.Arm.sha512Md'.hmacFin
-    verified := .unscrubbed (Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_finalize
-      Proof.Hmac.sha512_local Proof.Pbkdf2.Md.Arm.sha512_finFrameSat) }]
+  Spec.Hmac.sha512I.initAnyKeyApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.sha512InitRegArm,
+  Spec.Hmac.sha512I.finalizeApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.sha512FinRegArm]
 
 end VG.Artifacts.HmacSha512.Arm
