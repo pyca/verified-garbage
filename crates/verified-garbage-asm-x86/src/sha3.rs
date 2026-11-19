@@ -29,6 +29,32 @@ call {vg_keccak_absorb_scratch}
     )
 }
 
+/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 144.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 704 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_224_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4kAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
 /// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -78,6 +104,32 @@ pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: u
         r#".base64 "jWQk6ItEJByJBCS4iAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
 .base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 136.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 704 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_256_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4iAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
@@ -137,6 +189,32 @@ call {vg_keccak_absorb_scratch}
     )
 }
 
+/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 104.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 704 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_384_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4aAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
 /// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -191,6 +269,32 @@ call {vg_keccak_absorb_scratch}
     )
 }
 
+/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 72.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 704 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha3_512_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4SAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
 /// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
@@ -240,6 +344,32 @@ pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: u
         r#".base64 "jWQk6ItEJByJBCS4qAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
 .base64 "jWQkGMM="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+    )
+}
+
+/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. A computation starts from the all-zero state, at position 0.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `pos` must be less than 168.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 704 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_shake128_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4qAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
+call {vg_keccak_absorb_scratch}
+.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
