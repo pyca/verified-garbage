@@ -114,7 +114,7 @@ vg_aes_cbc_decrypt_aesni:
 	mov DWORD PTR [esp], eax
 	mov eax, 240
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]
 	mov edx, DWORD PTR [esp+28]
 	lea esp, [esp+44]
@@ -142,7 +142,7 @@ vg_aes_cbc_encrypt:
 	mov DWORD PTR [esp], eax
 	mov eax, 2048
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]
 	mov edx, DWORD PTR [esp+28]
 	lea esp, [esp+44]
@@ -170,7 +170,7 @@ vg_aes_cbc_decrypt:
 	mov DWORD PTR [esp], eax
 	mov eax, 2048
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]
 	mov edx, DWORD PTR [esp+28]
 	lea esp, [esp+44]

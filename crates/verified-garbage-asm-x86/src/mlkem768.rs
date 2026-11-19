@@ -45,11 +45,11 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *m
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAw="
 call {vg_mlkem768_keygen_body}
 .base64 "iUQkEIlUJBSLRCQsiQQkuACAAACJRCQE"
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "i0QkEItUJBSNZCQcww=="
 .p2align 6"#,
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -77,11 +77,11 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *co
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAyLRCQwiUQkEA=="
 call {vg_mlkem768_encaps_body}
 .base64 "iUQkFIlUJBiLRCQwiQQkuACAAACJRCQE"
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "i0QkFItUJBiNZCQcww=="
 .p2align 6"#,
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -111,11 +111,11 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *
         r#".base64 "jWQk1ItEJDCJBCSLRCQ0iUQkBItEJDiJRCQIi0QkPIlEJAyLRCRAiUQkEItEJESJRCQU"
 call {vg_mlkem768_encaps_h_body}
 .base64 "iUQkGIlUJByLRCREiQQkuACAAACJRCQE"
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "i0QkGItUJByNZCQsww=="
 .p2align 6"#,
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -141,11 +141,11 @@ pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *c
         r#".base64 "jWQk5ItEJCCJBCSLRCQkiUQkBItEJCiJRCQIi0QkLIlEJAw="
 call {vg_mlkem768_decaps_body}
 .base64 "iUQkEIlUJBSLRCQsiQQkuACAAACJRCQE"
-call {vg_zeroize}
+call {vg_zeroize_core}
 .base64 "i0QkEItUJBSNZCQcww=="
 .p2align 6"#,
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 

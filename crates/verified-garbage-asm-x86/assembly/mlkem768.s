@@ -61,7 +61,7 @@ vg_mlkem768_keygen:
 	mov DWORD PTR [esp], eax
 	mov eax, 32768
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+16]
 	mov edx, DWORD PTR [esp+20]
 	lea esp, [esp+28]
@@ -87,7 +87,7 @@ vg_mlkem768_encaps:
 	mov DWORD PTR [esp], eax
 	mov eax, 32768
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+20]
 	mov edx, DWORD PTR [esp+24]
 	lea esp, [esp+28]
@@ -115,7 +115,7 @@ vg_mlkem768_encaps_h:
 	mov DWORD PTR [esp], eax
 	mov eax, 32768
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+24]
 	mov edx, DWORD PTR [esp+28]
 	lea esp, [esp+44]
@@ -139,7 +139,7 @@ vg_mlkem768_decaps:
 	mov DWORD PTR [esp], eax
 	mov eax, 32768
 	mov DWORD PTR [esp+4], eax
-	call {vg_zeroize}
+	call {vg_zeroize_core}
 	mov eax, DWORD PTR [esp+16]
 	mov edx, DWORD PTR [esp+20]
 	lea esp, [esp+28]
