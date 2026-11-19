@@ -57,14 +57,15 @@ theorem verEntry_ok {Wn : Nat} {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 =
     by rw [x12', x5₁], by rw [r.mem, m₁], by rw [r.rd, rd₁], by rw [r.wr, wr₁]⟩
 
 /-- What `verPre` gives. -/
-theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre (Wn := Wn) s) :
+theorem lay_of_ver {Wn : Nat} {s : State} (hs : verPre (Wn := Wn) s)
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧ Perm Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s ∧
       rounds (s.gpr .x1) ∧ Covers [⟨s.gpr .x5, (s.gpr .x6).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x7, Wn⟩ := by
   simp only [verPre] at hs
   obtain ⟨hrd, hwr, dcs, dcw, -, dsw, dtw, wc, ws, -, ww, hR⟩ := hs
   exact ⟨Lay.of wc ws ww dcs dcw dsw hWn,
-    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩, hR,
+    ⟨covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp), covers_of_mem (by rw [hwr]; simp), hWn⟩, hR,
     covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- The parts of `W` that the entry and `tagIn` write. -/
@@ -75,7 +76,7 @@ theorem tag16_inv {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact savedR_inv L _ (List.mem_singleton_self _)
-  · exact ⟨L.sa, Region.sub_prefix (by decide)⟩
+  · exact ⟨L.sa, Region.sub_prefix (by have := L.hWn; omega)⟩
 
 /-- One run of `stream_verify`, for a message `a`, `c` of those lengths. -/
 theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 Wn).pre s) {a c : List Byte}
@@ -134,7 +135,7 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
     have x12₃ : s₃.gpr .x12 = s.gpr .x5 := by rw [r₃.others _ (by decide), x12₂]
     have x28₃ : s₃.gpr .x28 = BitVec.ofNat 64 tl := by rw [r₃.others _ (by decide), x28₂']
     refine WP.seq (WP.mono (tagIn_ok he₃.x19 x12₃ x28₃ hle (by rw [r₃.rd, r₃.wr, rd₂, wr₂]; exact tR)
-      he₃.perm.w (dtw.sub_right (Region.sub_prefix (by decide))))
+      he₃.perm.w (dtw.sub_right (Region.sub_prefix (by omega))))
       fun s₄ ⟨in₄, f₄, og₄, sp₄, rd₄, wr₄⟩ => ?_)
     have he₄ : Env Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp s₄ := he₃.keep (fun r hr => og₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -172,19 +173,19 @@ theorem ver_run {Wn : Nat} (v : GcmImpl) {s : State} (hs : (streamVerifyAArch64 
         refine Region.Disjoint.sub_left ?_ (Region.sub_prefix hle)
         have ww : ∀ e j, 16 ≤ e → e + j ≤ Wn →
             (⟨s.gpr .x7, 16⟩ : Region).Disjoint ⟨s.gpr .x7 + BitVec.ofNat 64 e, j⟩ := fun e j h₁ h₂ => by
-          simpa using L.w_w (a := 0) (n := 16) (d := e) (k := j) (.inl h₁) (by decide) h₂
+          simpa using L.w_wn (a := 0) (n := 16) (d := e) (k := j) (.inl h₁) (by have := L.hWn; omega) h₂
         rcases List.mem_append.mp hr with hr | hr
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact (L.sa.sub_left (Lay.stSub (by decide))).symm
-          · exact ww _ _ (by decide) (by decide)
-          · exact ww _ _ (by decide) (by decide)
+          · exact ww _ _ (by decide) (by have := L.hWn; omega)
+          · exact ww _ _ (by decide) (by have := L.hWn; omega)
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl
           · exact (L.sa.sub_left (Region.sub_prefix (by decide))).symm
-          · exact ww _ _ (by decide) (by decide)
-          · exact ww _ _ (by decide) (by decide)
-          · exact ww _ _ (by decide) (by decide)
+          · exact ww _ _ (by decide) (by have := L.hWn; omega)
+          · exact ww _ _ (by decide) (by have := L.hWn; omega)
+          · exact ww _ _ (by decide) (by have := L.hWn; omega)
       rw [bytesAt_frame f₅ dW (by omega_using [htl]), in₄, m₃]
       refine bytesAt_frame fsv (fun r hr => ?_) (by omega_using [htl])
       simp only [List.mem_singleton] at hr; subst hr

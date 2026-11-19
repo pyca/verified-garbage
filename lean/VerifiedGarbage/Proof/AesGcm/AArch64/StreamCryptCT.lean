@@ -130,7 +130,8 @@ theorem cr_run {Wn : Nat} {body : Prog isa} {s : State} (hs : streamCryptPre (Wn
       BodyIn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp k (s.gpr .x1).toNat (s.gpr .x6).toNat (s.gpr .x4).toNat
         (s.gpr .x5) a c (Spec.Gcm.ctxH s.mem (s.gpr .x0)) s₁ →
       WP isa body s₁ (BodyOut Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) s.sp k (s.gpr .x1).toNat (s.gpr .x6).toNat
-        (s.gpr .x4).toNat (s.gpr .x5) a c (Spec.Gcm.ctxH s.mem (s.gpr .x0)) icb (E s₁.mem) (O s₁.mem) s₁.mem)) :
+        (s.gpr .x4).toNat (s.gpr .x5) a c (Spec.Gcm.ctxH s.mem (s.gpr .x0)) icb (E s₁.mem) (O s₁.mem) s₁.mem))
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.seq (.block crEntry) (.seq body (.block restore))) s (CrRun s a c icb (E s.mem) (O s.mem)) := by
   unfold CrRun
   simp only [streamCryptPre] at hs
@@ -238,7 +239,8 @@ theorem crypt_inv {s : State} (hs : streamCryptPre (Wn := Wn) s) {m : Mem} (hf :
     bytesAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [])⟩
 
-theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s) : Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧
+theorem lay_of_crypt {Wn : Nat} {s : State} (hs : streamCryptPre (Wn := Wn) s)
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : Lay Wn (s.gpr .x0) (s.gpr .x2) (s.gpr .x7) ∧
     (⟨s.gpr .x5, (s.gpr .x6).toNat⟩ : Region).Disjoint ⟨s.gpr .x2, 80⟩ := by
   simp only [streamCryptPre] at hs
   obtain ⟨-, -, dcs, -, dcw, dsd, dsw, -, wc, ws, -, ww, -⟩ := hs
@@ -421,7 +423,8 @@ theorem cr_rel {Wn : Nat} {body : Prog isa} {σ₁ σ₂ : State} (h₁ : stream
       RelCT isa (Eq2 τ₁ τ₂) body TT)
     (hw : ∀ {Ctx St W SP : Addr} {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
       {τ : State}, Lay Wn Ctx St W → BodyIn Ctx St W SP k R n P D a c H τ →
-      WP isa body τ fun τ' => Env Wn Ctx St W SP τ') :
+      WP isa body τ fun τ' => Env Wn Ctx St W SP τ')
+    (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block crEntry) (.seq body (.block restore))) TT := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp⟩ := hq
   simp only [streamCryptPre] at h₁ h₂
