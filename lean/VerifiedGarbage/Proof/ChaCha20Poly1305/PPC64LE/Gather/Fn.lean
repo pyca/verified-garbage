@@ -651,7 +651,7 @@ structure Called (s z : State) : Prop where
   wr : z.wr = FR s :: s.wr
 
 theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.call "vg_chacha20_poly1305_seal" sealCode) c (Called s) := by
+    WP isa (.call "vg_chacha20_poly1305_seal_core" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9⟩ := hc.callGpr
   refine WP.callAny (k := Spec.ChaCha20Poly1305.sealContract PPC64LE.abi 848) hv (sealSpec_pre hcp) hcov hw

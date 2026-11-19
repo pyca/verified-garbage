@@ -18,7 +18,7 @@ b 21f
 20:
 21:
 .base64 "AAB/OEADvzgAAMA4"
-bl {vg_blake2b_init}
+bl {vg_blake2b_init_core}
 .base64 "AACAOEADvzgEAMA4AAB/OMAA/zg="
 bl {vg_blake2b_update_scratch}
 .base64 "BACAOAAAuzgAANw4AAB/OMAA/zg="
@@ -35,7 +35,7 @@ bne %cr0, 24b
 bne %cr0, 25f
 27:
 .base64 "QACAOAAAfzhAA784AADAOA=="
-bl {vg_blake2b_init}
+bl {vg_blake2b_init_core}
 .base64 "AACAOAADvzhAAMA4AAB/OMAA/zg="
 bl {vg_blake2b_update_scratch}
 .base64 "QACAOAAAfzgAA784wADfOA=="
@@ -50,7 +50,7 @@ b 26f
 25:
 26:
 .base64 "AACeOAAAfzhAA784AADAOA=="
-bl {vg_blake2b_init}
+bl {vg_blake2b_init_core}
 .base64 "AACAOAADvzhAAMA4AAB/OMAA/zg="
 bl {vg_blake2b_update_scratch}
 .base64 "QACAOAAAfzgAA784wADfOA=="
@@ -63,7 +63,7 @@ b 23f
 .base64 "AADFiAAA3ZgBAKU4AQC9O///KTkAACko"
 bne %cr0, 29b
 .base64 "cAMf6KYDCHxIA3/rUAOf61gDv+tgA9/raAP/6yAAgE4=""#,
-        vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym crate::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
     )

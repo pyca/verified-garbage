@@ -308,5 +308,133 @@ theorem p256RedB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
   have hu := val32_lt u.mem base w 10
   omega_arith
 
+/-! ## P-521's reduction
+
+`p521Red acc` on the window of twenty words at `[ebp + acc]`: for
+`p = 2^521 - 1` and `q` the window's low word, the window `+ q p` is the
+window with its low word cleared and `q 2^9` added at word 16.
+-/
+
+/-- A word of the window cleared. -/
+theorem clearWordB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size) {w : Nat}
+    (hsz : w + 4 ≤ size) :
+    WP isa (.block [.mov .eax (.imm 0), .store (bp w) .eax]) s fun u =>
+      Outside base w 4 s.mem u.mem ∧ w32 u.mem base w = 0 ∧ u.cf = s.cf ∧ Keeps [.eax] s u := by
+  have hn := hb.nowrap
+  refine wp_movS rfl fun s₁ u₁ c₁ => ?_
+  have hb₁ := hb.of_keeps u₁.keeps (by decide)
+  refine wp_storeS (hb₁.ea (d := w) (by omega_arith)) (hb₁.write (n := 4) (by omega_arith))
+    fun u m => WP.block_nil ⟨?_, ?_, by rw [m.cf, c₁], u₁.keeps.trans (m.keeps _)⟩
+  · rw [m.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  · rw [m.mem, w32_write_self, u₁.gpr]; rfl
+
+/-- `edx:ecx = 2^9 ecx`. -/
+theorem shift9_ok {s : State} :
+    WP isa (.block shift9) s fun u =>
+      u.mem = s.mem ∧ (u.gpr .ecx).toNat + 2 ^ 32 * (u.gpr .edx).toNat = (s.gpr .ecx).toNat * 512 ∧
+      Keeps [.eax, .ecx, .edx] s u := by
+  unfold shift9
+  refine wp_movS rfl fun s₁ u₁ _ => ?_
+  refine wp_movS rfl fun s₂ u₂ _ => ?_
+  refine wp_mul fun s₃ u₃ => ?_
+  refine wp_movS rfl fun u u₄ _ => WP.block_nil ⟨?_, ?_, ?_⟩
+  · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  · have ha : (s₂.gpr .eax).toNat = (s.gpr .ecx).toNat := by rw [u₂.other .eax (by decide), u₁.gpr]
+    have hd : (s₂.gpr .edx).toNat = 512 := by rw [u₂.gpr]; rfl
+    have hq := (s.gpr .ecx).isLt
+    rw [u₄.gpr, u₄.other .edx (by decide), u₃.eax, u₃.edx, ha, hd, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega_arith
+  · refine ⟨fun r hr => ?_, by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [u₄.other r hr.2.1, u₃.other r hr.1 hr.2.2, u₂.other r hr.2.2, u₁.other r hr.1]
+
+theorem val32_20 (mem : Mem) (base : Addr) (w : Nat) :
+    val32 mem base w 20 = w32 mem base w + 2 ^ 32 * val32 mem base (w + 4) 15 +
+      2 ^ 512 * (w32 mem base (w + 64) + 2 ^ 32 * w32 mem base (w + 68) + 2 ^ 64 * w32 mem base (w + 72) +
+        2 ^ 96 * w32 mem base (w + 76)) := by
+  rw [show 20 = 16 + 4 from rfl, val32_append mem base w 16 4]
+  simp only [val32, Nat.reduceMul, Nat.reduceAdd, Nat.add_assoc]
+  omega_arith
+
+theorem p521RedB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
+    {acc w : Nat}
+    (hw : acc = w) (hsz : w + 80 ≤ size)
+    (hq : (s.gpr .ecx).toNat = w32 s.mem base w)
+    (hlt : val32 s.mem base w 20 + (s.gpr .ecx).toNat * (2 ^ 521 - 1) < 2 ^ 640) :
+    WP isa (.block (p521Red acc)) s fun u =>
+      Outside base w 80 s.mem u.mem ∧
+      val32 u.mem base w 20 = val32 s.mem base w 20 + (s.gpr .ecx).toNat * (2 ^ 521 - 1) ∧
+      Keeps [.eax, .ecx, .edx] s u := by
+  subst hw
+  have hn := hb.nowrap
+  simp only [p521Red, List.append_assoc]
+  refine WP.block_append (WP.mono (clearWordB_ok hb (w := acc) (by omega_arith)) fun s₁ ⟨O₁, Z₁, _, K₁⟩ => ?_)
+  have hb₁ := hb.of_keeps K₁ (by decide)
+  refine WP.block_append (WP.mono shift9_ok fun s₂ ⟨M₂, P₂, K₂⟩ => ?_)
+  have hb₂ := hb₁.of_keeps K₂ (by decide)
+  rw [K₁.1 .ecx (by decide)] at P₂
+  refine WP.block_append (WP.mono (sparseStepAddB_ok hb₂ (op := .add) (cin := false) (.inl ⟨rfl, rfl⟩)
+    (acc := acc) (j := 16) true (by omega_arith)) fun s₃ ⟨O₃, ⟨c₃, cf₃, V₃⟩, K₃⟩ => ?_)
+  have hb₃ := hb₂.of_keeps K₃ (by decide)
+  refine WP.block_append (wp_movS rfl fun s₄ u₄ cf₄ => WP.block_nil ?_)
+  have hb₄ := hb₃.of_keeps u₄.keeps (by decide)
+  refine WP.block_append (WP.mono (sparseStepAddB_ok hb₄ (op := .adc) (cin := c₃)
+    (.inr ⟨rfl, by rw [cf₄, cf₃]⟩) (acc := acc) (j := 17) true (by omega_arith))
+    fun s₅ ⟨O₅, ⟨c₅, cf₅, V₅⟩, K₅⟩ => ?_)
+  have hb₅ := hb₄.of_keeps K₅ (by decide)
+  refine WP.block_append (WP.mono (sparseStepAddB_ok hb₅ (op := .adc) (cin := c₅) (.inr ⟨rfl, cf₅⟩)
+    (acc := acc) (j := 18) false (by omega_arith)) fun s₆ ⟨O₆, ⟨c₆, cf₆, V₆⟩, K₆⟩ => ?_)
+  have hb₆ := hb₅.of_keeps K₆ (by decide)
+  refine WP.mono (sparseStepAddB_ok hb₆ (op := .adc) (cin := c₆) (.inr ⟨rfl, cf₆⟩)
+    (acc := acc) (j := 19) false (by omega_arith)) fun u ⟨O₇, ⟨c₇, _, V₇⟩, K₇⟩ => ?_
+  -- The registers the additions read.
+  have e₃ : (s₂.gpr .ecx).toNat + 2 ^ 32 * (s₄.gpr .ecx).toNat = (s.gpr .ecx).toNat * 512 := by
+    rw [u₄.gpr, K₃.1 .edx (by decide)]; exact P₂
+  simp only [Bool.false_eq_true, ite_false, ite_true, Bool.toNat_false, Nat.reduceMul, Nat.add_zero] at V₃ V₅ V₆ V₇
+  -- The memory of each state, word by word.
+  have m₂ : s₂.mem = s₁.mem := M₂
+  have m₄ : s₄.mem = s₃.mem := u₄.mem
+  rw [m₂] at O₃ V₃
+  rw [m₄] at O₅ V₅
+  refine ⟨?_, ?_, ?_⟩
+  · exact (((((O₁.mono (Nat.le_refl _) (by omega_arith)).trans (m₂ ▸ Outside.refl _ _ _ _)).trans
+      (O₃.mono (by omega_arith) (by omega_arith))).trans (m₄ ▸ Outside.refl _ _ _ _)).trans
+      (O₅.mono (by omega_arith) (by omega_arith))).trans
+      ((O₆.mono (by omega_arith) (by omega_arith)).trans (O₇.mono (by omega_arith) (by omega_arith)))
+  · have low : val32 u.mem base (acc + 4) 15 = val32 s.mem base (acc + 4) 15 := by
+      rw [O₇.val32 (by omega_arith) (by omega_arith), O₆.val32 (by omega_arith) (by omega_arith),
+        O₅.val32 (by omega_arith) (by omega_arith), O₃.val32 (by omega_arith) (by omega_arith),
+        O₁.val32 (by omega_arith) (by omega_arith)]
+    have w0 : w32 u.mem base acc = 0 := by
+      rw [O₇.w32 (by omega_arith) (by omega_arith), O₆.w32 (by omega_arith) (by omega_arith),
+        O₅.w32 (by omega_arith) (by omega_arith), O₃.w32 (by omega_arith) (by omega_arith), Z₁]
+    have a16 : w32 u.mem base (acc + 64) = w32 s₃.mem base (acc + 64) := by
+      rw [O₇.w32 (by omega_arith) (by omega_arith), O₆.w32 (by omega_arith) (by omega_arith),
+        O₅.w32 (by omega_arith) (by omega_arith)]
+    have a17 : w32 u.mem base (acc + 68) = w32 s₅.mem base (acc + 68) := by
+      rw [O₇.w32 (by omega_arith) (by omega_arith), O₆.w32 (by omega_arith) (by omega_arith)]
+    have a18 : w32 u.mem base (acc + 72) = w32 s₆.mem base (acc + 72) := by
+      rw [O₇.w32 (by omega_arith) (by omega_arith)]
+    have b16 : w32 s₁.mem base (acc + 64) = w32 s.mem base (acc + 64) := O₁.w32 (by omega_arith) (by omega_arith)
+    have b17 : w32 s₃.mem base (acc + 68) = w32 s.mem base (acc + 68) := by
+      rw [O₃.w32 (by omega_arith) (by omega_arith), O₁.w32 (by omega_arith) (by omega_arith)]
+    have b18 : w32 s₅.mem base (acc + 72) = w32 s.mem base (acc + 72) := by
+      rw [O₅.w32 (by omega_arith) (by omega_arith), O₃.w32 (by omega_arith) (by omega_arith),
+        O₁.w32 (by omega_arith) (by omega_arith)]
+    have b19 : w32 s₆.mem base (acc + 76) = w32 s.mem base (acc + 76) := by
+      rw [O₆.w32 (by omega_arith) (by omega_arith), O₅.w32 (by omega_arith) (by omega_arith),
+        O₃.w32 (by omega_arith) (by omega_arith), O₁.w32 (by omega_arith) (by omega_arith)]
+    rw [b16] at V₃
+    rw [b17] at V₅
+    rw [b18] at V₆
+    rw [b19] at V₇
+    have hu := val32_lt u.mem base acc 20
+    rw [val32_20] at hlt hu ⊢
+    rw [val32_20 s.mem, low, w0, a16, a17, a18]
+    have c7 := Bool.toNat_le c₇
+    omega_arith
+  · exact ((((((K₁.mono (by decide)).trans K₂).trans (K₃.mono (by decide))).trans (u₄.keeps.mono (by decide))).trans
+      (K₅.mono (by decide))).trans (K₆.mono (by decide))).trans (K₇.mono (by decide))
+
 
 end VG.Proof.Weierstrass.X86.Mont

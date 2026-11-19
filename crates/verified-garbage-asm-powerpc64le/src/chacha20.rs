@@ -111,5 +111,9 @@ b 21f
 pub(crate) mod vg_chacha20_block;
 
 #[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_chacha20_xor.rs"]
 pub(crate) mod vg_chacha20_xor;
