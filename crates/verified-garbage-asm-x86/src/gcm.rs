@@ -1032,22 +1032,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const 
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
@@ -2315,22 +2323,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 3
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
@@ -3598,22 +3614,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f
@@ -4853,22 +4877,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], ro
         r#".base64 "jWQk0IlcJCSJdCQoiXwkLItEJDSJBCSLRCQ4iUQkBItEJDyJRCQIi0QkQIlEJAyLRCREiUQkEItEJEiJRCQUi0QkVIlEJBiLRCRYiUQkHItEJFyJRCQgi3QkTItcJFCLVCRUg/sA"
 je 20f
 22:
-.base64 "iz6LTgTB6QKD+QA="
+.base64 "iz6LTgTB6QSD+QA="
 je 23f
 25:
-.base64 "iweJAoPHBIPCBIPpAQ=="
+.base64 "8w9vB/MPfwKDxxCDwhCD6QE="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "i04Eg+ED"
+.base64 "i04EwekCg+ED"
 je 26f
 28:
-.base64 "D7YHiAKDxwGDwgGD6QE="
+.base64 "iweJAoPHBIPCBIPpAQ=="
 jne 28b
 jmp 27f
 26:
 27:
+.base64 "i04Eg+ED"
+je 29f
+211:
+.base64 "D7YHiAKDxwGDwgGD6QE="
+jne 211b
+jmp 210f
+29:
+210:
 .base64 "g8YIg+sB"
 jne 22b
 jmp 21f

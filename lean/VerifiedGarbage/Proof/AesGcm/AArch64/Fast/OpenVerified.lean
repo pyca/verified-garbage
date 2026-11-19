@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
@@ -66,12 +67,61 @@ theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 
+theorem fastOpen_verifiedW {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«open» v.callees)
+      (Proof.AesGcm.openScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (fastOpen_correct (Wn := 768) v hMK) (Fast.open_fast_ct (Wn := 768) v hMK) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 768)
+  · exact Verified.of_correct (fastOpen_correct (Wn := 2560) v hMK) (Fast.open_fast_ct (Wn := 2560) v hMK) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560)
+
 theorem openCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (openCode v) (Proof.AesGcm.openScratchContract AArch64.abi) := by
   unfold openCode
   split
   · exact fastOpen_verified v hMK
   · exact open_verified v
+
+theorem openCode_verifiedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {Wn : Nat}
+    (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (openCode v) (Proof.AesGcm.openScratchContract AArch64.abi (n := Wn / 8)) := by
+  unfold openCode
+  split
+  · exact fastOpen_verifiedW v hMK h hv
+  · exact open_verifiedW v h hv
+
+/-- `open` in a frame of `gcmWn v + 32` bytes holding its working space and
+copies of its two stack arguments before it: 800 bytes over an
+implementation of counter mode that needs no working space, else 2592. -/
+theorem openCode_framedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn v + 32) 2 (openCode v))
+      (Proof.AesGcm.openRoundsContract AArch64.abi (gcmWn v + 32)) := by
+  obtain hv := openCode_verifiedW v hMK (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 800)
+      (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (openPre_local _) (openPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre800
+      (hleak := openLeak_local _)
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.openPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.openRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2592)
+      (leak := some (Spec.Gcm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (openPre_local _) (openPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
+      (hleak := openLeak_local _)
 
 theorem openCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target

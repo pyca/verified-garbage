@@ -177,6 +177,8 @@ def openToSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 40⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 2560⟩]
 
+def openToSatW (F : Nat) : State := { openToSat with wr := [⟨0, 0⟩, ⟨0x5000, F⟩] }
+
 theorem openTo_verified (v : GcmImpl) :
     Verified AArch64.target (openG v.callees true 4) (Proof.AesGcm.openToScratchContract AArch64.abi) :=
   Verified.of_correct (openTo_correct (Wn := 2560) v) (openTo_ct (Wn := 2560) v) (by
@@ -186,6 +188,22 @@ theorem openTo_verified (v : GcmImpl) :
       AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSat)
 
+theorem openTo_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (openG v.callees true 4) (Proof.AesGcm.openToScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (openTo_correct (Wn := 768) v) (openTo_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
+          Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
+          openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [openToSatW, openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSatW 768)
+  · exact Verified.of_correct (openTo_correct (Wn := 2560) v) (openTo_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
+          Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, openToAArch64, openToPreXW, List.append_nil, onePub,
+          openToRes, openToPostOf, openToLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+          AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [openToSatW, openToSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openToSatW 2560)
+
 /-- A state satisfying `vg_aes_gcm_open_to`'s precondition, without the
 working space: its four other stack arguments. -/
 def openToFrameSat : State :=
@@ -193,6 +211,12 @@ def openToFrameSat : State :=
                    wr := [⟨0, 0⟩] }
 
 theorem openToFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.abi 2608).pre s := by
+  implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre,
+    Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+    AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openToFrameSat, openToSat, stackArg,
+    stackArgAddr, Mem.readW, Mem.read] using openToFrameSat
+
+theorem openToFrameSat_pre816 : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.abi 816).pre s := by
   implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre,
     Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
     AArch64.stackArgAddr, List.getD, List.range, List.range.loop] [openToFrameSat, openToSat, stackArg,

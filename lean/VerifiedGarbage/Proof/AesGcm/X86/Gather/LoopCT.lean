@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -62,6 +64,12 @@ theorem rel_taint {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg) (hr : ∀
   obtain ⟨_, hc⟩ := hc
   exact RelCT.taint (A := VG.X86.taint) _ (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact agree_regs hr) hc
 
+/-- The same, for code with SSE instructions. -/
+theorem rel_taintSse {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg) (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
+    (hc : ∃ h, (VG.X86.sseTaint.check (τr rs) c h).isSome = true) : RelCT isa (Eq2 σ₁ σ₂) c TT := by
+  obtain ⟨_, hc⟩ := hc
+  exact RelCT.taint (A := VG.X86.sseTaint) _ (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact agree_regs hr) hc
+
 /-- An empty block. -/
 theorem rel_skip {σ₁ σ₂ : State} : RelCT isa (Eq2 σ₁ σ₂) (.block []) TT :=
   RelCT.nil fun _ _ _ => trivial
@@ -112,12 +120,19 @@ theorem rel_alloc {n : Nat} {body : Prog isa} {σ₁ σ₂ : State}
 length, the addresses are its and the descriptor's. -/
 theorem copySlice_rel {σ₁ σ₂ : State} {A₀ S D : BitVec 32} {n : Nat} (h₁ : SlicePre σ₁ A₀ S D n)
     (h₂ : SlicePre σ₂ A₀ S D n) : RelCT isa (Eq2 σ₁ σ₂) copySlice TT := by
+  have tc : ∃ h, (VG.X86.sseTaint.check (τr [.edi, .edx, .ecx]) copyChunks h).isSome = true :=
+    ⟨_, by taint_decide⟩
   have tw : ∃ h, (VG.X86.taint.check (τr [.edi, .edx, .ecx]) copyWords h).isSome = true :=
     ⟨_, by taint_decide⟩
   have tl : ∃ h, (VG.X86.taint.check (τr [.edi, .edx, .ecx]) copyLoop h).isSome = true :=
     ⟨_, by taint_decide⟩
   refine rel_seq (rel_taint [.esi] (by simp [h₁.esi, h₂.esi]) ⟨_, by taint_decide⟩)
-    (wordsArg_wp h₁) (wordsArg_wp h₂) fun τ₁ τ₂ w₁ w₂ => ?_
+    (chunksArg_wp h₁) (chunksArg_wp h₂) fun τ₁ τ₂ c₁ c₂ => ?_
+  refine rel_seq (rel_ite c₁.zf c₂.zf (fun _ => rel_skip) fun _ =>
+      rel_taintSse [.edi, .edx, .ecx] (by simp [c₁.edi, c₂.edi, c₁.edx, c₂.edx, c₁.ecx, c₂.ecx]) tc)
+    (chunks_wp h₁ c₁) (chunks_wp h₂ c₂) fun υ₁ υ₂ d₁ d₂ => ?_
+  refine rel_seq (rel_taint [.esi] (by simp [d₁.esi, d₂.esi]) ⟨_, by taint_decide⟩)
+    (wordsArg_wp h₁ d₁) (wordsArg_wp h₂ d₂) fun τ₁ τ₂ w₁ w₂ => ?_
   refine rel_seq (rel_ite w₁.zf w₂.zf (fun _ => rel_skip) fun _ =>
       rel_taint [.edi, .edx, .ecx] (by simp [w₁.edi, w₂.edi, w₁.edx, w₂.edx, w₁.ecx, w₂.ecx]) tw)
     (words_wp h₁ w₁) (words_wp h₂ w₂) fun v₁ v₂ x₁ x₂ => ?_

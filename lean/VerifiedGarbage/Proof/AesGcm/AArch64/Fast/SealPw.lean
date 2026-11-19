@@ -61,19 +61,35 @@ theorem fastSealWith_keepsV (v : GcmImpl) {gh : Fn} (hgh : gh.code.allInstrs kee
 theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.callees).allInstrs keepsV = true :=
   fastSealWith_keepsV v v.gh.keepsV
 
-theorem fastSeal_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : sealAArch64.pre s) :
+theorem fastSeal_correct {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State)
+    (hs : (sealAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (Fast.seal_wp v hMK hs) (fastSeal_keepsV v)
 
 theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
+  Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+
+theorem fastSeal_verifiedW {Wn : Nat} (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
+      (Proof.AesGcm.sealScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (fastSeal_correct (Wn := 768) v hMK) (Fast.seal_ct (Wn := 768) v hMK) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 768)
+  · exact Verified.of_correct (fastSeal_correct (Wn := 2560) v hMK) (Fast.seal_ct (Wn := 2560) v hMK) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 2560)
 
 theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (sealCode v) (Proof.AesGcm.sealScratchContract AArch64.abi) := by
@@ -81,6 +97,34 @@ theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
   split
   · exact fastSeal_verified v hMK
   · exact seal_verified v
+
+theorem sealCode_verifiedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {Wn : Nat}
+    (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (sealCode v) (Proof.AesGcm.sealScratchContract AArch64.abi (n := Wn / 8)) := by
+  unfold sealCode
+  split
+  · exact fastSeal_verifiedW v hMK h hv
+  · exact seal_verifiedW v h hv
+
+/-- `seal` in a frame of `gcmWn v + 16` bytes holding its working space and a
+copy of its stack argument before it: 784 bytes over an implementation of
+counter mode that needs no working space, else 2576. -/
+theorem sealCode_framedW (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (gcmWn v + 16) 1 (sealCode v))
+      (Proof.AesGcm.sealRoundsContract AArch64.abi (gcmWn v + 16)) := by
+  obtain hv := sealCode_verifiedW v hMK (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv, Nat.reduceAdd] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 784)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre784
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.sealRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
+      hv (by decide) (by decide) (sealPre_local _) (sealPost_local _)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
 theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target

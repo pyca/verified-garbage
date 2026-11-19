@@ -687,6 +687,13 @@ def openSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 2560⟩]
 
+/-- The states above with `F` bytes of working space. -/
+def initSatW (F : Nat) : State := { initSat with wr := [⟨0x2000, 256⟩, ⟨0x4000, F⟩] }
+
+def sealSatW (F : Nat) : State := { sealSat with wr := [⟨0x4000, 0⟩, ⟨0, 16⟩, ⟨0x5000, F⟩] }
+
+def openSatW (F : Nat) : State := { openSat with wr := [⟨0x4000, 0⟩, ⟨0x5000, F⟩] }
+
 /-! ## The shared contracts -/
 
 theorem init_verified (v : GcmImpl) :
@@ -695,6 +702,18 @@ theorem init_verified (v : GcmImpl) :
     sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, initAArch64, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [initSat] using initSat)
+
+theorem init_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 1024 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (init v.callees) (Proof.AesGcm.initScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (init_correct (Wn := 1024) v) (init_ct (Wn := 1024) v) (by
+        sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, initAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [initSatW, initSat] using initSatW 1024)
+  · exact Verified.of_correct (init_correct (Wn := 2560) v) (init_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, initAArch64, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [initSatW, initSat] using initSatW 2560)
 
 theorem streamInit_verified (v : GcmImpl) :
     Verified AArch64.target (streamInit v.callees) (Proof.AesGcm.streamInitScratchContract AArch64.abi) :=
@@ -748,6 +767,20 @@ theorem seal_verified (v : GcmImpl) :
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
+theorem seal_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (seal_correct (Wn := 768) v) (seal_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 768)
+  · exact Verified.of_correct (seal_correct (Wn := 2560) v) (seal_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+          Proof.AesGcm.sealRoundsPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
+          AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+          [sealSatW, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSatW 2560)
+
 theorem open_verified (v : GcmImpl) :
     Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (open_correct (Wn := 2560) v) (open_ct (Wn := 2560) v) (by
@@ -756,5 +789,44 @@ theorem open_verified (v : GcmImpl) :
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
+
+theorem open_verifiedW {Wn : Nat} (v : GcmImpl) (h : Wn = 768 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi (n := Wn / 8))  := by
+  rcases h with rfl | rfl
+  · exact Verified.of_correct (open_correct (Wn := 768) v) (open_ct (Wn := 768) v) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 768)
+  · exact Verified.of_correct (open_correct (Wn := 2560) v) (open_ct (Wn := 2560) v) (by
+        sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+          Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
+          AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+          List.range.loop]
+          [openSatW, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSatW 2560)
+
+/-! ## The working space of each implementation
+
+512 bytes the code uses itself, then what its callees need: the 256 bytes of
+the hash, over an implementation of counter mode that needs none
+(`Ctr32Impl.scratch`), else counter mode's 2048; key setup needs the 512
+bytes of the key expansion instead of the hash's. -/
+
+def gcmWn (v : GcmImpl) : Nat := if v.ctr.scratch = 0 then 768 else 2560
+
+theorem gcmWn_cases (v : GcmImpl) : gcmWn v = 768 ∨ gcmWn v = 2560 := by
+  unfold gcmWn; split <;> simp
+
+theorem gcmWn_hv (v : GcmImpl) : v.ctr.scratch ≤ gcmWn v - 512 := by
+  rcases v.ctr.scratch_ok with h | h <;> simp [gcmWn, h]
+
+def gcmInitWn (v : GcmImpl) : Nat := if v.ctr.scratch = 0 then 1024 else 2560
+
+theorem gcmInitWn_cases (v : GcmImpl) : gcmInitWn v = 1024 ∨ gcmInitWn v = 2560 := by
+  unfold gcmInitWn; split <;> simp
+
+theorem gcmInitWn_hv (v : GcmImpl) : v.ctr.scratch ≤ gcmInitWn v - 512 := by
+  rcases v.ctr.scratch_ok with h | h <;> simp [gcmInitWn, h]
 
 end VG.Proof.AesGcm.AArch64

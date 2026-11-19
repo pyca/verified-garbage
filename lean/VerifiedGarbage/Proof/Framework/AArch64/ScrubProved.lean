@@ -121,6 +121,21 @@ def scrubAllOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
   vendor := r.vendor
   notWith := r.notWith }
 
+/-- What `scrubAllOf` proves of the code, for code verified against any
+contract `k`: a caller that calls the scrubbed code by name (as
+`vg_aes_gcm_seal_gather` calls `vg_aes_gcm_seal`) proves its call against
+it. -/
+theorem Verified.scrubAllOfV {c : Prog isa} {k : Contract isa} {cl : Clear} {W rb : Nat}
+    {ts : List (String × List FnTable)} (hv : Verified target c k) (hok : ScrubAllOk k W rb)
+    (h : scrubSide c W rb cl ts = true) : Verified target (VG.Impl.Residue.AArch64.scrubAll W rb cl c) k := by
+  obtain ⟨hwf, -, -, hrb⟩ := keeps_of_side h
+  rcases Nat.eq_zero_or_pos W with h0 | hpos
+  · subst h0; exact Verified.scrubAll0 hwf hv hrb hok
+  · have hs := h
+    simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
+      decide_eq_true_eq, beq_iff_eq] at hs
+    exact Verified.scrubAll hwf hv ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hrb hok
+
 /-- `scrubAllOf` for code without frames (`scrubSide` with no stack, whose
 depth is then 0) that keeps what `r` states of `written`: `withScrubAllW`,
 with the registers the tail clears stated and what it needs of the code

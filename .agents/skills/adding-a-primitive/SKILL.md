@@ -100,7 +100,34 @@ instructions in an ISA model) go in their own PR before either.
    A function also proves that it returns without secret residue
    (`TCB/<ISA>/Residue.lean`), as part of what its registration proves:
    `verified := .scrubbed h`, of an `h : VerifiedScrubbed …`
-   (`TCB/Registration.lean`). On x86-64, build its
+   (`TCB/Registration.lean`). Its cleanup is part of its code. The
+   function as emitted, its body and then the instructions that clear the
+   registers it wrote and zero the stack it used, is a named definition in
+   `Impl/`, which states those registers and that stack as literals; one
+   theorem in `Proof/` states `VerifiedScrubbed` of that definition; and
+   the registration file binds the two: `code := Impl.…`,
+   `verified := .scrubbed (Proof.… )`, with no call of a scrub wrapper or
+   form, no register list, no side condition and no tactic in it
+   (`Fn` in `Impl/Sha3/AArch64/Instances.lean`,
+   `Proof/Sha3/AArch64/Scrub.lean`, `Artifacts/Sha3/AArch64.lean`).
+   Nothing is worked out of the code when the emitter runs: it only
+   prints, and the kernel has checked what the cleanup needs of the code
+   (`scrubSide … = true`, by `lit_decide`) when the proof module was built.
+   For code generic over a variant, the registers are the function's own
+   joined with those the variant states it writes (`Clear.union`,
+   `Callee.clear`); each variant proves that of its own code where it is
+   defined, as a field of the variant structure (`Permutation.scrub`, by
+   `lit_decide`), the function proves its own instructions once, and a
+   lemma joins the two (`AArch64.ScrubAll.scrubSide_union`): never a proof
+   over the list of variants, which evaluates every variant's code again
+   for every caller, and never `variants.attach` in a registration file.
+   On AArch64 the cleanup is `Impl.Residue.AArch64.scrubAll` and the
+   theorem comes from `AArch64.ScrubAll.verifiedScrubbed`
+   (`Proof/Framework/AArch64/ScrubProved.lean`).
+   On a target whose `Proof/Framework/` does not yet state its scrub as a
+   theorem about named code, build the registration in `Proof/` with that
+   target's form and let the registration file bind it by name, never
+   call the form there. On x86-64, build its
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
    hold secrets and which gives that proof; the registration file binds the
@@ -114,18 +141,6 @@ instructions in an ISA model) go in their own PR before either.
    is a frame of the model, a multiple of 8 bytes (`FrameOk`), so code proven
    with another number is registered with the next one
    (`Arm.Scrub.Verified.stack_le`, as `Proof/MlDsa/Arm/Scrub.lean` does).
-   On AArch64, code scrubbed whole is registered with
-   `AArch64.ScrubAll.scrubAllOf` (`Proof/Framework/AArch64/ScrubProved.lean`),
-   not `withScrubAll`: the registers its tail clears are a literal at the
-   call site, and one proof there (`scrubSide … = true`, by `lit_decide`)
-   says that the code writes no other register the calling convention does
-   not preserve, with what the scrub needs of its stack and of DIT. The
-   kernel checks it when the module is built, so that the emitter works
-   nothing out of the code: it only prints. For a caller generic over
-   variants, the proof module proves `scrubSide` of every variant of the
-   list by one evaluation (`variants.all … = true`), and the registration
-   file maps over `variants.attach` to pass each variant's membership
-   (`Proof/RsaOaep/AArch64/Scrub.lean`, `Artifacts/RsaOaep/AArch64.lean`).
    Only functions `ci/residue_allowlist.txt` already lists may go
    without (`verified := .unscrubbed h`, of an `h : Verified …`): the list
    only shrinks (`ci/check_residue_allowlist.py`), and the
