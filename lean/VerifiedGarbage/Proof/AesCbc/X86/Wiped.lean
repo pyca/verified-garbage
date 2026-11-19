@@ -38,9 +38,9 @@ of it, then of `vg_zeroize` on the first `v.encWritten` bytes
 (`encrypt_scrubbed`: `Verified.callWipeTail'`, with the side conditions of
 `Proof/AesCbc/Wipe.lean`), with 72 bytes of stack (the CBC code's 24, the
 frame and the return address). `encrypt_verified` and `decrypt_verified`
-state them as the contracts of `Spec/Cbc/`. Which is emitted for `v`
-(`encryptRegs`, `decryptRegs`): the first where it writes nothing, the
-second otherwise.
+state them as the contracts of `Spec/Cbc/`. Which is emitted for `v`: the
+first where it writes nothing, the second otherwise
+(`Proof/AesCbc/X86/Scrub.lean`, with its cleanup).
 
 Decryption's CBC code for `v` is `decryptCode v`: for AES-NI (`hardware`),
 the code that deciphers six blocks at a time with no call
@@ -324,39 +324,5 @@ theorem decryptCode_spSafe (v : BlocksImpl) : (decryptCode v).all (fun i => !isa
 theorem decrypt_spSafe (v : BlocksImpl) :
     (Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v)).all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe (decryptCode_spSafe v)
-
-/-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted: the
-CBC code itself (`encryptCode v`) where it writes nothing in `scratch`, the
-call wiping its first `encWritten v` bytes otherwise. -/
-def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi X86.target) :=
-  if h : encWritten v = 0 then [{
-    suffix := v.suffix
-    code := encryptCode v
-    stack := 24
-    verified := .unscrubbed (encrypt_free v h)
-    spSafe := encryptCode_spSafe v }]
-  else [{
-    suffix := v.suffix
-    code := Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)
-    stack := 72
-    verified := .unscrubbed (encrypt_verified v)
-    spSafe := encrypt_spSafe v }]
-
-/-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted: the
-CBC code itself (`decryptCode v`) where it writes nothing in `scratch`, the
-call wiping its first `decWritten v` bytes otherwise. -/
-def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi X86.target) :=
-  if h : decWritten v = 0 then [{
-    suffix := v.suffix
-    code := decryptCode v
-    stack := 24
-    verified := .unscrubbed (decrypt_free v h)
-    spSafe := decryptCode_spSafe v }]
-  else [{
-    suffix := v.suffix
-    code := Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v)
-    stack := 72
-    verified := .unscrubbed (decrypt_verified v)
-    spSafe := decrypt_spSafe v }]
 
 end VG.Proof.AesCbc.X86.Wiped

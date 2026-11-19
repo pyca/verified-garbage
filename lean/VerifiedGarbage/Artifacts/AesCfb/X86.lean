@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.X86.Verified
-public import VerifiedGarbage.Proof.AesCfb.X86.Final
+public import VerifiedGarbage.Proof.AesCfb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -12,29 +11,13 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesCfb.X86
 
-open VG.Proof.AesCfb.X86
+open VG.Proof.AesCfb.X86.Scrub
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
-    Spec.Cfb.aesEncryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesCfb.X86.encrypt v.enc
-      verified := .unscrubbed (Proof.AesCfb.encrypt_keyed (encrypt_verified v))
-      spSafe := encrypt_spSafe v },
-    Spec.Cfb.aesDecryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesCfb.X86.decrypt v.enc
-      verified := .unscrubbed (Proof.AesCfb.decrypt_keyed (decrypt_verified v))
-      spSafe := decrypt_spSafe v },
-    Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
-      verified := .unscrubbed (Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v))
-      spSafe := encryptFinal_framed_spSafe v },
-    Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal v.enc v.suffix)
-      verified := .unscrubbed (Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v))
-      spSafe := decryptFinal_framed_spSafe v }]
+    Spec.Cfb.aesEncryptApi.artifact X86.target (encryptReg v),
+    Spec.Cfb.aesDecryptApi.artifact X86.target (decryptReg v),
+    Spec.Cfb.aesEncryptFinalApi.artifact X86.target (encryptFinalReg v),
+    Spec.Cfb.aesDecryptFinalApi.artifact X86.target (decryptFinalReg v)]
 
 end VG.Artifacts.AesCfb.X86
