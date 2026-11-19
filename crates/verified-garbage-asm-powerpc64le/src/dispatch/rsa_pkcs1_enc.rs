@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_rsa_pkcs1_decrypt_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -46,6 +48,8 @@ pub unsafe fn vg_rsa_pkcs1_decrypt_precomputed_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
 ///
 /// It runs `vg_rsa_pkcs1_encrypt_random`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
