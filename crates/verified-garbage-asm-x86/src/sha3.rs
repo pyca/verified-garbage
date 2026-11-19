@@ -23,9 +23,9 @@ pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: u
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4kAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
-.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "jWQkGI2kJJgCAABmD+/AjaQkQP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
 }
 
@@ -52,8 +52,8 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -77,9 +77,9 @@ pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: u
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4iAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
-.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "jWQkGI2kJJgCAABmD+/AjaQkQP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
 }
 
@@ -106,8 +106,8 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -131,9 +131,9 @@ pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: u
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4aAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
-.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "jWQkGI2kJJgCAABmD+/AjaQkQP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
 }
 
@@ -160,8 +160,8 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -185,9 +185,9 @@ pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: u
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4SAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
-.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "jWQkGI2kJJgCAABmD+/AjaQkQP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
 }
 
@@ -214,8 +214,8 @@ call {vg_keccak_pad_scratch}
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -239,9 +239,9 @@ pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: u
     core::arch::naked_asm!(
         r#".base64 "jaQkaP3//4uEJJwCAACJRCQEi4QkoAIAAIlEJAiLhCSkAgAAiUQkDIuEJKgCAACJRCQQieCDwBiJRCQUjWQk6ItEJByJBCS4qAAAAIlEJASLRCQgiUQkCItEJCSJRCQMi0QkKIlEJBCLRCQsiUQkFA=="
 call {vg_keccak_absorb_scratch}
-.base64 "jWQkGI2kJJgCAACNpCRA/f//uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkgAAAAImMJIQAAACJjCSIAAAAiYwkjAAAAImMJJAAAACJjCSUAAAAiYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAiYwkAAIAAImMJAQCAACJjCQIAgAAiYwkDAIAAImMJBACAACJjCQUAgAAiYwkGAIAAImMJBwCAACJjCQgAgAAiYwkJAIAAImMJCgCAACJjCQsAgAAiYwkMAIAAImMJDQCAACJjCQ4AgAAiYwkPAIAAImMJEACAACJjCREAgAAiYwkSAIAAImMJEwCAACJjCRQAgAAiYwkVAIAAImMJFgCAACJjCRcAgAAiYwkYAIAAImMJGQCAACJjCRoAgAAiYwkbAIAAImMJHACAACJjCR0AgAAiYwkeAIAAImMJHwCAACJjCSAAgAAiYwkhAIAAImMJIgCAACJjCSMAgAAiYwkkAIAAImMJJQCAACJjCSYAgAAiYwknAIAAImMJKACAACJjCSkAgAAiYwkqAIAAImMJKwCAACJjCSwAgAAiYwktAIAAImMJLgCAACJjCS8AgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "jWQkGI2kJJgCAABmD+/AjaQkQP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAAjaQkwAIAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
     )
 }
 
@@ -263,7 +263,7 @@ pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "jaQklAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
 }
 
@@ -287,7 +287,7 @@ pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: 
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
 
@@ -309,7 +309,7 @@ pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos:
 call {vg_keccak_pad_scratch}
 .base64 "jaQklAIAAMM="
 .p2align 6"#,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
 }
 
@@ -333,6 +333,22 @@ pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: 
 call {vg_keccak_squeeze_scratch}
 .base64 "jaQkmAIAAMM="
 .p2align 6"#,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_scratch.rs"]
+pub(crate) mod vg_keccak_absorb_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600.rs"]
+pub(crate) mod vg_keccak_f1600;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_pad_scratch.rs"]
+pub(crate) mod vg_keccak_pad_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_squeeze_scratch.rs"]
+pub(crate) mod vg_keccak_squeeze_scratch;
