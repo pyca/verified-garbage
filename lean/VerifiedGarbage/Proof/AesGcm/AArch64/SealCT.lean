@@ -172,7 +172,7 @@ theorem streamVerify_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 25
       Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ'.rd ++ τ'.wr) →
       WP isa tagIn τ' fun τ'' => Env Wn (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ'' ∧ Kept τ'.gpr τ'' :=
     fun hok he h12 h28 hr => WP.mono (tagIn_ok he.x19 h12 h28 (tagLenOk_le hok) hr he.perm.w
-      (dtw.sub_right (Region.sub_prefix (by decide)))) fun _ ⟨_, _, og, sp, rd, wr⟩ =>
+      (dtw.sub_right (Region.sub_prefix (by omega)))) fun _ ⟨_, _, og, sp, rd, wr⟩ =>
         ⟨he.keep (fun r hr => og r (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl <;> decide)) sp rd wr, Kept.of_others (fun _ _ => rfl) og⟩
@@ -277,12 +277,12 @@ theorem RelCT.assoc' {a b c : Prog isa} {P Q : State → State → Prop}
 /-- `oneAad`'s first block. -/
 theorem aadBlk_ok {Wn : Nat} {s : State} {W A : Addr} {al : Nat} (h19 : s.gpr .x19 = W)
     (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (sA : s.mem.readW (W + BitVec.ofNat 64 216) 64 = A)
-    (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al) :
+    (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.block [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO, imm .x25 0]) s fun s' =>
       s'.gpr .x23 = A ∧ s'.gpr .x24 = BitVec.ofNat 64 al ∧ s'.gpr .x25 = BitVec.ofNat 64 0 ∧
       Regs [.x23, .x24, .x25] s s' := by
-  have q₁ := in_off hr (show 216 + 8 ≤ 512 by decide) (by decide)
-  have q₂ := in_off hr (show 224 + 8 ≤ 512 by decide) (by decide)
+  have q₁ := in_off hr (show 216 + 8 ≤ Wn by omega) (by omega)
+  have q₂ := in_off hr (show 224 + 8 ≤ Wn by omega) (by omega)
   refine WP.run ⟨_, by arun [h19, q₁, q₂], rfl⟩ fun s' hs' => ?_
   subst hs'
   refine ⟨?_, ?_, by simp [gpr_write], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
@@ -294,13 +294,13 @@ theorem encPrep_ok {Wn : Nat} {s : State} {W D : Addr} {al n : Nat} (h19 : s.gpr
     (hr : Covers [⟨W, Wn⟩] (s.rd ++ s.wr)) (hlt : al < 2 ^ 64)
     (sL : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
     (sD : s.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
-    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) :
+    (sN : s.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     WP isa (.block encPrep) s fun s' =>
       s'.gpr .x25 = BitVec.ofNat 64 (al % 16) ∧ s'.gpr .x26 = BitVec.ofNat 64 n ∧ s'.gpr .x27 = 0 ∧
       s'.gpr .x28 = D ∧ Regs [.x9, .x10, .x25, .x26, .x27, .x28] s s' := by
-  have q₂ := in_off hr (show 224 + 8 ≤ 512 by decide) (by decide)
-  have q₃ := in_off hr (show 232 + 8 ≤ 512 by decide) (by decide)
-  have q₄ := in_off hr (show 240 + 8 ≤ 512 by decide) (by decide)
+  have q₂ := in_off hr (show 224 + 8 ≤ Wn by omega) (by omega)
+  have q₃ := in_off hr (show 232 + 8 ≤ Wn by omega) (by omega)
+  have q₄ := in_off hr (show 240 + 8 ≤ Wn by omega) (by omega)
   refine WP.run ⟨_, by simp only [encPrep]; arun [h19, q₂, q₃, q₄], rfl⟩ fun s' hs' => ?_
   subst hs'
   refine ⟨?_, ?_, by simp [gpr_write], ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
@@ -350,7 +350,7 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
     (h₁ : FrontIn Wn Ctx St W SP k₁ Np A D nl al n σ₁) (h₂ : FrontIn Wn Ctx St W SP k₂ Np A D nl al n σ₂)
     {rest : Prog isa}
     (hr : ∀ τ₁ τ₂, FrontOut Wn Ctx St W SP k₁ D al n σ₁ τ₁ → FrontOut Wn Ctx St W SP k₂ D al n σ₂ τ₂ →
-      RelCT isa (Eq2 τ₁ τ₂) rest TT) :
+      RelCT isa (Eq2 τ₁ τ₂) rest TT) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) TT := by
   have hlt := h₁.aad.lt
   have j₁ : J0In Wn Ctx St W SP k₁ (blockAt σ₁.mem (Ctx + BitVec.ofNat 64 240)) Np nl σ₁ :=
@@ -514,12 +514,11 @@ theorem frontIn_of {Wn : Nat} {σ σ₀ τ : State} {n w : Nat} {V : BitVec 64} 
       τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 240) 64 = σ.gpr .x7 ∧
       τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 248) 64 = V ∧
       Frame [entryR (stackArg σ₀ w)] σ.mem τ.mem ∧ SavedAt τ.mem (stackArg σ₀ w) σ ∧ τ.rd = σ.rd ∧
-      τ.wr = σ.wr) :
+      τ.wr = σ.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     FrontIn Wn (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ.sp τ.gpr (σ₀.gpr .x2)
       (σ₀.gpr .x4) (σ₀.gpr .x6) (σ₀.gpr .x3).toNat (σ₀.gpr .x5).toNat (σ₀.gpr .x7).toNat τ := by
-  obtain hWn := a.perm.hWn
   obtain ⟨he, _, x23, x24, x26, x27, _, s1, s2, s3, s4, _, _, _, rd, wr⟩ := a
-  obtain sub16 : Region.Sub ⟨stackArg σ₀ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₀ w)) := Lay.wSub (by decide)
+  obtain sub16 : Region.Sub ⟨stackArg σ₀ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₀ w)) := Lay.wSub (by omega)
   exact ⟨he, fun _ _ => rfl, by rw [x23, h2], by rw [x24, h3, ofNat_toNat'], by rw [x26, h3, ofNat_toNat'], x27,
     ⟨by rw [rd, wr]; exact f.nonceR, (σ₀.gpr .x3).isLt, f.ol.nw, f.ol.nonce.sub_right sub16, f.ol.nonce⟩,
     ⟨by rw [rd, wr]; exact f.aadR, (σ₀.gpr .x5).isLt, f.ol.aw, f.ol.aad.sub_right sub16, f.ol.aad⟩,
@@ -572,7 +571,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   rw [← q5] at s2₂
   rw [← q7] at s4₂
   have ol := f₁.ol
-  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by decide)
+  obtain sub16 : Region.Sub ⟨stackArg σ₁ w + BitVec.ofNat 64 16, 80⟩ (workR Wn (stackArg σ₁ w)) := Lay.wSub (by have := L.hWn; omega)
   have hRb : (σ₁.gpr .x1).toNat = 10 ∨ (σ₁.gpr .x1).toNat = 12 ∨ (σ₁.gpr .x1).toNat = 14 := ol.rounds
   obtain hal := (σ₁.gpr .x5).isLt
   obtain hn := (σ₁.gpr .x7).isLt
@@ -631,7 +630,7 @@ theorem sealRest_rel {Wn : Nat} (v : GcmImpl) {w : Nat} {extra₁ extra₂ extra
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem seal_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub («seal» v.callees) := by
+theorem seal_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by assumption) : ConstantTime isa (sealAArch64 Wn).pre (sealAArch64 Wn).pub («seal» v.callees) := by
   unfold «seal»
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 1 < 2) (sealCore h₁) (sealCore h₂) hq
