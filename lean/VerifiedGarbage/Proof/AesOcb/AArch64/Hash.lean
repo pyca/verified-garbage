@@ -282,7 +282,7 @@ theorem fill_step {T : Nat} {K W D : Addr} {n R : Nat} {SP : Addr} {ciph : Ciphe
     rw [F.rd, F.wr]; exact (C.buf.slice (a := 16 * (j + i)) (k := 16) (by omega_arith)).rd
   obtain hAW : (⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint ⟨W, T⟩ :=
     (C.buf.slice (a := 16 * (j + i)) (k := 16) (by omega_arith)).w
-  refine WP.mono (hashFill_ok L F.env.x19 (F.env.perm.w5 L) hi hc (by omega_arith) F.x25 F.x23 F.x27 F.x15 F.l0 F.oh hA hAW)
+  refine WP.mono (hashFill_ok L F.env.x19 (F.env.perm.w5) hi hc (by omega_arith) F.x25 F.x23 F.x27 F.x15 F.l0 F.oh hA hAW)
     fun t' P => ?_
   obtain hfr : ∀ r ∈ [(⟨W + BitVec.ofNat 64 lO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ohO, 16⟩,
       ⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩], ∃ r' ∈ hashR T W, Region.Sub r r' := by
@@ -542,7 +542,7 @@ theorem chunkRest_ok (v : BlocksImpl) {T : Nat} {K W D : Addr} {n R : Nat} {SP :
     rw [this, F.buf k hk]
     exact congrFun (C.ciph' (hashR_mut F.frame)) _
   obtain h24₃ : t₃.gpr .x24 = BitVec.ofNat 64 c := by rw [P₃.saved _ (by decide) (by decide), F.x24]
-  refine WP.seq (WP.mono (hashSum_ok L E₃.x19 (E₃.perm.w5 L) hc0 hc h24₃ hg) fun t₄ ⟨fr₄, sum₄, g₄, sp₄, rd₄, wr₄⟩ => ?_)
+  refine WP.seq (WP.mono (hashSum_ok L E₃.x19 (E₃.perm.w5) hc0 hc h24₃ hg) fun t₄ ⟨fr₄, sum₄, g₄, sp₄, rd₄, wr₄⟩ => ?_)
   obtain E₄ := E₃.others g₄ sp₄ rd₄ wr₄
   obtain k₄ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ 64 ≤ d) → d + 16 ≤ T →
       blockAtMem t₄.mem (W + BitVec.ofNat 64 d) = blockAtMem t₃.mem (W + BitVec.ofNat 64 d) := fun h₁ h₂ =>
@@ -669,7 +669,7 @@ theorem hashRest_ok (v : BlocksImpl) {T : Nat} {K W D : Addr} {n R : Nat} {SP : 
       (C.a_mut r hr).sub_left (Offset.sub_base A (by omega_using [hm]))) (by omega_using []), hd]
   unfold hashRest
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (padTo_ok E₁.x19 (E₁.perm.w5 L) hr (by omega_using []) (by decide)
+  refine WP.seq (WP.mono (padTo_ok E₁.x19 (E₁.perm.w5) hr (by omega_using []) (by decide)
     (by rw [B₁.gpr _ (by decide), H.x23]) (by rw [B₁.gpr _ (by decide), h24]) hS hSD)
     fun t₂ ⟨fr₂, pad₂, g₂, sp₂, rd₂, wr₂⟩ => ?_)
   rw [hrestb] at pad₂
@@ -784,7 +784,7 @@ theorem hashHead_ok {T : Nat} {K W D : Addr} {n R : Nat} {SP : Addr} {ciph : Cip
   obtain hT := C.lay.hT
   have L := C.lay
   have hs := C.short
-  obtain ⟨s₁, run₁, x23₁, x26₁, g₁, f₁, sum₁, oh₁, sp₁, rd₁, wr₁⟩ := hashHead1_ok L E.x19 (E.perm.w5 L) haad halen
+  obtain ⟨s₁, run₁, x23₁, x26₁, g₁, f₁, sum₁, oh₁, sp₁, rd₁, wr₁⟩ := hashHead1_ok L E.x19 (E.perm.w5) haad halen
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine Proof.AesGcm.AArch64.WP.run (Q := fun s => s = (s₁.write .x .x26 (s₁.gpr .x26 >>> 4)).write .x .x25
     (BitVec.ofNat 64 1)) ⟨_, by orun [], rfl⟩ fun s hs' => ?_

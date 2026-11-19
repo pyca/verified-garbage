@@ -219,7 +219,7 @@ structure Lay (T : Nat) (K W : Addr) : Prop where
 
 /-- What a state may access. -/
 structure Perm (T : Nat) (K W : Addr) (s : State) : Prop where
-  hT : T ≤ 2560
+  hT : 512 ≤ T ∧ T ≤ 2560
   k : Covers [⟨K, 256⟩] (s.rd ++ s.wr)
   w : Covers [⟨W, T⟩] s.wr
 
@@ -299,8 +299,8 @@ theorem wC {d n : Nat} (h : d + n ≤ T) : Covers [⟨W + BitVec.ofNat 64 d, n�
 
 /-- The first 512 bytes of the working space, which hold everything but the
 callee's. -/
-theorem w5 (L : Lay T K W) : Covers [⟨W, 512⟩] s.wr :=
-  Proof.AesGcm.AArch64.covers_prefix P.w L.hT.1
+theorem w5 : Covers [⟨W, 512⟩] s.wr :=
+  Proof.AesGcm.AArch64.covers_prefix P.w P.hT.1
 
 end Perm
 

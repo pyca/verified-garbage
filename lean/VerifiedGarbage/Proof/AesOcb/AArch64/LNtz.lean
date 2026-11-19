@@ -858,7 +858,7 @@ theorem nonce_ok (v : BlocksImpl) {T : Nat} {K W D : Addr} {R n : Nat} {SP : Add
       (NonceOk T K W D R n SP (Spec.Ocb.offset0 (ctxCiph s.mem K R) t (bytesAt s.mem N nl)) s) := by
   obtain hT := L.hT
   unfold nonce
-  refine WP.seq (WP.mono (nonceBlock_ok L E.x19 (E.perm.w5 L) hN hnl htl h1 h15 ht hB) fun s₁ P₁ => ?_)
+  refine WP.seq (WP.mono (nonceBlock_ok L E.x19 (E.perm.w5) hN hnl htl h1 h15 ht hB) fun s₁ P₁ => ?_)
   obtain E₁ : Env T K W D R n SP s₁ := E.others P₁.gpr P₁.sp P₁.rd P₁.wr
   obtain F₁ : Frame (nonceR T W) s.mem s₁.mem := P₁.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -886,7 +886,7 @@ theorem nonce_ok (v : BlocksImpl) {T : Nat} {K W D : Addr} {R n : Nat} {SP : Add
       rcases hr with rfl | rfl
       · exact L.w_w (.inr (by decide)) (by have := ocbOffs; omega) (by have := ocbOffs; omega)
       · exact L.w_w (.inl (by decide)) (by have := ocbOffs; omega) (by have := ocbOffs; omega)) (by decide), P₁.bot]
-  obtain ⟨s₃, run₃, P₃⟩ := offset0_ok L E₂.x19 (E₂.perm.w5 L) hbv bot₂
+  obtain ⟨s₃, run₃, P₃⟩ := offset0_ok L E₂.x19 (E₂.perm.w5) hbv bot₂
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   refine ⟨E₂.others P₃.gpr P₃.sp P₃.rd P₃.wr,
     F₁.trans (F₂.trans (P₃.frame.sub fun r hr => ?_)), ?_, ?_, fun {d} h₁ h₂ => ?_, by rw [P₃.rd, P₂.rd, P₁.rd],
