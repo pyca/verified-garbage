@@ -56,12 +56,12 @@ theorem xor2_ok (s : State) (pb qb cb : Reg) (pd qd cd : Nat) {P Q C : Addr}
   refine ⟨?_, fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], rfl, rfl, rfl⟩
   simp only [Proof.Cmac.xor2Mem, Mem.writeW, Mem.readW, BitVec.setWidth_eq]
 
-theorem full_eq : full = xor2 .x3 .x0 .x5 0 240 2048 := rfl
+theorem full_eq : full = xor2 .x3 .x0 .x5 0 240 0 := rfl
 theorem padK2_eq :
-    padK2 = ([.movz .x .x9 0x80 0, .strb .x9 .x6 0] : List Instr) ++ xor2 .x5 .x0 .x5 2048 256 2048 := rfl
-theorem finArgs_eq : finArgs = xor2 .x5 .x2 .x5 2048 0 2048 ++
-    ([.movz .x .x9 0 0, .str .x .x9 .x2 0, .str .x .x9 .x2 8, .str .x .x19 .x5 2064, .str .x .x30 .x5 2072,
-     mov .x19 .x5, mov .x3 .x2, .addImm .x .x2 .x5 cOff, .movz .x .x4 1 0] : List Instr) := rfl
+    padK2 = ([.movz .x .x9 0x80 0, .strb .x9 .x6 0] : List Instr) ++ xor2 .x5 .x0 .x5 0 256 0 := rfl
+theorem finArgs_eq : finArgs = xor2 .x5 .x2 .x5 0 0 0 ++
+    ([.movz .x .x9 0 0, .str .x .x9 .x2 0, .str .x .x9 .x2 8, .str .x .x19 .x5 16, .str .x .x30 .x5 24,
+     mov .x19 .x5, mov .x3 .x2, .addImm .x .x2 .x5 0, .movz .x .x4 1 0, .addImm .x .x5 .x5 wOff] : List Instr) := rfl
 
 theorem sub16_ok (s : State) {L : Nat} (h4 : s.gpr .x4 = BitVec.ofNat 64 L) (hL : L ≤ 16) :
     ∃ s', runBlock isa [.subImm .x .x9 .x4 16] s = some s' ∧
@@ -73,8 +73,8 @@ theorem sub16_ok (s : State) {L : Nat} (h4 : s.gpr .x4 = BitVec.ofNat 64 L) (hL 
   simp only [State.read, gpr_write_self, BitVec.setWidth_eq, h4]
   rw [Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
 
-theorem zero_ok (s : State) {C : Addr} (hc : s.gpr .x5 + BitVec.ofNat 64 2048 = C)
-    (hc8 : s.gpr .x5 + BitVec.ofNat 64 2056 = C + BitVec.ofNat 64 8)
+theorem zero_ok (s : State) {C : Addr} (hc : s.gpr .x5 + BitVec.ofNat 64 0 = C)
+    (hc8 : s.gpr .x5 + BitVec.ofNat 64 8 = C + BitVec.ofNat 64 8)
     (wc : InRegions s.wr C 8) (wc8 : InRegions s.wr (C + BitVec.ofNat 64 8) 8) :
     ∃ s', runBlock isa zero s = some s' ∧ s'.mem = Proof.Cmac.zero2 s.mem C ∧ s'.gpr .x6 = C ∧
       s'.gpr .x7 = s.gpr .x3 ∧ s'.gpr .x8 = s.gpr .x4 ∧
@@ -190,22 +190,24 @@ theorem pad_ok (s : State) {B : Addr} (hb : s.gpr .x6 + BitVec.ofNat 64 0 = B) (
 
 theorem args_ok (s : State) {D S : Addr} (hd : s.gpr .x2 = D) (hs : s.gpr .x5 = S)
     (wd : InRegions s.wr (D + BitVec.ofNat 64 0) 8) (wd8 : InRegions s.wr (D + BitVec.ofNat 64 8) 8)
-    (ws₁ : InRegions s.wr (S + BitVec.ofNat 64 2064) 8) (ws₂ : InRegions s.wr (S + BitVec.ofNat 64 2072) 8) :
-    ∃ s', runBlock isa [.movz .x .x9 0 0, .str .x .x9 .x2 0, .str .x .x9 .x2 8, .str .x .x19 .x5 2064,
-        .str .x .x30 .x5 2072, mov .x19 .x5, mov .x3 .x2, .addImm .x .x2 .x5 cOff, .movz .x .x4 1 0] s = some s' ∧
+    (ws₁ : InRegions s.wr (S + BitVec.ofNat 64 16) 8) (ws₂ : InRegions s.wr (S + BitVec.ofNat 64 24) 8) :
+    ∃ s', runBlock isa [.movz .x .x9 0 0, .str .x .x9 .x2 0, .str .x .x9 .x2 8, .str .x .x19 .x5 16,
+        .str .x .x30 .x5 24, mov .x19 .x5, mov .x3 .x2, .addImm .x .x2 .x5 0, .movz .x .x4 1 0,
+        .addImm .x .x5 .x5 wOff] s = some s' ∧
       s'.mem = (((s.mem.writeW (D + BitVec.ofNat 64 0) (0 : BitVec 64)).writeW (D + BitVec.ofNat 64 8)
-        (0 : BitVec 64)).writeW (S + BitVec.ofNat 64 2064) (s.gpr .x19)).writeW (S + BitVec.ofNat 64 2072)
+        (0 : BitVec 64)).writeW (S + BitVec.ofNat 64 16) (s.gpr .x19)).writeW (S + BitVec.ofNat 64 24)
         (s.gpr .x30) ∧
-      s'.gpr .x3 = D ∧ s'.gpr .x2 = S + BitVec.ofNat 64 2048 ∧ s'.gpr .x4 = 1 ∧ s'.gpr .x19 = S ∧
-      (∀ r, r ≠ .x2 → r ≠ .x3 → r ≠ .x4 → r ≠ .x9 → r ≠ .x19 → s'.gpr r = s.gpr r) ∧
+      s'.gpr .x3 = D ∧ s'.gpr .x2 = S + BitVec.ofNat 64 0 ∧ s'.gpr .x4 = 1 ∧ s'.gpr .x19 = S ∧
+      s'.gpr .x5 = S + BitVec.ofNat 64 128 ∧
+      (∀ r, r ≠ .x2 → r ≠ .x3 → r ≠ .x4 → r ≠ .x5 → r ≠ .x9 → r ≠ .x19 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [cOff, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp (config := {decide := true}) only [wOff, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
       addr, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, wr_write, ite_true,
       ite_false, Option.bind_some, BitVec.setWidth_eq, hd, hs, wd, wd8, ws₁, ws₂]
     rfl, ?_⟩
-  refine ⟨?_, by simp [gpr_write], by simp [gpr_write], rfl, by simp [gpr_write],
-    fun r h₁ h₂ h₃ h₄ h₅ => by simp [gpr_write, h₁, h₂, h₃, h₄, h₅], rfl, rfl, rfl⟩
+  refine ⟨?_, by simp [gpr_write], by simp [gpr_write], rfl, by simp [gpr_write], by simp [gpr_write],
+    fun r h₁ h₂ h₃ h₄ h₅ h₆ => by simp [gpr_write, h₁, h₂, h₃, h₄, h₅, h₆], rfl, rfl, rfl⟩
   simp only [mem_write, Mem.writeW, BitVec.setWidth_eq, mz0]
 
 end VG.Proof.CmacAes.AArch64
