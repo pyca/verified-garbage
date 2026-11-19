@@ -82,7 +82,7 @@ def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (brainpoolp384r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries (vars vs1 vs256)
-      verified := brainpoolp384r1T_verified hasLaw.law (vars vs1 vs256) hv
+      verified := .unscrubbed (brainpoolp384r1T_verified hasLaw.law (vars vs1 vs256) hv)
       spSafe := signCode_sp _ _ _ }]
   else []
 
@@ -99,7 +99,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifyBrainpoolP384r1
-    verified := Proof.Ecdsa.Verify.X86.BrainpoolP384r1.verifyHash_verified hasLaw.law }] ++
+    verified := .unscrubbed (Proof.Ecdsa.Verify.X86.BrainpoolP384r1.verifyHash_verified hasLaw.law) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.X86

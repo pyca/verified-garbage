@@ -18,7 +18,7 @@ namespace VG.Artifacts.RsaKeyGen.X86
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact X86.target {
     code := Impl.RsaKeyGen.X86.KeyInit.init
-    verified := Proof.RsaKeyGen.X86.KeyInit.init_verified }]
+    verified := .unscrubbed Proof.RsaKeyGen.X86.KeyInit.init_verified }]
 
 end VG.Artifacts.RsaKeyGen.X86
 
@@ -32,7 +32,7 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact target {
       suffix := v.suffix
       code := Proof.RsaKeyGen.X86.Generate.genCode v
-      verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
+      verified := .unscrubbed (Proof.RsaKeyGen.X86.Generate.gen_verified v)
       spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }])
 
 end VG.Artifacts.RsaKeyGen.X86

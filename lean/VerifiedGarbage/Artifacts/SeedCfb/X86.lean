@@ -16,15 +16,15 @@ namespace VG.Artifacts.SeedCfb.X86
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncrypt
-    verified := Proof.Seed.X86.Fb.cfbEncrypt_framed },
+    verified := .unscrubbed Proof.Seed.X86.Fb.cfbEncrypt_framed },
   Spec.Seed.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecrypt
-    verified := Proof.Seed.X86.Fb.cfbDecrypt_framed },
+    verified := .unscrubbed Proof.Seed.X86.Fb.cfbDecrypt_framed },
   Spec.Seed.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncryptFinal
-    verified := Proof.Seed.X86.FbFinal.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Seed.X86.FbFinal.cfbEncryptFinal_framed },
   Spec.Seed.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecryptFinal
-    verified := Proof.Seed.X86.FbFinal.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Seed.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.SeedCfb.X86

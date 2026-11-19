@@ -19,22 +19,22 @@ def artifacts : List Artifact :=
     Spec.Cfb.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.encrypt v.enc
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
+      verified := .unscrubbed (Proof.AesCfb.encrypt_keyed (encrypt_verified v))
       spSafe := encrypt_spSafe v },
     Spec.Cfb.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.decrypt v.enc
-      verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
+      verified := .unscrubbed (Proof.AesCfb.decrypt_keyed (decrypt_verified v))
       spSafe := decrypt_spSafe v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
-      verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v)
+      verified := .unscrubbed (Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v))
       spSafe := encryptFinal_framed_spSafe v },
     Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal v.enc v.suffix)
-      verified := Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v)
+      verified := .unscrubbed (Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v))
       spSafe := decryptFinal_framed_spSafe v }]
 
 end VG.Artifacts.AesCfb.X86

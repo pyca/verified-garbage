@@ -26,7 +26,7 @@ def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.S
       suffix := qualifiedName "" []
       tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
       code := Proof.RsaOaep.X86.Enc.encryptCode (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
-      verified := enc_ok _ h
+      verified := .unscrubbed (enc_ok _ h)
       spSafe := Proof.RsaOaep.X86.Enc.code_sp Proof.RsaPkcs1Sig.X86.Ver.baseline }]
   else []
 
@@ -46,7 +46,7 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
       code := Proof.RsaOaep.X86.Dec.decCodeP (vars vs1 vs256) c crtPBaseline
-      verified := decP_ok _ h c crtPBaseline
+      verified := .unscrubbed (decP_ok _ h c crtPBaseline)
       spSafe := Proof.RsaOaep.X86.Dec.code_spP c crtPBaseline }]
   else []
 

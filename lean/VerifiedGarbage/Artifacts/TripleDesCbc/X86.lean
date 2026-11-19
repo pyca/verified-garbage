@@ -14,9 +14,9 @@ namespace VG.Artifacts.TripleDesCbc.X86
 def artifacts : List Artifact := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
-    verified := Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed },
+    verified := .unscrubbed Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained
-    verified := Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }]
+    verified := .unscrubbed Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.X86

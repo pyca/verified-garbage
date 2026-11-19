@@ -57,12 +57,12 @@ open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.publicKeyBrainpoolP256r1
-    verified := Proof.EcKey.X86.BrainpoolP256r1.pk_verified hasLaw.law hasLaw.inv },
+    verified := .unscrubbed (Proof.EcKey.X86.BrainpoolP256r1.pk_verified hasLaw.law hasLaw.inv) },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact X86.target {
     code := Proof.EcKey.Compressed.X86.BrainpoolP256r1.code
-    verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1.verified hasLaw.inv },
+    verified := .unscrubbed (Proof.EcKey.Compressed.X86.BrainpoolP256r1.verified hasLaw.inv) },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact X86.target {
     code := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.verified hasLaw.law hasLaw.inv }]
+    verified := .unscrubbed (Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.verified hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcBrainpoolP256r1.X86

@@ -19,24 +19,24 @@ open VG.Proof.P256.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.P256.code
-    verified := Proof.EcKey.Compressed.Arm.P256.verified },
+    verified := .unscrubbed Proof.EcKey.Compressed.Arm.P256.verified },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.P256Decompress.code
-    verified := Proof.EcKey.Compressed.Arm.P256Decompress.verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.P256Decompress.verified hasLaw.law) },
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.P256.codeU
-    verified := Proof.EcKey.Compressed.Arm.P256.verifiedU },
+    verified := .unscrubbed Proof.EcKey.Compressed.Arm.P256.verifiedU },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.P256Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.P256Decompress.verifiedU hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Compressed.Arm.P256Decompress.verifiedU hasLaw.law) },
   Spec.EcKey.P256.publicKeyApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.publicKeyP256Comb
-    verified := Proof.EcKey.Arm.P256.combPk_verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Arm.P256.combPk_verified hasLaw.law) },
   Spec.EcKey.P256.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.publicKeyP256CombU
-    verified := Proof.EcKey.Arm.P256.combPkU_verified hasLaw.law }]
+    verified := .unscrubbed (Proof.EcKey.Arm.P256.combPkU_verified hasLaw.law) }]
 
 end VG.Artifacts.EcP256.Arm

@@ -16,12 +16,12 @@ open VG.Proof.AesOcb.RISCV64
 def artifacts : List Artifact := [
   Spec.Ocb.initApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
-    verified := init_framed },
+    verified := .unscrubbed init_framed },
   Spec.Ocb.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«seal»
-    verified := Proof.AesOcb.seal_keyed seal_framed },
+    verified := .unscrubbed (Proof.AesOcb.seal_keyed seal_framed) },
   Spec.Ocb.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«open»
-    verified := Proof.AesOcb.open_keyed open_framed }]
+    verified := .unscrubbed (Proof.AesOcb.open_keyed open_framed) }]
 
 end VG.Artifacts.AesOcb.RISCV64

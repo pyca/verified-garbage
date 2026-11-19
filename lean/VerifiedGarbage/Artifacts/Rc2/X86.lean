@@ -17,12 +17,12 @@ namespace VG.Artifacts.Rc2.X86
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.init
-    verified := Proof.Rc2.X86.Stream.init_framed },
+    verified := .unscrubbed Proof.Rc2.X86.Stream.init_framed },
   Spec.Rc2.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.encrypt
-    verified := Proof.Rc2.X86.Cbc.encryptChained_framed },
+    verified := .unscrubbed Proof.Rc2.X86.Cbc.encryptChained_framed },
   Spec.Rc2.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.decrypt
-    verified := Proof.Rc2.X86.Cbc.decryptChained_framed }]
+    verified := .unscrubbed Proof.Rc2.X86.Cbc.decryptChained_framed }]
 
 end VG.Artifacts.Rc2.X86

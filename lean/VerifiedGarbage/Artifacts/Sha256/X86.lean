@@ -19,7 +19,7 @@ def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Sha256.digest256Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
-    verified := Proof.MdStream.X86.Digest.sha256_digest v.stream
+    verified := .unscrubbed (Proof.MdStream.X86.Digest.sha256_digest v.stream)
     spSafe := Proof.MdStream.X86.Digest.sha256_digestSp v.stream }]
 
 def artifacts : List Artifact :=
@@ -34,7 +34,7 @@ def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Sha256.digest224Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
-    verified := Proof.MdStream.X86.Digest.sha224_digest v.stream
+    verified := .unscrubbed (Proof.MdStream.X86.Digest.sha224_digest v.stream)
     spSafe := Proof.MdStream.X86.Digest.sha224_digestSp v.stream }]
 
 def artifacts : List Artifact :=
@@ -50,10 +50,10 @@ def artifacts : List Artifact :=
   [
     Spec.Sha256.init224Api.artifact X86.target {
       code := Impl.Sha256.X86.Stream.init224
-      verified := Proof.Sha256.X86.Shared.init224 },
+      verified := .unscrubbed Proof.Sha256.X86.Shared.init224 },
     Spec.Sha256.initApi.artifact X86.target {
       code := Impl.Sha256.X86.Stream.init
-      verified := Proof.Sha256.X86.Shared.init }] ++
+      verified := .unscrubbed Proof.Sha256.X86.Shared.init }] ++
   (VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) =>
     v.functions.map fun f =>
       f.api.artifact X86.target { f.reg with suffix := v.suffix})
