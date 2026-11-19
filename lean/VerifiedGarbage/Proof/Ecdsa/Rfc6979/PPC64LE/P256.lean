@@ -253,7 +253,7 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 
-theorem p256_sizes : (Spec.P256.curve.len = 24 ∨ Spec.P256.curve.len = 28 ∨ Spec.P256.curve.len = 32 ∨ Spec.P256.curve.len = 48 ∨ Spec.P256.curve.len = 64) ∧
+theorem p256_sizes : (Spec.P256.curve.len = 24 ∨ Spec.P256.curve.len = 28 ∨ Spec.P256.curve.len = 32 ∨ Spec.P256.curve.len = 40 ∨ Spec.P256.curve.len = 48 ∨ Spec.P256.curve.len = 64) ∧
     4 = (Spec.P256.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits Spec.P256.curve = 8 * Spec.P256.curve.len ∧ 2 ^ (8 * Spec.P256.curve.len) < 2 * Spec.P256.curve.n :=
   ⟨by decide, by decide, by rw [p256_nBits]; decide, by decide +kernel⟩
 

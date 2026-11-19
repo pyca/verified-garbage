@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.PPC64LE.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.PPC64LE
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdh.P192.PPC64LE
@@ -14,6 +15,7 @@ public import VerifiedGarbage.Impl.Ecdh.P384.PPC64LE
 public import VerifiedGarbage.Impl.Ecdh.P521.PPC64LE
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP320r1.Verified
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.P192.Verified
@@ -23,6 +25,7 @@ public import VerifiedGarbage.Proof.Ecdh.PPC64LE.P521.Verified
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Verified
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdh.Generic
@@ -33,6 +36,7 @@ public import VerifiedGarbage.Spec.Ecdh.P384
 public import VerifiedGarbage.Spec.Ecdh.P521
 public import VerifiedGarbage.Spec.Ecdh.Secp256k1
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP320r1.Lit
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Lit
@@ -122,6 +126,15 @@ def brainpoolp256r1Exchange (hL : Law Spec.BrainpoolP256r1.curve) : Registration
   scrubOf {
       code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP256r1
       verified := Proof.Ecdh.PPC64LE.BrainpoolP256r1.ecdh_verified hL }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (by dsimp only; lit_decide)
+
+/-- `Spec.Ecdh.BrainpoolP320r1.exchangeApi`. -/
+def brainpoolp320r1Exchange (hL : Law Spec.BrainpoolP320r1.curve) : Registration Spec.Ecdh.BrainpoolP320r1.exchangeApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP320r1
+      verified := Proof.Ecdh.PPC64LE.BrainpoolP320r1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
     (by dsimp only; lit_decide)

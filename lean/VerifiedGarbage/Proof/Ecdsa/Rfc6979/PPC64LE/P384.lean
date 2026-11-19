@@ -253,7 +253,7 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 
-theorem p384_sizes : (Spec.P384.curve.len = 24 ∨ Spec.P384.curve.len = 28 ∨ Spec.P384.curve.len = 32 ∨ Spec.P384.curve.len = 48 ∨ Spec.P384.curve.len = 64) ∧
+theorem p384_sizes : (Spec.P384.curve.len = 24 ∨ Spec.P384.curve.len = 28 ∨ Spec.P384.curve.len = 32 ∨ Spec.P384.curve.len = 40 ∨ Spec.P384.curve.len = 48 ∨ Spec.P384.curve.len = 64) ∧
     6 = (Spec.P384.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits Spec.P384.curve = 8 * Spec.P384.curve.len ∧ 2 ^ (8 * Spec.P384.curve.len) < 2 * Spec.P384.curve.n :=
   ⟨by decide, by decide, by rw [p384_nBits]; decide, by decide +kernel⟩
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.PPC64LE
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP320r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.PPC64LE
@@ -15,6 +16,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.PPC64LE
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P192.Verified
@@ -24,6 +26,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Verified
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.P192
@@ -33,6 +36,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
@@ -42,6 +46,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Lit
@@ -145,6 +150,17 @@ def brainpoolp256r1Verify (hL : Law Spec.BrainpoolP256r1.curve) : Registration S
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
     (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts Spec.Ecdsa.BrainpoolP256r1.inst)
+    (by dsimp only; lit_decide)
+
+/-- `Spec.Ecdsa.BrainpoolP320r1.verifyHashApi`. -/
+def brainpoolp320r1Verify (hL : Law Spec.BrainpoolP320r1.curve) : Registration Spec.Ecdsa.BrainpoolP320r1.verifyHashApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
+        Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP320r1
+      verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.verifyHash_verified hL }
+    112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v18, .v19]⟩
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts Spec.Ecdsa.BrainpoolP320r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP384r1.verifyHashApi`. -/

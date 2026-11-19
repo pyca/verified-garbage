@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP256r1
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP320r1
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P192
@@ -16,6 +17,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P384
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P521
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.P192
@@ -26,6 +28,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.CombLit
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP320r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP384r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
@@ -176,6 +179,16 @@ def brainpoolp256r1Sign (hL : Law Spec.BrainpoolP256r1.curve) (hv : OK vars ∧ 
     736 .all
     (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts vars)
     (by dsimp only [signCodeT, cfgT, brainpoolp256r1R, brainpoolp256r1Core, RfcCurve.Q]; lit_decide)
+
+/-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi`, with the HMAC implementations of
+`HmacTable.PPC64LE.vars`. -/
+def brainpoolp320r1Sign (hL : Law Spec.BrainpoolP320r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP320R1_COMB" ∉ names vars) :
+    Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi PPC64LE.target :=
+  withScrub {
+      tables := [("hmac", tables vars)]
+      code := signCodeT (brainpoolp320r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars
+      verified := brainpoolp320r1T_verified hL vars hv }
+    (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1 Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts vars)
 
 /-- `Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi`, with the HMAC implementations of
 `HmacTable.PPC64LE.vars`. -/
