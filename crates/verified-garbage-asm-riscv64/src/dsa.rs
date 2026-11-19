@@ -10616,12 +10616,12 @@ bnez a2, 21017b
 21:
 .base64 "gzCLBwM0iwuDNAsMAzmLDIM5Cw0DOosNgzoLDoM7iw4DPAsPgzyLDwM9CxCDPYsQAzsLEYFCAXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4TAQEgAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
-        vg_sha256_compress = sym super::dsa::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,
         vg_dsa_probable_prime_3072 = sym super::dsa::vg_dsa_probable_prime_3072::vg_dsa_probable_prime_3072,
         vg_dsa_check_parameters = sym super::dsa::vg_dsa_check_parameters::vg_dsa_check_parameters,
         vg_dsa_probable_prime_2048 = sym super::dsa::vg_dsa_probable_prime_2048::vg_dsa_probable_prime_2048,
-        vg_sha1_compress = sym super::dsa::vg_sha1_compress::vg_sha1_compress,
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
         vg_dsa_probable_prime_160 = sym super::dsa::vg_dsa_probable_prime_160::vg_dsa_probable_prime_160,
         vg_dsa_probable_prime_1024 = sym super::dsa::vg_dsa_probable_prime_1024::vg_dsa_probable_prime_1024,
     )
@@ -10662,11 +10662,3 @@ pub(crate) mod vg_dsa_sign_prevalidated;
 #[rustfmt::skip]
 #[path = "internal/vg_miller_rabin_round.rs"]
 pub(crate) mod vg_miller_rabin_round;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha1_compress.rs"]
-pub(crate) mod vg_sha1_compress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_sha256_compress.rs"]
-pub(crate) mod vg_sha256_compress;
