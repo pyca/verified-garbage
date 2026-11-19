@@ -527,17 +527,6 @@ x86 vg_mldsa87_verify
 x86 vg_mldsa87_verify_message_cached
 x86 vg_mldsa87_verify_message_prepared
 x86 vg_mldsa87_verify_prepared
-x86 vg_pbkdf2_hmac_md5
-x86 vg_pbkdf2_hmac_sha1
-x86 vg_pbkdf2_hmac_sha1_shani
-x86 vg_pbkdf2_hmac_sha224
-x86 vg_pbkdf2_hmac_sha224_shani
-x86 vg_pbkdf2_hmac_sha256
-x86 vg_pbkdf2_hmac_sha256_shani
-x86 vg_pbkdf2_hmac_sha384
-x86 vg_pbkdf2_hmac_sha512
-x86 vg_pbkdf2_hmac_sha512_224
-x86 vg_pbkdf2_hmac_sha512_256
 x86 vg_poly1305_finalize
 x86 vg_poly1305_init
 x86 vg_poly1305_update

@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # PBKDF2-HMAC-MD5 (RFC 8018) on x86 -/
@@ -15,13 +12,7 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Pbkdf2Md5.X86
 
-open VG.Proof.Pbkdf2.Stream.X86
-
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.pbkdf2Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
-      Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
-    verified := .unscrubbed (Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5
-      Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat) }]
+  Spec.Hmac.md5I.pbkdf2Api.artifact X86.target Proof.Pbkdf2.Whole.X86.Scrub.md5Reg]
 
 end VG.Artifacts.Pbkdf2Md5.X86
