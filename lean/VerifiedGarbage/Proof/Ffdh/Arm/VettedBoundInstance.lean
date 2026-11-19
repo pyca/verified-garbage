@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.VettedGroupFacts
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroups
 import VerifiedGarbage.Spec.Ffdh.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState

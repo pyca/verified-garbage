@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
@@ -19,10 +19,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductLoadCT
-import VerifiedGarbage.Proof.Bignum.Arm.MontCallOpCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquareState
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialCT
@@ -41,7 +40,6 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquareState
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataAll
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -53,7 +51,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMem
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeArgs
@@ -73,7 +70,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataAll
+meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMetadataCT
 meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
@@ -99,7 +96,6 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreMemory
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMem
 meta import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductStore
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
@@ -116,7 +112,6 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 meta import VerifiedGarbage.Proof.Ffdh.Arm.DomainPointers
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeStoreCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 
 /-! ### `Ffdh.Arm.CombPrecomputeControlCT`, which only this module used -/

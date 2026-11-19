@@ -23,8 +23,7 @@ import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.Clear`, which this module and modules that import it used -/

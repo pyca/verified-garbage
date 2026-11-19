@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SetLowBit
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LessTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -15,23 +13,369 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BoundHead
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Copy
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LoadArray
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Nonzero
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Less
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 public import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Initial
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.CopyTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.LoadTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Ffdh.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+public import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+
+/-! ### `Ffdh.AArch64.Cached.Nonzero`, which only this module used -/
+
+section
+
+/-! The full scalar nonzero predicate is written as a 0/1 control word. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/NonzeroScan.lean`, which only this module imported.
+section
+
+/-! The scalar's nonzero test scans every limb without branching on its value. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+structure NonzeroInv (s : State) (B : Addr) (e j : Nat) (t : State) : Prop where
+ mem : t.mem=s.mem
+ keep : Keep [.x3,.x8,.x9,.x12] s t
+ pointer : t.gpr .x8=off B (e+8*j)
+ value : t.gpr .x9=0#64 ↔ ∀ i<j,word s.mem B (e+8*i)=0#64
+
+theorem nonzeroScanStep_ok {s t : State} {B : Addr} {Z e w j : Nat}
+ (scratch : Scr s B Z) (fit : e+8*w≤Z) (inside : j<w) (inv : NonzeroInv s B e j t) :
+ WP isa (.block ([ld .x3 .x8,.logic .orr .x .x9 .x9 .x3,next .x8]++([.subImm .x .x12 .x12 1] : List Instr))) t fun u =>
+ NonzeroInv s B e (j+1) u ∧ u.gpr .x12=t.gpr .x12-1#64 := by
+ rw [WP.block_append_iff]
+ refine WP.mono (WP.keep [.x3,.x8,.x9] (Q:=fun a =>a.mem=t.mem ∧
+  a.gpr .x9=t.gpr .x9 ||| word t.mem B (e+8*j) ∧ a.gpr .x8=off B (e+8*j+8)) ?_ rfl rfl rfl) ?_
+ · brun [inv.pointer,(scratch.congr inv.keep.wr).ld (d:=e+8*j) (by omega_using [fit, inside])]
+ · rintro a ⟨⟨memA,valueA,ptrA⟩,restA⟩
+   refine WP.mono (dec_ok a .x12) ?_
+   rintro u ⟨⟨count,memU,_⟩,restU⟩
+   refine ⟨⟨memU.trans (memA.trans inv.mem),((inv.keep.trans restA).trans restU).mono (by simp),?_,?_⟩,?_⟩
+   · rw [restU.gpr .x8 (by decide),ptrA]
+     rw [show e+8*j+8=e+8*(j+1) by omega_using []]
+   · rw [restU.gpr .x9 (by decide),valueA,BitVec.or_eq_zero_iff,inv.value,inv.mem]
+     constructor
+     · rintro ⟨low,top⟩ i hi
+       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi|rfl
+       · exact low i hi
+       · exact top
+     · intro h
+       exact ⟨fun i hi =>h i (by omega_using [hi]),h j (by omega_using [])⟩
+   · rw [count,restA.gpr .x12 (by decide)]
+
+theorem nonzeroScan_ok {s : State} {B : Addr} {Z e w : Nat}
+ (scratch : Scr s B Z) (fit : e+8*w≤Z) (positive : 0<w) (size : w<2^31)
+ (pointer : s.gpr .x8=off B e) (zero : s.gpr .x9=0#64) (count : s.gpr .x12=BitVec.ofNat 64 w) :
+ WP isa (countLoop .x12 [ld .x3 .x8,.logic .orr .x .x9 .x9 .x3,next .x8]) s fun t =>
+ (t.gpr .x9=0#64 ↔ wv s.mem B e w=0) ∧ t.mem=s.mem ∧ Keep [.x3,.x8,.x9,.x12] s t := by
+ refine WP.mono (wp_countdown (N:=w) (by omega_using [size]) (by omega_using [positive]) (NonzeroInv s B e)
+  (fun j hj t h _ =>nonzeroScanStep_ok scratch fit hj h) ?_ count) ?_
+ · exact ⟨rfl,Keep.refl _ _,by simpa using pointer,by rw [zero];simp⟩
+ · intro t h
+   refine ⟨?_,h.mem,h.keep⟩
+   rw [h.value,wv_eq_zero_iff]
+   rfl
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+private theorem exec_cselc_x (s : State) (d n m : Reg) (cond : CondCode) :
+ exec (.cselc .x d n m cond) s=some (s.write .x d (if cond.holds s then s.gpr n else s.gpr m)) := rfl
+private theorem zeroFlag (s : State) (d : Reg) (a b : BitVec 64) (c : Bool) :
+ (s.addWithCarry .x d a b c).zf=decide (a+b+BitVec.ofNat 64 c.toNat=0#64) := rfl
+
+theorem nonzero_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (positive : 0<w) (size : w<2^31) :
+ WP isa Generate.nonzero s fun t =>
+ Good t B Z w mi ∧ t.gpr .x9=(if wv s.mem B (slot w 1) w=0 then 0#64 else 1#64) ∧
+ word t.mem B (8*sTmp)=(if wv s.mem B (slot w 1) w=0 then 0#64 else 1#64) ∧
+ Outside B (8*sTmp) 8 s.mem t.mem ∧ Keep mmRegs s t := by
+ have arrayRoom := Nat.le_trans (slot_le (w:=w) (show 1<8 by decide)) room
+ unfold Generate.nonzero
+ rw [WP.seq_iff]
+ refine WP.mono (WP.keep [.x8,.x12,.x9] (Q:=fun a =>
+  a.gpr .x8=off B (slot w 1) ∧ a.gpr .x12=BitVec.ofNat 64 w ∧ a.gpr .x9=0#64 ∧ a.mem=s.mem)
+  ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sArr 1<32 by decide),hdr_enc (show sW<32 by decide),
+    header_read good room (show sArr 1<32 by decide),header_read good room (show sW<32 by decide),
+    good.hdr.harr 1 (by decide),good.hdr.hw]
+ · rintro a ⟨⟨ptrA,countA,zeroA,memA⟩,restA⟩
+   rw [WP.seq_iff]
+   refine WP.mono (nonzeroScan_ok (good.scr.congr restA.wr) (by omega_using [arrayRoom]) positive size ptrA zeroA countA) ?_
+   rintro b ⟨zeroB,memB,restB⟩
+   have total := restA.trans restB
+   rw [memA] at zeroB
+   let flag : Addr := if wv s.mem B (slot w 1) w=0 then 0#64 else 1#64
+   refine WP.mono (WP.keep [.x3,.x4,.x9] (Q:=fun t =>t.gpr .x9=flag ∧
+    t.mem=b.mem.writeW (off B (8*sTmp)) flag) ?_ rfl rfl rfl) ?_
+   · brun [exec_cselc_x,zeroFlag,CondCode.holds,RegUpd.zf_write,
+      (total.gpr .x0 (by decide)).trans good.x0,hdr_enc (show sTmp<32 by decide),
+      (good.scr.congr total.wr).st (d:=8*sTmp) (by have := hdr_lt_slot w 8 (show sTmp<32 by decide);omega_using [room, this]),
+      Bool.toNat_true]
+     simp only [show (BitVec.setWidth 64 (0#16))=0#64 from rfl,
+      show (BitVec.setWidth 64 (1#16))=1#64 from rfl,BitVec.not_zero]
+     have cond : b.gpr .x9+BitVec.allOnes 64+1#64=b.gpr .x9 := by simp [BitVec.add_assoc]
+     rw [cond]
+     simp only [decide_eq_true_eq,zeroB,flag]
+     exact ⟨trivial,trivial⟩
+   · rintro t ⟨⟨value,memT⟩,restT⟩
+     have frame : Outside B (8*sTmp) 8 s.mem t.mem := by
+      rw [memT,memB,memA];exact writeW_outside _ _ _ (by decide)
+     have rest : Keep mmRegs s t := (total.trans restT).mono (by simp [mmRegs])
+     exact ⟨good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by simp [mmRegs])).trans good.x0),
+      value,by rw [memT,word_writeW_self],frame,rest⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.BoundHead`, which only this module used -/
+
+section
+
+/-! The public domain length selects q or p−1 without inspecting a private scalar. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem boundHead_ok {s : State} {B dom : Addr} {Z w k dl : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (size : k<2^31) (shape : dl=2*k ∨ dl=3*k)
+ (pointer : word s.mem B (8*sDom)=dom) (length : word s.mem B (8*sLen)=BitVec.ofNat 64 k)
+ (domainLength : word s.mem B (8*sDL)=BitVec.ofNat 64 dl) :
+ WP isa (.block [ldh .x1 sDom,ldh .x2 sLen,ldh .x3 sDL,.lsl .x .x4 .x2 1,.sub .x .x3 .x3 .x4]) s fun t =>
+ (t.gpr .x1=dom ∧ t.gpr .x2=BitVec.ofNat 64 k ∧ t.gpr .x3=BitVec.ofNat 64 (dl-2*k) ∧
+ t.gpr .x4=BitVec.ofNat 64 (2*k) ∧ t.mem=s.mem) ∧ Keep [.x1,.x2,.x3,.x4] s t := by
+ have shift : BitVec.ofNat 64 k <<< 1=BitVec.ofNat 64 (2*k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
+  omega_using []
+ have sub : BitVec.ofNat 64 dl-BitVec.ofNat 64 (2*k)=BitVec.ofNat 64 (dl-2*k) :=
+  BitVec.ofNat_sub_ofNat_of_le dl (2*k) (by omega_using [size]) (by omega_using [shape])
+ refine WP.keep [.x1,.x2,.x3,.x4] ?_ rfl rfl rfl
+ brun [good.x0,hdr_enc (show sDom<32 by decide),hdr_enc (show sLen<32 by decide),hdr_enc (show sDL<32 by decide),
+  header_read good room (show sDom<32 by decide),header_read good room (show sLen<32 by decide),
+  header_read good room (show sDL<32 by decide),pointer,length,domainLength,shift,sub]
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.LessTiming`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.Less`, which this module and modules that import it used -/
+
+section
+
+/-! Native strict comparison reuses the verified multiword borrow loop. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem lessHead_ok {s : State} {B : Addr} {Z w a b : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (left : a<8) (right : b<8) :
+ WP isa (.block [ldh .x16 (sArr a),ldh .x17 (sArr b),ldh .x14 sW,movi .x7 0,.subs .x .x3 .x7 .x7]) s fun u =>
+ (u.gpr .x16=off B (slot w a) ∧ u.gpr .x17=off B (slot w b) ∧ u.gpr .x14=BitVec.ofNat 64 w ∧
+  u.gpr .x7=0#64 ∧ u.c=true ∧ u.mem=s.mem) ∧ Keep [.x16,.x17,.x14,.x7,.x3] s u := by
+ have hdrA : sArr a<32 := by unfold sArr;omega_using [left]
+ have hdrB : sArr b<32 := by unfold sArr;omega_using [right]
+ refine WP.keep [.x16,.x17,.x14,.x7,.x3] ?_ rfl rfl rfl
+ brun [good.x0,hdr_enc hdrA,hdr_enc hdrB,hdr_enc (show sW<32 by decide),
+  header_read good room hdrA,header_read good room hdrB,header_read good room (show sW<32 by decide),
+  good.hdr.harr a left,good.hdr.harr b right,good.hdr.hw]
+
+theorem less_ok {s : State} {B : Addr} {Z w a b : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (positive : 0<w) (size : w<2^31)
+ (left : a<8) (right : b<8) :
+ WP isa (Generate.less a b) s fun t =>
+ t.gpr .x9=(if wv s.mem B (slot w a) w<wv s.mem B (slot w b) w then 1#64 else 0#64) ∧
+ t.mem=s.mem ∧ Keep mmRegs s t := by
+ have roomA := Nat.le_trans (slot_le (w:=w) left) room
+ have roomB := Nat.le_trans (slot_le (w:=w) right) room
+ unfold Generate.less
+ rw [WP.seq_iff]
+ refine WP.mono (lessHead_ok good room left right) ?_
+ · rintro u ⟨⟨ptrA,ptrB,count,zero,carry,memU⟩,restU⟩
+   rw [WP.seq_iff]
+   refine WP.mono (cmpLoop_ok (good.scr.congr restU.wr) ptrA ptrB count carry (by omega_using [positive]) size (by omega_using [roomA]) (by omega_using [roomB])) ?_
+   rintro v ⟨carryV,memV,restV⟩
+   have total := restU.trans restV
+   have zeroV := (restV.gpr .x7 (by decide)).trans zero
+   have carry : v.c= !decide (wv s.mem B (slot w a) w<wv s.mem B (slot w b) w) := by rw [memU] at carryV;exact carryV
+   refine WP.mono (WP.keep [.x4,.x9] (Q:=fun t =>
+    t.gpr .x9=(if wv s.mem B (slot w a) w<wv s.mem B (slot w b) w then 1#64 else 0#64) ∧ t.mem=v.mem)
+    ?_ rfl rfl rfl) ?_
+   · brun [zeroV,carry]
+     split <;> simp_all
+   · rintro t ⟨⟨value,memT⟩,restT⟩
+     exact ⟨value,(memT.trans memV).trans memU,(total.trans restT).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! Strict comparison has a public limb count and no predicate-dependent trace. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+
+theorem less_ct {a b : Nat} (left : a<8) (right : b<8) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+ (check : (taint.check (Taint.ofRegs [.x0])
+  (.block [ldh .x16 (sArr a),ldh .x17 (sArr b),ldh .x14 sW,movi .x7 0,.subs .x .x3 .x7 .x7]) hc).isSome=true) :
+ RelCT isa (Two GoodW) (Generate.less a b) (fun _ _ => True) := by
+ unfold Generate.less
+ refine RelCT.seq (two_piece (Ψ:=fun q s =>s.gpr .x16=off q.B (slot q.w a) ∧
+  s.gpr .x17=off q.B (slot q.w b) ∧ s.gpr .x14=BitVec.ofNat 64 q.w) [.x0] pins_goodW check ?_)
+  (two_taint [.x16,.x17,.x14] ?_ (by taint_decide))
+ · rintro q s ⟨mi,good,room⟩
+   refine WP.mono (lessHead_ok good room left right) ?_
+   rintro t ⟨⟨ptrA,ptrB,count,_,_,_⟩,_⟩
+   exact ⟨ptrA,ptrB,count⟩
+ · intro q s t hs ht r hr
+   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+   rcases hr with rfl|rfl|rfl
+   · exact hs.1.trans ht.1.symm
+   · exact hs.2.1.trans ht.2.1.symm
+   · exact hs.2.2.trans ht.2.2.symm
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.SetLowBit`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.MemoryState`, which the modules that import this one used -/
+
+section
+
+/-! Register-only phases preserve arithmetic state when memory is unchanged. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem good_after_mem {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {rs : List Reg}
+ (good : Good s B Z w mi) (mem : t.mem=s.mem) (rest : Keep rs s t) (base : t.gpr .x0=B) : Good t B Z w mi :=
+ ⟨good.scr.congr rest.wr,base,mem ▸ good.hdr⟩
+
+theorem ModState.after_mem {p : Parameters} {s t : State} {rs : List Reg}
+ (state : ModState p s) (mem : t.mem=s.mem) (rest : Keep rs s t) (base : t.gpr .x0=p.B) : ModState p t :=
+ ⟨good_after_mem state.good mem rest base,mem ▸ state.modulus,mem ▸ state.inverse,mem ▸ state.one,mem ▸ state.r2⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
+/-! The native low-bit update touches exactly one limb of the comparison copy. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/LowOrOne.lean`, which only this module imported.
+section
+
+/-! Setting the low bit of a multiword value preserves all its higher bits. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.Proof.Bignum
+
+theorem wv_low_or_one (m : Mem) (B : Addr) {d w : Nat} (positive : 0<w) (fit : d+8*w≤2^64) :
+ wv (m.writeW (off B d) (word m B d ||| 1#64)) B d w=2*(wv m B d w/2)+1 := by
+ have low := wv_mod64 m B d (by omega_using [positive] : 1≤w)
+ have mod2 : (word m B d).toNat%2=wv m B d w%2 := by omega_using [low]
+ have split (m : Mem) : wv m B d w=(word m B d).toNat+2^64*wv m B (d+8) (w-1) := by
+  have h := wv_add m B d 1 (w-1)
+  rw [show 1+(w-1)=w by omega_using [positive]] at h
+  simpa only [wv,Nat.mul_zero,Nat.pow_zero,Nat.mul_one,Nat.one_mul,Nat.add_zero,Nat.zero_add,Nat.reduceMul,Nat.reducePow] using h
+ have frame := writeW_outside m B (word m B d ||| 1#64) (by omega_using [positive, fit] : d+8≤2^64)
+ have orValue := VG.Proof.Ffdh.AArch64.or1_toNat (word m B d)
+ change (word m B d ||| 1#64).toNat=(word m B d).toNat+(1-(word m B d).toNat%2) at orValue
+ rw [split,word_writeW_self,orValue,
+  frame.wv (Or.inr (by omega_using [] : d+8≤d+8)) (by omega_using [positive, fit])]
+ have original := split m
+ omega_using [original]
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem setLowBit_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
+ (good : Good s B Z w mi) (room : slot w 8≤Z) (positive : 0<w) :
+ WP isa (.block [ldh .x8 (sArr 1),ld .x3 .x8,movi .x4 1,.logic .orr .x .x3 .x3 .x4,st .x3 .x8]) s fun t =>
+ Good t B Z w mi ∧ wv t.mem B (slot w 1) w=2*(wv s.mem B (slot w 1) w/2)+1 ∧
+ Arrays B w [1] s.mem t.mem ∧ Keep [.x3,.x4,.x8] s t := by
+ have arrayRoom := Nat.le_trans (slot_le (w:=w) (show 1<8 by decide)) room
+ refine WP.mono (WP.keep [.x3,.x4,.x8] (Q:=fun t =>
+  t.mem=s.mem.writeW (off B (slot w 1)) (word s.mem B (slot w 1) ||| 1#64)) ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sArr 1<32 by decide),header_read good room (show sArr 1<32 by decide),
+    good.hdr.harr 1 (by decide),good.scr.ld (d:=slot w 1) (by omega_using [arrayRoom]),good.scr.st (d:=slot w 1) (by omega_using [arrayRoom])]
+   rfl
+ · rintro t ⟨mem,rest⟩
+   have frame : Arrays B w [1] s.mem t.mem := by
+    apply Arrays.of_outside (j:=1) (by simp) (o:=slot w 1) (n:=8)
+    · rw [mem];exact writeW_outside _ _ _ (by have := good.scr.nowrap;omega_using [arrayRoom, this])
+    · omega_using []
+    · have := good.scr.nowrap;omega_using []
+   refine ⟨good_after_arrays good frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩
+   rw [mem]
+   exact wv_low_or_one _ _ positive (by have := good.scr.nowrap;omega_using [arrayRoom, this])
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Cached.NonzeroTiming`, which only this module used -/
 

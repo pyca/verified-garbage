@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaPss.Arm.TabCall
 public import VerifiedGarbage.Spec.MdHashTable
-public import VerifiedGarbage.Proof.RsaPss.Arm.Hash
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
-meta import VerifiedGarbage.Proof.RsaPss.Arm.Hash
+meta import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.KernelRfl

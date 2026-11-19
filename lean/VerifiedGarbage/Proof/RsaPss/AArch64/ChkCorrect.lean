@@ -24,7 +24,7 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ### `RsaPss.AArch64.FixedSaltCopy`, which this module and modules that import it used -/

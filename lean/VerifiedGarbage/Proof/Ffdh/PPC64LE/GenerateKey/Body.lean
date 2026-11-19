@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.GenerateKey.Cut
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
 
 /-! ### `Ffdh.PPC64LE.GenerateKey.Scalar`, which this module and modules that import it used -/

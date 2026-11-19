@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub

@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.RelSplit
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.EntropyRequest
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Loop
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CTBase
 public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Rsa.BytesFrame
 meta import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Loop
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CTBase
 meta import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 meta import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
 meta import VerifiedGarbage.Proof.Framework.Offset

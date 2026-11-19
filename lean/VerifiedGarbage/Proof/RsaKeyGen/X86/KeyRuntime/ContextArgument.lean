@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Artifact
@@ -17,25 +16,22 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyABI
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDerive
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyFinal
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyExponent
-import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputMap
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Spec.RsaKeyGen
@@ -43,6 +39,513 @@ import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetry
+public import VerifiedGarbage.Spec.Rsa
+public import Init.Data.Nat.Coprime
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+
+/-! ### `RsaKeyGen.X86.KeyDerive`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyGeometry`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyOutputContext`, which this module and modules that import it used -/
+
+section
+
+/-! # Public geometry for the seven masked RSA key outputs -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+
+structure OutputGeometry where
+  base : Addr
+  size : Nat
+  n : Nat
+  argument : Nat → BitVec 32
+
+def OutputGeometry.pointer (g : OutputGeometry) (i : Nat) : BitVec 32 := g.argument (2 * i)
+def OutputGeometry.length (g : OutputGeometry) (i : Nat) : Nat := (g.argument (2 * i + 1)).toNat
+def OutputGeometry.region (g : OutputGeometry) (i : Nat) : Region := ⟨(g.pointer i).setWidth 64, g.length i⟩
+def OutputGeometry.scratch (g : OutputGeometry) : Region := ⟨g.base, g.size⟩
+def OutputGeometry.writes (g : OutputGeometry) : List Region := g.scratch :: (List.range 7).map g.region
+
+structure OutputGeometry.Valid (g : OutputGeometry) : Prop where
+  lengthPositive : ∀ i < 7, 0 < g.length i
+  lengthBound : ∀ i < 7, g.length i ≤ 4 * g.n
+  fit : ∀ i < 7, (g.pointer i).toNat + g.length i ≤ 2 ^ 32
+  scratchApart : ∀ i < 7, g.scratch.Disjoint (g.region i)
+  separate : ∀ i < 7, ∀ j < 7, i ≠ j → (g.region i).Disjoint (g.region j)
+
+structure OutputInput (g : OutputGeometry) (s : State) : Prop where
+  ws : Ws s g.base g.size g.n 32
+  valid : g.Valid
+  arguments : ∀ i < 14, s.mem.readW (off g.base (4 * i)) 32 = g.argument i
+  writable : ∀ i < 7, InRegions s.wr (g.region i).base (g.region i).len
+
+theorem OutputInput.after {g : OutputGeometry} {s t : State} {rs : List Reg}
+    (h : OutputInput g s) (ws : Ws t g.base g.size g.n 32) (K : Keeps rs s t)
+    (header : ∀ d, d + 4 ≤ hdr → slot t.mem g.base d = slot s.mem g.base d) : OutputInput g t := by
+  refine ⟨ws, h.valid, ?_, ?_⟩
+  · intro i hi
+    apply BitVec.eq_of_toNat_eq
+    exact (header (4 * i) (by unfold hdr; omega_using [hi])).trans (congrArg BitVec.toNat (h.arguments i hi))
+  · intro i hi
+    rw [K.2.2]
+    exact h.writable i hi
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyEnvironment`, which this module and modules that import it used -/
+
+section
+
+/-! # Public lengths, pointers, and cdecl arguments for native key assembly -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86
+
+structure Environment where
+  workspace : BitVec 32
+  capacity : Nat
+  out : Nat → BitVec 32
+  primeLength : Nat
+  exponent : BitVec 32
+  exponentLength : Nat
+
+def Environment.base (E : Environment) : Addr := E.workspace.setWidth 64
+def Environment.size (E : Environment) : Nat := 8 * E.capacity
+def Environment.n (E : Environment) : Nat := E.primeLength / 2
+def Environment.k (E : Environment) : Nat := E.primeLength / 4
+def Environment.outputLength (E : Environment) (i : Nat) : Nat := if i < 2 then 2 * E.primeLength else E.primeLength
+def Environment.outputRegion (E : Environment) (i : Nat) : Region := ⟨(E.out i).setWidth 64, E.outputLength i⟩
+def Environment.workspaceRegion (E : Environment) : Region := ⟨E.base, E.size⟩
+def Environment.exponentRegion (E : Environment) : Region := ⟨E.exponent.setWidth 64, E.exponentLength⟩
+
+def Environment.argument (E : Environment) : Nat → BitVec 32
+  | 0 => E.out 0
+  | 1 => BitVec.ofNat 32 (2 * E.primeLength)
+  | 2 => E.out 1
+  | 3 => BitVec.ofNat 32 (2 * E.primeLength)
+  | 4 => E.out 2
+  | 5 => BitVec.ofNat 32 E.primeLength
+  | 6 => E.out 3
+  | 7 => BitVec.ofNat 32 E.primeLength
+  | 8 => E.out 4
+  | 9 => BitVec.ofNat 32 E.primeLength
+  | 10 => E.out 5
+  | 11 => BitVec.ofNat 32 E.primeLength
+  | 12 => E.out 6
+  | 13 => BitVec.ofNat 32 E.primeLength
+  | 14 => E.exponent
+  | 15 => BitVec.ofNat 32 E.exponentLength
+  | 16 => E.workspace
+  | _ => BitVec.ofNat 32 E.capacity
+
+def Environment.outputs (E : Environment) : OutputGeometry := ⟨E.base, E.size, E.n, E.argument⟩
+
+structure Environment.Valid (E : Environment) : Prop where
+  length : Spec.RsaKeyGen.primeLenValid E.primeLength
+  exponentLength : 1 ≤ E.exponentLength ∧ E.exponentLength ≤ 8
+  capacity : Spec.Rsa.scratchWords (2 * E.primeLength) ≤ E.capacity
+  workspaceFit : E.workspace.toNat + E.size ≤ 2 ^ 32
+  outFit : ∀ i < 7, (E.out i).toNat + E.outputLength i ≤ 2 ^ 32
+  exponentFit : E.exponent.toNat + E.exponentLength ≤ 2 ^ 32
+  outputScratch : ∀ i < 7, (E.outputRegion i).Disjoint E.workspaceRegion
+  outputSeparate : ∀ i < 7, ∀ j < 7, i ≠ j → (E.outputRegion i).Disjoint (E.outputRegion j)
+  exponentScratch : E.exponentRegion.Disjoint E.workspaceRegion
+  exponentOutput : ∀ i < 7, E.exponentRegion.Disjoint (E.outputRegion i)
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Every supported native width fits its shared RSA scratch allocation -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+
+theorem Environment.Valid.widths {E : Environment} (v : E.Valid) :
+    16 ≤ E.n ∧ E.n ≤ 256 ∧ E.n = 2 * E.k ∧ 0 < E.k ∧ E.k % 2 = 0 ∧ E.primeLength = 2 * E.n := by
+  obtain ⟨lower, upper, multiple⟩ := v.length
+  unfold Environment.n Environment.k
+  omega_using [lower, upper, multiple]
+
+theorem Environment.Valid.bankFit {E : Environment} (v : E.Valid) : arr E.n 32 ≤ E.size := by
+  have cap := v.capacity
+  have lower := v.length.1
+  unfold Spec.Rsa.scratchWords at cap
+  unfold Environment.n Environment.size arr S hdr
+  omega_using [cap, lower]
+
+theorem Environment.outputPointer (E : Environment) {i : Nat} (hi : i < 7) : E.outputs.pointer i = E.out i := by
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+theorem Environment.Valid.outputLength {E : Environment} (v : E.Valid) {i : Nat} (hi : i < 7) :
+    E.outputs.length i = E.outputLength i := by
+  have small : E.outputLength i < 2 ^ 32 := by
+    have H := v.length.2.1
+    unfold Environment.outputLength
+    split <;> omega_using [H]
+  have arg : E.argument (2 * i + 1) = BitVec.ofNat 32 (E.outputLength i) := by
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
+    rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  change (E.argument (2 * i + 1)).toNat = _
+  rw [arg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
+
+theorem Environment.Valid.outputRegion {E : Environment} (v : E.Valid) {i : Nat} (hi : i < 7) :
+    E.outputs.region i = E.outputRegion i := by
+  unfold OutputGeometry.region Environment.outputRegion
+  rw [E.outputPointer hi, v.outputLength hi]
+
+theorem Environment.Valid.outputs {E : Environment} (v : E.Valid) : E.outputs.Valid := by
+  have lengths := v.widths
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · intro i hi
+    rw [v.outputLength hi]
+    have lower := v.length.1
+    unfold Environment.outputLength
+    split <;> omega_using [lengths]
+  · intro i hi
+    rw [v.outputLength hi]
+    change E.outputLength i ≤ 4 * E.n
+    unfold Environment.outputLength
+    split <;> omega_using [lengths]
+  · intro i hi
+    rw [E.outputPointer hi, v.outputLength hi]
+    exact v.outFit i hi
+  · intro i hi
+    rw [v.outputRegion hi]
+    exact (v.outputScratch i hi).symm
+  · intro i hi j hj ne
+    rw [v.outputRegion hi, v.outputRegion hj]
+    exact v.outputSeparate i hi j hj ne
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyScratchFrame`, which the modules that import this one used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyInput`, which this module and modules that import it used -/
+
+section
+
+/-! # The retained header and buffer permissions survive scratch arithmetic -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+
+structure Input (E : Environment) (s : State) : Prop where
+  valid : E.Valid
+  ws : Ws s E.base E.size E.n 32
+  arguments : ∀ i < 18, s.mem.readW (off E.base (4 * i)) 32 = E.argument i
+  outWrite : ∀ i < 7, InRegions s.wr (E.outputRegion i).base (E.outputRegion i).len
+  exponentRead : InRegions (s.rd ++ s.wr) E.exponentRegion.base E.exponentRegion.len
+
+theorem Input.outputs {E : Environment} {s : State} (h : Input E s) : OutputInput E.outputs s := by
+  refine ⟨h.ws, h.valid.outputs, fun i hi => h.arguments i (by omega_using [hi]), ?_⟩
+  intro i hi
+  rw [h.valid.outputRegion hi]
+  exact h.outWrite i hi
+
+theorem Input.keep {E : Environment} {s t : State} {rs : List Reg} (h : Input E s)
+    (ws : Ws t E.base E.size E.n 32) (K : Keeps rs s t)
+    (header : ∀ d, d + 4 ≤ 72 → t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32) : Input E t := by
+  refine ⟨h.valid, ws, ?_, ?_, ?_⟩
+  · intro i hi
+    rw [header (4 * i) (by omega_using [hi])]
+    exact h.arguments i hi
+  · intro i hi
+    rw [K.2.2]
+    exact h.outWrite i hi
+  · rw [K.2.1, K.2.2]
+    exact h.exponentRead
+
+theorem Input.afterOuts {E : Environment} {s t : State} {regs : List Reg} {rs : List (Nat × Nat)}
+    (h : Input E s) (ws : Ws t E.base E.size E.n 32) (K : Keeps regs s t)
+    (lower : ∀ r ∈ rs, 72 ≤ r.1) (O : Outs E.base rs s.mem t.mem) : Input E t := by
+  apply h.keep ws K
+  intro d hd
+  apply BitVec.eq_of_toNat_eq
+  have H : val32 t.mem E.base d 1 = val32 s.mem E.base d 1 :=
+    O.val32 (d := d) (k := 1) (fun r hr => Or.inl (Nat.le_trans hd (lower r hr))) (by omega_using [hd])
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
+
+theorem Input.afterStage {E : Environment} {s t : State} {regs : List Reg} {js : List Nat}
+    (h : Input E s) (ws : Ws t E.base E.size E.n 32) (K : Keeps regs s t)
+    (O : Outs E.base (stageRanges E.n js) s.mem t.mem) : Input E t := by
+  apply h.keep ws K
+  intro d hd
+  apply BitVec.eq_of_toNat_eq
+  have H := stage_preserves_header (n := E.n) (d := d) (count := 1)
+    (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega_using [hd]) O
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Scratch-local steps preserve the encoded primes and public exponent -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem outs_scratch_frame {B : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' : Mem}
+    (size : Z ≤ 2 ^ 64) (O : Outs B rs m m') (fit : ∀ r ∈ rs, r.1 + r.2 ≤ Z) :
+    Frame [⟨B, Z⟩] m m' := by
+  have outside : Outside B 0 Z m m' := by
+    intro a ha
+    apply O a
+    intro r hr
+    have H := fit r hr
+    omega_using [ha, H]
+  simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
+    VG.Proof.Bignum.outside_frame outside (by simpa only [Nat.zero_add] using size)
+
+theorem stage_scratch_frame {s : State} {B : Addr} {Z n : Nat} {js : List Nat} {m m' : Mem}
+    (h : Ws s B Z n 32) (indices : ∀ j ∈ js, j < 32) (O : Outs B (stageRanges n js) m m') :
+    Frame [⟨B, Z⟩] m m' := by
+  have head := h.hdr_le
+  apply outs_scratch_frame (by have := h.workspace.nowrap; omega_using [this]) O
+  intro r hr
+  rcases List.mem_append.mp hr with temp | output
+  · simp only [exponentTemps, List.mem_cons, List.not_mem_nil, or_false] at temp
+    rcases temp with rfl | rfl
+    · unfold kOk hdr at *
+      omega_using [head]
+    · exact Nat.le_trans (arr_mono (by decide : 15 ≤ 32)) h.fits
+  · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at output
+    obtain ⟨j, hj, rfl⟩ := output
+    exact h.arr_fit (indices j hj)
+
+theorem Input.output_preserved {E : Environment} {s : State} {m m' : Mem} {i : Nat}
+    (h : Input E s) (hi : i < 7) (F : Frame [E.workspaceRegion] m m') :
+    Spec.Rsa.bytesAt m' (E.outputRegion i).base (E.outputRegion i).len =
+      Spec.Rsa.bytesAt m (E.outputRegion i).base (E.outputRegion i).len := by
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.outputLength i < 2 ^ 64; have H := h.valid.outFit i hi; omega_using [H])
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact h.valid.outputScratch i hi
+
+theorem Input.exponent_preserved {E : Environment} {s : State} {m m' : Mem}
+    (h : Input E s) (F : Frame [E.workspaceRegion] m m') :
+    Spec.Rsa.bytesAt m' E.exponentRegion.base E.exponentRegion.len =
+      Spec.Rsa.bytesAt m E.exponentRegion.base E.exponentRegion.len := by
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change E.exponentLength < 2 ^ 64; have H := h.valid.exponentLength; omega_using [H])
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact h.valid.exponentScratch
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyPartOutcome`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyPartResult`, which this module and modules that import it used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyCrtCorrect`, which this module and modules that import it used -/
+
+section
+
+/-! # Compute both CRT exponents with safe fixed-schedule division -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key
+
+def crtArrays : List Nat := [aDen, aU, aDp, aDq]
+def crtDivisor (x : Nat) : Nat := if x = 0 then 1 else x
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # The computed key components before masked external export -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key
+
+def keyPartArrays : List Nat := [aDen, aQi, aU, aDp, aDq, aN]
+
+structure KeyPartResult (B : Addr) (n : Nat) (m : Mem) (t : State) : Prop where
+  modulus : num t.mem B n aN = num m B n aPa * num m B n aQa
+  dp : num t.mem B n aDp = num m B n aD % crtDivisor (num m B n aPm)
+  dq : num t.mem B n aDq = num m B n aD % crtDivisor (num m B n aQm)
+  qiBound : num t.mem B n aQi < safePrime (num m B n aPa)
+  qiCongruence : (safePrime (num m B n aPa) : Int) ∣
+    (num t.mem B n aQi : Int) * num m B n aQa - Nat.gcd (num m B n aQa) (safePrime (num m B n aPa))
+  mask : slot t.mem B kOk = (if slot m B kOk = 1 ∧
+    Nat.gcd (num m B n aQa) (safePrime (num m B n aPa)) = 1 ∧
+    2 ^ (32 * n - 1) ≤ num m B n aPa * num m B n aQa ∧
+    num m B n aPa % 2 = 1 ∧ num m B n aQa % 2 = 1 ∧
+    Spec.Rsa.exponentValid (val32 m B kEv 2) = true then 1 else 0)
+  status : slot t.mem B kStatus = slot t.mem B kOk
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # The native post-retry arithmetic produces the shared key or failure -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key
+
+/-- The key part's outcome (`CoreOutcome`), from what it leaves of the factors, `d` and `e`. -/
+theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
+    (lower : 16 ≤ n) (upper : n ≤ 256)
+    (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n))
+    (R : KeyReady B n e p q s.mem)
+    (notSmall : ¬(slot s.mem B kOk = 1 ∧ num s.mem B n aD ≤ 2 ^ (16 * n)))
+    (keptP : num t.mem B n aPa = num s.mem B n aPa) (keptQ : num t.mem B n aQa = num s.mem B n aQa)
+    (keptD : num t.mem B n aD = num s.mem B n aD) (keptE : val32 t.mem B kEv 2 = val32 s.mem B kEv 2)
+    (K : KeyPartResult B n s.mem t) :
+    CoreOutcome B n e p q t.mem := by
+  have boundE : e < 2 ^ 64 := by rw [← R.exponent]; exact val32_lt _ _ _ _
+  have congruence := K.qiCongruence
+  have boundX := K.qiBound
+  rw [R.pValue, R.qValue] at congruence
+  rw [R.pValue] at boundX
+  have code := keyFromPrimes_native lower upper boundP boundQ boundE congruence boundX
+  have mask := K.mask
+  rw [R.pValue, R.qValue, R.exponent] at mask
+  unfold CoreOutcome
+  rw [code]
+  by_cases empty : slot s.mem B kOk = 0
+  · have inverse := R.inverse
+    rw [empty, ite_eq_left rfl] at inverse
+    rw [inverse]
+    dsimp only
+    have M : slot t.mem B kOk = 0 := by simpa only [empty, Nat.zero_ne_one, false_and, ite_false] using mask
+    exact ⟨K.status.trans M, M⟩
+  · have unit : slot s.mem B kOk = 1 := by have H := R.bit; omega_using [empty, H]
+    have inverse := R.inverse
+    rw [unit, ite_eq_right (by decide : ¬(1 : Nat) = 0)] at inverse
+    have large : ¬num s.mem B n aD ≤ 2 ^ (16 * n) := fun small => notSmall ⟨unit, small⟩
+    rw [inverse]
+    dsimp only
+    rw [ite_eq_right large]
+    have M : slot t.mem B kOk = if nativeShape n e (max p q) (min p q) then 1 else 0 := by
+      rw [unit] at mask
+      simpa only [nativeShape, true_and, and_assoc, and_comm, and_left_comm] using mask
+    by_cases shape : nativeShape n e (max p q) (min p q)
+    · rw [ite_eq_left shape]
+      have accepted : slot t.mem B kOk = 1 := by rw [M, ite_eq_left shape]
+      refine ⟨K.status.trans accepted, accepted, ?_⟩
+      have two : 2 ≤ 2 ^ (16 * n) :=
+        Nat.pow_le_pow_right (by decide : 0 < 2) (by omega_using [lower] : 1 ≤ 16 * n)
+      have factors := VG.Proof.RsaKeyGen.primes_of_inverse
+        (Nat.le_trans (Nat.min_le_left p q) (Nat.le_max_left p q)) inverse (by omega_using [boundP, notSmall, unit])
+      have Pm : max p q - 1 ≠ 0 := by omega_using [factors]
+      have Qm : min p q - 1 ≠ 0 := by omega_using [factors]
+      have pFinal : num t.mem B n aPa = max p q := keptP.trans R.pValue
+      have qFinal : num t.mem B n aQa = min p q := keptQ.trans R.qValue
+      have dFinal : num t.mem B n aD = num s.mem B n aD := keptD
+      have eFinal : val32 t.mem B kEv 2 = e := keptE.trans R.exponent
+      have dp := K.dp
+      have dq := K.dq
+      rw [R.pm, crtDivisor, ite_eq_right Pm] at dp
+      rw [R.qm, crtDivisor, ite_eq_right Qm] at dq
+      unfold assembledKey
+      rw [K.modulus, R.pValue, R.qValue, pFinal, qFinal, dFinal, eFinal, dp, dq]
+    · rw [ite_eq_right shape]
+      have rejected : slot t.mem B kOk = 0 := by rw [M, ite_eq_right shape]
+      exact ⟨K.status.trans rejected, rejected⟩
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! # Complete native numeric RSA derivation, including all failure cases -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+def deriveArrays : List Nat := prepareArrays ++ keyPartArrays
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyOutputMap`, which this module and modules that import it used -/
+
+section
+
+/-! # The seven output slots name distinct persistent arrays -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem outputIndex_bound {i : Nat} (hi : i < 7) : outputIndex i < 32 := by
+  exact (by decide : ∀ k : Fin 7, outputIndex k.val < 32) ⟨i, hi⟩
+
+theorem outputIndex_zero {i : Nat} (hi : i < 7) : VG.Impl.Rsa.X86.Keys.aZero ≠ outputIndex i := by
+  exact (by decide : ∀ k : Fin 7, VG.Impl.Rsa.X86.Keys.aZero ≠ outputIndex k.val) ⟨i, hi⟩
+
+theorem outputIndex_injective {i j : Nat} (hi : i < 7) (hj : j < 7) (ne : i ≠ j) :
+    outputIndex i ≠ outputIndex j := by
+  exact (by decide : ∀ a b : Fin 7, a ≠ b → outputIndex a.val ≠ outputIndex b.val)
+    ⟨i, hi⟩ ⟨j, hj⟩ (fun equal => ne (congrArg Fin.val equal))
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
 
 /-! ### `RsaKeyGen.X86.KeyOutputReady`, which the modules that import this one used -/
 

@@ -17,7 +17,6 @@ public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math

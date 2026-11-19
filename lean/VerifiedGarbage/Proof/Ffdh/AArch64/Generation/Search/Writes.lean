@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Live
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
@@ -8,12 +7,531 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Ffdh.Contract
+public import VerifiedGarbage.Proof.EntropyRequest
+import VerifiedGarbage.Proof.Ffdh.SievedBounds
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
+public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
+
+/-! ### `Ffdh.AArch64.Generation.Search.Live`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Generation.Search.Data`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Generation.Search.Contract`, which this module and modules that import it used -/
+
+section
+
+/-! # The parameter-search controller's contract in terms of the machine (AArch64)
+
+`vg_ffdh_generate_parameters(out = x0, out_len = x1, used = x2, bits = x3,
+generator = w4, rand = x5, rand_len = x6, scratch = x7, scratch_len, state)`:
+eight arguments in registers and two on the stack. The controller uses 32
+bytes of stack: the frame saving `x30` and its candidate's frame of 16
+bytes; the candidate it calls has no frames (`Cand.noFrames`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Generation
+
+open VG VG.AArch64 VG.Spec.Ffdh
+open VG.Spec.Rsa (bytesAt wordsAt i2osp)
+open VG.Proof.Ffdh.AArch64.ParameterCandidate (pcContract pcPre pcPub)
+
+/-- The stack the controller uses below the stack pointer. -/
+abbrev stackUse : Nat := 32
+
+/-- An implementation of `vg_ffdh_parameter_candidate_sieved`, as the controller
+calls it: its name, its code, which has no frames, and its proofs. -/
+structure Cand where
+  name : String
+  code : Prog isa
+  noFrames : code.noFrames = true
+  correct : ∀ s, pcContract.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ pcContract.post s s'
+  ct : ConstantTime isa pcPre pcPub code
+
+/-- The candidate, as the controller calls it. -/
+abbrev Cand.call (c : Cand) : Prog isa := .call c.name c.code
+
+def inOut (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
+def inUsed (s : State) : Region := ⟨s.gpr .x2, 8⟩
+def inRand (s : State) : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
+def inScr (s : State) : Region := ⟨s.gpr .x7, (stackArg s 0).toNat * 8⟩
+def inCtl (s : State) : Region := ⟨stackArg s 1, 128⟩
+def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
+
+/-- The buffers the controller writes, and those it only reads. -/
+def inWrites (s : State) : List Region := [inOut s, inUsed s, inScr s, inCtl s]
+def inReads (s : State) : List Region := [inRand s, inArgs s]
+
+/-- The width, the bits, the generator, the tape and the attempts on entry. -/
+abbrev genLen (s : State) : Nat := (s.gpr .x1).toNat
+abbrev genBits (s : State) : Nat := (s.gpr .x3).toNat
+abbrev genGen (s : State) : Nat := ((s.gpr .x4).setWidth 32).toNat
+abbrev genRand (s : State) : List Byte := bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat
+abbrev genAttempts (s : State) : Nat := (s.mem.readW (stackArg s 1) 64).toNat
+
+def searchPre (s : State) : Prop :=
+  s.sp.toNat + 16 ≤ 2 ^ 64 ∧ stackUse ≤ s.sp.toNat ∧
+    s.rd = inReads s ∧ s.wr = inWrites s ∧
+    (∀ r ∈ inWrites s ++ inReads s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
+    (inWrites s).Pairwise Region.Disjoint ∧
+    (∀ w ∈ inWrites s, ∀ r ∈ inReads s, w.Disjoint r) ∧
+    (∀ r ∈ inWrites s ++ inReads s, (below s.sp stackUse).Disjoint r) ∧
+    512 ≤ genBits s ∧ genBits s ≤ 8192 ∧ genLen s = (genBits s + 7) / 8 ∧
+    (genGen s = 2 ∨ genGen s = 5) ∧
+    Spec.Rsa.scratchWords (genLen s) ≤ (stackArg s 0).toNat ∧
+    genAttempts s ≤ parameterAttempts (genBits s) ∧
+    s.mem.readW (stackArg s 1 + 8) 64 = BitVec.ofNat 64 (genLen s) ∧
+    s.mem.readW (stackArg s 1 + 16) 64 = BitVec.ofNat 64 (parameterEntropy (genBits s)) ∧
+    (s.gpr .x6).toNat ≤ parameterEntropy (genBits s)
+
+def searchResult (s : State) : ParameterSearchResult :=
+  sievedParameterSearch (genBits s) (genGen s) (genAttempts s) (genRand s)
+
+def searchPost (s t : State) : Prop :=
+  ((t.gpr .x0).setWidth 32).toNat = (searchResult s).status ∧
+    bytesAt t.mem (s.gpr .x0) (genLen s) =
+      (match searchResult s with
+        | .accepted p _ => i2osp p (genLen s)
+        | _ => List.replicate (genLen s) 0) ∧
+    wordsAt t.mem (s.gpr .x2) 1 = [BitVec.ofNat 64 (searchResult s).used] ∧
+    ∃ requested, wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
+      BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
+      BitVec.ofNat 64 requested] ∧
+      (searchResult s).Requests (parameterEntropy (genBits s)) requested
+
+/-- What timing may depend on: the arguments, the tape and the controller's
+public words. -/
+def searchPub (s t : State) : Prop :=
+  s.sp = t.sp ∧ (genRand s).map (·.toNat) = (genRand t).map (·.toNat) ∧
+    wordsAt s.mem (stackArg s 1) 4 = wordsAt t.mem (stackArg t 1) 4 ∧
+    s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧
+    (s.gpr .x4).setWidth 32 = (t.gpr .x4).setWidth 32 ∧ s.gpr .x5 = t.gpr .x5 ∧ s.gpr .x6 = t.gpr .x6 ∧
+    s.gpr .x7 = t.gpr .x7 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1
+
+def searchContract : Contract isa where
+  pre := searchPre
+  post := searchPost
+  pub := searchPub
+
+end VG.Proof.Ffdh.AArch64.Generation
+
+end
+
+end
+
+/-! # The parameter search's public data, loop states and buffers (AArch64)
+
+`SPub` is everything two constant-time runs share, the tape included; a
+loop state (`SLive`) is at an offset into the tape with attempts left, in
+the frame saving `x30`, and the search from there (`SPub.tail`) is what the
+controller returns.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Generation
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Spec.Ffdh
+open VG.Proof.Ffdh.AArch64 (Slots)
+
+structure SPub where
+  op : Addr
+  up : Addr
+  rp : Addr
+  B : Addr
+  control : Addr
+  sp : Addr
+  len : Nat
+  bits : Nat
+  gen : Nat
+  randLen : Nat
+  Z : Nat
+  attempts : Nat
+  rand : List Byte
+
+def sOfState (s : State) : SPub where
+  op := s.gpr .x0
+  up := s.gpr .x2
+  rp := s.gpr .x5
+  B := s.gpr .x7
+  control := stackArg s 1
+  sp := s.sp
+  len := genLen s
+  bits := genBits s
+  gen := genGen s
+  randLen := (s.gpr .x6).toNat
+  Z := (stackArg s 0).toNat * 8
+  attempts := genAttempts s
+  rand := genRand s
+
+def SInput (p : SPub) (s : State) : Prop := searchPre s ∧ sOfState s = p
+
+/-- The search from octet `used` of the tape, with `k` attempts left. -/
+def SPub.tail (p : SPub) (used k : Nat) : ParameterSearchResult :=
+  (sievedParameterSearch p.bits p.gen k (p.rand.drop used)).consume used
+
+/-- The controller's words while it searches. -/
+def SPub.headers (p : SPub) (used k : Nat) : List (Nat × BitVec 64) :=
+  [(0, BitVec.ofNat 64 k), (1, BitVec.ofNat 64 p.len), (2, BitVec.ofNat 64 (parameterEntropy p.bits)),
+    (5, p.op), (6, BitVec.ofNat 64 p.len), (7, p.up), (8, BitVec.ofNat 64 p.bits),
+    (9, BitVec.ofNat 64 p.gen), (10, p.rp + BitVec.ofNat 64 used),
+    (11, BitVec.ofNat 64 (p.randLen - used)), (12, BitVec.ofNat 64 used), (13, p.B),
+    (15, BitVec.ofNat 64 (p.Z / 8))]
+
+theorem SPub.headers_bound (p : SPub) (used k : Nat) : ∀ e ∈ p.headers used k, e.1 < 16 := by
+  simp only [SPub.headers, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
+    dsimp only <;> decide
+
+theorem SPub.headers_index {p : SPub} {used k : Nat} {e : Nat × BitVec 64}
+    (he : e ∈ p.headers used k) : e.1 < 16 := p.headers_bound used k e he
+
+/-- A state of the loop, in the frame saving `x30`: `used` octets consumed,
+`k` attempts left. The entry state is functional-proof data only: its
+callee-saved registers may hold secrets. -/
+structure SLive (p : SPub) (original : State) (used k : Nat) (s : State) : Prop where
+  input : SInput p original
+  used_le : used ≤ p.randLen
+  k_le : k ≤ p.attempts
+  rd : s.rd = original.rd
+  wr : s.wr = original.wr
+  sp : s.sp = p.sp - 16
+  x19 : s.gpr .x19 = p.control
+  saved : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x30 → s.gpr r = original.gpr r
+  vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (original.v r).extractLsb' 0 64
+  savedX19 : word s.mem p.control 32 = original.gpr .x19
+  random : Spec.Rsa.bytesAt s.mem p.rp p.randLen = p.rand
+  headers : Slots s.mem p.control (p.headers used k)
+
+/-- The output of a finished search. -/
+def SOutput (p : SPub) (result : ParameterSearchResult) (m : Mem) : Prop :=
+  Spec.Rsa.bytesAt m p.op p.len =
+    match result with
+    | .accepted q _ => Spec.Rsa.i2osp q p.len
+    | _ => List.replicate p.len 0
+
+/-- The controller's four public words for a finished search. -/
+def SPub.policy (p : SPub) (result : ParameterSearchResult) : List (BitVec 64) :=
+  [BitVec.ofNat 64 result.remaining, BitVec.ofNat 64 p.len,
+    BitVec.ofNat 64 (parameterEntropy p.bits), BitVec.ofNat 64 (Proof.Ffdh.requested p.bits result)]
+
+/-- A finished search, before `finish` stores `used` and restores `x19`. -/
+structure SDone (p : SPub) (original : State) (result : ParameterSearchResult) (s : State) : Prop where
+  input : SInput p original
+  rd : s.rd = original.rd
+  wr : s.wr = original.wr
+  x19 : s.gpr .x19 = p.control
+  saved : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x30 → s.gpr r = original.gpr r
+  vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (original.v r).extractLsb' 0 64
+  savedX19 : word s.mem p.control 32 = original.gpr .x19
+  usedPtr : word s.mem p.control 56 = p.up
+  used : word s.mem p.control 96 = BitVec.ofNat 64 result.used
+  status : word s.mem p.control 112 = BitVec.ofNat 64 result.status
+  policy : Spec.Rsa.wordsAt s.mem p.control 4 = p.policy result
+  output : SOutput p result s.mem
+
+/-! ## Where the buffers are -/
+
+namespace SInput
+
+variable {p : SPub} {s : State}
+
+theorem nowrap (h : SInput p s) {r : Region} (hr : r ∈ inWrites s ++ inReads s) :
+    r.base.toNat + r.len ≤ 2 ^ 64 := h.1.2.2.2.2.1 r hr
+
+theorem write_disjoint (h : SInput p s) {w r : Region} (hw : w ∈ inWrites s) (hr : r ∈ inReads s) :
+    w.Disjoint r := h.1.2.2.2.2.2.2.1 w hw r hr
+
+theorem stack_disjoint (h : SInput p s) {r : Region} (hr : r ∈ inWrites s ++ inReads s) :
+    (below s.sp stackUse).Disjoint r :=
+  h.1.2.2.2.2.2.2.2.1 r hr
+
+theorem writes_pairwise (h : SInput p s) : (inWrites s).Pairwise Region.Disjoint :=
+  h.1.2.2.2.2.2.1
+
+theorem bits_bounds (h : SInput p s) : 512 ≤ p.bits ∧ p.bits ≤ 8192 := by
+  obtain ⟨-, -, -, -, -, -, -, -, h1, h2, -⟩ := h.1
+  rw [← h.2]; exact ⟨h1, h2⟩
+
+theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, hl, -⟩ := h.1
+  rw [← h.2]; exact hl
+
+theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
+  have := h.bits_bounds; have := h.len_eq; omega_arith
+
+theorem attempts_le (h : SInput p s) : p.attempts ≤ parameterAttempts p.bits := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, ha, -⟩ := h.1
+  rw [← h.2]; exact ha
+
+theorem attempts_lt (h : SInput p s) : p.attempts < 2 ^ 64 := by
+  have ha := h.attempts_le
+  have hb := h.bits_bounds
+  have : parameterAttempts p.bits ≤ 8192 * 8192 * 64 := by
+    unfold parameterAttempts
+    exact Nat.mul_le_mul (Nat.mul_le_mul hb.2 hb.2) (Nat.le_refl _)
+  omega_using [ha, this]
+
+theorem randLen_le (h : SInput p s) : p.randLen ≤ parameterEntropy p.bits := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr⟩ := h.1
+  rw [← h.2]; exact hr
+
+theorem randLen_lt (h : SInput p s) : p.randLen < 2 ^ 64 := by
+  rw [← h.2]; exact BitVec.isLt _
+
+theorem rand_length (h : SInput p s) : p.rand.length = p.randLen := by
+  rw [← h.2]; simp only [sOfState, genRand, Spec.Rsa.bytesAt, List.length_map, List.length_range]
+
+theorem sp_eq (h : SInput p s) : p.sp = s.sp := by rw [← h.2]; rfl
+
+theorem sp_room (h : SInput p s) : 32 ≤ p.sp.toNat := by rw [h.sp_eq]; exact h.1.2.1
+
+theorem control_scr (h : SInput p s) {t : State} (hw : t.wr = s.wr) : Scr t p.control 128 := by
+  refine Scr.of_mem (by rw [hw, h.1.2.2.2.1, ← h.2]; simp [inWrites, inCtl, sOfState]) ?_
+  rw [← h.2]
+  exact h.nowrap (r := inCtl s) (by simp [inWrites])
+
+/-- The regions the controller (and its callee) may write, and its stack. -/
+def changes (s : State) : List Region := inWrites s ++ [below s.sp stackUse]
+
+theorem read_disjoint (h : SInput p s) {r : Region} (hr : r ∈ inReads s) :
+    ∀ w ∈ changes s, r.Disjoint w := by
+  intro w hw
+  rcases List.mem_append.mp hw with hw | hw
+  · exact (h.write_disjoint hw hr).symm
+  · obtain rfl := List.mem_singleton.mp hw
+    exact (h.stack_disjoint (List.mem_append_right _ hr)).symm
+
+theorem bytes_frame (h : SInput p s) {r : Region} (hr : r ∈ inReads s) {m m' : Mem}
+    (hf : Frame (changes s) m m') : Spec.Rsa.bytesAt m' r.base r.len = Spec.Rsa.bytesAt m r.base r.len := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hn := h.nowrap (List.mem_append_right _ hr)
+  exact hf.bytes (h.read_disjoint hr) (by omega_using [hn]) (List.mem_range.mp hi)
+
+theorem random_frame (h : SInput p s) {m m' : Mem} (hf : Frame (changes s) m m') :
+    Spec.Rsa.bytesAt m' p.rp p.randLen = Spec.Rsa.bytesAt m p.rp p.randLen := by
+  rw [← h.2]
+  exact h.bytes_frame (r := inRand s) (by simp [inReads]) hf
+
+/-- The writes but the controller's words. -/
+def callChanges (s : State) : List Region :=
+  [inOut s, inUsed s, inScr s, below s.sp stackUse]
+
+theorem callChanges_sub (s : State) : ∀ r ∈ callChanges s, ∃ q ∈ changes s, Region.Sub r q := by
+  intro r hr
+  refine ⟨r, ?_, fun _ hi => hi⟩
+  simp only [callChanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> simp [changes, inWrites]
+
+theorem control_frame (h : SInput p s) {m m' : Mem} (hf : Frame (callChanges s) m m')
+    (j : Nat) (hj : j < 16) : word m' p.control (8 * j) = word m p.control (8 * j) := by
+  have hpw := h.writes_pairwise
+  simp only [inWrites, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at hpw
+  rw [← h.2]
+  refine hf.readW (r := inCtl s) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
+    (fun r hr => ?_) (by decide)
+  simp only [callChanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact hpw.1.2.2.symm
+  · exact hpw.2.1.2.symm
+  · exact hpw.2.2.1.symm
+  · exact (h.stack_disjoint (r := inCtl s) (by simp [inWrites])).symm
+
+theorem out_eq (h : SInput p s) : inOut s = ⟨p.op, p.len⟩ := by
+  rw [← h.2]; rfl
+
+theorem used_eq (h : SInput p s) : inUsed s = ⟨p.up, 8⟩ := by
+  rw [← h.2]; rfl
+
+theorem ctl_eq (h : SInput p s) : inCtl s = ⟨p.control, 128⟩ := by
+  rw [← h.2]; rfl
+
+end SInput
+
+theorem frame_of_callChanges (s : State) {m m' : Mem} (hf : Frame (SInput.callChanges s) m m') :
+    Frame (SInput.changes s) m m' := hf.sub (SInput.callChanges_sub s)
+
+end VG.Proof.Ffdh.AArch64.Generation
+
+end
+
+end
+
+/-! # What keeps the parameter search's loop state (AArch64), and where the search goes -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Generation
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Spec.Ffdh
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Ffdh.AArch64 (Slots)
+open VG.Proof.Ffdh.Control (writeController writeController_frame writeController_word
+  controllerValue controllerValue_unchanged)
+
+/-- The loads and stores of a controller's block, at its words. -/
+structure CtlAccess (s : State) (B : Addr) : Prop where
+  ld : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 8
+  st : ∀ d, d + 8 ≤ 128 → InRegions s.wr (B + BitVec.ofNat 64 d) 8
+  ld0 : InRegions (s.rd ++ s.wr) B 8
+  st0 : InRegions s.wr B 8
+
+theorem CtlAccess.of_scr {s : State} {B : Addr} (scr : Scr s B 128) : CtlAccess s B :=
+  ⟨fun _ hd => scr.ld hd, fun _ hd => scr.st hd,
+    by simpa only [off, BitVec.add_zero] using scr.ld (d := 0) (by decide),
+    by simpa only [off, BitVec.add_zero] using scr.st (d := 0) (by decide)⟩
+
+/-- The controller's words after writes of `values`. -/
+theorem headers_after {p : SPub} {s t : State} (values : List (Nat × BitVec 64))
+    (hb : ∀ e ∈ values, e.1 < 16) (hm : t.mem = writeController s.mem p.control values)
+    {used k : Nat}
+    (hv : ∀ e ∈ p.headers used k, controllerValue values e.1 (word s.mem p.control (8 * e.1)) = e.2) :
+    Slots t.mem p.control (p.headers used k) := by
+  intro e he
+  rw [hm, writeController_word _ _ _ hb e.1 (SPub.headers_index he)]
+  exact hv e he
+
+namespace SLive
+
+variable {p : SPub} {original s t : State} {used k : Nat}
+
+theorem access (h : SLive p original used k s) : CtlAccess s p.control :=
+  CtlAccess.of_scr (h.input.control_scr (t := s) h.wr)
+
+theorem header (h : SLive p original used k s) {j : Nat} {v : BitVec 64}
+    (hj : (j, v) ∈ p.headers used k) : word s.mem p.control (8 * j) = v :=
+  h.headers (j, v) hj
+
+theorem rand_length (h : SLive p original used k s) : p.rand.length = p.randLen := h.input.rand_length
+
+/-- Through code that keeps `x19`, the stack pointer, the regions, the
+controller's words, and writes only the output, `used`, the working space
+and the stack. -/
+theorem restore (h : SLive p original used k s)
+    (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
+    (hg : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = s.gpr r)
+    (hv : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64)
+    (hf : Frame (SInput.callChanges original) s.mem t.mem) :
+    SLive p original used k t := by
+  have hc := h.input.control_frame hf
+  have hf' := frame_of_callChanges original hf
+  refine ⟨h.input, h.used_le, h.k_le, hr.trans h.rd, hw.trans h.wr,
+    hsp.trans h.sp, (hg .x19 (by decide) (by decide)).trans h.x19,
+    fun r hr h19 h30 => (hg r hr h30).trans (h.saved r hr h19 h30),
+    fun r hr => (hv r hr).trans (h.vcs r hr), ?_, ?_, ?_⟩
+  · exact (hc 4 (by decide)).trans h.savedX19
+  · exact (h.input.random_frame hf').trans h.random
+  · intro e he
+    exact (hc e.1 (SPub.headers_index he)).trans (h.headers e he)
+
+theorem keep (h : SLive p original used k s) {rs : List Reg}
+    (kp : Keep rs s t) (hm : t.mem = s.mem) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
+    SLive p original used k t := by
+  apply h.restore kp.rd kp.wr kp.sp (fun reg hr _ => kp.gpr reg (hregs reg hr)) kp.vcs
+  rw [hm]
+  exact Frame.refl _ _
+
+/-- Through writes of the controller's words but the saved `x19`. -/
+theorem update (h : SLive p original used k s) {u k' : Nat}
+    (hu : u ≤ p.randLen) (hk : k' ≤ p.attempts)
+    (values : List (Nat × BitVec 64)) (hb : ∀ e ∈ values, e.1 < 16)
+    (h4 : ∀ e ∈ values, 4 ≠ e.1)
+    (hm : t.mem = writeController s.mem p.control values)
+    (kp : Keep [.x0, .x1, .x2, .x3, .x9, .x10, .x11, .x12, .x13, .x14, .x15] s t)
+    (hh : Slots t.mem p.control (p.headers u k')) : SLive p original u k' t := by
+  have hf : Frame (SInput.changes original) s.mem t.mem := by
+    rw [hm]
+    apply (writeController_frame s.mem p.control values hb).sub
+    intro region hregion
+    obtain rfl := List.mem_singleton.mp hregion
+    refine ⟨inCtl original, by simp [SInput.changes, inWrites], ?_⟩
+    rw [h.input.ctl_eq]
+    exact fun _ hi => hi
+  have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr r (by revert r hr; decide)
+  refine ⟨h.input, hu, hk, kp.rd.trans h.rd, kp.wr.trans h.wr,
+    kp.sp.trans h.sp, (hg .x19 (by decide)).trans h.x19,
+    fun reg hreg h19 h30 => (hg reg hreg).trans (h.saved reg hreg h19 h30),
+    fun r hr => (kp.vcs r hr).trans (h.vcs r hr), ?_, ?_, hh⟩
+  · rw [hm]
+    change word (writeController s.mem p.control values) p.control (8 * 4) = _
+    rw [writeController_word _ _ _ hb 4 (by decide), controllerValue_unchanged _ _ _ h4]
+    exact h.savedX19
+  · exact (h.input.random_frame hf).trans h.random
+
+/-- A finished search's state, from a loop state with its words written. -/
+theorem done (h : SLive p original used k s) {r : ParameterSearchResult}
+    (hu : r.used = used)
+    (hs : word s.mem p.control 112 = BitVec.ofNat 64 r.status)
+    (hp : Spec.Rsa.wordsAt s.mem p.control 4 = p.policy r)
+    (ho : SOutput p r s.mem) : SDone p original r s :=
+  ⟨h.input, h.rd, h.wr, h.x19, h.saved, h.vcs, h.savedX19,
+    h.header (j := 7) (by simp [SPub.headers]),
+    by rw [hu]; exact h.header (j := 12) (by simp [SPub.headers]), hs, hp, ho⟩
+
+end SLive
+
+theorem SDone.keep {p : SPub} {original s t : State} {result : ParameterSearchResult}
+    (h : SDone p original result s) {rs : List Reg} (k : Keep rs s t) (hm : t.mem = s.mem)
+    (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) : SDone p original result t := by
+  refine ⟨h.input, k.rd.trans h.rd, k.wr.trans h.wr, (k.gpr _ (hregs .x19 (by decide))).trans h.x19,
+    fun reg hr h19 h30 => (k.gpr reg (hregs reg hr)).trans (h.saved reg hr h19 h30),
+    fun r hr => (k.vcs r hr).trans (h.vcs r hr), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals rw [hm]
+  · exact h.savedX19
+  · exact h.usedPtr
+  · exact h.used
+  · exact h.status
+  · exact h.policy
+  · exact h.output
+
+/-! ## Where the search goes from a loop state -/
+
+theorem SPub.tail_zero (p : SPub) (used : Nat) : p.tail used 0 = .exhausted used := by
+  simp only [SPub.tail, sievedParameterSearch, ParameterSearchResult.consume, Nat.add_zero]
+
+theorem SPub.tail_short {p : SPub} {used k : Nat} (hk : k ≠ 0) (hl : p.rand.length = p.randLen)
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = none) :
+    p.tail used k = if parameterEntropy p.bits ≤ p.randLen - used then .exhausted used
+      else .entropy k (p.randLen - used) used := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl]
+  split <;> simp only [ParameterSearchResult.consume, Nat.add_zero]
+
+theorem SPub.tail_accept {p : SPub} {used k q : Nat} {rest : List Byte} (hk : k ≠ 0)
+    (hl : p.rand.length = p.randLen)
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (some q, rest)) :
+    p.tail used k = .accepted q (used + ((p.randLen - used) - rest.length)) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk
+  simp only [SPub.tail, sievedParameterSearch, hc, List.length_drop, hl, ParameterSearchResult.consume]
+
+theorem SPub.tail_reject {p : SPub} {used k : Nat} {rest : List Byte} (hk : k ≠ 0)
+    (hl : p.rand.length = p.randLen)
+    (hc : sievedParameterCandidate p.bits p.gen (p.rand.drop used) = some (none, rest)) :
+    p.tail used k = p.tail (used + ((p.randLen - used) - rest.length)) (k - 1) := by
+  have := Proof.Ffdh.SievedGeneration.search_reject (Nat.pos_of_ne_zero hk) hc
+  simp only [List.length_drop, hl] at this
+  exact this
+
+end VG.Proof.Ffdh.AArch64.Generation
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Generation.Search.Call`, which the modules that import this one used -/
 

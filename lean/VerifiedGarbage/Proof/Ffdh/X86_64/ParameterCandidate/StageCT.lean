@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 

@@ -39,7 +39,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeInitial
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Bit
@@ -56,7 +55,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BitMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoopTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoop

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtReduce
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
@@ -16,11 +15,10 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.Reach
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
+meta import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint

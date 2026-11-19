@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
 public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 public import VerifiedGarbage.Proof.HashTable.AArch64
 public import VerifiedGarbage.Proof.RsaOaep.Encode
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry

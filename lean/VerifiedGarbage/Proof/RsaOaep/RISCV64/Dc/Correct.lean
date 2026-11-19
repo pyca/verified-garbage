@@ -671,7 +671,7 @@ section
 # RSAES-OAEP decryption on RISC-V: what the outputs say
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Out.lean`): `dec_written`, from the
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`): `dec_written`, from the
 views of `EM` before and after its unmasking, `lHash` and the scan's
 registers, the bytes of `out` (the buffer shifted by `idx + 1`, ANDed with
 `ok`), `*msg_len` and the result are what `writtenDecrypt` asks of
@@ -833,7 +833,7 @@ end
 # RSAES-OAEP decryption on RISC-V: the outputs
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
-(`Proof/RsaOaep/PPC64LE/Dc/Out.lean`): `okMask_ok`, `ok`, all ones iff
+(`Proof/RsaOaep/PPC64LE/Dc/VerifiedP.lean`): `okMask_ok`, `ok`, all ones iff
 the private operation's result is 1 and the accumulator zero (`x ≠ 0` from
 the top bit of `x ∨ -x`); `outLoop_ok`, the buffer's first `k` bytes ANDed
 with it to `out`; `decRet_ok`, the length and the result; `decFail_ok`,

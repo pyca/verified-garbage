@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout

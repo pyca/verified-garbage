@@ -28,22 +28,20 @@ meta import VerifiedGarbage.Proof.Bignum.WordStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2
 meta import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Rsa.Ranges
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit

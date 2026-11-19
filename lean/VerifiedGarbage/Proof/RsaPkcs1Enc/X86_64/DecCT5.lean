@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
@@ -10,13 +10,11 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecScan
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-! ### `RsaPkcs1Enc.X86_64.DecCT4`, which only this module used -/

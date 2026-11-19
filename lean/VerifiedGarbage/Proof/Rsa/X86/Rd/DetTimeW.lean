@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.Rd.ProdW
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.DivAW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2B
+public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2B
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeSqrtW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdWTime
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
@@ -19,14 +19,12 @@ import VerifiedGarbage.Proof.Rsa.X86.Rd.Loops
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Rsa.X86.Rd.Abi
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2Q
-public import VerifiedGarbage.Proof.Rsa.X86.Rd.DivAW
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2Q
+meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimeW2B
 
 /-! ### `Rsa.X86.Rd.TimeW2A`, which only this module used -/
 

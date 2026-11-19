@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.RoundCall
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Hyp
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
 import VerifiedGarbage.Proof.RsaKeyGen.Generate
-import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.Sieve
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Fin
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.Setup
 public import VerifiedGarbage.Proof.RsaKeyGen.MrLoopAt
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore

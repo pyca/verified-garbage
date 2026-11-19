@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainFn
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit

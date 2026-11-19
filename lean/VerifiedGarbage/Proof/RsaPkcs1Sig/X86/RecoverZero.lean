@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Weierstrass
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 import VerifiedGarbage.Proof.Bignum.MemoryFrame

@@ -32,47 +32,35 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRoundCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SampleRound
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRoundCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sample
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
 public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
 meta import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TestWitness
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TestWitness
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Load
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
@@ -162,6 +150,65 @@ meta import VerifiedGarbage.Proof.Bignum.WorkFrame
 meta import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
+
+/-! ### `Dsa.X86_64.Generation.DrawCopyCT`, which only this module used -/
+
+section
+
+/-! # Witness draws reveal their public tape position and widths -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Bignum.X86_64
+
+structure DrawPublic where
+  prime : PrimeParams
+  used : Nat
+
+def DrawBefore (len drawBytes : Nat) (p : DrawPublic) (s : State) : Prop :=
+  (∃ mi, PrimeState p.prime mi p.used s) ∧ p.prime.len = len ∧ p.prime.drawBytes = drawBytes
+
+def DrawCopyReady (len drawBytes : Nat) (p : DrawPublic) (s : State) : Prop :=
+  s.gpr .rsi = off p.prime.rp (p.used + (drawBytes - len)) ∧ s.gpr .rdi = p.prime.p ∧
+    s.gpr .rcx = BitVec.ofNat 64 len ∧ s.gpr .rdx = BitVec.ofNat 64 (8 * len)
+
+theorem drawCopy_ct (len drawBytes : Nat) :
+    RelCT isa (Two (DrawBefore len drawBytes))
+      (Impl.Dsa.X86_64.Generation.drawCopy) (fun _ _ => True) := by
+  unfold Impl.Dsa.X86_64.Generation.drawCopy
+  simp only [seqs]
+  refine RelCT.seq (two_post (Ψ := DrawCopyReady len drawBytes) (two_taint [.rdi] ?_ (by taint_decide)) ?_) ?_
+  · intro p s t hs ht r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    obtain ⟨mi, hs⟩ := hs.1
+    obtain ⟨mi', ht⟩ := ht.1
+    exact hs.ready.good.rdi.trans ht.ready.good.rdi.symm
+  · intro p s h
+    obtain ⟨mi, hs⟩ := h.1
+    rw [← h.2.1, ← h.2.2]
+    exact WP.mono (drawCopyArgs_ok hs.ready.good p.prime.dims.z p.prime.lenDraw hs.rand hs.ptr hs.used
+      hs.draw hs.len)
+      fun t ⟨_, hsi, hdi, hcx, hdx, _, _⟩ => ⟨hsi, hdi, hcx, hdx⟩
+  · exact two_taint [.rdi, .rsi, .rcx, .rdx] (by
+      intro p s t hs ht r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hs.2.1.trans ht.2.1.symm
+      · exact hs.1.trans ht.1.symm
+      · exact hs.2.2.1.trans ht.2.2.1.symm
+      · exact hs.2.2.2.trans ht.2.2.2.symm) (by taint_decide)
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
 
 /-! ### `Dsa.X86_64.ProbablePrime.Body`, which this module and modules that import it used -/
 

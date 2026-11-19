@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Guard
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Loop
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Mul
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Eq
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr

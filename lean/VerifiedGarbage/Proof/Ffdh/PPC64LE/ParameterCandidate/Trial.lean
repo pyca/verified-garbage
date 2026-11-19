@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.DrawFn
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Mr
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Contract
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.Tests
 
 /-! ### `Ffdh.PPC64LE.ParameterCandidate.MainShape`, which only this module used -/
 

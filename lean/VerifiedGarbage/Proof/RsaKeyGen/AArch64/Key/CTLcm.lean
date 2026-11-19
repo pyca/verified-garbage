@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -11,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops

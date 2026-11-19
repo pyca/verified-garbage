@@ -12,12 +12,10 @@ import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Entry
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.ByIdx
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
-import VerifiedGarbage.Proof.RsaPss.PPC64LE.Fixed
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Shift
 import VerifiedGarbage.Proof.RsaPss.PPC64LE.ShiftV
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.MHash

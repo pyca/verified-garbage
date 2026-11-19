@@ -42,7 +42,7 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Rsa.KeyBits32
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 
 /-!
 # `vg_rsa_recover_primes_det` on i686: the inputs, `d e` and the outputs

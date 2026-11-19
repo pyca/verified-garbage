@@ -7,13 +7,11 @@ public import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreFn
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtChecks
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PrivPre
 public meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.PPC64LE.Carry

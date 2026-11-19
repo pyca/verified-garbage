@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowTable
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
 import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
-import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn

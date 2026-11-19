@@ -5,12 +5,11 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf

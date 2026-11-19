@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Rsa.MontContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
-import VerifiedGarbage.Proof.Ffdh.Arm.CandidatePrepare
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
@@ -17,14 +16,268 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontStride
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 import VerifiedGarbage.Impl.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
+public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
+import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepare
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Ffdh.Arm.ParameterCandidate.MontStride`, which this module and modules that import it used -/
+
+section
+
+/-! The shared compact round's stride is a complete u64 header word. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
+open VG.Proof.X25519.Arm (Rest)
+open VG.Proof.Rsa.Mont (numAt)
+
+def strideMemory (m : Mem) (base : BitVec 32) (w : Nat) : Mem :=
+  (m.writeW (off (State.addr base) 224) (BitVec.ofNat 32 (8 * (w + 2)))).writeW
+    (off (State.addr base) 228) (0#32)
+
+theorem keyStride_words {s : State} {base : BitVec 32} {capacity w : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (ptr : s.gpr .r0 = base) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.keyStride) s fun t =>
+      t.mem = strideMemory s.mem base w ∧ Rest [.r1] s t := by
+  have fit := ready.arrayFit (j := 0) (by decide)
+  have write224 : InRegions s.wr (State.addr (base + 224#32)) 4 := by
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])]
+    exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+      Nat.zero_mul, Nat.add_zero] at fit; omega_using [fit])
+  have write228 : InRegions s.wr (State.addr (base + 228#32)) 4 := by
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])]
+    exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
+      Nat.zero_mul, Nat.add_zero] at fit; omega_using [fit])
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
+  have stride := ready.r7
+  rw [keyView_stride] at stride
+  have addr224 : State.addr (base + 224#32) = off (State.addr base) 224 :=
+    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])
+  have addr228 : State.addr (base + 228#32) = off (State.addr base) 228 :=
+    VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])
+  change s.gpr .r7 = _ at stride
+  rw [addr224] at write224
+  rw [addr228] at write228
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.keyStride strideMemory
+  ffrun [ptr, stride, write224, write228, addr224, addr228,
+    show (0 : BitVec 32) = 0#32 from rfl]
+
+theorem strideMemory_write64 (m : Mem) (base : BitVec 32) {w : Nat} (bound : w ≤ 1024) :
+    strideMemory m base w = m.writeW (off (State.addr base) 224) (BitVec.ofNat 64 (8 * (w + 2))) := by
+  unfold strideMemory
+  have offset : off (State.addr base) 228 = off (State.addr base) 224 + BitVec.ofNat 64 4 := by
+    rw [Offset.add_add]
+  rw [offset, ← VG.Proof.Rc2.Word32.write64_pair]
+  congr 1
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_append]
+  simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
+  rw [Nat.mod_eq_of_lt (by omega_using [bound] : 8 * (w + 2) < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [bound] : 8 * (w + 2) < 2 ^ 64)]
+
+theorem strideMemory_frame (m : Mem) (base : BitVec 32) {w : Nat} (bound : w ≤ 1024) :
+    Frame [⟨off (State.addr base) 224, 8⟩] m (strideMemory m base w) := by
+  rw [strideMemory_write64 m base bound]
+  exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
+
+theorem keyStride_ok {s : State} {base : BitVec 32} {capacity w : Nat}
+    (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
+    (data : MontData base capacity w s.mem) (ptr : s.gpr .r0 = base) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.keyStride) s fun t =>
+      KeyReady base capacity w t ∧ MontData base capacity w t.mem ∧
+      t.mem.readW (off (State.addr base) 224) 64 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+      (∀ j, j < 35 → numAt t.mem (State.addr base) w j = numAt s.mem (State.addr base) w j) ∧
+      Frame [⟨off (State.addr base) 224, 8⟩] s.mem t.mem ∧ Rest [.r1] s t := by
+  have wBound : w ≤ 1024 := by have := ready.wle; omega_using [this]
+  refine WP.mono (keyStride_words workspace ready ptr) ?_
+  rintro t ⟨mem, rest⟩
+  have frame : Frame [⟨off (State.addr base) 224, 8⟩] s.mem t.mem := by
+    rw [mem]
+    exact strideMemory_frame s.mem base wBound
+  have values (j : Nat) (jBound : j < 35) : numAt t.mem (State.addr base) w j = numAt s.mem (State.addr base) w j := by
+    unfold numAt
+    apply congrArg BitVec.toNat
+    refine frame.read (r := ⟨off (State.addr base) (Proof.Rsa.Mont.arrAt w j), 8 * w⟩)
+      (Region.contains_self _ _) ?_ (by omega_using [wBound])
+    intro r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    have scale := Nat.mul_le_mul_right (8 * (w + 2)) (show j ≤ 35 by omega_using [jBound])
+    apply Offset.disjoint _ (.inr ?_) (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [wBound, scale]) (by decide)
+    simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
+    omega_using []
+  have dataT := data.after_value frame (by
+    intro r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    exact (Offset.disjoint_base _ (by decide : 128 ≤ 224) (by decide : 224 + 8 ≤ 2 ^ 64)).symm) (values 0 (by decide))
+  refine ⟨ready.rest rest (by decide) (by decide) (by decide), dataT.1, ?_, values, frame, rest⟩
+  rw [mem, strideMemory_write64 s.mem base wBound, Mem.readW_writeW_self64]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CandidatePrepare`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Bignum.Arm.InlineMontgomery`, which this module and modules that import it used -/
+
+section
+
+/-! Inline Montgomery operations meet the same interface as shared calls. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+open VG.Proof.Rsa.Mont (arrAt)
+
+def inlineMontgomery (base : BitVec 32) (len w : Nat) :
+    TwoExp.Montgomery base len w (fun _ => True) [⟨State.addr base, 8 * len⟩] where
+  op := montOp
+  workspace := by simp
+  stable := by intros; trivial
+  op_ok := by
+    intro s o a b ready _ ho ha hb ho0 operand
+    refine WP.mono (montOp_ok s ready ho ha hb ho0 operand) ?_
+    rintro t ⟨r,m,b,v,k,f,rest⟩
+    exact ⟨r,m,b,v,k,trivial,f,rest⟩
+
+theorem inlineMontgomery_ct {base : BitVec 32} {len w : Nat}
+    (fit : arrAt w 3 + 32 ≤ 8 * len) :
+    TwoExp.MontgomeryTiming (inlineMontgomery base len w) where
+  op_ct := by
+    intro o a b ho ha hb
+    exact (montOp_ct ho ha hb fit).mono
+      (fun _ _ h => ⟨⟨h.1.1,h.1.2.2⟩,⟨h.2.1.1,h.2.1.2.2⟩,h.2.2⟩)
+      (fun _ _ h => h)
+
+end VG.Proof.Bignum.Arm
+
+end
+
+end
+
+/-! The public byte count selects normalized setup only where the shaped
+candidate guarantees a nonzero highest radix word. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm
+
+theorem candidatePrepareChoice_ok (s : State) {base src : BitVec 32} {len k : Nat}
+    (h : PrepareInput base src len k s)
+    (normalized : k % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
+    WP isa (.block VG.Impl.Ffdh.Arm.CandidatePrepare.choose) s fun v =>
+      PrepareInput base src len k v ∧
+      (k % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k)) ∧
+      v.z = decide (k % 8 = 1) ∧ v.mem = s.mem ∧ Rest [.r1] s v := by
+  simp only [VG.Impl.Ffdh.Arm.CandidatePrepare.choose]
+  refine wp_dp (op2_imm (by decide)) fun u hu => ?_
+  refine wp_cmp (op2_imm (by decide)) fun v hv zero => WP.block_nil ?_
+  have rest : Rest [.r1] s v := (hu.rest (by simp)).trans ((hv.rest []).mono (by simp))
+  have memory : v.mem = s.mem := hv.mem.trans hu.mem
+  have input : PrepareInput base src len k v := by
+    refine ⟨h.workspace.congr rest.wr, ?_, ?_, ?_, h.minLength,h.maxLength,h.space,
+      h.sourceFits,?_,h.separate,?_,?_⟩
+    · have f : Frame [⟨State.addr base,8*len⟩] s.mem v.mem := by rw [memory];exact Frame.refl _ _
+      simpa only [memory,rest.sp] using h.stack.after_workspace f rest
+    · rw [rest.gpr .r0 (by simp)];exact h.ptr
+    · rw [rest.gpr .r6 (by simp)];exact h.count
+    · rw [rest.rd,rest.wr];exact h.readable
+    · rw [memory];exact h.large
+    · rw [memory];exact h.odd
+  have branch : v.z = decide (k % 8 = 1) := by
+    rw [zero, hu.gpr, dpVal, h.count]
+    have mask : (BitVec.ofNat 32 k &&& (7 : BitVec 32)).toNat = k % 8 := by
+      rw [BitVec.toNat_and,BitVec.toNat_ofNat]
+      change (k % 2^32) &&& (2^3-1) = _
+      rw [Nat.and_two_pow_sub_one_eq_mod]
+      omega_using []
+    apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    constructor
+    · intro eq
+      have emask : (BitVec.ofNat 32 k &&& (7 : BitVec 32)) = 1 := by
+        calc
+          _ = ((BitVec.ofNat 32 k &&& (7 : BitVec 32)) - 1) + 1 := (BitVec.sub_add_cancel _ _).symm
+          _ = 1 := by rw [eq]; rfl
+      have e := congrArg BitVec.toNat emask
+      rw [mask] at e
+      exact e
+    · intro eq
+      have emask : (BitVec.ofNat 32 k &&& (7 : BitVec 32)) = 1 :=
+        BitVec.eq_of_toNat_eq (by rw [mask]; exact eq)
+      rw [emask]; rfl
+  exact ⟨input,by rw [memory];exact normalized,branch,memory,rest⟩
+
+theorem candidatePrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
+    (h : PrepareInput base src len k s)
+    (normalized : k % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
+    WP isa VG.Impl.Ffdh.Arm.CandidatePrepare.code s fun t =>
+      ArithmeticReady base len (Spec.Rsa.modulusWords k) t ∧
+      numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 =
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+      numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 =
+        2 ^ (128 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧
+      Rest VG.Proof.Bignum.Arm.roundClobbers s t := by
+  rw [VG.Impl.Ffdh.Arm.CandidatePrepare.code, WP.seq_iff]
+  refine WP.mono (candidatePrepareChoice_ok s h normalized) ?_
+  rintro v ⟨input,_,branch,memory,rest⟩
+  have finish (t : State) (ready : ArithmeticReady base len (Spec.Rsa.modulusWords k) t)
+      (n : Proof.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
+      (r2 : Proof.Rsa.Mont.numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 = 2^(128*Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt v.mem (State.addr src) k))
+      (frame : Frame [⟨State.addr base,8*len⟩] v.mem t.mem) (rt : Rest roundClobbers v t) :=
+    And.intro ready (And.intro (memory ▸ n) (And.intro (memory ▸ r2)
+      (And.intro (by simpa only [memory] using frame) ((rest.mono (by simp [roundClobbers])).trans rt))))
+  refine WP.ite v.z rfl ?_ ?_
+  · intro selected
+    refine WP.mono (prepare_ok v input) ?_
+    rintro t ⟨ready,n,r2,frame,rt⟩
+    exact finish t ready n r2 frame rt
+  · intro selected
+    have notBoundary : k % 8 ≠ 1 := by
+      rw [branch] at selected
+      simpa only [decide_eq_false_iff_not] using selected
+    have bound := normalized.resolve_left notBoundary
+    refine WP.mono (normalizedPrepare_ok v (inlineMontgomery base len (Spec.Rsa.modulusWords k))
+      input trivial (by rw [memory];exact bound)) ?_
+    rintro t ⟨ready,n,r2,_,frame,rt⟩
+    exact finish t ready n r2 frame rt
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterCandidate.MontPrepare`, which this module and modules that import it used -/
 

@@ -24,7 +24,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinishCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT

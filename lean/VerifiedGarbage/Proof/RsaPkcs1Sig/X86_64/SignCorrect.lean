@@ -20,7 +20,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Sign
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfTCT
 import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
 import VerifiedGarbage.Proof.Mgf1.Bytes
@@ -33,13 +33,11 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

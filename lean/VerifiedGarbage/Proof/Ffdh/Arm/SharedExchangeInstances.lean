@@ -13,10 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
-import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAtCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Bignum.Math
@@ -28,9 +26,9 @@ import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntryCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
@@ -39,7 +37,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec

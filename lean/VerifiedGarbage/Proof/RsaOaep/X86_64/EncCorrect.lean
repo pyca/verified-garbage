@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
-import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset

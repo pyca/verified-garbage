@@ -59,7 +59,7 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillABI
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
@@ -74,7 +74,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 meta import Mathlib.Order.RelClasses

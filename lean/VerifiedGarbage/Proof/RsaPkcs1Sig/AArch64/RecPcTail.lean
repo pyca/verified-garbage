@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
 
 /-! ### `RsaPkcs1Sig.AArch64.RecPcCall`, which this module and modules that import it used -/

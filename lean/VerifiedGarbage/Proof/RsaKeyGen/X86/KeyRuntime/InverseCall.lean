@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.CallWith

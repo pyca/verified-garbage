@@ -1,14 +1,571 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Ffdh.GenerationSearch
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
+
+/-! ### `Ffdh.AArch64.Cached.SearchProof.Entry`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.SearchProof.Data`, which this module and modules that import it used -/
+
+section
+
+/-! ### `Ffdh.AArch64.Cached.SearchProof.Contract`, which this module and modules that import it used -/
+
+section
+
+/-! # The key-generation controller's contract in terms of the machine (AArch64)
+
+`vg_ffdh_generate_key_search_cached(x = x0, x_len = x1, y = x2, y_len = x3,
+used = x4, domain = x5, domain_len = x6, p_len = x7, rand, rand_len,
+scratch, scratch_len, state, ctx, ctx_len)`: eight arguments in registers and seven on the
+stack. The controller uses 64 bytes of stack: the frame saving `x30` and
+its attempt's frame of 48 bytes; the attempt it calls uses none
+(`Attempt.depth`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Spec.Ffdh
+open VG.Proof.Bignum.AArch64 VG.Proof.Bignum.AArch64.WindowFive
+open VG.Spec.Rsa (bytesAt wordsAt i2osp powMod)
+
+/-- The stack the controller uses below the stack pointer. -/
+abbrev stackUse : Nat := 64
+
+/-- A stack-free verified cached attempt. -/
+structure Attempt where
+ M : Mont
+ depth : (Impl.Ffdh.AArch64.Cached.Generate.code M.mm).aarch64Depth=0
+
+abbrev Attempt.code (a : Attempt) : Prog isa := Impl.Ffdh.AArch64.Cached.Generate.code a.M.mm
+abbrev Attempt.call (a : Attempt) : Prog isa := .call "vg_ffdh_generate_key_cached" a.code
+
+def inX (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
+def inY (s : State) : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+def inUsed (s : State) : Region := ⟨s.gpr .x4, 8⟩
+def inDom (s : State) : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
+def inRand (s : State) : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+def inScr (s : State) : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
+def inCtl (s : State) : Region := ⟨stackArg s 4, 128⟩
+def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 56⟩
+
+/-- The buffers the controller writes, and those it only reads. -/
+def inWrites (s : State) : List Region := [inX s, inY s, inUsed s, inScr s, inCtl s]
+def inContext (s : State) : Region := ⟨stackArg s 5,(stackArg s 6).toNat*8⟩
+def inReads (s : State) : List Region := [inDom s, inRand s, inContext s,inArgs s]
+
+/-- The width, the domain and the random octets on entry. -/
+abbrev keyLen (s : State) : Nat := (s.gpr .x7).toNat
+abbrev keyDom (s : State) : List Byte := bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat
+abbrev keyRand (s : State) : List Byte := bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat
+abbrev keyA (s : State) : Parameters := domainOf (keyLen s) (keyDom s)
+abbrev keyRetries (s : State) : KeyRetries :=
+  ⟨(s.mem.readW (stackArg s 4) 64).toNat, (s.mem.readW (stackArg s 4 + 8) 64).toNat⟩
+
+def keyPre (s : State) : Prop :=
+  s.sp.toNat + 56 ≤ 2 ^ 64 ∧ stackUse ≤ s.sp.toNat ∧
+    s.rd = inReads s ∧ s.wr = inWrites s ∧
+    (∀ r ∈ inWrites s ++ inReads s, r.base.toNat + r.len ≤ 2 ^ 64) ∧
+    (inWrites s).Pairwise Region.Disjoint ∧
+    (∀ w ∈ inWrites s, ∀ r ∈ inReads s, w.Disjoint r) ∧
+    (∀ r ∈ inWrites s ++ inReads s, (below s.sp stackUse).Disjoint r) ∧
+    pLenValid (keyLen s) ∧ domainLenValid (keyLen s) (s.gpr .x6).toNat ∧
+    (s.gpr .x1).toNat = keyLen s ∧ (s.gpr .x3).toNat = keyLen s ∧
+    Spec.Rsa.scratchWords (keyLen s) ≤ (stackArg s 3).toNat ∧
+    domainValid (keyLen s) (keyDom s) ∧
+    (s.mem.readW (stackArg s 4) 64).toNat ≤ 128 ∧
+    (s.mem.readW (stackArg s 4 + 8) 64).toNat ≤ 128 ∧
+    s.mem.readW (stackArg s 4 + 16) 64 = BitVec.ofNat 64 (keyLen s) ∧
+    (stackArg s 6).toNat=Spec.Ffdh.generationPrecomputedWords (keyLen s) ∧
+    Spec.Ffdh.generationPrecompute (keyLen s) (keyDom s)=some (wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat)
+
+def keyResult (s : State) : KeySearchResult :=
+  vettedKeySearch (keyA s) (keyLen s) (keyRetries s) (keyRand s)
+
+def keyPost (s t : State) : Prop :=
+  ((t.gpr .x0).setWidth 32).toNat = (keyResult s).status ∧
+    (match (keyResult s).outcome with
+      | .accepted sx sy => bytesAt t.mem (s.gpr .x0) (keyLen s) = i2osp sx (keyLen s) ∧
+          bytesAt t.mem (s.gpr .x2) (keyLen s) = i2osp sy (keyLen s)
+      | _ => bytesAt t.mem (s.gpr .x0) (keyLen s) = List.replicate (keyLen s) 0 ∧
+          bytesAt t.mem (s.gpr .x2) (keyLen s) = List.replicate (keyLen s) 0) ∧
+    wordsAt t.mem (stackArg s 4) 4 = [BitVec.ofNat 64 (keyResult s).retries.keys,
+      BitVec.ofNat 64 (keyResult s).retries.scalars, BitVec.ofNat 64 (keyLen s),
+      BitVec.ofNat 64 (if (keyResult s).status = 0 then keyLen s else 0)] ∧
+    wordsAt t.mem (s.gpr .x4) 1 = [BitVec.ofNat 64 (keyResult s).used]
+
+/-- What timing may depend on: the arguments but the random octets, the
+domain, the controller's public words and the attempts' statuses. -/
+def keyPub (s t : State) : Prop :=
+  s.sp = t.sp ∧ (∀ r ∈ argRegs, s.gpr r = t.gpr r) ∧
+    (∀ j < 7, stackArg s j = stackArg t j) ∧
+    keyDom s = keyDom t ∧ wordsAt s.mem (stackArg s 4) 4 = wordsAt t.mem (stackArg t 4) 4 ∧
+    (keyResult s).statuses = (keyResult t).statuses
+
+def keyContract : Contract isa where
+  pre := keyPre
+  post := keyPost
+  pub := keyPub
+
+end VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+end
+
+end
+
+/-! # The key-generation controller's public data, loop states and buffers (AArch64)
+
+As on x86-64 (`Proof/Ffdh/X86_64/KeyGeneration/Data.lean`): `KeyPublic` is
+everything two constant-time runs share; a loop state (`KeyLive`) is at an
+offset into the tape with budgets left, in the frame saving `x30`, and the
+search from there (`keyTail`) is what the controller returns.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Spec.Ffdh
+open VG.Proof.Ffdh.GenerationSearch
+open VG.Proof.Ffdh.AArch64 (Slots)
+
+structure KeyPublic where
+  xp : Addr
+  yp : Addr
+  up : Addr
+  dp : Addr
+  rp : Addr
+  B : Addr
+  control : Addr
+  sp : Addr
+  len : Nat
+  dlen : Nat
+  randLen : Nat
+  Z : Nat
+  keys : Nat
+  scalars : Nat
+  dom : List Byte
+  ctx : Addr
+  ctxLen : Nat
+
+def keyOfState (s : State) : KeyPublic where
+  xp := s.gpr .x0
+  yp := s.gpr .x2
+  up := s.gpr .x4
+  dp := s.gpr .x5
+  rp := stackArg s 0
+  B := stackArg s 2
+  control := stackArg s 4
+  sp := s.sp
+  len := keyLen s
+  dlen := (s.gpr .x6).toNat
+  randLen := (stackArg s 1).toNat
+  Z := (stackArg s 3).toNat * 8
+  keys := (keyRetries s).keys
+  scalars := (keyRetries s).scalars
+  dom := keyDom s
+  ctx := stackArg s 5
+  ctxLen := (stackArg s 6).toNat
+
+/-- The domain's parameters. -/
+abbrev KeyPublic.a (p : KeyPublic) : Parameters := domainOf p.len p.dom
+
+def KeyInput (p : KeyPublic) (s : State) : Prop := keyPre s ∧ keyOfState s = p
+
+/-- The search from octet `used` of `rand`, with `keys` and `scalars` left. -/
+abbrev KeyPublic.tail (p : KeyPublic) (rand : List Byte) (used keys scalars : Nat) : KeySearchResult :=
+  keyTail .cached p.a p.len rand used keys scalars
+
+/-- The controller's words while it searches. -/
+def KeyPublic.headers (p : KeyPublic) (used keys scalars : Nat) : List (Nat × BitVec 64) :=
+  [(0, BitVec.ofNat 64 keys), (1, BitVec.ofNat 64 scalars), (2, BitVec.ofNat 64 p.len),
+    (5, p.xp), (6, p.yp), (7, p.dp), (8, BitVec.ofNat 64 p.dlen),
+    (9, p.rp + BitVec.ofNat 64 used), (10, BitVec.ofNat 64 (p.randLen - used)),
+    (11, BitVec.ofNat 64 used), (12, p.B), (13, BitVec.ofNat 64 (p.Z / 8)), (15, p.up)]
+
+theorem KeyPublic.headers_bound (p : KeyPublic) (used keys scalars : Nat) :
+    ∀ e ∈ p.headers used keys scalars, e.1 < 16 := by
+  simp only [KeyPublic.headers, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
+    dsimp only <;> decide
+
+theorem KeyPublic.headers_index {p : KeyPublic} {used keys scalars : Nat} {e : Nat × BitVec 64}
+    (he : e ∈ p.headers used keys scalars) : e.1 < 16 := p.headers_bound used keys scalars e he
+
+/-- A state of the loop, in the frame saving `x30`: `used` octets consumed,
+`keys` and `scalars` left. The entry state is functional-proof data only:
+its callee-saved registers may hold secrets, and its tape is secret. -/
+structure KeyLive (p : KeyPublic) (original : State) (used keys scalars : Nat) (s : State) : Prop where
+  input : KeyInput p original
+  used_le : used ≤ p.randLen
+  keys_le : keys ≤ 128
+  scalars_le : scalars ≤ 128
+  rd : s.rd = original.rd
+  wr : s.wr = original.wr
+  sp : s.sp = p.sp - 16
+  x19 : s.gpr .x19 = p.control
+  saved : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x30 → s.gpr r = original.gpr r
+  vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (original.v r).extractLsb' 0 64
+  savedX19 : word s.mem p.control 32 = original.gpr .x19
+  random : Spec.Rsa.bytesAt s.mem p.rp p.randLen = keyRand original
+  domain : Spec.Rsa.bytesAt s.mem p.dp p.dlen = p.dom
+  headers : Slots s.mem p.control (p.headers used keys scalars)
+  frame : Frame (inWrites original++[below original.sp stackUse]) original.mem s.mem
+
+/-- The outputs of a finished search. -/
+def KeyOutput (p : KeyPublic) (result : KeySearchResult) (m : Mem) : Prop :=
+  match result.outcome with
+  | .accepted sx sy => Spec.Rsa.bytesAt m p.xp p.len = Spec.Rsa.i2osp sx p.len ∧
+      Spec.Rsa.bytesAt m p.yp p.len = Spec.Rsa.i2osp sy p.len
+  | _ => Spec.Rsa.bytesAt m p.xp p.len = List.replicate p.len 0 ∧
+      Spec.Rsa.bytesAt m p.yp p.len = List.replicate p.len 0
+
+/-- The controller's four public words for a finished search. -/
+def KeyPublic.policy (p : KeyPublic) (result : KeySearchResult) : List (BitVec 64) :=
+  [BitVec.ofNat 64 result.retries.keys, BitVec.ofNat 64 result.retries.scalars,
+    BitVec.ofNat 64 p.len, BitVec.ofNat 64 (if result.status = 0 then p.len else 0)]
+
+/-- A finished search, before `finish` stores `used` and restores `x19`. -/
+structure KeyDone (p : KeyPublic) (original : State) (result : KeySearchResult) (s : State) : Prop where
+  input : KeyInput p original
+  rd : s.rd = original.rd
+  wr : s.wr = original.wr
+  x19 : s.gpr .x19 = p.control
+  saved : ∀ r ∈ preserved, r ≠ .x19 → r ≠ .x30 → s.gpr r = original.gpr r
+  vcs : ∀ r ∈ preservedV, (s.v r).extractLsb' 0 64 = (original.v r).extractLsb' 0 64
+  savedX19 : word s.mem p.control 32 = original.gpr .x19
+  usedPtr : word s.mem p.control 120 = p.up
+  used : word s.mem p.control 88 = BitVec.ofNat 64 result.used
+  status : word s.mem p.control 112 = BitVec.ofNat 64 result.status
+  policy : Spec.Rsa.wordsAt s.mem p.control 4 = p.policy result
+  output : KeyOutput p result s.mem
+
+/-! ## Where the buffers are -/
+
+namespace KeyInput
+
+variable {p : KeyPublic} {s : State}
+
+theorem nowrap (h : KeyInput p s) {r : Region} (hr : r ∈ inWrites s ++ inReads s) :
+    r.base.toNat + r.len ≤ 2 ^ 64 := h.1.2.2.2.2.1 r hr
+
+theorem write_disjoint (h : KeyInput p s) {w r : Region} (hw : w ∈ inWrites s) (hr : r ∈ inReads s) :
+    w.Disjoint r := h.1.2.2.2.2.2.2.1 w hw r hr
+
+theorem stack_disjoint (h : KeyInput p s) {r : Region} (hr : r ∈ inWrites s ++ inReads s) :
+    (below s.sp stackUse).Disjoint r :=
+  h.1.2.2.2.2.2.2.2.1 r hr
+
+theorem writes_pairwise (h : KeyInput p s) : (inWrites s).Pairwise Region.Disjoint :=
+  h.1.2.2.2.2.2.1
+
+theorem len_eq (h : KeyInput p s) : p.len = keyLen s := by rw [← h.2]; rfl
+
+theorem len_bounds (h : KeyInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
+  rw [h.len_eq]; exact h.1.2.2.2.2.2.2.2.2.1
+
+theorem sp_eq (h : KeyInput p s) : p.sp = s.sp := by rw [← h.2]; rfl
+
+theorem sp_room (h : KeyInput p s) : 64 ≤ p.sp.toNat := by rw [h.sp_eq]; exact h.1.2.1
+
+theorem control_scr (h : KeyInput p s) {t : State} (hw : t.wr = s.wr) : Scr t p.control 128 := by
+  refine Scr.of_mem (by rw [hw, h.1.2.2.2.1, ← h.2]; simp [inWrites, inCtl, keyOfState]) ?_
+  rw [← h.2]
+  exact h.nowrap (r := inCtl s) (by simp [inWrites])
+
+/-- The regions the controller (and its callee) may write, and its stack. -/
+def changes (s : State) : List Region := inWrites s ++ [below s.sp stackUse]
+
+theorem read_disjoint (h : KeyInput p s) {r : Region} (hr : r ∈ inReads s) :
+    ∀ w ∈ changes s, r.Disjoint w := by
+  intro w hw
+  rcases List.mem_append.mp hw with hw | hw
+  · exact (h.write_disjoint hw hr).symm
+  · obtain rfl := List.mem_singleton.mp hw
+    exact (h.stack_disjoint (List.mem_append_right _ hr)).symm
+
+theorem bytes_frame (h : KeyInput p s) {r : Region} (hr : r ∈ inReads s) {m m' : Mem}
+    (hf : Frame (changes s) m m') : Spec.Rsa.bytesAt m' r.base r.len = Spec.Rsa.bytesAt m r.base r.len := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hn := h.nowrap (List.mem_append_right _ hr)
+  exact hf.bytes (h.read_disjoint hr) (by omega_using [hn]) (List.mem_range.mp hi)
+
+theorem random_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (changes s) m m') :
+    Spec.Rsa.bytesAt m' p.rp p.randLen = Spec.Rsa.bytesAt m p.rp p.randLen := by
+  rw [← h.2]
+  exact h.bytes_frame (r := inRand s) (by simp [inReads]) hf
+
+theorem domain_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (changes s) m m') :
+    Spec.Rsa.bytesAt m' p.dp p.dlen = Spec.Rsa.bytesAt m p.dp p.dlen := by
+  rw [← h.2]
+  exact h.bytes_frame (r := inDom s) (by simp [inReads]) hf
+
+/-- The writes but the controller's words. -/
+def callChanges (s : State) : List Region :=
+  [inX s, inY s, inUsed s, inScr s, below s.sp stackUse]
+
+theorem callChanges_sub (s : State) : ∀ r ∈ callChanges s, ∃ q ∈ changes s, Region.Sub r q := by
+  intro r hr
+  refine ⟨r, ?_, fun _ hi => hi⟩
+  simp only [callChanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [changes, inWrites]
+
+theorem control_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (callChanges s) m m')
+    (j : Nat) (hj : j < 16) : word m' p.control (8 * j) = word m p.control (8 * j) := by
+  have hpw := h.writes_pairwise
+  simp only [inWrites, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at hpw
+  rw [← h.2]
+  refine hf.readW (r := inCtl s) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
+    (fun r hr => ?_) (by decide)
+  simp only [callChanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact hpw.1.2.2.2.symm
+  · exact hpw.2.1.2.2.symm
+  · exact hpw.2.2.1.2.symm
+  · exact hpw.2.2.2.1.symm
+  · exact (h.stack_disjoint (r := inCtl s) (by simp [inWrites])).symm
+
+theorem domain_valid (h : KeyInput p s) : Spec.Ffdh.domainValid p.len p.dom := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hv, -, -, -, -, -⟩ := h.1
+  rw [← h.2]; exact hv
+
+theorem keys_le (h : KeyInput p s) : p.keys ≤ 128 := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hk, -, -, -, -⟩ := h.1
+  rw [← h.2]; exact hk
+
+theorem scalars_le (h : KeyInput p s) : p.scalars ≤ 128 := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hs, -, -, -⟩ := h.1
+  rw [← h.2]; exact hs
+
+theorem len_lt (h : KeyInput p s) : p.len < 2 ^ 31 := by
+  have := h.len_bounds.2; omega_using [this]
+
+end KeyInput
+
+end VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+end
+
+end
+
+/-! ### `Ffdh.AArch64.Cached.SearchProof.Live`, which the modules that import this one used -/
+
+section
+
+/-! # What keeps the key-generation controller's loop state (AArch64) -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Ffdh.AArch64 (Slots)
+open VG.Proof.Ffdh.Control (writeController writeController_frame writeController_word
+  controllerValue controllerValue_unchanged)
+
+theorem frame_of_callChanges (s : State) {m m' : Mem} (hf : Frame (KeyInput.callChanges s) m m') :
+    Frame (KeyInput.changes s) m m' := hf.sub (KeyInput.callChanges_sub s)
+
+namespace KeyLive
+
+variable {p : KeyPublic} {original s t : State} {used keys scalars : Nat}
+
+/-- Through code that keeps `x19`, the stack pointer, the regions, the
+controller's words, and writes only the outputs, `used`, the working space
+and the stack. -/
+theorem restore (h : KeyLive p original used keys scalars s)
+    (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
+    (hg : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = s.gpr r)
+    (hv : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64)
+    (hf : Frame (KeyInput.callChanges original) s.mem t.mem) :
+    KeyLive p original used keys scalars t := by
+  have hc := h.input.control_frame hf
+  have hf' := frame_of_callChanges original hf
+  refine ⟨h.input, h.used_le, h.keys_le, h.scalars_le, hr.trans h.rd, hw.trans h.wr,
+    hsp.trans h.sp, (hg .x19 (by decide) (by decide)).trans h.x19,
+    fun r hr h19 h30 => (hg r hr h30).trans (h.saved r hr h19 h30),
+    fun r hr => (hv r hr).trans (h.vcs r hr), ?_, ?_, ?_, ?_,h.frame.trans hf'⟩
+  · exact (hc 4 (by decide)).trans h.savedX19
+  · exact (h.input.random_frame hf').trans h.random
+  · exact (h.input.domain_frame hf').trans h.domain
+  · intro e he
+    exact (hc e.1 (KeyPublic.headers_index he)).trans (h.headers e he)
+
+theorem keep (h : KeyLive p original used keys scalars s) {rs : List Reg}
+    (k : Keep rs s t) (hm : t.mem = s.mem) (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) :
+    KeyLive p original used keys scalars t := by
+  apply h.restore k.rd k.wr k.sp (fun reg hr _ => k.gpr reg (hregs reg hr)) k.vcs
+  rw [hm]
+  exact Frame.refl _ _
+
+/-- Through writes of the controller's words but the saved `x19`, to the
+counters `u`, `k` and `c`. -/
+theorem update (h : KeyLive p original used keys scalars s) {u k c : Nat}
+    (hu : u ≤ p.randLen) (hk : k ≤ 128) (hc : c ≤ 128)
+    (values : List (Nat × BitVec 64)) (hb : ∀ e ∈ values, e.1 < 16)
+    (h4 : ∀ e ∈ values, 4 ≠ e.1)
+    (hm : t.mem = writeController s.mem p.control values)
+    (kp : Keep [.x0, .x1, .x2, .x3, .x9, .x10, .x11, .x12, .x13, .x14] s t)
+    (hh : Slots t.mem p.control (p.headers u k c)) : KeyLive p original u k c t := by
+  have hf : Frame (KeyInput.changes original) s.mem t.mem := by
+    rw [hm]
+    apply (writeController_frame s.mem p.control values hb).sub
+    intro region hregion
+    obtain rfl := List.mem_singleton.mp hregion
+    refine ⟨inCtl original, by simp [KeyInput.changes, inWrites], ?_⟩
+    rw [← h.input.2]
+    exact fun _ hi => hi
+  have hg : ∀ r ∈ preserved, t.gpr r = s.gpr r := fun r hr => kp.gpr r (by revert r hr; decide)
+  refine ⟨h.input, hu, hk, hc, kp.rd.trans h.rd, kp.wr.trans h.wr,
+    kp.sp.trans h.sp, (hg .x19 (by decide)).trans h.x19,
+    fun reg hreg h19 h30 => (hg reg hreg).trans (h.saved reg hreg h19 h30),
+    fun r hr => (kp.vcs r hr).trans (h.vcs r hr), ?_, ?_, ?_, hh,h.frame.trans hf⟩
+  · rw [hm]
+    change word (writeController s.mem p.control values) p.control (8 * 4) = _
+    rw [writeController_word _ _ _ hb 4 (by decide), controllerValue_unchanged _ _ _ h4]
+    exact h.savedX19
+  · exact (h.input.random_frame hf).trans h.random
+  · exact (h.input.domain_frame hf).trans h.domain
+
+theorem header (h : KeyLive p original used keys scalars s) {j : Nat} {v : BitVec 64}
+    (hj : (j, v) ∈ p.headers used keys scalars) : word s.mem p.control (8 * j) = v :=
+  h.headers (j, v) hj
+
+/-- A finished search's state, from a loop state with its words written. -/
+theorem done (h : KeyLive p original used keys scalars s) {r : Spec.Ffdh.KeySearchResult}
+    (hu : r.used = used)
+    (hs : word s.mem p.control 112 = BitVec.ofNat 64 r.status)
+    (hp : Spec.Rsa.wordsAt s.mem p.control 4 = p.policy r)
+    (ho : KeyOutput p r s.mem) : KeyDone p original r s :=
+  ⟨h.input, h.rd, h.wr, h.x19, h.saved, h.vcs, h.savedX19,
+    h.header (j := 15) (by simp [KeyPublic.headers]),
+    by rw [hu]; exact h.header (j := 11) (by simp [KeyPublic.headers]), hs, hp, ho⟩
+
+end KeyLive
+
+theorem KeyDone.keep {p : KeyPublic} {original s t : State} {result : Spec.Ffdh.KeySearchResult}
+    (h : KeyDone p original result s) {rs : List Reg} (k : Keep rs s t) (hm : t.mem = s.mem)
+    (hregs : ∀ reg ∈ preserved, reg ∉ rs := by decide) : KeyDone p original result t := by
+  refine ⟨h.input, k.rd.trans h.rd, k.wr.trans h.wr, (k.gpr _ (hregs .x19 (by decide))).trans h.x19,
+    fun reg hr h19 h30 => (k.gpr reg (hregs reg hr)).trans (h.saved reg hr h19 h30),
+    fun r hr => (k.vcs r hr).trans (h.vcs r hr), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals rw [hm]
+  · exact h.savedX19
+  · exact h.usedPtr
+  · exact h.used
+  · exact h.status
+  · exact h.policy
+  · exact h.output
+
+/-- A finished search's state depends on its result's outcome and octets
+consumed, not on its statuses. -/
+theorem KeyDone.congr {p : KeyPublic} {original s : State} {r r' : Spec.Ffdh.KeySearchResult}
+    (h : KeyDone p original r s) (ho : r.outcome = r'.outcome) (hu : r.used = r'.used) :
+    KeyDone p original r' s := by
+  have hs : r.status = r'.status := by unfold Spec.Ffdh.KeySearchResult.status; rw [ho]
+  have hr : r.retries = r'.retries := by unfold Spec.Ffdh.KeySearchResult.retries; rw [ho]
+  refine ⟨h.input, h.rd, h.wr, h.x19, h.saved, h.vcs, h.savedX19, h.usedPtr,
+    by rw [← hu]; exact h.used, by rw [← hs]; exact h.status, ?_, ?_⟩
+  · rw [h.policy]; unfold KeyPublic.policy; rw [hs, hr]
+  · have ho' := h.output; unfold KeyOutput at ho' ⊢; rw [← ho]; exact ho'
+
+end VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+end
+
+end
+
+/-! # The key-generation controller's entry (AArch64)
+
+The stack arguments are loaded, the caller's `x19` saved in word 4 and the
+arguments stored in the controller's words; then, in the frame saving
+`x30`, the controller is at the tape's start (`key_start`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.Ffdh.AArch64 (Slots)
+open VG.Proof.Ffdh.Control (writeController writeController_frame writeController_word
+  controllerValue)
+open VG.Impl.Ffdh.AArch64.KeyGeneration.Search (ldf stf terminal zeroOut zeroOutputs exhausted advance rejectedScalar rejectedPublic test classify request room entry arguments finish)
+open VG.Impl.Ffdh.AArch64.Cached.Search
+
+theorem imm64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega_using [hn]
+
+def entryValues (s : State) : List (Nat × BitVec 64) :=
+  [(4, s.gpr .x19), (5, s.gpr .x0), (6, s.gpr .x2), (7, s.gpr .x5), (8, s.gpr .x6),
+    (9, stackArg s 0), (10, stackArg s 1), (11, 0), (12, stackArg s 2), (13, stackArg s 3),
+    (15, s.gpr .x4)]
+
+theorem entryValues_bound (s : State) : ∀ e ∈ entryValues s, e.1 < 16 := by
+  simp only [entryValues, List.mem_cons, List.not_mem_nil, or_false]
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
+
+theorem input_args {p : KeyPublic} {s : State} (h : KeyInput p s) (j : Nat) (hj : j < 7) :
+    InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * j)) 8 := by
+  refine ⟨inArgs s, ?_, ?_⟩
+  · rw [h.1.2.2.1]
+    exact List.mem_append_left _ (by simp [inReads])
+  · simp only [inArgs, stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
+
+theorem entry_ok {p : KeyPublic} {s : State} (h : KeyInput p s) :
+    WP isa (.block entry) s fun t =>
+      (t.gpr .x19 = p.control ∧ t.mem = writeController s.mem p.control (entryValues s)) ∧
+      Keep [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x19] s t := by
+  have scr := h.control_scr (t := s) rfl
+  have hd : s.mem.readW (s.sp + BitVec.ofNat 64 32) 64 = p.control :=
+    congrArg KeyPublic.control h.2
+  have hs : ∀ d, d + 8 ≤ 128 → InRegions s.wr (p.control + BitVec.ofNat 64 d) 8 :=
+    fun _ hd => scr.st hd
+  have ha0 : InRegions (s.rd ++ s.wr) s.sp 8 := by
+    simpa only [Nat.mul_zero, BitVec.add_zero] using input_args h 0 (by decide)
+  have ha1 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := input_args h 1 (by decide)
+  have ha2 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 := input_args h 2 (by decide)
+  have ha3 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 24) 8 := input_args h 3 (by decide)
+  have ha4 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 32) 8 := input_args h 4 (by decide)
+  refine WP.keep [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x19] ?_ (by decide) (by decide) (by decide +kernel)
+  unfold entry writeController entryValues
+  simp only [List.foldl_cons, List.foldl_nil]
+  brun [ldf, stf, exec_addSp (show 0 < 4096 by decide), imm64 (show 0 < 65536 by decide), hd, ha0,
+    ha1, ha2, ha3, ha4, hs 32 (by decide), hs 40 (by decide), hs 48 (by decide),
+    hs 56 (by decide), hs 64 (by decide), hs 72 (by decide), hs 80 (by decide), hs 88 (by decide),
+    hs 96 (by decide), hs 104 (by decide), hs 120 (by decide)]
+  simp only [stackArg, stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+  rfl
+
+end VG.Proof.Ffdh.AArch64.Cached.SearchProof
+
+end
+
+end
 
 /-! ### `Ffdh.AArch64.Cached.SearchProof.Outputs`, which this module and modules that import it used -/
 

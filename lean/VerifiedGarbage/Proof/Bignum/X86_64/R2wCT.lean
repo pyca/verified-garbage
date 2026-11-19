@@ -19,9 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStep
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
 meta import VerifiedGarbage.Impl.Bignum.X86_64.R2Squares
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Squares
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Squares
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont

@@ -20,19 +20,17 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
 import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Proof.Bignum.Arm.Row
-meta import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
 meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.Row
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
-import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
-meta import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
 meta import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Bignum.Arm.Square

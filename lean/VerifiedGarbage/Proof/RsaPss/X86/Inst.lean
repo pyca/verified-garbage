@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.RsaPss.X86.SgVerified
 import VerifiedGarbage.Proof.RsaOaep.X86.NoSp
-import VerifiedGarbage.Proof.RsaPss.X86.NoSpT
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.RsaOaep.X86.LabelT
 import VerifiedGarbage.Proof.Framework.Contract

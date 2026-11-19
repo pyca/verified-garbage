@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkFn
 public import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.Contract
 meta import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkWord
@@ -32,7 +31,6 @@ meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Rsa.RISCV64.KeyChkFn
 
 /-! ### `Rsa.RISCV64.KeyChkCk`, which only this module used -/
 

@@ -5,26 +5,24 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
 public import VerifiedGarbage.Impl.Ffdh.Arm.VettedValidation
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
+public import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsState
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Syms
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroups
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsCT
 import VerifiedGarbage.Proof.Ffdh.VettedValidation.Facts
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
@@ -41,11 +39,9 @@ public import Init.Core
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
-import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
@@ -56,7 +52,6 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
@@ -77,14 +72,12 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ffdh.Arm.Odd
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntryCT
 import VerifiedGarbage.Proof.Ffdh.Domain
 
 /-! ### `Ffdh.Arm.VettedValidation.RecognitionTiming`, which the modules that import this one used -/

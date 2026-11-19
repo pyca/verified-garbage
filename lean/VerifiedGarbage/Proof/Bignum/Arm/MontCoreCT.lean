@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MontCore
 import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.MontState
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFinish
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace

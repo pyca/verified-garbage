@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Impl.Bignum.Arm.SubModBuffers

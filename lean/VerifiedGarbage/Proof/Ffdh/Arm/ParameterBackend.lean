@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePre
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateDimensions
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -21,33 +21,26 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Algebra.GroupWithZero.Nat
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResiduePrime
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResidueLow
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueLow
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateResult
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTShape
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLimitedResult
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTResult
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateCount
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTExponentLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTStackBlocks
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Room
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessStep
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTLocal
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateStart
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.EntryContext
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntry
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
@@ -57,18 +50,15 @@ public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairTrials
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairStep
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairInit
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTScreenedTests
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd
@@ -81,16 +71,11 @@ import Mathlib.Data.Option.Basic
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePhaseFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.LimitedParams
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessProgress
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTest
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessEnd
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateHalve
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairEntry
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialSmall
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialStart
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -98,6 +83,51 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateFrame
 import VerifiedGarbage.Spec.Ffdh
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ReadContext
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+
+/-! ### `Ffdh.Arm.ParameterCandidate.CTResidueLow`, which only this module used -/
+
+section
+
+/-! The generator-two low-octet prefilter reads one public candidate address. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Ffdh.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint)
+
+private def LowPointers (p : BitVec 32 × Nat) (s : State) : Prop :=
+  s.gpr .r4 = p.1 ∧ s.gpr .r5 = BitVec.ofNat 32 p.2
+
+private theorem residueLow_tail_taint : ∃ hint, (VG.Taint.check taint (Taint.ofRegs [.r4, .r5])
+    (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.residueLow.drop 2)) hint).isSome = true := ⟨_, by taint_decide⟩
+
+theorem residueLow_ct : RelCT isa (Two fun (p : BitVec 32 × Nat) s => ReadContext p.1 p.2 s)
+    (.block VG.Impl.Ffdh.Arm.ParameterCandidate.residueLow) (fun _ _ => True) := by
+  have head : RelCT isa (Two fun (p : BitVec 32 × Nat) s => ReadContext p.1 p.2 s)
+      (.block [.ldrSp .r4 4, .ldrSp .r5 12]) (Two LowPointers) :=
+    two_post ((stackLoads_ct [(.r4, 4), (.r5, 12)]).mono
+      (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h => by
+      have out : s.mem.readW (State.addr (s.sp + 4#32)) 32 = p.1 := h.out
+      have width : s.mem.readW (State.addr (s.sp + 12#32)) 32 = BitVec.ofNat 32 p.2 := h.width
+      ffrun [LowPointers, h.frame.read (d := 4) (by decide), h.frame.read (d := 12) (by decide), out, width])
+  obtain ⟨hint, checked⟩ := residueLow_tail_taint
+  have tail : RelCT isa (Two LowPointers) (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.residueLow.drop 2))
+      (fun _ _ => True) := by
+    refine two_taint [.r4, .r5] ?_ checked
+    intro p s t a b r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact a.1.trans b.1.symm
+    · exact a.2.trans b.2.symm
+  exact RelCT.block_append (head.seq tail)
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
 
 /-! ### `Ffdh.Arm.ParameterCandidate.CandidatePairMath`, which only this module used -/
 

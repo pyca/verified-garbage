@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad

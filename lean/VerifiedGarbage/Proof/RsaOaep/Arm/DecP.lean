@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
-import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecOut
 import VerifiedGarbage.Proof.RsaOaep.Arm.LabelT
 import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 

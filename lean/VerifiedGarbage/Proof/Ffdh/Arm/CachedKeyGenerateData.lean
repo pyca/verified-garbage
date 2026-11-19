@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 public import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -53,7 +53,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory

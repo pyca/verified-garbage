@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.CombFrame
-import VerifiedGarbage.Proof.Mont.X86.CombAccess
+public import VerifiedGarbage.Proof.Mont.X86.CombAccess
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 public import VerifiedGarbage.Impl.Mont.X86.CombTable

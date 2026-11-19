@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KcBase
-public import VerifiedGarbage.Proof.Rsa.Arm.CvBase
+public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
+public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
-public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 
 /-! ### `Rsa.Arm.KcChecks`, which the modules that import this one used -/

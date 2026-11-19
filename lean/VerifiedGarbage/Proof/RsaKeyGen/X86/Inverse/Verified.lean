@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.ConstantTime
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
@@ -22,8 +21,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvParts
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain

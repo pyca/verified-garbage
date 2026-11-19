@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Live
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.EntropyRequest
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow

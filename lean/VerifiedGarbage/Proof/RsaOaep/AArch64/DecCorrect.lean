@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelT
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.Framework.Offset
 

@@ -29,7 +29,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvContract
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvBase
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ### `Rsa.PPC64LE.CvImplies`, which only this module used -/

@@ -17,15 +17,14 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86.Checks
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Tests
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
+public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-! ### `Ffdh.X86.Cand.Body`, which this module and modules that import it used -/

@@ -74,7 +74,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpTiming
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
-import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
@@ -111,7 +111,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateSat
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpLoop
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitial

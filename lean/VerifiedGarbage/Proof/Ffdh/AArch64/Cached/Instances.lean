@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Contract
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 import VerifiedGarbage.Proof.Framework.Contract

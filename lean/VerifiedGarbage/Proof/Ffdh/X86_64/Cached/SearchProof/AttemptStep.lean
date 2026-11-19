@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Live
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.CallPre
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Data
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

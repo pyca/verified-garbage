@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaPss.AArch64.EncCT
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 public import VerifiedGarbage.Proof.RsaPss.AArch64.ChkCorrect
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.EncCT
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.MaskBits
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.ChkCorrect
@@ -24,20 +24,16 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
-import VerifiedGarbage.Proof.RsaPss.AArch64.Restore
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.Restore
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 public import VerifiedGarbage.Proof.RsaPss.AArch64.ChkFrame

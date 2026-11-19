@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.MillerRabin.Word32
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Offset
@@ -46,7 +46,7 @@ meta import VerifiedGarbage.Proof.MillerRabin.Representation
 meta import VerifiedGarbage.Proof.MillerRabin.Word32
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Framework.Offset

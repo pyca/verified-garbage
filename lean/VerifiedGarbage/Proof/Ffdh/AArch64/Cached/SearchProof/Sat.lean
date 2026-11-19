@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Contract
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SatWitness
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -25,8 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Entry
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Entry
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.AttemptInput
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.NativeTimingState
@@ -40,11 +39,7 @@ meta import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.NativeTimingState
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
-import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore

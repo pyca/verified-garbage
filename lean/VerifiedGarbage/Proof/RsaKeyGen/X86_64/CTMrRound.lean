@@ -31,12 +31,10 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
 meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
 
 /-! ### `RsaKeyGen.X86_64.CTMrExp`, which only this module used -/

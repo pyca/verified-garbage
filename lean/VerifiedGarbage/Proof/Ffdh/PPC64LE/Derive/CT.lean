@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Fn
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Front
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Range
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Fn
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Front
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Range
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
@@ -15,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Body
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Status
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeCorrect
-import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicFn
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicCT
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.TerminalMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 

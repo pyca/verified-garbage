@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
-import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
 
 /-!
 # Constant time of the round with Montgomery calls

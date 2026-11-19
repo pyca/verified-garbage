@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 /-!
 # RSAES-OAEP on AArch64: the label's hash with the hash function of a table
 
-As on x86-64 (`Proof/RsaOaep/X86_64/LabelT.lean`): `hashLabelT f o` writes
+As on x86-64 (`Proof/RsaOaep/X86_64/EncMain.lean`): `hashLabelT f o` writes
 the label's hash `H(label)` to `scratch + o` as `hashLabel` does
 (`hashLabelT_ok`), for `H` the hash function of the table whose address is
 in the slot `sTab` (word 32): each of its calls is an indirect call

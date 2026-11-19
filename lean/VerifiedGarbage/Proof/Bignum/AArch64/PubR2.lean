@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Impl.Bignum.AArch64.R2Div
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub

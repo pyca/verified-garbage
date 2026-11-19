@@ -28,7 +28,6 @@ public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Proof.Bignum.Arm.MontState
 public import VerifiedGarbage.Impl.Bignum.Arm.MontPipeline
 public import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineLoop
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCallArithmetic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint

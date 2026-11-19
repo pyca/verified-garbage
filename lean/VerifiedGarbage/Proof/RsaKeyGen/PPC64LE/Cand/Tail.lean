@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Fin
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Hyp
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Slot
 import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.WUni
 import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Block

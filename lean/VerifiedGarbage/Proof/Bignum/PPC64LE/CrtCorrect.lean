@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtFront
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPre
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtArgs
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtVals
@@ -16,18 +15,16 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtChecks
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPhaseP
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPowerA
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtReduce
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.Math

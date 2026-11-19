@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfT
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

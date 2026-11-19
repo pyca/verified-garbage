@@ -4,14 +4,13 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecFrame
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import Mathlib.Data.Int.ModEq
 

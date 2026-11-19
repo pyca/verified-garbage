@@ -13,10 +13,9 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
-import VerifiedGarbage.Proof.Rsa.X86.Rd.ProdW
+import VerifiedGarbage.Proof.Rsa.X86.Rd.DivAW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.TwosW
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdW
-import VerifiedGarbage.Proof.Rsa.X86.Rd.DivAW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.DivBW
 import VerifiedGarbage.Proof.Rsa.X86.Rd.SqrtW
 import VerifiedGarbage.Proof.Rsa.RecoverDet

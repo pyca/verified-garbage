@@ -29,10 +29,8 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

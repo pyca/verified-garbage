@@ -25,14 +25,14 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Spec.RsaPkcs1Sig
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 

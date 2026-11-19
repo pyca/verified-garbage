@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
 import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
@@ -47,7 +47,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 meta import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+meta import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 meta import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
 meta import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT

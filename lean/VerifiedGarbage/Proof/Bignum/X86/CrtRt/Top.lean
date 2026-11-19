@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa

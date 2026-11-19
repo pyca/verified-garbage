@@ -31,10 +31,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.HashTable.AArch64
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.HashTable.AArch64

@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Rsa.Divstep.Absolute
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Bignum.X86.R2Words.Run
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.Rd.Ops
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FInit
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots

@@ -23,23 +23,21 @@ import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 meta import VerifiedGarbage.Proof.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Call
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Call
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Data
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 meta import VerifiedGarbage.Proof.Ffdh.SievedBounds
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Data
+meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 

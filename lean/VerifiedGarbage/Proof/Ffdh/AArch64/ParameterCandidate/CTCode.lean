@@ -36,16 +36,12 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Test
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Test
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound

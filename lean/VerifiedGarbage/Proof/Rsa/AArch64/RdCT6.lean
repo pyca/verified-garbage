@@ -61,7 +61,6 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Rsa.AArch64.RdTwos
 import VerifiedGarbage.Proof.Rsa.AArch64.RdDiv
-import VerifiedGarbage.Proof.Rsa.AArch64.RdSqrt
 import VerifiedGarbage.Proof.Rsa.AArch64.RdSqrtDigits
 import VerifiedGarbage.Proof.Rsa.RecoverRoot
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -79,7 +78,6 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdTwos
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdDiv
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RdSqrt
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdSqrtDigits
 meta import VerifiedGarbage.Proof.Rsa.RecoverRoot
 

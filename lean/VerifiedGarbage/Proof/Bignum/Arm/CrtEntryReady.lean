@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -57,7 +56,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtImportQResidue
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowCopy
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowHalf
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
@@ -88,7 +87,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
-import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked

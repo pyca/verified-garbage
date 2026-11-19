@@ -2,14 +2,13 @@ module
 
 -- separate module: the precomputation's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PrivPreFront
-public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid
+public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid1
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtLoad
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreSave
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreFn
 import VerifiedGarbage.Proof.Bignum.RISCV64.CrtFn
-import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid1
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset

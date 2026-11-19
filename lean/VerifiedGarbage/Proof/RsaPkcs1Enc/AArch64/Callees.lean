@@ -51,12 +51,10 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecIrprf
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecD
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Spec.RsaPkcs1Sig
 import VerifiedGarbage.TCB.Registration
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecD
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

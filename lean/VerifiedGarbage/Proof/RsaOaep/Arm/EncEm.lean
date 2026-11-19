@@ -32,8 +32,8 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
-meta import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
+import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
+meta import VerifiedGarbage.Proof.RsaOaep.Arm.Calls
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 public import VerifiedGarbage.Spec.RsaOaep.MdTables

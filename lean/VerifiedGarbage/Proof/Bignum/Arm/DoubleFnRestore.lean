@@ -20,11 +20,9 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 public import VerifiedGarbage.Impl.Bignum.Arm.Double
 import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
-meta import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Double
 meta import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
 

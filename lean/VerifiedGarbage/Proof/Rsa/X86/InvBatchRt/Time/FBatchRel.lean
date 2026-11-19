@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FBatch
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FScatter
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Step
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop

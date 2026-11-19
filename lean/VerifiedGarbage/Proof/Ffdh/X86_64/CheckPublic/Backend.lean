@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Verified
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Verified
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp

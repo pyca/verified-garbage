@@ -13,8 +13,7 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
-import VerifiedGarbage.Proof.Ffdh.Arm.Checks
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+meta import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst

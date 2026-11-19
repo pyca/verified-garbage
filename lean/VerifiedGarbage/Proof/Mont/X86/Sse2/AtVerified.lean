@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Proof.Mont.X86.Sse2.Mcdt
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Columns
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Impl.Mont.X86.Sse2

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.RelCT
@@ -48,8 +47,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
+public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -62,7 +60,6 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
-public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint

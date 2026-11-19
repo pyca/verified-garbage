@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
 
 /-! ### `Ffdh.Arm.ParameterCandidate.SieveState`, which this module and modules that import it used -/

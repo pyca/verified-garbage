@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Spec.RsaPkcs1Sig
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
@@ -17,14 +15,10 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelT
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfT

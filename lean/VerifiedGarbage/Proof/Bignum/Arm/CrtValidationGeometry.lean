@@ -11,14 +11,13 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusArgs
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtPadModulus
 public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
 import VerifiedGarbage.Impl.Bignum.Arm.Zero
 import VerifiedGarbage.Impl.Bignum.Arm.HeaderControl
 import VerifiedGarbage.Proof.Framework.Offset
@@ -36,7 +35,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
 
 /-! ### `Bignum.Arm.ControlBuffers`, which this module and modules that import it used -/
