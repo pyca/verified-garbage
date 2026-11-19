@@ -18,9 +18,9 @@ namespace VG.Artifacts.IdeaOfb.Arm
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofb
-    verified := Proof.Idea.Arm.ofb_framed },
+    verified := .unscrubbed Proof.Idea.Arm.ofb_framed },
   Spec.Idea.ofbFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofbFinal
-    verified := Proof.Idea.Arm.ofbFinal_framed }]
+    verified := .unscrubbed Proof.Idea.Arm.ofbFinal_framed }]
 
 end VG.Artifacts.IdeaOfb.Arm

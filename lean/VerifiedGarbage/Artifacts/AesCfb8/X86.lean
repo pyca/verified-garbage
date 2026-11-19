@@ -18,12 +18,12 @@ def artifacts : List Artifact :=
     Spec.Cfb8.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb8.X86.encrypt v.enc
-      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
+      verified := .unscrubbed (Proof.AesCfb8.encrypt_keyed (encrypt_verified v))
       spSafe := encrypt_spSafe v },
     Spec.Cfb8.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb8.X86.decrypt v.enc
-      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
+      verified := .unscrubbed (Proof.AesCfb8.decrypt_keyed (decrypt_verified v))
       spSafe := decrypt_spSafe v }]
 
 end VG.Artifacts.AesCfb8.X86

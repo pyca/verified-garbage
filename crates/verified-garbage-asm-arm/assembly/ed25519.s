@@ -10,7 +10,7 @@ vg_ed25519_key_pair_umaal:
 	mov r0, r2
 	ldr r2, [sp, #4]
 	movw r1, #32
-	bl {vg_sha512_digest}
+	bl {vg_sha512_digest_core}
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #4]
 	ldr r2, [sp, #8]
@@ -292,7 +292,7 @@ vg_ed25519_sign_expanded_umaal:
 	str r0, [r12, #84]
 	ldr r0, [sp, #268]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	add r0, sp, #56
 	add r12, sp, #0
 	str r0, [r12, #0]
@@ -351,7 +351,7 @@ vg_ed25519_sign_expanded_umaal:
 	bl {vg_ed25519_scalar_base_umaal}
 	ldr r0, [sp, #268]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	ldr r0, [sp, #248]
 	add r0, r0, #0
 	add r12, sp, #0
@@ -701,7 +701,7 @@ vg_ed25519_verify_umaal:
 	str lr, [r12, #16]
 	ldr r0, [sp, #264]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	ldr r0, [sp, #260]
 	add r0, r0, #0
 	add r12, sp, #0
@@ -892,7 +892,7 @@ vg_ed25519_key_pair:
 	mov r0, r2
 	ldr r2, [sp, #4]
 	movw r1, #32
-	bl {vg_sha512_digest}
+	bl {vg_sha512_digest_core}
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #4]
 	ldr r2, [sp, #8]
@@ -1174,7 +1174,7 @@ vg_ed25519_sign_expanded:
 	str r0, [r12, #84]
 	ldr r0, [sp, #268]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	add r0, sp, #56
 	add r12, sp, #0
 	str r0, [r12, #0]
@@ -1233,7 +1233,7 @@ vg_ed25519_sign_expanded:
 	bl {vg_ed25519_scalar_base}
 	ldr r0, [sp, #268]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	ldr r0, [sp, #248]
 	add r0, r0, #0
 	add r12, sp, #0
@@ -1583,7 +1583,7 @@ vg_ed25519_verify:
 	str lr, [r12, #16]
 	ldr r0, [sp, #264]
 	add r0, r0, #0
-	bl {vg_sha512_init}
+	bl {vg_sha512_init_core}
 	ldr r0, [sp, #260]
 	add r0, r0, #0
 	add r12, sp, #0

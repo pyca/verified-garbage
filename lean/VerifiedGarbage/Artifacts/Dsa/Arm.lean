@@ -39,6 +39,6 @@ def artifacts : List Artifact :=
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := p.1.suffix
       code := Impl.Dsa.Arm.Generation.code (geo1 p.1.umaal p.2) (geo2 p.1.umaal p.2) (geo3 p.1.umaal p.2)
-      verified := search_params p.2 }])
+      verified := .unscrubbed (search_params p.2) }])
 
 end VG.Artifacts.Dsa.Arm

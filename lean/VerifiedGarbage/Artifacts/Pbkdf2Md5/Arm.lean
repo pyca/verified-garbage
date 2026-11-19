@@ -18,7 +18,7 @@ def artifacts : List Artifact := [
   Spec.Hmac.md5I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I) 3
       Proof.Pbkdf2.Whole.Arm.md5F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.md5
-      Proof.Pbkdf2.Whole.Arm.md5_pbkFrameSat }]
+    verified := .unscrubbed (Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.md5
+      Proof.Pbkdf2.Whole.Arm.md5_pbkFrameSat) }]
 
 end VG.Artifacts.Pbkdf2Md5.Arm

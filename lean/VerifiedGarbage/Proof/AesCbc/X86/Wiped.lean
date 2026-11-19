@@ -333,13 +333,13 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi X86
     suffix := v.suffix
     code := encryptCode v
     stack := 24
-    verified := encrypt_free v h
+    verified := .unscrubbed (encrypt_free v h)
     spSafe := encryptCode_spSafe v }]
   else [{
     suffix := v.suffix
     code := Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)
     stack := 72
-    verified := encrypt_verified v
+    verified := .unscrubbed (encrypt_verified v)
     spSafe := encrypt_spSafe v }]
 
 /-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted: the
@@ -350,13 +350,13 @@ def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi X86
     suffix := v.suffix
     code := decryptCode v
     stack := 24
-    verified := decrypt_free v h
+    verified := .unscrubbed (decrypt_free v h)
     spSafe := decryptCode_spSafe v }]
   else [{
     suffix := v.suffix
     code := Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v)
     stack := 72
-    verified := decrypt_verified v
+    verified := .unscrubbed (decrypt_verified v)
     spSafe := decrypt_spSafe v }]
 
 end VG.Proof.AesCbc.X86.Wiped

@@ -26,9 +26,9 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha224I.pbkdf2Api.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
-      verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
+      verified := .unscrubbed (Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
         Proof.Pbkdf2.Whole.X86.sha224_pbkFrameSat
-        (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
+        (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v))
       spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2_224Sp }]
 
 end VG.Artifacts.Pbkdf2Sha224.X86

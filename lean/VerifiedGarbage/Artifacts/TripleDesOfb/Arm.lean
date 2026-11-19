@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
 
 /-! # Triple DES-OFB on ARMv7 -/
 
@@ -13,11 +11,7 @@ public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
 namespace VG.Artifacts.TripleDesOfb.Arm
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
-    verified := Proof.TripleDes.Arm.ofb_framed },
-  Spec.TripleDes.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal
-    verified := Proof.TripleDes.Arm.ofbFinal_framed }]
+  Spec.TripleDes.ofbApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.ofbReg,
+  Spec.TripleDes.ofbFinalApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.ofbFinalReg]
 
 end VG.Artifacts.TripleDesOfb.Arm

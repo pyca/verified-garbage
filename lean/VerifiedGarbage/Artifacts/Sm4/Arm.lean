@@ -16,12 +16,12 @@ namespace VG.Artifacts.Sm4.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey
-    verified := Proof.Sm4.Arm.expandKey_framed },
+    verified := .unscrubbed Proof.Sm4.Arm.expandKey_framed },
   Spec.Sm4.ecbEncryptApi.artifact Arm.target {
     code := Impl.Sm4.Arm.ecbCall .encrypt
-    verified := Proof.Sm4.Arm.ecbCall_verified .encrypt },
+    verified := .unscrubbed (Proof.Sm4.Arm.ecbCall_verified .encrypt) },
   Spec.Sm4.ecbDecryptApi.artifact Arm.target {
     code := Impl.Sm4.Arm.ecbCall .decrypt
-    verified := Proof.Sm4.Arm.ecbCall_verified .decrypt }]
+    verified := .unscrubbed (Proof.Sm4.Arm.ecbCall_verified .decrypt) }]
 
 end VG.Artifacts.Sm4.Arm

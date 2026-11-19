@@ -19,12 +19,12 @@ def artifacts : List Artifact :=
     Spec.Xts.aesEncryptUnitApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)
-      verified := Unit.encrypt_verified v
+      verified := .unscrubbed (Unit.encrypt_verified v)
       spSafe := Unit.encrypt_spSafe v },
     Spec.Xts.aesDecryptUnitApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)
-      verified := Unit.decrypt_verified v
+      verified := .unscrubbed (Unit.decrypt_verified v)
       spSafe := Unit.decrypt_spSafe v }]
 
 end VG.Artifacts.AesXts.X86

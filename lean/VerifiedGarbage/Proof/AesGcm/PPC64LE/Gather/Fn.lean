@@ -123,7 +123,7 @@ section
 # AES-GCM encryption out of place, from a list of slices, PPC64LE: the function called
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather`
-calls `vg_aes_gcm_seal`, with its working space in a frame of its own, by
+calls the code of `vg_aes_gcm_seal`, as the internal `vg_aes_gcm_seal_core`, with its working space in a frame of its own, by
 its shared contract (`Proof.AesGcm.sealRoundsContract`, with 2672 bytes of stack,
 which its frame uses: `seal_sdepth`): its precondition from the layout the
 call gives it (`callPre`: its stack argument `tag` in our frame,
@@ -218,7 +218,7 @@ the 2832 bytes of stack below the stack pointer (`sp = Bs + 2832`); keeps
 `ctx`, `rounds`, `nonce`, `nonce_len`, `aad`, `aad_len` and our return
 address in the seven doublewords at `Pf + 104` (`slot`), and `tag`, from
 `Pf + 272`, at `Pf + 96`, the call's stack argument (`entered_wp`); gathers
-the slices to `dst` (`gathered_wp`); and calls `vg_aes_gcm_seal` on them in
+the slices to `dst` (`gathered_wp`); and calls it on them in
 place, by its contract (`sealSpec_pre`, `sealSpec_post`), whose frame is in
 the 2672 bytes below ours, so the return address comes back from it
 (`called_wp`, `ret_wp`). As for ChaCha20-Poly1305
@@ -784,7 +784,7 @@ structure Called (s z : State) : Prop where
   wr : z.wr = FR s :: s.wr
 
 theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.call "vg_aes_gcm_seal" sealCode) c (Called s) := by
+    WP isa (.call "vg_aes_gcm_seal_core" sealCode) c (Called s) := by
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   obtain ⟨c3, c4, c5, c6, c7, c8, c9, c10⟩ := hc.callGpr
   refine WP.callAny (k := Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) hv (sealSpec_pre hcp) hcov hw

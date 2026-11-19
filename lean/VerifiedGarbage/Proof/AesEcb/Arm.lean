@@ -25,10 +25,11 @@ namespace VG.Proof.AesEcb.Arm
 open VG VG.Arm VG.Arm.FrameStack
 open VG.Impl.Aes.Arm (scratchUsed)
 
-/-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the
+/-- A call of `name`, whose code is `body`, then of `vg_zeroize`'s code
+(as the internal `vg_zeroize_core`) on the
 first `scratchUsed` bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.ArmStack.callWipeStack 1 0 scratchUsed name body "vg_zeroize" Impl.Zeroize.Arm.zeroize
+  Impl.CallWipe.ArmStack.callWipeStack 1 0 scratchUsed name body "vg_zeroize_core" Impl.Zeroize.Arm.zeroize
 
 /-- `vg_aes_ecb_encrypt`. -/
 def encrypt : Prog isa := wiped "vg_aes_encrypt_blocks" Impl.Aes.Arm.encryptBlocks

@@ -15,15 +15,15 @@ namespace VG.Artifacts.CamelliaCfb.Arm
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt
-    verified := Proof.Camellia.Arm.cfbEncrypt_framed },
+    verified := .unscrubbed Proof.Camellia.Arm.cfbEncrypt_framed },
   Spec.Camellia.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
-    verified := Proof.Camellia.Arm.cfbDecrypt_framed },
+    verified := .unscrubbed Proof.Camellia.Arm.cfbDecrypt_framed },
   Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal
-    verified := Proof.Camellia.Arm.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Camellia.Arm.cfbEncryptFinal_framed },
   Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal
-    verified := Proof.Camellia.Arm.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Camellia.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.CamelliaCfb.Arm

@@ -24,9 +24,9 @@ namespace VG.Artifacts.X25519.X86
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact X86.target {
     code := Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32
-    verified := Proof.X25519.X86.Exchange.exchange_verified },
+    verified := .unscrubbed Proof.X25519.X86.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact X86.target {
     code := Impl.X25519.X86.Base.x25519Base
-    verified := Proof.X25519.X86.Base.x25519Base_verified }]
+    verified := .unscrubbed Proof.X25519.X86.Base.x25519Base_verified }]
 
 end VG.Artifacts.X25519.X86

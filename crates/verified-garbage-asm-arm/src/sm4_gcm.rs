@@ -29,7 +29,7 @@ str r11, [r2, #156]
 str lr, [r2, #160]
 mov r11, r2
 mov r9, r1
-bl {vg_sm4_expand_key}
+bl {vg_sm4_expand_key_core}
 mov r0, #0
 str r0, [r9, #240]
 str r0, [r9, #244]
@@ -58,7 +58,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #768
 bx lr",
-        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
+        vg_sm4_expand_key_core = sym super::sm4::vg_sm4_expand_key_core::vg_sm4_expand_key_core,
         vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
     )
 }

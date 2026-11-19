@@ -14,45 +14,45 @@ namespace VG.Artifacts.Sha512.Arm
 def artifacts : List Artifact := [
   Spec.Sha512.init384Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_384
-    verified := Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_384 },
+    verified := .unscrubbed (Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_384) },
   Spec.Sha512.init512Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_512
-    verified := Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512 },
+    verified := .unscrubbed (Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512) },
   Spec.Sha512.init512_224Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512_224 },
+    verified := .unscrubbed (Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512_224) },
   Spec.Sha512.init512_256Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512_256 },
+    verified := .unscrubbed (Proof.Sha512.Arm.Shared.init Spec.Sha512.H0_512_256) },
   Spec.Sha512.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 2 Impl.Sha512.Arm.Stream.update
-    verified := Proof.Sha512.Arm.Shared.update },
+    verified := .unscrubbed Proof.Sha512.Arm.Shared.update },
   Spec.Sha512.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 1 Impl.Sha512.Arm.Stream.finalize
-    verified := Proof.Sha512.Arm.Shared.finalize },
+    verified := .unscrubbed Proof.Sha512.Arm.Shared.finalize },
   Spec.Sha512.finalize384Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 1
       (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params384)
-    verified := Proof.Sha512.Arm.Shared.finalize384 },
+    verified := .unscrubbed Proof.Sha512.Arm.Shared.finalize384 },
   Spec.Sha512.finalize512_256Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 1
       (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params512_256)
-    verified := Proof.Sha512.Arm.Shared.finalize512_256 },
+    verified := .unscrubbed Proof.Sha512.Arm.Shared.finalize512_256 },
   Spec.Sha512.finalize512_224Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 1392 1
       (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params512_224)
-    verified := Proof.Sha512.Arm.Shared.finalize512_224 },
+    verified := .unscrubbed Proof.Sha512.Arm.Shared.finalize512_224 },
   Spec.Sha512.digest384Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha384H
-    verified := Proof.MdStream.Arm.Digest.sha384_digest },
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha384_digest },
   Spec.Sha512.digest512Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha512H'
-    verified := Proof.MdStream.Arm.Digest.sha512_digest },
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha512_digest },
   Spec.Sha512.digest512_224Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha512_224H
-    verified := Proof.MdStream.Arm.Digest.sha512_224_digest },
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha512_224_digest },
   Spec.Sha512.digest512_256Api.artifact Arm.target {
     code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha512_256H
-    verified := Proof.MdStream.Arm.Digest.sha512_256_digest }]
+    verified := .unscrubbed Proof.MdStream.Arm.Digest.sha512_256_digest }]
 
 end VG.Artifacts.Sha512.Arm

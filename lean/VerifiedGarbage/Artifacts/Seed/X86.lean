@@ -16,12 +16,12 @@ namespace VG.Artifacts.Seed.X86
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 840 2 206 Impl.Seed.X86.expandKey
-    verified := Proof.Seed.X86.expandKey_framed },
+    verified := .unscrubbed Proof.Seed.X86.expandKey_framed },
   Spec.Seed.ecbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .encrypt)
-    verified := Proof.Seed.X86.ecbCall_framed .encrypt },
+    verified := .unscrubbed (Proof.Seed.X86.ecbCall_framed .encrypt) },
   Spec.Seed.ecbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .decrypt)
-    verified := Proof.Seed.X86.ecbCall_framed .decrypt }]
+    verified := .unscrubbed (Proof.Seed.X86.ecbCall_framed .decrypt) }]
 
 end VG.Artifacts.Seed.X86
