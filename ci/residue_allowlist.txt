@@ -98,8 +98,6 @@ aarch64 vg_aes_siv_encrypt_neon
 aarch64 vg_aes_siv_init
 aarch64 vg_aes_siv_init_aes
 aarch64 vg_aes_siv_init_neon
-aarch64 vg_cmac_aes_absorb
-aarch64 vg_cmac_aes_absorb_neon
 aarch64 vg_cmac_aes_finish
 aarch64 vg_cmac_aes_finish_aes
 aarch64 vg_cmac_aes_finish_neon
