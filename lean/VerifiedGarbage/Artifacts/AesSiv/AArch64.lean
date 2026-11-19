@@ -35,10 +35,12 @@ namespace VG.Artifacts.AesSiv.AArch64
 open VG.Proof.AesSiv.AArch64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Siv.initApi.artifact AArch64.target (initReg v)]) ++
-  (VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
-    Spec.Siv.encryptApi.artifact AArch64.target (encryptReg v),
-    Spec.Siv.decryptApi.artifact AArch64.target (decryptReg v)])
+  (VG.Proof.Variants.AesCtr32.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.Aes.AArch64.Ctr32Impl // v ∈ VG.Proof.Variants.AesCtr32.AArch64.variants }) => [
+    Spec.Siv.initApi.artifact AArch64.target (initReg v.1 v.2)]) ++
+  (VG.Proof.Variants.CmacAesUpdate.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.CmacAes.AArch64.UpdateImpl // v ∈ VG.Proof.Variants.CmacAesUpdate.AArch64.variants }) => [
+    Spec.Siv.encryptApi.artifact AArch64.target (encryptReg v.1 v.2),
+    Spec.Siv.decryptApi.artifact AArch64.target (decryptReg v.1 v.2)])
 
 end VG.Artifacts.AesSiv.AArch64
