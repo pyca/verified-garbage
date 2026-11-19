@@ -310,6 +310,19 @@ vg_rsa_public_precompute:
 	ld %r20, 176(%r21)
 	ld %r22, 184(%r21)
 	ld %r21, 192(%r21)
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
 
 vg_rsa_private_precompute:
@@ -3103,6 +3116,30 @@ vg_rsa_private_precompute:
 	ld %r30, 232(%r23)
 	ld %r31, 240(%r23)
 	ld %r23, 248(%r23)
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
 	blr
 
 vg_rsa_crt_values:
@@ -11729,6 +11766,19 @@ vg_rsa_crt_values:
 	ld %r29, 88(%r31)
 	ld %r30, 96(%r31)
 	ld %r31, 104(%r31)
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
 
 vg_rsa_check_key:
@@ -17460,6 +17510,19 @@ vg_rsa_check_key:
 	ld %r29, 96(%r31)
 	ld %r30, 104(%r31)
 	ld %r31, 112(%r31)
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
 
 vg_rsa_recover_primes_det:
@@ -24830,4 +24893,17 @@ vg_rsa_recover_primes_det:
 	ld %r29, 120(%r11)
 	ld %r30, 128(%r11)
 	ld %r31, 136(%r11)
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr

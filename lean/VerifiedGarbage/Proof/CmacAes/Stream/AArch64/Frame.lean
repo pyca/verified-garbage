@@ -1403,11 +1403,9 @@ theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
   absorbOk _ (by omega_using [])
 
 /-- `vg_cmac_aes_absorb` in its frame (`absorb_framed`), scrubbed whole
-(`ScrubAll.withScrubAll`) when the chaining implementation it calls needs no
-working space, so that the frame is 64 bytes. With one that needs some,
-zeroing it would cost more than the budget (zeroing 2240 bytes, about 20 ns,
-next to about 550 ns for 64 bytes of scalar AES): that function stays on
-`ci/residue_allowlist.txt`. -/
+(`ScrubAll.withScrubAll`): 64 bytes with a chaining implementation that needs
+no working space, and 2240 with one that does, whose working space holds its
+secrets (the cost of zeroing them is accepted). -/
 def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
   let r : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
     { suffix := v.suffix
@@ -1415,6 +1413,6 @@ def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.ae
       verified := absorb_framed v
       consts := []
       stack := 64 + v.scratch }
-  if v.scratch = 0 then ScrubAll.withScrubAll r (absorbOk_framed v) else r
+  ScrubAll.withScrubAll r (absorbOk_framed v)
 
 end VG.Proof.CmacAes.Stream.AArch64

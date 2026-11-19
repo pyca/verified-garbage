@@ -775,6 +775,19 @@ vg_ec_p224_compress_public_key:
 	ld %r14, 0(%r3)
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr
 
 vg_ec_p224_decompress_public_key:
@@ -1855,4 +1868,17 @@ vg_ec_p224_decompress_public_key:
 	ld %r14, 0(%r3)
 	ld %r31, 8(%r3)
 	or %r3, %r4, %r4
+	li %r0, 0
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
 	blr

@@ -262,6 +262,45 @@ theorem upd_relW (v : Proof.CmacAes.AArch64.UpdateImpl) (nm : String) {W C D S :
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
+private theorem covers_lastU {xs T : List Region} {S : Addr} {M N : Nat} (h : Covers (xs ++ [⟨S, N⟩]) T)
+    (hle : M ≤ N) : Covers (xs ++ [⟨S, M⟩]) T := by
+  intro a n ⟨r, hr, hc⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact h a n ⟨r, List.mem_append_left _ hr, hc⟩
+  · rw [List.mem_singleton] at hr; subst hr
+    refine h a n ⟨⟨S, N⟩, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    simp only [Region.Contains] at hc ⊢; omega
+
+/-- `UArgsW` with less working space, a prefix of it. -/
+theorem UArgsW.shrink {M N : Nat} {s : State} {W C D S : Addr} {R n : Nat} (h : UArgsW N s W C D S R n)
+    (hle : M ≤ N) : UArgsW M s W C D S R n :=
+  { h with
+    ws := h.ws.sub_right (Region.sub_prefix hle)
+    ds := h.ds.sub_right (Region.sub_prefix hle)
+    cs := h.cs.sub_right (Region.sub_prefix hle)
+    wrapS := by have := h.wrapS; omega
+    reads := covers_lastU (xs := [⟨W, 240⟩, ⟨D, 16 * n⟩, ⟨C, 16⟩]) h.reads hle
+    writes := covers_lastU (xs := [⟨C, 16⟩]) h.writes hle }
+
+/-- A call of `v` with `N` bytes of working space, at least what it needs. -/
+theorem upd_callLe (v : Proof.CmacAes.AArch64.UpdateImpl) (nm : String) {N : Nat} (hle : v.scratch ≤ N)
+    {s : State} {W C D S : Addr} {R n : Nat} (h : UArgsW N s W C D S R n) :
+    WP isa (.call nm v.callee.code) s (UPostW N s W C D S R n) := by
+  refine WP.mono (upd_callW v nm (h.shrink hle)) fun _ q => ⟨q.rd, q.wr, q.sp, q.saved, ?_, q.out⟩
+  refine q.frame.sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix hle⟩
+
+theorem upd_relLe (v : Proof.CmacAes.AArch64.UpdateImpl) (nm : String) {N : Nat} (hle : v.scratch ≤ N)
+    {W C D S : Addr} {R n : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → UArgsW N s₁ W C D S R n ∧ UArgsW N s₂ W C D S R n ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call nm v.callee.code) fun _ _ => True :=
+  upd_relW v nm fun s₁ s₂ hp => by
+    obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨h₁.shrink hle, h₂.shrink hle, hsp⟩
+
 /-! ## `vg_cmac_aes_subkeys` -/
 
 /-- What a call of `vg_cmac_aes_subkeys` needs: the key schedule `W`, the

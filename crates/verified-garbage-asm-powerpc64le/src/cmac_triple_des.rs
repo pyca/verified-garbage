@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -21,7 +23,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64;
 bl {vg_triple_des_expand_key_core}
 .base64 "ePvjf3jzxX8AAp44AAAAOAAABPg="
 bl {vg_triple_des_encrypt_block}
-.base64 "AADAOCg05HzgD+h4UDAofRsAQDk4UCl9pA/neHhK53yAAWA5KF3jfOAP6HhQMCh9GwBAOThQKX2kD+d4eErnfIgBYDkoXeN8AAAAOJABA/gQAh7oKAL+6yAC3uumAwh8oAIhOCAAgE4=""#,
+.base64 "AADAOCg05HzgD+h4UDAofRsAQDk4UCl9pA/neHhK53yAAWA5KF3jfOAP6HhQMCh9GwBAOThQKX2kD+d4eErnfIgBYDkoXeN8AAAAOJABA/gQAh7oKAL+6yAC3uumAwh8oAIhOAAAADhh/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4oAIhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_triple_des_expand_key_core = sym super::triple_des::vg_triple_des_expand_key_core::vg_triple_des_expand_key_core,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
@@ -30,6 +32,8 @@ bl {vg_triple_des_encrypt_block}
 /// Absorbs data into a TDEA-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under a TDEA key (as `vg_cmac_triple_des_stream_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_triple_des_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -88,7 +92,7 @@ b 214f
 213:
 214:
 23:
-.base64 "EAIF6BgCpesgAsXrKALl66YDCHzQAiE4IACATg==""#,
+.base64 "EAIF6BgCpesgAsXrKALl66YDCHzQAiE4AAAAODH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPjQAiE4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }
@@ -96,6 +100,8 @@ b 214f
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -131,7 +137,7 @@ b 23f
 23:
 .base64 "AAKFOA=="
 bl {vg_triple_des_encrypt_block}
-.base64 "AALl6AAA//gQAgXoKALl66YDCHygAiE4IACATg==""#,
+.base64 "AALl6AAA//gQAgXoKALl66YDCHygAiE4AAAAOGH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPigAiE4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
         vg_triple_des_encrypt_block = sym super::triple_des::vg_triple_des_encrypt_block::vg_triple_des_encrypt_block,
     )
 }

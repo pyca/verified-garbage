@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -12,9 +12,6 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.Pbkdf2Sha1.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha1I.pbkdf2Api.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha1I) .r10
-      Proof.Pbkdf2.Whole.PPC64LE.Sha1.F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.PPC64LE.Sha1.pbkdf2 }]
+  Spec.Hmac.sha1I.pbkdf2Api.artifact PPC64LE.target Proof.Pbkdf2.Whole.PPC64LE.Scrub.sha1Pbkdf2Reg]
 
 end VG.Artifacts.Pbkdf2Sha1.PPC64LE
