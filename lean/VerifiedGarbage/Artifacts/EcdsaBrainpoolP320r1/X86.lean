@@ -77,23 +77,13 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Scrub
 namespace VG.Artifacts.EcdsaBrainpoolP320r1.X86.Rfc6979
 
 open VG.Proof.BrainpoolP320r1.X86 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT OK brainpoolp320r1 brainpoolp320r1T_verified signCode_sp stackT
-  brainpoolp320r1T_scrub)
-open VG.Proof.HmacTable.X86 (tables names vars)
+open VG.Proof.Ecdsa.Rfc6979.X86 (OK brainpoolp320r1SignReg)
+open VG.Proof.HmacTable.X86 (names vars)
 
 def artifacts : List Artifact :=
   if hv : OK (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants) ∧
       "VG_BRAINPOOLP320R1_COMB" ∉ names (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants) then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86.target (X86.Scrub.scrubFOf {
-      tables := [("hmac", tables (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants))]
-      code := signCodeT (brainpoolp320r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries
-        (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants)
-      verified := brainpoolp320r1T_verified hasLaw.law
-        (vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants) hv
-      spSafe := signCode_sp _ _ _ }
-      (Proof.Ecdsa.Rfc6979.X86.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
-        Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts _)
-      stackT (brainpoolp320r1T_scrub hasLaw.law))]
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86.target (brainpoolp320r1SignReg hasLaw.law hv)]
   else []
 
 end VG.Artifacts.EcdsaBrainpoolP320r1.X86.Rfc6979
@@ -103,12 +93,8 @@ namespace VG.Artifacts.EcdsaBrainpoolP320r1.X86
 open VG.Proof.BrainpoolP320r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact X86.target (X86.Scrub.scrubFOf {
-    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
-      Impl.Ecdsa.Verify.X86.verifyBrainpoolP320r1
-    verified := Proof.Ecdsa.Verify.X86.BrainpoolP320r1.verifyHash_verified hasLaw.law }
-    (Proof.EcKey.X86.Scrub.verifyHashOut (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)
-      Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts Spec.Ecdsa.BrainpoolP320r1.inst))] ++
+  Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact X86.target
+    (Proof.Ecdsa.Verify.X86.BrainpoolP320r1.verifyReg hasLaw.law)] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP320r1.X86

@@ -32,6 +32,12 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombCore
+public import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Scrub
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Scrub
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): brainpoolP320r1
@@ -105,5 +111,24 @@ theorem brainpoolp320r1T_scrub (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
       [("hmac", Proof.HmacTable.X86.tables
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))] stackT = true :=
   brainpoolp320r1T_scrubLaw
+
+/-- `vg_ecdsa_brainpoolp320r1_sign`, with the tables of every HMAC implementation,
+scrubbed (`X86.Scrub.scrubFOf`), returning without secret residue. -/
+def brainpoolp320r1SignReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
+    (hv : OK (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants) ∧
+      "VG_BRAINPOOLP320R1_COMB" ∉ Proof.HmacTable.X86.names
+        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)) :
+    Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi X86.target :=
+  X86.Scrub.scrubFOf {
+      tables := [("hmac", Proof.HmacTable.X86.tables
+        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))]
+      code := signCodeT (brainpoolp320r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries
+        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)
+      verified := brainpoolp320r1T_verified hL
+        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants) hv
+      spSafe := signCode_sp _ _ _ }
+    (Proof.Ecdsa.Rfc6979.X86.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
+      Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts _)
+    stackT (brainpoolp320r1T_scrub hL)
 
 end VG.Proof.Ecdsa.Rfc6979.X86
