@@ -29,7 +29,7 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 5. `[u]G` by the signature's ladder (from the table of `u`'s bits), or, for
    a curve with a comb's tables (`verifyComb`), by its comb, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits), or with the comb by ECDH's windows (`Cfg.winMul`,
+   table of `v`'s bits), or with the comb by ECDH's windows (`Cfg.ecdhMul`,
    `Impl/Ecdsa/X86/Window.lean`), and `[u]G + [v]Q` by the complete
    addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
@@ -201,7 +201,7 @@ the table of `v`'s bits: constant time, although `v` and `Q` are public. -/
 def pointsCombLadder : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (c.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY) (sum c)
+  .seq (c.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY) (sum c)
 
 /-- Fixed-base comb and signed-window variable-base multiplication. -/
 def pointsWindow : Prog isa :=
