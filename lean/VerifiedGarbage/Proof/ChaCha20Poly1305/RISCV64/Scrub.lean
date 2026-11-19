@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.GatherOut
 
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Verified
@@ -22,7 +24,7 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.GatherOut
 
 `vg_chacha20_poly1305_seal`, `vg_chacha20_poly1305_open`,
 `vg_chacha20_poly1305_open_to` and `vg_chacha20_poly1305_seal_gather`, each
-followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`),
+followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`),
 which clears the caller-saved registers and the stack its frames used.
 Their postconditions read the memory on return only within the data and the
 tag (`RISCV64.Scrub.PostOut`), as on x86-64
@@ -33,7 +35,7 @@ Poly1305's code, and `vg_chacha20_poly1305_seal_gather` that of
 
 `seal`, `open`, `open_to` and `seal_gather` instead clear only the runs of
 doublewords that the residue analysis (`RISCV64.rtaint`) finds may differ
-between two runs (`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their
+between two runs (`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their
 code wipes its working space, which leaves none, or two (`open_to`'s and
 `seal_gather`'s).
 -/
@@ -67,7 +69,7 @@ theorem gatherOut (stack : Nat) :
 
 /-- `Spec.ChaCha20Poly1305.sealApi`. -/
 def sealReg : Registration Spec.ChaCha20Poly1305.sealApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78 (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
       verified := Proof.ChaCha20Poly1305.RISCV64.seal_framed } []
     (sealOut _)
@@ -77,7 +79,7 @@ def sealReg : Registration Spec.ChaCha20Poly1305.sealApi RISCV64.target :=
 
 /-- `Spec.ChaCha20Poly1305.openZeroApi`. -/
 def openReg : Registration Spec.ChaCha20Poly1305.openZeroApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78 (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open»)
       verified := Proof.ChaCha20Poly1305.RISCV64.open_framed } []
     (openOut _)
@@ -87,7 +89,7 @@ def openReg : Registration Spec.ChaCha20Poly1305.openZeroApi RISCV64.target :=
 
 /-- `Spec.ChaCha20Poly1305.openToApi`. -/
 def openToReg : Registration Spec.ChaCha20Poly1305.openToApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.StackScratch.RISCV64.withStackScratchArgsWiped 640 1 78 Impl.ChaCha20Poly1305.RISCV64.openTo
       verified := Proof.ChaCha20Poly1305.RISCV64.openTo_framed } [(640, [(0, 2)])]
     (openToOut _)
@@ -97,7 +99,7 @@ def openToReg : Registration Spec.ChaCha20Poly1305.openToApi RISCV64.target :=
 
 /-- `Spec.ChaCha20Poly1305.sealGatherApi`. -/
 def sealGatherReg : Registration Spec.ChaCha20Poly1305.sealGatherApi RISCV64.target :=
-  withScrubSel {
+  scrubSelOf {
       code := Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather
       verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified } [(640, [(78, 2)])]
     (gatherOut _)

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 The postcondition of `vg_scrypt` reads the memory on return only within
 `out` (`RISCV64.Scrub.PostOut`, as AArch64's `Proof/Scrypt/AArch64/Scrub.lean`
 proves it): the implementation, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), returns with the caller-saved registers cleared
+(`RISCV64.Scrub.scrubOf`), returns with the caller-saved registers cleared
 and the stack its frames used zeroed. Its arguments on the stack are in the
 caller's frame, among the buffers (`writeArgs`), which the caller owns.
 -/

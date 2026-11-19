@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Ct.RISCV64
 meta import VerifiedGarbage.Impl.Ct.RISCV64
@@ -234,7 +235,7 @@ end
 # Constant-time comparison on RISC-V, without secret residue
 
 `vg_ct_eq`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within nothing: it writes no memory (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Ct/X86_64/Scrub.lean`).
 -/
@@ -263,7 +264,7 @@ theorem eqOut : PostOut (Spec.Ct.eqContract abi) (Spec.Ct.eqSig.retBits 64) :=
 
 /-- `Spec.Ct.eqApi`. -/
 def eqReg : Registration Spec.Ct.eqApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Ct.RISCV64.eq
       verified := Proof.Ct.RISCV64.verified }
     (eqOut)

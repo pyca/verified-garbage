@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 The postcondition of `vg_argon2` reads the memory on return only within
 `out` (`RISCV64.Scrub.PostOut`, as AArch64's `Proof/Argon2/AArch64/Scrub.lean`
 proves it): the implementation, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), returns with the caller-saved registers cleared
+(`RISCV64.Scrub.scrubOf`), returns with the caller-saved registers cleared
 and the stack its frames used zeroed. Its arguments on the stack are in the
 caller's frame, among the buffers (`writeArgs`), which the caller owns.
 -/

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -86,7 +87,7 @@ end
 # Poly1305 on RISC-V, without secret residue
 
 `vg_poly1305_init`, `vg_poly1305_update` and `vg_poly1305_finalize`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within the state and the tag (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Poly1305/X86_64/Scrub.lean`).
 -/
@@ -150,21 +151,21 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract RISCV64.abi stack)
 
 /-- `Spec.Poly1305.initApi`. -/
 def initReg : Registration Spec.Poly1305.initApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Poly1305.RISCV64.init
       verified := Proof.Poly1305.RISCV64.Shared.init }
     (initOut _)
 
 /-- `Spec.Poly1305.updateApi`. -/
 def updateReg : Registration Spec.Poly1305.updateApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Poly1305.RISCV64.update
       verified := Proof.Poly1305.RISCV64.Shared.update }
     (updateOut _)
 
 /-- `Spec.Poly1305.finalizeApi`. -/
 def finalizeReg : Registration Spec.Poly1305.finalizeApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Poly1305.RISCV64.finalize
       verified := Proof.Poly1305.RISCV64.Shared.finalize }
     (finalizeOut _)
