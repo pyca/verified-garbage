@@ -76,3 +76,12 @@ def verifyWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
     (.ite (.zero .x .x9) (wrap (body c)) (.block [.movz .x .x0 0 0]))
 
 end VG.Impl.Ed448.AArch64.Verify
+
+namespace VG.Impl.Ed448.AArch64.Fn
+
+/-- `vg_ed448_verify`: `Verify.verifyWith`, its registers cleared but its
+result, and its 352 bytes of stack zeroed. -/
+def verify (c : Impl.Sha3.AArch64.Callee) : Prog AArch64.isa :=
+  Impl.Residue.AArch64.scrubAll 352 32 (own.union c.clear) (Verify.verifyWith c)
+
+end VG.Impl.Ed448.AArch64.Fn

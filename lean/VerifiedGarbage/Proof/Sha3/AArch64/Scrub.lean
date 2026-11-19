@@ -69,7 +69,7 @@ gives one. -/
 
 /-- A permutation that does nothing: a function's code with it has the
 function's own instructions only. -/
-private def stub : Impl.Sha3.AArch64.Callee :=
+def stub : Impl.Sha3.AArch64.Callee :=
   { name := "", code := .block [], suffix := "", clear := ⟨[], [], []⟩ }
 
 private theorem absorb_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee) (rate : Nat)
@@ -179,6 +179,80 @@ theorem xofSqueeze_side (v : Permutation) (rate : Nat) :
   simp only [Impl.Sha3.AArch64.Instances.xofSqueeze, Impl.StackScratch.AArch64.withStackScratch,
     Code.aarch64Depth, Instr.frameUnits, v.squeeze_depth]
   decide
+
+/-! ## The sponge's functions, in a function that calls them
+
+A function that absorbs, pads and squeezes with the permutation `v` (a
+signature scheme hashing with SHAKE) needs the same of them, for its own
+registers `own` and `v`'s: from the sponge's own instructions, which write
+only registers of `update`'s, `xofFinalize`'s and `finalize`'s, which `own` is
+to include, and `v`'s own proof. -/
+
+private theorem absorbWith_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
+    (h0 : sideAll p (Impl.Sha3.AArch64.Stream.absorbWith stub) = true) (hc : sideAll p c.code = true)
+    (ho : ∀ code, c.absorbOverride = some code → sideAll p code = true) :
+    sideAll p (Impl.Sha3.AArch64.Stream.absorbWith c) = true := by
+  cases h : c.absorbOverride with
+  | none =>
+    simp only [Impl.Sha3.AArch64.Stream.absorbWith, stub, h,
+      Impl.Sha3.AArch64.Stream.absorbGenericWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
+      Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, sideAll,
+      Bool.and_eq_true] at h0 ⊢
+    simp only [h0, hc, and_self]
+  | some code =>
+    simp only [Impl.Sha3.AArch64.Stream.absorbWith, h]
+    exact ho code h
+
+private theorem padWith_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
+    (h0 : sideAll p (Impl.Sha3.AArch64.Stream.padWith stub) = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.Sha3.AArch64.Stream.padWith c) = true := by
+  simp only [Impl.Sha3.AArch64.Stream.padWith, Impl.Sha3.AArch64.Stream.padMainWith, stub, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem squeezeWith_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
+    (h0 : sideAll p (Impl.Sha3.AArch64.Stream.squeezeWith stub) = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.Sha3.AArch64.Stream.squeezeWith c) = true := by
+  simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Impl.Sha3.AArch64.Stream.squeezeMainWith,
+    Impl.Sha3.AArch64.Stream.squeezeBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, stub, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem absorbWith_own :
+    calleeSide (Impl.Sha3.AArch64.Stream.absorbWith stub) Impl.Sha3.AArch64.Fn.updateOwn = true := by
+  kernel_rfl
+
+private theorem padWith_own :
+    calleeSide (Impl.Sha3.AArch64.Stream.padWith stub) Impl.Sha3.AArch64.Fn.xofFinalizeOwn = true := by
+  kernel_rfl
+
+private theorem squeezeWith_own :
+    calleeSide (Impl.Sha3.AArch64.Stream.squeezeWith stub) Impl.Sha3.AArch64.Fn.finalizeOwn = true := by
+  kernel_rfl
+
+theorem absorbWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+    (hs : (Impl.Sha3.AArch64.Fn.updateOwn.gprs.all own.gprs.contains &&
+      Impl.Sha3.AArch64.Fn.updateOwn.vecs.all own.vecs.contains &&
+      Impl.Sha3.AArch64.Fn.updateOwn.his.all own.his.contains) = true) :
+    calleeSide (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (own.union v.callee.clear) = true :=
+  absorbWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left absorbWith_own))
+    (sideAll_union_right v.scrub) fun code h => calleeSide_union_mono hs (v.absorbOverrideScrub code h)
+
+theorem padWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+    (hs : (Impl.Sha3.AArch64.Fn.xofFinalizeOwn.gprs.all own.gprs.contains &&
+      Impl.Sha3.AArch64.Fn.xofFinalizeOwn.vecs.all own.vecs.contains &&
+      Impl.Sha3.AArch64.Fn.xofFinalizeOwn.his.all own.his.contains) = true) :
+    calleeSide (Impl.Sha3.AArch64.Stream.padWith v.callee) (own.union v.callee.clear) = true :=
+  padWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left padWith_own))
+    (sideAll_union_right v.scrub)
+
+theorem squeezeWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+    (hs : (Impl.Sha3.AArch64.Fn.finalizeOwn.gprs.all own.gprs.contains &&
+      Impl.Sha3.AArch64.Fn.finalizeOwn.vecs.all own.vecs.contains &&
+      Impl.Sha3.AArch64.Fn.finalizeOwn.his.all own.his.contains) = true) :
+    calleeSide (Impl.Sha3.AArch64.Stream.squeezeWith v.callee) (own.union v.callee.clear) = true :=
+  squeezeWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left squeezeWith_own))
+    (sideAll_union_right v.scrub)
 
 end VG.Proof.Sha3.AArch64.Scrub
 

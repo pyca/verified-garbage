@@ -110,3 +110,12 @@ def body (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
 def signCachedWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := wrap (body c)
 
 end VG.Impl.Ed448.AArch64.SignCached
+
+namespace VG.Impl.Ed448.AArch64.Fn
+
+/-- `vg_ed448_sign_cached`: `SignCached.signCachedWith`, its registers cleared
+and its 352 bytes of stack zeroed. -/
+def signCached (c : Impl.Sha3.AArch64.Callee) : Prog AArch64.isa :=
+  Impl.Residue.AArch64.scrubAll 352 0 (own.union c.clear) (SignCached.signCachedWith c)
+
+end VG.Impl.Ed448.AArch64.Fn

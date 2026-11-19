@@ -200,6 +200,38 @@ theorem noIcall_of_sideAll {p : Instr → Bool} {c : Prog isa} (hc : sideAll p c
   | frame i b j ih => simp only [sideAll, noIcall, Bool.and_eq_true] at hc ⊢; exact ih hc.1.2
   | icall => simp only [sideAll, Bool.false_eq_true] at hc
 
+/-- What `l` has of neither `a'` nor `b`, it has of neither `a` nor `b`, for
+`a` within `a'`. -/
+private theorem kept_mono {α : Type} [BEq α] [LawfulBEq α] {l a a' b : List α} {q : α}
+    (ha : ∀ q, q ∈ a → q ∈ a')
+    (h : q ∈ l.filter fun q => !(l.filter fun q => a'.contains q || b.contains q).contains q) :
+    q ∈ l.filter fun q => !(l.filter fun q => a.contains q || b.contains q).contains q := by
+  obtain ⟨hq, hn⟩ := List.mem_filter.mp h
+  refine List.mem_filter.mpr ⟨hq, ?_⟩
+  rw [Bool.not_eq_true'] at hn ⊢
+  cases hm : (l.filter fun q => a.contains q || b.contains q).contains q with
+  | false => rfl
+  | true =>
+    obtain ⟨_, hab⟩ := List.mem_filter.mp (List.contains_iff_mem.mp hm)
+    have hab' : (a'.contains q || b.contains q) = true := by
+      rw [Bool.or_eq_true] at hab ⊢
+      exact hab.imp (fun h => List.contains_iff_mem.mpr (ha q (List.contains_iff_mem.mp h))) id
+    rw [List.contains_iff_mem.mpr (List.mem_filter.mpr ⟨hq, hab'⟩)] at hn
+    exact absurd hn (by decide)
+
+/-- `calleeSide` of code a function calls, which holds with the registers `a`
+of another function that calls it, holds with the function's own `a'`, which
+has them all. -/
+theorem calleeSide_union_mono {a a' b : Clear} {c : Prog isa}
+    (hs : (a.gprs.all a'.gprs.contains && a.vecs.all a'.vecs.contains &&
+      a.his.all a'.his.contains) = true)
+    (h : calleeSide c (a.union b) = true) : calleeSide c (a'.union b) = true := by
+  simp only [Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at hs
+  refine sideAll_mono (fun _ => sideI_mono (fun q hq => kept_mono hs.1.1 hq) fun w hw => ?_) h
+  rcases List.mem_append.mp hw with h | h
+  · exact List.mem_append_left _ (kept_mono hs.1.2 h)
+  · exact List.mem_append_right _ (kept_mono hs.2 h)
+
 /-- `scrubSide` of code with frames that takes no table, for the registers
 `own` and `cl` together: from `calleeSide` of all of it with them (which
 `sideAll_union_left` and `sideAll_union_right` give of its parts), and `own`
