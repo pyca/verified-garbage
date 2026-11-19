@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -63,7 +65,8 @@ theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `Spec.Dsa.parameterInitApi` without secret residue. -/
 def initReg : Registration Spec.Dsa.parameterInitApi X86_64.target :=
-  withScrub { code := Impl.Dsa.X86_64.ParameterSearch.init, verified := init_verified } initOut [] (pubOk_nil _)
-    (some ⟨initKs, initOk⟩)
+  scrubOf { code := Impl.Dsa.X86_64.ParameterSearch.init, verified := init_verified } .sse false [.rsi] initOut [] (pubOk_nil _)
+    ⟨initKs, initOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Dsa.X86_64.ParameterSearchInit

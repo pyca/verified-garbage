@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
@@ -53,8 +55,9 @@ theorem checkEkOk : ∃ h : VG.Taint.Hint RTaint.FT,
 
 open VG.X86_64.RScrub in
 def checkEkReg : Registration Spec.MlKem.checkEkApi X86_64.target :=
-  withScrub { code := Impl.MlKem.X86_64.checkEk, verified := Proof.MlKem.X86_64.checkEk_verified } checkEkOut [] (pubOk_nil _)
-    (some ⟨checkEkKs, checkEkOk⟩)
+  scrubOf { code := Impl.MlKem.X86_64.checkEk, verified := Proof.MlKem.X86_64.checkEk_verified } .sse false [.rcx, .rdx, .rdi, .r8] checkEkOut [] (pubOk_nil _)
+    ⟨checkEkKs, checkEkOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def checkEkAvx2Ks : List Nat := keep_for% Spec.MlKem.checkEkApi.sig 0 Impl.MlKem.X86_64.checkEkAvx2 []
 
@@ -65,8 +68,9 @@ theorem checkEkAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 
 open VG.X86_64.RScrub in
 def checkEkAvx2Reg : Registration Spec.MlKem.checkEkApi X86_64.target :=
-  withScrub { suffix := "_avx2", code := Impl.MlKem.X86_64.checkEkAvx2, verified := Proof.MlKem.X86_64.checkEkAvx2_verified } checkEkOut [] (pubOk_nil _)
-    (some ⟨checkEkAvx2Ks, checkEkAvx2Ok⟩)
+  scrubOf { suffix := "_avx2", code := Impl.MlKem.X86_64.checkEkAvx2, verified := Proof.MlKem.X86_64.checkEkAvx2_verified } .avx true [.rcx, .rdi] checkEkOut [] (pubOk_nil _)
+    ⟨checkEkAvx2Ks, checkEkAvx2Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def checkEk1024Ks : List Nat := keep_for% Spec.MlKem1024.checkEkApi.sig 0 Impl.MlKem1024.X86_64.checkEk1024 []
 
@@ -77,8 +81,9 @@ theorem checkEk1024Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 
 open VG.X86_64.RScrub in
 def checkEk1024Reg : Registration Spec.MlKem1024.checkEkApi X86_64.target :=
-  withScrub { code := Impl.MlKem1024.X86_64.checkEk1024, verified := Proof.MlKem1024.X86_64.checkEk1024_verified } checkEk1024Out [] (pubOk_nil _)
-    (some ⟨checkEk1024Ks, checkEk1024Ok⟩)
+  scrubOf { code := Impl.MlKem1024.X86_64.checkEk1024, verified := Proof.MlKem1024.X86_64.checkEk1024_verified } .sse false [.rcx, .rdx, .rdi, .r8] checkEk1024Out [] (pubOk_nil _)
+    ⟨checkEk1024Ks, checkEk1024Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def checkEk1024Avx2Ks : List Nat := keep_for% Spec.MlKem1024.checkEkApi.sig 0 Impl.MlKem1024.X86_64.checkEk1024Avx2 []
 
@@ -89,7 +94,8 @@ theorem checkEk1024Avx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 
 open VG.X86_64.RScrub in
 def checkEk1024Avx2Reg : Registration Spec.MlKem1024.checkEkApi X86_64.target :=
-  withScrub { suffix := "_avx2", code := Impl.MlKem1024.X86_64.checkEk1024Avx2, verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified } checkEk1024Out [] (pubOk_nil _)
-    (some ⟨checkEk1024Avx2Ks, checkEk1024Avx2Ok⟩)
+  scrubOf { suffix := "_avx2", code := Impl.MlKem1024.X86_64.checkEk1024Avx2, verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified } .avx true [.rcx, .rdi] checkEk1024Out [] (pubOk_nil _)
+    ⟨checkEk1024Avx2Ks, checkEk1024Avx2Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.MlKem.X86_64.Scrub
