@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Md5.PostOut
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -26,7 +26,7 @@ the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`Verified.stackScratch`).
 
 `updateReg` and `finalizeReg` register them scrubbed whole
-(`AArch64.ScrubAll.withScrubAll`): their postconditions read the memory on
+(`AArch64.ScrubAll.scrubAllOf`): their postconditions read the memory on
 return only within their buffers (`Proof/Md5/PostOut.lean`), so they return with
 the registers they may write cleared and their stack zeroed.
 -/
@@ -88,7 +88,8 @@ def updateReg₀ : Registration Spec.Md5.updateApi AArch64.target :=
 
 /-- `update`, scrubbed whole. -/
 def updateReg : Registration Spec.Md5.updateApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll updateReg₀ updateOk
+  AArch64.ScrubAll.scrubAllOf updateReg₀
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩ updateOk
 
 /-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
 theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
@@ -103,6 +104,7 @@ def finalizeReg₀ : Registration Spec.Md5.finalizeApi AArch64.target :=
 
 /-- `finalize`, scrubbed whole. -/
 def finalizeReg : Registration Spec.Md5.finalizeApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll finalizeReg₀ finalizeOk
+  AArch64.ScrubAll.scrubAllOf finalizeReg₀
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩ finalizeOk
 
 end VG.Proof.Md5.AArch64.Shared

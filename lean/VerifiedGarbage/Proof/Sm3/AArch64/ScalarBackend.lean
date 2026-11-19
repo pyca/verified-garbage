@@ -682,6 +682,8 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   suffix := "_sm3"
+  clear := ⟨[.x1, .x2, .x4],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22], []⟩
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
@@ -712,6 +714,7 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   suffix := ""
+  clear := ⟨[.x1, .x2, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15], [], []⟩
   updateCT := by exact (VG.Taint.constantTime (A := taint) (c := Impl.Sm3.AArch64.Stream.update)
     (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))

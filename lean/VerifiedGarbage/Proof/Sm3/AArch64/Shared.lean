@@ -7,7 +7,9 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Variants.Sm3Compress.AArch64
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm3.PostOut
 import VerifiedGarbage.Proof.Sm3.AArch64.Lit
@@ -27,7 +29,7 @@ contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
 run in a frame that allocates it (`Verified.stackScratch`).
 
 `updateReg` and `finalizeReg` register them scrubbed whole
-(`AArch64.ScrubAll.withScrubAll`): their postconditions read the memory on
+(`AArch64.ScrubAll.scrubAllOf`): their postconditions read the memory on
 return only within their buffers (`Proof/Sm3/PostOut.lean`), so they return with
 the registers they may write cleared and their stack zeroed.
 -/
@@ -92,9 +94,26 @@ def updateReg₀ (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
     verified := update v }
 
+/-- The registers `update` writes itself: its tail clears them with those its
+compression function writes (`Compress.clear`). -/
+def updateOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [], []⟩
+
+/-- What `scrubAllOf` needs of `update` with each compression function:
+evaluated here. -/
+theorem updateSide (v : Compress) (hv : v ∈ Proof.Variants.Sm3Compress.AArch64.variants) :
+    AArch64.ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update) (16 + 112)
+      (Spec.Sm3.updateSig.retBits AArch64.abi.ptrBits) (AArch64.ScrubAll.clearUnion updateOwn v.clear) [] = true := by
+  have e : (Proof.Variants.Sm3Compress.AArch64.variants.all fun v =>
+      AArch64.ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update) (16 + 112)
+        (Spec.Sm3.updateSig.retBits AArch64.abi.ptrBits) (AArch64.ScrubAll.clearUnion updateOwn v.clear) []) = true := by
+    lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `update` with `v`, scrubbed whole. -/
-def updateReg (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll (updateReg₀ v) updateOk
+def updateReg (v : Compress) (hv : v ∈ Proof.Variants.Sm3Compress.AArch64.variants) : Registration Spec.Sm3.updateApi AArch64.target :=
+  AArch64.ScrubAll.scrubAllOf (updateReg₀ v) (AArch64.ScrubAll.clearUnion updateOwn v.clear) updateOk
+    (updateSide v hv)
 
 /-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
 theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
@@ -108,8 +127,25 @@ def finalizeReg₀ (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.ta
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
     verified := finalize v }
 
+/-- The registers `finalize` writes itself: its tail clears them with those its
+compression function writes (`Compress.clear`). -/
+def finalizeOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x9, .x11, .x12, .x13, .x16, .x17], [], []⟩
+
+/-- What `scrubAllOf` needs of `finalize` with each compression function:
+evaluated here. -/
+theorem finalizeSide (v : Compress) (hv : v ∈ Proof.Variants.Sm3Compress.AArch64.variants) :
+    AArch64.ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize) (16 + 112)
+      (Spec.Sm3.finalizeSig.retBits AArch64.abi.ptrBits) (AArch64.ScrubAll.clearUnion finalizeOwn v.clear) [] = true := by
+  have e : (Proof.Variants.Sm3Compress.AArch64.variants.all fun v =>
+      AArch64.ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize) (16 + 112)
+        (Spec.Sm3.finalizeSig.retBits AArch64.abi.ptrBits) (AArch64.ScrubAll.clearUnion finalizeOwn v.clear) []) = true := by
+    lit_decide
+  exact List.all_eq_true.mp e v hv
+
 /-- `finalize` with `v`, scrubbed whole. -/
-def finalizeReg (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll (finalizeReg₀ v) finalizeOk
+def finalizeReg (v : Compress) (hv : v ∈ Proof.Variants.Sm3Compress.AArch64.variants) : Registration Spec.Sm3.finalizeApi AArch64.target :=
+  AArch64.ScrubAll.scrubAllOf (finalizeReg₀ v) (AArch64.ScrubAll.clearUnion finalizeOwn v.clear) finalizeOk
+    (finalizeSide v hv)
 
 end VG.Proof.Sm3.AArch64.Shared

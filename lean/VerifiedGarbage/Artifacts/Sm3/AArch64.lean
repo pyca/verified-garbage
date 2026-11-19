@@ -17,8 +17,9 @@ def artifacts : List Artifact := [
     code := Impl.Sm3.AArch64.Stream.init
     verified := Proof.Sm3.AArch64.Shared.init
     residue := some ⟨Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩ }] ++
-  (Proof.Variants.Sm3Compress.AArch64.variants.flatMap fun (v : Proof.Sm3.AArch64.Compress) => [
-    Spec.Sm3.updateApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.updateReg v),
-    Spec.Sm3.finalizeApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.finalizeReg v)])
+  (Proof.Variants.Sm3Compress.AArch64.variants.attach.flatMap
+      fun (v : { v : Proof.Sm3.AArch64.Compress // v ∈ Proof.Variants.Sm3Compress.AArch64.variants }) => [
+    Spec.Sm3.updateApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.updateReg v.1 v.2),
+    Spec.Sm3.finalizeApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.finalizeReg v.1 v.2)])
 
 end VG.Artifacts.Sm3.AArch64
