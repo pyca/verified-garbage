@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_ffdh_check_domain`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -32,6 +34,8 @@ pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
 /// It runs `vg_ffdh_check_public`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -60,6 +64,8 @@ pub unsafe fn vg_ffdh_check_public_auto(_dit: verified_garbage_cpu::Dit<'_>, dom
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
 /// It runs `vg_ffdh_check_private`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -90,6 +96,8 @@ pub unsafe fn vg_ffdh_check_private_auto(_dit: verified_garbage_cpu::Dit<'_>, do
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
 /// It runs `vg_ffdh_exchange`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -123,6 +131,8 @@ pub unsafe fn vg_ffdh_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *m
 ///
 /// It runs `vg_ffdh_derive_public`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -151,6 +161,8 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
 ///
 /// It runs `vg_ffdh_key_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -166,6 +178,8 @@ pub unsafe fn vg_ffdh_key_generation_init_auto(_dit: verified_garbage_cpu::Dit<'
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
 /// It runs `vg_ffdh_generate_key_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -192,6 +206,8 @@ pub unsafe fn vg_ffdh_generate_key_precompute_auto(_dit: verified_garbage_cpu::D
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
 /// It runs `vg_ffdh_generate_key_search_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -226,6 +242,8 @@ pub unsafe fn vg_ffdh_generate_key_search_cached_auto(_dit: verified_garbage_cpu
 ///
 /// It runs `vg_ffdh_parameter_generation_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -241,6 +259,8 @@ pub unsafe fn vg_ffdh_parameter_generation_init_auto(_dit: verified_garbage_cpu:
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
 /// It runs `vg_ffdh_generate_parameters`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

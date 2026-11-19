@@ -721,16 +721,6 @@ x86 vg_ed25519_verify
 x86 vg_ed448_public_key
 x86 vg_ed448_sign_cached
 x86 vg_ed448_verify
-x86 vg_ffdh_check_domain
-x86 vg_ffdh_check_private
-x86 vg_ffdh_check_public
-x86 vg_ffdh_derive_public
-x86 vg_ffdh_exchange
-x86 vg_ffdh_generate_key_precompute
-x86 vg_ffdh_generate_key_search_cached
-x86 vg_ffdh_generate_parameters
-x86 vg_ffdh_key_generation_init
-x86 vg_ffdh_parameter_generation_init
 x86 vg_hmac_md5_finalize
 x86 vg_hmac_md5_init
 x86 vg_hmac_sha1_finalize
