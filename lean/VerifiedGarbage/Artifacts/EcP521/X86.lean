@@ -59,12 +59,12 @@ open VG.Proof.P521.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86.target {
     code := Proof.EcKey.Compressed.X86.P521.code
-    verified := Proof.EcKey.Compressed.X86.P521.verified },
+    verified := .unscrubbed Proof.EcKey.Compressed.X86.P521.verified },
   Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86.target {
     code := Proof.EcKey.Compressed.X86.P521Decompress.code
-    verified := Proof.EcKey.Compressed.X86.P521Decompress.verified hasLaw.law },
+    verified := .unscrubbed (Proof.EcKey.Compressed.X86.P521Decompress.verified hasLaw.law) },
   Spec.EcKey.P521.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.publicKeyP521
-    verified := Proof.EcKey.X86.P521.pk_verified hasLaw.law }]
+    verified := .unscrubbed (Proof.EcKey.X86.P521.pk_verified hasLaw.law) }]
 
 end VG.Artifacts.EcP521.X86

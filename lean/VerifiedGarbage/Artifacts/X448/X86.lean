@@ -17,9 +17,9 @@ namespace VG.Artifacts.X448.X86
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact X86.target {
     code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
-    verified := Proof.X448.X86.Exchange.exchange_verified },
+    verified := .unscrubbed Proof.X448.X86.Exchange.exchange_verified },
   Spec.X448.x448BaseApi.artifact X86.target {
     code := Impl.X448.X86.x448Base
-    verified := Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok }]
+    verified := .unscrubbed (Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok) }]
 
 end VG.Artifacts.X448.X86

@@ -13,9 +13,9 @@ namespace VG.Artifacts.BlowfishCbc.Arm
 def artifacts : List Artifact := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cbcEncryptChained
-    verified := Proof.Blowfish.Arm.cbcEncryptChained_framed },
+    verified := .unscrubbed Proof.Blowfish.Arm.cbcEncryptChained_framed },
   Spec.Blowfish.cbcDecryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cbcDecryptChained
-    verified := Proof.Blowfish.Arm.cbcDecryptChained_framed }]
+    verified := .unscrubbed Proof.Blowfish.Arm.cbcDecryptChained_framed }]
 
 end VG.Artifacts.BlowfishCbc.Arm

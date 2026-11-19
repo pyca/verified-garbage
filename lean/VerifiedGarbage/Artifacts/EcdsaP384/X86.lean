@@ -82,7 +82,7 @@ def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (p384 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries (vars vs1 vs256)
-      verified := p384T_verified hasLaw.law (vars vs1 vs256) hv
+      verified := .unscrubbed (p384T_verified hasLaw.law (vars vs1 vs256) hv)
       spSafe := signCode_sp _ _ _ }]
   else []
 
@@ -99,7 +99,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P384.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifyP384
-    verified := Proof.Ecdsa.Verify.X86.P384.verifyHash_verified hasLaw.law }] ++
+    verified := .unscrubbed (Proof.Ecdsa.Verify.X86.P384.verifyHash_verified hasLaw.law) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP384.X86

@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesEcb.Arm
 def artifacts : List Artifact := [
   Spec.AesEcb.encryptApi.artifact Arm.target {
     code := Proof.AesEcb.Arm.encrypt
-    verified := Proof.AesEcb.Arm.encrypt_verified },
+    verified := .unscrubbed Proof.AesEcb.Arm.encrypt_verified },
   Spec.AesEcb.decryptApi.artifact Arm.target {
     code := Proof.AesEcb.Arm.decrypt
-    verified := Proof.AesEcb.Arm.decrypt_verified }]
+    verified := .unscrubbed Proof.AesEcb.Arm.decrypt_verified }]
 
 end VG.Artifacts.AesEcb.Arm

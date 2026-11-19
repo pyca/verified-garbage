@@ -13,9 +13,9 @@ namespace VG.Artifacts.Rc4.Arm
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init
-    verified := Proof.Rc4.Arm.init_framed },
+    verified := .unscrubbed Proof.Rc4.Arm.init_framed },
   Spec.Rc4.applyApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply
-    verified := Proof.Rc4.Arm.apply_framed }]
+    verified := .unscrubbed Proof.Rc4.Arm.apply_framed }]
 
 end VG.Artifacts.Rc4.Arm

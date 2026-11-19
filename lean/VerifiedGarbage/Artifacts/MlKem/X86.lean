@@ -27,33 +27,33 @@ namespace VG.Artifacts.MlKem.X86
 def artifacts : List Artifact := [
   Spec.MlKem.checkEkApi.artifact X86.target {
     code := Impl.MlKem.X86.checkEk
-    verified := Proof.MlKem.X86.CheckEk.verified },
+    verified := .unscrubbed Proof.MlKem.X86.CheckEk.verified },
   Spec.MlKem.keyGenApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.keyGen
-    verified := Proof.MlKem.X86.Wipe.keyGen_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.encaps
-    verified := Proof.MlKem.X86.Wipe.encaps_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.encapsH
-    verified := Proof.MlKem.X86.Wipe.encapsH_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.decaps
-    verified := Proof.MlKem.X86.Wipe.decaps_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.decaps_verified },
   Spec.MlKem1024.checkEkApi.artifact X86.target {
     code := Impl.MlKem1024.X86.checkEk
-    verified := Proof.MlKem1024.X86.CheckEk.verified },
+    verified := .unscrubbed Proof.MlKem1024.X86.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.keyGen1024
-    verified := Proof.MlKem.X86.Wipe.keyGen1024_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.encaps1024
-    verified := Proof.MlKem.X86.Wipe.encaps1024_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.encapsH1024
-    verified := Proof.MlKem.X86.Wipe.encapsH1024_verified },
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.decaps1024
-    verified := Proof.MlKem.X86.Wipe.decaps1024_verified }]
+    verified := .unscrubbed Proof.MlKem.X86.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem.X86

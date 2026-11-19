@@ -15,9 +15,9 @@ open VG.Proof.AesXts.Arm
 def artifacts : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact Arm.target {
     code := Impl.AesXts.ArmUnit.encrypt
-    verified := Unit.encrypt_verified },
+    verified := .unscrubbed Unit.encrypt_verified },
   Spec.Xts.aesDecryptUnitApi.artifact Arm.target {
     code := Impl.AesXts.ArmUnit.decrypt
-    verified := Unit.decrypt_verified }]
+    verified := .unscrubbed Unit.decrypt_verified }]
 
 end VG.Artifacts.AesXts.Arm

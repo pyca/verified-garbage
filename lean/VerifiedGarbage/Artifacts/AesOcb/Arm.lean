@@ -16,12 +16,12 @@ open VG.Proof.AesOcb.Arm
 def artifacts : List Artifact := [
   Spec.Ocb.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
-    verified := init_framed },
+    verified := .unscrubbed init_framed },
   Spec.Ocb.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«seal»
-    verified := Proof.AesOcb.seal_keyed seal_framed },
+    verified := .unscrubbed (Proof.AesOcb.seal_keyed seal_framed) },
   Spec.Ocb.openApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«open»
-    verified := Proof.AesOcb.open_keyed open_framed }]
+    verified := .unscrubbed (Proof.AesOcb.open_keyed open_framed) }]
 
 end VG.Artifacts.AesOcb.Arm

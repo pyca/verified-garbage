@@ -280,7 +280,7 @@ vg_argon2:
 	mov r0, r4
 	mov r2, r4
 	mov r3, #0
-	bl {vg_blake2b_init}
+	bl {vg_blake2b_init_core}
 	ldr r0, [r11, #212]
 	str r0, [r4, #768]
 	ldr r0, [r11, #252]

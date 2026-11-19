@@ -42,12 +42,12 @@ def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.generationPrecomputeApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := Proof.Ffdh.Arm.combPrecomputeCalledCode v
-    verified := Proof.Ffdh.Arm.combPrecomputeCalled_verified v },
+    verified := .unscrubbed (Proof.Ffdh.Arm.combPrecomputeCalled_verified v) },
   Spec.Ffdh.cachedKeySearchApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := Proof.Ffdh.Arm.KeySearch.calledCode
       (Proof.Ffdh.Arm.CachedKeyGenerate.backend v)
-    verified := Proof.Ffdh.Arm.KeySearch.verified (Proof.Ffdh.Arm.CachedKeyGenerate.backend v) }]
+    verified := .unscrubbed (Proof.Ffdh.Arm.KeySearch.verified (Proof.Ffdh.Arm.CachedKeyGenerate.backend v)) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
@@ -62,7 +62,7 @@ def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.derivePublicApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Proof.Ffdh.Arm.SharedDerive.calledCode b
-    verified := Proof.Ffdh.Arm.SharedDerive.called_verified b }]
+    verified := .unscrubbed (Proof.Ffdh.Arm.SharedDerive.called_verified b) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
@@ -77,11 +77,11 @@ def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := v.checkDomain
-    verified := v.checkDomain_verified },
+    verified := .unscrubbed v.checkDomain_verified },
   Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := v.checkPrivate
-    verified := v.checkPrivate_verified }]
+    verified := .unscrubbed v.checkPrivate_verified }]
 
 end VG.Artifacts.Ffdh.Arm.Domain.Ffdh
 
@@ -93,7 +93,7 @@ def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Proof.Ffdh.Arm.SharedCheckPublic.calledCode b
-    verified := Proof.Ffdh.Arm.SharedCheckPublic.called_verified b }]
+    verified := .unscrubbed (Proof.Ffdh.Arm.SharedCheckPublic.called_verified b) }]
 
 end VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 
@@ -113,7 +113,7 @@ def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.exchangeApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Proof.Ffdh.Arm.SharedExchange.calledCode b
-    verified := Proof.Ffdh.Arm.SharedExchange.called_verified b }]
+    verified := .unscrubbed (Proof.Ffdh.Arm.SharedExchange.called_verified b) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => artifactsFor v
@@ -127,10 +127,10 @@ def direct : List Artifact :=
   [
     Spec.Ffdh.keyInitApi.artifact VG.Arm.target {
       code := Impl.Ffdh.Arm.KeyGeneration.init
-      verified := Proof.Ffdh.Arm.keyInit_verified },
+      verified := .unscrubbed Proof.Ffdh.Arm.keyInit_verified },
     Spec.Ffdh.parameterInitApi.artifact VG.Arm.target {
       code := Impl.Ffdh.Arm.Generation.init
-      verified := Proof.Ffdh.Arm.parameterInit_verified }]
+      verified := .unscrubbed Proof.Ffdh.Arm.parameterInit_verified }]
 
 end VG.Artifacts.Ffdh.Arm
 
@@ -149,6 +149,6 @@ def artifacts : List Artifact :=
     [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
       suffix := b.suffix
       code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
-      verified := Proof.Ffdh.Arm.ParameterSearch.verified b }])
+      verified := .unscrubbed (Proof.Ffdh.Arm.ParameterSearch.verified b) }])
 
 end VG.Artifacts.Ffdh.Arm

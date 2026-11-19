@@ -51,6 +51,6 @@ open VG.Proof.P224.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P224.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.exchangeP224
-    verified := Proof.Ecdh.X86.P224.ecdh_verified hasLaw.law }]
+    verified := .unscrubbed (Proof.Ecdh.X86.P224.ecdh_verified hasLaw.law) }]
 
 end VG.Artifacts.EcdhP224.X86

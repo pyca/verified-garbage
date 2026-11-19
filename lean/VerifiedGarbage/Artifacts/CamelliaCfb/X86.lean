@@ -16,15 +16,15 @@ namespace VG.Artifacts.CamelliaCfb.X86
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncrypt
-    verified := Proof.Camellia.X86.Fb.cfbEncrypt_framed },
+    verified := .unscrubbed Proof.Camellia.X86.Fb.cfbEncrypt_framed },
   Spec.Camellia.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecrypt
-    verified := Proof.Camellia.X86.Fb.cfbDecrypt_framed },
+    verified := .unscrubbed Proof.Camellia.X86.Fb.cfbDecrypt_framed },
   Spec.Camellia.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncryptFinal
-    verified := Proof.Camellia.X86.FbFinal.cfbEncryptFinal_framed },
+    verified := .unscrubbed Proof.Camellia.X86.FbFinal.cfbEncryptFinal_framed },
   Spec.Camellia.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecryptFinal
-    verified := Proof.Camellia.X86.FbFinal.cfbDecryptFinal_framed }]
+    verified := .unscrubbed Proof.Camellia.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.CamelliaCfb.X86

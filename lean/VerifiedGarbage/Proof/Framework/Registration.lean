@@ -50,6 +50,22 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   variant's `FieldVariant`) is proven for each of its values, by cases.
 -/
 
+@[expose] public section
+
+namespace VG
+
+/-- Temporary. `verified := .unscrubbed h` is how a registration will state
+that its function is one of those not yet proven to return without secret
+residue (`ci/residue_allowlist.txt`), once what a registration proves
+includes that (`Registration.verified`); until then it means `h`, so that
+the registrations can say it before the change that gives it a meaning. -/
+theorem Verified.unscrubbed {T : Target} {c : Prog T.isa} {k : Contract T.isa} (h : Verified T c k) :
+    Verified T c k := h
+
+end VG
+
+end
+
 public meta section
 
 namespace VG.RegistrationTactics

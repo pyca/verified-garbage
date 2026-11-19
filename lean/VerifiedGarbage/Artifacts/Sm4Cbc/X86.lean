@@ -14,9 +14,9 @@ namespace VG.Artifacts.Sm4Cbc.X86
 def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcEncryptChained
-    verified := Proof.Sm4.X86.Cbc.cbcEncryptChained_framed },
+    verified := .unscrubbed Proof.Sm4.X86.Cbc.cbcEncryptChained_framed },
   Spec.Sm4.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcDecryptChained
-    verified := Proof.Sm4.X86.Cbc.cbcDecryptChained_framed }]
+    verified := .unscrubbed Proof.Sm4.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.Sm4Cbc.X86

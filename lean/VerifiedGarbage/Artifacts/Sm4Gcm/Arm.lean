@@ -19,30 +19,30 @@ open VG.Proof.Sm4Gcm.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 768 .r2 Impl.Sm4Gcm.Arm.init
-    verified := init_framed },
+    verified := .unscrubbed init_framed },
   Spec.Sm4.Gcm.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 4 Impl.Sm4Gcm.Arm.«seal»
-    verified := seal_framed },
+    verified := .unscrubbed seal_framed },
   Spec.Sm4.Gcm.openApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 5 Impl.Sm4Gcm.Arm.«open»
-    verified := open_framed },
+    verified := .unscrubbed open_framed },
   Spec.Sm4.Gcm.streamInitApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 784 0 Impl.Sm4Gcm.Arm.streamInit
-    verified := streamInit_framed },
+    verified := .unscrubbed streamInit_framed },
   Spec.Sm4.Gcm.streamAadApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 784 2 Impl.Sm4Gcm.Arm.streamAad
-    verified := streamAad_framed },
+    verified := .unscrubbed streamAad_framed },
   Spec.Sm4.Gcm.streamEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 4 Impl.Sm4Gcm.Arm.streamEncrypt
-    verified := streamEncrypt_framed },
+    verified := .unscrubbed streamEncrypt_framed },
   Spec.Sm4.Gcm.streamDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 4 Impl.Sm4Gcm.Arm.streamDecrypt
-    verified := streamDecrypt_framed },
+    verified := .unscrubbed streamDecrypt_framed },
   Spec.Sm4.Gcm.streamFinishApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 3 Impl.Sm4Gcm.Arm.streamFinish
-    verified := streamFinish_framed },
+    verified := .unscrubbed streamFinish_framed },
   Spec.Sm4.Gcm.streamVerifyApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 800 4 Impl.Sm4Gcm.Arm.streamVerify
-    verified := streamVerify_framed }]
+    verified := .unscrubbed streamVerify_framed }]
 
 end VG.Artifacts.Sm4Gcm.Arm
