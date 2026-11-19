@@ -195,8 +195,10 @@ theorem gh_rel (g : GhashImpl) {P : State → State → Prop}
 /-! ## `vg_aes_ctr32` -/
 
 /-- What a call of `vg_aes_ctr32` needs: the key schedule at `K` for `R`
-rounds, the counter block at `C`, `n` blocks at `D` and working space at `S`. -/
-structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) : Prop where
+rounds, the counter block at `C`, `n` blocks at `D` and `N` bytes of working
+space at `S` (`ctr32AArch64`'s 2048 unless an implementation needs less,
+`Ctr32Impl.scratch`). -/
+structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) (N : Nat := 2048) : Prop where
   x0 : s.gpr .x0 = K
   x1 : s.gpr .x1 = BitVec.ofNat 64 R
   x2 : s.gpr .x2 = C
@@ -208,33 +210,81 @@ structure CtrCall (s : State) (K C D S : Addr) (R n : Nat) : Prop where
   n_lt : n < 2 ^ 64
   kc : (⟨K, 240⟩ : Region).Disjoint ⟨C, 16⟩
   kd : (⟨K, 240⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, 2048⟩
+  ks : (⟨K, 240⟩ : Region).Disjoint ⟨S, N⟩
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2048⟩
-  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2048⟩
-  reads : Covers ([⟨K, 240⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.wr
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, N⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, N⟩
+  reads : Covers ([⟨K, 240⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, N⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, N⟩] s.wr
 
 /-- What a call of `vg_aes_ctr32` leaves. -/
-structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) : Prop where
+structure CtrPost (s : State) (K C D S : Addr) (R n : Nat) (s' : State) (N : Nat := 2048) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩] s.mem s'.mem
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, N⟩] s.mem s'.mem
   out : blocksAt s'.mem D n = ctr32 (aesWith R (bytesAt s.mem K (16 * (R + 1)))) (blockAt s.mem C)
     (blocksAt s.mem D n)
   ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
 
-theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
-    Proof.Aes.ctr32AArch64.pre
-      (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
+theorem CtrCall.pre {s : State} {K C D S : Addr} {R n N : Nat} (h : CtrCall s K C D S R n N) :
+    (Proof.Aes.ctr32AArch64With N).pre
+      (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, N⟩]) := by
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat_lt h.n_lt
-  simp only [Proof.Aes.ctr32AArch64, State.withRegions_gpr, State.withRegions_rd,
+  simp only [Proof.Aes.ctr32AArch64With, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4,
     callEntry_x5, h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, hR, hn]
   exact ⟨trivial, trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.wrap, h.rounds⟩
+
+/-- What permits the accesses of a list of regions ending with `⟨S, N⟩`
+permits them with a prefix of it, `⟨S, M⟩`. -/
+theorem covers_last {xs T : List Region} {S : Addr} {M N : Nat} (h : Covers (xs ++ [⟨S, N⟩]) T)
+    (hle : M ≤ N) : Covers (xs ++ [⟨S, M⟩]) T := by
+  intro a n ⟨r, hr, hc⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact h a n ⟨r, List.mem_append_left _ hr, hc⟩
+  · rw [List.mem_singleton] at hr; subst hr
+    refine h a n ⟨⟨S, N⟩, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    simp only [Region.Contains] at hc ⊢; omega
+
+/-- `CtrCall` with less working space, a prefix of it. -/
+theorem CtrCall.shrink {s : State} {K C D S : Addr} {R n M N : Nat} (h : CtrCall s K C D S R n N)
+    (hle : M ≤ N) : CtrCall s K C D S R n M :=
+  { h with
+    ks := h.ks.sub_right (Region.sub_prefix hle)
+    cs := h.cs.sub_right (Region.sub_prefix hle)
+    ds := h.ds.sub_right (Region.sub_prefix hle)
+    reads := covers_last (xs := [⟨K, 240⟩, ⟨C, 16⟩, ⟨D, 16 * n⟩]) h.reads hle
+    writes := covers_last (xs := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.writes hle }
+
+/-- A call of `v`, with the working space it needs (`Ctr32Impl.scratch`). -/
+theorem ctr_callW (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat}
+    (h : CtrCall s K C D S R n v.scratch) :
+    WP isa (.call v.callee.name v.callee.code) s fun s' => CtrPost s K C D S R n s' v.scratch := by
+  have hR := toNat_rounds h.rounds
+  have hn := toNat_ofNat_lt h.n_lt
+  refine WP.call (k := Proof.Aes.ctr32AArch64With v.scratch) v.okW (rd := [⟨K, 240⟩])
+    (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, v.scratch⟩]) h.pre h.reads h.writes ?_ v.noFrames
+  intro s' hrd hwr hsp hf hsaved _ hpost
+  obtain ⟨hdata, hctr⟩ := hpost
+  simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4,
+    hR, hn] at hdata hctr
+  exact ⟨hrd, hwr, hsp, hsaved, hf, hdata, hctr⟩
+
+/-- A call of `v` with `N` bytes of working space, at least what it needs. -/
+theorem ctr_callLe (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n N : Nat} (hle : v.scratch ≤ N)
+    (h : CtrCall s K C D S R n N) :
+    WP isa (.call v.callee.name v.callee.code) s fun s' => CtrPost s K C D S R n s' N := by
+  refine WP.mono (ctr_callW v (h.shrink hle)) fun _ q => ⟨q.rd, q.wr, q.sp, q.saved, ?_, q.out, q.ctr⟩
+  refine q.frame.sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.sub_prefix hle⟩
 
 theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     WP isa (.call v.callee.name v.callee.code) s (CtrPost s K C D S R n) := by
@@ -248,6 +298,31 @@ theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : C
     callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, h.x0, h.x1, h.x2, h.x3, h.x4,
     hR, hn] at hdata hctr
   exact ⟨hrd, hwr, hsp, hsaved, hf, hdata, hctr⟩
+
+/-- `ctr_rel` with the working space `v` needs. -/
+theorem ctr_relW (v : Ctr32Impl) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : Addr, ∃ R n : Nat,
+      CtrCall s₁ K C D S R n v.scratch ∧ CtrCall s₂ K C D S R n v.scratch ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) v.okW v.ctW [⟨K, 240⟩]
+    [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, v.scratch⟩] (fun a b hab => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  obtain ⟨rfl, rfl⟩ := hab
+  refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
+  simp only [Proof.Aes.ctr32AArch64With, Proof.Aes.ctr32AArch64, State.withRegions_gpr, State.withRegions_sp,
+    State.callEntry_sp, callEntry_x0, callEntry_x1, callEntry_x2, callEntry_x3, callEntry_x4, callEntry_x5,
+    h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-- `ctr_relW` with `N` bytes of working space, at least what `v` needs. -/
+theorem ctr_relLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : Addr, ∃ R n : Nat,
+      CtrCall s₁ K C D S R n N ∧ CtrCall s₂ K C D S R n N ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True :=
+  ctr_relW v fun s₁ s₂ hp => by
+    obtain ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨K, C, D, S, R, n, h₁.shrink hle, h₂.shrink hle, hsp⟩
 
 theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D S : Addr, ∃ R n : Nat,

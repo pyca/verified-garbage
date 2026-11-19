@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -46,7 +48,7 @@ bne %cr0, 22b
 b 21f
 20:
 21:
-.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IAQhOCAAgE4=""#,
+.base64 "AACV6hAA1eoYAPXqIAAV6ygANesIALXqIAAB6DAAITimAwh8IAQhOAAAADix+SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPhwBAz4eAQM+IAEDPiIBAz4kAQM+JgEDPigBAz4qAQM+LAEDPi4BAz4wAQM+MgEDPjQBAz42AQM+OAEDPjoBAz48AQM+PgEDPgABQz4CAUM+BAFDPgYBQz4IAUM+CgFDPgwBQz4OAUM+EAFDPhIBQz4UAUM+FgFDPhgBQz4aAUM+HAFDPh4BQz4gAUM+IgFDPiQBQz4mAUM+KAFDPioBQz4sAUM+LgFDPjABQz4yAUM+NAFDPjYBQz44AUM+OgFDPjwBQz4+AUM+AAGDPgIBgz4EAYM+BgGDPggBgz4KAYM+FAGITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
         vg_hmac_md5_init_core = sym super::hmac_md5::vg_hmac_md5_init_core::vg_hmac_md5_init_core,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch::vg_hmac_md5_finalize_scratch,

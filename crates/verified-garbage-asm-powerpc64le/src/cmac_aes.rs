@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -21,7 +23,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
 bl {vg_aes_expand_key_scratch}
 .base64 "eHPDfXiDBH7wAK44eHvmfQ=="
 bl {vg_cmac_aes_subkeys}
-.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4IACATg==""#,
+.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4AAAAOOH2IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPiwAgz4uAIM+MACDPjIAgz40AIM+NgCDPjgAgz46AIM+PACDPj4Agz4AAMM+AgDDPgQAwz4GAMM+CADDPgoAwz4MAMM+DgDDPhAAwz4SAMM+FADDPhYAwz4YAMM+GgDDPhwAwz4eAMM+IADDPiIAwz4kAMM+JgDDPigAwz4qAMM+LADDPi4Awz4wAMM+MgDDPjQAwz42AMM+OADDPjoAwz48AMM+PgDDPgABAz4CAQM+BAEDPgYBAz4IAQM+CgEDPgwBAz4OAQM+EAEDPhIBAz4UAQM+FgEDPhgBAz4aAQM+HAEDPh4BAz4gAQM+IgEDPiQBAz4mAQM+KAEDPioBAz4sAQM+LgEDPjABAz4yAQM+NAEDPjYBAz44AQM+OgEDPjwBAz4+AQM+AAFDPgIBQz4EAUM+BgFDPggBQz4KAUM+DAFDPg4BQz4QAUM+EgFDPhQBQz4WAUM+GAFDPhoBQz4cAUM+HgFDPiABQz4iAUM+JAFDPiYBQz4oAUM+KgFDPiwBQz4uAUM+MAFDPjIBQz40AUM+NgFDPjgBQz46AUM+PAFDPj4BQz4AAYM+AgGDPgQBgz4GAYM+CAGDPgoBgz4MAYM+DgGDPhABgz4SAYM+FAGDPhYBgz4YAYM+GgGDPhwBgz4eAYM+IAGDPiIBgz4kAYM+JgGDPigBgz4qAYM+LAGDPi4Bgz4wAYM+MgGDPjQBgz42AYM+OAGDPjoBgz48AYM+PgGDPgABwz4CAcM+BAHDPgYBwz4IAcM+CgHDPgwBwz4OAcM+EAHDPhIBwz4UAcM+FgHDPhgBwz4aAcM+HAHDPh4Bwz4gAcM+IgHDPiQBwz4mAcM+KAHDPioBwz4sAcM+LgHDPjABwz4yAcM+NAHDPjYBwz44AcM+OgHDPjwBwz4+AcM+AAIDPgICAz4EAgM+BgIDPggCAz4KAgM+DAIDPg4CAz4QAgM+EgIDPhQCAz4WAgM+GAIDPhoCAz4cAgM+HgIDPiACAz4iAgM+JAIDPiYCAz4oAgM+KgIDPiwCAz4uAgM+MAIDPjICAz40AgM+NgIDPjgCAz46AgM+PAIDPj4CAz4IAkhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxJxzEiAAgE4=""#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
@@ -30,6 +32,8 @@ bl {vg_cmac_aes_subkeys}
 /// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -93,7 +97,7 @@ bne %cr0, 215b
 b 214f
 213:
 214:
-.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4IACATg==""#,
+.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4AAAAOOH2IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPiwAgz4uAIM+MACDPjIAgz40AIM+NgCDPjgAgz46AIM+PACDPj4Agz4AAMM+AgDDPgQAwz4GAMM+CADDPgoAwz4MAMM+DgDDPhAAwz4SAMM+FADDPhYAwz4YAMM+GgDDPhwAwz4eAMM+IADDPiIAwz4kAMM+JgDDPigAwz4qAMM+LADDPi4Awz4wAMM+MgDDPjQAwz42AMM+OADDPjoAwz48AMM+PgDDPgABAz4CAQM+BAEDPgYBAz4IAQM+CgEDPgwBAz4OAQM+EAEDPhIBAz4UAQM+FgEDPhgBAz4aAQM+HAEDPh4BAz4gAQM+IgEDPiQBAz4mAQM+KAEDPioBAz4sAQM+LgEDPjABAz4yAQM+NAEDPjYBAz44AQM+OgEDPjwBAz4+AQM+AAFDPgIBQz4EAUM+BgFDPggBQz4KAUM+DAFDPg4BQz4QAUM+EgFDPhQBQz4WAUM+GAFDPhoBQz4cAUM+HgFDPiABQz4iAUM+JAFDPiYBQz4oAUM+KgFDPiwBQz4uAUM+MAFDPjIBQz40AUM+NgFDPjgBQz46AUM+PAFDPj4BQz4AAYM+AgGDPgQBgz4GAYM+CAGDPgoBgz4MAYM+DgGDPhABgz4SAYM+FAGDPhYBgz4YAYM+GgGDPhwBgz4eAYM+IAGDPiIBgz4kAYM+JgGDPigBgz4qAYM+LAGDPi4Bgz4wAYM+MgGDPjQBgz42AYM+OAGDPjoBgz48AYM+PgGDPgABwz4CAcM+BAHDPgYBwz4IAcM+CgHDPgwBwz4OAcM+EAHDPhIBwz4UAcM+FgHDPhgBwz4aAcM+HAHDPh4Bwz4gAcM+IgHDPiQBwz4mAcM+KAHDPioBwz4sAcM+LgHDPjABwz4yAcM+NAHDPjYBwz44AcM+OgHDPjwBwz4+AcM+AAIDPgICAz4EAgM+BgIDPggCAz4KAgM+DAIDPg4CAz4QAgM+EgIDPhQCAz4WAgM+GAIDPhoCAz4cAgM+HgIDPiACAz4iAgM+JAIDPiYCAz4oAgM+KgIDPiwCAz4uAgM+MAIDPjICAz40AgM+NgIDPjgCAz46AgM+PAIDPj4CAz4IAkhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHEnHMSIACATg==""#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
@@ -101,6 +105,8 @@ b 214f
 /// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -120,7 +126,7 @@ b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize}
-.base64 "iAgO6IAIzummAwh8IAkhOCAAgE4=""#,
+.base64 "iAgO6IAIzummAwh8IAkhOAAAADjh9iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjAAgz4yAIM+NACDPjYAgz44AIM+OgCDPjwAgz4+AIM+AADDPgIAwz4EAMM+BgDDPggAwz4KAMM+DADDPg4Awz4QAMM+EgDDPhQAwz4WAMM+GADDPhoAwz4cAMM+HgDDPiAAwz4iAMM+JADDPiYAwz4oAMM+KgDDPiwAwz4uAMM+MADDPjIAwz40AMM+NgDDPjgAwz46AMM+PADDPj4Awz4AAQM+AgEDPgQBAz4GAQM+CAEDPgoBAz4MAQM+DgEDPhABAz4SAQM+FAEDPhYBAz4YAQM+GgEDPhwBAz4eAQM+IAEDPiIBAz4kAQM+JgEDPigBAz4qAQM+LAEDPi4BAz4wAQM+MgEDPjQBAz42AQM+OAEDPjoBAz48AQM+PgEDPgABQz4CAUM+BAFDPgYBQz4IAUM+CgFDPgwBQz4OAUM+EAFDPhIBQz4UAUM+FgFDPhgBQz4aAUM+HAFDPh4BQz4gAUM+IgFDPiQBQz4mAUM+KAFDPioBQz4sAUM+LgFDPjABQz4yAUM+NAFDPjYBQz44AUM+OgFDPjwBQz4+AUM+AAGDPgIBgz4EAYM+BgGDPggBgz4KAYM+DAGDPg4Bgz4QAYM+EgGDPhQBgz4WAYM+GAGDPhoBgz4cAYM+HgGDPiABgz4iAYM+JAGDPiYBgz4oAYM+KgGDPiwBgz4uAYM+MAGDPjIBgz40AYM+NgGDPjgBgz46AYM+PAGDPj4Bgz4AAcM+AgHDPgQBwz4GAcM+CAHDPgoBwz4MAcM+DgHDPhABwz4SAcM+FAHDPhYBwz4YAcM+GgHDPhwBwz4eAcM+IAHDPiIBwz4kAcM+JgHDPigBwz4qAcM+LAHDPi4Bwz4wAcM+MgHDPjQBwz42AcM+OAHDPjoBwz48AcM+PgHDPgACAz4CAgM+BAIDPgYCAz4IAgM+CgIDPgwCAz4OAgM+EAIDPhICAz4UAgM+FgIDPhgCAz4aAgM+HAIDPh4CAz4gAgM+IgIDPiQCAz4mAgM+KAIDPioCAz4sAgM+LgIDPjACAz4yAgM+NAIDPjYCAz44AgM+OgIDPjwCAz4+AgM+CAJITgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }

@@ -58,13 +58,13 @@ open VG VG.AArch64 VG.AArch64.Taint VG.Impl.AesCcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Impl.AesGcm.AArch64 (mov ptr imm copyLoop minK)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ite eval_zero Others)
-open VG.Proof.CmacAes.Stream.AArch64 (upd_call)
+open VG.Proof.CmacAes.Stream.AArch64 (upd_call upd_callLe)
 open VG.Proof.AesCcm (headLen)
 
 section
-variable (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁)
+variable (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {σ₁ σ₂ : State} (E₁ : Env c σ₁)
   (E₂ : Env c σ₂) {y : Nat} (hy : y = 0 ∨ y = 96)
-include L E₁ E₂ hy
+include L hv E₁ E₂ hy
 
 /-- `updBlock y`. -/
 theorem updBlock_rel : RelCT isa (Eq2 σ₁ σ₂) (updBlock v.callee y) TT := by
@@ -72,7 +72,7 @@ theorem updBlock_rel : RelCT isa (Eq2 σ₁ σ₂) (updBlock v.callee y) TT := b
       (.block (updArgs y ++ ([ptr .x3 .x19 bO, imm .x4 1] : List Instr))) h).isSome = true := by
     rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   exact rel_seq (rel_env [] E₁ E₂ (by simp) t) (updArgs_ok L E₁ hy) (updArgs_ok L E₂ hy)
-    fun τ₁ τ₂ ⟨F₁, A₁, _⟩ ⟨F₂, A₂, _⟩ => rel_upd v A₁ A₂ (by rw [F₁.sp, F₂.sp])
+    fun τ₁ τ₂ ⟨F₁, A₁, _⟩ ⟨F₂, A₂, _⟩ => rel_upd v hv A₁ A₂ (by rw [F₁.sp, F₂.sp])
 
 /-- `absTail y`. -/
 theorem absTail_rel {P : Addr} {len : Nat} (hP₁ : Buf c σ₁ P len) (hP₂ : Buf c σ₂ P len)
@@ -83,7 +83,7 @@ theorem absTail_rel {P : Addr} {len : Nat} (hP₁ : Buf c σ₁ P len) (hP₂ : 
   refine RelCT.assoc (rel_seq (rel_env [.x23, .x24, .x13] E₁ E₂ (by agree_tac [h23₁, h23₂, h24₁, h24₂, h13₁, h13₂])
       ⟨_, by taint_decide⟩)
     (absTailPre_ok E₁ hP₁ h23₁ h24₁ h13₁ h0) (absTailPre_ok E₂ hP₂ h23₂ h24₂ h13₂ h0) fun τ₁ τ₂ a₁ a₂ => ?_)
-  exact updBlock_rel v L a₁.1 a₂.1 hy
+  exact updBlock_rel v L hv a₁.1 a₂.1 hy
 
 /-- `absorbPad y`. -/
 theorem absorbPad_rel {P : Addr} {len : Nat} (hP₁ : Buf c σ₁ P len) (hP₂ : Buf c σ₂ P len)
@@ -96,29 +96,29 @@ theorem absorbPad_rel {P : Addr} {len : Nat} (hP₁ : Buf c σ₁ P len) (hP₂ 
   have hl := hP₁.lt
   -- After the call: the environment, the string's pointer and length.
   have call : ∀ {σ τ : State}, Env c σ → Buf c σ P len → σ.gpr .x23 = P → σ.gpr .x24 = BitVec.ofNat 64 len →
-      Proof.CmacAes.Stream.AArch64.UArgs τ c.K (c.W + BitVec.ofNat 64 y) P (c.W + BitVec.ofNat 64 384) c.R
+      Proof.CmacAes.Stream.AArch64.UArgsW c.N τ c.K (c.W + BitVec.ofNat 64 y) P (c.W + BitVec.ofNat 64 384) c.R
         (len / 16) → Env c τ → Others [.x0, .x1, .x2, .x3, .x4, .x5] σ τ → τ.rd = σ.rd → τ.wr = σ.wr →
       WP isa (callUpdate v.callee) τ fun ρ => Env c ρ ∧ Buf c ρ P len ∧ ρ.gpr .x23 = P ∧
         ρ.gpr .x24 = BitVec.ofNat 64 len :=
-    fun _ hP h23 h24 U F g rd wr => WP.mono (upd_call v v.callee.name U) fun ρ h =>
+    fun _ hP h23 h24 U F g rd wr => WP.mono (upd_callLe v v.callee.name hv U) fun ρ h =>
       ⟨F.of_saved h.saved h.sp h.rd h.wr, hP.of_eq (by rw [h.rd, rd]) (by rw [h.wr, wr]),
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h23],
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h24]⟩
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h23],
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h24]⟩
   refine rel_seq (rel_env [.x23, .x24] E₁ E₂ (by agree_tac [h23₁, h23₂, h24₁, h24₂]) t)
     (absArgs_ok L E₁ hy hP₁ h23₁ h24₁) (absArgs_ok L E₂ hy hP₂ h23₂ h24₂)
     fun τ₁ τ₂ ⟨U₁, F₁, g₁, _, rd₁, wr₁⟩ ⟨U₂, F₂, g₂, _, rd₂, wr₂⟩ => ?_
-  refine rel_seq (rel_upd v U₁ U₂ (by rw [F₁.sp, F₂.sp])) (call E₁ hP₁ h23₁ h24₁ U₁ F₁ g₁ rd₁ wr₁)
+  refine rel_seq (rel_upd v hv U₁ U₂ (by rw [F₁.sp, F₂.sp])) (call E₁ hP₁ h23₁ h24₁ U₁ F₁ g₁ rd₁ wr₁)
     (call E₂ hP₂ h23₂ h24₂ U₂ F₂ g₂ rd₂ wr₂) fun ρ₁ ρ₂ ⟨G₁, B₁, x23₁, x24₁⟩ ⟨G₂, B₂, x23₂, x24₂⟩ => ?_
   refine rel_seq (rel_env [.x24] G₁ G₂ (by agree_tac [x24₁, x24₂]) ⟨_, by taint_decide⟩)
     (absMask_ok hl x24₁) (absMask_ok hl x24₂)
     fun κ₁ κ₂ ⟨x13₁, og₁, _, sp₁, rd₁', wr₁'⟩ ⟨x13₂, og₂, _, sp₂, rd₂', wr₂'⟩ => ?_
-  have H₁ : Env c κ₁ := G₁.others og₁ (by decide) sp₁ rd₁' wr₁'
-  have H₂ : Env c κ₂ := G₂.others og₂ (by decide) sp₂ rd₂' wr₂'
+  have H₁ : Env c κ₁ := G₁.others og₁ (by first | decide | omega) sp₁ rd₁' wr₁'
+  have H₂ : Env c κ₂ := G₂.others og₂ (by first | decide | omega) sp₂ rd₂' wr₂'
   refine rel_ite (eval_zero x13₁ (by omega_using [])) (eval_zero x13₂ (by omega_using [])) (fun _ => ?_) (fun hf => ?_)
   · exact rel_env [] H₁ H₂ (by simp) ⟨_, by taint_decide⟩
-  · exact absTail_rel v L H₁ H₂ hy (B₁.of_eq rd₁' wr₁') (B₂.of_eq rd₂' wr₂')
-      (by rw [og₁ _ (by decide), x23₁]) (by rw [og₂ _ (by decide), x23₂])
-      (by rw [og₁ _ (by decide), x24₁]) (by rw [og₂ _ (by decide), x24₂]) x13₁ x13₂ (of_decide_eq_false hf)
+  · exact absTail_rel v L hv H₁ H₂ hy (B₁.of_eq rd₁' wr₁') (B₂.of_eq rd₂' wr₂')
+      (by rw [og₁ _ (by first | decide | omega), x23₁]) (by rw [og₂ _ (by first | decide | omega), x23₂])
+      (by rw [og₁ _ (by first | decide | omega), x24₁]) (by rw [og₂ _ (by first | decide | omega), x24₂]) x13₁ x13₂ (of_decide_eq_false hf)
 
 /-- `aadHead y`. -/
 theorem aadHead_rel {A : Addr} {a : Nat} (hA₁ : Buf c σ₁ A a) (hA₂ : Buf c σ₂ A a) (ha0 : 0 < a)
@@ -127,7 +127,7 @@ theorem aadHead_rel {A : Addr} {a : Nat} (hA₁ : Buf c σ₁ A a) (hA₂ : Buf 
     RelCT isa (Eq2 σ₁ σ₂) (aadHead v.callee y) TT :=
   rel_assoc5 (rel_seq (rel_env [.x23, .x24] E₁ E₂ (by agree_tac [h23₁, h23₂, h24₁, h24₂]) ⟨_, by taint_decide⟩)
     (aadHeadPre_ok E₁ hA₁ ha0 h23₁ h24₁) (aadHeadPre_ok E₂ hA₂ ha0 h23₂ h24₂)
-    fun _ _ a₁ a₂ => updBlock_rel v L a₁.1 a₂.1 hy)
+    fun _ _ a₁ a₂ => updBlock_rel v L hv a₁.1 a₂.1 hy)
 
 /-- The associated data, if there is any. -/
 theorem aadPart_rel (h23₁ : σ₁.gpr .x23 = c.A) (h23₂ : σ₂.gpr .x23 = c.A)
@@ -140,11 +140,11 @@ theorem aadPart_rel (h23₁ : σ₁.gpr .x23 = c.A) (h23₂ : σ₂.gpr .x23 = c
   have h0 : c.al ≠ 0 := of_decide_eq_false hf
   have hA₁ := L.bufA E₁.perm
   have hA₂ := L.bufA E₂.perm
-  refine rel_seq (aadHead_rel v L E₁ E₂ hy hA₁ hA₂ (by omega_using [h0]) h23₁ h23₂ h24₁ h24₂)
-    (aadHead_ok v L E₁ hy hA₁ (by omega_using [h0]) h23₁ h24₁) (aadHead_ok v L E₂ hy hA₂ (by omega_using [h0]) h23₂ h24₂)
+  refine rel_seq (aadHead_rel v L hv E₁ E₂ hy hA₁ hA₂ (by omega_using [h0]) h23₁ h23₂ h24₁ h24₂)
+    (aadHead_ok v L hv E₁ hy hA₁ (by omega_using [h0]) h23₁ h24₁) (aadHead_ok v L hv E₂ hy hA₂ (by omega_using [h0]) h23₂ h24₂)
     fun τ₁ τ₂ A₁ A₂ => ?_
   have hn1 : headLen c.al ≤ c.al := by unfold headLen; omega_using []
-  exact absorbPad_rel v L A₁.env A₂.env hy ((hA₁.drop hn1).of_eq A₁.rd A₁.wr) ((hA₂.drop hn1).of_eq A₂.rd A₂.wr)
+  exact absorbPad_rel v L hv A₁.env A₂.env hy ((hA₁.drop hn1).of_eq A₁.rd A₁.wr) ((hA₂.drop hn1).of_eq A₂.rd A₂.wr)
     A₁.x23 A₂.x23 A₁.x24 A₂.x24
 
 /-- `b0 y`. -/
@@ -158,10 +158,10 @@ theorem b0_rel (S₁ : Slots c σ₁.mem) (S₂ : Slots c σ₂.mem) (h24₁ : �
   refine rel_seq (rel_env [.x24] E₁ E₂ (by agree_tac [h24₁, h24₂]) ⟨_, by taint_decide⟩)
     (flags_ok L E₁ S₁ h24₁) (flags_ok L E₂ S₂ h24₂)
     fun τ₁ τ₂ ⟨x9₁, g₁, m₁, sp₁, rd₁, wr₁⟩ ⟨x9₂, g₂, m₂, sp₂, rd₂, wr₂⟩ => ?_
-  have F₁ : Env c τ₁ := E₁.others g₁ (by decide) sp₁ rd₁ wr₁
-  have F₂ : Env c τ₂ := E₂.others g₂ (by decide) sp₂ rd₂ wr₂
+  have F₁ : Env c τ₁ := E₁.others g₁ (by first | decide | omega) sp₁ rd₁ wr₁
+  have F₂ : Env c τ₂ := E₂.others g₂ (by first | decide | omega) sp₂ rd₂ wr₂
   exact rel_seq (rel_env [] F₁ F₂ (by simp) t) (b0Seg_ok L F₁ hn₁ (by rw [m₁]; exact hc₁) x9₁ hy)
-    (b0Seg_ok L F₂ hn₂ (by rw [m₂]; exact hc₂) x9₂ hy) fun _ _ a₁ a₂ => updBlock_rel v L a₁.1 a₂.1 hy
+    (b0Seg_ok L F₂ hn₂ (by rw [m₂]; exact hc₂) x9₂ hy) fun _ _ a₁ a₂ => updBlock_rel v L hv a₁.1 a₂.1 hy
 
 /-- `mac y`. -/
 theorem mac_rel (S₁ : Slots c σ₁.mem) (S₂ : Slots c σ₂.mem) {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl)
@@ -170,22 +170,22 @@ theorem mac_rel (S₁ : Slots c σ₁.mem) (S₂ : Slots c σ₂.mem) {n₁ n₂
     RelCT isa (Eq2 σ₁ σ₂) (mac v.callee y) TT := by
   refine rel_seq (rel_env [] E₁ E₂ (by simp) ⟨_, by taint_decide⟩) (aadLd_ok E₁ S₁) (aadLd_ok E₂ S₂)
     fun τ₁ τ₂ ⟨x23₁, x24₁, g₁, m₁, sp₁, rd₁, wr₁⟩ ⟨x23₂, x24₂, g₂, m₂, sp₂, rd₂, wr₂⟩ => ?_
-  have F₁ : Env c τ₁ := E₁.others g₁ (by decide) sp₁ rd₁ wr₁
-  have F₂ : Env c τ₂ := E₂.others g₂ (by decide) sp₂ rd₂ wr₂
-  refine rel_seq (b0_rel v L F₁ F₂ hy (by rw [m₁]; exact S₁) (by rw [m₂]; exact S₂) x24₁ x24₂ hn₁ hn₂
+  have F₁ : Env c τ₁ := E₁.others g₁ (by first | decide | omega) sp₁ rd₁ wr₁
+  have F₂ : Env c τ₂ := E₂.others g₂ (by first | decide | omega) sp₂ rd₂ wr₂
+  refine rel_seq (b0_rel v L hv F₁ F₂ hy (by rw [m₁]; exact S₁) (by rw [m₂]; exact S₂) x24₁ x24₂ hn₁ hn₂
       (by rw [m₁]; exact hc₁) (by rw [m₂]; exact hc₂))
-    (b0_ok v L F₁ (by rw [m₁]; exact S₁) x24₁ hn₁ (by rw [m₁]; exact hc₁) hy)
-    (b0_ok v L F₂ (by rw [m₂]; exact S₂) x24₂ hn₂ (by rw [m₂]; exact hc₂) hy)
+    (b0_ok v L hv F₁ (by rw [m₁]; exact S₁) x24₁ hn₁ (by rw [m₁]; exact hc₁) hy)
+    (b0_ok v L hv F₂ (by rw [m₂]; exact S₂) x24₂ hn₂ (by rw [m₂]; exact hc₂) hy)
     fun κ₁ κ₂ ⟨M₁, y23₁, y24₁⟩ ⟨M₂, y23₂, y24₂⟩ => ?_
-  refine rel_seq (aadPart_rel v L M₁.env M₂.env hy (by rw [y23₁, x23₁]) (by rw [y23₂, x23₂])
+  refine rel_seq (aadPart_rel v L hv M₁.env M₂.env hy (by rw [y23₁, x23₁]) (by rw [y23₂, x23₂])
       (by rw [y24₁, x24₁]) (by rw [y24₂, x24₂]))
-    (aadPart_ok v L M₁.env hy (by rw [y23₁, x23₁]) (by rw [y24₁, x24₁]))
-    (aadPart_ok v L M₂.env hy (by rw [y23₂, x23₂]) (by rw [y24₂, x24₂])) fun ρ₁ ρ₂ P₁ P₂ => ?_
+    (aadPart_ok v L hv M₁.env hy (by rw [y23₁, x23₁]) (by rw [y24₁, x24₁]))
+    (aadPart_ok v L hv M₂.env hy (by rw [y23₂, x23₂]) (by rw [y24₂, x24₂])) fun ρ₁ ρ₂ P₁ P₂ => ?_
   refine rel_seq (rel_env [] P₁.env P₂.env (by simp) ⟨_, by taint_decide⟩) (dataArgs_ok P₁.env) (dataArgs_ok P₂.env)
     fun ω₁ ω₂ ⟨z23₁, z24₁, h₁, _, sp₁', rd₁', wr₁'⟩ ⟨z23₂, z24₂, h₂, _, sp₂', rd₂', wr₂'⟩ => ?_
-  have G₁ : Env c ω₁ := P₁.env.others h₁ (by decide) sp₁' rd₁' wr₁'
-  have G₂ : Env c ω₂ := P₂.env.others h₂ (by decide) sp₂' rd₂' wr₂'
-  exact absorbPad_rel v L G₁ G₂ hy (L.bufD G₁.perm) (L.bufD G₂.perm) z23₁ z23₂ z24₁ z24₂
+  have G₁ : Env c ω₁ := P₁.env.others h₁ (by first | decide | omega) sp₁' rd₁' wr₁'
+  have G₂ : Env c ω₂ := P₂.env.others h₂ (by first | decide | omega) sp₂' rd₂' wr₂'
+  exact absorbPad_rel v L hv G₁ G₂ hy (L.bufD G₁.perm) (L.bufD G₂.perm) z23₁ z23₂ z24₁ z24₂
 
 end
 
@@ -215,15 +215,16 @@ namespace VG.Proof.AesCcm.AArch64
 
 open VG VG.AArch64 VG.AArch64.Taint VG.Impl.AesCcm.AArch64
 open VG.Impl.AesGcm.AArch64 (save)
-open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint save_ok)
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint save_ok save_ok256 covers_prefix)
 
 /-- Two runs with the same public arguments: both from the public values of
 the first. -/
-theorem args_two {σ₁ σ₂ : State} (A₁ : Args (cxOf σ₁) (σ₁.gpr .x2) σ₁) (A₂ : Args (cxOf σ₂) (σ₂.gpr .x2) σ₂)
-    (hq : onePub σ₁ σ₂) : Args (cxOf σ₁) (σ₁.gpr .x2) σ₁ ∧ Args (cxOf σ₁) (σ₁.gpr .x2) σ₂ := by
+theorem args_two {Nw : Nat} {hNw : Nw ≤ 2176} {σ₁ σ₂ : State} (A₁ : Args (cxOf Nw hNw σ₁) (σ₁.gpr .x2) σ₁)
+    (A₂ : Args (cxOf Nw hNw σ₂) (σ₂.gpr .x2) σ₂) (hq : onePub σ₁ σ₂) :
+    Args (cxOf Nw hNw σ₁) (σ₁.gpr .x2) σ₁ ∧ Args (cxOf Nw hNw σ₁) (σ₁.gpr .x2) σ₂ := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
-  have hcx : cxOf σ₂ = cxOf σ₁ := by
-    simp only [cxOf, q0, q1, q3, q4, q5, q6, q7, qsp, qa 0 (by decide), qa 1 (by decide), qa 2 (by decide)]
+  have hcx : cxOf Nw hNw σ₂ = cxOf Nw hNw σ₁ := by
+    simp only [cxOf, q0, q1, q3, q4, q5, q6, q7, qsp, qa 0 (by first | decide | omega), qa 1 (by first | decide | omega), qa 2 (by first | decide | omega)]
   rw [hcx, ← q2] at A₂
   exact ⟨A₁, A₂⟩
 
@@ -236,7 +237,7 @@ theorem entry_rel {c : Cx} {N : Addr} {σ₁ σ₂ : State} (A₁ : Args c N σ�
         s'.gpr .x9 = c.W ∧ s'.gpr .x10 = BitVec.ofNat 64 c.tl ∧ s'.gpr .x11 = c.T ∧
         (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → s'.gpr r = σ.gpr r) ∧ s'.sp = σ.sp := fun A =>
     WP.block_append (WP.mono (ldr_ok A) fun s₁ ⟨x9₁, x10₁, x11₁, g₁, sp₁, _, _, wr₁⟩ => by
-      obtain ⟨s₂, run₂, g₂, sp₂, _, _, _⟩ := save_ok s₁ .x9 x9₁ (by rw [wr₁]; exact A.perm.w)
+      obtain ⟨s₂, run₂, g₂, sp₂, _, _, _⟩ := save_ok256 s₁ .x9 x9₁ (by rw [wr₁]; exact covers_prefix A.perm.w (by omega))
       exact WP.of_runBlock ⟨s₂, run₂, by rw [g₂, x9₁], by rw [g₂, x10₁], by rw [g₂, x11₁],
         fun r h h' h'' => by rw [g₂, g₁ r h h' h''], by rw [sp₂, sp₁]⟩)
   have qsp : σ₁.sp = σ₂.sp := by rw [A₁.sp, A₂.sp]
@@ -285,7 +286,7 @@ namespace VG.Proof.AesCcm.AArch64
 open VG VG.AArch64 VG.AArch64.Taint VG.Impl.AesCcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Impl.AesGcm.AArch64 (mov ptr imm)
-open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ite rel_ctr eval_zero eval_nonzero Others ctr_call CtrCall)
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ite rel_ctr eval_zero eval_nonzero Others ctr_call ctr_callLe CtrCall)
 open VG.Proof.Aes.AArch64 (Ctr32Impl)
 
 /-- Two runs from any states related by `P`, from those of each pair. -/
@@ -300,8 +301,8 @@ theorem rel_post {σ₁ σ₂ : State} {c : Prog isa} {F₁ F₂ : State → Pro
     (fun _ _ h => h) fun _ _ h => h.2
 
 section
-variable (v : Ctr32Impl) {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
-include L E₁ E₂
+variable (v : Ctr32Impl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
+include L hv E₁ E₂
 
 /-- `tag y`. -/
 theorem tag_rel {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl) (hn₂ : n₂.length = c.nl)
@@ -313,7 +314,7 @@ theorem tag_rel {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl) (hn₂ : n�
       true := by
     rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   exact rel_seq (rel_env [] E₁ E₂ (by simp) t) (tagArgs_ok L E₁ hn₁ hc₁ hy) (tagArgs_ok L E₂ hn₂ hc₂ hy)
-    fun τ₁ τ₂ ⟨F₁, C₁, _⟩ ⟨F₂, C₂, _⟩ => rel_ctr v C₁ C₂ (by rw [F₁.sp, F₂.sp])
+    fun τ₁ τ₂ ⟨F₁, C₁, _⟩ ⟨F₂, C₂, _⟩ => rel_ctrLe v hv C₁ C₂ (by rw [F₁.sp, F₂.sp])
 
 /-- `ctrTail`. -/
 theorem ctrTail_rel {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl) (hn₂ : n₂.length = c.nl)
@@ -331,24 +332,24 @@ theorem ctrTail_rel {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl) (hn₂ 
   -- After the call: the environment, the pointer and the length of the last bytes.
   have call : ∀ {σ τ : State}, σ.gpr .x23 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) →
       σ.gpr .x26 = BitVec.ofNat 64 (c.n % 16) → Env c τ →
-      CtrCall τ c.K (c.W + BitVec.ofNat 64 64) (c.W + BitVec.ofNat 64 80) (c.W + BitVec.ofNat 64 384) c.R 1 →
+      CtrCall τ c.K (c.W + BitVec.ofNat 64 64) (c.W + BitVec.ofNat 64 80) (c.W + BitVec.ofNat 64 384) c.R 1 c.N →
       Others [.x0, .x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11] σ τ →
       WP isa (callCtr v.callee) τ fun ρ => Env c ρ ∧ ρ.gpr .x23 = c.D + BitVec.ofNat 64 (16 * (c.n / 16)) ∧
         ρ.gpr .x26 = BitVec.ofNat 64 (c.n % 16) :=
-    fun h23 h26 F C g => WP.mono (ctr_call v C) fun ρ h =>
-      ⟨F.of_saved h.saved h.sp h.rd h.wr, by rw [h.saved _ (by decide) (by decide), g _ (by decide), h23],
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h26]⟩
+    fun h23 h26 F C g => WP.mono (ctr_callLe v hv C) fun ρ h =>
+      ⟨F.of_saved h.saved h.sp h.rd h.wr, by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h23],
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h26]⟩
   refine rel_seq (rel_env [.x25] E₁ E₂ (by agree_tac [h25₁, h25₂]) ⟨_, by taint_decide⟩)
     (tailSetup_ok L hn₁ E₁ hc₁ hj h25₁) (tailSetup_ok L hn₂ E₂ hc₂ hj h25₂)
     fun τ₁ τ₂ ⟨F₁, C₁, _, _, _, g₁, _⟩ ⟨F₂, C₂, _, _, _, g₂, _⟩ => ?_
-  refine rel_seq (rel_ctr v C₁ C₂ (by rw [F₁.sp, F₂.sp])) (call h23₁ h26₁ F₁ C₁ g₁) (call h23₂ h26₂ F₂ C₂ g₂)
+  refine rel_seq (rel_ctrLe v hv C₁ C₂ (by rw [F₁.sp, F₂.sp])) (call h23₁ h26₁ F₁ C₁ g₁) (call h23₂ h26₂ F₂ C₂ g₂)
     fun ρ₁ ρ₂ ⟨G₁, x23₁, x26₁⟩ ⟨G₂, x23₂, x26₂⟩ => ?_
   exact rel_env [.x23, .x26] G₁ G₂ (by agree_tac [x23₁, x23₂, x26₁, x26₂]) ⟨_, by taint_decide⟩
 
 end
 
 /-- One chunk, from two states after the same number of blocks. -/
-theorem chunk_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl)
+theorem chunk_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl)
     (hn₂ : n₂.length = c.nl) {s₁ s₂ : State}
     (hc₁ : bytesAt s₁.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n₁ 0)
     (hc₂ : bytesAt s₂.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n₂ 0) {b : Nat} {σ₁ σ₂ : State}
@@ -363,47 +364,47 @@ theorem chunk_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) {n₁ n₂ : List Byte} (
   rw [← hk] at x26₁ x26₂
   have hk1 : 1 ≤ k := by rw [hk]; have := Nat.mod_lt (1 + b) (show 0 < 2 ^ 32 by decide); omega_arith
   have hkb : b + k ≤ c.n / 16 := by rw [hk]; omega_arith
-  have F₁ : Env c τ₁ := I₁.env.others g₁ (by decide) sp₁ rd₁ wr₁
-  have F₂ : Env c τ₂ := I₂.env.others g₂ (by decide) sp₂ rd₂ wr₂
+  have F₁ : Env c τ₁ := I₁.env.others g₁ (by first | decide | omega) sp₁ rd₁ wr₁
+  have F₂ : Env c τ₂ := I₂.env.others g₂ (by first | decide | omega) sp₂ rd₂ wr₂
   have c0 : ∀ {n : List Byte} {s σ τ : State}, CtrInv c n s b σ → τ.mem = σ.mem →
       bytesAt s.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n 0 →
       bytesAt τ.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n 0 := fun I hm hc => by
-    rw [hm, Proof.AesGcm.AArch64.bytesAt_frame I.frame (ctrR_disj L (.inl (by decide))) (by decide), hc]
-  have y23₁ : τ₁.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) := by rw [g₁ _ (by decide), I₁.x23]
-  have y23₂ : τ₂.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) := by rw [g₂ _ (by decide), I₂.x23]
-  have y25₁ : τ₁.gpr .x25 = BitVec.ofNat 64 (1 + b) := by rw [g₁ _ (by decide), I₁.x25]
-  have y25₂ : τ₂.gpr .x25 = BitVec.ofNat 64 (1 + b) := by rw [g₂ _ (by decide), I₂.x25]
-  have y24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) := by rw [g₁ _ (by decide), I₁.x24]
-  have y24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) := by rw [g₂ _ (by decide), I₂.x24]
+    rw [hm, Proof.AesGcm.AArch64.bytesAt_frame I.frame (ctrR_disj L (.inl (by first | decide | omega))) (by first | decide | omega), hc]
+  have y23₁ : τ₁.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) := by rw [g₁ _ (by first | decide | omega), I₁.x23]
+  have y23₂ : τ₂.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) := by rw [g₂ _ (by first | decide | omega), I₂.x23]
+  have y25₁ : τ₁.gpr .x25 = BitVec.ofNat 64 (1 + b) := by rw [g₁ _ (by first | decide | omega), I₁.x25]
+  have y25₂ : τ₂.gpr .x25 = BitVec.ofNat 64 (1 + b) := by rw [g₂ _ (by first | decide | omega), I₂.x25]
+  have y24₁ : τ₁.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) := by rw [g₁ _ (by first | decide | omega), I₁.x24]
+  have y24₂ : τ₂.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) := by rw [g₂ _ (by first | decide | omega), I₂.x24]
   refine rel_seq (rel_env [.x23, .x25, .x26] F₁ F₂ (by agree_tac [y23₁, y23₂, y25₁, y25₂, x26₁, x26₂])
       ⟨_, by taint_decide⟩)
     (setup_ok L hn₁ hkb hk1 F₁ (c0 I₁ m₁ hc₁) y23₁ y25₁ x26₁) (setup_ok L hn₂ hkb hk1 F₂ (c0 I₂ m₂ hc₂) y23₂ y25₂ x26₂)
     fun ρ₁ ρ₂ ⟨G₁, C₁, _, _, h₁, _⟩ ⟨G₂, C₂, _, _, h₂, _⟩ => ?_
   have call : ∀ {τ ρ : State}, τ.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) → τ.gpr .x25 = BitVec.ofNat 64 (1 + b) →
       τ.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) → τ.gpr .x26 = BitVec.ofNat 64 k → Env c ρ →
-      CtrCall ρ c.K (c.W + BitVec.ofNat 64 64) (c.D + BitVec.ofNat 64 (16 * b)) (c.W + BitVec.ofNat 64 384) c.R k →
+      CtrCall ρ c.K (c.W + BitVec.ofNat 64 64) (c.D + BitVec.ofNat 64 (16 * b)) (c.W + BitVec.ofNat 64 384) c.R k c.N →
       Others [.x0, .x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11] τ ρ →
       WP isa (callCtr v.callee) ρ fun ω => Env c ω ∧ ω.gpr .x23 = c.D + BitVec.ofNat 64 (16 * b) ∧
         ω.gpr .x25 = BitVec.ofNat 64 (1 + b) ∧ ω.gpr .x24 = BitVec.ofNat 64 (c.n / 16 - b) ∧
         ω.gpr .x26 = BitVec.ofNat 64 k :=
-    fun h23 h25 h24 h26 G C g => WP.mono (ctr_call v C) fun ω h =>
-      ⟨G.of_saved h.saved h.sp h.rd h.wr, by rw [h.saved _ (by decide) (by decide), g _ (by decide), h23],
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h25],
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h24],
-        by rw [h.saved _ (by decide) (by decide), g _ (by decide), h26]⟩
-  refine rel_seq (rel_ctr v C₁ C₂ (by rw [G₁.sp, G₂.sp])) (call y23₁ y25₁ y24₁ x26₁ G₁ C₁ h₁)
+    fun h23 h25 h24 h26 G C g => WP.mono (ctr_callLe v hv C) fun ω h =>
+      ⟨G.of_saved h.saved h.sp h.rd h.wr, by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h23],
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h25],
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h24],
+        by rw [h.saved _ (by first | decide | omega) (by first | decide | omega), g _ (by first | decide | omega), h26]⟩
+  refine rel_seq (rel_ctrLe v hv C₁ C₂ (by rw [G₁.sp, G₂.sp])) (call y23₁ y25₁ y24₁ x26₁ G₁ C₁ h₁)
     (call y23₂ y25₂ y24₂ x26₂ G₂ C₂ h₂) fun ω₁ ω₂ ⟨H₁, z23₁, z25₁, z24₁, z26₁⟩ ⟨H₂, z23₂, z25₂, z24₂, z26₂⟩ => ?_
   exact rel_env [.x23, .x24, .x25, .x26] H₁ H₂ (by agree_tac [z23₁, z23₂, z24₁, z24₂, z25₁, z25₂, z26₁, z26₂])
     ⟨_, by taint_decide⟩
 
 /-- `ctr`. -/
-theorem ctr_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
+theorem ctr_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂)
     {n₁ n₂ : List Byte} (hn₁ : n₁.length = c.nl) (hn₂ : n₂.length = c.nl)
     (hc₁ : bytesAt σ₁.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n₁ 0)
     (hc₂ : bytesAt σ₂.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n₂ 0) :
     RelCT isa (Eq2 σ₁ σ₂) (ctr v.callee) TT := by
   have hn64 := L.n_lt
-  refine RelCT.assoc (rel_seq ?_ (ctrHead_ok v L hn₁ E₁ hc₁) (ctrHead_ok v L hn₂ E₂ hc₂) fun τ₁ τ₂ I₁ I₂ => ?_)
+  refine RelCT.assoc (rel_seq ?_ (ctrHead_ok v L hv hn₁ E₁ hc₁) (ctrHead_ok v L hv hn₂ E₂ hc₂) fun τ₁ τ₂ I₁ I₂ => ?_)
   · refine rel_seq (rel_env [] E₁ E₂ (by simp) ⟨_, by taint_decide⟩) (ctrHeadBlk_ok L (nonce := n₁) E₁)
       (ctrHeadBlk_ok L (nonce := n₂) E₂) fun τ₁ τ₂ I₁ I₂ => ?_
     have e₁ := eval_zero (a := c.n / 16) (by rw [I₁.x24, Nat.sub_zero]) (by omega_arith)
@@ -415,8 +416,8 @@ theorem ctr_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁
         CtrInv c n₁ σ₁ j a ∧ CtrInv c n₂ σ₂ j b) (fun m => ?_) (c.n / 16 - 0)).mono
       (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨0, rfl, by omega_arith, I₁, I₂⟩) fun _ _ h => h
     refine rel_of_eq2 fun a b ⟨j, hm, hj, J₁, J₂⟩ => ?_
-    refine (rel_post (chunk_rel v L hn₁ hn₂ hc₁ hc₂ J₁ J₂ hj) (chunk_ok v L hn₁ hc₁ J₁ hj)
-      (chunk_ok v L hn₂ hc₂ J₂ hj)).mono (fun _ _ h => h) fun a' b' ⟨⟨k, hk, hk1, hkb, K₁⟩, ⟨k', hk', _, _, K₂⟩⟩ => ?_
+    refine (rel_post (chunk_rel v L hv hn₁ hn₂ hc₁ hc₂ J₁ J₂ hj) (chunk_ok v L hv hn₁ hc₁ J₁ hj)
+      (chunk_ok v L hv hn₂ hc₂ J₂ hj)).mono (fun _ _ h => h) fun a' b' ⟨⟨k, hk, hk1, hkb, K₁⟩, ⟨k', hk', _, _, K₂⟩⟩ => ?_
     have e : k = k' := by rw [hk, hk']
     subst e
     have ev₁ := eval_nonzero (r := .x24) (a := c.n / 16 - (j + k)) K₁.x24 (by omega_arith)
@@ -426,16 +427,16 @@ theorem ctr_rel (v : Ctr32Impl) {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁
     · rw [ev₁] at ht; simp at ht; omega_arith
   · refine rel_seq (rel_env [] I₁.env I₂.env (by simp) ⟨_, by taint_decide⟩) (lastLen_ok L I₁.env) (lastLen_ok L I₂.env)
       fun ρ₁ ρ₂ ⟨x26₁, g₁, m₁, sp₁, rd₁, wr₁⟩ ⟨x26₂, g₂, m₂, sp₂, rd₂, wr₂⟩ => ?_
-    have F₁ : Env c ρ₁ := I₁.env.others g₁ (by decide) sp₁ rd₁ wr₁
-    have F₂ : Env c ρ₂ := I₂.env.others g₂ (by decide) sp₂ rd₂ wr₂
+    have F₁ : Env c ρ₁ := I₁.env.others g₁ (by first | decide | omega) sp₁ rd₁ wr₁
+    have F₂ : Env c ρ₂ := I₂.env.others g₂ (by first | decide | omega) sp₂ rd₂ wr₂
     refine rel_ite (eval_zero x26₁ (by omega_arith)) (eval_zero x26₂ (by omega_arith)) (fun _ => ?_) (fun _ => ?_)
     · exact rel_env [] F₁ F₂ (by simp) ⟨_, by taint_decide⟩
     · have c0 : ∀ {n : List Byte} {s σ τ : State}, CtrInv c n s (c.n / 16) σ → τ.mem = σ.mem →
           bytesAt s.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n 0 →
           bytesAt τ.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock n 0 := fun I hm hc => by
-        rw [hm, Proof.AesGcm.AArch64.bytesAt_frame I.frame (ctrR_disj L (.inl (by decide))) (by decide), hc]
-      exact ctrTail_rel v L F₁ F₂ hn₁ hn₂ (c0 I₁ m₁ hc₁) (c0 I₂ m₂ hc₂)
-        (by rw [g₁ _ (by decide), I₁.x23]) (by rw [g₂ _ (by decide), I₂.x23])
-        (by rw [g₁ _ (by decide), I₁.x25]) (by rw [g₂ _ (by decide), I₂.x25]) x26₁ x26₂
+        rw [hm, Proof.AesGcm.AArch64.bytesAt_frame I.frame (ctrR_disj L (.inl (by first | decide | omega))) (by first | decide | omega), hc]
+      exact ctrTail_rel v L hv F₁ F₂ hn₁ hn₂ (c0 I₁ m₁ hc₁) (c0 I₂ m₂ hc₂)
+        (by rw [g₁ _ (by first | decide | omega), I₁.x23]) (by rw [g₂ _ (by first | decide | omega), I₂.x23])
+        (by rw [g₁ _ (by first | decide | omega), I₁.x25]) (by rw [g₂ _ (by first | decide | omega), I₂.x25]) x26₁ x26₂
 
 end VG.Proof.AesCcm.AArch64
