@@ -945,7 +945,6 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
-  n2 := by decide
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
