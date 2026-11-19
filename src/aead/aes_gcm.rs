@@ -38,10 +38,14 @@ use crate::arch::dispatch::gcm::{
 use crate::align::CacheAligned;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "riscv64"
+)))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
-};
+use crate::arch::dispatch::gcm::{vg_aes_gcm_open_auto, vg_aes_gcm_seal_gather_auto};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_prepared_auto, vg_aes_gcm_open_to_prepared_auto, vg_aes_gcm_prepare_auto,
@@ -59,13 +63,13 @@ use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stre
 #[cfg(not(target_arch = "riscv64"))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_finish_auto, vg_aes_gcm_stream_verify_auto};
 // On RISC-V, a key computes the bitsliced form of its key context when it is
-// created, which the streaming functions read instead of computing it at
-// every call.
+// created, which the streaming functions and `seal` read instead of computing
+// it at every call.
 #[cfg(target_arch = "riscv64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_bitslice_auto, vg_aes_gcm_stream_decrypt_bitsliced_auto,
-    vg_aes_gcm_stream_encrypt_bitsliced_auto, vg_aes_gcm_stream_finish_bitsliced_auto,
-    vg_aes_gcm_stream_verify_bitsliced_auto,
+    vg_aes_gcm_bitslice_auto, vg_aes_gcm_seal_bitsliced_auto,
+    vg_aes_gcm_stream_decrypt_bitsliced_auto, vg_aes_gcm_stream_encrypt_bitsliced_auto,
+    vg_aes_gcm_stream_finish_bitsliced_auto, vg_aes_gcm_stream_verify_bitsliced_auto,
 };
 use crate::error::InvalidKeyLength;
 #[cfg(not(target_arch = "x86_64"))]
@@ -312,8 +316,9 @@ impl AesGcm {
     }
 
     /// `vg_aes_gcm_seal` (on x86-64, `vg_aes_gcm_seal_prepared`; on
-    /// AArch64, `vg_aes_gcm_seal_with_powers`) of `data` in place, whose
-    /// lengths the caller checked.
+    /// AArch64, `vg_aes_gcm_seal_with_powers`; on RISC-V,
+    /// `vg_aes_gcm_seal_bitsliced`) of `data` in place, whose lengths the
+    /// caller checked.
     #[inline(always)]
     fn seal(&self, dit: crate::dit::Dit<'_>, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         let mut tag: Block = [0; 16];
@@ -322,7 +327,9 @@ impl AesGcm {
         // followed on x86-64 by the powers `vg_aes_gcm_prepare` wrote for the
         // same key (`AesGcm::new`), valid for reads of 1032 bytes in all,
         // and on AArch64 next to the powers `vg_aes_gcm_store_powers` wrote
-        // (`self.powers`, 128 bytes); `nonce` and `aad` are valid for reads
+        // (`self.powers`, 128 bytes), and on RISC-V next to its bitsliced
+        // form `vg_aes_gcm_bitslice` wrote (`self.bk`, 1248 bytes, read
+        // only); `nonce` and `aad` are valid for reads
         // and `data` for reads and writes of their lengths, and `tag` (a
         // local) for reads and writes of 16 bytes. They are distinct objects
         // (`data` a unique borrow), so the writable ones overlap nothing
@@ -356,7 +363,25 @@ impl AesGcm {
                 &mut tag,
                 &self.powers.0,
             );
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(target_arch = "riscv64")]
+            vg_aes_gcm_seal_bitsliced_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+                &self.bk.0,
+            );
+            #[cfg(not(any(
+                target_arch = "x86_64",
+                target_arch = "aarch64",
+                target_arch = "riscv64"
+            )))]
             vg_aes_gcm_seal_auto(
                 dit,
                 self.key(),

@@ -424,7 +424,7 @@ theorem sealBsBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp
       hD.of_eq kp.rd kp.wr kp.sp, by rw [kp.mem]; exact sa, by rw [kp.mem]; exact sd⟩,
       (g .s9 (by decide) (by decide)).trans hT.2.1, by rw [kp.wr]; exact hT.2.2.1,
       hT.2.2.2.of_eq kp.rd kp.wr kp.sp, by simp only [OneAbs, kp.mem]; exact hab,
-      by rw [kp.mem]; exact hbk.of_eq kp.rd kp.wr⟩ <;> simp only [setS7, reduceCtorEq, ↓reduceIte] <;> assumption
+      by rw [kp.mem]; exact hbk.of_eq kp.rd kp.wr⟩ <;> simp only [setS7, reduceCtorEq, ↓reduceIte] <;> with_reducible assumption
   -- `oneCryptB true false`
   refine CT.seq (J := fun s => OneIK c W sp R kb Ad A D Ln s ∧ s.gpr .s9 = T ∧ Covers [⟨T, 16⟩] s.wr ∧
       OneAbs c W A s ∧ BkIn kb c (W + BitVec.ofNat 64 16) W sp R s.mem D D Ln.toNat s)
