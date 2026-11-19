@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Bitslice
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamBs
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -59,6 +60,7 @@ def artifacts : List Artifact := [
   Spec.Gcm.streamEncryptBitslicedApi.artifact RISCV64.target streamEncryptBsReg,
   Spec.Gcm.streamDecryptBitslicedApi.artifact RISCV64.target streamDecryptBsReg,
   Spec.Gcm.streamFinishBitslicedApi.artifact RISCV64.target streamFinishBsReg,
-  Spec.Gcm.streamVerifyBitslicedApi.artifact RISCV64.target streamVerifyBsReg]
+  Spec.Gcm.streamVerifyBitslicedApi.artifact RISCV64.target streamVerifyBsReg,
+  Spec.Gcm.sealBitslicedApi.artifact RISCV64.target sealBsReg]
 
 end VG.Artifacts.AesGcm.RISCV64

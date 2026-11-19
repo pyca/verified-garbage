@@ -50,6 +50,11 @@ def streamVerifyBitslicedRoundsPost (pb : Nat) : streamVerifyBitslicedSig.Post p
   fun ctx rounds state aadLen textLen tag tagLen _bk =>
     streamVerifyRoundsPost pb ctx rounds state aadLen textLen tag tagLen
 
+/-- `sealRoundsPost`, which does not depend on `bk`. -/
+def sealBitslicedRoundsPost (pb : Nat) : sealBitslicedSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen data len tag _bk =>
+    sealRoundsPost pb ctx rounds nonce nonceLen aad aadLen data len tag
+
 def streamEncryptBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptBitslicedSig.contract A (pre := streamTextBitslicedPre A.ptrBits)
     (post := streamEncryptBitslicedRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
@@ -65,6 +70,10 @@ def streamFinishBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0)
 def streamVerifyBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamVerifyBitslicedSig.contract A (pre := streamVerifyBitslicedPre A.ptrBits)
     (post := streamVerifyBitslicedRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
+
+def sealBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealBitslicedSig.contract A (pre := sealBitslicedPre A.ptrBits)
+    (post := sealBitslicedRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-! ## With the working space as an argument
 
@@ -119,6 +128,20 @@ def streamVerifyBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0
       streamVerifyBitslicedRoundsPost A.ptrBits ctx rounds state aadLen textLen tag tagLen bk)
     (writeArgs := true) (stack := stack)
 
+def sealBitslicedScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("data", .slice true .u8 "len"), ("tag", .array true .u8 16), ("bk", .array false .u64 156),
+    ("work", .array true .u64 320)]
+
+def sealBitslicedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  sealBitslicedScratchSig.contract A
+    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag bk _work =>
+      sealBitslicedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag bk)
+    (post := fun ctx rounds nonce nonceLen aad aadLen data len tag bk _work =>
+      sealBitslicedRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag bk)
+    (writeArgs := true) (stack := stack)
+
 /-! ## With the key -/
 
 theorem streamEncryptBitsliced_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
@@ -140,6 +163,11 @@ theorem streamVerifyBitsliced_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa
     (h : Verified T c (streamVerifyBitslicedRoundsContract A stack)) :
     Verified T c (Spec.Gcm.streamVerifyBitslicedContract A stack) :=
   h.post_mono fun ctx rounds st al tl tag tagLen _ => streamVerifyPost_imp _ ctx rounds st al tl tag tagLen
+
+theorem sealBitsliced_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (sealBitslicedRoundsContract A stack)) :
+    Verified T c (Spec.Gcm.sealBitslicedContract A stack) :=
+  h.post_mono fun ctx rounds n nl a al d l tag _ => sealPost_imp _ ctx rounds n nl a al d l tag
 
 /-! ## Locality -/
 
@@ -533,5 +561,62 @@ theorem streamVerifyBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (strea
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (streamVerifyBitslicedPost pb) _ m m₂ r
   dsimp only [Curry.apply, streamVerifyBitslicedPost, streamVerifyPost, ArgWord.ofRaw] at h ⊢
   exact h
+
+/-- The ten words of the `_bitsliced` `seal`: the plain function's nine, then `bk`. -/
+theorem seal_words {α : Type} {vs : List α} (hlen : vs.length = 10) :
+    ∃ x0 x1 x2 x3 x4 x5 x6 x7 x8 bk, vs = [x0, x1, x2, x3, x4, x5, x6, x7, x8, bk] := by
+  match vs, hlen with
+  | [x0, x1, x2, x3, x4, x5, x6, x7, x8, bk], _ => exact ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, bk, rfl⟩
+
+theorem sealBitslicedPre_local : ∀ vs m₁ m₂, vs.length = (sealBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealBitslicedSig.words pb) (sealBitslicedPre pb) vs m₁ →
+      Curry.apply (sealBitslicedSig.words pb) (sealBitslicedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, bk, rfl⟩ := seal_words hlen
+  obtain ⟨h₁, h₂⟩ := h
+  refine ⟨sealPre_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8] m₁ m₂ rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h₁, ?_⟩
+  simp only [sealBitslicedSig, sealSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  exact ctxSlicedRepr_congr (agree_of hb.2.2.2.2.2) (agree_of hb.1) h₂
+
+theorem sealBitslicedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealBitslicedSig.words pb) (sealBitslicedRoundsPost pb) vs m₁ m' r →
+      Curry.apply (sealBitslicedSig.words pb) (sealBitslicedRoundsPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, bk, rfl⟩ := seal_words hlen
+  exact sealPost_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8] m₁ m₂ m' r rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h
+
+theorem sealBitslicedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (sealBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealBitslicedSig.words pb) (sealBitslicedRoundsPost pb) vs m m₁ r →
+      Curry.apply (sealBitslicedSig.words pb) (sealBitslicedRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, bk, rfl⟩ := seal_words hlen
+  exact sealPostOut_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8] m m₁ m₂ r rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h
+
+theorem sealBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (sealBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs sealBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (sealBitslicedSig.words pb) (sealBitslicedPost pb) vs m m₁ r →
+      Curry.apply (sealBitslicedSig.words pb) (sealBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, len, tag, bk, rfl⟩ := seal_words hlen
+  simp only [sealBitslicedSig, sealSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr] (sealBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr] (sealBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, sealBitslicedPost, sealPost, ArgWord.ofRaw] at h ⊢
+  intro key hk
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [h key hk, bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := x6) (n := (len.setWidth pb).toNat) fun i hi =>
+      agree_of hb.2.2.2.1 i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]),
+    bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := tag) (n := 16) fun i hi =>
+      agree_of hb.2.2.2.2.1 i (by omega_using [hi])]
 
 end VG.Proof.AesGcm

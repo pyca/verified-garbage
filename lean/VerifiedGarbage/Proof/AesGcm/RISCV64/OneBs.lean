@@ -22,6 +22,49 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesGcm.Bitsliced
+public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
+import all Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Contract
+meta import VerifiedGarbage.Impl.AesGcm.RISCV64
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.OneEntry
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamCrypt
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTSeal
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.CTBase
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.TextAbsorb
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.J0
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Tag
+meta import VerifiedGarbage.Proof.Gcm.Compose
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+meta import VerifiedGarbage.Proof.AesGcm.Bitsliced
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+meta import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Framework.SigEval
+meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratchArgs
+meta import VerifiedGarbage.Impl.StackScratch.RISCV64
+meta import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
 
 /-!
 # AES-GCM on RISC-V: the one-shot functions with the round keys bitsliced
@@ -485,5 +528,115 @@ theorem sealBs_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealBsRISCV
   · have := sealBsEntry_wp hs
     rw [ea0, ea1, ea2, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
     exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT, hOD, k8, i8, hbk⟩ => ⟨⟨hO, h20, hT, hOD⟩, h24, h25, k8, i8, hbk⟩
+
+/-! ## The contracts -/
+
+/-- Memory holding the stack arguments at `0x9000`: `tag` (`0x5000`), `bk`
+(`0x7000`) and the working space (`0x6000`). -/
+def sealBsSatMem : Mem := fun a =>
+  bif Nat.beq a.toNat 0x9001 then 0x50 else bif Nat.beq a.toNat 0x9009 then 0x70 else
+    bif Nat.beq a.toNat 0x9011 then 0x60 else 0
+
+theorem sealBsSatMem_zero {p : Addr} {n : Nat} (h : p.toNat + n ≤ 0x9001) :
+    ∀ i < n, sealBsSatMem (p + BitVec.ofNat 64 i) = 0 := fun i hi => by
+  obtain e : (p + BitVec.ofNat 64 i).toNat = p.toNat + i := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h, hi]
+  obtain hb : ∀ k, 0x9001 ≤ k → Nat.beq (p.toNat + i) k = false := fun k hk => by
+    rw [← Bool.not_eq_true, Nat.beq_eq]; omega_using [h, hi, hk]
+  simp only [sealBsSatMem, e, hb _ (Nat.le_refl _), hb 0x9009 (by decide), hb 0x9011 (by decide), Bool.cond_false]
+
+/-- `sealBsPre`, with the buffers at `0x1000` (`ctx`), `0x2000` (no nonce),
+`0x3000` (no additional data), `0x4000` (no data), and the stack arguments'. -/
+def sealBsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x2000 | .a4 => 0x3000 | .a6 => 0x4000 | _ => 0
+  sp := 0x9000
+  mem := sealBsSatMem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x7000, 1248⟩, ⟨0x9000, 24⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
+
+theorem sealBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target sealBs (Proof.AesGcm.sealBitslicedScratchContract RISCV64.abi 2048) :=
+  Verified.of_correct (fun _ hs => sealBs_wp hs) sealBs_ct
+    { pre := by
+        sig_implies_pre [Proof.AesGcm.sealBitslicedScratchContract, Proof.AesGcm.sealBitslicedScratchSig,
+          Spec.Gcm.sealBitslicedPre, Spec.Gcm.sealPre, sealBsRISCV64, sealBsPre, onePub, args, rounds, RISCV64.abi,
+          RISCV64.argRegs, stackBelow, stkOk, stkAll, and_true, stackArg, stackArgAddr, List.getD, List.range,
+          List.range.loop]
+      post := by
+        sig_implies_post [Proof.AesGcm.sealBitslicedScratchContract, Proof.AesGcm.sealBitslicedScratchSig,
+          Proof.AesGcm.sealBitslicedRoundsPost, Proof.AesGcm.sealRoundsPost, sealBsRISCV64, sealRISCV64, RISCV64.abi,
+          RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      pub := by
+        sig_implies_pub [Proof.AesGcm.sealBitslicedScratchContract, Proof.AesGcm.sealBitslicedScratchSig,
+          sealBsRISCV64, sealBsPre, onePub, args, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD,
+          List.range, List.range.loop]
+      sat := ⟨sealBsSat, by
+        sig_pre [Proof.AesGcm.sealBitslicedScratchContract, Proof.AesGcm.sealBitslicedScratchSig,
+          Spec.Gcm.sealBitslicedPre, Spec.Gcm.sealPre, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr,
+          List.getD, List.range, List.range.loop, sealBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (sealBsSatMem_zero (by decide)) (sealBsSatMem_zero (by decide))⟩ }
+
+/-! ## With the working space on the stack
+
+As the plain `seal`'s (`Verified.lean`): its arguments fill `a0`–`a7`, and
+`tag` and `bk` arrive on the stack, which the frame copies, followed by the
+working space's address (`Verified.stackScratchArgs`). -/
+
+def sealBsFrameSat : State :=
+  { sealBsSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x7000, 1248⟩, ⟨0x9000, 16⟩],
+                   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩] }
+
+theorem sealBsFrameSat_pre : ∃ s, (Proof.AesGcm.sealBitslicedRoundsContract RISCV64.abi 4640).pre s := by
+  refine ⟨sealBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.sealBitslicedRoundsContract, Spec.Gcm.sealBitslicedSig, Spec.Gcm.sealSig,
+    Spec.Gcm.bitslicedParam, Spec.Gcm.sealBitslicedPre, Spec.Gcm.sealPre, Proof.AesGcm.sealBitslicedRoundsPost,
+    RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop, sealBsFrameSat,
+    sealBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (sealBsSatMem_zero (by decide)) (sealBsSatMem_zero (by decide))
+
+theorem sealBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 sealBs)
+      (Proof.AesGcm.sealBitslicedRoundsContract RISCV64.abi 4640) :=
+  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.sealBitslicedSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.sealBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.sealBitslicedRoundsPost RISCV64.abi.ptrBits)
+    (wa := true) (stack := 2048) (bytes := 2592) (m := 2) sealBs_verified (by decide) (by decide)
+    (Proof.AesGcm.sealBitslicedPre_local _) (Proof.AesGcm.sealBitslicedPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealBitslicedPostOut_local _ vs m m₁ m₂ r hl)
+    sealBsFrameSat_pre
+
+/-! ## Without secret residue
+
+As the streaming functions' (`StreamBs.lean`): followed by the clearing of
+the caller-saved registers and of the doublewords of its stack that the
+residue analysis finds may differ between two runs. -/
+
+open VG.RISCV64.Scrub
+
+theorem sealBsOut :
+    PostOut (Spec.Gcm.sealBitslicedContract RISCV64.abi 4640) (Spec.Gcm.sealBitslicedSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.sealBitslicedPost_out _)
+
+/-- `Spec.Gcm.sealBitslicedApi`. -/
+def sealBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.sealBitslicedApi RISCV64.target :=
+  withScrubSel {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs
+      verified := Proof.AesGcm.sealBitsliced_keyed sealBs_framed }
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])]
+    sealBsOut
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb sealBsOut (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs) 4640 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 end VG.Proof.AesGcm.RISCV64
