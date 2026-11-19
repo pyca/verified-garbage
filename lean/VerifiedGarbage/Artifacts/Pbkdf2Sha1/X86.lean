@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
@@ -26,12 +27,6 @@ namespace VG.Artifacts.Pbkdf2Sha1.X86
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha1.X86.variants.flatMap fun (v : Proof.Sha1.X86.Variants.Backend) => [
-    Spec.Hmac.sha1I.pbkdf2Api.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I) 7 v.F.pbkdf2
-      verified := .unscrubbed (Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha1_verified v)
-        Proof.Pbkdf2.Whole.X86.sha1_pbkFrameSat
-        (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha1_stack v))
-      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2Sp }]
+    Spec.Hmac.sha1I.pbkdf2Api.artifact X86.target (Proof.Pbkdf2.Whole.X86.Scrub.sha1Reg v)]
 
 end VG.Artifacts.Pbkdf2Sha1.X86
