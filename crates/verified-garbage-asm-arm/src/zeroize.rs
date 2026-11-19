@@ -60,3 +60,7 @@ b 27f
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_zeroize_core.rs"]
+pub(crate) mod vg_zeroize_core;

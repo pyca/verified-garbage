@@ -35,7 +35,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #2176
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -44,7 +44,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -80,7 +80,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #2176
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -89,7 +89,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 

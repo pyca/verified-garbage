@@ -28,7 +28,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #32768
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -37,7 +37,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_mlkem768_keygen_body = sym super::mlkem768::vg_mlkem768_keygen_body::vg_mlkem768_keygen_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -73,7 +73,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #32768
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -82,7 +82,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_mlkem768_encaps_body = sym super::mlkem768::vg_mlkem768_encaps_body::vg_mlkem768_encaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -122,7 +122,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #32768
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -131,7 +131,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_mlkem768_encaps_h_body = sym super::mlkem768::vg_mlkem768_encaps_h_body::vg_mlkem768_encaps_h_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
@@ -160,7 +160,7 @@ mov r6, r1
 mov r0, r4
 movw r1, #32768
 movt r1, #0
-bl {vg_zeroize}
+bl {vg_zeroize_core}
 mov r0, r5
 mov r1, r6
 ldr r5, [sp, #4]
@@ -169,7 +169,7 @@ ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
         vg_mlkem768_decaps_body = sym super::mlkem768::vg_mlkem768_decaps_body::vg_mlkem768_decaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
