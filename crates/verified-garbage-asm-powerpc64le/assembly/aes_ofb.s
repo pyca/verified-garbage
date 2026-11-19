@@ -51,6 +51,26 @@ vg_aes_ofb:
 	ld %r18, 2096(%r19)
 	ld %r19, 2104(%r19)
 	mtlr %r0
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v19, %v19, %v19
 	blr
 
 vg_aes_ofb_final:
@@ -75,7 +95,7 @@ vg_aes_ofb_final:
 	add %r31, %r6, %r11
 	subf %r30, %r11, %r7
 	or %r7, %r10, %r10
-	bl {vg_aes_ofb}
+	bl {vg_aes_ofb_core}
 	cmpldi %cr0, %r30, 0
 	beq %cr0, 20f
 	or %r3, %r14, %r14
@@ -118,4 +138,25 @@ vg_aes_ofb_final:
 	std %r11, 48(%r12)
 	std %r11, 56(%r12)
 	addi %r1, %r1, 96
+	li %r0, 0
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v19, %v19, %v19
 	blr
