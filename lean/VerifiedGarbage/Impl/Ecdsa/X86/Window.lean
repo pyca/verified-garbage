@@ -214,12 +214,14 @@ the zero and the negation are selections under masks. -/
 def swinJ : Nat := 2 * c.C.len
 
 /-- Window `esi`'s magnitude `|d|` into `eax`, and the number of its entry,
-`|d| mod 8 + 1`, into `ebx`; `low`: window 0, with no bit below it. -/
+`|d| mod 8 + 1`, into `ebx`: the bit below the window into `ebx` (none for
+window 0, `low`), the window into `eax`, and `|v - 16|`. -/
 def swinDigitB (low : Bool) : List Instr :=
-  winIndex 4 ++ hornerBits (bitsAt c.n 0) 4 ++
-  ([.alu .xor .eax (.imm 8), .alu .add .eax (.imm 8)] : List Instr) ++
-  (if low then [] else [.movzx8 .edx (winByte (bitsAt c.n 0 - 1)), .alu .add .eax (.reg .edx)]) ++
-  magnitudeH 16 ++ ([.alu .and .ebx (.imm 7), .alu .add .ebx (.imm 1)] : List Instr)
+  (if low then ([.mov .ebx (.imm 0)] : List Instr)
+    else winIndex 4 ++ ([.movzx8 .ebx (winByte (bitsAt c.n 0 - 1))] : List Instr)) ++
+  ((winIndex 4 ++ hornerBits (bitsAt c.n 0) 4) ++
+    (([.alu .xor .eax (.imm 8), .alu .add .eax (.imm 8), .alu .add .eax (.reg .ebx)] : List Instr) ++
+      (magnitudeH 16 ++ ([.alu .and .ebx (.imm 7), .alu .add .ebx (.imm 1)] : List Instr))))
 
 /-- The digit of window `esi` (the test of the counter is public). -/
 def swinDigit : Prog isa :=
@@ -231,16 +233,13 @@ def swinZero : List Instr :=
   ([.mov .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx)] : List Instr) ++
     selPt c.n (c.pt TX TY TZ) (c.pt TX TY TZ) (c.pt ZERO ONEP ZERO)
 
-/-- `ecx` all ones if bit `4 esi + 3` of the scalar is set, through `eax`
-and `edx`. -/
-def swinSign : List Instr :=
-  winIndex 4 ++ ([.movzx8 .edx (winByte (bitsAt c.n 0 + 3)), .mov .ecx (.imm 0),
-    .alu .sub .ecx (.reg .edx)] : List Instr)
-
-/-- `T = -T` where window `esi`'s digit is negative (through `TMP`). -/
+/-- `T = -T` where window `esi`'s digit is negative, that is where bit
+`4 esi + 3` is set: `-T` into `D`, and `T`'s `y` kept under the comb's mask
+of the window's top bit being clear, else `D`'s. -/
 def swinNeg : Prog isa :=
-  .seq (Mont.subCall c.SP (c.sl TMP) (c.sl ZERO) (c.sl TY))
-    (.block (c.swinSign ++ sel (2 * c.n) (c.sl TY) (c.sl TY) (c.sl TMP)))
+  .seq (fprog c.SP [.add (c.sl DX) (c.sl TX) (c.sl ZERO), .sub (c.sl DY) (c.sl ZERO) (c.sl TY),
+    .add (c.sl DZ) (c.sl TZ) (c.sl ZERO)])
+    (.block (c.winScan.signMask ++ sel (2 * c.n) (c.sl TY) (c.sl DY) (c.sl TY)))
 
 /-- One window: `esi -= 1`, `R = 16 R`, the window's signed entry `T`, and
 `R = R + T`. -/

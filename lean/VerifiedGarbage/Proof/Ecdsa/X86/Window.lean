@@ -1605,4 +1605,296 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px) 
   · have := I.rep
     rwa [Nat.mul_zero, Nat.pow_zero, Nat.div_one] at this
 
+/-! ## Signed windows of four bits
+
+`Cfg.swinMul` (`Impl/Ecdsa/X86/Window.lean`), for the curves whose table has
+eight entries: Booth's digits `d_j = w_j + b_{4j-1} - 16 b_{4j+3}`. After the
+windows from `j` up the accumulator is `[swPre k j]P`, where `swPre k j` is
+`k / 16^j`, plus one if the bit below is set (`swin_pt`). -/
+
+/-- The multiple after the windows from `j` up. -/
+def swPre (k j : Nat) : Nat := k / 2 ^ (4 * j) + (if 0 < j ∧ k.testBit (4 * j - 1) then 1 else 0)
+
+/-- Window `j`'s digit, plus 16: its window with its top bit flipped, plus 8,
+plus the bit below. -/
+def swV (k j : Nat) : Nat :=
+  (if combWin 4 k j < 8 then combWin 4 k j + 16 else combWin 4 k j) +
+    (if 0 < j ∧ k.testBit (4 * j - 1) then 1 else 0)
+
+theorem combWin4_lt (k j : Nat) : combWin 4 k j < 16 := combWin_lt 4 k j
+
+theorem swV_lt (k j : Nat) : swV k j < 32 := by
+  have := combWin4_lt k j
+  unfold swV
+  split <;> split <;> omega_arith
+
+theorem swPre_succ (k j : Nat) :
+    swPre k (j + 1) = k / 2 ^ (4 * (j + 1)) + (if 8 ≤ combWin 4 k j then 1 else 0) := by
+  have h := testBit_top k 4 j (by decide)
+  rw [show 4 * j + (4 - 1) = 4 * (j + 1) - 1 by omega_arith, show (2 : Nat) ^ (4 - 1) = 8 from rfl] at h
+  unfold swPre
+  rw [h]
+  simp only [Nat.zero_lt_succ, true_and, decide_eq_true_eq]
+
+theorem div_win4 (k j : Nat) : k / 2 ^ (4 * j) = 16 * (k / 2 ^ (4 * (j + 1))) + combWin 4 k j := by
+  have h := Nat.div_add_mod (k / 2 ^ (4 * j)) (2 ^ 4)
+  rw [Nat.div_div_eq_div_mul, ← Nat.pow_add, show (2 : Nat) ^ 4 = 16 from rfl] at h
+  rw [combWin, show 4 * (j + 1) = 4 * j + 4 by omega_arith, show (2 : Nat) ^ 4 = 16 from rfl]
+  exact h.symm
+
+/-- A window's step of the multiple: its digit added, or subtracted where
+the window's top bit is set. -/
+theorem swPre_step (k j : Nat) :
+    (16 ≤ swV k j → swPre k j = 16 * swPre k (j + 1) + magH 16 (swV k j) ∧
+      (combWin 4 k j < 8 ∨ magH 16 (swV k j) = 0)) ∧
+    (swV k j < 16 → ¬combWin 4 k j < 8 ∧ magH 16 (swV k j) ≤ 16 * swPre k (j + 1) ∧
+      swPre k j = 16 * swPre k (j + 1) - magH 16 (swV k j)) := by
+  have hw := combWin4_lt k j
+  have hd := div_win4 k j
+  have hm : ∀ x, (if 16 ≤ x then x - 16 else 16 - x) = x - 16 + (16 - x) := fun x => by
+    split <;> omega_arith
+  rw [swPre_succ]
+  unfold swPre swV magH
+  rw [hd]
+  obtain ⟨w, hwe⟩ : ∃ w, combWin 4 k j = w := ⟨_, rfl⟩
+  rw [hwe] at hw ⊢
+  obtain ⟨c, hc, hc1⟩ : ∃ c, (if 0 < j ∧ k.testBit (4 * j - 1) = true then 1 else 0) = c ∧ c ≤ 1 :=
+    ⟨_, rfl, by split <;> decide⟩
+  rw [hc]
+  simp only [hm]
+  generalize k / 2 ^ (4 * (j + 1)) = q
+  by_cases h8 : w < 8
+  · have h8' : ¬8 ≤ w := by omega_arith
+    simp only [h8, h8', ↓reduceIte]
+    exact ⟨fun _ => ⟨by omega_arith, Or.inl trivial⟩, fun h => absurd h (by omega_arith)⟩
+  · have h8' : 8 ≤ w := by omega_arith
+    simp only [h8, h8', ↓reduceIte]
+    exact ⟨fun h => ⟨by omega_arith, Or.inr (by omega_arith)⟩,
+      fun h => ⟨fun hf => hf, by omega_arith, by omega_arith⟩⟩
+
+/-- A window: `16 [swPre k (j + 1)]P ± [|d_j|]P = [swPre k j]P`. -/
+theorem swin_pt {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P = true) (k j : Nat) :
+    Spec.Weierstrass.add (dblPt (mul (swPre k (j + 1)) P) 4)
+      (if combWin 4 k j < 8 then mul (magH 16 (swV k j)) P else negPt (mul (magH 16 (swV k j)) P)) =
+      mul (swPre k j) P := by
+  rw [dblPt_mul hC hP, show (2 : Nat) ^ 4 = 16 from rfl]
+  by_cases h16 : 16 ≤ swV k j
+  · obtain ⟨e, hz⟩ := (swPre_step k j).1 h16
+    have hn : negPt (mul 0 P) = mul 0 P := by
+      have h0 : mul 0 P = .infinity := by rw [Spec.Weierstrass.mul]; simp
+      rw [h0]; rfl
+    rcases hz with hw | hm
+    · simp only [hw, ↓reduceIte]
+      rw [hC.add_mul_mul hP, e]
+    · rw [hm] at e ⊢
+      rw [hn, ite_self, hC.add_mul_mul hP, e]
+  · obtain ⟨hw, hle, e⟩ := (swPre_step k j).2 (by omega_arith)
+    simp only [hw, ↓reduceIte]
+    rw [hC.add_mul_neg hP hle, e]
+
+/-- A byte of the table of bits at a constant offset from window `esi`'s. -/
+theorem winBit_ok {s : State} {base : Addr} (hs : Scr s base size) {k j N D t bits w : Nat}
+    (hw : w < 2 ^ 32) (hj : j < 2 ^ 32) (hD : D + w * j = bits + t) (ht : t < N) (hN : bits + N ≤ size)
+    (hx : s.gpr .esi = BitVec.ofNat 32 j)
+    (hbits : ∀ t < N, s.mem (off base (bits + t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block (winIndex w ++ [.movzx8 .ebx (winByte D)])) s fun u =>
+      u.gpr .ebx = BitVec.ofNat 32 (k.testBit t).toNat ∧ CKeeps [.eax, .ebx, .ecx, .edx] s u := by
+  have hn := hs.nowrap
+  rw [WP.block_append_iff]
+  refine WP.mono (winIndex_ok s hw hj hx) fun a ⟨a1, ka⟩ => ?_
+  have hea : a.ea (winByte D) = off base (bits + t) := by
+    rw [ea_winByte (hs.of_keeps ka.keeps (by decide)) (by rw [ka.1 .edi (by decide)]; exact a1)
+      (by omega_arith)]
+    exact congrArg (off base) hD
+  have hr : InRegions (a.rd ++ a.wr) (off base (bits + t)) 1 :=
+    ⟨_, List.mem_append_right _ (ka.2.2.2 ▸ hs.wr), Scr.contains hs.nowrap (by omega_arith)⟩
+  have hm : a.mem (off base (bits + t)) = if k.testBit t then 1 else 0 := by rw [ka.2.1, hbits _ ht]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load8, hea, hr, hm, ite_true,
+    Option.map_some, RegUpd.gpr_setReg, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr' => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
+  · cases k.testBit t <;> decide
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+    simp only [RegUpd.gpr_setReg, hr'.2.1, ite_false]
+    exact ka.1 r (by simp [hr'.1, hr'.2.2.1, hr'.2.2.2])
+
+/-- Booth's digit plus 16, from the window in `eax` and the bit below in `ebx`. -/
+theorem boothAdj_ok (s : State) {w cc : Nat} (hw : w < 16) (hcc : cc < 2)
+    (ha : s.gpr .eax = BitVec.ofNat 32 w) (hb : s.gpr .ebx = BitVec.ofNat 32 cc) :
+    WP isa (.block [.alu .xor .eax (.imm 8), .alu .add .eax (.imm 8), .alu .add .eax (.reg .ebx)]) s
+      fun t => t.gpr .eax = BitVec.ofNat 32 ((if w < 8 then w + 16 else w) + cc) ∧ CKeeps [.eax] s t := by
+  crun [ha, hb]
+  refine ⟨booth_fact w hw cc hcc, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- The number of a magnitude's entry. -/
+theorem entryNum_ok (s : State) {m : Nat} (hm : m < 17) (hb : s.gpr .ebx = BitVec.ofNat 32 m) :
+    WP isa (.block [.alu .and .ebx (.imm 7), .alu .add .ebx (.imm 1)]) s
+      fun t => t.gpr .ebx = BitVec.ofNat 32 (m % 8 + 1) ∧ CKeeps [.ebx] s t := by
+  crun [hb]
+  refine ⟨entry_fact m hm, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- The digit of a window: its magnitude, and the number of its entry. -/
+theorem swinDigit_ok (hc : CfgOk c) {base : Addr} {k : Nat} {s : State} (ctx : WinCtx c base k s)
+    (hk : k < 2 ^ (8 * c.C.len)) {j : Nat} (hj : j < c.swinJ) (gj : s.gpr .esi = BitVec.ofNat 32 j) :
+    WP isa c.swinDigit s fun t =>
+      t.gpr .eax = BitVec.ofNat 32 (magH 16 (swV k j)) ∧
+      t.gpr .ebx = BitVec.ofNat 32 (magH 16 (swV k j) % 8 + 1) ∧ CKeeps [.eax, .ebx, .ecx, .edx] s t := by
+  have h7 := hc.n10
+  have hlen := hc.len_hi
+  have hbit0 := bitsAt_le c h7 (j := 0) (by decide)
+  have hJ : c.swinJ = 2 * c.C.len := rfl
+  have hw := combWin4_lt k j
+  have hsz : size = 8192 := rfl
+  have hb0 : bitsAt c.n 0 = 4096 := rfl
+  -- The window, Booth's digit and its magnitude, from the bit below in `ebx`.
+  have tail : ∀ (t : State) (cc : Nat), cc < 2 → CKeeps [.eax, .ebx, .ecx, .edx] s t →
+      t.gpr .ebx = BitVec.ofNat 32 cc →
+      WP isa (.block ((winIndex 4 ++ hornerBits (bitsAt c.n 0) 4) ++
+        (([.alu .xor .eax (.imm 8), .alu .add .eax (.imm 8), .alu .add .eax (.reg .ebx)] : List Instr) ++
+          (magnitudeH 16 ++ ([.alu .and .ebx (.imm 7), .alu .add .ebx (.imm 1)] : List Instr))))) t
+        fun u => u.gpr .eax = BitVec.ofNat 32 (magH 16
+            ((if combWin 4 k j < 8 then combWin 4 k j + 16 else combWin 4 k j) + cc)) ∧
+          u.gpr .ebx = BitVec.ofNat 32 (magH 16
+            ((if combWin 4 k j < 8 then combWin 4 k j + 16 else combWin 4 k j) + cc) % 8 + 1) ∧
+          CKeeps [.eax, .ebx, .ecx, .edx] s u := by
+    intro t cc hcc kt gb
+    have hst : Scr t base size := ctx.scr.of_keeps kt.keeps (by decide)
+    have hxt : t.gpr .esi = BitVec.ofNat 32 j := by rw [kt.1 _ (by decide), gj]
+    have hbt : ∀ i < 8 * c.C.len, t.mem (off base (bitsAt c.n 0 + i)) = if k.testBit i then 1 else 0 :=
+      fun i hi => by rw [kt.2.1]; exact ctx.bits i hi
+    have hv : (if combWin 4 k j < 8 then combWin 4 k j + 16 else combWin 4 k j) + cc < 32 := by
+      split <;> omega_arith
+    refine WP.block_append (WP.mono (winBits_ok hst (k := k) (j := j) (cnt := 4) (N := 8 * c.C.len)
+      (by decide) (Nat.le_refl 4) (by omega_using [hj, hJ]) (by omega_using [hj, hJ, hlen, h7])
+      (by omega_using [hbit0, hlen]) hxt hbt (window_without_padding (Nat.le_refl 4) (Or.inl rfl) hk))
+      fun t₁ ⟨a₁, k₁⟩ => ?_)
+    have b₁ : t₁.gpr .ebx = BitVec.ofNat 32 cc := by rw [k₁.1 _ (by decide), gb]
+    refine WP.block_append (WP.mono (boothAdj_ok t₁ hw hcc a₁ b₁) fun t₂ ⟨a₂, k₂⟩ => ?_)
+    refine WP.block_append (WP.mono (magnitudeH_ok t₂ (w := 5) (by decide) hv a₂) fun t₃ ⟨a₃, b₃, k₃⟩ => ?_)
+    have hm : magH 16 ((if combWin 4 k j < 8 then combWin 4 k j + 16 else combWin 4 k j) + cc) < 17 := by
+      unfold magH
+      by_cases h8 : combWin 4 k j < 8 <;> simp only [h8, ↓reduceIte] <;> split <;> omega_arith
+    refine WP.mono (entryNum_ok t₃ hm b₃) fun u ⟨b₄, k₄⟩ => ⟨?_, b₄, ?_⟩
+    · rw [k₄.1 _ (by decide)]; exact a₃
+    · exact kt.trans (((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans
+        ((k₃.mono (by decide)).trans (k₄.mono (by decide))))
+  unfold Cfg.swinDigit
+  refine WP.seq (wp_testCounter (by omega_using [hj, hJ, hlen, h7]) gj fun s₁ f₁ z₁ => WP.block_nil ?_)
+  have k₁ : CKeeps [] s s₁ := ⟨fun r _ => (f₁.keeps []).1 r List.not_mem_nil, f₁.mem, (f₁.keeps []).2.1,
+    (f₁.keeps []).2.2⟩
+  refine WP.ite (decide (j = 0)) z₁ (fun h => ?_) (fun h => ?_)
+  · have hj0 : j = 0 := of_decide_eq_true h
+    have hcz : (if 0 < j ∧ k.testBit (4 * j - 1) = true then 1 else 0) = 0 := by
+      rw [hj0]; rfl
+    unfold Cfg.swinDigitB
+    simp only [↓reduceIte]
+    refine WP.block_append (wp_movS rfl fun t u _ => WP.block_nil ?_)
+    refine WP.mono (tail t 0 (by decide) ((k₁.mono (fun _ h => nomatch h)).trans
+      ⟨fun r hr => u.other r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact hr.2.1),
+        u.mem, u.rd, u.wr⟩) u.gpr) fun v ⟨va, vb, vk⟩ => ?_
+    unfold swV
+    rw [hcz]
+    exact ⟨va, vb, vk⟩
+  · have hj0 : j ≠ 0 := of_decide_eq_false h
+    have hcz : (if 0 < j ∧ k.testBit (4 * j - 1) = true then 1 else 0) = (k.testBit (4 * j - 1)).toNat := by
+      have : 0 < j := by omega_arith
+      cases k.testBit (4 * j - 1) <;> simp [this]
+    have hs₁ : Scr s₁ base size := ctx.scr.of_keeps k₁.keeps (by decide)
+    have hx₁ : s₁.gpr .esi = BitVec.ofNat 32 j := by rw [k₁.1 _ List.not_mem_nil, gj]
+    have hb₁ : ∀ i < 8 * c.C.len, s₁.mem (off base (bitsAt c.n 0 + i)) = if k.testBit i then 1 else 0 :=
+      fun i hi => by rw [k₁.2.1]; exact ctx.bits i hi
+    unfold Cfg.swinDigitB
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    refine WP.block_append (WP.mono (winBit_ok hs₁ (k := k) (j := j) (N := 8 * c.C.len) (D := bitsAt c.n 0 - 1)
+      (t := 4 * j - 1) (bits := bitsAt c.n 0) (w := 4) (by decide) (by omega_using [hj, hJ, hlen, h7])
+      (by omega_using [hj0, hb0]) (by omega_using [hj, hJ, hj0]) (by omega_using [hbit0, hlen, hsz]) hx₁ hb₁)
+      fun t ⟨tb, tk⟩ => ?_)
+    refine WP.mono (tail t _ (by cases k.testBit (4 * j - 1) <;> decide)
+      ((k₁.mono (fun _ h => nomatch h)).trans tk) tb) fun v ⟨va, vb, vk⟩ => ?_
+    unfold swV
+    rw [hcz]
+    exact ⟨va, vb, vk⟩
+
+/-- A slot kept, or replaced by another under the mask in `ecx`. -/
+theorem selSlot_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) (b : Bool)
+    (hm : s.gpr .ecx = if b then BitVec.allOnes 32 else 0) {o a x : Nat} (ho : o < 45) (ha : a < 45)
+    (hx : x < 45) :
+    WP isa (.block (sel (2 * c.n) (c.sl o) (c.sl a) (c.sl x))) s fun s' =>
+      sv c base s' o = (if b then sv c base s x else sv c base s a) ∧
+      Keeps [.eax, .edx] s s' ∧ Unch base (slW c [o]) s.mem s'.mem := by
+  have h7 := hc.n10
+  have hO := sl_le c h7 ho
+  have hA := sl_le c h7 ha
+  have hX := sl_le c h7 hx
+  have cond : ∀ {i : Nat}, c.sl o ≤ c.sl i ∨ c.sl i + 4 * (2 * c.n) ≤ c.sl o := fun {i} => by
+    by_cases h : o = i
+    · subst h; exact Or.inl (Nat.le_refl _)
+    · rcases sl_apart c h with h' | h'
+      · exact Or.inl (by omega_arith)
+      · exact Or.inr (by omega_arith)
+  refine WP.mono (sel_ok b (2 * c.n) hs hm (o := c.sl o) (a := c.sl a) (b := c.sl x) (by omega_arith)
+    (by omega_arith) (by omega_arith) cond cond) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
+  · rw [← wordsVal_eq_val32, ← wordsVal_eq_val32, ← wordsVal_eq_val32] at e
+    exact e
+  · rw [show 4 * (2 * c.n) = 8 * c.n by omega_arith] at O
+    exact O.unch
+
+/-- A point's slots kept, or replaced by another's under the mask in `ecx`. -/
+theorem selSelf3_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) (b : Bool)
+    (hm : s.gpr .ecx = if b then BitVec.allOnes 32 else 0) {o₁ o₂ o₃ x₁ x₂ x₃ : Nat}
+    (h45 : ∀ i ∈ [o₁, o₂, o₃, x₁, x₂, x₃], i < 45) (hnd : [o₁, o₂, o₃].Nodup)
+    (hxo : ∀ i ∈ [x₁, x₂, x₃], i ∉ [o₁, o₂, o₃]) :
+    WP isa (.block (selPt c.n (c.pt o₁ o₂ o₃) (c.pt o₁ o₂ o₃) (c.pt x₁ x₂ x₃))) s fun s' =>
+      sv c base s' o₁ = (if b then sv c base s x₁ else sv c base s o₁) ∧
+      sv c base s' o₂ = (if b then sv c base s x₂ else sv c base s o₂) ∧
+      sv c base s' o₃ = (if b then sv c base s x₃ else sv c base s o₃) ∧
+      Keeps [.eax, .edx] s s' ∧ Unch base (slW c [o₁, o₂, o₃]) s.mem s'.mem := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil,
+    and_true, not_false_eq_true] at hnd
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, forall_eq_or_imp, forall_eq] at hxo h45
+  obtain ⟨⟨n12, n13⟩, n23⟩ := hnd
+  obtain ⟨⟨x11, x12, x13⟩, ⟨x21, x22, x23⟩, ⟨x31, x32, x33⟩⟩ := hxo
+  obtain ⟨l1, l2, l3, l4, l5, l6⟩ := h45
+  have keep : ∀ {m m' : Mem} {o i : Nat}, Unch base (slW c [o]) m m' → i < 45 → i ≠ o →
+      wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := fun U hi hne =>
+    sv_unch U h7 hn hi (apart_slW (by simpa using hne))
+  show WP isa (.block (sel (2 * c.n) (c.sl o₁) (c.sl o₁) (c.sl x₁) ++ sel (2 * c.n) (c.sl o₂) (c.sl o₂) (c.sl x₂) ++
+    sel (2 * c.n) (c.sl o₃) (c.sl o₃) (c.sl x₃))) s _
+  refine WP.block_append (WP.block_append (WP.mono (selSlot_ok hc hs b hm l1 l1 l4) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_))
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  refine WP.mono (selSlot_ok hc hs₁ b (by rw [k₁.1 _ (by decide)]; exact hm) l2 l2 l5) fun s₂ ⟨e₂, k₂, U₂⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.mono (selSlot_ok hc hs₂ b (by rw [k₂.1 _ (by decide), k₁.1 _ (by decide)]; exact hm) l3 l3 l6)
+    fun s₃ ⟨e₃, k₃, U₃⟩ => ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, ?_⟩
+  · show wordsVal s₃.mem base (c.sl o₁) c.n = _
+    rw [keep U₃ l1 n13, keep U₂ l1 n12]; exact e₁
+  · show wordsVal s₃.mem base (c.sl o₂) c.n = _
+    rw [keep U₃ l2 n23]
+    refine e₂.trans ?_
+    show (if b then wordsVal s₁.mem base (c.sl x₂) c.n else wordsVal s₁.mem base (c.sl o₂) c.n) = _
+    rw [keep U₁ l5 x21, keep U₁ l2 (Ne.symm n12)]
+  · refine e₃.trans ?_
+    show (if b then wordsVal s₂.mem base (c.sl x₃) c.n else wordsVal s₂.mem base (c.sl o₃) c.n) = _
+    rw [keep U₂ l6 x32, keep U₂ l3 (Ne.symm n23), keep U₁ l6 x31, keep U₁ l3 (Ne.symm n13)]
+  · refine ((U₁.trans U₂).trans U₃).mono fun w hw => ?_
+    simpa only [slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append] using hw
+
+/-- `ecx` all ones if the magnitude in `eax` is zero. -/
+theorem zeroMask_ok (s : State) {m : Nat} (hm : m < 17) (ha : s.gpr .eax = BitVec.ofNat 32 m) :
+    WP isa (.block [.mov .ecx (.reg .eax), .alu .cmp .ecx (.imm 1), .alu .sbb .ecx (.reg .ecx)]) s
+      fun t => t.gpr .ecx = (if decide (m = 0) then BitVec.allOnes 32 else 0) ∧ CKeeps [.ecx] s t := by
+  crun [ha]
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · exact zero_fact m hm
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-! SWIN-END -/
+
 end VG.Proof.Ecdsa.X86
