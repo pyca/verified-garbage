@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sm3.Md
@@ -85,6 +86,10 @@ structure Compress where
   noFrames : code.noFrames = true
   keepsV : code.allInstrs keepsV = true
   suffix : String
+  /-- The registers `code` writes: a caller's tail clears them with its own
+  (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this to the
+  code. -/
+  clear : Impl.Residue.AArch64.Clear
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre (updK (P := Stream.params) md).pub
     (update Stream.params name code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre (finK (P := Stream.params) md).pub
