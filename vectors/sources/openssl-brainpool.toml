@@ -1,0 +1,5 @@
+name = "OpenSSL EVP test data for the Brainpool curves (key pairs and ECDH shared secrets)"
+directories = ["openssl-brainpool"]
+url = "https://raw.githubusercontent.com/openssl/openssl/354f1cf64842dc03f30a97a3a4fd8a7b48e40807/test/recipes/30-test_evp_data/evppkey_brainpool.txt"
+sha256 = "b132c90566db7d970cad9c11facbe4c17fc82e2372df98e65c0cf4919dfdf7cd"
+retrieved = 2026-11-19
