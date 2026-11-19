@@ -5,14 +5,12 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Poly
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
-import VerifiedGarbage.Proof.Weierstrass.RootTonelli
+import VerifiedGarbage.Proof.P224.Sqrt
 import VerifiedGarbage.Proof.Mont.PPC64LE.Const
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.P224.Sqrt
 public import VerifiedGarbage.Impl.EcKey.Compressed.P224.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.EcKey.P224
@@ -35,7 +33,7 @@ public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.SlotOps
 public import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Peer
+import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Flags
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row

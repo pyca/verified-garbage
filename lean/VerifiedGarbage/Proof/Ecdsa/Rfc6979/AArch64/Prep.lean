@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 public import VerifiedGarbage.Proof.Framework.ICall
 
 /-! ### `Ecdsa.Rfc6979.AArch64.Steps`, which this module and modules that import it used -/

@@ -12,8 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyCT
-import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
+public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.WindowDigit
 import VerifiedGarbage.Proof.Ed25519.Window
@@ -23,8 +22,8 @@ import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyCT
-meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Decode
+meta import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsgCT
+meta import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyFn
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.WindowDigit
 meta import VerifiedGarbage.Proof.Ed25519.Window
@@ -37,7 +36,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-public import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyPoints
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 import Mathlib.Tactic.Ring
 import Mathlib.Data.ZMod.Defs
@@ -54,7 +52,6 @@ meta import VerifiedGarbage.Proof.Ed25519.BaseTable
 meta import VerifiedGarbage.Proof.Ed25519.DblPoint
 meta import VerifiedGarbage.Impl.Ed25519.RISCV64.VerifyWindow
 meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
-meta import VerifiedGarbage.Proof.Ed25519.RISCV64.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.Group.Double
 meta import Mathlib.Tactic.Ring
 meta import Mathlib.Data.ZMod.Defs

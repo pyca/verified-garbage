@@ -4,11 +4,9 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Spec.X25519

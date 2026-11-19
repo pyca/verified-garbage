@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 
 /-! An exact field environment for point transfers through public addresses. -/
 

@@ -38,7 +38,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
@@ -46,12 +45,12 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Framework.Block
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
@@ -70,7 +69,7 @@ import VerifiedGarbage.Proof.P256.GTable9Shape
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-public import VerifiedGarbage.Proof.P256.VerifyTable.Build
+public import VerifiedGarbage.Proof.P256.VerifyTable.Env
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
@@ -83,7 +82,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.CombLay
-meta import VerifiedGarbage.Proof.P256.VerifyTable.Build
+meta import VerifiedGarbage.Proof.P256.VerifyTable.Env
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 meta import Init.Data.Nat.Bitwise.Basic
@@ -97,19 +96,17 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import Mathlib.Algebra.Group.Nat.Defs
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import Mathlib.Data.Nat.Prime.Defs
@@ -121,7 +118,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 meta import Mathlib.Algebra.Group.Nat.Defs
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 meta import Mathlib.Tactic.ClearExcept
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 meta import Mathlib.Data.Nat.Prime.Defs
@@ -141,9 +138,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafLoop
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit
@@ -155,7 +150,6 @@ meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 meta import VerifiedGarbage.Spec.Ecdsa.P256
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Proof.P256.GTable9Shape
@@ -169,11 +163,9 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
 meta import Mathlib.Tactic.FieldSimp
 meta import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Impl.NatPairs

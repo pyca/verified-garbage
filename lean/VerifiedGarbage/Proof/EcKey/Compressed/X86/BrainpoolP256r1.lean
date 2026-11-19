@@ -6,20 +6,19 @@ public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.LitAlias
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP256r1
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitAlias
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.MulTaint
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
-meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
@@ -29,7 +28,6 @@ public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86.BrainpoolP256r1

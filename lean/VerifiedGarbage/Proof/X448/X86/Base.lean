@@ -8,10 +8,9 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-import VerifiedGarbage.Proof.X448.X86.CT
 public import VerifiedGarbage.Proof.X448.X86.Runs
 import VerifiedGarbage.Proof.X448.X86.Main
-import VerifiedGarbage.Proof.X448.X86.Finish
+import VerifiedGarbage.Proof.X448.X86.FinalSwap
 import VerifiedGarbage.Proof.X448.X86.Output
 import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.Restore
@@ -36,10 +35,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
-meta import VerifiedGarbage.Proof.X448.X86.CT
 meta import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Main
-meta import VerifiedGarbage.Proof.X448.X86.Finish
+meta import VerifiedGarbage.Proof.X448.X86.FinalSwap
 meta import VerifiedGarbage.Proof.X448.X86.Output
 meta import VerifiedGarbage.Proof.X448.X86.Freeze
 meta import VerifiedGarbage.Proof.X448.X86.Restore

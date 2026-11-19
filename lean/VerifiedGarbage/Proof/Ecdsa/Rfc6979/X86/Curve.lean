@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 # Deterministic ECDSA on x86 (32-bit): the curve
 
 What the proof needs of the curve (`RfcCurve`), as on x86-64
-(`Proof/Ecdsa/Rfc6979/X86_64/Curve.lean`): the code of
+(`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`): the code of
 `vg_ecdsa_<curve>_sign_k` for curves of `n` 64-bit words
 (`Impl.Ecdsa.X86.Cfg`, `n` 3, 4, 6 or 8), the instance of ECDSA it is, that the
 order `n` of its base point has exactly `64 n` bits and `2^(64 n) < 2 n` (so

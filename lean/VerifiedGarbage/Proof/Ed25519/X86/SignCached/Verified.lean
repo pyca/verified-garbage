@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
@@ -13,7 +12,6 @@ public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
@@ -32,11 +30,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
@@ -46,18 +40,13 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CopyDigest
@@ -67,15 +56,13 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic.Positivity.Finset
@@ -90,7 +77,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import Mathlib.Data.Nat.Basic
 public import Mathlib.Order.RelClasses
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 meta import Mathlib.Tactic.NormNum.Prime
 meta import Mathlib.Data.Nat.Totient
 meta import Mathlib.Tactic.Positivity.Finset
@@ -105,6 +91,669 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import Mathlib.Data.Nat.Basic
 meta import Mathlib.Order.RelClasses
+import VerifiedGarbage.Proof.Framework.X86.Wp
+meta import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Count
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import Mathlib.Tactic.ToAdditive
+
+/-! ### `Ed25519.X86.SignCached.Base`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
+open VG.Impl.Ed25519.X86 (scalarBase combSym)
+open VG.Impl.Ed25519.X86.PublicKey (callWith)
+
+def baseRd (L : Lay) : List Region := [field L 96, ⟨L.E.setWidth 64, 12⟩, L.TB]
+def baseOut (L : Lay) : Region := ⟨L.out.setWidth 64, 32⟩
+def baseWr (L : Lay) : List Region := [baseOut L, L.SCR]
+def BaseArgs (L : Lay) (t : State) : Prop :=
+  Whole.slots L.E t 0 = L.out ∧ Whole.slots L.E t 1 = fp L 96 ∧ Whole.slots L.E t 2 = L.scr
+
+theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
+theorem base_stack : stackUse scalarBase = 8 := by lit_decide
+
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem base_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) (hy : s.syms combSym = L.T)
+    (ht : TblWords (L.T.setWidth 64) s.mem) :
+    scalarBaseLocal.pre (s.callEntry.withRegions (baseRd L) (baseWr L)) := by
+  have H := hashSpace hL
+  have ca {j : Nat} (hj : j < 64) := Whole.call_arg hc.esp H.below H.frameFit hj
+  have a0 := (ca (j := 0) (by decide)).trans ha.1
+  have a1 := (ca (j := 1) (by decide)).trans ha.2.1
+  have a2 := (ca (j := 2) (by decide)).trans ha.2.2
+  have ae := Whole.arg_base hc.esp (baseRd L) (baseWr L)
+  have ret : Region.Sub ⟨(L.E - 4).setWidth 64, 4⟩ L.STK := Whole.below_sub_stack H.below (by decide)
+  have args : Region.Sub ⟨L.E.setWidth 64, 12⟩ L.STK :=
+    fun p hp => Whole.frame_sub L.E p (Region.sub_prefix (by decide) p hp)
+  have out : Region.Sub (baseOut L) L.OUT := Region.sub_prefix (by decide)
+  have be := hL.below
+  have stk : Region.Sub (below (L.E - BitVec.ofNat 32 4) 8) L.STK := Whole.inner_sub_stack be
+  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega_using [this]
+  have tb : L.TB ∈ L.inputs := by simp [Lay.inputs]
+  have tw : TblWords (L.T.setWidth 64) s.callEntry.mem :=
+    ht.frame (Whole.callEntry_frame s) fun r hr => by
+      rw [List.mem_singleton.mp hr, hc.esp]
+      exact (hL.ks _ tb).symm.sub_right (Whole.below_sub_stack be (by decide))
+  have cy : (s.callEntry.withRegions (baseRd L) (baseWr L)).syms combSym = L.T := hy
+  have cs : callStk (s.callEntry.withRegions (baseRd L) (baseWr L)) = below (L.E - BitVec.ofNat 32 4) 8 := by
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
+  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, cs, State.withRegions_rd, State.withRegions_wr,
+    arg_withRegions, State.withRegions_gpr, State.withRegions_mem, State.callEntry_esp, hc.esp, a0, a1,
+    a2, ae]
+  refine ⟨⟨rfl, rfl, hL.oc.sub_left out, hL.kc.sub_left (field_sub hL (by decide)),
+    (hL.ko.sub_left args).sub_right out, hL.kc.sub_left args,
+    (hL.ko.sub_left ret).sub_right out, hL.kc.sub_left ret,
+    by have := hL.no; omega_using [this], field_fit hL (by decide), hL.nc, ?_, ?_,
+    Whole.inner_frame be hf (d := 96) (n := 32) (by decide) (by decide), hL.kc.sub_left stk,
+    (hL.ko.sub_left stk).sub_right out⟩,
+    (hL.ko.sub_left stk).sub_right out, tw, hL.nt, ?_⟩
+  · change (L.E - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
+    rw [sub_toNat (k := 4) (by omega_using [be])]
+    have := hL.top; omega_using [hf]
+  · change 8 ≤ (L.E - BitVec.ofNat 32 4).toNat
+    rw [sub_toNat (k := 4) (by omega_using [be])]
+    omega_using [be]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact (hL.os _ tb).symm.sub_right out
+    · exact hL.sc _ tb
+    · exact (hL.ks _ tb).symm.sub_right stk
+
+theorem base_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) (hy : s.syms combSym = L.T)
+    (ht : TblWords (L.T.setWidth 64) s.mem) :
+    WP isa (.call "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g m₀ t ∧
+      Frame (baseWr L ++ [below L.E 24]) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 =
+        Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem ((fp L 96).setWidth 64) 32) := by
+  have cov := hash_covers (L := L) (rs := baseRd L ++ baseWr L) (by
+    simp only [baseRd, baseWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl | rfl)
+    · exact .inl (fieldWithin hL (by decide))
+    · exact .inl (argsWithin L (by decide))
+    · exact .inr ⟨L.TB, by simp [Lay.inputs], 0, by simp, by simp⟩
+    · exact .inr ⟨L.OUT, by simp [Lay.outputs], 0, by simp [baseOut], by change 0 + 32 ≤ 64; decide⟩
+    · exact scratch_covered ⟨0, by simp, by simp⟩)
+  have ws : ∀ r ∈ baseWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+    simp only [baseWr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact .inr ⟨L.OUT, by simp [Lay.outputs], 0, by simp [baseOut], by change 0 + 32 ≤ 64; decide⟩
+    · exact .inr ⟨L.SCR, by simp [Lay.outputs], 0, by simp, by simp⟩
+  with_reducible
+    refine Whole.call_ok hc hL.below scalarBase_ok base_nosp (by rw [base_stack]; decide)
+      (base_pre hc hL ha hy ht) cov ws fun t ht hf _ post => ⟨ht, hf, ?_⟩
+  obtain ⟨s₂, hm, _, hp⟩ := post
+  have H := hashSpace hL
+  have ca {j : Nat} (hj : j < 64) := Whole.call_arg hc.esp H.below H.frameFit hj
+  change Spec.Ed25519.bytesAt s₂.mem ((arg s.callEntry 0).setWidth 64) 32 =
+    Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.callEntry.mem ((arg s.callEntry 1).setWidth 64) 32) at hp
+  rw [hm, (ca (by decide)).trans ha.1, (ca (by decide)).trans ha.2.1] at hp
+  rw [hp, field_ce hc hL (by decide)]
+
+theorem base_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hy : s.syms combSym = L.T) :
+    WP isa (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g m₀ t ∧
+      Frame (primitiveWrites L (baseOut L)) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 =
+        Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem ((fp L 96).setWidth 64) 32) := by
+  refine WP.seq (WP.mono_syms (args_ok hc hL ha (vs := [.caller 0 0, .frame 96, .caller 5 0])
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
+  have a0 := hs.slot hL (j := 0) (by decide) (by decide)
+  have a1 := hs.slot hL (j := 1) (by decide) (by decide)
+  have a2 := hs.slot hL (j := 2) (by decide) (by decide)
+  change Whole.slots L.E u 0 = L.out + 0#32 at a0
+  change Whole.slots L.E u 2 = L.scr + 0#32 at a2
+  rw [BitVec.add_zero] at a0 a2
+  refine WP.mono (base_call hu hL ⟨a0, a1, a2⟩ ((congrFun yu combSym).trans hy) (hu.tbl hL ha))
+    fun t ⟨ht, hft, hp⟩ =>
+    ⟨ht, primitive_frame hf hft, ?_⟩
+  rw [hp, field_setup hL hf (by decide) (by decide)]
+
+end VG.Proof.Ed25519.X86.SignCached
+
+end
+
+end
+
+/-! ### `Ed25519.X86.SignCached.Entry`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86
+open VG.Impl.Ed25519.X86 (combSym)
+
+def signRd (n : Nat) (s : State) : List Region :=
+  [⟨(arg s 1).setWidth 64, n⟩, ⟨(arg s 2).setWidth 64, 32⟩,
+    ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩, ⟨argAddr s 0, 24⟩, TBL ((s.syms combSym).setWidth 64)]
+def signWr (s : State) : List Region :=
+  [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 5).setWidth 64, 8192⟩]
+
+/-- What the two runs of a signature share: the stack pointer, the arguments and the
+comb's tables. -/
+def signPub (s t : State) : Prop :=
+  s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧
+    arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5 ∧
+    s.syms combSym = t.syms combSym
+
+/-- Signing with the `n` bytes at the second argument (the seed's SHA-512 digest, 64),
+the condition `key` on them and the public key, and the postcondition `post`. -/
+def signLocalWith (n : Nat) (key : State → Prop) (post : State → State → Prop) : Contract isa where
+  pre s :=
+    let out : Region := ⟨(arg s 0).setWidth 64, 64⟩
+    let seed : Region := ⟨(arg s 1).setWidth 64, n⟩
+    let pk : Region := ⟨(arg s 2).setWidth 64, 32⟩
+    let msg : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
+    let scr : Region := ⟨(arg s 5).setWidth 64, 8192⟩
+    let args : Region := ⟨argAddr s 0, 24⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩
+    s.rd = signRd n s ∧ s.wr = signWr s ∧
+      out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint msg ∧ out.Disjoint args ∧
+      out.Disjoint scr ∧ stk.Disjoint out ∧ ret.Disjoint out ∧
+      seed.Disjoint scr ∧ pk.Disjoint scr ∧ msg.Disjoint scr ∧ args.Disjoint scr ∧
+      ret.Disjoint seed ∧ ret.Disjoint pk ∧ ret.Disjoint msg ∧ ret.Disjoint scr ∧
+      stk.Disjoint seed ∧ stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint scr ∧
+      (arg s 0).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 1).toNat + n ≤ 2 ^ 32 ∧
+      (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + (arg s 4).toNat ≤ 2 ^ 32 ∧
+      (arg s 5).toNat + 8192 ≤ 2 ^ 32 ∧
+      280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ key s ∧
+      CombHeld s [out, scr, stk, ret]
+  post := post
+  pub := signPub
+
+def lay (n : Nat) (s : State) : Lay :=
+  ⟨arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, s.gpr .esp - BitVec.ofNat 32 256,
+    s.syms combSym, n⟩
+
+variable {n : Nat} {key : State → Prop} {post : State → State → Prop}
+
+theorem entry_bounds {s : State} (h : (signLocalWith n key post).pre s) :
+    280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb, ht, _⟩ := h
+  exact ⟨hb, ht⟩
+
+theorem entry_key {s : State} (h : (signLocalWith n key post).pre s) : key s := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
+  exact hk
+
+theorem entry_held {s : State} (h : (signLocalWith n key post).pre s) :
+    CombHeld s [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 5).setWidth 64, 8192⟩,
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩, ⟨(s.gpr .esp).setWidth 64, 4⟩] := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ht⟩ := h
+  exact ht
+
+theorem lay_base {s : State} (h : (signLocalWith n key post).pre s) :
+    (lay n s).E.setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 :=
+  Taint.sub_setWidth (by have := (entry_bounds h).1; omega_arith)
+
+theorem lay_args {s : State} (h : (signLocalWith n key post).pre s) :
+    (lay n s).ARGS = ⟨argAddr s 0, 24⟩ := by
+  rw [Lay.ARGS, lay_base h]
+  have ha : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
+    addr_eq (by have := (entry_bounds h).2; omega_arith)
+  rw [ha]
+  congr 1
+  change _ - 256#64 + 260#64 = _ + 4#64
+  rw [show BitVec.ofNat 64 260 = BitVec.ofNat 64 256 + BitVec.ofNat 64 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+theorem lay_ret {s : State} (h : (signLocalWith n key post).pre s) :
+    (lay n s).RET = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+  rw [Lay.RET, lay_base h]
+  change (⟨(s.gpr .esp).setWidth 64 - 256#64 + 256#64, 4⟩ : Region) = _
+  rw [BitVec.sub_add_cancel]
+
+theorem lay_stack {s : State} (h : (signLocalWith n key post).pre s) :
+    (lay n s).STK = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩ := by
+  rw [Lay.STK, Whole.STK, lay_base h, BitVec.sub_sub]
+  rfl
+
+theorem lay_top {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).E.toNat + 284 ≤ 2 ^ 32 := by
+  have hb := entry_bounds h
+  change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
+  rw [sub_toNat (by omega_arith)]
+  omega_arith
+
+theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) (sl : 32 ≤ n) : (lay n s).Ok := by
+  have held := entry_held h
+  have h₀ := h
+  obtain ⟨_, _, os, op, om, oa, oc, ko, ro, sc, pc, mc, ac, rs, rp, rm, rc,
+    ks, kp, km, kc, no, ns, np, nm, nc, nb, na, _⟩ := h₀
+  have top : (lay n s).E.toNat + 284 ≤ 2 ^ 32 := by
+    change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
+    rw [sub_toNat (by omega_arith)]
+    omega_arith
+  refine ⟨?_, top, ?_, oc, ?_, ?_, no, ?_, ?_, ?_, ?_, ?_, np, nm, ns, nc, held.2.1, sl⟩
+  · change 24 ≤ (s.gpr .esp - BitVec.ofNat 32 256).toNat
+    rw [sub_toNat (by omega_arith)]
+    omega_arith
+  · intro r hr
+    simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact os
+    · exact op
+    · exact om
+    · rw [lay_args h]; exact oa
+    · exact (held.2.2 _ List.mem_cons_self).symm
+  · rw [lay_stack h]; exact ko
+  · rw [lay_ret h]; exact ro
+  · intro r hr
+    simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact sc
+    · exact pc
+    · exact mc
+    · rw [lay_args h]; exact ac
+    · exact held.2.2 _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  · intro r hr
+    rw [lay_stack h]
+    simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact ks
+    · exact kp
+    · exact km
+    · rw [Lay.ARGS, lay_base h]
+      have e : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 + 260 =
+          (s.gpr .esp).setWidth 64 + 4 := by
+        change _ - 256#64 + 260#64 = _ + 4#64
+        rw [show (260#64) = 256#64 + 4#64 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+      rw [e]
+      exact Offset.disjoint_below_above _ (by decide)
+    · exact (held.2.2 _ (by simp)).symm
+  · intro r hr
+    rw [lay_ret h]
+    simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact rs
+    · exact rp
+    · exact rm
+    · rw [Lay.ARGS, lay_base h]
+      have e : (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 + 260 =
+          (s.gpr .esp).setWidth 64 + 4 := by
+        change _ - 256#64 + 260#64 = _ + 4#64
+        rw [show (260#64) = 256#64 + 4#64 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+      rw [e]
+      exact (Offset.disjoint_base _ (by decide) (by decide)).symm
+    · exact (held.2.2 _ (by simp)).symm
+  · rw [lay_stack h]; exact kc
+  · rw [lay_ret h]; exact rc
+
+theorem lay_arguments {s : State} (h : (signLocalWith n key post).pre s) : Arguments (lay n s) s.mem := by
+  refine ⟨fun j hj => ?_, (entry_held h).1⟩
+  have hb := lay_top h
+  have e : (lay n s).E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j) = argAddr s j := by
+    rw [← addr_eq (by have := hb; omega_arith)]
+    simp only [addr, lay, argAddr]
+    rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_arith, BitVec.ofNat_add,
+      ← BitVec.add_assoc, BitVec.sub_add_cancel]
+  rw [e]
+  change arg s j = (lay n s).value j
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_arith
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+
+theorem push_ctx {s : State} (h : (signLocalWith n key post).pre s) :
+    Ctx (lay n s) s.gpr s.mem (pushed (List.replicate 64 .eax) s) := by
+  have hn := (entry_bounds h).1
+  have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
+    (by simp only [List.length_replicate]; omega_arith)
+  refine ⟨?_, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
+  · rw [pushed_rd, h.1]
+    rw [Lay.inputs, lay_args h]
+    rfl
+  · rw [pushed_wr, h.2.1]
+    simp only [List.length_replicate, Whole.FR, Lay.outputs, Lay.SCR, lay, signWr]
+  · rw [pushed_esp, List.length_replicate]
+    rfl
+  · refine Frame.sub hf fun r hr => ?_
+    rw [List.mem_singleton.mp hr]
+    refine ⟨(lay n s).STK, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    rw [lay_stack h, ← Taint.sub_setWidth hn]
+    exact below_sub (by simp) hn
+
+end VG.Proof.Ed25519.X86.SignCached
+
+end
+
+end
+
+/-! ### `Ed25519.X86.SignCached.HashInputs`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.Whole
+
+variable {L : Lay}
+
+theorem update_args {t : State} (hL : L.Ok) (c : Nat) (p n : Value)
+    (h : OutArgs L [.caller 5 0, .const c, .const 0, p, n, .caller 5 192] t) :
+    UpdateArgs L (BitVec.ofNat 32 c) (value L p) (value L n) t := by
+  have h0 := h.slot hL (j := 0) (by simp) (by simp)
+  have h1 := h.slot hL (j := 1) (by simp) (by simp)
+  have h2 := h.slot hL (j := 2) (by simp) (by simp)
+  have h3 := h.slot hL (j := 3) (by simp) (by simp)
+  have h4 := h.slot hL (j := 4) (by simp) (by simp)
+  have h5 := h.slot hL (j := 5) (by simp) (by simp)
+  change Whole.slots L.E t 0 = L.scr + 0#32 at h0
+  rw [BitVec.add_zero] at h0
+  exact ⟨h0, h1, h2, h3, h4, h5⟩
+
+theorem Input.external {p n : BitVec 32}
+    (hc : ∃ R ∈ L.inputs ++ L.outputs, Whole.Within ⟨p.setWidth 64, n.toNat⟩ R)
+    (hs : Region.Disjoint ⟨p.setWidth 64, n.toNat⟩ L.SCR)
+    (hk : L.STK.Disjoint ⟨p.setWidth 64, n.toNat⟩)
+    (hL : L.Ok) (hf : p.toNat + n.toNat ≤ 2 ^ 32) : Input L p n :=
+  ⟨.inr hc, hs, hk.sub_left (Whole.below_sub_stack hL.below (by decide)),
+    (hk.sub_left (fun a ha => Whole.frame_sub L.E a (Region.sub_prefix (by decide : 24 ≤ 256) a ha))).symm, hf⟩
+
+theorem key_input (hL : L.Ok) : Input L L.pk 32 :=
+  Input.external ⟨L.PK, by simp [Lay.inputs], 0, by simp, by change 0 + 32 ≤ 32; decide⟩
+    (hL.sc _ (by simp [Lay.inputs])) (hL.ks _ (by simp [Lay.inputs])) hL hL.np
+
+theorem message_input (hL : L.Ok) : Input L L.msg L.len :=
+  Input.external ⟨L.MSG, by simp [Lay.inputs], 0, by simp, by simp⟩
+    (hL.sc _ (by simp [Lay.inputs])) (hL.ks _ (by simp [Lay.inputs])) hL hL.nm
+
+theorem point_input (hL : L.Ok) : Input L L.out 32 :=
+  Input.external ⟨L.OUT, by simp [Lay.outputs], 0, by simp, by change 0 + 32 ≤ 64; decide⟩
+    (hL.oc.sub_left (Region.sub_prefix (by decide)))
+    (hL.ko.sub_right (Region.sub_prefix (by decide))) hL (by change L.out.toNat + 32 ≤ 2 ^ 32; have := hL.no; omega_using [this])
+
+theorem prefix_input (hL : L.Ok) : Input L (L.E + 64) 32 := by
+  have ea : (L.E + 64).setWidth 64 = L.E.setWidth 64 + 64 :=
+    addr_eq (x := L.E) (k := 64) (by have := hL.top; omega_using [this])
+  have hin : Whole.Within ⟨(L.E + 64).setWidth 64, (32 : BitVec 32).toNat⟩ L.FR :=
+    ⟨64, ea, by change 64 + 32 ≤ 256; decide⟩
+  refine ⟨.inl hin, hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (hin.sub p hp)), ?_, ?_, ?_⟩
+  · change Region.Disjoint ⟨(L.E - BitVec.ofNat 32 24).setWidth 64, 24⟩ _
+    rw [Taint.sub_setWidth hL.below, ea]
+    exact (Offset.disjoint_below _ (n := 24) (d := 64) (k := 32) (by decide)).symm
+  · rw [ea]
+    exact Offset.disjoint_base _ (d := 64) (n := 32) (k := 24) (by decide) (by decide)
+  · rw [BitVec.toNat_add, show (64 : BitVec 32).toNat = 64 from rfl,
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; change L.E.toNat + 64 + 32 ≤ 2 ^ 32; omega_using [this]
+
+end VG.Proof.Ed25519.X86.SignCached
+
+end
+
+end
+
+/-! ### `Ed25519.X86.SignCached.HashFinalize`, which only this module used -/
+
+section
+
+/-! Merged from `Proof.Ed25519.X86.SignCached.FinalizeArgs`. -/
+
+@[expose] public section
+
+section
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.Whole VG.Impl.Ed25519.X86.SignCached
+
+def FinArgs (L : Lay) (count : BitVec 64) (t : State) : Prop :=
+  Whole.slots L.E t 0 = L.scr ∧ Whole.slots L.E t 3 = L.E + 192 ∧
+    Whole.slots L.E t 4 = L.scr + 192 ∧
+    Whole.slots L.E t 2 ++ Whole.slots L.E t 1 = count
+
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem count_keep {t u : State} (hf : Frame [⟨L.E.setWidth 64 + 4, 8⟩] t.mem u.mem)
+    {j : Nat} (hj : j = 0 ∨ j = 3 ∨ j = 4) : Whole.slots L.E u j = Whole.slots L.E t j := by
+  refine hf.readW (Region.contains_self _ _) ?_ (by decide)
+  rintro r hr; rw [List.mem_singleton.mp hr]
+  apply Offset.disjoint (e := 4) (k := 8)
+  · rcases hj with rfl | rfl | rfl <;> decide
+  · rcases hj with rfl | rfl | rfl <;> decide
+  · decide
+
+theorem count_frame {m m' : Mem} (hf : Frame [⟨L.E.setWidth 64 + 4, 8⟩] m m') :
+    Frame [⟨L.E.setWidth 64, 24⟩] m m' :=
+  hf.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (d := 4) (by decide)⟩
+
+theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (n : Nat) (hn : n < 2 ^ 32) (b : Bool) :
+    WP isa (.block (finalizeArgs n b)) s fun t => Ctx L g m₀ t ∧
+      Frame [⟨L.E.setWidth 64, 24⟩] s.mem t.mem ∧
+      FinArgs L (BitVec.ofNat 64 ((if b then L.len.toNat else 0) + n)) t := by
+  rw [finalizeArgs, WP.block_append_iff]
+  refine WP.mono (args_ok hc hL ha (vs := [.caller 5 0, .const n, .const 0, .frame 192, .caller 5 192])
+    (by simp) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_
+  have aa := hs.slot hL (j := 0) (by simp) (by simp)
+  have ab := hs.slot hL (j := 1) (by simp) (by simp)
+  have ac := hs.slot hL (j := 2) (by simp) (by simp)
+  have ad := hs.slot hL (j := 3) (by simp) (by simp)
+  have ae := hs.slot hL (j := 4) (by simp) (by simp)
+  change Whole.slots L.E u 0 = L.scr + 0#32 at aa
+  rw [BitVec.add_zero] at aa
+  change Whole.slots L.E u 1 = BitVec.ofNat 32 n at ab
+  change Whole.slots L.E u 2 = 0#32 at ac
+  change Whole.slots L.E u 3 = L.E + 192 at ad
+  change Whole.slots L.E u 4 = L.scr + 192 at ae
+  cases b with
+  | false =>
+    refine WP.block_nil ⟨hu, hf, aa, ad, ae, ?_⟩
+    rw [ac, ab]
+    simp only [Bool.false_eq_true, ite_false, Nat.zero_add]
+    change (0#32) ++ BitVec.ofNat 32 n = BitVec.ofNat 64 n
+    rw [count_zero_high, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
+  | true =>
+    have hr : InRegions (u.rd ++ u.wr) (addr L.E 276) 4 := by
+      refine ⟨L.ARGS, ?_, ?_⟩
+      · rw [hu.rd]; simp [Lay.inputs]
+      · rw [addr_eq (by have := hL.top; omega_using [this])]
+        exact Offset.contains _ (e := 260) (k := 24) (d := 276) (n := 4) (by decide) (by decide) (by decide)
+    have hx : u.mem.readW (addr L.E 276) 32 = L.len := by
+      rw [addr_eq (by have := hL.top; omega_using [this])]
+      exact (hu.arg_word hL (j := 4) (by decide)).trans (ha.1 4 (by decide))
+    refine WP.mono (Whole.Ctx.count hu (index := 4) (n := n) (by have := hL.top; omega_using [this]) hr hx)
+      fun t ⟨ht, hft, hlo, hhi⟩ => ⟨ht, hf.trans (count_frame hft),
+        (count_keep hft (.inl rfl)).trans aa,
+        (count_keep hft (.inr (.inl rfl))).trans ad,
+        (count_keep hft (.inr (.inr rfl))).trans ae, ?_⟩
+    change (t.mem.readW (L.E.setWidth 64 + 8#64) 32 ++ t.mem.readW (L.E.setWidth 64 + 4#64) 32 : BitVec 64) = BitVec.ofNat 64 ((if true then L.len.toNat else 0) + n)
+    change t.mem.readW (L.E.setWidth 64 + 8#64) 32 = _ at hhi
+    change t.mem.readW (L.E.setWidth 64 + 4#64) 32 = _ at hlo
+    rw [hhi, hlo]
+    exact Whole.count_pair L.len n hn
+
+end VG.Proof.Ed25519.X86.SignCached
+end
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
+
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem digest_addr (hL : L.Ok) : (L.E + 192).setWidth 64 = L.E.setWidth 64 + 192 :=
+  addr_eq (x := L.E) (k := 192) (by have := hL.top; omega_using [this])
+
+theorem digestWithin (hL : L.Ok) : Whole.Within ⟨(L.E + 192).setWidth 64, 64⟩ L.FR :=
+  ⟨192, digest_addr hL, by change 192 + 64 ≤ 256; decide⟩
+
+theorem digest_below (hL : L.Ok) : (below L.E 24).Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ := by
+  change Region.Disjoint ⟨(L.E - BitVec.ofNat 32 24).setWidth 64, 24⟩ _
+  rw [Taint.sub_setWidth hL.below, digest_addr hL]
+  exact (Offset.disjoint_below _ (n := 24) (d := 192) (k := 64) (by decide)).symm
+
+theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (n : Nat) (hn : n < 2 ^ 32) (b : Bool) {msg : List Byte}
+    (hlen : msg.length < 2 ^ 64) (hcount : (if b then L.len.toNat else 0) + n = msg.length)
+    (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (L.scr.setWidth 64) msg) :
+    WP isa (finalize n b) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 = Spec.Sha512.sha512 msg := by
+  refine WP.seq (WP.mono (finalizeArgs_ok hc hL ha n hn b) fun u ⟨hu, hf, a0, a3, a4, ac⟩ => ?_)
+  have H := hashSpace hL
+  have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
+    rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; omega_using [this]
+  have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
+    hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
+  have hp := Whole.finalize_pre hu.esp H a0 a3 a4 hd (digest_below hL) (by
+    rw [digest_addr hL]
+    exact Offset.base_disjoint _ (k := 20) (e := 192) (n := 64) (by decide) (by decide)) fit
+  have cov := hash_covers (L := L)
+    (rs := Whole.finalizeRd L.E ++ Whole.finalizeWr L.scr (L.E + 192)) (by
+    simp only [Whole.finalizeRd, Whole.finalizeWr, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl)
+    · exact .inl (argsWithin L (by decide))
+    · exact scratch_covered (shaWithin L)
+    · exact .inl (digestWithin hL)
+    · exact scratch_covered (workWithin hL))
+  have ws := hash_writes (L := L) (rs := Whole.finalizeWr L.scr (L.E + 192)) (by
+    simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact .inr (shaWithin L)
+    · exact .inl (digestWithin hL)
+    · exact .inr (workWithin hL))
+  have ca {j : Nat} (hj : j < 64) := Whole.call_arg hu.esp H.below H.frameFit hj
+  have cnt : Proof.Sha512.countX86 u.callEntry = BitVec.ofNat 64 msg.length := by
+    unfold Proof.Sha512.countX86
+    rw [ca (j := 2) (by decide), ca (j := 1) (by decide), ac, hcount]
+  have hbsha : (Whole.SHA L.scr).Disjoint (below (u.gpr .esp) 4) := by
+    rw [hu.esp]; exact (H.below_sha (by decide)).symm
+  refine WP.mono (Whole.finalize_call hu H.below hp cov ws (ca (by decide) |>.trans a0)
+    (ca (by decide) |>.trans a3) cnt hbsha (setup_repr hL hf hr) hlen)
+    fun t ⟨ht, hft, hdigest⟩ => ⟨ht, ?_, ?_⟩
+  · refine (setup_frame hf).trans (hash_frame hft ?_)
+    simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact .inl (shaWithin L)
+    · exact .inr ⟨0, by rw [digest_addr hL]; simp, by change 0 + 64 ≤ 64; decide⟩
+    · exact .inl (workWithin hL)
+  · rw [digest_addr hL] at hdigest
+    exact hdigest
+
+end VG.Proof.Ed25519.X86.SignCached
+
+end
+
+end
+
+/-! ### `Ed25519.X86.SignCached.Prefix`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86.SignCached
+open VG VG.X86 VG.Impl.Ed25519.X86.PublicKey VG.Impl.Ed25519.X86.SignCached
+open VG.Proof.Ed25519.X86.PublicKey (Step frame_word decode_words)
+
+theorem copyWord_ok {s : State} {E : BitVec 32} {k : Nat} (he : s.gpr .esp = E)
+    (hr : InRegions (s.rd ++ s.wr) (addr E (224 + 4 * k)) 4)
+    (hw : InRegions s.wr (addr E (64 + 4 * k)) 4) :
+    WP isa (.block (copyWord 224 64 k)) s fun t => Step s t ∧
+      t.mem = s.mem.writeW (addr E (64 + 4 * k)) (s.mem.readW (addr E (224 + 4 * k)) 32) := by
+  simp only [copyWord, at_]
+  refine Wp.wp_ldm he hr fun u hu => ?_
+  refine Wp.wp_stm (hu.other _ (by decide) |>.trans he) (hu.wr ▸ hw) fun t ht => WP.block_nil ?_
+  refine ⟨⟨ht.rd.trans hu.rd, ht.wr.trans hu.wr, fun r h => by rw [ht.gpr]; exact hu.other r h⟩, ?_⟩
+  rw [ht.mem, hu.mem, hu.gpr]
+
+structure PrefixInv (E : BitVec 32) (s : State) (n : Nat) (t : State) : Prop where
+  step : Step s t
+  frame : Frame [⟨E.setWidth 64 + BitVec.ofNat 64 64, 32⟩] s.mem t.mem
+  words : ∀ j < n, t.mem.readW (addr E (64 + 4 * j)) 32 =
+    s.mem.readW (addr E (224 + 4 * j)) 32
+
+theorem copyPrefix_ok {s : State} {E : BitVec 32} (he : s.gpr .esp = E)
+    (hf : E.toNat + 256 ≤ 2 ^ 32) (hw : (⟨E.setWidth 64, 256⟩ : Region) ∈ s.wr) :
+    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap (copyWord 224 64))) s (PrefixInv E s n)
+  | 0, _ => WP.block_nil ⟨Step.refl s, Frame.refl _ _, fun _ h => by omega_using [h]⟩
+  | n + 1, hn => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (copyPrefix_ok he hf hw n (by omega_using [hn])) fun u hu => ?_
+    have ur : InRegions (u.rd ++ u.wr) (addr E (224 + 4 * n)) 4 := by
+      obtain ⟨r, hr, hc⟩ := frame_word hf (hu.step.wr ▸ hw) (d := 224 + 4 * n) (by omega_using [hn])
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
+    have uw := frame_word hf (hu.step.wr ▸ hw) (d := 64 + 4 * n) (by omega_using [hn])
+    refine WP.mono (copyWord_ok (hu.step.esp.trans he) ur uw) fun t ⟨kt, mt⟩ => ?_
+    have a224 : addr E (224 + 4 * n) = E.setWidth 64 + BitVec.ofNat 64 (224 + 4 * n) :=
+      addr_eq (by omega_using [hf, hn])
+    have a32 : addr E (64 + 4 * n) = E.setWidth 64 + BitVec.ofNat 64 (64 + 4 * n) :=
+      addr_eq (by omega_using [hf, hn])
+    have same : u.mem.readW (addr E (224 + 4 * n)) 32 = s.mem.readW (addr E (224 + 4 * n)) 32 := by
+      rw [a224]
+      apply hu.frame.readW (Region.contains_self _ _) _ (by decide)
+      simp only [List.mem_singleton]
+      rintro r rfl
+      exact Offset.disjoint _ (by omega_using [hn]) (by omega_using [hn]) (by omega_using [hn])
+    rw [same] at mt
+    refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
+    · rw [mt, a32]
+      exact hu.frame.writeW (List.mem_singleton_self _) _
+        (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by decide))
+    · rw [mt]
+      by_cases hjn : j = n
+      · subst j; exact Mem.readW_writeW_self32 _ _ _
+      · rw [Mem.readW_writeW_sep (a := addr E (64 + 4 * j)) (b := addr E (64 + 4 * n)) ?_ (by decide)]
+        · exact hu.words j (by omega_using [hj, hjn])
+        · rw [a32, addr_eq (by omega_using [hf, hj, hn])]
+          exact Offset.sep _ (by omega_using [hj, hjn]) (by omega_using [hj, hn]) (by omega_using [hn])
+
+theorem prefix_ok {s : State} {E : BitVec 32} (he : s.gpr .esp = E)
+    (hf : E.toNat + 256 ≤ 2 ^ 32) (hw : (⟨E.setWidth 64, 256⟩ : Region) ∈ s.wr) :
+    WP isa (.block copyPrefix) s fun t => Step s t ∧
+      Frame [⟨E.setWidth 64 + 64, 32⟩] s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (E.setWidth 64 + 64) 32 =
+        Spec.Ed25519.bytesAt s.mem (E.setWidth 64 + 224) 32 := by
+  refine WP.mono (copyPrefix_ok he hf hw 8 (by decide)) fun t ht => ⟨ht.step, ht.frame, ?_⟩
+  have words : ∀ j < 8, t.mem.readW (E.setWidth 64 + BitVec.ofNat 64 (64 + 4 * j)) 32 =
+      s.mem.readW (E.setWidth 64 + BitVec.ofNat 64 (224 + 4 * j)) 32 := by
+    intro j hj
+    have h := ht.words j hj
+    rw [addr_eq (by omega_using [hf, hj]), addr_eq (by omega_using [hf, hj])] at h
+    exact h
+  rw [Proof.Ed25519.bytesAt_encodeLE t.mem, Proof.Ed25519.bytesAt_encodeLE s.mem]
+  apply congrArg (Spec.Ed25519.encodeLE 32)
+  rw [decode_words, decode_words]
+  simp only [BitVec.add_assoc, BitVec.reduceAdd]
+  have w0 := words 0 (by decide)
+  have w1 := words 1 (by decide)
+  have w2 := words 2 (by decide)
+  have w3 := words 3 (by decide)
+  have w4 := words 4 (by decide)
+  have w5 := words 5 (by decide)
+  have w6 := words 6 (by decide)
+  have w7 := words 7 (by decide)
+  simp only [Nat.reduceMul, Nat.reduceAdd] at w0 w1 w2 w3 w4 w5 w6 w7
+  change t.mem.readW (E.setWidth 64 + (64 : BitVec 64)) 32 = s.mem.readW (E.setWidth 64 + (224 : BitVec 64)) 32 at w0
+  rw [w0, w1, w2, w3, w4, w5, w6, w7]
+
+end VG.Proof.Ed25519.X86.SignCached
+
+end
+
+end
 
 /-! ### `Ed25519.X86.SignCached.CT`, which only this module used -/
 

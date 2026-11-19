@@ -5,14 +5,12 @@ public import VerifiedGarbage.Proof.Xdh.AArch64
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.X25519.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Xdh.AArch64
 meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.X25519.AArch64.Verified
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.X25519.Contract

@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-public import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-meta import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
@@ -71,8 +71,6 @@ meta import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 meta import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! ### `Ed25519.Arm.ScalarBaseCTFrom`, which this module and modules that import it used -/

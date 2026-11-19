@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Ed25519.SlidingDigits
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset

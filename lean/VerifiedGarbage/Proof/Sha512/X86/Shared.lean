@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Compress
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Sha512.Scratch
@@ -27,15 +26,14 @@ public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
-public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
 public import VerifiedGarbage.Proof.Sha512.Md
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.MdStream.X86.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.MdStream.Prefix
 meta import VerifiedGarbage.Proof.MdStream.X86.Words

@@ -7,17 +7,13 @@ public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.X448.X86.CT
-
 meta import VerifiedGarbage.Proof.Xdh.X86
 meta import VerifiedGarbage.Proof.X448.X86.Verified
 meta import VerifiedGarbage.Spec.X448.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.X448.X86.CT
 meta import VerifiedGarbage.Proof.X448.Contract
-
 
 /-!
 # X448 exchange, with RFC 7748's check, on x86

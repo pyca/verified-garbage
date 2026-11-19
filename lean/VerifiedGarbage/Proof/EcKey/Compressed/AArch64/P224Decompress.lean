@@ -26,10 +26,9 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Weierstrass.RootTonelli
+import VerifiedGarbage.Proof.P224.Sqrt
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.P224.Sqrt
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMulTiming
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 public import VerifiedGarbage.Proof.Weierstrass.Law

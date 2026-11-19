@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Curve448.AArch64
-public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
+public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.Wide.Word
-import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.X448.Wide.Pack
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

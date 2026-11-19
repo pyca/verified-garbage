@@ -21,11 +21,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
@@ -43,9 +41,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 

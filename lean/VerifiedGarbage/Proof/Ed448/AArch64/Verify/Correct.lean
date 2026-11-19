@@ -7,14 +7,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ed448.AArch64.Verify
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Static
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

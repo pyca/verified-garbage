@@ -50,14 +50,14 @@ import Batteries.Logic
 public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
 import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf

@@ -10,11 +10,10 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Main
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Main
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P256.MulVerified
+meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P256.Tail
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts

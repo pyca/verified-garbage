@@ -24,16 +24,15 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -50,13 +49,12 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 meta import VerifiedGarbage.Proof.Framework.Arm.Syms
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 

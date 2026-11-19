@@ -9,12 +9,10 @@ public import VerifiedGarbage.Proof.X448.AArch64.Freeze
 public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
 public import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
-import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Value
-import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
@@ -39,11 +37,9 @@ import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.X448.AArch64.Step
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
 import VerifiedGarbage.Proof.X448.Bytes
-import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+import VerifiedGarbage.Proof.X448.Wide.Pass
 import VerifiedGarbage.Proof.X448.Wide.Fold
 import VerifiedGarbage.Proof.X448.Wide.Pack
-import VerifiedGarbage.Proof.X448.Wide.Pass
-import VerifiedGarbage.Proof.X448.Wide.Term
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.X448.Limbs
@@ -52,10 +48,8 @@ import VerifiedGarbage.Impl.X448.AArch64
 import VerifiedGarbage.Proof.X448.AArch64.Mem
 import Batteries.Logic
 import VerifiedGarbage.Impl.X448.AArch64.Symmetric
-import VerifiedGarbage.Proof.X448.Wide.CacheRegs
 import VerifiedGarbage.Proof.X448.Wide.Product
 import VerifiedGarbage.Proof.X448.Wide.Word
-import VerifiedGarbage.Proof.X448.Wide.Column
 import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain

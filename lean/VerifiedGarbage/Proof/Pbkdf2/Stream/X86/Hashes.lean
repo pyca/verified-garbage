@@ -9,12 +9,10 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Sha512.X86.Compress
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha256.StateMem

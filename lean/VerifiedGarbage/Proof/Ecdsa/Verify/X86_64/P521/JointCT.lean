@@ -8,12 +8,11 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.P521.X86_64.JointLayout
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Impl.P521.X86_64.Joint
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Framework.GetElem

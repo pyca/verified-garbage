@@ -13,11 +13,11 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
 meta import VerifiedGarbage.Impl.EcKey.P384.AArch64
 public import VerifiedGarbage.Spec.EcKey.P384
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Tables
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Spec.EcKey.P384
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Tables
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.GetElem
 

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.X25519.X86
 
 Field elements are twenty-eight 16-bit limbs in 32-bit words. The field
 arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_sqr`, `vg_gf448_r16_add`,
-`vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Proof/X448/X86/FnContract.lean`),
+`vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Proof/X448/X86/FnVerified.lean`),
 which X448 and Ed448 call rather than inlining it; reduction uses
 `2^448 = 2^224 + 1` modulo the field prime. The product packs the limbs of
 its operands in pairs, fourteen 32-bit words each, and multiplies those by
@@ -107,7 +107,7 @@ def subK (i : Nat) : BitVec 32 := if i = 14 then 131068 else 131070
 
 /-! ## The field functions
 
-`vg_gf448_r16_{mul,add,sub,mul_a24,sqr}(ws, o, a[, b])` (`Proof/X448/X86/FnContract.lean`),
+`vg_gf448_r16_{mul,add,sub,mul_a24,sqr}(ws, o, a[, b])` (`Proof/X448/X86/FnVerified.lean`),
 cdecl: the arguments at `[esp + 4]` to `[esp + 16]`. Each loads `ws` into
 `edi` and saves the callee-saved registers in the last 16 bytes of its own
 working space (`SAVE`), points `esi` (and `ebp`) at its operands, writes the

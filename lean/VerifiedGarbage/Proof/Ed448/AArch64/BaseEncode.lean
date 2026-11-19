@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
+public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Ed448.Scalar

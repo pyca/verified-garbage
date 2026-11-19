@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Proof.X448.X86.FnContract
-import VerifiedGarbage.Proof.X448.X86.FnVerified
+public import VerifiedGarbage.Proof.X448.X86.FnVerified
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset

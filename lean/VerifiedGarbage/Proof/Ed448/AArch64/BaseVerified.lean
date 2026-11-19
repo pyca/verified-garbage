@@ -62,7 +62,6 @@ import VerifiedGarbage.Proof.X448.AArch64.Iter
 import Mathlib.FieldTheory.Finite.Basic
 import VerifiedGarbage.Proof.X448.AArch64.Main
 import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 public import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -100,7 +99,6 @@ meta import VerifiedGarbage.Proof.X448.AArch64.Iter
 meta import Mathlib.FieldTheory.Finite.Basic
 meta import VerifiedGarbage.Proof.X448.AArch64.Main
 meta import VerifiedGarbage.Proof.Ed448.Scalar
-meta import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 meta import VerifiedGarbage.Proof.X448.AArch64.Bits
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Ecdsa.P192
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P192.Arm
@@ -22,7 +21,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Spec.Ecdsa.P192
 meta import VerifiedGarbage.Proof.Ecdsa.Contract
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontP192
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.P192.Arm
@@ -43,6 +41,49 @@ meta import VerifiedGarbage.Spec.Ecdsa.Generic
 meta import VerifiedGarbage.Spec.P192
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+
+/-! ### `Weierstrass.Arm.MontP192`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo P-192's `p` and `n`, as functions, on 32-bit ARM: verified
+
+P-192's moduli, in three 64-bit words, are ones the functions support
+(`ModOk`), so each of their functions meets the contract of its `Api`, as
+the other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Mont
+
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
+
+theorem p192p_ok : ModOk p192p.k p192p.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+theorem p192n_ok : ModOk p192n.k p192n.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+end VG.Proof.Weierstrass.Arm.Mont
+
+end
+
+end
 
 /-! ### `Ecdsa.Arm.P192.Contract`, which this module and modules that import it used -/
 

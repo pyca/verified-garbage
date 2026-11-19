@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64
 
 `[acc] = [base]^(p - 2)` for a prime `p` (`InvCfg.inv`), as the inverse of
 `[base]` (zero for zero) by Bernstein–Yang divsteps in batches of `N = 59`
-(`Proof/Divstep/Alg.lean`'s `invRun`), then one Montgomery multiplication by
+(`Proof/Divstep/Tc.lean`'s `invRun`), then one Montgomery multiplication by
 a constant. Nothing depends on the numbers but through masks.
 
 * `f`, `g`: `n + 1` words each (two's complement), from `(p, x)`.

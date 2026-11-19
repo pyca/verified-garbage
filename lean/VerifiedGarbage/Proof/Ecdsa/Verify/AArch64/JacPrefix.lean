@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 public import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays

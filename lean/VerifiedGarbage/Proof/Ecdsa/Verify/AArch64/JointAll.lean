@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.SumAll
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math

@@ -43,7 +43,6 @@ public import VerifiedGarbage.Impl.X448.Arm.Base
 public import VerifiedGarbage.Proof.Ed448.CombRef
 public import VerifiedGarbage.Proof.X448.Arm.Ops
 import VerifiedGarbage.Proof.X448.Arm.Iter
-import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
 import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 import VerifiedGarbage.Proof.X448.Arm.Bits
@@ -56,7 +55,6 @@ meta import VerifiedGarbage.Impl.X448.Arm.Base
 meta import VerifiedGarbage.Proof.Ed448.CombRef
 meta import VerifiedGarbage.Proof.X448.Arm.Ops
 meta import VerifiedGarbage.Proof.X448.Arm.Iter
-meta import VerifiedGarbage.Proof.Ed448.Arm.BaseInit
 meta import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
 meta import VerifiedGarbage.Proof.X448.Arm.Bits

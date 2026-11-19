@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
 meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
 meta import VerifiedGarbage.Proof.Ed25519.Recover
@@ -35,8 +35,6 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import Mathlib.Tactic.FieldSimp
 meta import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Decode
@@ -63,8 +61,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.PointDecode
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
 meta import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 meta import VerifiedGarbage.Proof.Ed25519.Decode

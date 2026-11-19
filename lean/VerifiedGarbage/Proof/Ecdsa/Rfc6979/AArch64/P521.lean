@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb

@@ -1401,7 +1401,7 @@ end
 /-!
 # ECDSA verification on 32-bit ARM: the whole function
 
-As on x86 (`Proof/Ecdsa/Verify/X86/Main.lean`).
+As on x86 (`Proof/Ecdsa/Verify/X86/CombMain.lean`).
 
 `verify_ok`: `Cfg.verify` returns 1 exactly if the specification's
 verification of the signature holds, for any curve the proof of the code

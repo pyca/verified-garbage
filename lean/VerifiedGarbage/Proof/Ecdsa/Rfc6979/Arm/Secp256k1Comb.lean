@@ -8,22 +8,20 @@ public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 meta import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombContract
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -45,6 +43,49 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Weierstrass.PointContract
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Impl.NatPairs
+import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
+public import VerifiedGarbage.Impl.Weierstrass.Arm.TCombSecp256k1
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Ecdsa.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
+meta import VerifiedGarbage.Proof.Weierstrass.PointContract
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.NatPairs
+meta import Mathlib.Logic.Function.Basic
+meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
+meta import VerifiedGarbage.Impl.Weierstrass.Arm.TCombSecp256k1
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Ecdsa.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Weierstrass.MulContract
+
+/-! ### `Ecdsa.Arm.Secp256k1.CombContract`, which only this module used -/
+
+section
+
+/-! The existing ECDSA contract with its read-only comb table. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Arm.Secp256k1
+open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
+
+def combSignPre (u : Bool) (s : State) : Prop :=
+  Pre (secp256k1With u) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
+
+end VG.Proof.Ecdsa.Arm.Secp256k1
+
+end
+
+end
 
 /-! ### `Ecdsa.Arm.Secp256k1.CombCT`, which only this module used -/
 

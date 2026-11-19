@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified
@@ -13,7 +13,7 @@ import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Verified

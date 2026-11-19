@@ -14,14 +14,14 @@ public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GTable
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
@@ -17,6 +16,32 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+
+/-! ### `Ecdsa.Verify.AArch64.GTable`, which this module and modules that import it used -/
+
+section
+
+/-! P-256 verification's precondition and public relation with its own table of `[m]G`,
+`m = 1 … 256`, at `VG_P256_GTAB` (`P256Joint.p256v`), in place of the comb's. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
+
+/-- `VPre p256` with the verifier's table. -/
+abbrev VPreG := VPreT p256 P256Joint.p256v.tsym P256Joint.p256v.combWords
+
+/-- `JacPublic p256` with the verifier's table. -/
+abbrev JacPublicG := JacPublicT p256 P256Joint.p256v.tsym
+
+end VG.Proof.Ecdsa.Verify.AArch64
+
+end
+
+end
 
 /-! ### `Ecdsa.Verify.AArch64.AllocatedInput`, which only this module used -/
 

@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
+public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Impl.NatPairs
-public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
 public import VerifiedGarbage.Impl.Weierstrass.Arm.TCombSecp256k1
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Secp256k1.Comb7

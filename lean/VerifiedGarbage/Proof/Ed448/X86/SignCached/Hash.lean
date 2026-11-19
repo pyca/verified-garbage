@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
-public import VerifiedGarbage.Proof.Ed448.X86.Shake.Sponge
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Header
 public import VerifiedGarbage.Impl.Ed448.X86.SignCached
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
@@ -16,8 +15,7 @@ public import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Spec.Ed448

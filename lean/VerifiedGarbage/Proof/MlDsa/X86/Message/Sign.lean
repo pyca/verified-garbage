@@ -21,12 +21,12 @@ meta import VerifiedGarbage.Proof.MlDsa.X86.Message.HashMu
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.MlDsa.X86.Message
-public import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.MlKem.X86.Piece
 import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 import VerifiedGarbage.Proof.Sha3.X86.Permute
 meta import VerifiedGarbage.Proof.Sha3.X86.Permute
 meta import VerifiedGarbage.Impl.MlDsa.X86.Message

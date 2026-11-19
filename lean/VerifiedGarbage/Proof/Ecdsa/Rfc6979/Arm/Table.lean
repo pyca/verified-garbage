@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Sha256.Md
@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.ICall
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
@@ -41,7 +40,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec

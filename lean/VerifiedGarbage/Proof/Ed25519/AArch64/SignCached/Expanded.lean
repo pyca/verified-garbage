@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ed25519.ExpandedSign
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -30,7 +30,6 @@ meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -46,7 +45,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -58,10 +56,8 @@ meta import Mathlib.Tactic.NormNum.GCD
 meta import Mathlib.Data.Sym.Sym2.Init
 meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 import VerifiedGarbage.Spec.Weierstrass
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 meta import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT

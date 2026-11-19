@@ -170,7 +170,7 @@ end
 /-!
 # Ed25519's base-point multiplication on RISC-V: the comb
 
-What `combMultiply` computes, as ARMv7's comb does (`Proof/Ed25519/Arm/LrSlot.lean`).
+What `combMultiply` computes, as ARMv7's comb does (`Proof/Ed25519/Arm/ScalarBaseCTMul.lean`).
 
 *The digits.* Digit `i` of the scalar at `p` is the nibble `n` of byte `i / 2` (its high
 nibble for odd `i`), `nibAt`; `combDigit` leaves the mask of its sign (all ones for `n < 8`)

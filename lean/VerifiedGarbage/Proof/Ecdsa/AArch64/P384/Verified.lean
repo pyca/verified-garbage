@@ -33,7 +33,7 @@ public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Impl.P384.Linear
-import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -54,7 +54,7 @@ meta import VerifiedGarbage.Impl.P384.EcdhDouble
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Impl.P384.Linear
-meta import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

@@ -17,11 +17,10 @@ public import VerifiedGarbage.Proof.Weierstrass.InverseContract
 import VerifiedGarbage.Proof.P256.EcdhInverse.RawUpdate
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
 import Mathlib.Tactic.Positivity
-public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 import Mathlib.Tactic.FieldSimp
-import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 import VerifiedGarbage.Proof.P256.EcdhInverse.Finish

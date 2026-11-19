@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Spec.Ed25519.Contract
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
 public import VerifiedGarbage.Proof.Ed25519.Point64Contract
@@ -21,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Spec.Weierstrass

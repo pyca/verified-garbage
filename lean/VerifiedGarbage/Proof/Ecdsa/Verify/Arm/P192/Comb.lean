@@ -30,7 +30,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P192.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.P192.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
@@ -52,7 +52,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.CombGenerator
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ecdsa.Generic

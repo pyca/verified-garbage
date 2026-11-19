@@ -1,6 +1,6 @@
 module
--- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+-- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Divstep.Packed
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 import VerifiedGarbage.Proof.Mont.X86_64.Csub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import Mathlib.Tactic.Linarith

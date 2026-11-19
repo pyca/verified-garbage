@@ -3,14 +3,13 @@ module
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import VerifiedGarbage.Proof.Divstep.Tc
 
 /-! ### `Divstep.Early`, which this module and modules that import it used -/
 

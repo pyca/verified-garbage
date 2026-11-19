@@ -1,20 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 meta import VerifiedGarbage.Spec.Ecdsa.P521
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignLit
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves

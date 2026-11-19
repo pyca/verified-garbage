@@ -8,12 +8,11 @@ import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 public import VerifiedGarbage.Impl.P224.X86_64.Joint
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
 public import VerifiedGarbage.Spec.Ecdsa.P224
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Framework.GetElem

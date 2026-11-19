@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Sha3.X86.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.X86.Shared
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.X86.Wp
@@ -24,7 +23,6 @@ meta import VerifiedGarbage.Impl.Sha3.X86.Instances
 meta import VerifiedGarbage.Spec.Sha3.Instances
 meta import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 meta import VerifiedGarbage.Proof.Sha3.X86.Shared
 meta import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 meta import VerifiedGarbage.Proof.Framework.X86.Wp

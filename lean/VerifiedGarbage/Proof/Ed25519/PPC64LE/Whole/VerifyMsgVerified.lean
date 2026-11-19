@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -38,7 +38,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyCT
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
 import VerifiedGarbage.Proof.Ed25519.Window
@@ -51,7 +51,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyCT
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowRhs
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.WindowDigit
 meta import VerifiedGarbage.Proof.Ed25519.Window
@@ -64,7 +64,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.Challenge
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
@@ -73,7 +72,7 @@ public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Verify
 public import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
 meta import VerifiedGarbage.Impl.Ed25519.PPC64LE.VerifyWindow
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Prune
 meta import VerifiedGarbage.Proof.Ed25519.Challenge

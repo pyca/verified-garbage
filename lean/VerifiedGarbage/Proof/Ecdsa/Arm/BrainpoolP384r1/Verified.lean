@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.MulLit
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
@@ -16,7 +15,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
 meta import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
@@ -43,6 +41,49 @@ meta import VerifiedGarbage.Spec.BrainpoolP384r1
 meta import VerifiedGarbage.Spec.Ecdsa.Generic
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+
+/-! ### `Weierstrass.Arm.MontBrainpoolP384r1`, which this module and modules that import it used -/
+
+section
+
+/-!
+# Montgomery arithmetic modulo brainpoolP384r1's `p` and `n`, as functions, on 32-bit ARM: verified
+
+brainpoolP384r1's moduli, in six 64-bit words, are ones the functions support
+(`ModOk`), so each of their functions meets the contract of its `Api`, as
+the other curves' do (`MontVerified.lean`). Apart from the other curves', so
+that adding them rebuilds none of their proofs.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Mont
+
+open VG VG.Arm VG.Impl.Weierstrass.Arm.Mont Impl.Weierstrass.Mont
+
+theorem brainpoolp384r1p_ok : ModOk brainpoolp384r1p.k brainpoolp384r1p.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+theorem brainpoolp384r1n_ok : ModOk brainpoolp384r1n.k brainpoolp384r1n.m where
+  n3 := by decide
+  n9 := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+
+end VG.Proof.Weierstrass.Arm.Mont
+
+end
+
+end
 
 /-! ### `Ecdsa.Arm.BrainpoolP384r1.Contract`, which this module and modules that import it used -/
 

@@ -28,12 +28,12 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Expanded
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CopyDigest
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
@@ -50,7 +50,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
@@ -66,7 +65,6 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap

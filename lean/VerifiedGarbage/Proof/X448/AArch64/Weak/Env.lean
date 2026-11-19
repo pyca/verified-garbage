@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Proof.X448.AArch64.Env
-public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
+public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 public import VerifiedGarbage.Impl.Curve448.AArch64
-import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Weak
@@ -12,22 +11,144 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 public import VerifiedGarbage.Proof.X448.Wide.Word
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
-public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
 public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.Wide.Product
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.X448.AArch64.Wide
-import VerifiedGarbage.Proof.X448.Wide.Term
-public import VerifiedGarbage.Proof.X448.Wide.Column
-import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+public import VerifiedGarbage.Proof.X448.Wide.Pass
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Ed25519.Word64
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.X448.AArch64.Cached
+import VerifiedGarbage.Proof.Framework.GetElem
+
+/-! ### `X448.Wide.CacheRegs`, which this module and modules that import it used -/
+
+section
+
+/-! Untrusted: register allocation for cached wide X448 operands. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+open VG VG.AArch64
+open VG.Impl.X448.AArch64.Cached
+open VG.Proof.X448.AArch64 (Keeps)
+
+abbrev termRegs : List Reg := [.x4, .x5, .x10, .x11]
+
+def sqrRegs : List Reg := [.x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x13, .x14, .x15, .x16]
+
+theorem cacheReg_kept {i : Nat} (hi : i < 8) : cacheReg i ∉ ([.x4, .x5, .x10, .x11] : List Reg) := by
+  have h : ∀ n < 8, cacheReg n ∉ ([.x4, .x5, .x10, .x11] : List Reg) := by decide +kernel
+  exact h i hi
+
+theorem cacheReg_member {i : Nat} (hi : i < 8) : cacheReg i ∈ sqrRegs := by
+  have h : ∀ n < 8, cacheReg n ∈ sqrRegs := by decide +kernel
+  exact h i hi
+
+theorem cacheReg_ne10 {i : Nat} (hi : i < 8) : cacheReg i ≠ .x10 := by
+  intro h
+  exact cacheReg_kept hi (by rw [h]; decide)
+
+theorem cacheReg_ne11 {i : Nat} (hi : i < 8) : cacheReg i ≠ .x11 := by
+  intro h
+  exact cacheReg_kept hi (by rw [h]; decide)
+
+theorem cacheReg_inj {i j : Nat} (hi : i < 8) (hj : j < 8) : cacheReg i = cacheReg j ↔ i = j := by
+  have h : ∀ i < 8, ∀ j < 8, cacheReg i = cacheReg j ↔ i = j := by decide +kernel
+  exact h i hi j hj
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+/-! ### `Curve448.AArch64.Bounds`, which this module and modules that import it used -/
+
+section
+
+/-! ### `X448.Wide.SquareProduct`, which only this module used -/
+
+section
+
+/-! Untrusted: symmetric diagonal accumulation for an eight-limb square. -/
+
+@[expose] public section
+
+namespace VG.Proof.X448.Wide
+
+def sqrSum (f : Nat → Nat) (k : Nat) : Nat → Nat
+  | 0 => 0
+  | n + 1 => sqrSum f k n + if n ≤ k ∧ k < n + 8 ∧ n ≤ k - n then
+      if n = k - n then f n * f (k - n) else 2 * (f n * f (k - n)) else 0
+
+theorem sqrSum_eq (f : Nat → Nat) {k : Nat} (hk : k < 16) :
+    sqrSum f k 8 = rows f f 8 k := by
+  rw [← colSum_eq]
+  obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 ∨
+    k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega_using [hk]
+  all_goals (simp [sqrSum, colSum] <;> grind)
+
+theorem sqrSum_le {n m : Nat} (hn : n ≤ m) (f : Nat → Nat) (k : Nat) :
+    sqrSum f k n ≤ sqrSum f k m := by
+  induction m generalizing n with
+  | zero =>
+    obtain rfl : n = 0 := by omega_using [hn]
+    exact Nat.le_refl _
+  | succ m ih =>
+    by_cases h : n = m + 1
+    · subst n; exact Nat.le_refl _
+    · exact Nat.le_trans (ih (by omega_using [hn, h])) (by rw [sqrSum]; omega_using [])
+
+end VG.Proof.X448.Wide
+
+end
+
+end
+
+
+@[expose] public section
+
+namespace VG.Proof.Curve448.AArch64
+open VG.Proof.X448.Wide VG.Proof.X448.Wide.Representation
+
+theorem rows_bound {f g : Nat → Nat} (hf : Within weakBound f)
+    (hg : Within weakBound g) {n : Nat} (hn : n ≤ 8) (k : Nat) :
+    rows f g n k ≤ n * (weakBound - 1) ^ 2 := by
+  induction n with
+  | zero => simp only [rows, Nat.zero_mul, Nat.le_refl]
+  | succ n ih =>
+    rw [rows, addRow_at]
+    have hp := ih (by omega_using [hn])
+    split
+    · rename_i hk
+      have h1 := hf n (by omega_using [hn])
+      have h2 := hg (k - n) (by omega_using [hk])
+      have hprod : f n * g (k - n) ≤ (weakBound - 1) ^ 2 := by
+        rw [Nat.pow_two]
+        exact Nat.mul_le_mul (by omega_using [h1]) (by omega_using [h2])
+      rw [Nat.succ_mul]; omega_using [ih, hn, hprod]
+    · rw [Nat.succ_mul]; omega_using [ih, hn]
+
+theorem sqrSum_bound {f : Nat → Nat} (hf : Within weakBound f)
+    {n k : Nat} (hn : n ≤ 8) (hk : k < 16) : sqrSum f k n < 2 ^ 116 := by
+  have h := sqrSum_le hn f k
+  rw [sqrSum_eq f hk] at h
+  exact Nat.lt_of_le_of_lt (Nat.le_trans h (rows_bound hf hf (by decide) k)) (by decide)
+end VG.Proof.Curve448.AArch64
+
+end
+
+end
 
 /-! ### `Curve448.AArch64.SymmetricColumn`, which this module and modules that import it used -/
 

@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -42,8 +41,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86_64.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.InverseVerified
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressContract
-meta import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressContract
+meta import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.DecompressMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline

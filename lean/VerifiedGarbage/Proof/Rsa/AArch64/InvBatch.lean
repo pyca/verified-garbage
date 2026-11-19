@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Divstep.SignedWords
-public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Divstep.TcS
 import VerifiedGarbage.Proof.Divstep.TcSBounds
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
@@ -25,7 +25,6 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.RdOps
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
-import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith

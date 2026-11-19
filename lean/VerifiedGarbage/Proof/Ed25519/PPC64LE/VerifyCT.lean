@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
+meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 meta import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
@@ -22,14 +22,12 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.TCB.PPC64LE.Target
-meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.VerifyPoints
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.Packed
 meta import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes

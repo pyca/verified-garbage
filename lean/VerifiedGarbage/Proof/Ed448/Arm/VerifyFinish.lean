@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
-public import VerifiedGarbage.Proof.X448.Arm.Save
 
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
+public import VerifiedGarbage.Proof.X448.Arm.Save
 import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
 import VerifiedGarbage.Proof.X448.Arm.Restore
 import VerifiedGarbage.Proof.X448.Arm.Counters

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
 public import VerifiedGarbage.Impl.Ecdh.P384.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -16,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
 meta import VerifiedGarbage.Impl.Ecdh.P384.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

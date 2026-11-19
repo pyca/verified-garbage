@@ -21,10 +21,10 @@ meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 
 /-! ### `Ed25519.AArch64.ScalarBaseCTEngine`, which this module and modules that import it used -/
 

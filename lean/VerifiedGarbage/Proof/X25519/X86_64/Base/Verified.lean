@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
@@ -18,10 +18,8 @@ public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.X25519.X86_64.Base
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 import VerifiedGarbage.Proof.X25519.Edwards.Base
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
@@ -31,10 +29,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 meta import VerifiedGarbage.Impl.X25519.X86_64.Base
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.X25519.Edwards.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch

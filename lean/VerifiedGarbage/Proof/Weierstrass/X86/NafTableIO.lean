@@ -1,7 +1,7 @@
 module
-public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 
+public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith

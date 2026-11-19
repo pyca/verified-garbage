@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
@@ -35,7 +35,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
 import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
 import VerifiedGarbage.Proof.Weierstrass.X86.PointFieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafPublicFields
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -45,7 +44,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
 meta import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-meta import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointFieldTiming
 
 /-! ### `Weierstrass.X86.NafWindowTiming`, which this module and modules that import it used -/

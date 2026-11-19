@@ -19,12 +19,12 @@ import Mathlib.Data.Nat.Find
 meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 meta import VerifiedGarbage.Spec.Ecdsa.P521
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Proof.Framework.GetElem

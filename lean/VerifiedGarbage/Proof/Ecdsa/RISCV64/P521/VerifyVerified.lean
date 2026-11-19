@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.CombVerified
-import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.SignVerified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -31,7 +31,6 @@ import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Verified
-public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
@@ -46,7 +45,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.EcKey.PublicKey
-meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.Sign
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
 meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts

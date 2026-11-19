@@ -1111,7 +1111,7 @@ structure MdHash where
   the code's (its state's representation and its working space): what a
   function generic over the variant that calls HMAC's `_scratch` functions
   needs (deterministic ECDSA's, through a table of `Hmac`,
-  `Proof/Ecdsa/Rfc6979/AArch64/Regs.lean`). -/
+  `Proof/Ecdsa/Rfc6979/AArch64/Hash.lean`). -/
   C : CoreOK (core H)
   hSH : ok.SH = I.S
   hW : H.W = I.scratch

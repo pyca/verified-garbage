@@ -16,8 +16,6 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 public import VerifiedGarbage.Proof.X448.Wide.Pass
 public import VerifiedGarbage.Proof.X448.Wide.Pack
-public import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
-public import VerifiedGarbage.Proof.Curve448.AArch64.Normalize
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -25,20 +23,15 @@ public import VerifiedGarbage.Proof.X448.AArch64.Carry
 public import VerifiedGarbage.Proof.X448.AArch64.Copy
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
 public import VerifiedGarbage.Proof.X448.AArch64.Step
-public import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
 public import VerifiedGarbage.Proof.X448.Wide.Fold
-public import VerifiedGarbage.Proof.X448.Wide.Term
 public import VerifiedGarbage.Impl.X448.AArch64
 public import VerifiedGarbage.Proof.X448.Limbs
 public import Batteries.Logic
 public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
-public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
 public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Word
-public import VerifiedGarbage.Proof.X448.Wide.Column
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
