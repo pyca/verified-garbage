@@ -112,5 +112,9 @@ bl {vg_sha512_finalize_scratch}
 pub(crate) mod vg_hmac_sha512_256_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_core.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_256_init_scratch.rs"]
 pub(crate) mod vg_hmac_sha512_256_init_scratch;

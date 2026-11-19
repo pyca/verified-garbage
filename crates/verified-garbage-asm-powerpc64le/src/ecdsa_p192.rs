@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 49 bytes.
@@ -855,7 +857,7 @@ bl {vg_p192_mul_mod_p}
 bl {vg_p192_mul_mod_n}
 .base64 "AASAONADoDjoA8A4"
 bl {vg_p192_sub_mod_n}
-.base64 "wAGj6MgBg+h4I6V80AGD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/gABKPoCASD6HgjpXwQBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOGAEg+g4KIR8YASD+GAEQ+kBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8cAAhOCAAgE4=""#,
+.base64 "wAGj6MgBg+h4I6V80AGD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHxgBIPoOCiEfGAEg/gABKPoCASD6HgjpXwQBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfAAAgDhQIKV8//+lOGAEg+g4KIR8YASD+GAEQ+kBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8cAAhOAAAADiR/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhwACE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,

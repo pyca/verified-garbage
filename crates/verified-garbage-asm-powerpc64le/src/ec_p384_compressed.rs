@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 49 bytes.
@@ -36,7 +38,7 @@ bl {vg_p384_add_mod_p}
 bl {vg_p384_add_mod_p}
 .base64 "8AeAODAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
-.base64 "8Aej6PgHg+h4I6V8AAiD6HgjpXwICIPoeCOlfBAIg+h4I6V8GAiD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/iACEPpwAGD6KAGo+h4IqV8OFClfHgqhHxgB4P4yAGD6KgGo+h4IqV8OFClfHgqhHxoB4P40AGD6LAGo+h4IqV8OFClfHgqhHxwB4P42AGD6LgGo+h4IqV8OFClfHgqhHx4B4P44AGD6MAGo+h4IqV8OFClfHgqhHyAB4P46AGD6MgGo+h4IqV8OFClfHgqhHyIB4P48AGD6NAGo+h4IqV8OFClfHgqhHxQCIP4+AGD6NgGo+h4IqV8OFClfHgqhHxYCIP4AAKD6OAGo+h4IqV8OFClfHgqhHxgCIP4CAKD6OgGo+h4IqV8OFClfHgqhHxoCIP4EAKD6PAGo+h4IqV8OFClfHgqhHxwCIP4GAKD6PgGo+h4IqV8OFClfHgqhHx4CIP4gAhD6QAHg+gBAKA4OCiEfAIAhDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "8Aej6PgHg+h4I6V8AAiD6HgjpXwICIPoeCOlfBAIg+h4I6V8GAiD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/iACEPpwAGD6KAGo+h4IqV8OFClfHgqhHxgB4P4yAGD6KgGo+h4IqV8OFClfHgqhHxoB4P40AGD6LAGo+h4IqV8OFClfHgqhHxwB4P42AGD6LgGo+h4IqV8OFClfHgqhHx4B4P44AGD6MAGo+h4IqV8OFClfHgqhHyAB4P46AGD6MgGo+h4IqV8OFClfHgqhHyIB4P48AGD6NAGo+h4IqV8OFClfHgqhHxQCIP4+AGD6NgGo+h4IqV8OFClfHgqhHxYCIP4AAKD6OAGo+h4IqV8OFClfHgqhHxgCIP4CAKD6OgGo+h4IqV8OFClfHgqhHxoCIP4EAKD6PAGo+h4IqV8OFClfHgqhHxwCIP4GAKD6PgGo+h4IqV8OFClfHgqhHx4CIP4gAhD6QAHg+gBAKA4OCiEfAIAhDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
@@ -46,6 +48,8 @@ bl {vg_p384_sub_mod_p}
 /// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -92,7 +96,7 @@ bl {vg_p384_mul_mod_p}
 bl {vg_p384_mul_mod_p}
 .base64 "YAeAOPAHoDggCMA4"
 bl {vg_p384_sub_mod_p}
-.base64 "YAej6GgHg+h4I6V8cAeD6HgjpXx4B4PoeCOlfIAHg+h4I6V8iAeD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/gAB4PoQAaj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8gAiD6DgohHyACIP4gAhD6QQAgDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAAHg+g4UIR8WQDAOCg1jnwIB4PoOFCEfFEAwDgoNY58EAeD6DhQhHxJAMA4KDWOfBgHg+g4UIR8QQDAOCg1jnwgB4PoOFCEfDkAwDgoNY58KAeD6DhQhHwxAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "YAej6GgHg+h4I6V8cAeD6HgjpXx4B4PoeCOlfIAHg+h4I6V8iAeD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTiACIPoOCiEfIAIg/gAB4PoQAaj6HgipXwBAIA4OCClfAAAgDhQIEV9AQCqOAAAgDhQIKV8gAiD6DgohHyACIP4gAhD6QQAgDg4UIR8AACOmHAGg+g4UIR8KQDAOCg1jnx4BoPoOFCEfCEAwDgoNY58gAaD6DhQhHwZAMA4KDWOfIgGg+g4UIR8EQDAOCg1jnyQBoPoOFCEfAkAwDgoNY58mAaD6DhQhHwBAMA4KDWOfAAHg+g4UIR8WQDAOCg1jnwIB4PoOFCEfFEAwDgoNY58EAeD6DhQhHxJAMA4KDWOfBgHg+g4UIR8QQDAOCg1jnwgB4PoOFCEfDkAwDgoNY58KAeD6DhQhHwxAMA4KDWOfAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,

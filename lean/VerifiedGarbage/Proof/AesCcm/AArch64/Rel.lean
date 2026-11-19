@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 
@@ -50,11 +51,21 @@ theorem rel_env {c : Cx} {code : Prog isa} {σ₁ σ₂ : State} (rs : List Reg)
     · exact Env.agree E₁ E₂ r h
     · exact hr r h) hc
 
-/-- A call of `vg_cmac_aes_update` with the same arguments in both runs. -/
-theorem rel_upd (v : Proof.CmacAes.AArch64.UpdateImpl) {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
-    (h₁ : Proof.CmacAes.Stream.AArch64.UArgs σ₁ K C D S R n) (h₂ : Proof.CmacAes.Stream.AArch64.UArgs σ₂ K C D S R n)
+/-- A call of `vg_cmac_aes_update` with the same arguments in both runs, with
+`N` bytes of working space, at least what it needs. -/
+theorem rel_upd (v : Proof.CmacAes.AArch64.UpdateImpl) {N : Nat} (hv : v.scratch ≤ N) {σ₁ σ₂ : State}
+    {K C D S : Addr} {R n : Nat}
+    (h₁ : Proof.CmacAes.Stream.AArch64.UArgsW N σ₁ K C D S R n) (h₂ : Proof.CmacAes.Stream.AArch64.UArgsW N σ₂ K C D S R n)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call v.callee.name v.callee.code) TT :=
-  Proof.CmacAes.Stream.AArch64.upd_rel v _ fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
+  Proof.CmacAes.Stream.AArch64.upd_relLe v _ hv fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
+
+/-- A call of `vg_aes_ctr32` with the same arguments in both runs, with `N`
+bytes of working space, at least what it needs. -/
+theorem rel_ctrLe (v : Proof.Aes.AArch64.Ctr32Impl) {N : Nat} (hv : v.scratch ≤ N) {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
+    (h₁ : Proof.AesGcm.AArch64.CtrCall σ₁ K C D S R n N) (h₂ : Proof.AesGcm.AArch64.CtrCall σ₂ K C D S R n N) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) (.call v.callee.name v.callee.code) TT :=
+  Proof.AesGcm.AArch64.ctr_relLe v hv fun a b hab => by
+    obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
 
 /-- `a; (b; (c; (d; (e; f))))`, related as `(a; (b; (c; (d; e)))); f`. -/
 theorem rel_assoc5 {P Q : State → State → Prop} {a b c d e f : Prog isa}

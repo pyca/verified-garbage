@@ -37,7 +37,7 @@ namespace VG.Proof.AesCcm.AArch64
 
 open VG VG.AArch64
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.CmacAes.Stream.AArch64 (UArgs)
+open VG.Proof.CmacAes.Stream.AArch64 (UArgsW)
 open VG.Proof.AesGcm.AArch64 (CtrCall covers_cons covers_nil covers_append covers_left)
 
 /-- The arguments of `vg_cmac_aes_update`: the key schedule, the state at
@@ -47,7 +47,7 @@ theorem uargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y +
     (hk : 16 * k < 2 ^ 64) (x0 : s.gpr .x0 = c.K) (x1 : s.gpr .x1 = BitVec.ofNat 64 c.R)
     (x2 : s.gpr .x2 = c.W + BitVec.ofNat 64 y) (x3 : s.gpr .x3 = Q) (x4 : s.gpr .x4 = BitVec.ofNat 64 k)
     (x5 : s.gpr .x5 = c.W + BitVec.ofNat 64 384) :
-    UArgs s c.K (c.W + BitVec.ofNat 64 y) Q (c.W + BitVec.ofNat 64 384) c.R k where
+    UArgsW c.N s c.K (c.W + BitVec.ofNat 64 y) Q (c.W + BitVec.ofNat 64 384) c.R k where
   x0 := x0
   x1 := x1
   x2 := x2
@@ -57,16 +57,16 @@ theorem uargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y +
   rounds := L.rounds
   hn := hk
   wc := L.k_w' (by omega_using [hy])
-  ws := L.k_w' (by decide)
+  ws := L.k_w' (Nat.le_refl _)
   dc := hqy
   ds := hq.qs
-  cs := L.w_w (.inl (by omega_using [hy])) (by omega_using [hy]) (by decide)
+  cs := L.w_w (.inl (by omega_using [hy])) (by omega_using [hy]) (Nat.le_refl _)
   wrapC := by rw [L.wrapW (by omega_using [hy])]; have := L.ww; omega_using [hy, this]
   wrapD := hq.wrap
-  wrapS := by rw [L.wrapW (by decide)]; have := L.ww; omega_using [this]
+  wrapS := L.wrapHi
   reads := covers_append (covers_cons E.perm.k (covers_cons hq.rd covers_nil))
-    (covers_cons (E.perm.wCR (by omega_using [hy])) (covers_cons (E.perm.wCR (by decide)) covers_nil))
-  writes := covers_cons (E.perm.wC (by omega_using [hy])) (covers_cons (E.perm.wC (by decide)) covers_nil)
+    (covers_cons (E.perm.wCR (by omega_using [hy])) (covers_cons (E.perm.wCR (Nat.le_refl _)) covers_nil))
+  writes := covers_cons (E.perm.wC (by omega_using [hy])) (covers_cons (E.perm.wC (Nat.le_refl _)) covers_nil)
 
 /-- The arguments of `vg_aes_ctr32`: the key schedule, the counter block at
 `W + o`, `k` blocks at `Q`, which it may write, and the working space at
@@ -76,7 +76,7 @@ theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o +
     (hqk : (⟨c.K, 240⟩ : Region).Disjoint ⟨Q, 16 * k⟩) (hqw : Covers [⟨Q, 16 * k⟩] s.wr) (hk : k < 2 ^ 64)
     (x0 : s.gpr .x0 = c.K) (x1 : s.gpr .x1 = BitVec.ofNat 64 c.R) (x2 : s.gpr .x2 = c.W + BitVec.ofNat 64 o)
     (x3 : s.gpr .x3 = Q) (x4 : s.gpr .x4 = BitVec.ofNat 64 k) (x5 : s.gpr .x5 = c.W + BitVec.ofNat 64 384) :
-    CtrCall s c.K (c.W + BitVec.ofNat 64 o) Q (c.W + BitVec.ofNat 64 384) c.R k where
+    CtrCall s c.K (c.W + BitVec.ofNat 64 o) Q (c.W + BitVec.ofNat 64 384) c.R k c.N where
   x0 := x0
   x1 := x1
   x2 := x2
@@ -88,13 +88,13 @@ theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o +
   n_lt := hk
   kc := L.k_w' (by omega_using [ho])
   kd := hqk
-  ks := L.k_w' (by decide)
+  ks := L.k_w' (Nat.le_refl _)
   cd := hqo.symm
-  cs := L.w_w (.inl (by omega_using [ho])) (by omega_using [ho]) (by decide)
-  ds := hq.qs.sub_right (Region.sub_prefix (by decide))
+  cs := L.w_w (.inl (by omega_using [ho])) (by omega_using [ho]) (Nat.le_refl _)
+  ds := hq.qs
   reads := covers_append (covers_cons E.perm.k covers_nil)
-    (covers_cons (E.perm.wCR (by omega_using [ho])) (covers_cons hq.rd (covers_cons (E.perm.wCR (by decide)) covers_nil)))
-  writes := covers_cons (E.perm.wC (by omega_using [ho])) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+    (covers_cons (E.perm.wCR (by omega_using [ho])) (covers_cons hq.rd (covers_cons (E.perm.wCR (Nat.le_refl _)) covers_nil)))
+  writes := covers_cons (E.perm.wC (by omega_using [ho])) (covers_cons hqw (covers_cons (E.perm.wC (Nat.le_refl _)) covers_nil))
 
 /-- A block of `W` below 384 as the data of a call of `vg_aes_ctr32`. -/
 theorem cargsW {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o + 16 ≤ 384) {d : Nat}
@@ -102,9 +102,9 @@ theorem cargsW {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o 
     (x0 : s.gpr .x0 = c.K) (x1 : s.gpr .x1 = BitVec.ofNat 64 c.R) (x2 : s.gpr .x2 = c.W + BitVec.ofNat 64 o)
     (x3 : s.gpr .x3 = c.W + BitVec.ofNat 64 d) (x4 : s.gpr .x4 = BitVec.ofNat 64 1)
     (x5 : s.gpr .x5 = c.W + BitVec.ofNat 64 384) :
-    CtrCall s c.K (c.W + BitVec.ofNat 64 o) (c.W + BitVec.ofNat 64 d) (c.W + BitVec.ofNat 64 384) c.R 1 :=
-  cargs L E ho (L.srcW E.perm (k := 16 * 1) hd) (L.w_w (by omega_using [hod]) (by omega_using [hd]) (by omega_using [ho])) (L.k_w' (by omega_using [hd]))
-    (E.perm.wC (by omega_using [hd])) (by decide) x0 x1 x2 x3 x4 x5
+    CtrCall s c.K (c.W + BitVec.ofNat 64 o) (c.W + BitVec.ofNat 64 d) (c.W + BitVec.ofNat 64 384) c.R 1 c.N :=
+  cargs L E ho (L.srcW E.perm (k := 16 * 1) hd (by omega_using [hd])) (L.w_w (by omega_using [hod]) (by omega_using [hd]) (by omega_using [ho])) (L.k_w' (by omega_using [hd]))
+    (E.perm.wC (by omega_using [hd])) (by first | decide | omega) x0 x1 x2 x3 x4 x5
 
 end VG.Proof.AesCcm.AArch64
 
@@ -133,7 +133,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le8)
 open VG.Impl.AesGcm.AArch64 (mov ptr imm copyLoop)
 open VG.Proof.AesGcm.AArch64 (LoopPre copyLoop_ok loopRegs Others add_ofNat_assoc)
-open VG.Proof.CmacAes.Stream.AArch64 (upd_call)
+open VG.Proof.CmacAes.Stream.AArch64 (upd_call upd_callLe)
 open VG.Proof.AesCcm (length_bytesAt bytesAt_writeBytes_at bytesAt_writeW8_base ctrBlock_take8 ctr_or be_zero
   sub_low_byte)
 
@@ -147,9 +147,9 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have h7 := L.h7
   have h13 := L.h13
-  have w₁ := E.perm.wW (show 48 + 8 ≤ 2560 by decide)
-  have w₂ := E.perm.wW (show 56 + 8 ≤ 2560 by decide)
-  have w₃ := E.perm.wW (show 48 + 1 ≤ 2560 by decide)
+  have w₁ := E.perm.wW (show 48 + 8 ≤ 384 + c.N by omega)
+  have w₂ := E.perm.wW (show 56 + 8 ≤ 384 + c.N by omega)
+  have w₃ := E.perm.wW (show 48 + 1 ≤ 384 + c.N by omega)
   obtain ⟨s₁, run₁, hm₁, x11₁, x12₁, x13₁, hg₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa ctrsSeg s = some s₁ ∧
       s₁.mem = ((s.mem.writeW (c.W + BitVec.ofNat 64 48) (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 56)
         (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 48) (BitVec.ofNat 8 (15 - c.nl - 1)) ∧
@@ -169,7 +169,7 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp [gpr_write, hr]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have E₁ : Env c s₁ := E.others hg₁ (by decide) sp₁ rd₁ wr₁
+  have E₁ : Env c s₁ := E.others hg₁ (by first | decide | omega) sp₁ rd₁ wr₁
   have dNW : (⟨N, c.nl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 49, c.nl⟩ := hN.wd (by omega_arith)
   have lp : LoopPre s₁ N (c.W + BitVec.ofNat 64 49) c.nl :=
     ⟨by omega_arith, by rw [rd₁, wr₁]; exact hN.rd, E₁.perm.wC (by omega_arith), dNW⟩
@@ -177,30 +177,30 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
   have hfz : Frame [⟨c.W + BitVec.ofNat 64 48, 16⟩] s.mem s₁.mem := by
     rw [hm₁]
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains c.W (d := 48) (n := 8) (e := 48) (k := 16) (by decide) (by decide) (by decide))).writeW
+      (Offset.contains c.W (d := 48) (n := 8) (e := 48) (k := 16) (by first | decide | omega) (by first | decide | omega) (by first | decide | omega))).writeW
       (List.mem_singleton_self _) _
-      (Offset.contains c.W (d := 56) (n := 8) (e := 48) (k := 16) (by decide) (by decide) (by decide))).writeW
+      (Offset.contains c.W (d := 56) (n := 8) (e := 48) (k := 16) (by first | decide | omega) (by first | decide | omega) (by first | decide | omega))).writeW
       (List.mem_singleton_self _) _
-      (Offset.contains c.W (d := 48) (n := 1) (e := 48) (k := 16) (by decide) (by decide) (by decide))
+      (Offset.contains c.W (d := 48) (n := 1) (e := 48) (k := 16) (by first | decide | omega) (by first | decide | omega) (by first | decide | omega))
   have hNs : bytesAt s₁.mem N c.nl = bytesAt s.mem N c.nl :=
     Proof.AesGcm.AArch64.bytesAt_frame hfz (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hN.wd (by decide)) (by omega_arith)
-  refine ⟨E₁.others hg₂ (by decide) sp₂ rd₂ wr₂, ?_, ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+      exact hN.wd (by first | decide | omega)) (by omega_arith)
+  refine ⟨E₁.others hg₂ (by first | decide | omega) sp₂ rd₂ wr₂, ?_, ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
   · refine hfz.trans ?_
     rw [hm₂]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains c.W (d := 49) (n := c.nl) (e := 48) (k := 16) (by decide) (by omega_arith) (by decide))
+      exact Offset.contains c.W (d := 49) (n := c.nl) (e := 48) (k := 16) (by first | decide | omega) (by omega_arith) (by first | decide | omega))
   · -- The bytes of the block.
     have e56 : c.W + BitVec.ofNat 64 56 = c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
     have hz : bytesAt s₁.mem (c.W + BitVec.ofNat 64 48) 16 = BitVec.ofNat 8 (15 - c.nl - 1) :: Spec.Ccm.zeros 15 := by
-      rw [hm₁, bytesAt_writeW8_base _ _ _ (by decide) (by decide), e56, Proof.Cmac.bytesAt_store2,
+      rw [hm₁, bytesAt_writeW8_base _ _ _ (by first | decide | omega) (by first | decide | omega), e56, Proof.Cmac.bytesAt_store2,
         Proof.Cmac.le8_zero]
       rfl
     have hl := length_bytesAt s.mem N c.nl
     rw [hm₂, show c.W + BitVec.ofNat 64 49 = c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 1 by rw [add_ofNat_assoc],
-      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt, hz, hNs,
+      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by first | decide | omega), length_bytesAt, hz, hNs,
       Spec.Ccm.ctrBlock, hl, be_zero, show 1 + c.nl = c.nl + 1 by omega_arith]
     simp only [Spec.Ccm.zeros, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_replicate,
       List.cons_append, List.nil_append]
@@ -214,10 +214,10 @@ theorem ctrAt_ok {c : Cx} {s : State} (E : Env c s) {nonce : List Byte} (h7 : 7 
     WP isa (.block ctrAt) s fun s' => Frame [⟨c.W + BitVec.ofNat 64 64, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem (c.W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce i ∧
       Others [.x9, .x10, .x11] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 2560 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 2560 by decide)
-  have r₁ := E.perm.wR (show 48 + 8 ≤ 2560 by decide)
-  have r₂ := E.perm.wR (show 56 + 8 ≤ 2560 by decide)
+  have w₁ := E.perm.wW (show 64 + 8 ≤ 384 + c.N by omega)
+  have w₂ := E.perm.wW (show 72 + 8 ≤ 384 + c.N by omega)
+  have r₁ := E.perm.wR (show 48 + 8 ≤ 384 + c.N by omega)
+  have r₂ := E.perm.wR (show 56 + 8 ≤ 384 + c.N by omega)
   obtain ⟨s', run, hm, hg, sp', rd', wr'⟩ : ∃ s', runBlock isa ctrAt s = some s' ∧
       s'.mem = (s.mem.writeW (c.W + BitVec.ofNat 64 64) (s.mem.readW (c.W + BitVec.ofNat 64 48) 64)).writeW
         (c.W + BitVec.ofNat 64 72) (s.mem.readW (c.W + BitVec.ofNat 64 56) 64 ||| byteRev64 (BitVec.ofNat 64 i)) ∧
@@ -233,9 +233,9 @@ theorem ctrAt_ok {c : Cx} {s : State} (E : Env c s) {nonce : List Byte} (h7 : 7 
   refine WP.of_runBlock ⟨s', run, ?_, ?_, hg, sp', rd', wr'⟩
   · rw [hm]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains c.W (d := 64) (n := 8) (e := 64) (k := 16) (by decide) (by decide) (by decide))).writeW
+      (Offset.contains c.W (d := 64) (n := 8) (e := 64) (k := 16) (by first | decide | omega) (by first | decide | omega) (by first | decide | omega))).writeW
       (List.mem_singleton_self _) _
-      (Offset.contains c.W (d := 72) (n := 8) (e := 64) (k := 16) (by decide) (by decide) (by decide))
+      (Offset.contains c.W (d := 72) (n := 8) (e := 64) (k := 16) (by first | decide | omega) (by first | decide | omega) (by first | decide | omega))
   · have h8 : bytesAt s.mem (c.W + BitVec.ofNat 64 48) 8 = (bytesAt s.mem (c.W + BitVec.ofNat 64 48) 16).take 8 := by
       rw [Proof.Cmac.bytesAt_split, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
     have hlo : le8 (s.mem.readW (c.W + BitVec.ofNat 64 48) 64) = (Spec.Ccm.ctrBlock nonce i).take 8 := by
@@ -253,7 +253,7 @@ abbrev pieceRegs : List Reg := [.x23, .x24, .x25, .x26]
 /-- The arguments of the call chaining `B` into the MAC state at `W + y`. -/
 theorem updArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (.block (updArgs y ++ ([ptr .x3 .x19 bO, imm .x4 1] : List Instr))) s fun s₁ => Env c s₁ ∧
-      Proof.CmacAes.Stream.AArch64.UArgs s₁ c.K (c.W + BitVec.ofNat 64 y) (c.W + BitVec.ofNat 64 32)
+      Proof.CmacAes.Stream.AArch64.UArgsW c.N s₁ c.K (c.W + BitVec.ofNat 64 y) (c.W + BitVec.ofNat 64 32)
         (c.W + BitVec.ofNat 64 384) c.R 1 ∧
       Others [.x0, .x1, .x2, .x3, .x4, .x5] s s₁ ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   obtain ⟨s₁, run₁, hm₁, x0, x1, x2, x3, x4, x5, hg₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
@@ -274,30 +274,30 @@ theorem updArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp [gpr_write, hr]
-  have E₁ : Env c s₁ := E.others hg₁ (by decide) sp₁ rd₁ wr₁
+  have E₁ : Env c s₁ := E.others hg₁ (by first | decide | omega) sp₁ rd₁ wr₁
   refine WP.of_runBlock ⟨s₁, run₁, E₁, ?_, hg₁, hm₁, rd₁, wr₁⟩
-  have hq := L.srcW (s := s₁) E₁.perm (t := 32) (k := 16 * 1) (by decide)
+  have hq := L.srcW (s := s₁) E₁.perm (t := 32) (k := 16 * 1) (by first | decide | omega)
   have hqy : (⟨c.W + BitVec.ofNat 64 32, 16 * 1⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 y, 16⟩ := by
     rcases hy with rfl | rfl
-    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  exact uargs L E₁ (by omega_arith) hq hqy (by decide) x0 x1 x2 x3 x4 x5
+    · exact L.w_w (.inr (by first | decide | omega)) (by first | decide | omega) (by first | decide | omega)
+    · exact L.w_w (.inl (by first | decide | omega)) (by first | decide | omega) (by first | decide | omega)
+  exact uargs L E₁ (by omega_arith) hq hqy (by first | decide | omega) x0 x1 x2 x3 x4 x5
 
 /-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
-theorem updBlock_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {s : State} (E : Env c s)
+theorem updBlock_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) (hv : v.scratch ≤ c.N) {s : State} (E : Env c s)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (updBlock v.callee y) s fun s' => Env c s' ∧ (∀ r ∈ pieceRegs, s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨c.W + BitVec.ofNat 64 y, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 2176⟩] s.mem s'.mem ∧
+      Frame [⟨c.W + BitVec.ofNat 64 y, 16⟩, ⟨c.W + BitVec.ofNat 64 384, c.N⟩] s.mem s'.mem ∧
       bytesAt s'.mem (c.W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem (c.W + BitVec.ofNat 64 y) 16)
           [bytesAt s.mem (c.W + BitVec.ofNat 64 32) 16] := by
   refine WP.seq (WP.mono (updArgs_ok L E hy) fun s₁ ⟨E₁, A₁, hg₁, hm₁, rd₁, wr₁⟩ => ?_)
-  refine WP.mono (upd_call v v.callee.name A₁)
+  refine WP.mono (upd_callLe v v.callee.name hv A₁)
     fun s₂ h => ⟨E₁.of_saved h.saved h.sp h.rd h.wr, fun r hr => ?_, by rw [h.rd, rd₁], by rw [h.wr, wr₁],
       by rw [← hm₁]; exact h.frame, ?_⟩
   · have hr' : r = .x23 ∨ r = .x24 ∨ r = .x25 ∨ r = .x26 := by simpa using hr
-    rcases hr' with rfl | rfl | rfl | rfl <;> rw [h.saved _ (by decide) (by decide), hg₁ _ (by decide)]
+    rcases hr' with rfl | rfl | rfl | rfl <;> rw [h.saved _ (by first | decide | omega) (by first | decide | omega), hg₁ _ (by first | decide | omega)]
   · rw [h.out, Proof.Cmac.Stream.blocksAt_eq, Nat.mul_one, Proof.Cmac.Stream.blocks_single
       (Proof.Cmac.bytesAt_length _ _ _), hm₁]
     rfl

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 48 bytes.
@@ -2105,7 +2107,7 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 bl {vg_brainpoolp384r1_mul_mod_p}
 .base64 "0AaAOKAGoDgAAcA4"
 bl {vg_brainpoolp384r1_mul_mod_p}
-.base64 "AAAAOP//AGD//wBkAQDAOEAG44BwAAOBFALnfFA46HwUMud8IgDmeEQG44B0AAOBFALnfFA46HwUMud8IgDmeEgG44B4AAOBFALnfFA46HwUMud8IgDmeEwG44B8AAOBFALnfFA46HwUMud8IgDmeFAG44CAAAOBFALnfFA46HwUMud8IgDmeFQG44CEAAOBFALnfFA46HwUMud8IgDmeFgG44CIAAOBFALnfFA46HwUMud8IgDmeFwG44CMAAOBFALnfFA46HwUMud8IgDmeGAG44CQAAOBFALnfFA46HwUMud8IgDmeGQG44CUAAOBFALnfFA46HwUMud8IgDmeGgG44CYAAOBFALnfFA46HwUMud8IgDmeGwG44CcAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAaj6EgGg+h4I6V8UAaD6HgjpXxYBoPoeCOlfGAGg+h4I6V8aAaD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8gAiD6DgohHyACIP4QAOj6EgDg+h4I6V8UAOD6HgjpXxYA4PoeCOlfGADg+h4I6V8aAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHyACIPoOCiEfIAIg/iACEPp0AaD6DhQhHwoAMA4KDWOfNgGg+g4UIR8IADAOCg1jnzgBoPoOFCEfBgAwDgoNY586AaD6DhQhHwQAMA4KDWOfPAGg+g4UIR8CADAOCg1jnz4BoPoOFCEfAAAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
+.base64 "AAAAOP//AGD//wBkAQDAOEAG44BwAAOBFALnfFA46HwUMud8IgDmeEQG44B0AAOBFALnfFA46HwUMud8IgDmeEgG44B4AAOBFALnfFA46HwUMud8IgDmeEwG44B8AAOBFALnfFA46HwUMud8IgDmeFAG44CAAAOBFALnfFA46HwUMud8IgDmeFQG44CEAAOBFALnfFA46HwUMud8IgDmeFgG44CIAAOBFALnfFA46HwUMud8IgDmeFwG44CMAAOBFALnfFA46HwUMud8IgDmeGAG44CQAAOBFALnfFA46HwUMud8IgDmeGQG44CUAAOBFALnfFA46HwUMud8IgDmeGgG44CYAAOBFALnfFA46HwUMud8IgDmeGwG44CcAAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QAaj6EgGg+h4I6V8UAaD6HgjpXxYBoPoeCOlfGAGg+h4I6V8aAaD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHw4SKV8gAiD6DgohHyACIP4QAOj6EgDg+h4I6V8UAOD6HgjpXxYA4PoeCOlfGADg+h4I6V8aAOD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHyACIPoOCiEfIAIg/iACEPp0AaD6DhQhHwoAMA4KDWOfNgGg+g4UIR8IADAOCg1jnzgBoPoOFCEfBgAwDgoNY586AaD6DhQhHwQAMA4KDWOfPAGg+g4UIR8CADAOCg1jnz4BoPoOFCEfAAAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfAAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHwgAIBO""#,
         vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,

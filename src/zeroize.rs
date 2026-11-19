@@ -16,7 +16,7 @@
 // the password KDFs' working memory (scrypt's and Argon2's) and the key their
 // `verify` functions derive, once compared.
 //
-// What is not: the symmetric algorithms' `scratch`; the verified functions'
+// What is not: the verified functions'
 // stack, which their contracts do not promise to wipe (but RC4's); copies of
 // states the Rust code makes on the stack when it moves them (e.g. each
 // ChaCha20-Poly1305 call's context, PBKDF2's and scrypt's blocks), which later
