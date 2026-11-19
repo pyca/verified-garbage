@@ -4,6 +4,11 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -182,5 +187,162 @@ theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
       rw [e _ (by rw [← hp.2.1]; exact toNat_sw (ScrubAbi.consts cs) keyLen), wordsAt_of hb.2.1,
         wordsAt_of hb.2.2.2.2, bytesAt48_of hb.2.2.2.2]
       exact h
+
+/-! ## RSAES-PKCS1-v1_5 and RSASSA-PKCS1-v1_5 -/
+
+theorem written_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Option (List Byte)}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.written m₁ o n r v) :
+    Spec.Rsa.written m₂ o n r v := by
+  cases v <;> simpa only [Spec.Rsa.written, e] using h
+
+theorem writtenOutcome_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.writtenOutcome m₁ o n r v) :
+    Spec.Rsa.writtenOutcome m₂ o n r v := by
+  cases v <;> simpa only [Spec.Rsa.writtenOutcome, e] using h
+
+theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Option (List Byte)}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.RsaPkcs1Enc.writtenRandom m₁ o n r v) :
+    Spec.RsaPkcs1Enc.writtenRandom m₂ o n r v := by
+  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
+
+theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (el : Spec.Rsa.wordsAt m₂ l 1 = Spec.Rsa.wordsAt m₁ l 1)
+    (h : Spec.RsaPkcs1Enc.writtenMsg m₁ o l n r v) : Spec.RsaPkcs1Enc.writtenMsg m₂ o l n r v := by
+  cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenMsg, e, el] using h
+
+theorem pkcs1EncryptRandomOut (stack : Nat) :
+    PostOut (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol := hp.2.1
+      rw [toNat_sw ScrubAbi.plain] at hol
+      have e' := e _ hol.symm
+      rw [wordsAt_of hb.2.1]
+      refine ⟨h.1, ?_⟩
+      have h2 := h.2
+      revert h2
+      generalize (Spec.RsaPkcs1Enc.padSearch _ _).outcome = o
+      match o with
+      | .accepted _ => exact fun h2 hP => writtenRandom_of e' (h2 hP)
+      | .entropy .. => simp only [e']; exact id
+      | .exhausted => simp only [e']; exact id
+
+theorem pkcs1DecryptOut (stack : Nat) :
+    PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Spec.RsaPkcs1Enc.decryptSig, List.cons_append,
+        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol := hp.2.1
+      rw [toNat_sw ScrubAbi.plain, toNat_sw ScrubAbi.plain] at hol
+      exact writtenMsg_of (e _ (by rw [toNat_sw ScrubAbi.plain]; exact hol.symm)) (wordsAt_of hb.2.1) h
+
+theorem pkcs1SignOut (stack : Nat) :
+    PostOut (Spec.RsaPkcs1Sig.signPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig, List.cons_append,
+        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol := hp.2.1
+      rw [toNat_sw ScrubAbi.plain, toNat_sw ScrubAbi.plain] at hol
+      exact writtenOutcome_of (e _ (by rw [toNat_sw ScrubAbi.plain]; exact hol.symm)) h
+
+theorem pkcs1VerifyOut (stack : Nat) :
+    PostOut (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Sig.verifyPrecomputedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [_, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+
+theorem pkcs1RecoverOut (stack : Nat) :
+    PostOut (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi stack)
+      (Spec.RsaPkcs1Sig.recoverPrecomputedSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.RsaPkcs1Sig.recoverPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e := bytesAt_of hb.1
+      exact fun hP H hH => written_of (by rw [toNat_sw ScrubAbi.plain]; exact e) (h hP H hH)
+
+/-! ## RSAES-OAEP -/
+
+theorem writtenDecrypt_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (el : m₂.readW l 64 = m₁.readW l 64)
+    (h : Spec.RsaOaep.writtenDecrypt m₁ o l n r v) : Spec.RsaOaep.writtenDecrypt m₂ o l n r v := by
+  cases v <;> simpa only [Spec.RsaOaep.writtenDecrypt, e, el] using h
+
+theorem oaepEncryptOut (ts : List FnTable) (stack : Nat) :
+    PostOut (Spec.RsaOaep.encryptMdTablesContract
+        (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
+      (Spec.RsaOaep.encryptMdTablesSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
+    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol : (outLen.setWidth 64).toNat = (nLen.setWidth 64).toNat := hp.2.1
+      rw [BitVec.setWidth_eq, BitVec.setWidth_eq] at hol
+      have e' : Spec.Rsa.bytesAt m₂ out (nLen.setWidth 64).toNat = Spec.Rsa.bytesAt m₁ out (nLen.setWidth 64).toNat :=
+        e _ (by rw [BitVec.setWidth_eq]; exact hol.symm)
+      exact fun H G h1 h2 h3 => written_of e' (h H G h1 h2 h3)
+
+theorem oaepDecryptOut (ts : List FnTable) (stack : Nat) :
+    PostOut (Spec.RsaOaep.decryptPrecomputedMdTablesContract
+        (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
+      (Spec.RsaOaep.decryptPrecomputedMdTablesSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
+    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaOaep.decryptPrecomputedMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append,
+        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol : (outLen.setWidth 64).toNat = (nLen.setWidth 64).toNat := hp.2.1
+      rw [BitVec.setWidth_eq, BitVec.setWidth_eq] at hol
+      have e' : Spec.Rsa.bytesAt m₂ out (nLen.setWidth 64).toNat = Spec.Rsa.bytesAt m₁ out (nLen.setWidth 64).toNat :=
+        e _ (by rw [BitVec.setWidth_eq]; exact hol.symm)
+      have el : m₂.readW ml 64 = m₁.readW ml 64 := Mem.readW_congr fun t ht => by
+        have := hb.2.1 (ml + BitVec.ofNat 64 t) (contains_of (by simp only [Nat.reduceDiv] at ht; omega))
+        exact this.symm
+      exact fun H G h1 h2 => writtenDecrypt_of e' el (h H G h1 h2)
 
 end VG.Proof.Rsa.RISCV64.Scrub

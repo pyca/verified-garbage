@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_rsa_oaep_decrypt_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -52,6 +54,8 @@ pub unsafe fn vg_rsa_oaep_decrypt_precomputed_auto(_dit: verified_garbage_cpu::D
 /// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// It runs `vg_rsa_oaep_encrypt_precomputed`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
