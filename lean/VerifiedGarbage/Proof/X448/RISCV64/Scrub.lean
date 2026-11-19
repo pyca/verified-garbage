@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -758,7 +759,7 @@ end
 # X448 on RISC-V, without secret residue
 
 `vg_x448_base` and `vg_x448_exchange`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within `out` (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/X448/X86_64/Scrub.lean`).
 -/
@@ -814,14 +815,14 @@ theorem exchangeOut (stack : Nat) :
 
 /-- `Spec.X448.exchangeApi`. -/
 def exchangeReg : Registration Spec.X448.exchangeApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56
       verified := Proof.X448.RISCV64.Exchange.exchange_verified }
     (exchangeOut _)
 
 /-- `Spec.X448.x448BaseApi`. -/
 def baseReg : Registration Spec.X448.x448BaseApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.X448.RISCV64.R64.x448Base
       verified := Proof.X448.RISCV64.R64.x448Base_verified }
     (baseOut _)
