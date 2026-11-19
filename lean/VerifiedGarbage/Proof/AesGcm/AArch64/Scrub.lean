@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Powers8
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.Framework.Scratch
 
 /-!
@@ -244,5 +245,18 @@ def clear : Impl.Residue.AArch64.Clear :=
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
     .v26, .v27, .v28, .v29, .v30, .v31], []⟩
 
+
+
+/-- `vg_aes_gcm_store_powers`: its postcondition reads the memory on return
+only within the powers. -/
+theorem storePowersOk (stack : Nat) (hW : 0 < stack) :
+    ScrubAllOk (Spec.Gcm.storePowersContract abi stack) stack (Spec.Gcm.storePowersSig.retBits abi.ptrBits) :=
+  scrubAllOk_regs (sig := Spec.Gcm.storePowersSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    (Proof.AesGcm.storePowersPostOut_local _)
+
+/-- `storePowersOk` in its frame of 80 bytes. -/
+theorem storePowersOk80 :
+    ScrubAllOk (Spec.Gcm.storePowersContract abi 80) 80 (Spec.Gcm.storePowersSig.retBits abi.ptrBits) :=
+  storePowersOk 80 (by decide)
 
 end VG.Proof.AesGcm.AArch64.Scrub

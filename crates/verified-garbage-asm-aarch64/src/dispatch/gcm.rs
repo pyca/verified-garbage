@@ -646,6 +646,8 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_seal_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -657,7 +659,7 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// * `rounds` must be 10, 12 or 14.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_seal_with_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
@@ -707,6 +709,8 @@ pub unsafe fn vg_aes_gcm_seal_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_open_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -769,6 +773,8 @@ pub unsafe fn vg_aes_gcm_open_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_to_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_open_to_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open_to_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -835,6 +841,8 @@ pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(_dit: verified_garbage_cpu::Di
 /// Contract: `VG.Spec.Gcm.storePowersContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_store_powers_aes` if the CPU supports its features (`VG_AES_GCM_STORE_POWERS_AES_FEATURES`); or else `vg_aes_gcm_store_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

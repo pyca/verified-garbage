@@ -197,9 +197,11 @@ def artifactsFor (v : GcmVariant) (hv : v ∈ VG.Proof.Variants.AesGcm.AArch64.v
 def artifacts : List Artifact :=
   (VG.Proof.Variants.AesGcm.AArch64.variants.attach.flatMap fun ⟨v, hv⟩ => artifactsFor v hv) ++
   [
-    Spec.Gcm.storePowersApi.artifact AArch64.target {
+    Spec.Gcm.storePowersApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       code := Impl.StackScratch.AArch64.withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers
-      verified := .unscrubbed Proof.Gcm.AArch64.KeyPowers.keyPowers_framed },
+      verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_framed }
+      Proof.AesGcm.AArch64.Scrub.clear Proof.AesGcm.AArch64.Scrub.storePowersOk80
+      Proof.AesGcm.AArch64.Scrub.storePowersSide),
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       suffix := "_aes"
       code := Proof.Gcm.AArch64.Pmull.keyPowersCleared
