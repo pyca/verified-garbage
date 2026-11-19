@@ -26,49 +26,58 @@ namespace VG.Artifacts.Ed25519.AArch64.KeyPair
 
 /-- Key-pair derivation with the one-shot SHA-512 digest of `h`'s compression function,
 calling `vg_ed25519_public_key_expanded`. -/
-def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
+def artifactsFor (v : Proof.Sha512.AArch64.Compress)
+    (hv : v ∈ VG.Proof.Variants.Sha512Compress.AArch64.variants) : List Artifact :=
   [
-  Spec.Ed25519.keyPairApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ed25519.keyPairApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ v.suffix)
       (Proof.Ed25519.AArch64.KeyPair.dgCode v) "vg_ed25519_public_key_expanded"
       Impl.Ed25519.AArch64.PublicKey.codeExpanded
-    verified := Proof.Ed25519.AArch64.KeyPair.verified v } Proof.Ed25519.AArch64.Scrub.keyPairOk)]
+    verified := Proof.Ed25519.AArch64.KeyPair.verified v }
+    (AArch64.ScrubAll.clearUnion Proof.Ed25519.AArch64.Scrub.keyPairOwn v.clear)
+    Proof.Ed25519.AArch64.Scrub.keyPairOk (Proof.Ed25519.AArch64.Scrub.keyPairSide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed25519.AArch64.KeyPair
 
 -- Ed25519 signing from the seed's SHA-512 digest on AArch64, for each SHA-512 implementation
 namespace VG.Artifacts.Ed25519.AArch64.SignExpanded
 
-def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
+def artifactsFor (v : Proof.Sha512.AArch64.Compress)
+    (hv : v ∈ VG.Proof.Variants.Sha512Compress.AArch64.variants) : List Artifact :=
   [
-  Spec.Ed25519.signExpandedApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ed25519.signExpandedApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
     verified := Proof.Ed25519.AArch64.SignCached.signExpanded_verified v }
-    Proof.Ed25519.AArch64.Scrub.signExpandedOk)]
+   
+    (AArch64.ScrubAll.clearUnion Proof.Ed25519.AArch64.Scrub.signExpandedOwn v.clear)
+    Proof.Ed25519.AArch64.Scrub.signExpandedOk (Proof.Ed25519.AArch64.Scrub.signExpandedSide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed25519.AArch64.SignExpanded
 
 -- Ed25519 whole-message verification on AArch64, for each SHA-512 implementation
 namespace VG.Artifacts.Ed25519.AArch64.VerifyMessage
 
-def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
+def artifactsFor (v : Proof.Sha512.AArch64.Compress)
+    (hv : v ∈ VG.Proof.Variants.Sha512Compress.AArch64.variants) : List Artifact :=
   [
-    Spec.Ed25519.verifyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Ed25519.verifyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := v.suffix
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
       verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v }
-      Proof.Ed25519.AArch64.Scrub.verifyOk)]
+     
+    (AArch64.ScrubAll.clearUnion Proof.Ed25519.AArch64.Scrub.verifyOwn v.clear)
+    Proof.Ed25519.AArch64.Scrub.verifyOk (Proof.Ed25519.AArch64.Scrub.verifySide v hv))]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.AArch64.variants.attach.flatMap fun v => artifactsFor v.1 v.2
 
 end VG.Artifacts.Ed25519.AArch64.VerifyMessage
 
