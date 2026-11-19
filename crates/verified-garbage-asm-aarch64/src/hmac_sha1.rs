@@ -10,6 +10,8 @@ pub const VG_HMAC_SHA1_INIT_SHA2_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -23,7 +25,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], out
     core::arch::naked_asm!(
         r".inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
-.inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
+.inst 0xd10383ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
 bl {vg_sha1_init}
 .inst 0x910002a0
@@ -48,7 +50,13 @@ b 23f
 bl {vg_sha1_compress_sha2}
 .inst 0x910002b3,0x910052a1,0x91000260,0xd2800022,0x91000283
 bl {vg_sha1_compress_sha2}
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
+.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910383ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0xea01003f,0xd2800000,0xd103c3ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x9103c3ff
 21:
 .inst 0xd65f03c0
 20:
@@ -84,7 +92,20 @@ bl {vg_hmac_sha1_init_scratch_sha2}
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
 .inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
 .inst 0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0x911183ff
+.inst 0xa9054611,0x911183ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000a
+.inst 0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400
+.inst 0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410
+.inst 0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0xea01003f,0xd2800000,0xd111c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x9111c3ff
 b 21b
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
@@ -102,6 +123,8 @@ pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -109,12 +132,12 @@ pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: verified_garbage_cpu::Features = 
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
+        r".inst 0xd103c3ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
 bl {vg_sha1_finalize_scratch_sha2}
 .inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
@@ -126,8 +149,13 @@ bl {vg_sha1_finalize_scratch_sha2}
 bl {vg_sha1_compress_sha2}
 .inst 0x91000315,0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69
 .inst 0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
-.inst 0xd65f03c0
+.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x9103c3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800009,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0xea01003f,0xd2800000,0xd10403ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f
+.inst 0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x910403ff,0xd65f03c0
 .p2align 6",
         vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2::vg_sha1_finalize_scratch_sha2,
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2::vg_sha1_compress_sha2,
@@ -137,6 +165,8 @@ bl {vg_sha1_compress_sha2}
 /// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -150,7 +180,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *
     core::arch::naked_asm!(
         r".inst 0xd280080a,0xd280000c,0xeb03014b,0x9a832189
 cbnz x9, 20f
-.inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
+.inst 0xd10383ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000094,0x91000035,0x91000056,0x91000097,0x91000078,0x91000260
 bl {vg_sha1_init}
 .inst 0x910002a0
@@ -175,7 +205,13 @@ b 23f
 bl {vg_sha1_compress}
 .inst 0x910002b3,0x910052a1,0x91000260,0xd2800022,0x91000283
 bl {vg_sha1_compress}
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
+.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910383ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000
+.inst 0xd103c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
+.inst 0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f
+.inst 0x3d80353f,0x3d80393f,0x9103c3ff
 21:
 .inst 0xd65f03c0
 20:
@@ -211,7 +247,19 @@ bl {vg_hmac_sha1_init_scratch}
 .inst 0xa90e4611,0xa90f4611,0xa9104611,0xa9114611,0xa9124611,0xa9134611,0xa9144611,0xa9154611
 .inst 0xa9164611,0xa9174611,0xa9184611,0xa9194611,0xa91a4611,0xa91b4611,0xa91c4611,0xa91d4611
 .inst 0xa91e4611,0xa91f4611,0x911003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611
-.inst 0xa9054611,0x911183ff
+.inst 0xa9054611,0x911183ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0xea01003f,0xd2800000,0xd111c3ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f
+.inst 0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f
+.inst 0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f
+.inst 0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f
+.inst 0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f
+.inst 0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f
+.inst 0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f
+.inst 0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f
+.inst 0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f
+.inst 0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x9111c3ff
 b 21b
 .p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
@@ -226,6 +274,8 @@ b 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -233,11 +283,11 @@ b 21b
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r".inst 0xd10703ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
+        r".inst 0xd103c3ff,0x910003e4,0xf9005093,0xf9005494,0xf9005895,0xf9005c96,0xf9006098,0xf900649e
 .inst 0xf9006897,0x91000013,0x91000034,0x91000075,0x91000097,0x91000041,0x910362e2,0x910002e3
 bl {vg_sha1_finalize_scratch}
 .inst 0xb9400289,0xb9000269,0xb9400689,0xb9000669,0xb9400a89,0xb9000a69,0xb9400e89,0xb9000e69
@@ -249,8 +299,13 @@ bl {vg_sha1_finalize_scratch}
 bl {vg_sha1_compress}
 .inst 0x91000315,0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69
 .inst 0x5ac00929,0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9
-.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x910703ff
-.inst 0xd65f03c0
+.inst 0xf94052f3,0xf94056f4,0xf9405af5,0xf9405ef6,0xf94062f8,0xf94066fe,0xf9406af7,0x9103c3ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0xea01003f,0xd2800000
+.inst 0xd10403ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f
+.inst 0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f
+.inst 0x3d80353f,0x3d80393f,0x3d803d3f,0x910403ff,0xd65f03c0
 .p2align 6",
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,

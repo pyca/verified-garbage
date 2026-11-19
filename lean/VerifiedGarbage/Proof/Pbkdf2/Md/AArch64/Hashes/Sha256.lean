@@ -226,6 +226,17 @@ def stream : List StreamFn := [
     scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _)
       (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
   MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
@@ -241,6 +252,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 32 ⟨fitI v, by decide, by decide, by decide⟩ ⟨fitF v, by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using initSat 96 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha256I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi, AArch64.argRegs] using finSat 96 32 32)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256

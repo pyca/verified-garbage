@@ -283,6 +283,17 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI : (hash).stream.buf ≤ 8 * 22 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Md5.AArch64.Stream.params]
+  decide
+
+theorem fitF : (hash).stream.buf + (hash).stream.F ≤ 8 * 24 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Md5.AArch64.Stream.params]
+  decide
+
 /-- MD5 with its compression function. -/
 def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
@@ -297,6 +308,17 @@ def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes]
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    22 24 ⟨fitI, by decide, by decide, by decide⟩ ⟨fitF, by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.md5I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using initSat 80 22)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.md5I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs] using finSat 80 16 24)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     "" []
 
 end VG.Proof.Pbkdf2.Md.AArch64.Md5
@@ -494,6 +516,17 @@ def stream : List StreamFn := [
     scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.digestSig) (by decide) (by decide) (Nat.le_refl _)
       (Proof.Sha1.digestPost_out _) }]
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha1.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 30 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha1.AArch64.Stream.params]
+  decide
+
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
   MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
@@ -509,6 +542,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 30 ⟨(fitI v), by decide, by decide, by decide⟩ ⟨(fitF v), by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha1I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha1I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 30)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha1
@@ -724,6 +768,17 @@ def stream : List StreamFn := [
     scrubOk := AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 28)) (by decide) (by decide) (Nat.le_refl _)
       (Proof.Sha256.digestPost_out _ _ _ (by decide)) }]
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) : (hash v).stream.buf ≤ 8 * 28 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
+theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha256.AArch64.Stream.params]
+  decide
+
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
 carries, and its `finalize` its own (`stream v`). -/
@@ -741,6 +796,17 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
+    28 32 ⟨(fitI v), by decide, by decide, by decide⟩ ⟨(fitF v), by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi, AArch64.argRegs] using initSat 96 28)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha224I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi, AArch64.argRegs] using finSat 96 28 32)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224
@@ -1099,6 +1165,17 @@ theorem sha384_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- HMAC's buffers fit in the right-sized working space (`MdHash.initW`, `MdHash.finW`). -/
+theorem fitI (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : (hash v I D initN iv).stream.buf ≤ 8 * 94 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha512.AArch64.Stream.params, Impl.Sha512.AArch64.scratchBytes]
+  decide
+
+theorem fitF (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : (hash v I D initN iv).stream.buf + (hash v I D initN iv).stream.F ≤ 8 * 102 := by
+  simp only [hash, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.buf, Impl.Pbkdf2.AArch64.ofMd,
+    Impl.Sha512.AArch64.Stream.params, Impl.Sha512.AArch64.scratchBytes]
+  decide
+
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
 theorem sha384_anyOK : Any.AnyOK (coreH 48) := anyOK 48 (Or.inr (Or.inr (Or.inl rfl)))
@@ -1120,6 +1197,17 @@ def sha384 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha384_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha384I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha384I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi, AArch64.argRegs] using finSat 192 48 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream384 v)
 
 /-! ## SHA-512 -/
@@ -1173,6 +1261,17 @@ def sha512 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi, AArch64.argRegs] using finSat 192 64 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream v)
 
 /-! ## SHA-512/224 -/
@@ -1226,6 +1325,17 @@ def sha512_224 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_224_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512_224I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi, AArch64.argRegs] using finSat 192 28 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream512_224 v)
 
 /-! ## SHA-512/256 -/
@@ -1279,6 +1389,17 @@ def sha512_256 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_256_satPF
+    94 102 ⟨fitI .., by decide, by decide, by decide⟩ ⟨fitF .., by decide, by decide, by decide⟩
+    (by inst_sat [Proof.Hmac.initScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.initScratchSig, Spec.Hmac.initPre,
+      Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi, AArch64.argRegs] using initSat 192 94)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by inst_sat [Proof.Hmac.finalizeScratchContract, Spec.Hmac.sha512_256I, Proof.Hmac.finalizeScratchSig,
+      Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi, AArch64.argRegs] using finSat 192 32 102)
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     v.suffix v.features (stream512_256 v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

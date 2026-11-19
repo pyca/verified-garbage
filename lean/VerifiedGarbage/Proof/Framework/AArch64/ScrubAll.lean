@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Framework.EntryBranch
 
 /-!
 # Returning without secret residue, whatever the code leaves (AArch64)
@@ -1270,5 +1272,55 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       notWith := r.notWith
       residue := some ⟨noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩ }
   else r
+
+/-! ## A choice on entry between two functions without residue -/
+
+/-- A straight-line block `b` that decides a condition from public data, then
+a cold branch (`Code.iteCold c c₁ c₂`) to code returning without residue
+under `k₁` when it holds and under `k₂` when not, returns without residue
+under `k`: from `k`'s precondition the block leaves the precondition of the
+branch it takes, and two runs that agree outside the buffers, with the same
+public data, take the same branch and still agree, with the same public data
+of the branch's contract (as `Verified.entryBranch`). The block leaves the
+unknowns as they were (`execBlock_unknowns`). -/
+theorem noResidue_entryBranch {b : List Instr} {c : isa.Cond} {c₁ c₂ : Prog isa}
+    {k k₁ k₂ : Contract isa} {p : State → Bool} {rb : Nat}
+    (h₁ : NoResidue c₁ k₁ rb) (h₂ : NoResidue c₂ k₂ rb)
+    (hb : ∀ s u t, k.pre s → execBlock isa b s = some (u, t) → isa.eval c u = some (p s) ∧
+      (p s = true → k₁.pre u) ∧ (p s = false → k₂.pre u))
+    (hpub : ∀ s s' u u' t t', k.pre s → k.pre s' → k.pub s s' → Outside 0 s s' →
+      execBlock isa b s = some (u, t) → execBlock isa b s' = some (u', t') →
+      p s = p s' ∧ Outside 0 u u' ∧ (p s = true → k₁.pub u u') ∧ (p s = false → k₂.pub u u')) :
+    NoResidue (.seq (.block b) (Code.iteCold c c₁ c₂)) k rb := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' p₁ p₂ hq ho hu e₁ e₂
+  cases e₁ with
+  | seq a₁ i₁ =>
+  cases e₂ with
+  | seq a₂ i₂ =>
+  have x₁ := Exec.block_eq (T := AArch64.target) a₁
+  have x₂ := Exec.block_eq (T := AArch64.target) a₂
+  obtain ⟨-, hu₁, -⟩ := execBlock_unknowns x₁ x₁
+  obtain ⟨-, hu₂, -⟩ := execBlock_unknowns x₂ x₂
+  obtain ⟨ec₁, k11, k12⟩ := hb _ _ _ p₁ x₁
+  obtain ⟨ec₂, k21, k22⟩ := hb _ _ _ p₂ x₂
+  obtain ⟨ep, ho', pb1, pb2⟩ := hpub _ _ _ _ _ _ p₁ p₂ hq ho x₁ x₂
+  have hu' : _ := hu₁.trans (hu.trans hu₂.symm)
+  have i₁ := Exec.iteCold_iff.mp i₁
+  have i₂ := Exec.iteCold_iff.mp i₂
+  cases hp : p s₁
+  · have hp' : p s₂ = false := ep ▸ hp
+    cases i₁ with
+    | iteT hc _ => rw [ec₁, hp] at hc; cases hc
+    | iteF _ r₁ =>
+      cases i₂ with
+      | iteT hc _ => rw [ec₂, hp'] at hc; cases hc
+      | iteF _ r₂ => exact h₂ _ _ _ _ _ _ (k12 hp) (k22 hp') (pb2 hp) ho' hu' r₁ r₂
+  · have hp' : p s₂ = true := ep ▸ hp
+    cases i₁ with
+    | iteF hc _ => rw [ec₁, hp] at hc; cases hc
+    | iteT _ r₁ =>
+      cases i₂ with
+      | iteF hc _ => rw [ec₂, hp'] at hc; cases hc
+      | iteT _ r₂ => exact h₁ _ _ _ _ _ _ (k11 hp) (k21 hp') (pb1 hp) ho' hu' r₁ r₂
 
 end VG.AArch64.ScrubAll
