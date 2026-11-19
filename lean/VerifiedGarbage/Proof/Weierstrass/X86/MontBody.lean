@@ -738,6 +738,341 @@ end
 
 end
 
+/-! P521-SQUARE-BEGIN -/
+/-! # P-521's square: the products of different words, doubled, the squares, and the reduction -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86.Mont
+
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Mont
+open VG.Proof.Mont VG.Proof.Mont.X86
+
+variable {s : State} {base : Addr} {size : Nat}
+
+/-- The stores of `zeroWords`, `eax` being zero. -/
+theorem zeroStores_ok {acc : Nat} : ∀ (n : Nat) {s : State}, Bx s base size → s.gpr .eax = 0 →
+    acc + 4 * n ≤ size →
+    WP isa (.block ((List.range n).map fun j => .store (bp (acc + 4 * j)) .eax)) s fun u =>
+      Outside base acc (4 * n) s.mem u.mem ∧ val32 u.mem base acc n = 0 ∧ Keeps [] s u
+  | 0, s, _, _, _ => WP.block_nil ⟨Outside.refl _ _ _ _, rfl, Keeps.refl _ _⟩
+  | n + 1, s, hb, h0, hsz => by
+    have hn := hb.nowrap
+    rw [List.range_succ, List.map_append]
+    refine WP.block_append (WP.mono (zeroStores_ok n hb h0 (by omega_arith)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    have hb₁ := hb.of_keeps K₁ (by decide)
+    simp only [List.map_cons, List.map_nil]
+    refine wp_storeS (hb₁.ea (d := acc + 4 * n) (by omega_arith)) (hb₁.write (n := 4) (by omega_arith))
+      fun u m => WP.block_nil ?_
+    obtain W := writeW32_outside s₁.mem base (d := acc + 4 * n) (s₁.gpr .eax) (by omega_arith)
+    rw [← m.mem] at W
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_,
+      K₁.trans (m.keeps _)⟩
+    rw [val32_succ, W.val32 (Or.inl (Nat.le_refl _)) (by omega_arith), V₁, m.mem, w32_write_self,
+      K₁.1 _ (by decide), h0]
+    rfl
+
+/-- The accumulator's `n` words cleared. -/
+theorem zeroWords_ok (hb : Bx s base size) {acc n : Nat} (hsz : acc + 4 * n ≤ size) :
+    WP isa (.block (zeroWords acc n)) s fun u =>
+      Outside base acc (4 * n) s.mem u.mem ∧ val32 u.mem base acc n = 0 ∧ Keeps [.eax] s u := by
+  unfold zeroWords
+  refine wp_movS rfl fun s₁ u₁ _ => ?_
+  refine WP.mono (zeroStores_ok n (hb.of_keeps u₁.keeps (by decide)) u₁.gpr hsz) fun u ⟨O, V, K⟩ =>
+    ⟨by rw [u₁.mem] at O; exact O, V, u₁.keeps.trans (K.mono (by decide))⟩
+
+/-- The words at `[ebp + d]`, apart from the window. -/
+theorem ysOk_acc (hb : Bx s base size) {d acc len N : Nat} (hfit : d + 4 * N ≤ size)
+    (hsep : d + 4 * N ≤ acc ∨ acc + len ≤ d) :
+    YsOk (accWord d) (fun j => s.mem.readW (off base (d + 4 * j)) 32) base acc len N s := by
+  intro j hj t K
+  have hn := hb.nowrap
+  have hbt : Bx t base size := ⟨by rw [K.ebp]; exact hb.ebp, K.wr ▸ hb.wr, hb.nowrap⟩
+  rw [accWord, readSrc_bp hbt (by omega_arith)]
+  exact congrArg some (BitVec.eq_of_toNat_eq (K.out.w32 (by omega_arith) (by omega_arith)))
+
+/-- A number that is zero: its two parts are. -/
+theorem val32_zero_parts {m : Mem} {d a b : Nat} (h : val32 m base d (a + b) = 0) :
+    val32 m base d a = 0 ∧ val32 m base (d + 4 * a) b = 0 := by
+  rw [val32_append] at h
+  have hP := Nat.two_pow_pos (32 * a)
+  refine ⟨(Nat.eq_zero_of_add_eq_zero h).1, ?_⟩
+  rcases Nat.mul_eq_zero.mp (Nat.eq_zero_of_add_eq_zero h).2 with h' | h'
+  · omega_using [h', hP]
+  · exact h'
+
+/-- Row `i` of the products of different words, the accumulator's words from
+`2i` being zero: its `2i + 2 + r` words `+= 2^(32 i) a_i (a_0 … a_{i-1})`. -/
+theorem sqRow_ok (hb : Bx s base size) {pa acc i r : Nat} (hp : Ptr s .esi pa) (hi : 0 < i)
+    (hpa : pa + 4 * (i + 1) ≤ acc) (hsz : acc + 4 * (2 * i + 2 + r) ≤ size)
+    (hZ : val32 s.mem base (acc + 8 * i) (2 + r) = 0) :
+    WP isa (.block (sqRow acc i)) s fun u =>
+      Outside base acc (4 * (2 * i + 2 + r)) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx] s u ∧
+      val32 u.mem base acc (2 * i + 2 + r) = val32 s.mem base acc (2 * i + 2 + r) +
+        2 ^ (32 * i) * (w32 s.mem base (pa + 4 * i) * val32 s.mem base pa i) ∧
+      val32 u.mem base (acc + 8 * i + 8) r = 0 := by
+  have hn := hb.nowrap
+  simp only [sqRow, List.cons_append, List.nil_append]
+  refine wp_movS (readSrc_ptr hb hp (d := 4 * i) (by omega_arith)) fun s₁ u₁ _ => ?_
+  have k₁ : Keeps [.eax, .ebx, .ecx, .edx] s s₁ := u₁.keeps.mono (by decide)
+  have hb₁ := hb.of_keeps k₁ (by decide)
+  have hp₁ : Ptr s₁ .esi pa := hp.of_keeps k₁ (by decide) (by decide)
+  have ecx₁ : (s₁.gpr .ecx).toNat = w32 s.mem base (pa + 4 * i) := by rw [u₁.gpr]
+  have mem₁ : s₁.mem = s.mem := u₁.mem
+  have hY := ysOk_b hb₁ hp₁ (acc := acc + 4 * i) (len := 4 * i + 8) (N := i) (by omega_arith)
+    (Or.inl (by omega_arith))
+  have hYv : yVal (fun j => s₁.mem.readW (off base (pa + 4 * j)) 32) i = val32 s.mem base pa i := by
+    rw [yVal_val32, mem₁]
+  obtain ⟨z2, zr⟩ := val32_zero_parts hZ
+  have e8 : acc + 4 * i + 4 * i = acc + 8 * i := by omega_arith
+  have e88 : acc + 8 * i + 4 * 2 = acc + 8 * i + 8 := by omega_arith
+  rw [e88] at zr
+  have hw : ∀ m : Mem, val32 m base (acc + 4 * i) (i + 2) =
+      val32 m base (acc + 4 * i) i + 2 ^ (32 * i) * val32 m base (acc + 8 * i) 2 := fun m => by
+    rw [val32_append, e8]
+  have hA := val32_lt s.mem base pa i
+  have ha := (s.mem.readW (off base (pa + 4 * i)) 32).isLt
+  have hX := val32_lt s.mem base (acc + 4 * i) i
+  have hP : 0 < 2 ^ (32 * i) := Nat.two_pow_pos _
+  have haA : w32 s.mem base (pa + 4 * i) * val32 s.mem base pa i < 2 ^ 32 * 2 ^ (32 * i) :=
+    Nat.mul_lt_mul_of_lt_of_lt ha hA
+  refine WP.mono (rowG_ok hb₁ hi hY (by omega_arith) ?_) fun u ⟨O, V, K⟩ => ?_
+  · rw [hw, hYv, mem₁, z2, ecx₁, pow32_add i 2, Nat.mul_zero, Nat.add_zero]
+    generalize 2 ^ (32 * i) = P at *
+    generalize w32 s.mem base (pa + 4 * i) * val32 s.mem base pa i = t at *
+    omega_arith
+  · rw [hYv, ecx₁] at V
+    rw [mem₁] at O V
+    have es : ∀ m : Mem, val32 m base acc (2 * i + 2 + r) = val32 m base acc i +
+        2 ^ (32 * i) * (val32 m base (acc + 4 * i) (i + 2) +
+          2 ^ (32 * (i + 2)) * val32 m base (acc + 8 * i + 8) r) := fun m => by
+      rw [show 2 * i + 2 + r = i + (i + 2 + r) by omega_arith, val32_append, val32_append,
+        show acc + 4 * i + 4 * (i + 2) = acc + 8 * i + 8 by omega_arith]
+    have t1 : val32 u.mem base acc i = val32 s.mem base acc i :=
+      O.val32 (Or.inl (Nat.le_refl _)) (by omega_arith)
+    have t2 : val32 u.mem base (acc + 8 * i + 8) r = val32 s.mem base (acc + 8 * i + 8) r :=
+      O.val32 (Or.inr (by omega_arith)) (by omega_arith)
+    refine ⟨O.mono (by omega_arith) (by omega_arith), k₁.widen K (by decide), ?_, by rw [t2, zr]⟩
+    rw [es, es, t1, t2, V, Nat.mul_add, Nat.mul_add, Nat.mul_add, Nat.mul_add]
+    omega_arith
+
+/-- The products of different words: `∑ 2^(32 l) a_l (a_0 … a_{l-1})` for `1 ≤ l ≤ r`. -/
+def sqCross (m : Mem) (base : Addr) (pa : Nat) : Nat → Nat
+  | 0 => 0
+  | r + 1 => sqCross m base pa r +
+      2 ^ (32 * (r + 1)) * (w32 m base (pa + 4 * (r + 1)) * val32 m base pa (r + 1))
+
+/-- The squares of the words `0 … n - 1`: `∑ 2^(64 l) a_l²`. -/
+def sqDiag (m : Mem) (base : Addr) (pa : Nat) : Nat → Nat
+  | 0 => 0
+  | n + 1 => sqDiag m base pa n + 2 ^ (64 * n) * (w32 m base (pa + 4 * n) * w32 m base (pa + 4 * n))
+
+/-- A square is twice the products of different words, and the squares. -/
+theorem sq_identity (m : Mem) (base : Addr) (pa : Nat) : ∀ n,
+    2 * sqCross m base pa n + sqDiag m base pa (n + 1) = val32 m base pa (n + 1) * val32 m base pa (n + 1)
+  | 0 => by
+    rw [sqCross, sqDiag, sqDiag, val32_one]
+    simp only [Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
+  | n + 1 => by
+    have ih := sq_identity m base pa n
+    rw [sqCross, sqDiag, val32_succ m base pa (n + 1)]
+    have hp : 2 ^ (64 * (n + 1)) = 2 ^ (32 * (n + 1)) * 2 ^ (32 * (n + 1)) := by
+      rw [← Nat.pow_add]
+      exact congrArg _ (by omega_arith)
+    rw [hp]
+    generalize 2 ^ (32 * (n + 1)) = P at *
+    grind
+
+/-- The rows `1 … r` of the products of different words, from the
+accumulator's 37 words being zero. -/
+theorem sqRows_ok {pa acc : Nat} (hpa : pa + 4 * 17 ≤ acc) (hsz : acc + 4 * 37 ≤ size) :
+    ∀ (r : Nat) {s : State}, Bx s base size → Ptr s .esi pa → r ≤ 16 → val32 s.mem base acc 37 = 0 →
+    WP isa (.block (sqRows acc r)) s fun u =>
+      Outside base acc (4 * 37) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx] s u ∧
+      val32 u.mem base acc 37 = sqCross s.mem base pa r ∧
+      val32 u.mem base (acc + 8 * r + 8) (35 - 2 * r) = 0
+  | 0, s, _, _, _, hz => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, hz,
+      (val32_zero_parts (a := 2) (b := 35) hz).2⟩
+  | r + 1, s, hb, hp, hr, hz => by
+    have hn := hb.nowrap
+    rw [sqRows]
+    refine WP.block_append (WP.mono (sqRows_ok hpa hsz r hb hp (by omega_arith) hz)
+      fun s₁ ⟨O₁, K₁, V₁, Z₁⟩ => ?_)
+    have hb₁ := hb.of_keeps K₁ (by decide)
+    have hp₁ : Ptr s₁ .esi pa := hp.of_keeps K₁ (by decide) (by decide)
+    have e37 : 2 * (r + 1) + 2 + (33 - 2 * r) = 37 := by omega_arith
+    have eZ : val32 s₁.mem base (acc + 8 * (r + 1)) (2 + (33 - 2 * r)) = 0 := by
+      rw [show 2 + (33 - 2 * r) = 35 - 2 * r by omega_arith,
+        show acc + 8 * (r + 1) = acc + 8 * r + 8 by omega_arith]
+      exact Z₁
+    have ha' : w32 s₁.mem base (pa + 4 * (r + 1)) = w32 s.mem base (pa + 4 * (r + 1)) :=
+      O₁.w32 (Or.inl (by omega_arith)) (by omega_arith)
+    have hA' : val32 s₁.mem base pa (r + 1) = val32 s.mem base pa (r + 1) :=
+      O₁.val32 (Or.inl (by omega_arith)) (by omega_arith)
+    refine WP.mono (sqRow_ok hb₁ (i := r + 1) (r := 33 - 2 * r) hp₁ (by omega_arith) (by omega_arith)
+      (by rw [e37]; exact hsz) eZ) fun u ⟨O, K, V, Z⟩ => ?_
+    rw [e37] at O V
+    refine ⟨O₁.trans O, K₁.trans K, ?_, ?_⟩
+    · rw [V, V₁, ha', hA', sqCross]
+    · rw [show 35 - 2 * (r + 1) = 33 - 2 * r by omega_arith]
+      exact Z
+
+/-- Words `0 … n - 1` doubled, with the carry word: a row's steps by one of
+the words themselves. -/
+theorem dblSteps_ok {acc : Nat} : ∀ (n : Nat) {s : State}, Bx s base size → (s.gpr .ecx).toNat = 1 →
+    acc + 4 * n ≤ size →
+    WP isa (.block (dblSteps acc n)) s fun u =>
+      Outside base acc (4 * n) s.mem u.mem ∧
+      val32 u.mem base acc n + 2 ^ (32 * n) * (u.gpr .ebx).toNat =
+        2 * val32 s.mem base acc n + (s.gpr .ebx).toNat ∧
+      Keeps [.eax, .ebx, .edx] s u
+  | 0, s, _, _, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by
+      simp only [val32, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add], Keeps.refl _ _⟩
+  | n + 1, s, hb, h1, hsz => by
+    have hn := hb.nowrap
+    rw [dblSteps]
+    refine WP.block_append (WP.mono (dblSteps_ok n hb h1 (by omega_arith)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    have hb₁ := hb.of_keeps K₁ (by decide)
+    have hy : readSrc s₁ (accWord acc n) = some (s₁.mem.readW (off base (acc + 4 * n)) 32) :=
+      readSrc_bp hb₁ (by omega_arith)
+    refine WP.mono (stepG_ok hb₁ hy (acc := acc) (j := n) (by omega_arith)) fun u ⟨m₂, b₂, K₂⟩ => ?_
+    have ecx₁ : (s₁.gpr .ecx).toNat = 1 := by rw [K₁.1 _ (by decide)]; exact h1
+    have hyw : (s₁.mem.readW (off base (acc + 4 * n)) 32).toNat = w32 s₁.mem base (acc + 4 * n) := rfl
+    have tk : w32 s₁.mem base (acc + 4 * n) = w32 s.mem base (acc + 4 * n) :=
+      O₁.w32 (Or.inr (Nat.le_refl _)) (by omega_arith)
+    rw [ecx₁, hyw, tk, Nat.one_mul] at m₂ b₂
+    obtain W := writeW32_outside s₁.mem base (d := acc + 4 * n)
+      (BitVec.ofNat 32 (w32 s.mem base (acc + 4 * n) + (s₁.gpr .ebx).toNat + w32 s.mem base (acc + 4 * n)))
+      (by omega_arith)
+    rw [← m₂] at W
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_,
+      K₁.trans K₂⟩
+    obtain hlow : val32 u.mem base acc n = val32 s₁.mem base acc n :=
+      W.val32 (Or.inl (Nat.le_refl _)) (by omega_arith)
+    obtain htop : w32 u.mem base (acc + 4 * n) = (w32 s.mem base (acc + 4 * n) + (s₁.gpr .ebx).toNat +
+        w32 s.mem base (acc + 4 * n)) % 2 ^ 32 := by
+      rw [m₂, w32_write_self, BitVec.toNat_ofNat]
+    rw [val32_succ u.mem base acc n, val32_succ s.mem base acc n, hlow, htop, b₂, pow32_succ n]
+    generalize hxd : w32 s.mem base (acc + 4 * n) + (s₁.gpr .ebx).toNat + w32 s.mem base (acc + 4 * n) = x at *
+    obtain hx := Nat.div_add_mod x (2 ^ 32)
+    generalize 2 ^ (32 * n) = P at *
+    grind
+
+/-- The squares of the words `0 … n - 1` added at words `0 … 2n - 1`, with
+the carry word. -/
+theorem diagSteps_ok {pa acc : Nat} : ∀ (n : Nat) {s : State}, Bx s base size → Ptr s .esi pa →
+    pa + 4 * n ≤ acc → acc + 8 * n ≤ size →
+    WP isa (.block (diagSteps acc n)) s fun u =>
+      Outside base acc (8 * n) s.mem u.mem ∧
+      val32 u.mem base acc (2 * n) + 2 ^ (64 * n) * (u.gpr .ebx).toNat =
+        val32 s.mem base acc (2 * n) + (s.gpr .ebx).toNat + sqDiag s.mem base pa n ∧
+      Keeps [.eax, .ebx, .ecx, .edx] s u
+  | 0, s, _, _, _, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by
+      simp only [Nat.mul_zero, val32, sqDiag, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero],
+      Keeps.refl _ _⟩
+  | n + 1, s, hb, hp, hpa, hsz => by
+    have hn := hb.nowrap
+    rw [diagSteps]
+    refine WP.block_append (WP.mono (diagSteps_ok n hb hp (by omega_arith) (by omega_arith))
+      fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    have hb₁ := hb.of_keeps K₁ (by decide)
+    have hp₁ : Ptr s₁ .esi pa := hp.of_keeps K₁ (by decide) (by decide)
+    simp only [diagStep, List.cons_append, List.nil_append]
+    refine wp_movS (readSrc_ptr hb₁ hp₁ (d := 4 * n) (by omega_arith)) fun s₂ u₂ _ => ?_
+    have k₂ : Keeps [.eax, .ebx, .ecx, .edx] s₁ s₂ := u₂.keeps.mono (by decide)
+    have hb₂ := hb₁.of_keeps k₂ (by decide)
+    have hp₂ : Ptr s₂ .esi pa := hp₁.of_keeps k₂ (by decide) (by decide)
+    have mem₂ : s₂.mem = s₁.mem := u₂.mem
+    have a₁ : w32 s₁.mem base (pa + 4 * n) = w32 s.mem base (pa + 4 * n) :=
+      O₁.w32 (Or.inl (by omega_arith)) (by omega_arith)
+    have ecx₂ : (s₂.gpr .ecx).toNat = w32 s.mem base (pa + 4 * n) := by rw [u₂.gpr]; exact a₁
+    have hy₂ : readSrc s₂ (bWord n) = some (s₂.mem.readW (off base (pa + 4 * n)) 32) :=
+      readSrc_ptr hb₂ hp₂ (by omega_arith)
+    have y₂ : (s₂.mem.readW (off base (pa + 4 * n)) 32).toNat = w32 s.mem base (pa + 4 * n) := by
+      rw [mem₂]; exact a₁
+    have ebx₂ : s₂.gpr .ebx = s₁.gpr .ebx := u₂.other _ (by decide)
+    have w0 : w32 s₂.mem base (acc + 4 * (2 * n)) = w32 s.mem base (acc + 4 * (2 * n)) := by
+      rw [mem₂]; exact O₁.w32 (Or.inr (by omega_arith)) (by omega_arith)
+    refine WP.block_append (WP.mono (stepG_ok hb₂ hy₂ (acc := acc) (j := 2 * n) (by omega_arith))
+      fun s₃ ⟨m₃, b₃, K₃⟩ => ?_)
+    rw [ecx₂, y₂, ebx₂, w0] at m₃ b₃
+    have hb₃ := hb₂.of_keeps K₃ (by decide)
+    have w1 : w32 s₃.mem base (acc + 4 * (2 * n + 1)) = w32 s.mem base (acc + 4 * (2 * n + 1)) := by
+      rw [m₃, w32_write_ne hn (by omega_arith) (by omega_arith) (Or.inr (by omega_arith)), mem₂]
+      exact O₁.w32 (Or.inr (by omega_arith)) (by omega_arith)
+    refine WP.mono (stepG_ok hb₃ (ys := .imm 0) (y := 0) rfl (acc := acc) (j := 2 * n + 1) (by omega_arith))
+      fun u ⟨m₄, b₄, K₄⟩ => ?_
+    have z0 : (0 : BitVec 32).toNat = 0 := rfl
+    rw [z0, Nat.mul_zero, Nat.zero_add, b₃, w1] at m₄ b₄
+    have W₃ : Outside base (acc + 4 * (2 * n)) 4 s₁.mem s₃.mem := by
+      rw [m₃, mem₂]; exact writeW32_outside _ _ _ (by omega_arith)
+    have W₄ : Outside base (acc + 4 * (2 * n + 1)) 4 s₃.mem u.mem := by
+      rw [m₄]; exact writeW32_outside _ _ _ (by omega_arith)
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans ((W₃.mono (by omega_arith) (by omega_arith)).trans
+      (W₄.mono (by omega_arith) (by omega_arith))), ?_,
+      K₁.trans (k₂.trans ((K₃.mono (by decide)).trans (K₄.mono (by decide))))⟩
+    have hlow : val32 u.mem base acc (2 * n) = val32 s₁.mem base acc (2 * n) := by
+      rw [W₄.val32 (Or.inl (by omega_arith)) (by omega_arith),
+        W₃.val32 (Or.inl (by omega_arith)) (by omega_arith)]
+    have h0 : w32 u.mem base (acc + 4 * (2 * n)) = (w32 s.mem base (pa + 4 * n) * w32 s.mem base (pa + 4 * n) +
+        (s₁.gpr .ebx).toNat + w32 s.mem base (acc + 4 * (2 * n))) % 2 ^ 32 := by
+      rw [W₄.w32 (Or.inl (by omega_arith)) (by omega_arith), m₃, w32_write_self, BitVec.toNat_ofNat]
+    have h1 : w32 u.mem base (acc + 4 * (2 * n + 1)) = ((w32 s.mem base (pa + 4 * n) * w32 s.mem base (pa + 4 * n) +
+        (s₁.gpr .ebx).toNat + w32 s.mem base (acc + 4 * (2 * n))) / 2 ^ 32 +
+        w32 s.mem base (acc + 4 * (2 * n + 1))) % 2 ^ 32 := by
+      rw [m₄, w32_write_self, BitVec.toNat_ofNat]
+    rw [show 64 * n = 32 * (2 * n) by omega_arith] at V₁
+    rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega_arith, val32_succ u.mem, val32_succ u.mem,
+      val32_succ s.mem, val32_succ s.mem, hlow, h0, h1, b₄, sqDiag,
+      show 64 * (n + 1) = 32 * (2 * n + 1 + 1) by omega_arith, show 64 * n = 32 * (2 * n) by omega_arith,
+      pow32_succ (2 * n + 1), pow32_succ (2 * n)]
+    generalize hx1 : w32 s.mem base (pa + 4 * n) * w32 s.mem base (pa + 4 * n) + (s₁.gpr .ebx).toNat +
+      w32 s.mem base (acc + 4 * (2 * n)) = x1 at *
+    generalize hx2 : x1 / 2 ^ 32 + w32 s.mem base (acc + 4 * (2 * n + 1)) = x2 at *
+    obtain e1 := Nat.div_add_mod x1 (2 ^ 32)
+    obtain e2 := Nat.div_add_mod x2 (2 ^ 32)
+    generalize 2 ^ (32 * (2 * n)) = P at *
+    grind
+
+/-- The reduction's arithmetic: `P = L₀ + E H` with `E = 2⁵¹²`, the first
+row leaves `H + 2⁹ L₀ = L₁ + F (M + D G)` (`F = 2⁶⁴`, `F D = E`), the second
+`R = M + D (G + 2⁹ L₁)`: `E F R = P + (L₀ + E L₁) p` and `R < 2p`. -/
+theorem p521_fold_arith {E F D L0 L1 H M G A p R : Nat} (hE : F * D = E) (hp : p + 1 = 512 * E)
+    (hF : 512 ≤ F) (hL0 : L0 < E) (hL1 : L1 < F) (hV : L0 + E * H = A * A)
+    (hH : H + 512 * L0 = L1 + F * (M + D * G)) (hR : R = M + D * (G + 512 * L1)) (hA : A < p) :
+    E * F * R = A * A + (L0 + E * L1) * p ∧ R < 2 * p := by
+  have key : E * F * R + (L0 + E * L1) + 512 * E * L0 =
+      A * A + (L0 + E * L1) * (p + 1) + 512 * E * L0 := by
+    rw [hp, ← hV, hR]
+    have h2 : E * (H + 512 * L0) = E * (L1 + F * (M + D * G)) := congrArg _ hH
+    subst hE
+    grind
+  have eq : E * F * R = A * A + (L0 + E * L1) * p := by
+    rw [Nat.mul_add (L0 + E * L1) p 1, Nat.mul_one] at key
+    omega_arith
+  refine ⟨eq, ?_⟩
+  apply Nat.lt_of_not_le
+  intro h
+  have h1 : E * F * (2 * p) ≤ E * F * R := Nat.mul_le_mul_left _ h
+  have hE0 : 0 < E := by omega_using [hL0]
+  have hEF : E * 512 ≤ E * F := Nat.mul_le_mul_left _ hF
+  have hpEF : p ≤ E * F := by omega_using [hp, hEF]
+  have h2 : A * A < p * p := Nat.mul_lt_mul_of_lt_of_lt hA hA
+  have h3 : p * p ≤ E * F * p := Nat.mul_le_mul_right _ hpEF
+  have hU : L0 + E * L1 ≤ E * F := by
+    have : E * (L1 + 1) ≤ E * F := Nat.mul_le_mul_left _ hL1
+    rw [Nat.mul_add, Nat.mul_one] at this
+    omega_using [this, hL0]
+  have h4 : (L0 + E * L1) * p ≤ E * F * p := Nat.mul_le_mul_right _ hU
+  rw [Nat.mul_left_comm (E * F) 2 p] at h1
+  omega_using [h1, h2, h3, h4, eq]
+
+end VG.Proof.Weierstrass.X86.Mont
+
+end
+
+/-! P521-SQUARE-END -/
+
 /-! # Selecting the x86 P-256 square from public operand pointers -/
 
 @[expose] public section

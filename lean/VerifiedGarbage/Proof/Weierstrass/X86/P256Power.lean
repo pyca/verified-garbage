@@ -272,7 +272,7 @@ end
 
 end
 
-/-! # P-256 field inversion by a fixed addition chain -/
+/-! # P-256's and P-521's field inversions by fixed addition chains -/
 
 @[expose] public section
 
@@ -339,6 +339,31 @@ theorem p256Power_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
   rw [p256Power_exponent] at Iu
   exact ⟨(K₁.mono (by decide)).trans Ku, fun x hx => (Uu x hx).trans (U₁ x hx), Iu.acc_lt, Iu.acc_val⟩
 
+/-- A chain from the base: `[acc]` reads as the base to the chain's exponent. -/
+theorem chainPower_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+    (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    (ops : List PowerOp) (hb : ∀ op ∈ ops, powerOpBound op) {e t : Nat}
+    (he : chainExponents ops (1, 1) = (e, t))
+    {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
+    (hB : wordsVal s.mem base P.base P.M.n < m) :
+    WP isa (chainPower P F ops) s fun u => Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem ∧
+      wordsVal u.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal u.mem base P.acc P.M.n) =
+        toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by
+  refine WP.seq (WP.mono (powerInit_ok hL hW hs hM hB) fun s₁ ⟨I₁, K₁, U₁⟩ => ?_)
+  refine WP.mono (powerChain_ok hL hW hm ops hb (v := (1, 1)) I₁) fun u ⟨Iu, Ku, Uu⟩ => ?_
+  rw [he] at Iu
+  exact ⟨(K₁.mono (by decide)).trans Ku, fun x hx => (Uu x hx).trans (U₁ x hx), Iu.acc_lt, Iu.acc_val⟩
+
+theorem p521Power_exponent :
+    chainExponents p521PowerOps (1, 1) = (Mont.p521Prime - 2, 2 ^ 259 - 1) := by
+  decide +kernel
+
+theorem p521Power_bound : ∀ op ∈ p521PowerOps, powerOpBound op := by
+  simp only [p521PowerOps, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    powerOpBound]
+  decide +kernel
+
 theorem powField_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
     (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
@@ -355,6 +380,11 @@ theorem powField_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Add
   next hp =>
     exact WP.mono (p256Power_ok hL hW hm hs hM hB) fun u ⟨K, U, L, V⟩ =>
       ⟨K, U, L, by rw [← hp] at V; exact V⟩
-  next _ => exact pow_ok hL hW hm hs hB hO hbits he
+  next _ =>
+    split
+    next hp =>
+      exact WP.mono (chainPower_ok hL hW hm p521PowerOps p521Power_bound p521Power_exponent hs hM hB)
+        fun u ⟨K, U, L, V⟩ => ⟨K, U, L, by rw [← hp] at V; exact V⟩
+    next _ => exact pow_ok hL hW hm hs hB hO hbits he
 
 end VG.Proof.Weierstrass.X86
