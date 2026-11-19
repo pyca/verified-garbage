@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
@@ -16,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
@@ -33,13 +35,13 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 # HMAC on RISC-V, without secret residue
 
 Each hash's HMAC `init` and `finalize`, followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`). Their
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`). Their
 postconditions read the memory on return only within their buffers, as on
 x86-64 (`Proof/Pbkdf2/Md/X86_64/ScrubStream.lean`).
 
 Each `init_any_key` instead clears only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.withScrubSel`, `scrubSel_noResidue`). Their code wipes most of
+(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -79,7 +81,7 @@ theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (sta
 
 /-- `Spec.Hmac.md5I.initAnyKeyApi`. -/
 def md5InitAnyKeyReg : Registration Spec.Hmac.md5I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Md5.hash.init, verified := Proof.Hmac.Stream.RISCV64.Md5.init } [(288, [(0, 18), (30, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Md5.hash.init, verified := Proof.Hmac.Stream.RISCV64.Md5.init } [(288, [(0, 18), (30, 6)])]
     (hmacInitAnyOut Spec.Hmac.md5I Proof.Hmac.md5_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.md5I Proof.Hmac.md5_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Md5.hash.init) 288 0
@@ -87,12 +89,12 @@ def md5InitAnyKeyReg : Registration Spec.Hmac.md5I.initAnyKeyApi RISCV64.target 
 
 /-- `Spec.Hmac.md5I.finalizeApi`. -/
 def md5FinalizeReg : Registration Spec.Hmac.md5I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Md5.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Md5.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Md5.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Md5.finalize }
     (hmacFinOut Spec.Hmac.md5I (by decide) _)
 
 /-- `Spec.Hmac.sha1I.initAnyKeyApi`. -/
 def sha1InitAnyKeyReg : Registration Spec.Hmac.sha1I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha1.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha1.init } [(304, [(0, 18), (31, 7)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha1.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha1.init } [(304, [(0, 18), (31, 7)])]
     (hmacInitAnyOut Spec.Hmac.sha1I Proof.Hmac.sha1_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha1I Proof.Hmac.sha1_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha1.hash.init) 304 0
@@ -100,12 +102,12 @@ def sha1InitAnyKeyReg : Registration Spec.Hmac.sha1I.initAnyKeyApi RISCV64.targe
 
 /-- `Spec.Hmac.sha1I.finalizeApi`. -/
 def sha1FinalizeReg : Registration Spec.Hmac.sha1I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha1.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha1.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha1.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha1.finalize }
     (hmacFinOut Spec.Hmac.sha1I (by decide) _)
 
 /-- `Spec.Hmac.sha224I.initAnyKeyApi`. -/
 def sha224InitAnyKeyReg : Registration Spec.Hmac.sha224I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.init, verified := Proof.Hmac.Stream.RISCV64.Sha224.init } [(320, [(0, 18), (34, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.init, verified := Proof.Hmac.Stream.RISCV64.Sha224.init } [(320, [(0, 18), (34, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha224I Proof.Hmac.sha224_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha224I Proof.Hmac.sha224_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.init) 320 0
@@ -113,12 +115,12 @@ def sha224InitAnyKeyReg : Registration Spec.Hmac.sha224I.initAnyKeyApi RISCV64.t
 
 /-- `Spec.Hmac.sha224I.finalizeApi`. -/
 def sha224FinalizeReg : Registration Spec.Hmac.sha224I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha224.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash224.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha224.finalize }
     (hmacFinOut Spec.Hmac.sha224I (by decide) _)
 
 /-- `Spec.Hmac.sha256I.initAnyKeyApi`. -/
 def sha256InitAnyKeyReg : Registration Spec.Hmac.sha256I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash256.init, verified := Proof.Hmac.Stream.RISCV64.Sha256.init } [(320, [(0, 18), (34, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash256.init, verified := Proof.Hmac.Stream.RISCV64.Sha256.init } [(320, [(0, 18), (34, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha256I Proof.Hmac.sha256_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha256I Proof.Hmac.sha256_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha256Family.hash256.init) 320 0
@@ -126,12 +128,12 @@ def sha256InitAnyKeyReg : Registration Spec.Hmac.sha256I.initAnyKeyApi RISCV64.t
 
 /-- `Spec.Hmac.sha256I.finalizeApi`. -/
 def sha256FinalizeReg : Registration Spec.Hmac.sha256I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash256.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha256.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha256Family.hash256.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha256.finalize }
     (hmacFinOut Spec.Hmac.sha256I (by decide) _)
 
 /-- `Spec.Hmac.sha384I.initAnyKeyApi`. -/
 def sha384InitAnyKeyReg : Registration Spec.Hmac.sha384I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha384.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha384.init } [(496, [(0, 26), (56, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha384.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha384.init } [(496, [(0, 26), (56, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha384I Proof.Hmac.sha384_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha384I Proof.Hmac.sha384_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha384.hash.init) 496 0
@@ -139,12 +141,12 @@ def sha384InitAnyKeyReg : Registration Spec.Hmac.sha384I.initAnyKeyApi RISCV64.t
 
 /-- `Spec.Hmac.sha384I.finalizeApi`. -/
 def sha384FinalizeReg : Registration Spec.Hmac.sha384I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha384.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha384.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha384.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha384.finalize }
     (hmacFinOut Spec.Hmac.sha384I (by decide) _)
 
 /-- `Spec.Hmac.sha512I.initAnyKeyApi`. -/
 def sha512InitAnyKeyReg : Registration Spec.Hmac.sha512I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha512.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512.init } [(512, [(0, 26), (58, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha512.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512.init } [(512, [(0, 26), (58, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha512I Proof.Hmac.sha512_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha512I Proof.Hmac.sha512_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha512.hash.init) 512 0
@@ -152,12 +154,12 @@ def sha512InitAnyKeyReg : Registration Spec.Hmac.sha512I.initAnyKeyApi RISCV64.t
 
 /-- `Spec.Hmac.sha512I.finalizeApi`. -/
 def sha512FinalizeReg : Registration Spec.Hmac.sha512I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha512.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha512.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512.finalize }
     (hmacFinOut Spec.Hmac.sha512I (by decide) _)
 
 /-- `Spec.Hmac.sha512_224I.initAnyKeyApi`. -/
 def sha512_224InitAnyKeyReg : Registration Spec.Hmac.sha512_224I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512_224.init } [(480, [(0, 26), (54, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512_224.init } [(480, [(0, 26), (54, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha512_224I Proof.Hmac.sha512_224_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha512_224I Proof.Hmac.sha512_224_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha512_224.hash.init) 480 0
@@ -165,12 +167,12 @@ def sha512_224InitAnyKeyReg : Registration Spec.Hmac.sha512_224I.initAnyKeyApi R
 
 /-- `Spec.Hmac.sha512_224I.finalizeApi`. -/
 def sha512_224FinalizeReg : Registration Spec.Hmac.sha512_224I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512_224.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512_224.finalize }
     (hmacFinOut Spec.Hmac.sha512_224I (by decide) _)
 
 /-- `Spec.Hmac.sha512_256I.initAnyKeyApi`. -/
 def sha512_256InitAnyKeyReg : Registration Spec.Hmac.sha512_256I.initAnyKeyApi RISCV64.target :=
-  withScrubSel { code := Proof.Hmac.Stream.RISCV64.Sha512_256.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512_256.init } [(480, [(0, 26), (54, 6)])]
+  scrubSelOf { code := Proof.Hmac.Stream.RISCV64.Sha512_256.hash.init, verified := Proof.Hmac.Stream.RISCV64.Sha512_256.init } [(480, [(0, 26), (54, 6)])]
     (hmacInitAnyOut Spec.Hmac.sha512_256I Proof.Hmac.sha512_256_local (by decide) _)
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (hmacInitAnyOut Spec.Hmac.sha512_256I Proof.Hmac.sha512_256_local (by decide) _) (hbp_nil _)
       (Proof.Hmac.Stream.RISCV64.Sha512_256.hash.init) 480 0
@@ -178,7 +180,7 @@ def sha512_256InitAnyKeyReg : Registration Spec.Hmac.sha512_256I.initAnyKeyApi R
 
 /-- `Spec.Hmac.sha512_256I.finalizeApi`. -/
 def sha512_256FinalizeReg : Registration Spec.Hmac.sha512_256I.finalizeApi RISCV64.target :=
-  withScrub { code := Proof.Hmac.Stream.RISCV64.Sha512_256.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512_256.finalize }
+  scrubOf { code := Proof.Hmac.Stream.RISCV64.Sha512_256.hash.finalize, verified := Proof.Hmac.Stream.RISCV64.Sha512_256.finalize }
     (hmacFinOut Spec.Hmac.sha512_256I (by decide) _)
 
 end VG.Proof.Hmac.Stream.RISCV64.Scrub
