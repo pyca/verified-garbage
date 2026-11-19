@@ -240,6 +240,8 @@ structure GhashImpl where
   ct : ConstantTime isa Proof.Gcm.ghashX86.pre Proof.Gcm.ghashX86.pub fn.code
   nosp : NoSp fn.code
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- No MMX instruction, which the scrub of a caller does not clear (`X86.Scrub.scrubFSide`). -/
+  noMmx : fn.code.allInstrs (fun i => !i.isMmx) = true
   suffix : String
   features : List String
 
@@ -253,6 +255,7 @@ def scalar : GhashImpl where
   ct := Proof.Gcm.X86.ghash_ct
   nosp := NoSp.of_all (by decide +kernel)
   spSafe := Code.all_of_spTest (by decide +kernel)
+  noMmx := by decide +kernel
   suffix := ""
   features := []
 

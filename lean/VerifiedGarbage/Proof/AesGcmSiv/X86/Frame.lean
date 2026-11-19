@@ -9,6 +9,9 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86.Frame
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 /-! ### `AesGcmSiv.X86.Verified`, which only this module used -/
 
@@ -317,3 +320,218 @@ theorem open_framed (hti : TagInputEq) :
     (Proof.AesGcmSiv.openPost_local _) (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.X86
+
+/-!
+# AES-GCM-SIV on x86, without secret residue
+
+`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` over any implementations
+`v` of `vg_aes_ctr32_to`, `vg_aes_expand_key` and `vg_ghash`, each followed
+by the zeroing of the 2888 bytes of stack below `esp` that they and their
+callees use (the 2856-byte frame of `withStackScratch`, which holds the
+derived keys and the callees' working space, and the 32 bytes of a call
+of `vg_aes_ctr32_to`) and by `tail` (`X86.Scrub.scrubFOf`). Their
+postconditions read the memory on return only within the data and the tag
+(`sealOut`, `openOut`).
+
+What the scrub needs of the code (`X86.Scrub.scrubFSide`) is proved once
+for every `v`: its own instructions are evaluated here, and its callees'
+facts are fields of the variants, proved where each is defined (`noMmx`,
+and no indirect call from `stack`, `noIcall_of_stackUse`).
+
+The registrations take the equation of POLYVAL's input with GHASH's
+(`TagInputEq`) as an argument, which the registration file gives: its
+proof imports the field algebra, which only leaves of the import graph may
+import (`ci/check_lean_speed.py`). They are in this module, which only the
+registration file imports, rather than in one of their own: this module
+imports GHASH's field algebra (through `vg_ghash_pclmul`'s proof), and
+another module importing it would count against the same limit.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcmSiv.X86.Scrub
+
+open VG VG.X86 VG.X86.Scrub VG.Impl.AesGcmSiv.X86 VG.Proof.Aes.ScrubLocal VG.Proof.AesGcmSiv.X86
+open VG.Proof.AesGcm.X86 (GcmImpl)
+
+/-! ## What the scrub needs of the code -/
+
+/-- Code that uses no stack makes no call, so no indirect one. -/
+theorem noIcall_of_stackUse {c : Prog isa} (h : stackUse c = 0) : noIcall c = true := by
+  induction c with
+  | block _ => rfl
+  | seq a b iha ihb =>
+    simp only [stackUse, Nat.max_eq_zero_iff] at h
+    simp only [noIcall, iha h.1, ihb h.2, Bool.and_self]
+  | ite _ t e iht ihe =>
+    simp only [stackUse, Nat.max_eq_zero_iff] at h
+    simp only [noIcall, iht h.1, ihe h.2, Bool.and_self]
+  | loop b _ ih => exact ih h
+  | call _ b _ =>
+    simp only [stackUse, Nat.add_eq_zero_iff] at h
+    exact absurd h.2 (by decide)
+  | frame _ b _ ih =>
+    simp only [stackUse, Nat.add_eq_zero_iff] at h
+    exact ih h.1
+  | icall _ _ b n _ _ =>
+    simp only [stackUse, Nat.max_eq_zero_iff, Nat.add_eq_zero_iff] at h
+    exact absurd h.1.2 (by decide)
+
+variable (v : GcmImpl)
+
+theorem blocks_noIcall : noIcall (blocks v.callees) = true := by
+  unfold blocks
+  split
+  · rfl
+  · simp only [cryptBlock, callCtr, Impl.AesGcm.X86.ctrCall, GcmImpl.callees, noIcall,
+      noIcall_of_stackUse v.ctr.stack, Bool.and_self, Bool.and_true, Bool.true_and]
+
+theorem rev_noIcall : noIcall (rev v.callees) = true := by
+  unfold rev
+  split <;> rfl
+
+theorem seal_noIcall : noIcall («seal» v.callees) = true := by
+  have hb := blocks_noIcall v
+  have hr := rev_noIcall v
+  simp only [GcmImpl.callees] at hb hr
+  simp only [«seal», sivEntry, Impl.AesGcm.X86.entry, tagOut, keys, derive, deriveBlock, derivePost, expand, hkey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
+    callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
+    noIcall, hb, hr, noIcall_of_stackUse v.ctr.stack, noIcall_of_stackUse v.ctr.expandStack,
+    noIcall_of_stackUse v.gh.stack, Bool.and_self, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem open_noIcall : noIcall («open» v.callees) = true := by
+  have hb := blocks_noIcall v
+  have hr := rev_noIcall v
+  simp only [GcmImpl.callees] at hb hr
+  simp only [«open», sivEntry, Impl.AesGcm.X86.entry, recvTag, keys, derive, deriveBlock, derivePost, expand, hkey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
+    callKey, callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
+    noIcall, hb, hr, noIcall_of_stackUse v.ctr.stack, noIcall_of_stackUse v.ctr.expandStack,
+    noIcall_of_stackUse v.gh.stack, Bool.and_self, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem blocks_noMmx : (blocks v.callees).allInstrs (fun i => !i.isMmx) = true := by
+  unfold blocks
+  split
+  · decide +kernel
+  · simp only [cryptBlock, callCtr, Impl.AesGcm.X86.ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.noMmx,
+      Bool.true_and, Bool.and_true]
+    decide +kernel
+
+theorem rev_noMmx : (rev v.callees).allInstrs (fun i => !i.isMmx) = true := by
+  unfold rev
+  split <;> decide +kernel
+
+theorem seal_noMmx : («seal» v.callees).allInstrs (fun i => !i.isMmx) = true := by
+  have hb := blocks_noMmx v
+  have hr := rev_noMmx v
+  simp only [GcmImpl.callees] at hb hr
+  simp only [«seal», sivEntry, Impl.AesGcm.X86.entry, tagOut, keys, derive, deriveBlock, derivePost, expand, hkey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, callCtr, callKey,
+    callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
+    Code.allInstrs, hb, hr, v.ctr.noMmx, v.ctr.expandNoMmx, v.gh.noMmx, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem open_noMmx : («open» v.callees).allInstrs (fun i => !i.isMmx) = true := by
+  have hb := blocks_noMmx v
+  have hr := rev_noMmx v
+  simp only [GcmImpl.callees] at hb hr
+  simp only [«open», sivEntry, Impl.AesGcm.X86.entry, recvTag, keys, derive, deriveBlock, derivePost, expand, hkey,
+    polyval, absorb, chunk, chunkPre, absTail, absTailPre, lens, onStr, tag, crypt, cryptTail, mask, callCtr,
+    callKey, callGh, Impl.AesGcm.X86.ctrCall, Impl.AesGcm.X86.keyCall, Impl.AesGcm.X86.ghCall, GcmImpl.callees,
+    Code.allInstrs, hb, hr, v.ctr.noMmx, v.ctr.expandNoMmx, v.gh.noMmx, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+/-- `scrubFSide` of code `c` in the frame of `withStackScratch 2856 8`, from
+`c`'s facts. -/
+theorem scrubFSide_framed {c : Prog isa} (hu : stackUse c ≤ 32) (hi : noIcall c = true)
+    (hm : c.allInstrs (fun i => !i.isMmx) = true) :
+    scrubFSide (Impl.StackScratch.X86.withStackScratch 2856 8 c) 2888 = true := by
+  have hu' : stackUse (Impl.StackScratch.X86.withStackScratch 2856 8 c) ≤ 2888 := by
+    simp only [Impl.StackScratch.X86.withStackScratch, stackUse, frameBytes, Nat.zero_max]
+    exact Nat.add_le_add_right hu 2856
+  have hm' : (Impl.StackScratch.X86.withStackScratch 2856 8 c).allInstrs (fun i => !i.isMmx) = true := by
+    simp only [Impl.StackScratch.X86.withStackScratch, Code.allInstrs, hm, Bool.and_true]
+    decide
+  have hi' : noIcall (Impl.StackScratch.X86.withStackScratch 2856 8 c) = true := by
+    simp only [Impl.StackScratch.X86.withStackScratch, noIcall, hi, Bool.true_and]
+  simp only [scrubFSide, hu', hi', hm', decide_true, Bool.true_and]
+  decide
+
+theorem seal_side :
+    scrubFSide (Impl.StackScratch.X86.withStackScratch 2856 8 («seal» v.callees)) 2888 = true :=
+  scrubFSide_framed (seal_stackUse v) (seal_noIcall v) (seal_noMmx v)
+
+theorem open_side :
+    scrubFSide (Impl.StackScratch.X86.withStackScratch 2856 8 («open» v.callees)) 2888 = true :=
+  scrubFSide_framed (open_stackUse v) (open_noIcall v) (open_noMmx v)
+
+/-- The frame of `withStackScratch 2856 8` keeps the stack pointer for code
+`c` that does. -/
+theorem framed_spSafe {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
+    (Impl.StackScratch.X86.withStackScratch 2856 8 c).all (fun i => !isa.writesSp i) = true := by
+  have hf : (Impl.StackScratch.X86.withStackScratch 2856 8 (.block [])).all
+      (fun i => !isa.writesSp i) = true := by decide
+  simp only [Impl.StackScratch.X86.withStackScratch, Code.all, List.all_nil, Bool.and_true,
+    Bool.and_eq_true] at hf ⊢
+  exact ⟨⟨hf.1.1, hf.1.2, h⟩, hf.2⟩
+
+/-! ## Postconditions -/
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.sealContract X86.abi stack) (Spec.GcmSiv.sealSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+        ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.sealPost 32) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+        ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.sealPost 32) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, bytesAt_of0 hb.2.2.2.1 (by simp [Nat.mod_le]), bytesAt_of0 hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.openContract X86.abi stack) (Spec.GcmSiv.openSig.retBits 32) := by
+  -- The postcondition is a `match` on a decryption: prove the locality
+  -- by intros, so that no expected type of a `fun` is reduced to it.
+  refine postOut_of_local ScrubAbi.plain ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+      ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.openPost 32) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+      ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.openPost 32) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    rw [bytesAt_of0 (n := (BitVec.setWidth 32 len).toNat) hb.2.2.2.1 (by simp [Nat.mod_le])]
+    exact @h
+
+/-! ## The registrations -/
+
+/-- `vg_aes_gcm_siv_seal` over `v`. -/
+def sealReg (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi X86.target :=
+  scrubFOf {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratch 2856 8 («seal» v.callees)
+      verified := Proof.AesGcmSiv.seal_keyed (seal_framed v hti)
+      spSafe := framed_spSafe (seal_spSafe v) }
+    (sealOut _) 2888 (seal_side v)
+
+/-- `vg_aes_gcm_siv_open` over `v`. (`@openOut`, as on x86-64: applied without `@`, the
+elaborator reduces its type to see what it is a function of.) -/
+def openReg (hti : TagInputEq) : Registration Spec.GcmSiv.openApi X86.target :=
+  scrubFOf {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratch 2856 8 («open» v.callees)
+      verified := Proof.AesGcmSiv.open_keyed (open_framed v hti)
+      spSafe := framed_spSafe (open_spSafe v) }
+    (@openOut _) 2888 (open_side v)
+
+end VG.Proof.AesGcmSiv.X86.Scrub
