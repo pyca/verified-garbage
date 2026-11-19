@@ -52,8 +52,8 @@ volatile registers and the stack its frames used. Its postcondition reads
 the memory on return only within `out` (`Proof/EcKey/PPC64LE/Scrub/Out.lean`).
 Each takes the curve's group law (`Weierstrass.Law`), which its registration
 file gives.
-The emitter checks `scrubOf`'s side conditions, as it refuses a function
-without a proof that `ci/residue_allowlist.txt` does not list.
+`scrubOf`'s side condition (`scrubSide`) is proved at each registration, by
+the kernel's evaluation of it when this module is built.
 -/
 
 @[expose] public section

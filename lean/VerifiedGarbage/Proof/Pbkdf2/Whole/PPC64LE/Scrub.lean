@@ -26,10 +26,8 @@ not wipe itself (`withStackScratch`), and calls HMAC's `init` and
 of their own. Its postcondition reads the memory on return only within
 `out`, as on RISC-V (`Proof/Pbkdf2/Whole/RISCV64/Scrub.lean`).
 
-`scrubOf`'s side conditions are not checked here by `decide`, which
-reaches the recursion limit on code this long: the emitter checks them, as
-it refuses a function without a proof of `NoResidue` that
-`ci/residue_allowlist.txt` does not list.
+`scrubOf`'s side condition (`scrubSide`) is proved at each registration, by
+the kernel's evaluation of it (`lit_decide`) when this module is built.
 -/
 
 @[expose] public section
