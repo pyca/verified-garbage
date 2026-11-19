@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Verified
 public import VerifiedGarbage.Proof.X25519.RISCV64.BaseVerified
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # X25519 on RISC-V, without secret residue
 
 `vg_x25519_base` and `vg_x25519_exchange`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.withScrub`), which clears the caller-saved registers and the
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
 stack its frames used. Their postconditions read the memory on return only
 within `out` (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/X25519/X86_64/Scrub.lean`).
 -/
@@ -68,14 +69,14 @@ theorem exchangeOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
 
 /-- `Spec.X25519.exchangeApi`. -/
 def exchangeReg : Registration Spec.X25519.exchangeApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Xdh.RISCV64.exchange "vg_x25519" Impl.X25519.RISCV64.R64.x25519 32
       verified := Proof.X25519.RISCV64.Exchange.exchange_verified }
     (exchangeOut [] _)
 
 /-- `Spec.X25519.x25519BaseApi`. -/
 def baseReg : Registration Spec.X25519.x25519BaseApi RISCV64.target :=
-  withScrub {
+  scrubOf {
       code := Impl.X25519.RISCV64.Base.x25519Base
       verified := Proof.X25519.RISCV64.Base.x25519Base_verified }
     (baseOut Impl.Ed25519.RISCV64.combConsts 0)

@@ -14,7 +14,7 @@ read the memory on return only within their outputs, and that of
 `vg_ed25519_verify` not at all (`RISCV64.Scrub.PostOut`), whatever tables of
 constants their code takes, as x86-64's `Proof/Ed25519/X86_64/Scrub.lean`
 proves them: each implementation, followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), returns with the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), returns with the
 caller-saved registers cleared and the stack its frames used zeroed.
 -/
 

@@ -11,7 +11,7 @@ The postconditions of `vg_ed448_public_key` and `vg_ed448_sign_cached` read
 the memory on return only within their outputs, and that of
 `vg_ed448_verify` not at all (`RISCV64.Scrub.PostOut`), as x86-64's
 `Proof/Ed448/X86_64/Scrub.lean` proves them: each implementation, followed
-by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.withScrub`), returns with
+by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), returns with
 the caller-saved registers cleared and the stack its frames used zeroed.
 -/
 
