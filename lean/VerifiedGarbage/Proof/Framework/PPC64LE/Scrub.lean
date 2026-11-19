@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Writes
 public import VerifiedGarbage.TCB.PPC64LE.Residue
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -1742,12 +1742,12 @@ theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnT
   | cons t ts => exact h.2.1 f hf
 
 /-- The result's width, of `r`'s function. -/
-abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 /-- `r`'s code, scrubbed, is verified against `r`'s contract and returns
 without secret residue. -/
-theorem scrubCode_ok {api : Api} (r : Registration api target)
+theorem scrubCode_ok {api : Api} (r : Unscrubbed api target)
     (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
     (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
@@ -1767,7 +1767,7 @@ theorem scrubCode_ok {api : Api} (r : Registration api target)
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`) of the stack
 its frames use and its volatile registers. -/
-def scrubReg {api : Api} (r : Registration api target)
+def scrubReg {api : Api} (r : Unscrubbed api target)
     (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
     (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
@@ -1776,7 +1776,7 @@ def scrubReg {api : Api} (r : Registration api target)
   tables := r.tables
   code := scrub (retBitsOf r) r.code.ppc64leDepth (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code
   contract := r.contract
-  verified := (scrubCode_ok r hd h16 h48 htc hrb hpost).1
+  verified := .scrubbed <| .abi ⟨(scrubCode_ok r hd h16 h48 htc hrb hpost).1, (scrubCode_ok r hd h16 h48 htc hrb hpost).2⟩
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -1787,15 +1787,14 @@ def scrubReg {api : Api} (r : Registration api target)
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨(scrubCode_ok r hd h16 h48 htc hrb hpost).2⟩
 
 /-- `r`, returning without secret residue (`scrubReg`) if `scrub`'s side
 conditions hold: its frames use at most `r.stack` bytes, it calls
 indirectly only functions of its tables (`tablesCall`), and it states no
 `written`; otherwise `r`
-itself, which then has no proof (`Registration.residue`), as the emitter
+itself, which then has no proof (`Verification.unscrubbed`), as the emitter
 allows only of what `ci/residue_allowlist.txt` lists. -/
-def withScrub {api : Api} (r : Registration api target) (hpost : PostOut r.contract (retBitsOf r)) :
+def withScrub {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r)) :
     Registration api target :=
   if hd : r.code.ppc64leDepth ≤ r.stack then
   if h16 : r.code.ppc64leDepth % 16 = 0 then
@@ -1803,7 +1802,8 @@ def withScrub {api : Api} (r : Registration api target) (hpost : PostOut r.contr
   if htc : tablesCall r.code r.tables = true then
   if hrb : retBitsOf r ≤ 64 then
   if hw : r.written = [] then scrubReg r hd h16 h48 htc hrb hpost hw
-  else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration
 
 end Scrub
 

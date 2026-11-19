@@ -87,7 +87,7 @@ theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.updateContract AArch64.
     (Proof.Sm3.updatePost_out _)
 
 /-- `update` with `v`, as it is. -/
-def updateReg₀ (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target :=
+def updateReg₀ (v : Compress) : Unscrubbed Spec.Sm3.updateApi AArch64.target :=
   { suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
     verified := update v }
@@ -103,7 +103,7 @@ theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArc
     (Proof.Sm3.finalizePost_out _)
 
 /-- `finalize` with `v`, as it is. -/
-def finalizeReg₀ (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.target :=
+def finalizeReg₀ (v : Compress) : Unscrubbed Spec.Sm3.finalizeApi AArch64.target :=
   { suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
     verified := finalize v }

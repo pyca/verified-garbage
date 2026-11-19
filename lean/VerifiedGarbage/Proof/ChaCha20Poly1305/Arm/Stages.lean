@@ -653,7 +653,7 @@ theorem xor_call {s : State} {S D B : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = S) 
   Proof.ChaCha20.Arm.Xor.xor_call h0 h1 h2 h3 h5 hn hSD hSB hDB hS hD hB hc hw
     fun s' hrd hwr hsp hf hcs r1 hpost => hQ s' ⟨hcs, hsp, hrd, hwr, hf⟩ r1 hpost
 
-/-! ## `vg_poly1305_init` -/
+/-! ## `vg_poly1305_init`, called as `vg_poly1305_init_core` -/
 
 theorem init_call {s : State} {P K : BitVec 32} (h0 : s.gpr .r0 = P) (h1 : s.gpr .r1 = K)
     (hdj : (⟨State.addr P, 128⟩ : Region).Disjoint ⟨State.addr K, 32⟩)
@@ -662,7 +662,7 @@ theorem init_call {s : State} {P K : BitVec 32} (h0 : s.gpr .r0 = P) (h1 : s.gpr
     (hw : Covers [⟨State.addr P, 128⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨State.addr P, 128⟩] s s' → s'.gpr .r0 = P →
       Repr s'.mem (State.addr P) (bytesAt s.mem (State.addr K) 32) [] → Q s') :
-    WP isa (.call "vg_poly1305_init" Impl.Poly1305.Arm.init) s Q := by
+    WP isa (.call "vg_poly1305_init_core" Impl.Poly1305.Arm.init) s Q := by
   refine WP.call (k := Proof.Poly1305.initArm) Proof.Poly1305.Arm.init_ok
     (rd := [⟨State.addr K, 32⟩]) (wr := [⟨State.addr P, 128⟩]) ?_ hc hw ?_ init_noCalls
   · simp only [Proof.Poly1305.initArm, State.withRegions_gpr, State.withRegions_rd,

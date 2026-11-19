@@ -40,7 +40,7 @@ theorem slot_kept {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {W : Addr
     (fun r hr => (hd r hr).sub_left (Offset.sub _ h₁ (by omega_using [h₂]))) (by decide)
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 theorem slots_j0Frame : ∀ r ∈ j0Frame St W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
@@ -49,7 +49,7 @@ theorem slots_j0Frame : ∀ r ∈ j0Frame St W, (⟨W + BitVec.ofNat 64 216, 40�
   rcases hr with rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 80) (d := 216) (k := 40) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem slots_absFrame : ∀ r ∈ absFrame St W 16, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
   intro r hr
@@ -57,7 +57,7 @@ theorem slots_absFrame : ∀ r ∈ absFrame St W 16, (⟨W + BitVec.ofNat 64 216
   rcases hr with rfl | rfl | rfl
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  · exact L.w_wn (.inl (by decide)) (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 theorem slots_frontFrame : ∀ r ∈ frontFrame St W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
   intro r hr
@@ -72,9 +72,9 @@ theorem saved_frontFrame : ∀ r ∈ frontFrame St W, (savedR W).Disjoint r := b
   · exact saved_absFrame L (.inr rfl) r hr
 
 /-- After `encPrep`, from `s₀`. -/
-structure Front (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) (n : Nat) (s₀ : State)
+structure Front (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) (n : Nat) (s₀ : State)
     (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   x22 : s.gpr .x22 = s₀.gpr .x22
   x25 : s.gpr .x25 = BitVec.ofNat 64 (a.length % 16)
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
@@ -90,21 +90,22 @@ structure Front (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (D : Addr) (
 
 /-- `j0`, `oneAad` and `encPrep`. -/
 theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {nl al n : Nat}
-    (he : Env Ctx St W SP s₀) (hk : Kept k s₀) (h23 : s₀.gpr .x23 = Np) (h24 : s₀.gpr .x24 = BitVec.ofNat 64 nl)
+    (he : Env Wn Ctx St W SP s₀) (hk : Kept k s₀) (h23 : s₀.gpr .x23 = Np) (h24 : s₀.gpr .x24 = BitVec.ofNat 64 nl)
     (h26 : s₀.gpr .x26 = BitVec.ofNat 64 nl) (h27 : s₀.gpr .x27 = 0)
-    (hnon : DataOk St W s₀ Np nl) (haad : DataOk St W s₀ A al)
+    (hnon : DataOk Wn St W s₀ Np nl) (haad : DataOk Wn St W s₀ A al)
     (hH : blockAt s₀.mem (Ctx + BitVec.ofNat 64 240) = H)
     (sA : s₀.mem.readW (W + BitVec.ofNat 64 216) 64 = A)
     (sL : s₀.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
     (sD : s₀.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
     (sN : s₀.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     {rest : Prog isa} {Q : State → Prop}
-    (hr : ∀ s', Front Ctx St W SP H (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) D n s₀ s' → WP isa rest s' Q) :
+    (hr : ∀ s', Front Wn Ctx St W SP H (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) D n s₀ s' → WP isa rest s' Q) :
     WP isa (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) s₀ Q := by
+  obtain hWn := he.perm.hWn
   have hlt := haad.lt
   refine WP.seq (WP.mono (WP.with_rdwr (j0_ok L v ⟨he, hk, h23, h24, h26, h27, hnon, hH⟩))
     fun s₁ ⟨h₁, rd₁, wr₁⟩ => ?_)
-  have r₁ (d : Nat) (h : d + 8 ≤ 2560) := h₁.env.perm.wR h
+  have r₁ (d : Nat) (h : d + 8 ≤ Wn) := h₁.env.perm.wRn h
   obtain ⟨s₂, run₂, x23₂, x24₂, x25₂, r₂⟩ : ∃ s₂, runBlock isa [.ldr .x .x23 .x19 aadO, .ldr .x .x24 .x19 alenO,
       imm .x25 0] s₁ = some s₂ ∧ s₂.gpr .x23 = A ∧ s₂.gpr .x24 = BitVec.ofNat 64 al ∧
       s₂.gpr .x25 = BitVec.ofNat 64 0 ∧ Regs [.x23, .x24, .x25] s₁ s₂ := by
@@ -112,8 +113,8 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
     have e₂ := slot_kept h₁.frame (slots_j0Frame L) (d := 224) (by decide) (by decide)
     rw [sA] at e₁
     rw [sL] at e₂
-    have q₁ := r₁ 216 (by decide)
-    have q₂ := r₁ 224 (by decide)
+    have q₁ := r₁ 216 (by have := he.perm.hWn; omega)
+    have q₂ := r₁ 224 (by have := he.perm.hWn; omega)
     refine ⟨_, by arun [h₁.env.x19, q₁, q₂], ?_⟩
     refine ⟨?_, ?_, by simp [gpr_write], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
     · simp only [gpr_write, ite_true, ite_false, reduceCtorEq]; rw [← e₁]; rfl
@@ -121,14 +122,14 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
   refine WP.seq (WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩))
   have he₂ := h₁.env.of_regs r₂
   have hk₂ := h₁.kept.of_others r₂.others
-  have hd₂ : DataOk St W s₂ A al := haad.of_eq (by rw [r₂.rd, rd₁]) (by rw [r₂.wr, wr₁])
-  have hIn : AbsIn Ctx St W SP k H [] A al 0 s₂ :=
+  have hd₂ : DataOk Wn St W s₂ A al := haad.of_eq (by rw [r₂.rd, rd₁]) (by rw [r₂.wr, wr₁])
+  have hIn : AbsIn Wn Ctx St W SP k H [] A al 0 s₂ :=
     ⟨he₂, hk₂, x23₂, x24₂, x25₂, rfl, hd₂, by rw [r₂.mem]; exact h₁.hH⟩
   refine WP.mono (WP.with_rdwr (absorbAl_ok L (.inr rfl) v hIn)) fun s₃ ⟨h₃, rd₃, wr₃⟩ => ?_
   have f₃ : Frame (frontFrame St W) s₀.mem s₃.mem :=
     (h₁.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
       (by rw [← r₂.mem]; exact h₃.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
-  have q (d : Nat) (h : d + 8 ≤ 2560) := h₃.env.perm.wR h
+  have q (d : Nat) (h : d + 8 ≤ Wn) := h₃.env.perm.wRn h
   obtain ⟨s₄, run₄, x25₄, x26₄, x27₄, x28₄, r₄⟩ : ∃ s₄, runBlock isa encPrep s₃ = some s₄ ∧
       s₄.gpr .x25 = BitVec.ofNat 64 (al % 16) ∧ s₄.gpr .x26 = BitVec.ofNat 64 n ∧ s₄.gpr .x27 = 0 ∧
       s₄.gpr .x28 = D ∧ Regs [.x9, .x10, .x25, .x26, .x27, .x28] s₃ s₄ := by
@@ -138,9 +139,9 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
     rw [sL] at e₂
     rw [sD] at e₃
     rw [sN] at e₄
-    have q₂ := q 224 (by decide)
-    have q₃ := q 232 (by decide)
-    have q₄ := q 240 (by decide)
+    have q₂ := q 224 (by have := he.perm.hWn; omega)
+    have q₃ := q 232 (by have := he.perm.hWn; omega)
+    have q₄ := q 240 (by have := he.perm.hWn; omega)
     refine ⟨_, by simp only [encPrep]; arun [h₃.env.x19, q₂, q₃, q₄], ?_⟩
     refine ⟨?_, ?_, by simp [gpr_write], ?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
     · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
@@ -158,7 +159,7 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
       rcases hr with rfl | rfl | rfl
       · exact st0_disj L (by decide) (by decide)
       · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by decide⟩), r₂.mem, h₁.j0]
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩), r₂.mem, h₁.j0]
   · rw [r₄.mem, blockAt_frame h₃.frame (ctx_absFrame L (.inr rfl)), r₂.mem, h₁.hH]
   · rw [r₄.mem, blockAt_frame h₃.frame (fun r hr => (ctr_absFrame L r hr).sub_left
       (Region.sub_prefix (by decide))), r₂.mem, h₁.cb]
@@ -168,8 +169,8 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact haad.st
-      · exact haad.w.sub_right (Lay.wSub (by decide))
-      · exact haad.w.sub_right (Lay.wSub (by decide))) (by omega_using [hlt])] at this
+      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))
+      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) (by omega_using [hlt])] at this
     exact this
   · rw [r₄.mem]; exact f₃
   · rw [r₄.rd, rd₃, r₂.rd, rd₁]

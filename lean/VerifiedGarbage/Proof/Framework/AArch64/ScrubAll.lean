@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -1271,7 +1271,7 @@ theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnT
   | nil => simp [tableFns] at hf
   | cons t ts => exact h.2.1 f hf
 
-theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCall r.code r.tables = true) :
+theorem tablesCall_syms {api : Api} {r : Unscrubbed api target} (h : tablesCall r.code r.tables = true) :
     ∀ s₁ s₂, r.contract.pub s₁ s₂ → ∀ n ∈ inames r.code, s₁.syms n = s₂.syms n := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   intro s₁ s₂ hp n hn
@@ -1293,18 +1293,18 @@ theorem all_spSafe (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := b
   simpa [isa] using all_true c
 
 /-- The result's bits of `r`'s function. -/
-abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
+abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
 /-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes;
 by `scrubAllL` for 4096 bytes or more),
 returning without secret residue, if its side conditions hold (checked when
 the registration is evaluated); otherwise `r` itself, which then has no
-proof (`Registration.residue`), as the emitter allows only of what
+proof (`Verification.unscrubbed`), as the emitter allows only of what
 `ci/residue_allowlist.txt` lists. For a caller generic over the
 implementations of the functions it calls, whose code the residue analysis
 does not follow, as x86-64's `X86_64.Scrub.withScrubAll`. -/
-def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
+def withScrubAll {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
     Registration api target :=
   if h : (0 < r.stack ∧ r.stack < 4096 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
       r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
@@ -1313,7 +1313,9 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       tables := r.tables
       code := scrubAll r.stack (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAll (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok
+      verified := .scrubbed <| .abi ⟨Verified.scrubAll (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
+        noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
+        h.2.2.2.2.1⟩
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -1323,9 +1325,7 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
       extra := r.extra
       vendor := r.vendor
-      notWith := r.notWith
-      residue := some ⟨noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
-        h.2.2.2.2.1⟩ }
+      notWith := r.notWith }
   else if h : (4080 < r.stack ∧ r.stack < 8176 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
       r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
@@ -1333,7 +1333,9 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       tables := r.tables
       code := scrubAllL r.stack (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAllL (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok
+      verified := .scrubbed <| .abi ⟨Verified.scrubAllL (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
+        noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1
+        (tablesCall_syms h.2.2.2.1) h.2.2.2.2.1⟩
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -1343,16 +1345,15 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
       extra := r.extra
       vendor := r.vendor
-      notWith := r.notWith
-      residue := some ⟨noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1
-        (tablesCall_syms h.2.2.2.1) h.2.2.2.2.1⟩ }
+      notWith := r.notWith }
   else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
     { suffix := r.suffix
       tables := r.tables
       code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2.1 (h.1 ▸ hok)
+      verified := .scrubbed <| .abi ⟨Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2.1 (h.1 ▸ hok),
+        noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -1362,9 +1363,8 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       writtenOk := by rw [h.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
       extra := r.extra
       vendor := r.vendor
-      notWith := r.notWith
-      residue := some ⟨noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩ }
-  else r
+      notWith := r.notWith }
+  else r.registration
 
 /-! ## A choice on entry between two functions without residue -/
 

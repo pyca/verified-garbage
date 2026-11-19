@@ -19,19 +19,19 @@ namespace VG.Artifacts.Cast5Cfb.AArch64
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode
-    verified := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified,
+      Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
   Spec.Cast5.cfbDecryptApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode
-    verified := Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified,
+      Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
   Spec.Cast5.cfbEncryptFinalApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+      Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
   Spec.Cast5.cfbDecryptFinalApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified
-    residue := some ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+      Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
 
 end VG.Artifacts.Cast5Cfb.AArch64

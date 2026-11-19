@@ -243,7 +243,7 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
   code := f.code
   contract := f.contract
   stack := f.stack
-  verified := f.verified
+  verified := .unscrubbed f.verified
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe

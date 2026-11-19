@@ -2,7 +2,7 @@
 """Checks that `ci/residue_allowlist.txt` only shrinks.
 
 The list names the functions that do not yet prove they return without
-secret residue (`Artifact.residue`, `lean/VerifiedGarbage/TCB/<ISA>/Residue.lean`).
+secret residue (`Verification.unscrubbed`, `lean/VerifiedGarbage/TCB/<ISA>/Residue.lean`).
 The emitter refuses a function of a target that defines it with no proof
 unless the list names it, and a line that names no such function
 (`Rust.checkResidue`). This script refuses a line that the revision `--base`
@@ -89,7 +89,7 @@ def main(argv: list[str]) -> int:
     new = added(base, (ROOT / LIST).read_text(), unrequired(args.base))
     for e in new:
         print(f"{LIST}: `{e}` is new: prove that the function returns without secret residue "
-              "(`Registration.residue`) instead of listing it", file=sys.stderr)
+              "(`Verification.scrubbed`) instead of listing it", file=sys.stderr)
     return 1 if new else 0
 
 

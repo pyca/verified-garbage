@@ -71,9 +71,9 @@ def openPwAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space and the text: `pw` is at `[sp + 16]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
-theorem gwCallO_of {σ s : State} {Y S : Addr} (hs : openPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR (stackArg σ 3)))
-    (sS : Region.Sub ⟨S, 256⟩ (workR (stackArg σ 3))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
+theorem gwCallO_of {σ s : State} {Y S : Addr} (hs : openPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 3)))
+    (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 3))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
+    (hf : Frame [workR 2560 (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
     s.mem.readW (s.sp + BitVec.ofNat 64 16) 64 = stackArg σ 2 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 2) := by

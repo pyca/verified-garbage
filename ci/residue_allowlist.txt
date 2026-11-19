@@ -1,5 +1,5 @@
 # Functions that do not yet prove they return without secret residue
-# (Artifact.residue, lean/VerifiedGarbage/TCB/<ISA>/Residue.lean), as a target and a name.
+# (Verification.unscrubbed, lean/VerifiedGarbage/TCB/<ISA>/Residue.lean), as a target and a name.
 # The emitter fails if a function without a proof is not listed here, or if a listed one is
 # gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
@@ -477,9 +477,6 @@ arm vg_x25519_exchange_umaal
 arm vg_zeroize
 powerpc64le vg_aes_ccm_open
 powerpc64le vg_aes_ccm_seal
-powerpc64le vg_aes_siv_decrypt
-powerpc64le vg_aes_siv_encrypt
-powerpc64le vg_aes_siv_init
 powerpc64le vg_ct_eq
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal

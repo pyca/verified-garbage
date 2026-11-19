@@ -299,7 +299,7 @@ theorem framesOk_of {fs : List (Nat × List (Nat × Nat))} (h : framesOkB fs = t
   obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h f hf
   exact ⟨h1, h2, h3, h4⟩
 
-theorem scrubSelCode_verified {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+theorem scrubSelCode_verified {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r)) :
     Verified target (scrubSel (retBitsOf r) fs r.code) r.contract := by
@@ -314,7 +314,7 @@ theorem scrubSelCode_verified {api : Api} (r : Registration api target) (fs : Li
 /-- Where the residue analysis of `r`'s function starts holds of the states its contract
 starts from, if the `e.2` bytes from what each register `e.1` of `bp0` holds are in its
 regions. -/
-theorem scrubSel_pre {api : Api} (r : Registration api target) (bp0 : List (Reg × Nat))
+theorem scrubSel_pre {api : Api} (r : Unscrubbed api target) (bp0 : List (Reg × Nat))
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1) :
     ∀ s, r.contract.pre s → r.stack ≤ s.sp.toNat ∧
@@ -338,7 +338,7 @@ theorem scrubSel_pre {api : Api} (r : Registration api target) (bp0 : List (Reg 
 residue if the residue analysis of the whole, stated of `code`, `W` and `rb`, which are
 `r`'s code, stack and result width (so that the kernel evaluates it without the
 registration, whose proofs mention the code), ends in `done`. -/
-theorem scrubSel_noResidue {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+theorem scrubSel_noResidue {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (bp0 : List (Reg × Nat)) (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r))
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
@@ -351,7 +351,7 @@ theorem scrubSel_noResidue {api : Api} (r : Registration api target) (fs : List 
 
 /-- `r`, its code followed by the clearing of only the runs of `fs` (`scrubSel`), with
 `hnr` (from `scrubSel_noResidue`). -/
-def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+def scrubSelReg {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
     (hpost : PostOut r.contract (retBitsOf r))
     (hnr : NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r))
@@ -360,7 +360,7 @@ def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × Lis
   tables := r.tables
   code := scrubSel (retBitsOf r) fs r.code
   contract := r.contract
-  verified := scrubSelCode_verified r fs hfs hsz hrb hpost
+  verified := .scrubbed <| .abi ⟨scrubSelCode_verified r fs hfs hsz hrb hpost, hnr⟩
   consts := r.consts
   stack := r.stack
   ofApi := r.ofApi
@@ -371,11 +371,10 @@ def scrubSelReg {api : Api} (r : Registration api target) (fs : List (Nat × Lis
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨hnr⟩
 
 /-- `scrubSelReg`, if its decidable side conditions hold; otherwise `r` itself, which then
-has no proof (`Registration.residue`). `hnr` is `scrubSel_noResidue`'s, given them. -/
-def withScrubSel {api : Api} (r : Registration api target) (fs : List (Nat × List (Nat × Nat)))
+has no proof (`Verification.unscrubbed`). `hnr` is `scrubSel_noResidue`'s, given them. -/
+def withScrubSel {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
     (hpost : PostOut r.contract (retBitsOf r))
     (hnr : FramesOk fs → sizeOf fs ≤ r.stack → retBitsOf r ≤ 64 →
       NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r)) :
@@ -385,7 +384,7 @@ def withScrubSel {api : Api} (r : Registration api target) (fs : List (Nat × Li
   if hrb : retBitsOf r ≤ 64 then
   if hw : r.written = [] then
     scrubSelReg r fs (framesOk_of hfs) hsz hrb hpost (hnr (framesOk_of hfs) hsz hrb) hw
-  else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
 
 /-! ## A buffer the first argument points to -/
 
@@ -438,14 +437,14 @@ theorem firstArray_mem {A : Abi isa} (hA : ScrubAbi A) (hargs : A.args = abi.arg
       rfl⟩, rfl⟩
 
 /-- `scrubSelReg`'s `hbp` for no buffer (`bp0 = []`). -/
-theorem hbp_nil {api : Api} (r : Registration api target) :
+theorem hbp_nil {api : Api} (r : Unscrubbed api target) :
     ∀ s, r.contract.pre s → ∀ q ∈ ([] : List (Reg × Nat)), ∀ i < q.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr q.1 + BitVec.ofNat 64 i) 1 :=
   fun _ _ _ hq => nomatch hq
 
 /-- `scrubSelReg`'s `hbp` for `bp0 = [(a0, n * e.size)]`, of a function whose first
 parameter is an array of `n` elements of `e`. -/
-theorem hbp_firstArray {api : Api} (r : Registration api target) {nm : String} {m : Bool} {e : Elem}
+theorem hbp_firstArray {api : Api} (r : Unscrubbed api target) {nm : String} {m : Bool} {e : Elem}
     {n : Nat} {rest : List (String × Param)} (hp : api.sig.params = (nm, .array m e n) :: rest) :
     ∀ s, r.contract.pre s → ∀ q ∈ [(Reg.a0, n * e.size)], ∀ i < q.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr q.1 + BitVec.ofNat 64 i) 1 := by

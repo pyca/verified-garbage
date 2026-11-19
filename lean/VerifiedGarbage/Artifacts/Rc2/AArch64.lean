@@ -18,15 +18,15 @@ namespace VG.Artifacts.Rc2.AArch64
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.InitResidue.cbcInitCode
-    verified := Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified
-    residue := some ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified,
+      Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩ },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
-    verified := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified
-    residue := some ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩ },
+    verified := .scrubbed ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified,
+      Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩ },
   Spec.Rc2.cbcDecryptChainedApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode
-    verified := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified
-    residue := some ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩ }]
+    verified := .scrubbed ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified,
+      Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩ }]
 
 end VG.Artifacts.Rc2.AArch64

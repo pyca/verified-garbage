@@ -19,8 +19,7 @@ namespace VG.Artifacts.Poly1305.AArch64
 def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
-    verified := Proof.Poly1305.AArch64.init_verified
-    residue := some ⟨Proof.Poly1305.AArch64.init_noResidue _⟩ },
+    verified := .scrubbed ⟨Proof.Poly1305.AArch64.init_verified, Proof.Poly1305.AArch64.init_noResidue _⟩ },
   Spec.Poly1305.updateApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update
     verified := Proof.Poly1305.AArch64.Radix64.update_framed }

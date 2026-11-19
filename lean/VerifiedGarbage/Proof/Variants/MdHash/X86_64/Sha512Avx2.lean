@@ -53,7 +53,7 @@ code (`X86_64.RTaint`) finds may hold secrets. -/
 def updateKs : List Nat := keep_for% Spec.Sha512.updateApi.sig updF.stack updF.code
 
 theorem updateRes : ResOk updF.code updF.contract updF.stack updateKs (chunks updF.stack) :=
-  RScrub.resOk_reg0 updF.reg updateKs (by taint_decide_lit)
+  RScrub.resOk_reg0 updF.unscrubbed updateKs (by taint_decide_lit)
 
 def update : StreamFn := updF.scrub .avx updateKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (updOut compress) updateRes
@@ -64,7 +64,7 @@ theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
 def finalizeKs : List Nat := keep_for% Spec.Sha512.finalizeApi.sig finF.stack finF.code
 
 theorem finalizeRes : ResOk finF.code finF.contract finF.stack finalizeKs (chunks finF.stack) :=
-  RScrub.resOk_reg0 finF.reg finalizeKs (by taint_decide_lit)
+  RScrub.resOk_reg0 finF.unscrubbed finalizeKs (by taint_decide_lit)
 
 def finalize : StreamFn := finF.scrub .avx finalizeKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (finOut compress) finalizeRes
@@ -75,7 +75,7 @@ theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits 
 def digestKs : List Nat := keep_for% Spec.Sha512.digest512Api.sig digF.stack digF.code
 
 theorem digestRes : ResOk digF.code digF.contract digF.stack digestKs (chunks digF.stack) :=
-  RScrub.resOk_reg0 digF.reg digestKs (by taint_decide_lit)
+  RScrub.resOk_reg0 digF.unscrubbed digestKs (by taint_decide_lit)
 
 def digest : StreamFn := digF.scrub .avx digestKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (digOut compress) digestRes
@@ -86,7 +86,7 @@ theorem digest_noResidue : NoResidue digest.code digF.contract digF.retBits :=
 def finalize384Ks : List Nat := keep_for% Spec.Sha512.finalize384Api.sig fin384F.stack fin384F.code
 
 theorem finalize384Res : ResOk fin384F.code fin384F.contract fin384F.stack finalize384Ks (chunks fin384F.stack) :=
-  RScrub.resOk_reg0 fin384F.reg finalize384Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 fin384F.unscrubbed finalize384Ks (by taint_decide_lit)
 
 def finalize384 : StreamFn := fin384F.scrub .avx finalize384Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (fin384Out compress) finalize384Res
@@ -97,7 +97,7 @@ theorem finalize384_noResidue : NoResidue finalize384.code fin384F.contract fin3
 def digest384Ks : List Nat := keep_for% Spec.Sha512.digest384Api.sig dig384F.stack dig384F.code
 
 theorem digest384Res : ResOk dig384F.code dig384F.contract dig384F.stack digest384Ks (chunks dig384F.stack) :=
-  RScrub.resOk_reg0 dig384F.reg digest384Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 dig384F.unscrubbed digest384Ks (by taint_decide_lit)
 
 def digest384 : StreamFn := dig384F.scrub .avx digest384Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (dig384Out compress) digest384Res
@@ -108,7 +108,7 @@ theorem digest384_noResidue : NoResidue digest384.code dig384F.contract dig384F.
 def finalize512_256Ks : List Nat := keep_for% Spec.Sha512.finalize512_256Api.sig fin512_256F.stack fin512_256F.code
 
 theorem finalize512_256Res : ResOk fin512_256F.code fin512_256F.contract fin512_256F.stack finalize512_256Ks (chunks fin512_256F.stack) :=
-  RScrub.resOk_reg0 fin512_256F.reg finalize512_256Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 fin512_256F.unscrubbed finalize512_256Ks (by taint_decide_lit)
 
 def finalize512_256 : StreamFn := fin512_256F.scrub .avx finalize512_256Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (fin512_256Out compress) finalize512_256Res
@@ -119,7 +119,7 @@ theorem finalize512_256_noResidue : NoResidue finalize512_256.code fin512_256F.c
 def digest512_256Ks : List Nat := keep_for% Spec.Sha512.digest512_256Api.sig dig512_256F.stack dig512_256F.code
 
 theorem digest512_256Res : ResOk dig512_256F.code dig512_256F.contract dig512_256F.stack digest512_256Ks (chunks dig512_256F.stack) :=
-  RScrub.resOk_reg0 dig512_256F.reg digest512_256Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 dig512_256F.unscrubbed digest512_256Ks (by taint_decide_lit)
 
 def digest512_256 : StreamFn := dig512_256F.scrub .avx digest512_256Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (dig512_256Out compress) digest512_256Res
@@ -130,7 +130,7 @@ theorem digest512_256_noResidue : NoResidue digest512_256.code dig512_256F.contr
 def finalize512_224Ks : List Nat := keep_for% Spec.Sha512.finalize512_224Api.sig fin512_224F.stack fin512_224F.code
 
 theorem finalize512_224Res : ResOk fin512_224F.code fin512_224F.contract fin512_224F.stack finalize512_224Ks (chunks fin512_224F.stack) :=
-  RScrub.resOk_reg0 fin512_224F.reg finalize512_224Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 fin512_224F.unscrubbed finalize512_224Ks (by taint_decide_lit)
 
 def finalize512_224 : StreamFn := fin512_224F.scrub .avx finalize512_224Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (fin512_224Out compress) finalize512_224Res
@@ -141,7 +141,7 @@ theorem finalize512_224_noResidue : NoResidue finalize512_224.code fin512_224F.c
 def digest512_224Ks : List Nat := keep_for% Spec.Sha512.digest512_224Api.sig dig512_224F.stack dig512_224F.code
 
 theorem digest512_224Res : ResOk dig512_224F.code dig512_224F.contract dig512_224F.stack digest512_224Ks (chunks dig512_224F.stack) :=
-  RScrub.resOk_reg0 dig512_224F.reg digest512_224Ks (by taint_decide_lit)
+  RScrub.resOk_reg0 dig512_224F.unscrubbed digest512_224Ks (by taint_decide_lit)
 
 def digest512_224 : StreamFn := dig512_224F.scrub .avx digest512_224Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (dig512_224Out compress) digest512_224Res

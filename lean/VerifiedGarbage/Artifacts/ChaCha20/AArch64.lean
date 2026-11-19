@@ -17,12 +17,12 @@ namespace VG.Artifacts.ChaCha20.AArch64
 def direct : List Artifact := [
   Spec.ChaCha20.initApi.artifact AArch64.target {
     code := Proof.ChaCha20.AArch64.Stream.initCleared
-    verified := Proof.ChaCha20.AArch64.Stream.initCleared_verified
-    residue := some ⟨Proof.ChaCha20.AArch64.Stream.initCleared_noResidue _⟩ },
+    verified := .scrubbed ⟨Proof.ChaCha20.AArch64.Stream.initCleared_verified,
+      Proof.ChaCha20.AArch64.Stream.initCleared_noResidue _⟩ },
   Spec.ChaCha20.setNonceApi.artifact AArch64.target {
     code := Proof.ChaCha20.AArch64.Stream.setNonceCleared
-    verified := Proof.ChaCha20.AArch64.Stream.setNonceCleared_verified
-    residue := some ⟨Proof.ChaCha20.AArch64.Stream.setNonceCleared_noResidue _⟩ }]
+    verified := .scrubbed ⟨Proof.ChaCha20.AArch64.Stream.setNonceCleared_verified,
+      Proof.ChaCha20.AArch64.Stream.setNonceCleared_noResidue _⟩ }]
 
 def artifacts : List Artifact :=
   direct ++

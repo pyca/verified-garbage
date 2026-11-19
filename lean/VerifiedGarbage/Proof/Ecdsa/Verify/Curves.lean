@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 import VerifiedGarbage.Proof.Framework.Omega
@@ -91,6 +92,16 @@ theorem brainpoolP256r1_len : 8 * Spec.Ecdsa.BrainpoolP256r1.inst.curve.len =
   have hn : Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP256r1.inst.curve = Spec.Ecdsa.BrainpoolP256r1.inst.curve.n.log2 + 1 := rfl
   rw [hn]
   show 8 * 32 = _
+  rw [ite_eq_right Bool.false_ne_true]
+  omega_using [h₁, h₂]
+
+theorem brainpoolP320r1_len : 8 * Spec.Ecdsa.BrainpoolP320r1.inst.curve.len =
+    Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP320r1.inst.curve + if false then 7 else 0 := by
+  have h₁ : 319 ≤ Spec.Ecdsa.BrainpoolP320r1.inst.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
+  have h₂ : Spec.Ecdsa.BrainpoolP320r1.inst.curve.n.log2 < 320 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
+  have hn : Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP320r1.inst.curve = Spec.Ecdsa.BrainpoolP320r1.inst.curve.n.log2 + 1 := rfl
+  rw [hn]
+  show 8 * 40 = _
   rw [ite_eq_right Bool.false_ne_true]
   omega_using [h₁, h₂]
 

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PointContract
 
 Not trusted: definitions for two functions for
 each curve of `curves` (so far P-192, P-224, P-256, secp256k1, P-384,
-P-521, brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working
+P-521, brainpoolP256r1, brainpoolP320r1, brainpoolP384r1 and brainpoolP512r1), on the working
 space where the
 x86-64 code of
 the curve's ECDSA signature, verification and public key derivation keeps

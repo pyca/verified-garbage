@@ -103,7 +103,7 @@ def artifact : Artifact where
   consts := consts
   code := code
   contract := contract
-  verified := verified
+  verified := .unscrubbed verified
 
 /-- The rendering: the static's page and offset in the syntax of the object
 format (`vg_sym_page!`, `vg_sym_pageoff!`), and its symbol. -/

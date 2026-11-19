@@ -47,7 +47,7 @@ def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x16, .x17] []
       Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.verified hasLaw.law hasLaw.inv
-    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.noResidue hasLaw.law hasLaw.inv⟩ }]
+    verified := .scrubbed ⟨Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.verified hasLaw.law hasLaw.inv,
+      Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.noResidue hasLaw.law hasLaw.inv⟩ }]
 
 end VG.Artifacts.EcBrainpoolP256r1.AArch64
