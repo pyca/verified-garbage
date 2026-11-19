@@ -60,6 +60,7 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
 
+    #[cfg(target_arch = "x86_64")]
     {
         let mut g = c.benchmark_group("ec_validate_brainpoolp320r1");
         g.bench(BenchmarkId::new(VG, 81), |b| {

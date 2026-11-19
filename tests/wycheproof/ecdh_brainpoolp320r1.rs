@@ -58,6 +58,7 @@ fn ecdh_brainpoolp320r1_test() {
             assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
             return;
         };
+        #[cfg(target_arch = "x86_64")]
         {
             let mut one = [0; 40];
             let last = one.len() - 1;
