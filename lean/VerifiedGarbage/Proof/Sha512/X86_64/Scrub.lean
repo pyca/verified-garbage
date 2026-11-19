@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -49,8 +51,9 @@ theorem init384Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha384_init`. -/
 def init384Reg : Registration Spec.Sha512.init384Api X86_64.target :=
-  withScrub { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384, verified := Shared.init Spec.Sha512.H0_384 } (initOut Spec.Sha512.H0_384) []
-    (pubOk_nil _) (some ⟨init384Ks, init384Ok⟩)
+  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384, verified := Shared.init Spec.Sha512.H0_384 } .sse false [.r11] (initOut Spec.Sha512.H0_384) []
+    (pubOk_nil _) ⟨init384Ks, init384Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def init512Ks : List Nat := keep_for% Spec.Sha512.init512Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512) []
 
@@ -62,8 +65,9 @@ theorem init512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha512_init`. -/
 def init512Reg : Registration Spec.Sha512.init512Api X86_64.target :=
-  withScrub { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512, verified := Shared.init Spec.Sha512.H0_512 } (initOut Spec.Sha512.H0_512) []
-    (pubOk_nil _) (some ⟨init512Ks, init512Ok⟩)
+  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512, verified := Shared.init Spec.Sha512.H0_512 } .sse false [.r11] (initOut Spec.Sha512.H0_512) []
+    (pubOk_nil _) ⟨init512Ks, init512Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def init512_224Ks : List Nat := keep_for% Spec.Sha512.init512_224Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224) []
 
@@ -75,8 +79,9 @@ theorem init512_224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha512_224_init`. -/
 def init512_224Reg : Registration Spec.Sha512.init512_224Api X86_64.target :=
-  withScrub { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224, verified := Shared.init Spec.Sha512.H0_512_224 } (initOut Spec.Sha512.H0_512_224) []
-    (pubOk_nil _) (some ⟨init512_224Ks, init512_224Ok⟩)
+  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224, verified := Shared.init Spec.Sha512.H0_512_224 } .sse false [.r11] (initOut Spec.Sha512.H0_512_224) []
+    (pubOk_nil _) ⟨init512_224Ks, init512_224Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def init512_256Ks : List Nat := keep_for% Spec.Sha512.init512_256Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256) []
 
@@ -88,7 +93,8 @@ theorem init512_256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_sha512_256_init`. -/
 def init512_256Reg : Registration Spec.Sha512.init512_256Api X86_64.target :=
-  withScrub { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256, verified := Shared.init Spec.Sha512.H0_512_256 } (initOut Spec.Sha512.H0_512_256) []
-    (pubOk_nil _) (some ⟨init512_256Ks, init512_256Ok⟩)
+  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256, verified := Shared.init Spec.Sha512.H0_512_256 } .sse false [.r11] (initOut Spec.Sha512.H0_512_256) []
+    (pubOk_nil _) ⟨init512_256Ks, init512_256Ok⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 end VG.Proof.Sha512.X86_64

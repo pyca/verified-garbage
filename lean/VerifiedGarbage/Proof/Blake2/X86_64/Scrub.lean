@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -77,9 +79,10 @@ theorem initBOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blake2b_init`. -/
 def initBReg : Registration Spec.Blake2.initBApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.b
-    verified := Proof.Blake2.X86_64.Stream.initB_verified } initBOut [] (pubOk_nil _) (some ⟨initBKs, initBOk⟩)
+    verified := Proof.Blake2.X86_64.Stream.initB_verified } .sse false [.rcx, .r8] initBOut [] (pubOk_nil _) ⟨initBKs, initBOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 def initSKs : List Nat := keep_for% Spec.Blake2.initSApi.sig 0 (Impl.Blake2.X86_64.Stream.init Spec.Blake2.s) []
 
@@ -92,9 +95,10 @@ theorem initSOk : ∃ h : VG.Taint.Hint RTaint.FT,
 open VG.X86_64.RScrub in
 /-- `vg_blake2s_init`. -/
 def initSReg : Registration Spec.Blake2.initSApi X86_64.target :=
-  withScrub {
+  scrubOf {
     code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.s
-    verified := Proof.Blake2.X86_64.Stream.initS_verified } initSOut [] (pubOk_nil _) (some ⟨initSKs, initSOk⟩)
+    verified := Proof.Blake2.X86_64.Stream.initS_verified } .sse false [.rcx, .r8] initSOut [] (pubOk_nil _) ⟨initSKs, initSOk⟩
+    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 open VG.X86_64.RScrub in
 /-- `vg_blake2b_update` over the backend `v`: without secret residue where `v`
