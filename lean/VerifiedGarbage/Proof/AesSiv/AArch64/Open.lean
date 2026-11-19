@@ -38,18 +38,18 @@ open VG.Proof.AesSiv (qmask counter_words)
 open VG.Proof.CmacAes.AArch64 (k0 le8_rev)
 open VG.Proof.Gcm.AArch64 (rev64_rev64)
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {Nw : Nat} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
-theorem counter_ok (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
+theorem counter_ok (h : Env Nw s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) :
     ∃ s', runBlock isa (counter 0) s = some s' ∧
       s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 cntOff) (s.mem.readW (W + BitVec.ofNat 64 0) 64)).writeW
         (W + BitVec.ofNat 64 (cntOff + 8)) (s.mem.readW (W + BitVec.ofNat 64 (0 + 8)) 64 &&& qmask) ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by decide)
-  obtain r₈ := h.inRW hrd hwr (d := 0 + 8) (n := 8) (by decide)
-  obtain w₀ := h.inW hwr (d := cntOff) (n := 8) (by decide)
-  obtain w₈ := h.inW hwr (d := cntOff + 8) (n := 8) (by decide)
+  obtain r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by have := sivOffs; omega)
+  obtain r₈ := h.inRW hrd hwr (d := 0 + 8) (n := 8) (by have := sivOffs; omega)
+  obtain w₀ := h.inW hwr (d := cntOff) (n := 8) (by have := sivOffs; omega)
+  obtain w₈ := h.inW hwr (d := cntOff + 8) (n := 8) (by have := sivOffs; omega)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, and_self, counter, cntOff, runBlock_cons, runStep_some, runBlock_nil, exec,
       addr, State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
@@ -91,51 +91,51 @@ theorem counter_frame (m : Mem) (W : Addr) (a b : BitVec 64) :
     (List.mem_cons_of_mem _ List.mem_cons_self) b (Region.contains_self (W + BitVec.ofNat 64 (cntOff + 8)) 8)
 
 /-- A range of the working space outside what `finish` writes. -/
-theorem fin_dis (_h : Env s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 256) (_hd : d + n ≤ 2560)
+theorem fin_dis (_h : Env Nw s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 256) (_hd : d + n ≤ 272 + Nw)
     (h1 : out + 16 ≤ d ∨ d + n ≤ out) (h2 : d + n ≤ 32 ∨ 64 ≤ d) (h3 : d + n ≤ 144 ∨ 160 ≤ d)
     (h5 : d + n ≤ 256) :
-    ∀ r ∈ finRegions W out, Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
+    ∀ r ∈ finRegions Nw W out, Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [_hd]) (by omega_using [hout])
-  · exact Offset.disjoint W (by omega_using [h2]) (by omega_using [_hd]) (by omega_using [])
-  · exact Offset.disjoint W (by omega_using [h3]) (by omega_using [_hd]) (by omega_using [])
-  · exact Offset.disjoint W (by omega_using [h5]) (by omega_using [_hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [h5]) (by omega_using [hout])
+  · exact Offset.disjoint W (by omega_using [h2]) (by omega_using [h5]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h3]) (by omega_using [h5]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h5]) (by omega_using [h5]) (by have := _h.small; omega)
 
 /-- A region outside the working space, outside what `finish` writes. -/
-theorem fin_out {X : Region} {out : Nat} (hout : out + 16 ≤ 256) (hw : X.Disjoint ⟨W, 2560⟩) :
-    ∀ r ∈ finRegions W out, X.Disjoint r := by
+theorem fin_out {X : Region} {out : Nat} (hout : out + 16 ≤ 256) (hw : X.Disjoint ⟨W, 272 + Nw⟩) :
+    ∀ r ∈ finRegions Nw W out, X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hw.sub_right (Offset.sub_base W (by omega_using [hout]))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
 
 /-- A range of the working space outside what CTR writes. -/
-theorem ctr_dis (h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) (h1 : d + n ≤ 64 ∨ 112 ≤ d) :
-    ∀ r ∈ ctrRegions W P L, Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
+theorem ctr_dis (h : Env Nw s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) (h1 : d + n ≤ 64 ∨ 112 ≤ d) :
+    ∀ r ∈ ctrRegions Nw W P L, Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact h.p_w.symm.sub_left (h.sW (by omega_using [hd]))
   · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
-  · exact Offset.disjoint W (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [hd]) (by omega_using [hd]) (by have := h.small; omega)
 
 /-- A region outside the data and the working space, outside what CTR writes. -/
-theorem ctr_out {X : Region} (hp : X.Disjoint ⟨P, L⟩) (hw : X.Disjoint ⟨W, 2560⟩) :
-    ∀ r ∈ ctrRegions W P L, X.Disjoint r := by
+theorem ctr_out {X : Region} (hp : X.Disjoint ⟨P, L⟩) (hw : X.Disjoint ⟨W, 272 + Nw⟩) :
+    ∀ r ∈ ctrRegions Nw W P L, X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
 
 /-- A range of the working space outside the counter. -/
-theorem cnt_dis {d n : Nat} (hd : d + n ≤ 2560) (h1 : d + n ≤ 64 ∨ 80 ≤ d) :
+theorem cnt_dis {d n : Nat} (hd : d + n ≤ 256) (h1 : d + n ≤ 64 ∨ 80 ≤ d) :
     ∀ r ∈ cntRegions W, Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   simp only [cntOff, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -144,12 +144,33 @@ theorem cnt_dis {d n : Nat} (hd : d + n ≤ 2560) (h1 : d + n ≤ 64 ∨ 80 ≤ 
   · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
 
 /-- A region outside the working space, outside the counter. -/
-theorem cnt_out {X : Region} (hw : X.Disjoint ⟨W, 2560⟩) : ∀ r ∈ cntRegions W, X.Disjoint r := by
+theorem cnt_out {X : Region} (hw : X.Disjoint ⟨W, 272 + Nw⟩) : ∀ r ∈ cntRegions W, X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
+  · exact hw.sub_right (Offset.sub_base W (by have := sivOffs; omega))
+
+/-- `D` misses what CTR writes. -/
+theorem d_ctr (h : Env Nw s₀ C D P W R L) : ∀ r ∈ ctrRegions Nw W P L, (⟨D, 16⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  have := sivOffs
+  have := h.small
+  rcases hr with rfl | rfl | rfl
+  · exact h.d_p
+  · exact h.dS (by omega) (by omega)
+  · exact h.dS (by omega) (by omega)
+
+/-- `D` misses the counter. -/
+theorem d_cnt (h : Env Nw s₀ C D P W R L) : ∀ r ∈ cntRegions W, (⟨D, 16⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  have := sivOffs
+  have := h.small
+  rcases hr with rfl | rfl
+  · exact h.dS (by omega) (by omega)
+  · exact h.dS (by omega) (by omega)
 
 theorem one_out {X Y : Region} (hw : X.Disjoint Y) : ∀ r ∈ [Y], X.Disjoint r := by
   intro r hr
@@ -158,32 +179,32 @@ theorem one_out {X Y : Region} (hw : X.Disjoint Y) : ∀ r ∈ [Y], X.Disjoint r
   exact hw
 
 /-- What `encrypt`'s and `decrypt`'s ends write: the data and the working space. -/
-abbrev endRegions (W P : Addr) (L : Nat) : List Region := [⟨P, L⟩, ⟨W, 2560⟩]
+abbrev endRegions (Nw : Nat) (W P : Addr) (L : Nat) : List Region := [⟨P, L⟩, ⟨W, 272 + Nw⟩]
 
-theorem fin_sub (h : Env s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256) :
-    ∀ r ∈ finRegions W out, ∃ r' ∈ endRegions W P L, Region.Sub r r' := by
+theorem fin_sub (h : Env Nw s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256) :
+    ∀ r ∈ finRegions Nw W out, ∃ r' ∈ endRegions Nw W P L, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by omega_using [hout])⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
 
-theorem cnt_sub (h : Env s₀ C D P W R L) : ∀ r ∈ cntRegions W, ∃ r' ∈ endRegions W P L, Region.Sub r r' := by
+theorem cnt_sub (h : Env Nw s₀ C D P W R L) : ∀ r ∈ cntRegions W, ∃ r' ∈ endRegions Nw W P L, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
 
-theorem ctr_sub (h : Env s₀ C D P W R L) : ∀ r ∈ ctrRegions W P L, ∃ r' ∈ endRegions W P L, Region.Sub r r' := by
+theorem ctr_sub (h : Env Nw s₀ C D P W R L) : ∀ r ∈ ctrRegions Nw W P L, ∃ r' ∈ endRegions Nw W P L, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by have := sivOffs; omega)⟩
 
 /-! ## From S2V's end to the restore -/
 
@@ -205,7 +226,7 @@ theorem restored_all : ∀ r ∈ preserved, r ∈ restored.map Prod.fst := by de
 
 /-- The restore, from the slots the save wrote (`Saved`), with the working
 space in `x19`. -/
-theorem restore_wp (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
+theorem restore_wp (h : Env Nw s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) {g : Reg → BitVec 64} (hsv : Spill.Saved W g saved s.mem) :
     WP isa (.block restore) s fun s' => (∀ r ∈ preserved, s'.gpr r = g r) ∧
       (∀ r, r ∉ restored.map Prod.fst → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem :=
@@ -241,20 +262,20 @@ theorem sep_of_disjoint {a b : Addr} {n k n' k' : Nat} (h : (⟨a, n'⟩ : Regio
     (hn : n ≤ n') (hk : k ≤ k') : Mem.Sep a n b k :=
   fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega_using [hn, h₁]) (by simp only [Region.Contains]; omega_using [hk, h₂])
 
-theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R L)
+theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : Env Nw s₀ C D P W R L)
     (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State}
     (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64} (hsv : Spill.Saved W g saved s.mem) {T : Addr}
-    (hgT : g .x6 = T) (hTw : (⟨T, 16⟩ : Region) ∈ s₀.wr) (tW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (hgT : g .x6 = T) (hTw : (⟨T, 16⟩ : Region) ∈ s₀.wr) (tW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 272 + Nw⟩)
     (tP : (⟨T, 16⟩ : Region).Disjoint ⟨P, L⟩) (wT : T.toNat + 16 ≤ 2 ^ 64) :
     WP isa (.seq (finish v.callee v.ctr.callee v.ctr.suffix 0)
         (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.seq (.block sivOut) (.block restore))))) s
       fun s' => (∀ r ∈ preserved, s'.gpr r = g r) ∧ s'.sp = s₀.sp ∧
-        Frame (⟨T, 16⟩ :: endRegions W P L) s.mem s'.mem ∧
+        Frame (⟨T, 16⟩ :: endRegions Nw W P L) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
           (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem T 16, Spec.Aes.bytesAt s'.mem P L) := by
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
   obtain hL : L ≤ 2 ^ 64 := by have := h.lt; omega_using [this]
-  refine WP.seq (WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (finish_wp v hv h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   obtain ⟨s₃, run₃, m₃, g₃, sp₃, rd₃, wr₃⟩ := counter_ok h h₂.regs.x19 h₂.regs.rd h₂.regs.wr
   obtain f₃ : Frame (cntRegions W) s₂.mem s₃.mem := m₃ ▸ counter_frame _ _ _ _
@@ -265,7 +286,7 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = rev64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
-  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt (by rw [g₃ _ (by decide) (by decide), h₂.hold.1, hs.x26])
+  refine WP.seq (WP.mono (ctr_wp v.ctr hv.ctr h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt (by rw [g₃ _ (by decide) (by decide), h₂.hold.1, hs.x26])
     (by rw [g₃ _ (by decide) (by decide), h₂.hold.2, hs.x27])) fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
@@ -282,9 +303,9 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
   have inT (d : Nat) (hd : d + 8 ≤ 16) : InRegions s₄.wr (T + BitVec.ofNat 64 d) 8 := by
     rw [h₄.regs.wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := wT; omega_using [hd])⟩
   obtain ⟨s₅, run₅, m₅, g₅, sp₅, rd₅, wr₅⟩ := sivOut_ok h₄.regs.x19 a₂
-    (h.inRW h₄.regs.rd h₄.regs.wr (d := 248) (n := 8) (by decide))
-    (h.inRW h₄.regs.rd h₄.regs.wr (d := 0) (n := 8) (by decide))
-    (h.inRW h₄.regs.rd h₄.regs.wr (d := 8) (n := 8) (by decide)) (inT 0 (by decide)) (inT 8 (by decide))
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 248) (n := 8) (by have := sivOffs; omega))
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 0) (n := 8) (by have := sivOffs; omega))
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 8) (n := 8) (by have := sivOffs; omega)) (inT 0 (by decide)) (inT 8 (by decide))
   obtain fT : Frame [⟨T, 16⟩] s₄.mem s₅.mem := by rw [m₅, k0]; exact Proof.Cmac.frame_store2 _ _ _
   obtain hsv₅ : Spill.Saved W g saved s₅.mem := hsv₄.frame fT fun p hp r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -312,7 +333,7 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
   -- The copy.
   obtain hT : Spec.Aes.bytesAt s₆.mem T 16 = Spec.Aes.bytesAt s₄.mem W 16 := by
     obtain sp8 : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
-      sep_of_disjoint (tW.sub_right (h.sW (d := 8) (n := 8) (by decide))).symm (by decide) (by decide)
+      sep_of_disjoint (tW.sub_right (h.sW (d := 8) (n := 8) (by have := sivOffs; omega))).symm (by decide) (by decide)
     rw [m₆, m₅, k0, k0, Mem.readW_writeW_sep sp8 (by decide), Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_readW,
       Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
   obtain hP : Spec.Aes.bytesAt s₆.mem P L = Spec.Aes.bytesAt s₄.mem P L := by
@@ -353,7 +374,7 @@ open VG.Proof.AesSiv (or_xor_eq_zero le8_append_eq eqz)
 open VG.Proof.CmacAes.AArch64 (k0 succ_ofNat read_one)
 open VG.Proof.CmacAes.Stream.AArch64 (toNat_ofNat eval_zero eval_nonzero mz0 bytesAt_writeBytes_self)
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {Nw : Nat} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
 /-- The OR of the XORs of the halves of the IVs at `W` and `W + 112` is 0
 exactly if they are equal. -/
@@ -369,7 +390,7 @@ theorem rot0 (x : BitVec 64) : x.rotateRight 0 = x := by
 
 theorem sw64 (x : BitVec (8 * 8)) : BitVec.setWidth 64 x = x := BitVec.setWidth_eq x
 
-theorem compare_ok (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
+theorem compare_ok (h : Env Nw s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) :
     ∃ s', runBlock isa compare s = some s' ∧
       s'.gpr .x0 = (if Spec.Aes.bytesAt s.mem W 16 = Spec.Aes.bytesAt s.mem (W + BitVec.ofNat 64 tOff) 16
@@ -377,10 +398,10 @@ theorem compare_ok (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W)
       s'.gpr .x11 = 0 - s'.gpr .x0 ∧
       (∀ r, r ≠ .x0 → r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by decide)
-  obtain r₁ := h.inRW hrd hwr (d := tOff) (n := 8) (by decide)
-  obtain r₂ := h.inRW hrd hwr (d := 8) (n := 8) (by decide)
-  obtain r₃ := h.inRW hrd hwr (d := tOff + 8) (n := 8) (by decide)
+  obtain r₀ := h.inRW hrd hwr (d := 0) (n := 8) (by have := sivOffs; omega)
+  obtain r₁ := h.inRW hrd hwr (d := tOff) (n := 8) (by have := sivOffs; omega)
+  obtain r₂ := h.inRW hrd hwr (d := 8) (n := 8) (by have := sivOffs; omega)
+  obtain r₃ := h.inRW hrd hwr (d := tOff + 8) (n := 8) (by have := sivOffs; omega)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, and_self, Impl.AesSiv.AArch64.compare, tOff, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write,
@@ -608,13 +629,13 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
 
 /-! ## From S2V's state on -/
 
-theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R L)
+theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (hv : NwOk v Nw) (h : Env Nw s₀ C D P W R L)
     (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State}
     (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64} (hsv : Spill.Saved W g saved s.mem) :
     WP isa (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.seq (finish v.callee v.ctr.callee v.ctr.suffix tOff)
         (.seq (.block Impl.AesSiv.AArch64.compare) (.seq maskData (.block restore)))))) s
       fun s' => (∀ r ∈ preserved, s'.gpr r = g r) ∧ s'.sp = s₀.sp ∧
-        Frame (endRegions W P L) s.mem s'.mem ∧
+        Frame (endRegions Nw W P L) s.mem s'.mem ∧
         match Spec.Siv.openWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R)
             (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem W 16) (Spec.Aes.bytesAt s.mem P L) with
         | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem P L = pt
@@ -632,11 +653,11 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16)) := by
     rw [m₁]; exact counter_cnt s.mem W
   -- CTR.
-  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₁ (length_counter _) (counter_low _) hcnt (by rw [g₁ _ (by decide) (by decide), hs.x26])
+  refine WP.seq (WP.mono (ctr_wp v.ctr hv.ctr h hcp hPw hr₁ (length_counter _) (counter_low _) hcnt (by rw [g₁ _ (by decide) (by decide), hs.x26])
     (by rw [g₁ _ (by decide) (by decide), hs.x27])) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   -- S2V into `W + 112`.
-  refine WP.seq (WP.mono (finish_wp v h h₂.regs (out := tOff) (Or.inr rfl)) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (finish_wp v hv h h₂.regs (out := tOff) (Or.inr rfl)) fun s₃ h₃ => ?_)
   have f₃ := h₃.frame
   -- The comparison.
   obtain ⟨s₄, run₄, x0₄, x11₄, g₄, sp₄, m₄, rd₄, wr₄⟩ := compare_ok h h₃.regs.x19 h₃.regs.rd h₃.regs.wr
@@ -670,7 +691,7 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
     rw [h₇b _ (by decide), h₅.other _ (by decide) (by decide) (by decide)]
   -- The IV, the plaintext and S2V's end.
   obtain hV : Spec.Aes.bytesAt s₃.mem W 16 = Spec.Aes.bytesAt s.mem W 16 := by
-    obtain d₃ := fin_dis h (out := tOff) (d := 0) (n := 16) (by decide) (by decide) (by decide) (by decide)
+    obtain d₃ := fin_dis h (out := tOff) (d := 0) (n := 16) (by have := sivOffs; omega) (by have := sivOffs; omega) (by decide) (by decide)
       (by decide) (by decide)
     obtain d₂ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
     obtain dc := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)
@@ -685,8 +706,8 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
         (Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16))
           (Spec.Aes.bytesAt s.mem P L)) := by
     rw [h₃.out, hp, ctxMac_frame f₂ (ctr_out hcp h.c_w) hRb, ctxMac_frame fc (cnt_out h.c_w) hRb,
-      Proof.Cmac.bytesAt_frame f₂ (ctr_out h.d_p h.d_w) (by decide),
-      Proof.Cmac.bytesAt_frame fc (cnt_out h.d_w) (by decide)]
+      Proof.Cmac.bytesAt_frame f₂ (d_ctr h) (by decide),
+      Proof.Cmac.bytesAt_frame fc (d_cnt h) (by decide)]
   obtain hd : Spec.Aes.bytesAt s₇.mem P L = if Spec.Aes.bytesAt s₃.mem W 16 =
       Spec.Aes.bytesAt s₃.mem (W + BitVec.ofNat 64 tOff) 16 then
         Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16))
@@ -697,7 +718,7 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
     rw [hl] at hw
     rw [m₇, h₅.mem, hw, m₄, Proof.Cmac.bytesAt_frame f₃ (fin_out (by decide) h.p_w) hL, hp]
     simp only [decide_eq_true_eq]
-  obtain f₅' : Frame (endRegions W P L) s₄.mem s₅.mem :=
+  obtain f₅' : Frame (endRegions Nw W P L) s₄.mem s₅.mem :=
     f₅.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self, fun _ h => h⟩
