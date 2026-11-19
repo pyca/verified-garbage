@@ -388,7 +388,6 @@ arm vg_rsa_public_precompute
 arm vg_rsa_public_precompute_umaal
 arm vg_rsa_recover_primes_det
 arm vg_rsa_recover_primes_det_umaal
-arm vg_scrypt
 arm vg_seed_cbc_decrypt_chained
 arm vg_seed_cbc_encrypt_chained
 arm vg_seed_cfb128_decrypt
