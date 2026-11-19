@@ -28,7 +28,7 @@
 pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "sf4h+AAAgTmmAgh8aAAM+HAAjPt4AKz7gADM+4gA7PuQAGz4mACM+KAArPioAMz4sADs+LgADPnAACz5yABM+QAAzDvoAf7ryAB+gGQXZXjAAJ6AAADAOAAA4DgBACA5/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofP4PiFSkD4R4pA/neBRC53xQOAV94A8IeVBICH2kD8Z4FELGfNIpCH1QOOh8/g+IVKQPhHikD+d4FELnfFA4BX3gDwh5UEgIfaQPxngUQsZ80ikIfVA46Hz+D4hUpA+EeKQP53gUQud8UDgFfeAPCHlQSAh9pA/GeBRCxnzSKQh9UDjofAgB3vhkF8Z4+ADe+GRVxngAAd74QACAOAAAfzhAA784AADAOA=="
-bl {vg_blake2b_init}
+bl {vg_blake2b_init_core}
 .base64 "yAB+gIADf5D4AX6AhAN/kMAAfoCIA3+QuAB+gIwDf5ATAGA4kAN/kJAAfoCUA3+QAACAOIADvzgYAMA4AAB/OMAA/zg="
 bl {vg_blake2b_update_scratch}
 .base64 "GABgOBABfvigAH7omAN/kBABnuiYA784BADAOAAAfzjAAP84"
@@ -156,7 +156,7 @@ bne %cr0, 228b
 .base64 "2AF+6AAEgDjwAb7o+AHe6AAA/zg="
 bl {vg_argon2_hprime}
 .base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOCAAgE4=""#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
         vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,

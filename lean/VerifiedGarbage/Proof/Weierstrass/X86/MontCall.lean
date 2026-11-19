@@ -197,7 +197,7 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hF : FnOk S) (hs : Scr s
   obtain hown := (saveAt_le hF.mul.k0 hF.k9).2
   refine WP.mono (callOp_ok hF.nsMul (by
     unfold mulFn mulBody
-    split <;> rfl) hF.mul.k0 hF.k9 hs ho ha hb
+    split <;> [rfl; (split <;> rfl)]) hF.mul.k0 hF.k9 hs ho ha hb
     (V := fun m m' => val32 m' base o (2 * S.k) < S.m ∧
       val32 m' base o (2 * S.k) * 2 ^ (64 * S.k) % S.m =
         val32 m base a (2 * S.k) * val32 m base b (2 * S.k) % S.m)

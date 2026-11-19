@@ -13,7 +13,8 @@ ninth argument `tag` in memory (ELFv2 ABI §2.2.3.3, the Parameter Save Area
 at `sp + 96`): it copies the slices `src` lists, one after the other, to
 `dst` (`Impl/Gather/PPC64LE.lean`, whose registers `src`, `src_count` and
 `dst` already are), and encrypts them there in place with a call of
-`vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, dst, len, tag)`.
+`vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, dst, len, tag)`'s
+code, as the internal `vg_chacha20_poly1305_seal_core`.
 
 It allocates a frame of 80 bytes, whose local variable space (at `sp + 32`)
 keeps `key`, `nonce`, `aad`, `aad_len` and `dst`, which the gathering
@@ -57,7 +58,7 @@ def sealGather : Prog isa :=
     (.seq (.block entry)
     (.seq Gather.PPC64LE.gather
     (.seq (.block callArgs)
-    (.seq (.call "vg_chacha20_poly1305_seal" sealCode)
+    (.seq (.call "vg_chacha20_poly1305_seal_core" sealCode)
       (.block ret)))))
     (.free 80)
 
