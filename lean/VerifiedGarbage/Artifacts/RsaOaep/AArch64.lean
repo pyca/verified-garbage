@@ -39,13 +39,16 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (privPOf)
 open VG.Proof.MdHashTable.AArch64 (tables)
 open VG.Proof.HashTable.AArch64 (fnsOf)
 
-def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if h : OK vs then [
-    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (hc : c ∈ VG.Proof.Variants.RsaPrivateCrt.AArch64.variants) :
+    List Artifact :=
+  if h : OK VG.Proof.Variants.MdHash.AArch64.variants then [
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.AArch64.decryptP (fnsOf vs) (privPOf c).name (privPOf c).code
-      verified := decP_ok vs h c } (Proof.RsaOaep.AArch64.Scrub.decryptOk vs _))]
+      tables := [("hash", tables VG.Proof.Variants.MdHash.AArch64.variants), ("mgf1", tables VG.Proof.Variants.MdHash.AArch64.variants)]
+      code := Impl.RsaOaep.AArch64.decryptP (fnsOf VG.Proof.Variants.MdHash.AArch64.variants) (privPOf c).name (privPOf c).code
+      verified := decP_ok VG.Proof.Variants.MdHash.AArch64.variants h c }
+      Proof.RsaOaep.AArch64.Scrub.clear (Proof.RsaOaep.AArch64.Scrub.decryptOk VG.Proof.Variants.MdHash.AArch64.variants _)
+      (Proof.RsaOaep.AArch64.Scrub.decryptSide c hc))]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
@@ -58,13 +61,16 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (pdOf)
 open VG.Proof.MdHashTable.AArch64 (tables)
 open VG.Proof.HashTable.AArch64 (fnsOf)
 
-def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  if h : OK vs then [
-    Spec.RsaOaep.encryptMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifacts (c : Proof.Rsa.AArch64.PublicImpl)
+    (hc : c ∈ VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants) : List Artifact :=
+  if h : OK VG.Proof.Variants.MdHash.AArch64.variants then [
+    Spec.RsaOaep.encryptMdTablesApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
       suffix := qualifiedName "" [("rsa", c.suffix)]
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf vs) (pdOf c).name (pdOf c).code
-      verified := enc_ok vs h c } (Proof.RsaOaep.AArch64.Scrub.encryptOk vs _))]
+      tables := [("hash", tables VG.Proof.Variants.MdHash.AArch64.variants), ("mgf1", tables VG.Proof.Variants.MdHash.AArch64.variants)]
+      code := Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf VG.Proof.Variants.MdHash.AArch64.variants) (pdOf c).name (pdOf c).code
+      verified := enc_ok VG.Proof.Variants.MdHash.AArch64.variants h c }
+      Proof.RsaOaep.AArch64.Scrub.clear (Proof.RsaOaep.AArch64.Scrub.encryptOk VG.Proof.Variants.MdHash.AArch64.variants _)
+      (Proof.RsaOaep.AArch64.Scrub.encryptSide c hc))]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
@@ -72,7 +78,8 @@ end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
 namespace VG.Artifacts.RsaOaep.AArch64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v VG.Proof.Variants.MdHash.AArch64.variants) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun v => RsaPublicPrecomputedAllMdHash.artifacts v VG.Proof.Variants.MdHash.AArch64.variants)
+  (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.attach.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v.1 v.2) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.attach.flatMap fun v =>
+    RsaPublicPrecomputedAllMdHash.artifacts v.1 v.2)
 
 end VG.Artifacts.RsaOaep.AArch64

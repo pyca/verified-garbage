@@ -111,7 +111,20 @@ instructions in an ISA model) go in their own PR before either.
    within its buffers (`Arm.Scrub.PostOut`, by `postOut_of_local`); that stack
    is a frame of the model, a multiple of 8 bytes (`FrameOk`), so code proven
    with another number is registered with the next one
-   (`Arm.Scrub.Verified.stack_le`, as `Proof/MlDsa/Arm/Scrub.lean` does). Only functions `ci/residue_allowlist.txt` already lists may go
+   (`Arm.Scrub.Verified.stack_le`, as `Proof/MlDsa/Arm/Scrub.lean` does).
+   On AArch64, code scrubbed whole is registered with
+   `AArch64.ScrubAll.scrubAllOf` (`Proof/Framework/AArch64/ScrubProved.lean`),
+   not `withScrubAll`: the registers its tail clears are a literal at the
+   call site, and one proof there (`scrubSide … = true`, by `lit_decide`)
+   says that the code writes no other register the calling convention does
+   not preserve, with what the scrub needs of its stack and of DIT. The
+   kernel checks it when the module is built, so that the emitter works
+   nothing out of the code: it only prints. For a caller generic over
+   variants, the proof module proves `scrubSide` of every variant of the
+   list by one evaluation (`variants.all … = true`), and the registration
+   file maps over `variants.attach` to pass each variant's membership
+   (`Proof/RsaOaep/AArch64/Scrub.lean`, `Artifacts/RsaOaep/AArch64.lean`).
+   Only functions `ci/residue_allowlist.txt` already lists may go
    without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
    emitter refuses a listed function that has a proof, so converting one
    removes its line. Where the analysis fails, its trace says at which
