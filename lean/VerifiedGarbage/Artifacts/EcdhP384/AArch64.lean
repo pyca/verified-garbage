@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Impl.Ecdh.P384.AArch64
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
@@ -40,8 +41,11 @@ namespace VG.Artifacts.EcdhP384.AArch64
 open VG.Proof.P384.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P384.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdh.P384.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ecdh.AArch64.exchangeP384
-    verified := Proof.Ecdh.AArch64.P384.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime } (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
+    verified := Proof.Ecdh.AArch64.P384.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v16, .v17, .v18, .v19, .v28, .v29],
+       []⟩ (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
 
 end VG.Artifacts.EcdhP384.AArch64

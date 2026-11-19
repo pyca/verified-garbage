@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
@@ -112,8 +113,12 @@ namespace VG.Artifacts.EcdhP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P256.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdh.P256.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.P256.EcdhJac.exchange
-    verified := Proof.P256.EcdhJac.verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.invToMP } (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
+    verified := Proof.P256.EcdhJac.verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.invToMP }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+       .v26, .v27, .v28, .v29, .v30, .v31],
+       []⟩ (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
 
 end VG.Artifacts.EcdhP256.AArch64

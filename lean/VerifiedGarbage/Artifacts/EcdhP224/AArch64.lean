@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Impl.Ecdh.P224.AArch64
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P224.Verified
@@ -68,8 +69,11 @@ namespace VG.Artifacts.EcdhP224.AArch64
 open VG.Proof.P224.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P224.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ecdh.P224.exchangeApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     code := Impl.Ecdh.AArch64.exchangeP224
-    verified := Proof.Ecdh.AArch64.P224.ecdh_verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
+    verified := Proof.Ecdh.AArch64.P224.ecdh_verified hasLaw.law hasLaw.inv }
+      ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17],
+       [.v28, .v29],
+       []⟩ (Proof.EcKey.AArch64.Scrub.exchangeOk _))]
 
 end VG.Artifacts.EcdhP224.AArch64
