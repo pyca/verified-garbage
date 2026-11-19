@@ -509,3 +509,238 @@ theorem openToBs_ct [VG.Proof.Gcm.RISCV64.GhashLaw] :
     exact CT.taintEq _ (fun _ => stackArg σ₁ 5) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
 end VG.Proof.AesGcm.RISCV64
+
+/-! ## The contracts
+
+As `open_to`'s (`RoundsTo.lean`, `OpenTo/Verified.lean`), with the buffer `bk`
+as a last argument, which the postcondition and the leak ignore and the
+precondition requires to hold the bitsliced form of the key context. -/
+
+namespace VG.Proof.AesGcm
+
+open VG.Spec.Gcm
+
+/-- `openToRoundsPost`, which does not depend on `bk`. -/
+def openToBitslicedRoundsPost (pb : Nat) : openToBitslicedSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen _bk =>
+    openToRoundsPost pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen
+
+def openToBitslicedRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  openToBitslicedSig.contract A (pre := openToBitslicedPre A.ptrBits)
+    (post := openToBitslicedRoundsPost A.ptrBits) (writeArgs := true) (stack := stack)
+    (leak := some (openToBitslicedLeak A.ptrBits))
+
+theorem openToBitsliced_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
+    (h : Verified T c (openToBitslicedRoundsContract A stack)) :
+    Verified T c (Spec.Gcm.openToBitslicedContract A stack) :=
+  h.post_mono fun ctx rounds n nl a al s l d dl t tl _ => openToPost_imp _ ctx rounds n nl a al s l d dl t tl
+
+variable (pb : Nat)
+
+/-- The thirteen words of the `_bitsliced` `open_to`: the plain function's twelve, then `bk`. -/
+theorem openTo_words {α : Type} {vs : List α} (hlen : vs.length = 13) :
+    ∃ x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 bk, vs = [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk] := by
+  match vs, hlen with
+  | [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk], _ =>
+    exact ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk, rfl⟩
+
+theorem openToBitslicedPre_local : ∀ vs m₁ m₂, vs.length = (openToBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPre pb) vs m₁ →
+      Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk, rfl⟩ := openTo_words hlen
+  obtain ⟨h₁, h₂⟩ := h
+  refine ⟨RISCV64.OpenTo.openToPre_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11] m₁ m₂ rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h₁, ?_⟩
+  simp only [openToBitslicedSig, openToSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  exact ctxSlicedRepr_congr (agree_of hb.2.2.2.2.2.2) (agree_of hb.1) h₂
+
+theorem openToBitslicedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedRoundsPost pb) vs m₁ m' r →
+      Curry.apply (openToBitslicedSig.words pb) (openToBitslicedRoundsPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk, rfl⟩ := openTo_words hlen
+  exact RISCV64.OpenTo.openToPost_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11] m₁ m₂ m' r rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h
+
+theorem openToBitslicedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (openToBitslicedSig.words pb).length →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPre pb) vs m →
+    (∀ b ∈ Sig.bufs openToBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedRoundsPost pb) vs m m₁ r →
+      Curry.apply (openToBitslicedSig.words pb) (openToBitslicedRoundsPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk, rfl⟩ := openTo_words hlen
+  exact RISCV64.OpenTo.openToPostOut_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11] m m₁ m₂ r rfl
+    hpre.1 (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm)) h
+
+theorem openToBitslicedLeak_local : ∀ vs m₁ m₂, vs.length = (openToBitslicedSig.words pb).length →
+    (∀ b ∈ Sig.bufs openToBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedLeak pb) vs m₁ =
+      Curry.apply (openToBitslicedSig.words pb) (openToBitslicedLeak pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb
+  obtain ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, bk, rfl⟩ := openTo_words hlen
+  exact RISCV64.OpenTo.openToLeak_local pb [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11] m₁ m₂ rfl
+    (fun b hbm => hb b (List.mem_append_left [((⟨bk, 156 * Elem.size .u64⟩ : Region), false)] hbm))
+
+theorem openToBitslicedPost_out : ∀ vs m m₁ m₂ r, vs.length = (openToBitslicedSig.words pb).length →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPre pb) vs m →
+    (∀ b ∈ Sig.bufs openToBitslicedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPost pb) vs m m₁ r →
+      Curry.apply (openToBitslicedSig.words pb) (openToBitslicedPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hpre hb h
+  obtain ⟨x0, x1, x2, x3, x4, x5, src, len, dst, dl, x10, x11, bk, rfl⟩ := openTo_words hlen
+  simp only [openToBitslicedSig, openToSig, bitslicedParam, List.cons_append, List.nil_append, Sig.bufs,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (openToBitslicedPre pb) _ m at hpre
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (openToBitslicedPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (openToBitslicedPost pb) _ m m₂ r
+  dsimp only [Curry.apply, openToBitslicedPre, openToPre, ArgWord.ofRaw, IntTy.bits] at hpre
+  dsimp only [Curry.apply, openToBitslicedPost, openToPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+  intro key hk
+  have := Nat.mod_le dl.toNat (2 ^ pb)
+  rw [bytesAt_congr (m₁ := m₁) (m₂ := m₂) (p := dst) (n := (len.setWidth pb).toNat) fun i hi =>
+    agree_of hb.2.2.2.2.1 i (by
+      rw [← hpre.1.2, BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h key hk
+
+end VG.Proof.AesGcm
+
+namespace VG.Proof.AesGcm.RISCV64
+
+open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
+
+/-- Memory holding the stack arguments at `0x9000`: `dst` (`0x7000`),
+`dst_len` 0, `tag` (`0x5000`), `tag_len` 0, `bk` (`0x800`) and the
+working space (`0x6000`). -/
+def toBsSatMem : Mem := fun a =>
+  bif Nat.beq a.toNat 0x9001 then 0x70 else bif Nat.beq a.toNat 0x9011 then 0x50 else
+    bif Nat.beq a.toNat 0x9021 then 0x08 else bif Nat.beq a.toNat 0x9029 then 0x60 else 0
+
+theorem toBsSatMem_zero {p : Addr} {n : Nat} (h : p.toNat + n ≤ 0x9001) :
+    ∀ i < n, toBsSatMem (p + BitVec.ofNat 64 i) = 0 := fun i hi => by
+  obtain e : (p + BitVec.ofNat 64 i).toNat = p.toNat + i := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h, hi]
+  obtain hb : ∀ k, 0x9001 ≤ k → Nat.beq (p.toNat + i) k = false := fun k hk => by
+    rw [← Bool.not_eq_true, Nat.beq_eq]; omega_using [h, hi, hk]
+  simp only [toBsSatMem, e, hb _ (Nat.le_refl _), hb 0x9011 (by decide), hb 0x9021 (by decide),
+    hb 0x9029 (by decide), Bool.cond_false]
+
+/-- `openToBsPreR`, with no nonce, additional data, text or tag, and the
+stack arguments'. -/
+def toBsSat : State where
+  gpr r := match r with
+    | .a0 => 0x1000 | .a1 => 10 | .a2 => 0x2000 | .a4 => 0x3000 | .a6 => 0x4000 | _ => 0
+  sp := 0x9000
+  mem := toBsSatMem
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x5000, 0⟩, ⟨0x800, 1248⟩, ⟨0x9000, 48⟩]
+  wr := [⟨0x7000, 0⟩, ⟨0x6000, 2560⟩]
+
+/-- As `openTo_verified`. -/
+theorem openToBs_verified [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target OpenTo.openToBs
+      (Sig.scratchContract RISCV64.abi Spec.Gcm.openToBitslicedSig "work" .u64 320 (Spec.Gcm.openToBitslicedPre 64)
+        (Proof.AesGcm.openToBitslicedRoundsPost 64) true 2048 (some (Spec.Gcm.openToBitslicedLeak 64))) :=
+  Verified.of_correct (fun _ hs => openToBs_wp hs) openToBs_ct
+    { pre := by
+        sig_implies_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
+          Spec.Gcm.openToBitslicedSig, Spec.Gcm.openToSig, Spec.Gcm.bitslicedParam, Spec.Gcm.openToBitslicedPre,
+          Spec.Gcm.openToPre, openToBsRISCV64, openToBsPreR, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs,
+          stackBelow, stkOk, stkAll, and_true, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
+      post := by
+        intro s s' _ h
+        sig_eval [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Gcm.openToBitslicedSig,
+          Spec.Gcm.openToSig, Spec.Gcm.bitslicedParam, Proof.AesGcm.openToBitslicedRoundsPost,
+          Proof.AesGcm.openToRoundsPost, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD,
+          List.range, List.range.loop]
+        simp only [openToBsRISCV64, openToRISCV64] at h
+        intro _
+        exact h
+      pub := by
+        intro s₁ s₂ _ _ h
+        sig_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Gcm.openToBitslicedSig,
+          Spec.Gcm.openToSig, Spec.Gcm.bitslicedParam, Spec.Gcm.openToBitslicedLeak, Spec.Gcm.openToLeak,
+          openToBsRISCV64, openToBsPreR, onePub, args, rounds, RISCV64.abi, RISCV64.argRegs,
+          stackBelow, stkOk, stkAll, and_true, stackArg, stackArgAddr, List.getD, List.range,
+          List.range.loop] at h
+        obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5⟩ := h
+        refine ⟨⟨h3, h4, h5, h6, h7, h8, h9, h10, hsp, fun i hi => ?_⟩, fun hr => leak_bool ?_⟩
+        · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi])
+            with rfl | rfl | rfl | rfl | rfl | rfl
+          exacts [a0, a1, a2, a3, a4, a5]
+        · have e₁ : ¬((s₁.gpr .a1).toNat = 10 ∨ (s₁.gpr .a1).toNat = 12 ∨ (s₁.gpr .a1).toNat = 14) ↔ False :=
+            ⟨fun x => x hr, False.elim⟩
+          have e₂ : ¬((s₂.gpr .a1).toNat = 10 ∨ (s₂.gpr .a1).toNat = 12 ∨ (s₂.gpr .a1).toNat = 14) ↔ False :=
+            ⟨fun x => x (h4 ▸ hr), False.elim⟩
+          simp only [e₁, e₂, ↓reduceIte] at hl
+          exact hl
+      sat := ⟨toBsSat, by
+        sig_pre [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Gcm.openToBitslicedSig,
+          Spec.Gcm.openToSig, Spec.Gcm.bitslicedParam, Spec.Gcm.openToBitslicedPre, Spec.Gcm.openToPre,
+          RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop, toBsSat]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | exact Proof.AesGcm.ctxSlicedRepr_of_zero (toBsSatMem_zero (by decide)) (toBsSatMem_zero (by decide))⟩ }
+
+/-! ## With the working space on the stack -/
+
+def toBsFrameSat : State :=
+  { toBsSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x5000, 0⟩, ⟨0x800, 1248⟩,
+      ⟨0x9000, 40⟩], wr := [⟨0x7000, 0⟩] }
+
+theorem toBsFrameSat_pre : ∃ s, (Proof.AesGcm.openToBitslicedRoundsContract RISCV64.abi 4656).pre s := by
+  refine ⟨toBsFrameSat, ?_⟩
+  sig_pre [Proof.AesGcm.openToBitslicedRoundsContract, Spec.Gcm.openToBitslicedSig, Spec.Gcm.openToSig,
+    Spec.Gcm.bitslicedParam, Spec.Gcm.openToBitslicedPre, Spec.Gcm.openToPre, Proof.AesGcm.openToBitslicedRoundsPost,
+    Spec.Gcm.openToBitslicedLeak, RISCV64.abi, RISCV64.argRegs, stackArg, stackArgAddr, List.getD, List.range,
+    List.range.loop, toBsFrameSat, toBsSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.ctxSlicedRepr_of_zero (toBsSatMem_zero (by decide)) (toBsSatMem_zero (by decide))
+
+theorem openToBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    Verified RISCV64.target (Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 OpenTo.openToBs)
+      (Proof.AesGcm.openToBitslicedRoundsContract RISCV64.abi 4656) :=
+  RISCV64.Verified.stackScratchArgs (sig := Spec.Gcm.openToBitslicedSig) (nm := "work") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.openToBitslicedPre RISCV64.abi.ptrBits)
+    (post := Proof.AesGcm.openToBitslicedRoundsPost RISCV64.abi.ptrBits)
+    (wa := true) (stack := 2048) (bytes := 2608) (m := 5)
+    (leak := some (Spec.Gcm.openToBitslicedLeak RISCV64.abi.ptrBits))
+    openToBs_verified (by decide) (by decide) (Proof.AesGcm.openToBitslicedPre_local _)
+    (Proof.AesGcm.openToBitslicedPost_local _) (Proof.AesGcm.openToBitslicedPostOut_local _) toBsFrameSat_pre
+    (hleak := Proof.AesGcm.openToBitslicedLeak_local _)
+
+/-! ## Without secret residue -/
+
+open VG.RISCV64.Scrub
+
+theorem openToBsOut :
+    PostOut (Spec.Gcm.openToBitslicedContract RISCV64.abi 4656) (Spec.Gcm.openToBitslicedSig.retBits 64) :=
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain (Proof.AesGcm.openToBitslicedPost_out _)
+
+/-- `Spec.Gcm.openToBitslicedApi`. -/
+def openToBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.openToBitslicedApi RISCV64.target :=
+  withScrubSel {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs
+      verified := Proof.AesGcm.openToBitsliced_keyed openToBs_framed }
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])]
+    openToBsOut
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb openToBsOut (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs) 4656 32
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+end VG.Proof.AesGcm.RISCV64
