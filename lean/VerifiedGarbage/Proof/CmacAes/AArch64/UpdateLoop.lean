@@ -129,6 +129,38 @@ theorem ctr_callW (v : Ctr32Impl) {s : State} {W C D S : Addr} {R : Nat} (h : Ca
     WP isa (.call v.callee.name v.callee.code) s fun s' => CallPost s W C D S R s' v.scratch :=
   ctr_callK v.noFrames v.okW h
 
+private theorem covers_lastC {xs T : List Region} {S : Addr} {M N : Nat} (h : Covers (xs ++ [⟨S, N⟩]) T)
+    (hle : M ≤ N) : Covers (xs ++ [⟨S, M⟩]) T := by
+  intro a n ⟨r, hr, hc⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact h a n ⟨r, List.mem_append_left _ hr, hc⟩
+  · rw [List.mem_singleton] at hr; subst hr
+    refine h a n ⟨⟨S, N⟩, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+    simp only [Region.Contains] at hc ⊢; omega
+
+/-- `CallPre` with less working space, a prefix of it. -/
+theorem CallPre.shrink {s : State} {W C D S : Addr} {R M N : Nat} (h : CallPre s W C D S R N) (hle : M ≤ N) :
+    CallPre s W C D S R M :=
+  { h with
+    ws := h.ws.sub_right (Region.sub_prefix hle)
+    cs := h.cs.sub_right (Region.sub_prefix hle)
+    ds := h.ds.sub_right (Region.sub_prefix hle)
+    reads := covers_lastC (xs := [⟨W, 240⟩, ⟨C, 16⟩, ⟨D, 16⟩]) h.reads hle
+    writes := covers_lastC (xs := [⟨C, 16⟩, ⟨D, 16⟩]) h.writes hle }
+
+/-- A call of `v` on one block with `N` bytes of working space, at least what
+it needs. -/
+theorem ctr_callLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {s : State} {W C D S : Addr} {R : Nat}
+    (h : CallPre s W C D S R N) :
+    WP isa (.call v.callee.name v.callee.code) s fun s' => CallPost s W C D S R s' N :=
+  WP.mono (ctr_callW v (h.shrink hle)) fun _ q => ⟨q.rd, q.wr, q.sp, q.saved, q.frame.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨⟨S, N⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.sub_prefix hle⟩,
+    q.out⟩
+
 /-- Calls of an implementation of `ctr32AArch64With N` on one block, with the
 same arguments in both runs, are constant time. -/
 theorem ctr_relK {c : Impl.Aes.AArch64.Ctr32} {N : Nat}
@@ -152,6 +184,15 @@ theorem ctr_rel (v : Ctr32Impl) {W C D S : Addr} {R : Nat} {P : State → State 
     (h : ∀ s₁ s₂, P s₁ s₂ → CallPre s₁ W C D S R ∧ CallPre s₂ W C D S R ∧ s₁.sp = s₂.sp) :
     RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True :=
   ctr_relK (N := 2048) v.ok v.ct h
+
+/-- `ctr_rel` with `N` bytes of working space, at least what `v` needs. -/
+theorem ctr_relLe (v : Ctr32Impl) {N : Nat} (hle : v.scratch ≤ N) {W C D S : Addr} {R : Nat}
+    {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → CallPre s₁ W C D S R N ∧ CallPre s₂ W C D S R N ∧ s₁.sp = s₂.sp) :
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True :=
+  ctr_relK v.okW v.ctW fun s₁ s₂ hp => by
+    obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨h₁.shrink hle, h₂.shrink hle, hsp⟩
 
 /-- `ctr_rel` with only the working space `v` needs. -/
 theorem ctr_relW (v : Ctr32Impl) {W C D S : Addr} {R : Nat} {P : State → State → Prop}
