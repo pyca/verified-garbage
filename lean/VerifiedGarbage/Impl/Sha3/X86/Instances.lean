@@ -55,7 +55,7 @@ def updateArgs (rate : Nat) : List Instr :=
 
 def update (rate : Nat) : Prog isa :=
   .frame (.alloc 24)
-    (.seq (.block (updateArgs rate)) (.call "vg_keccak_absorb_scratch" Stream.absorb)) (.free 24)
+    (.seq (.block (updateArgs rate)) (.call "vg_keccak_update_scratch" Stream.absorb)) (.free 24)
 
 /-- `absorb rate (state, pos, data, len)`: `update`, with its working space
 `scratch` in a frame of 664 bytes on the stack, passed as its stack argument

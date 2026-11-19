@@ -471,7 +471,7 @@ theorem upd_entry {rate : Nat} {s t : State} (hI : UpdAt rate s t) :
 
 theorem upd_call {rate : Nat} (hr : rate ∈ rates) {s t : State} (hs : (updateArm rate).pre s)
     (hI : UpdAt rate s t) :
-    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) t
+    WP isa (.call "vg_keccak_update_scratch" Impl.Sha3.Arm.Stream.absorb) t
       fun v => v.sp = s.sp - BitVec.ofNat 32 16 := by
   obtain ⟨hpre, hc, hw⟩ := upd_pre hr hs hI
   exact FrameStack.WP.callF (k := Proof.Sha3.absorbArm) Stream.Absorb.absorb_verified.1 hpre hc hw
@@ -528,8 +528,8 @@ def updSat : State where
 theorem update_verified {rate : Nat} (hr : rate ∈ rates) (hre : encodable (BitVec.ofNat 32 rate) = true)
     (hct : ConstantTime isa (updateArm rate).pre (updateArm rate).pub (update rate))
     (hsat : ∃ s, (updateArm rate).pre s)
-    (himp : (updateArm rate).Implies (Spec.Sha3.updateContract Arm.abi rate 16)) :
-    Verified Arm.target (update rate) (Spec.Sha3.updateContract Arm.abi rate 16) :=
+    (himp : (updateArm rate).Implies (Proof.Sha3.updateScratchContract Arm.abi rate 16)) :
+    Verified Arm.target (update rate) (Proof.Sha3.updateScratchContract Arm.abi rate 16) :=
   (show Verified Arm.target (update rate) (updateArm rate) from
     ⟨fun _ hs => (update_correct hr hre hs).elim fun t ⟨s', he, h⟩ => ⟨t, s', he, h.1, h.2⟩, hct,
       hsat⟩).of_implies himp
@@ -543,14 +543,14 @@ macro "upd_arm" I:ident : term => `(update_verified (by decide) (by decide)
     refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide, by decide,
       by decide, by decide⟩ <;>
     · exact Region.disjoint_of_sep (by decide)⟩
-  (by contract_implies [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-      Spec.Sha3.updatePost, updateArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+  (by contract_implies [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+      Proof.Sha3.updateScratchPost, updateArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr, Shared.setWidth_append32, $I:ident]
       [updSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updSat))
 
 theorem update_sha3_224 :
     Verified Arm.target (update Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_224.rate 16) :=
+      (Proof.Sha3.updateScratchContract Arm.abi Spec.Sha3.hashSha3_224.rate 16) :=
   upd_arm Spec.Sha3.hashSha3_224
 
 /-! ## SHAKE's `finalize` -/
@@ -1640,22 +1640,22 @@ theorem finalize_sha3_224 :
 
 theorem update_sha3_256 :
     Verified Arm.target (update Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_256.rate 16) :=
+      (Proof.Sha3.updateScratchContract Arm.abi Spec.Sha3.hashSha3_256.rate 16) :=
   upd_arm Spec.Sha3.hashSha3_256
 
 theorem update_sha3_384 :
     Verified Arm.target (update Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_384.rate 16) :=
+      (Proof.Sha3.updateScratchContract Arm.abi Spec.Sha3.hashSha3_384.rate 16) :=
   upd_arm Spec.Sha3.hashSha3_384
 
 theorem update_sha3_512 :
     Verified Arm.target (update Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_512.rate 16) :=
+      (Proof.Sha3.updateScratchContract Arm.abi Spec.Sha3.hashSha3_512.rate 16) :=
   upd_arm Spec.Sha3.hashSha3_512
 
 theorem update_shake128 :
     Verified Arm.target (update Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.updateContract Arm.abi Spec.Sha3.xofShake128.rate 16) :=
+      (Proof.Sha3.updateScratchContract Arm.abi Spec.Sha3.xofShake128.rate 16) :=
   upd_arm Spec.Sha3.xofShake128
 
 theorem finalize_sha3_256 :

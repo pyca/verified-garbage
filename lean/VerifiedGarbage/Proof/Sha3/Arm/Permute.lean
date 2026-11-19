@@ -64,7 +64,7 @@ def permuteArm : Contract Arm.isa where
   pub s₁ s₂ := s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1
 
 open VG.Arm in
-/-- 32-bit ARM contract for `vg_keccak_absorb(state = r0, rate = r1,
+/-- 32-bit ARM contract for `vg_keccak_update(state = r0, rate = r1,
 pos = r2, data = r3, len = [sp], scratch = [sp, #4]) -> r0`: absorbs `data`
 into the streaming state (`Repr`) and returns the new position in the
 block.

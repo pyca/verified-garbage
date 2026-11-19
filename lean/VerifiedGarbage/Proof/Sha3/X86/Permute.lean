@@ -71,7 +71,7 @@ def permuteX86 : Contract X86.isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1
 
 open X86 in
-/-- x86 (32-bit) contract for `vg_keccak_absorb(state, rate, pos, data, len,
+/-- x86 (32-bit) contract for `vg_keccak_update(state, rate, pos, data, len,
 scratch) -> eax`, whose arguments are on the stack: absorbs `data` into the
 streaming state (`Repr`) and returns the new position in the block.
 

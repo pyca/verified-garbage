@@ -14,7 +14,7 @@ namespace VG.Artifacts.Sha3.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun (v : Proof.Sha3.AArch64.Permutation) => [
-    Spec.Sha3.absorbSha3_224Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sha3.updateSha3_224Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_224.rate
@@ -26,7 +26,7 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.finalize v.callee Spec.Sha3.hashSha3_224.rate
         Spec.Sha3.hashSha3_224.len
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_224 v },
-    Spec.Sha3.absorbSha3_256Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sha3.updateSha3_256Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_256.rate
@@ -38,7 +38,7 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.finalize v.callee Spec.Sha3.hashSha3_256.rate
         Spec.Sha3.hashSha3_256.len
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_256 v },
-    Spec.Sha3.absorbSha3_384Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sha3.updateSha3_384Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_384.rate
@@ -50,7 +50,7 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.finalize v.callee Spec.Sha3.hashSha3_384.rate
         Spec.Sha3.hashSha3_384.len
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_384 v },
-    Spec.Sha3.absorbSha3_512Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sha3.updateSha3_512Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.hashSha3_512.rate
@@ -62,7 +62,7 @@ def artifacts : List Artifact :=
       code := Impl.Sha3.AArch64.Instances.finalize v.callee Spec.Sha3.hashSha3_512.rate
         Spec.Sha3.hashSha3_512.len
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_512 v },
-    Spec.Sha3.absorbShake128Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sha3.updateShake128Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Instances.absorb v.callee Spec.Sha3.xofShake128.rate

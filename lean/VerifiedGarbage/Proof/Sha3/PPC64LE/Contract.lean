@@ -37,7 +37,7 @@ def permutePPC64LE : Contract PPC64LE.isa where
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.sp = s₂.sp
 
 open VG.PPC64LE in
-/-- PPC64LE contract for `vg_keccak_absorb(state = r3, rate = r4, pos = r5,
+/-- PPC64LE contract for `vg_keccak_update(state = r3, rate = r4, pos = r5,
 data = r6, len = r7, scratch = r8) -> r3`: absorbs `data` into the streaming
 state (`Repr`) and returns the new position in the block.
 

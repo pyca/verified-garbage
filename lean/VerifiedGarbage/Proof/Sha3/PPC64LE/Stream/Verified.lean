@@ -2158,7 +2158,7 @@ end
 `absorb`, `pad` and `squeeze` (`Stream/`), each run in a frame that saves the
 link register (`WP.frameReg`): correctness, with constant time from `CT`, and
 a state satisfying each precondition. They take their working space as an
-argument; `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` run
+argument; `vg_keccak_update`, `vg_keccak_pad` and `vg_keccak_squeeze` run
 them in a frame that allocates it (`Verified.stackScratch`): 640 bytes,
 after the frame's 32-byte header.
 -/

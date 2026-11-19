@@ -3,11 +3,11 @@
 //!
 //! Each function has verified functions of its own, whose code has its rate
 //! and domain-separation suffix and whose contracts name the function of
-//! FIPS 202 they compute (`VG.Spec.Sha3`): `absorb` absorbs a piece of the
+//! FIPS 202 they compute (`VG.Spec.Sha3`): `update` absorbs a piece of the
 //! message, keeping its working space on its own stack, which its residue
 //! proof covers, and `finalize` writes the digest (SHA-3) or pads the message
 //! for `squeeze` to output it in pieces (SHAKE). Absorbing depends only on the
-//! rate, so SHAKE256 absorbs with SHA3-256's `absorb`, of the same rate. This module keeps the state and
+//! rate, so SHAKE256 absorbs with SHA3-256's `update`, of the same rate. This module keeps the state and
 //! the position in the block that each call returns for the next; each call
 //! runs the function's dispatcher (`crate::arch::dispatch::sha3`).
 
@@ -22,16 +22,16 @@
 
 use crate::align::CacheAligned;
 use crate::arch::dispatch::sha3::{
-    vg_sha3_224_absorb_auto, vg_sha3_224_finalize_auto, vg_sha3_256_absorb_auto,
-    vg_sha3_256_finalize_auto, vg_sha3_384_absorb_auto, vg_sha3_384_finalize_auto,
-    vg_sha3_512_absorb_auto, vg_sha3_512_finalize_auto, vg_shake128_absorb_auto,
+    vg_sha3_224_update_auto, vg_sha3_224_finalize_auto, vg_sha3_256_update_auto,
+    vg_sha3_256_finalize_auto, vg_sha3_384_update_auto, vg_sha3_384_finalize_auto,
+    vg_sha3_512_update_auto, vg_sha3_512_finalize_auto, vg_shake128_update_auto,
     vg_shake128_finalize_auto, vg_shake128_squeeze_auto, vg_shake256_finalize_auto,
     vg_shake256_squeeze_auto,
 };
 
 /// The state of a computation absorbing a message: `state` represents the
 /// message so far for the function's rate, and `pos` is the position its
-/// `absorb` returned (the message's length modulo the rate, less than it).
+/// `update` returned (the message's length modulo the rate, less than it).
 #[derive(Clone)]
 struct Absorbing {
     state: CacheAligned<[u64; 25]>,
@@ -70,13 +70,13 @@ impl Drop for Squeezing {
 }
 
 /// `update`: absorbs `data` into `$s` (an `Absorbing`), with the token
-/// `$dit`, with the dispatcher of the function's `absorb`.
+/// `$dit`, with the dispatcher of the function's `update`.
 macro_rules! absorb {
     ($dit:expr, $s:expr, $data:expr, $update:ident) => {{
         let dit: crate::dit::Dit<'_> = $dit;
         let s: &mut Absorbing = $s;
         let data: &[u8] = $data;
-        // SAFETY: `s.pos` is the position the function's `absorb` returned
+        // SAFETY: `s.pos` is the position the function's `update` returned
         // for the message `s.state` represents (0 for the all-zero state, the
         // empty message), so it is less than the function's rate.
         // `s.state` is valid for reads and writes of 200 bytes and `data` for
@@ -140,7 +140,7 @@ macro_rules! sha3 {
             pub(crate) fn finalize_with(mut self, dit: crate::dit::Dit<'_>) -> [u8; $output] {
                 let mut digest = [0; $output];
                 // SAFETY: as in `update`, `self.0.pos` is the position
-                // `absorb` returned for the message `self.0.state`
+                // `update` returned for the message `self.0.state`
                 // represents; `self.0.state` is valid for reads and writes of
                 // 200 bytes and `digest` for writes of its size, distinct
                 // objects. The dispatcher calls only an implementation the
@@ -261,7 +261,7 @@ macro_rules! shake {
             pub(crate) fn finalize_xof_with(self, dit: crate::dit::Dit<'_>) -> $reader {
                 let mut state = self.0.state;
                 // SAFETY: as in `update`, `self.0.pos` is the position
-                // `absorb` returned for the message `state` represents;
+                // `update` returned for the message `state` represents;
                 // `state` is valid for reads and writes of 200 bytes. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
@@ -307,7 +307,7 @@ sha3!(
     Sha3_224 {
         rate: 144,
         output: 28,
-        update: vg_sha3_224_absorb_auto,
+        update: vg_sha3_224_update_auto,
         finalize: vg_sha3_224_finalize_auto,
     }
 );
@@ -316,7 +316,7 @@ sha3!(
     Sha3_256 {
         rate: 136,
         output: 32,
-        update: vg_sha3_256_absorb_auto,
+        update: vg_sha3_256_update_auto,
         finalize: vg_sha3_256_finalize_auto,
     }
 );
@@ -325,7 +325,7 @@ sha3!(
     Sha3_384 {
         rate: 104,
         output: 48,
-        update: vg_sha3_384_absorb_auto,
+        update: vg_sha3_384_update_auto,
         finalize: vg_sha3_384_finalize_auto,
     }
 );
@@ -334,7 +334,7 @@ sha3!(
     Sha3_512 {
         rate: 72,
         output: 64,
-        update: vg_sha3_512_absorb_auto,
+        update: vg_sha3_512_update_auto,
         finalize: vg_sha3_512_finalize_auto,
     }
 );
@@ -344,7 +344,7 @@ shake!(
     /// The output of SHAKE128, squeezed in pieces.
     Shake128Reader {
         rate: 168,
-        update: vg_shake128_absorb_auto,
+        update: vg_shake128_update_auto,
         finalize: vg_shake128_finalize_auto,
         squeeze: vg_shake128_squeeze_auto,
     }
@@ -357,7 +357,7 @@ shake!(
         rate: 136,
         // SHA3-256's: absorbing depends only on the rate, which they share
         // (`VG.Spec.Sha3.updateContract`).
-        update: vg_sha3_256_absorb_auto,
+        update: vg_sha3_256_update_auto,
         finalize: vg_shake256_finalize_auto,
         squeeze: vg_shake256_squeeze_auto,
     }

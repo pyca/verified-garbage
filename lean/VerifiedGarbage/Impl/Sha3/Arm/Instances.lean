@@ -49,7 +49,7 @@ def updateArgs (rate : Nat) : List Instr :=
 def update (rate : Nat) : Prog isa :=
   .frame (.alloc 16)
     (.seq (.block (updateArgs rate)) <|
-     .seq (.call "vg_keccak_absorb_scratch" Stream.absorb) (.block [.ldrSp .lr 8]))
+     .seq (.call "vg_keccak_update_scratch" Stream.absorb) (.block [.ldrSp .lr 8]))
     (.free 16)
 
 /-- `absorb rate (state = r0, pos = r1, data = r2, len = r3)`: `update`, with

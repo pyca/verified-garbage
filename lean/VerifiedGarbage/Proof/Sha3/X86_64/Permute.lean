@@ -220,7 +220,7 @@ def permuteX86_64 : Contract X86_64.isa where
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi
 
 open VG.X86_64 in
-/-- X86-64 contract for `vg_keccak_absorb(state = rdi, rate = rsi, pos = rdx,
+/-- X86-64 contract for `vg_keccak_update(state = rdi, rate = rsi, pos = rdx,
 data = rcx, len = r8, scratch = r9) -> rax`: absorbs `data` into the streaming
 state (`Repr`) and returns the new position in the block.
 
