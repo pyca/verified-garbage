@@ -733,16 +733,6 @@ x86 vg_mldsa87_verify
 x86 vg_mldsa87_verify_message_cached
 x86 vg_mldsa87_verify_message_prepared
 x86 vg_mldsa87_verify_prepared
-x86 vg_mlkem1024_check_ek
-x86 vg_mlkem1024_decaps
-x86 vg_mlkem1024_encaps
-x86 vg_mlkem1024_encaps_h
-x86 vg_mlkem1024_keygen
-x86 vg_mlkem768_check_ek
-x86 vg_mlkem768_decaps
-x86 vg_mlkem768_encaps
-x86 vg_mlkem768_encaps_h
-x86 vg_mlkem768_keygen
 x86 vg_pbkdf2_hmac_md5
 x86 vg_pbkdf2_hmac_sha1
 x86 vg_pbkdf2_hmac_sha1_shani
