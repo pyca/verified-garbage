@@ -189,7 +189,7 @@ evaluated. `rb` is the result's bits as `hpost` states them, so that `hs` is
 stated with it and not with a projection of `r`. -/
 def scrubOf {api : Api} (r : Registration api target) (d : Nat) (cl : Clear) {rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl = true)
-    (hd : d ≤ r.stack := by decide) (hb : retBitsOf r = rb := by rfl)
+    (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
   have hpost : PostOut r.contract (retBitsOf r) := by rw [hb]; exact hpost
   have hs : scrubSide r.code d (retBitsOf r) cl = true := by rw [hb]; exact hs
@@ -250,7 +250,7 @@ def scrubWipedOf {api : Api} (r : Registration api target) (bytes : Nat) (reg : 
     (body : Prog isa) (cl : Clear) {rb : Nat}
     (hc : r.code = withStackScratchWiped bytes reg words body) (hpost : PostOut r.contract rb)
     (hs : wipedSide r.code body bytes words rb cl = true)
-    (hst : bytes ≤ r.stack := by decide) (hb : retBitsOf r = rb := by rfl)
+    (hst : bytes ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
   have hpost : PostOut r.contract (retBitsOf r) := by rw [hb]; exact hpost
   have hs : wipedSide r.code body bytes words (retBitsOf r) cl = true := by rw [hb]; exact hs

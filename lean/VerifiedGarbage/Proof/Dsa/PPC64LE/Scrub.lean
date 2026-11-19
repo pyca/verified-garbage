@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
+public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -22,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_dsa_derive_key`, `vg_dsa_generate_key`, `vg_dsa_sign_random_prevalidated`,
 `vg_dsa_validate_public_key`, `vg_dsa_validate_private_key`,
 `vg_dsa_verify_prevalidated` and `vg_dsa_parameter_search`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
 volatile registers and the stack their frames used, which they do not wipe
 themselves. Their postconditions read the memory on return only within
 their outputs, as x86-64's (`Proof/Dsa/X86_64/Scrub.lean`): the validations
@@ -206,21 +207,27 @@ def verifyPrevalidatedReg : Registration Spec.Dsa.verifyPrevalidatedApi PPC64LE.
     (verifyPrevalidatedOut _)
     (by dsimp only; lit_decide)
 
+/-- What `scrubOf` needs of the parameter search with each Miller-Rabin
+round: evaluated here. -/
+theorem parameterSearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    scrubSide (Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)) 176
+      (Spec.Dsa.parameterSearchSig.retBits 64) Impl.Scrub.PPC64LE.Clear.all = true := by
+  have h : (Proof.Variants.MillerRabin.PPC64LE.variants.all fun v =>
+      scrubSide (Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)) 176
+        (Spec.Dsa.parameterSearchSig.retBits 64) Impl.Scrub.PPC64LE.Clear.all) = true := by lit_decide
+  exact List.all_eq_true.mp h v hv
+
 /-- `Spec.Dsa.parameterSearchApi`, over the Miller-Rabin round `v`. -/
-def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :
+def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     Registration Spec.Dsa.parameterSearchApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       suffix := v.suffix
       code := Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)
       verified := Gen.search_params v }
+    176 Impl.Scrub.PPC64LE.Clear.all
     (parameterSearchOut Impl.RsaKeyGen.TrialTable32.consts 176)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. The
-parameter search's code is too long for `decide`; the emitter refuses it if it
-is not scrubbed, as `ci/residue_allowlist.txt` no longer lists it. -/
-example : deriveKeyReg.residue.isSome ∧ randomSignPrevalidatedReg.residue.isSome ∧
-    generateKeyReg.residue.isSome ∧ validatePublicKeyReg.residue.isSome ∧
-    validatePrivateKeyReg.residue.isSome ∧ verifyPrevalidatedReg.residue.isSome := by
-  decide
+    (parameterSearchSide v hv)
 
 end VG.Proof.Dsa.PPC64LE.Scrub
