@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Proof.Framework.AArch64.Clears
@@ -82,6 +83,12 @@ structure BlocksImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The registers `enc.code`, `dec.code` and `expand.code` write: a caller's tail clears
+  them with its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide`
+  holds them to the code. -/
+  encClear : Impl.Residue.AArch64.Clear
+  decClear : Impl.Residue.AArch64.Clear
+  expandClear : Impl.Residue.AArch64.Clear
   /-- The implementation of `vg_aes_expand_key` that goes with it, which
   needs no more CPU features. -/
   expand : Impl.Aes.AArch64.ExpandKey
@@ -130,6 +137,18 @@ def scalar : BlocksImpl where
   decFree := nofun
   suffix := ""
   features := []
+  encClear := ⟨[.x1, .x2, .x3, .x6, .x9, .x10],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
+  decClear := ⟨[.x1, .x2, .x3, .x6, .x9, .x10],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30],
+    []⟩
+  expandClear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+    []⟩
   expand := .scalar
   expandNoFrames := Ctr32Impl.scalar.expandNoFrames
   expandOk := Ctr32Impl.scalar.expandOk
@@ -161,6 +180,17 @@ def aese : BlocksImpl where
   decFree := fun _ => Aese.decryptBlocks_written
   suffix := "_aes"
   features := ["aes"]
+  encClear := ⟨[.x2, .x3, .x6, .x7, .x9, .x13],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30],
+    []⟩
+  decClear := ⟨[.x2, .x3, .x6, .x7, .x9, .x13],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30],
+    []⟩
+  expandClear := ⟨[.x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13],
+    [.v0, .v1],
+    []⟩
   expand := .aese
   expandNoFrames := Ctr32Impl.aese.expandNoFrames
   expandOk := Ctr32Impl.aese.expandOk

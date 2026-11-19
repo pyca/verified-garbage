@@ -1,16 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Inst
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSAES-OAEP on PPC64LE, without secret residue
 
 `vg_rsa_oaep_encrypt_precomputed` and `vg_rsa_oaep_decrypt_precomputed`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`),
+each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
 which clears the volatile registers each may write and zeroes the stack
 their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
@@ -91,23 +93,23 @@ theorem decryptOut (ts : List FnTable) (stack : Nat) :
 hash function. -/
 def decryptReg (h : OK mvars) :
     Registration Spec.RsaOaep.decryptPrecomputedMdTablesApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
       verified := decP_ok mvars h }
+    3792 .all
     (decryptOut _ _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.RsaOaep.encryptMdTablesApi`, with the tables of every hash
 function. -/
 def encryptReg (h : OK mvars) : Registration Spec.RsaOaep.encryptMdTablesApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
       verified := enc_ok mvars h }
+    304 .all
     (encryptOut _ _)
-
-/- The side conditions of `withScrub` on these, whose code is too long for
-`decide`, the emitter checks: it refuses a function without a proof that
-`ci/residue_allowlist.txt` does not list. -/
+    (by dsimp only; lit_decide)
 
 end VG.Proof.RsaOaep.PPC64LE.Scrub

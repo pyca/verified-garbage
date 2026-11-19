@@ -2822,44 +2822,622 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	pop eax
-	mov eax, DWORD PTR [edi+856]
+	mov eax, DWORD PTR [edi+2728]
 	mov DWORD PTR [edi+2152], eax
-	mov eax, DWORD PTR [edi+860]
+	mov eax, DWORD PTR [edi+2732]
 	mov DWORD PTR [edi+2156], eax
-	mov eax, DWORD PTR [edi+864]
+	mov eax, DWORD PTR [edi+2736]
 	mov DWORD PTR [edi+2160], eax
-	mov eax, DWORD PTR [edi+868]
+	mov eax, DWORD PTR [edi+2740]
 	mov DWORD PTR [edi+2164], eax
-	mov eax, DWORD PTR [edi+872]
+	mov eax, DWORD PTR [edi+2744]
 	mov DWORD PTR [edi+2168], eax
-	mov eax, DWORD PTR [edi+876]
+	mov eax, DWORD PTR [edi+2748]
 	mov DWORD PTR [edi+2172], eax
-	mov eax, DWORD PTR [edi+880]
+	mov eax, DWORD PTR [edi+2752]
 	mov DWORD PTR [edi+2176], eax
-	mov eax, DWORD PTR [edi+884]
+	mov eax, DWORD PTR [edi+2756]
 	mov DWORD PTR [edi+2180], eax
-	mov eax, DWORD PTR [edi+888]
+	mov eax, DWORD PTR [edi+2760]
 	mov DWORD PTR [edi+2184], eax
-	mov eax, DWORD PTR [edi+892]
+	mov eax, DWORD PTR [edi+2764]
 	mov DWORD PTR [edi+2188], eax
-	mov eax, DWORD PTR [edi+896]
+	mov eax, DWORD PTR [edi+2768]
 	mov DWORD PTR [edi+2192], eax
-	mov eax, DWORD PTR [edi+900]
+	mov eax, DWORD PTR [edi+2772]
 	mov DWORD PTR [edi+2196], eax
-	mov eax, DWORD PTR [edi+904]
+	mov eax, DWORD PTR [edi+2776]
 	mov DWORD PTR [edi+2200], eax
-	mov eax, DWORD PTR [edi+908]
+	mov eax, DWORD PTR [edi+2780]
 	mov DWORD PTR [edi+2204], eax
-	mov eax, DWORD PTR [edi+912]
+	mov eax, DWORD PTR [edi+2784]
 	mov DWORD PTR [edi+2208], eax
-	mov eax, DWORD PTR [edi+916]
+	mov eax, DWORD PTR [edi+2788]
 	mov DWORD PTR [edi+2212], eax
-	mov eax, DWORD PTR [edi+920]
+	mov eax, DWORD PTR [edi+2792]
 	mov DWORD PTR [edi+2216], eax
-	mov eax, DWORD PTR [edi+924]
+	mov eax, DWORD PTR [edi+2796]
 	mov DWORD PTR [edi+2220], eax
-	mov esi, 576
+	mov eax, DWORD PTR [edi+2728]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2732]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2736]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2740]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2744]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2748]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2752]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2756]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2760]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2764]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2768]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2772]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2776]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2780]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2784]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2788]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2792]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2796]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 1
 28:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 28b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 2
+29:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 29b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 4
+210:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 210b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 8
+211:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 211b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 16
+212:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 212b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 32
+213:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 213b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 1
+214:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 214b
+	mov eax, 2728
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 65
+215:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 215b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 1
+216:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 216b
+	mov eax, 2728
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [edi+2152]
+	mov DWORD PTR [edi+2224], eax
+	mov eax, DWORD PTR [edi+2156]
+	mov DWORD PTR [edi+2228], eax
+	mov eax, DWORD PTR [edi+2160]
+	mov DWORD PTR [edi+2232], eax
+	mov eax, DWORD PTR [edi+2164]
+	mov DWORD PTR [edi+2236], eax
+	mov eax, DWORD PTR [edi+2168]
+	mov DWORD PTR [edi+2240], eax
+	mov eax, DWORD PTR [edi+2172]
+	mov DWORD PTR [edi+2244], eax
+	mov eax, DWORD PTR [edi+2176]
+	mov DWORD PTR [edi+2248], eax
+	mov eax, DWORD PTR [edi+2180]
+	mov DWORD PTR [edi+2252], eax
+	mov eax, DWORD PTR [edi+2184]
+	mov DWORD PTR [edi+2256], eax
+	mov eax, DWORD PTR [edi+2188]
+	mov DWORD PTR [edi+2260], eax
+	mov eax, DWORD PTR [edi+2192]
+	mov DWORD PTR [edi+2264], eax
+	mov eax, DWORD PTR [edi+2196]
+	mov DWORD PTR [edi+2268], eax
+	mov eax, DWORD PTR [edi+2200]
+	mov DWORD PTR [edi+2272], eax
+	mov eax, DWORD PTR [edi+2204]
+	mov DWORD PTR [edi+2276], eax
+	mov eax, DWORD PTR [edi+2208]
+	mov DWORD PTR [edi+2280], eax
+	mov eax, DWORD PTR [edi+2212]
+	mov DWORD PTR [edi+2284], eax
+	mov eax, DWORD PTR [edi+2216]
+	mov DWORD PTR [edi+2288], eax
+	mov eax, DWORD PTR [edi+2220]
+	mov DWORD PTR [edi+2292], eax
+	mov esi, 131
+217:
+	sub esi, 1
+	mov eax, 2152
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	test esi, esi
+	jne 217b
+	mov eax, 2224
+	mov ecx, 2152
+	mov edx, 2152
+	push eax
+	push ecx
+	push edx
+	push edi
+	call {vg_p521_mul_mod_n}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, 259
+218:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -2999,7 +3577,7 @@ vg_ecdsa_p521_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+2220], eax
 	test esi, esi
-	jne 28b
+	jne 218b
 	mov eax, 784
 	mov ecx, 2368
 	mov edx, 2944
@@ -3073,7 +3651,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	mov esi, 72
-29:
+219:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -3115,7 +3693,7 @@ vg_ecdsa_p521_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 29b
+	jne 219b
 	mov eax, 185150101
 	mov DWORD PTR [edi+2944], eax
 	mov eax, -2143473681
@@ -3261,10 +3839,10 @@ vg_ecdsa_p521_verify:
 	mov eax, 0
 	mov DWORD PTR [edi+1284], eax
 	mov esi, 83
-210:
+220:
 	sub esi, 1
 	cmp esi, 82
-	je 211f
+	je 221f
 	mov eax, esi
 	mov ecx, 7
 	mul ecx
@@ -3300,8 +3878,8 @@ vg_ecdsa_p521_verify:
 	xor eax, ebx
 	sub eax, ebx
 	mov ebx, eax
-	jmp 212f
-211:
+	jmp 222f
+221:
 	mov eax, esi
 	mov ecx, 7
 	mul ecx
@@ -3322,7 +3900,7 @@ vg_ecdsa_p521_verify:
 	xor eax, ebx
 	sub eax, ebx
 	mov ebx, eax
-212:
+222:
 	mov eax, esi
 	mov ecx, 9216
 	mul ecx
@@ -6110,7 +6688,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	cmp esi, 82
-	je 213f
+	je 223f
 	mov eax, esi
 	mov ecx, 7
 	mul ecx
@@ -6119,10 +6697,10 @@ vg_ecdsa_p521_verify:
 	movzx eax, BYTE PTR [ecx+4102]
 	sub eax, 1
 	mov ecx, eax
-	jmp 214f
-213:
+	jmp 224f
+223:
 	mov ecx, -1
-214:
+224:
 	mov eax, DWORD PTR [edi+1576]
 	mov edx, DWORD PTR [edi+2224]
 	xor edx, eax
@@ -6820,7 +7398,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1284], eax
 	test esi, esi
-	jne 210b
+	jne 220b
 	mov eax, DWORD PTR [edi+1072]
 	mov DWORD PTR [edi+3016], eax
 	mov eax, DWORD PTR [edi+1076]
@@ -7038,7 +7616,7 @@ vg_ecdsa_p521_verify:
 	mov eax, 0
 	mov DWORD PTR [edi+1284], eax
 	mov esi, 72
-215:
+225:
 	sub esi, 1
 	mov eax, edi
 	add eax, esi
@@ -7080,7 +7658,7 @@ vg_ecdsa_p521_verify:
 	and edx, 1
 	mov BYTE PTR [ebx+4103], dl
 	test esi, esi
-	jne 215b
+	jne 225b
 	mov eax, DWORD PTR [edi+280]
 	mov DWORD PTR [edi+1504], eax
 	mov eax, DWORD PTR [edi+284]
@@ -7475,7 +8053,7 @@ vg_ecdsa_p521_verify:
 	movdqu XMMWORD PTR [edx+192], xmm0
 	movdqu xmm0, XMMWORD PTR [edi+1712]
 	movdqu XMMWORD PTR [edx+208], xmm0
-216:
+226:
 	mov eax, 2800
 	mov ecx, 1288
 	mov edx, 1720
@@ -8100,7 +8678,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+1716]
 	mov DWORD PTR [edi+1500], eax
 	cmp esi, 7
-	jne 216b
+	jne 226b
 	mov eax, DWORD PTR [edi+280]
 	mov DWORD PTR [edi+1072], eax
 	mov eax, DWORD PTR [edi+284]
@@ -8210,7 +8788,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+348]
 	mov DWORD PTR [edi+1284], eax
 	mov esi, 176
-217:
+227:
 	sub esi, 1
 	mov eax, 1216
 	mov ecx, 1072
@@ -9159,7 +9737,7 @@ vg_ecdsa_p521_verify:
 	xor eax, edx
 	mov DWORD PTR [edi+1212], eax
 	cmp esi, 175
-	je 218f
+	je 228f
 	mov eax, esi
 	mov ecx, 3
 	mul ecx
@@ -9175,8 +9753,8 @@ vg_ecdsa_p521_verify:
 	add eax, eax
 	movzx edx, BYTE PTR [ecx+4096]
 	add eax, edx
-	jmp 219f
-218:
+	jmp 229f
+228:
 	mov eax, esi
 	mov ecx, 3
 	mul ecx
@@ -9192,7 +9770,7 @@ vg_ecdsa_p521_verify:
 	add eax, eax
 	movzx edx, BYTE PTR [ecx+4096]
 	add eax, edx
-219:
+229:
 	mov ebx, eax
 	add ebx, 1
 	mov edx, edi
@@ -10294,7 +10872,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+1500]
 	mov DWORD PTR [edi+1284], eax
 	test esi, esi
-	jne 217b
+	jne 227b
 	mov eax, 1072
 	mov ecx, 3016
 	mov edx, 1720
@@ -10956,7 +11534,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+1284]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 1
-220:
+230:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -10971,7 +11549,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 220b
+	jne 230b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11021,7 +11599,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 2
-221:
+231:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11036,7 +11614,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 221b
+	jne 231b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11086,7 +11664,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 4
-222:
+232:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11101,7 +11679,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 222b
+	jne 232b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11151,7 +11729,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 8
-223:
+233:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11166,7 +11744,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 223b
+	jne 233b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11216,7 +11794,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 16
-224:
+234:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11231,7 +11809,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 224b
+	jne 234b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11281,7 +11859,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 32
-225:
+235:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11296,7 +11874,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 225b
+	jne 235b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11346,7 +11924,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 64
-226:
+236:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11361,7 +11939,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 226b
+	jne 236b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11375,7 +11953,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	mov esi, 1
-227:
+237:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11390,7 +11968,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 227b
+	jne 237b
 	mov eax, 1216
 	mov ecx, 2152
 	mov edx, 2152
@@ -11440,7 +12018,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 129
-228:
+238:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11455,7 +12033,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 228b
+	jne 238b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11469,7 +12047,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	mov esi, 1
-229:
+239:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11484,7 +12062,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 229b
+	jne 239b
 	mov eax, 1216
 	mov ecx, 2152
 	mov edx, 2152
@@ -11534,7 +12112,7 @@ vg_ecdsa_p521_verify:
 	mov eax, DWORD PTR [edi+2220]
 	mov DWORD PTR [edi+2292], eax
 	mov esi, 259
-230:
+240:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11549,7 +12127,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 230b
+	jne 240b
 	mov eax, 2224
 	mov ecx, 2152
 	mov edx, 2152
@@ -11563,7 +12141,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	mov esi, 1
-231:
+241:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11578,7 +12156,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 231b
+	jne 241b
 	mov eax, 1216
 	mov ecx, 2152
 	mov edx, 2152
@@ -11592,7 +12170,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	mov esi, 2
-232:
+242:
 	sub esi, 1
 	mov eax, 2152
 	mov ecx, 2152
@@ -11607,7 +12185,7 @@ vg_ecdsa_p521_verify:
 	pop eax
 	pop eax
 	test esi, esi
-	jne 232b
+	jne 242b
 	mov eax, 1216
 	mov ecx, 2152
 	mov edx, 2152
