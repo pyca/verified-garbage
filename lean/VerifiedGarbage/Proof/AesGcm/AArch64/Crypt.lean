@@ -323,7 +323,7 @@ theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n)
   rcases hr with rfl | rfl | rfl
   · exact hd.ctx
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact L.cw'.sub_right (Lay.wSub (by have := L.hWn; omega))
 
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
@@ -416,7 +416,7 @@ theorem crCallG_of {to : Bool} {R : Nat} {s : State} (he : Env Wn Ctx St W SP s)
       (hoj.ctx.sub_left (Region.sub_prefix (by decide))) (hdj.st.sub_right (Lay.stSub (by decide))).symm
       (hoj.ok.st.sub_right (Lay.stSub (by decide))).symm
       ((hdo.sub_left (Offset.sub_base D (by omega_arith))).sub_right (Offset.sub_base O (by omega_arith)))
-      (hdj.w.sub_right (Lay.wSub (by decide))) (hoj.ok.w.sub_right (Lay.wSub (by decide))) hdj.rd hoj.wr
+      (hdj.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) (hoj.ok.w.sub_right (Lay.wSub (by decide))) hdj.rd hoj.wr
 
 omit L in
 /-- A call of `vg_aes_ctr32` in place, or of `vg_aes_ctr32_to`: what
@@ -602,7 +602,7 @@ theorem ctrCallG1_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat}
           rcases hr with rfl | rfl | rfl
           · exact L.st_st (.inr (by decide)) (by decide) (by decide)
           · exact disjoint_zero_right
-          · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
+          · exact L.st_wn (by have := L.hWn; omega) (.inr ⟨by decide, by decide⟩)
       refine ⟨by simp [bytesAt, xorKs], ?_⟩
       simp only [Nat.mul_zero, Nat.add_zero]
       exact (h.ctr hc₀).congr (by rw [gctr]; rfl) hks
@@ -640,7 +640,7 @@ theorem ctrCallG1_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat}
       rcases hr with rfl | rfl | rfl
       · exact hrest.st.sub_right (Lay.stSub (by decide))
       · exact (OutAt.disj h.outAt hn' (Nat.le_refl _) (by omega_arith)).symm
-      · exact hrest.w.sub_right (Lay.wSub (by decide))
+      · exact hrest.w.sub_right (Lay.wSub (by have := L.hWn; omega))
     rw [bytesAt_frame g.frame hdis (by omega_arith)]
     obtain e := congrArg (List.drop (16 * nb)) h.rest
     rw [bytesAt_drop _ _ h16, bytesAt_drop _ _ h16, add_ofNat_assoc,
@@ -835,7 +835,7 @@ theorem ctrCall2_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R : Nat} 
     rcases hr with rfl | rfl | rfl
     · exact hX.st.sub_right (Lay.stSub (by decide))
     · exact hX.st.sub_right (Lay.stSub (by split <;> omega_arith))
-    · exact hX.w.sub_right (Lay.wSub (by decide))
+    · exact hX.w.sub_right (Lay.wSub (by have := L.hWn; omega))
   obtain hdD : ∀ {X : Addr}, DataOk Wn St W s X n → ∀ (q : Addr) (l : Nat), Region.Sub ⟨q, l⟩ ⟨X, n⟩ → l ≤ n →
       bytesAt s₃.mem q l = bytesAt s.mem q l :=
     fun hX q l hs hl => bytesAt_frame g.frame (fun r hr => (dD hX r hr).sub_left hs) (by omega_arith)
