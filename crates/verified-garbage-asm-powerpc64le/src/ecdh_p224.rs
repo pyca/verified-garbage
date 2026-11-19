@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 28 bytes.
@@ -2011,7 +2013,7 @@ bl {vg_p224_mul_mod_p}
 bl {vg_p224_mul_mod_p}
 .base64 "oASAOIAEoDjAAMA4"
 bl {vg_p224_mul_mod_p}
-.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6aAEg+g4UIR8FADAOCg1jnyoBIPoOFCEfAwAwDgoNY58sASD6DhQhHwEAMA4KDWOfLgEg+g4UIR8AkaFeAAArpgChIV4AQCumALChXgCAK6YAwCOmAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wgAIBO""#,
+.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6aAEg+g4UIR8FADAOCg1jnyoBIPoOFCEfAwAwDgoNY58sASD6DhQhHwEAMA4KDWOfLgEg+g4UIR8AkaFeAAArpgChIV4AQCumALChXgCAK6YAwCOmAEAgDg4IER9EAAD6KYDCHwAAMPpCADj63gjg3wAAAA4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8IACATg==""#,
         vg_p224_mul_mod_p = sym super::ec_p224::vg_p224_mul_mod_p::vg_p224_mul_mod_p,
         vg_p224_add_mod_p = sym super::ec_p224::vg_p224_add_mod_p::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::ec_p224::vg_p224_sub_mod_p::vg_p224_sub_mod_p,
