@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X448.X86.Base
 public import VerifiedGarbage.Proof.Ed448.CombFacts
 import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.X448.X86.Exchange
+public import VerifiedGarbage.Proof.X448.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
@@ -15,11 +16,7 @@ public import VerifiedGarbage.TCB.X86.Print
 namespace VG.Artifacts.X448.X86
 
 def artifacts : List Artifact := [
-  Spec.X448.exchangeApi.artifact X86.target {
-    code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
-    verified := .unscrubbed Proof.X448.X86.Exchange.exchange_verified },
-  Spec.X448.x448BaseApi.artifact X86.target {
-    code := Impl.X448.X86.x448Base
-    verified := .unscrubbed (Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok) }]
+  Spec.X448.exchangeApi.artifact X86.target Proof.X448.X86.Scrub.exchangeReg,
+  Spec.X448.x448BaseApi.artifact X86.target Proof.X448.X86.Scrub.baseReg]
 
 end VG.Artifacts.X448.X86

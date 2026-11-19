@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.X25519.X86.Exchange
+public import VerifiedGarbage.Proof.X25519.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.X25519.X86.Base.Lit
@@ -22,11 +23,7 @@ import VerifiedGarbage.Proof.X25519.X86.Base.Lit
 namespace VG.Artifacts.X25519.X86
 
 def artifacts : List Artifact := [
-  Spec.X25519.exchangeApi.artifact X86.target {
-    code := Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32
-    verified := .unscrubbed Proof.X25519.X86.Exchange.exchange_verified },
-  Spec.X25519.x25519BaseApi.artifact X86.target {
-    code := Impl.X25519.X86.Base.x25519Base
-    verified := .unscrubbed Proof.X25519.X86.Base.x25519Base_verified }]
+  Spec.X25519.exchangeApi.artifact X86.target Proof.X25519.X86.Scrub.exchangeReg,
+  Spec.X25519.x25519BaseApi.artifact X86.target Proof.X25519.X86.Scrub.baseReg]
 
 end VG.Artifacts.X25519.X86

@@ -948,8 +948,3 @@ x86 vg_triple_des_ecb_encrypt
 x86 vg_triple_des_expand_key
 x86 vg_triple_des_ofb
 x86 vg_triple_des_ofb_final
-x86 vg_x25519_base
-x86 vg_x25519_exchange
-x86 vg_x448_base
-x86 vg_x448_exchange
-x86 vg_zeroize

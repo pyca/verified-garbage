@@ -14,7 +14,8 @@ around `b` that zeroes what it saves in `scratch` (`encryptZ`, `decryptZ` in
 changed; where `w = 0`, that code itself, and otherwise a call of it (the
 internal functions `vg_aes_cbc_encrypt_unwiped` and
 `vg_aes_cbc_decrypt_unwiped`, with the variant's suffix), then of
-`vg_zeroize` on the first `w` bytes of `scratch` (the sixth argument).
+`vg_zeroize`'s code (the internal `vg_zeroize_core`) on the first `w` bytes
+of `scratch` (the sixth argument).
 With AES-NI the CBC code is not around `b`: decryption's is that of
 `Impl/AesCbc/X86/Decrypt.lean`, which writes only the first 240 bytes of
 `scratch`, wrapped the same way, and encryption's is `encryptNi`, which
@@ -29,9 +30,10 @@ open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 
 /-- A call of `name`, whose code is `body`, with the six stack arguments,
-then of `vg_zeroize` on the first `n` bytes of `scratch`. -/
+then of `vg_zeroize`'s code (the internal `vg_zeroize_core`) on the first
+`n` bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) (n : Nat) : Prog isa :=
-  Impl.CallWipe.X86.callWipe 6 5 n name body "vg_zeroize" Impl.Zeroize.X86.zeroize
+  Impl.CallWipe.X86.callWipe 6 5 n name body "vg_zeroize_core" Impl.Zeroize.X86.zeroize
 
 /-- `vg_aes_cbc_encrypt` with the CBC code `body` (`encryptZ` around a blocks
 implementation, or `encryptNi`), whose variant's suffix is `suffix`,

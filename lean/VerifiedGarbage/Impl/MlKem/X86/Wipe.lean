@@ -12,9 +12,10 @@ public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 
 Each function of ML-KEM-768 and ML-KEM-1024 taking `scratch` calls its code
 (`Impl.MlKem.X86.keyGen`, …) as the internal function named for it, with
-the arguments it was given, then `vg_zeroize` on all of `scratch`, its last
-argument: 32768 bytes for ML-KEM-768 and 49152 for ML-KEM-1024, with no
-proven smaller bound on what the code writes there (`callWipe`).
+the arguments it was given, then `vg_zeroize`'s code (the internal
+`vg_zeroize_core`) on all of `scratch`, its last argument: 32768 bytes for
+ML-KEM-768 and 49152 for ML-KEM-1024, with no proven smaller bound on what
+the code writes there (`callWipe`).
 -/
 
 @[expose] public section
@@ -24,10 +25,10 @@ namespace VG.Impl.MlKem.X86.Wipe
 open VG.X86 VG.Impl.CallWipe.X86
 
 /-- A call of the code `body` of the function `fn`, whose arguments take `m`
-slots of stack, then of `vg_zeroize` on the first `n` bytes of the buffer
-whose address is the last of them. -/
+slots of stack, then of `vg_zeroize`'s code (the internal `vg_zeroize_core`)
+on the first `n` bytes of the buffer whose address is the last of them. -/
 def wiped (m n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
-  callWipe m (m - 1) n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.X86.zeroize
+  callWipe m (m - 1) n (fn ++ "_body") body "vg_zeroize_core" Impl.Zeroize.X86.zeroize
 
 /-- `vg_mlkem768_keygen`. -/
 def keyGen : Prog isa := wiped 4 32768 "vg_mlkem768_keygen" Impl.MlKem.X86.keyGen

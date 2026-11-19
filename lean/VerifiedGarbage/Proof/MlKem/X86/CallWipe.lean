@@ -1120,7 +1120,7 @@ theorem keyGen_wipe {body : Prog isa}
       (Scrubbed.keyGenContract abi 120) := by
   have e : slots Spec.MlKem.keyGenSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.keyGenSig) (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_keygen_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_keygen_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1173,7 +1173,7 @@ theorem encapsH_wipe {body : Prog isa}
       (Scrubbed.encapsHContract abi 136) := by
   have e : slots Spec.MlKem.encapsHSig = 6 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.encapsHSig) (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := [])
-    (i := 5) (j := 5) (n := 32768) (name := "vg_mlkem768_encaps_h_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 5) (j := 5) (n := 32768) (name := "vg_mlkem768_encaps_h_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1233,7 +1233,7 @@ theorem encaps_wipe {body : Prog isa}
       (Scrubbed.encapsContract abi 120) := by
   have e : slots Spec.MlKem.encapsSig = 5 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.encapsSig) (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := [])
-    (i := 4) (j := 4) (n := 32768) (name := "vg_mlkem768_encaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 4) (j := 4) (n := 32768) (name := "vg_mlkem768_encaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1285,7 +1285,7 @@ theorem decaps_wipe {body : Prog isa}
       (Scrubbed.decapsContract abi 120) := by
   have e : slots Spec.MlKem.decapsSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem.decapsSig) (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_decaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 32768) (name := "vg_mlkem768_decaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1335,7 +1335,7 @@ theorem keyGen1024_wipe {body : Prog isa}
       (Scrubbed.keyGen1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.keyGenSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.keyGenSig) (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_keygen_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_keygen_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1388,7 +1388,7 @@ theorem encapsH1024_wipe {body : Prog isa}
       (Scrubbed.encapsH1024Contract abi 136) := by
   have e : slots Spec.MlKem1024.encapsHSig = 6 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.encapsHSig) (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := [])
-    (i := 5) (j := 5) (n := 49152) (name := "vg_mlkem1024_encaps_h_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 5) (j := 5) (n := 49152) (name := "vg_mlkem1024_encaps_h_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1448,7 +1448,7 @@ theorem encaps1024_wipe {body : Prog isa}
       (Scrubbed.encaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.encapsSig = 5 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.encapsSig) (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := [])
-    (i := 4) (j := 4) (n := 49152) (name := "vg_mlkem1024_encaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 4) (j := 4) (n := 49152) (name := "vg_mlkem1024_encaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
@@ -1500,7 +1500,7 @@ theorem decaps1024_wipe {body : Prog isa}
       (Scrubbed.decaps1024Contract abi 120) := by
   have e : slots Spec.MlKem1024.decapsSig = 4 := by decide
   have h' := Verified.callWipe' (sig := Spec.MlKem1024.decapsSig) (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := [])
-    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_decaps_body") (zname := "vg_zeroize") h Proof.Zeroize.X86.verified
+    (i := 3) (j := 3) (n := 49152) (name := "vg_mlkem1024_decaps_body") (zname := "vg_zeroize_core") h Proof.Zeroize.X86.verified
     (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) hsp hd zeroize_noSp zeroize_stack
     (Nat.zero_le _)
     (by
