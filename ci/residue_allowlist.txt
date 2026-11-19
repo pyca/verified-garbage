@@ -515,7 +515,6 @@ powerpc64le vg_aes_siv_encrypt
 powerpc64le vg_aes_siv_init
 powerpc64le vg_aes_xts_decrypt_unit
 powerpc64le vg_aes_xts_encrypt_unit
-powerpc64le vg_argon2
 powerpc64le vg_blake2b_finalize
 powerpc64le vg_blake2b_init
 powerpc64le vg_blake2b_update
@@ -539,7 +538,6 @@ powerpc64le vg_ed448_sign_cached
 powerpc64le vg_ed448_verify
 powerpc64le vg_rc4_apply
 powerpc64le vg_rc4_init
-powerpc64le vg_scrypt
 powerpc64le vg_sm4_ctr_final
 powerpc64le vg_sm4_gcm_init
 powerpc64le vg_sm4_gcm_open

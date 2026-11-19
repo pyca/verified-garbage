@@ -9,6 +9,8 @@
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -155,7 +157,7 @@ bne %cr0, 22b
 bne %cr0, 228b
 .base64 "2AF+6AAEgDjwAb7o+AHe6AAA/zg="
 bl {vg_argon2_hprime}
-.base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOCAAgE4=""#,
+.base64 "aAAe6KYDCHxwAJ7reAC+64gA/uuAAN7rUAEhOAAAADiB/iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4gAEhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkgAIBO""#,
         vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
