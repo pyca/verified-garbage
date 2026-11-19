@@ -44,14 +44,6 @@ meta import VerifiedGarbage.Spec.EcKey.Generic
 meta import VerifiedGarbage.Spec.Ecdh
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.EcKey.X86.Scrub
-meta import VerifiedGarbage.Proof.EcKey.X86.Scrub
-public import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
-meta import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
 
 /-! ### `Ecdh.X86.BrainpoolP320r1.Contract`, which only this module used -/
 
@@ -313,14 +305,5 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     simpa only [ecdhWide, ecdhX86, arg_withRegions, State.withRegions_mem, State.withRegions_gpr] using h
   · intro s t _ _ h
     simpa only [ecdhWide, ecdhX86, arg_withRegions, State.withRegions_gpr] using h
-
-/-- `vg_ecdh_brainpoolp320r1`, scrubbed (`X86.Scrub.scrubFOf`), returning without
-secret residue. -/
-def ecdhReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdh.BrainpoolP320r1.exchangeApi X86.target :=
-  X86.Scrub.scrubFOf {
-      code := exchangeBrainpoolP320r1
-      verified := ecdh_verified hL }
-    (Proof.EcKey.X86.Scrub.exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.BrainpoolP320r1

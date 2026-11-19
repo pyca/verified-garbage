@@ -39,9 +39,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
-
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.EcKey.X86.Scrub
+public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP320r1.Scrub
 
 /-! # ECDH over brainpoolP320r1 (SP 800-56A) on x86 -/
 
@@ -52,7 +50,6 @@ namespace VG.Artifacts.EcdhBrainpoolP320r1.X86
 open VG.Proof.BrainpoolP320r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact X86.target
-    (Proof.Ecdh.X86.BrainpoolP320r1.ecdhReg hasLaw.law)]
+  Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact X86.target (Proof.Ecdh.X86.BrainpoolP320r1.Scrub.exchangeReg hasLaw.law)]
 
 end VG.Artifacts.EcdhBrainpoolP320r1.X86

@@ -23,14 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.EcKey.X86.Scrub
-meta import VerifiedGarbage.Proof.EcKey.X86.Scrub
 
 /-!
 # brainpoolP320r1 public keys on x86 (32-bit): `Verified`
@@ -255,15 +247,5 @@ theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     · exact a0
     · exact a1
     · exact a2
-
-/-- `vg_ec_brainpoolp320r1_public_key`, scrubbed: its code, then the zeroing of
-the stack its contract reserves and the clearing of the registers a callee
-may change (`X86.Scrub.scrubFOf`), returning without secret residue. -/
-def pkReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.EcKey.BrainpoolP320r1.publicKeyApi X86.target :=
-  X86.Scrub.scrubFOf {
-      code := publicKeyBrainpoolP320r1
-      verified := pk_verified hL }
-    (Proof.EcKey.X86.Scrub.publicKeyOut Spec.EcKey.BrainpoolP320r1.inst 20 brainpoolp320r1Comb.combConsts)
 
 end VG.Proof.EcKey.X86.BrainpoolP320r1

@@ -27,14 +27,6 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.EcKey.X86.Scrub
-meta import VerifiedGarbage.Proof.EcKey.X86.Scrub
 
 @[expose] public section
 namespace VG.Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress
@@ -74,14 +66,5 @@ theorem sat : ∃ s, (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContrac
 theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     Verified target code (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract abi 28) :=
   decompress_verified (brainpoolp320r1_ok) Spec.EcKey.BrainpoolP320r1.inst rfl Impl.EcKey.Compressed.rootThreeModFour (candidateThree_correct (brainpoolp320r1_ok) (by decide +kernel)) (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sp ct sat
-
-/-- `vg_ec_brainpoolp320r1_decompress_public_key`, scrubbed (`X86.Scrub.scrubFOf`),
-returning without secret residue. -/
-def reg (hL : Proof.Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi X86.target :=
-  X86.Scrub.scrubFOf {
-      code := code
-      verified := verified hL }
-    (Proof.EcKey.X86.Scrub.decompressOut _ _ [])
 
 end VG.Proof.EcKey.Compressed.X86.BrainpoolP320r1Decompress
