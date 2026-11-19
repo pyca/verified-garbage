@@ -16,13 +16,18 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Dsa.X86.Comb.Setup
+import VerifiedGarbage.Proof.Mont.X86.PublicPowerTiming
+import VerifiedGarbage.Proof.Mont.X86.CombDigitMath
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # The product of two powers of DSA's verification on IA-32
 
 Untrusted: everything here is checked by Lean. `Pow.core2` computes
 `g^u · y^v mod m` in one pass over both exponents (`core2_ok`), and two runs
 of it from the same stack pointer and working space leak the same trace
-(`core2_relCT`).
+(`core2_relCT`); its context's setup branches on the top bit of the
+modulus, which the runs share (`CoreIn2`).
 
 The numbers it keeps between its pieces are *cells* of the working space
 (`Cell`): the four entries (`R` in `cellR`, `g R` in slot 5, `y R` in slot 4,
@@ -695,9 +700,9 @@ theorem core2_ok {s : State} {base : Addr} {size n e m : Nat}
           wordsVal s.mem base (slot n 7) n ^ val32 s.mem base (exp2 n) e % m ∧
       OutsS base (s.gpr .esp) (coreRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have nw := hs.nowrap
-  unfold core2 setup
-  refine WP.seq (WP.seq (WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega) (by omega) (by omega) hz hv hm1
-    hodd) fun u ⟨Cu, _, Xu, Ou, Ku⟩ => ?_))
+  unfold core2 setup2
+  refine WP.seq (WP.seq (WP.mono (VG.Proof.Dsa.X86.Comb.seed_ok hs (by omega) (by omega) hz hv hm1 hodd)
+    fun u ⟨Cu, _, Xu, Ou, Ku⟩ => ?_))
   obtain Su : St n m size base s u := ⟨Cu, R, Ku, (OutsS.of_outs Ou).core (setupRanges_core n)⟩
   -- The setup writes the header and slots 1 to 4.
   obtain keep₀ : ∀ (c : Cell), slot n 5 ≤ c.off n →
@@ -1003,16 +1008,73 @@ theorem wc_loop2 (hn : 6 ≤ n) (he0 : 0 < e) (he : e ≤ 2 * n) (j : Nat) :
       exact ⟨j - 1, by omega, by omega, by omega, W₁, W₂⟩
   · exact VG.RelCT.of_false fun _ _ h => hj ⟨h.1, h.2.1⟩
 
-theorem core2_relCT (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) :
-    RelCT isa (Both (CoreIn n base sp)) (core2 n e) (fun _ _ => True) := by
+/-- What `core2` needs of a run on entry: as `CoreIn`, with the working
+space's size and the modulus, which two runs share: the modulus is public. -/
+def CoreIn2 (n : Nat) (base : Addr) (sp : BitVec 32) (size m : Nat) (u : State) : Prop :=
+  Scr u base size ∧ CallRoom sp base size ∧ u.gpr .esp = sp ∧ contextBytes n ≤ size ∧
+    wordsVal u.mem base (slot n 0) n = m ∧ 1 < m ∧ m % 2 = 1
+
+theorem contextStart_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint false) (contextStart n)
+      (.seq (workspaceTaint false) (.block []) (oneHint false)) = some (zerosTaint false) :=
+  exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl) (one_check false n (slot n 3))
+
+/-- The context's seed: its branch is on the top word of the modulus, which
+the two runs share. -/
+theorem seed_relCT {size m : Nat} (hn : 0 < n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (VG.Impl.Dsa.X86.Comb.seed n) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  have b0 := slot_bound (n := n) (i := 0) (by decide)
+  simp only [stride] at b0
+  by_cases hsz : contextBytes n ≤ size
+  case neg => exact VG.RelCT.of_false fun _ _ h => hsz h.1.2.2.2.1
+  unfold VG.Impl.Dsa.X86.Comb.seed
+  refine RelCT.seq (R := fun (s t : State) => Context n m base size s ∧ Context n m base size t) ?_ ?_
+  · intro s t tr ur sf tf ⟨⟨hs, _, _, hz, hv, hm1, hodd⟩, ⟨ht, _, _, _, hv', _, _⟩⟩ Es Et
+    have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (hs.edi_toNat.trans ht.edi_toNat.symm)
+    exact ⟨((RelCT.taint (A := taint) (hc := .seq (workspaceTaint false) (.block []) (oneHint false))
+        (workspaceTaint false)
+        (fun (a b : State) (h : a.gpr .edi = b.gpr .edi) => agree_regs (rs := [.edi]) fun r hr => by
+          obtain rfl := List.mem_singleton.mp hr; exact h)
+        (by rw [contextStart_check]; rfl)) _ _ _ _ _ _ DI Es Et).1,
+      (wp_result (contextStart_ok hs hn hz hv hm1 hodd) Es).1,
+      (wp_result (contextStart_ok ht hn hz hv' hm1 hodd) Et).1⟩
+  · apply (publicPower_relCT (contextMod n) (slot n 2) (slot n 4) base size (by
+      change slot n 0 + 4 * (2 * n - 1) + 4 ≤ size
+      omega)).mono
+    · intro s t ⟨S, T⟩
+      refine ⟨S.scr, T.scr, ?_⟩
+      change w32 s.mem base (slot n 0 + 4 * (2 * n - 1)) = w32 t.mem base (slot n 0 + 4 * (2 * n - 1))
+      rw [← VG.Proof.Mont.X86.Comb.val32_word (by omega : 2 * n - 1 < 2 * n),
+        ← VG.Proof.Mont.X86.Comb.val32_word (by omega : 2 * n - 1 < 2 * n),
+        ← wordsVal_eq_val32, ← wordsVal_eq_val32,
+        show wordsVal s.mem base (slot n 0) n = m from S.modulus.val,
+        show wordsVal t.mem base (slot n 0) n = m from T.modulus.val]
+    · exact fun _ _ h => h
+
+theorem wk_seed2 {size m : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (VG.Impl.Dsa.X86.Comb.seed n) (Both (Wk n base sp none [4])) := by
+  have W : ∀ u, CoreIn2 n base sp size m u → WP isa (VG.Impl.Dsa.X86.Comb.seed n) u (Wk n base sp none [4]) := by
+    intro u ⟨hs, R, e', hz, hv, hm1, hodd⟩
+    refine WP.mono (VG.Proof.Dsa.X86.Comb.seed_ok hs (by omega) (by omega) hz hv hm1 hodd)
+      fun v ⟨Cv, _, Xv, Ov, Kv⟩ => ?_
+    rw [← e'] at R
+    refine ⟨size, m, u, ⟨Cv, R, Kv, (OutsS.of_outs Ov).core (setupRanges_core n)⟩, e', ?_, fun b hb => ?_⟩
+    · intro c h; cases h
+    · rw [List.mem_singleton.mp hb, Xv]
+      exact Nat.mod_lt _ (by omega)
+  intro s t tr ur sf tf H E F
+  exact ⟨(seed_relCT (by omega) _ _ _ _ _ _ H E F).1, wp_result (W s H.1) E, wp_result (W t H.2) F⟩
+
+theorem core2_relCT {size m : Nat} (hn : 6 ≤ n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) :
+    RelCT isa (Both (CoreIn2 n base sp size m)) (core2 n e) (fun _ _ => True) := by
   have toWc : ∀ u : State, Wk n base sp none [4] u → Wc n base sp none [.y] u := by
     rintro u ⟨size, m, s₀, S, hsp, c, B⟩
     exact ⟨size, m, s₀, S, hsp, c, fun x hx => by rw [List.mem_singleton.mp hx]; exact B 4 (by simp)⟩
   have toWk : ∀ u : State, Wc n base sp (some 0) loopCells u → Wk n base sp (some 0) [] u := by
     rintro u ⟨size, m, s₀, S, hsp, c, _⟩
     exact ⟨size, m, s₀, S, hsp, c, fun _ h => nomatch h⟩
-  unfold core2 setup
-  refine VG.RelCT.seq (VG.RelCT.seq (wk_seed (by omega) hn48) (wk_squarings (by omega) 6)) ?_
+  unfold core2 setup2
+  refine VG.RelCT.seq (VG.RelCT.seq (wk_seed2 (by omega) hn48) (wk_squarings (by omega) 6)) ?_
   refine VG.RelCT.seq ((wc_table hn hen).mono (fun _ _ h => ⟨toWc _ h.1, toWc _ h.2⟩) fun _ _ h => h) ?_
   refine VG.RelCT.seq (wc_start2 (32 * e)) ?_
   refine VG.RelCT.seq ((wc_loop2 hn he hen (32 * e)).mono (fun _ _ h => ⟨by omega, by omega, h⟩) fun _ _ h => h) ?_
