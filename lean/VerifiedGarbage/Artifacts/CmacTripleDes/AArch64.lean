@@ -1,11 +1,10 @@
 module
 
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Scrub
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64 -/
 
@@ -13,17 +12,15 @@ import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 
 namespace VG.Artifacts.CmacTripleDes.AArch64
 
-open VG.Proof.CmacTripleDes.AArch64
-
 def artifacts : List Artifact := [
-  Spec.Cmac.tdesStreamInitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.streamInit
-    verified := Proof.CmacTripleDes.Stream.AArch64.init_framed } (Proof.CmacTripleDes.AArch64.Scrub.initOk 640)),
-  Spec.Cmac.tdesAbsorbApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 688 .x4 Impl.CmacTripleDes.Stream.AArch64.absorb
-    verified := Proof.CmacTripleDes.Stream.AArch64.absorb_framed } (Proof.CmacTripleDes.AArch64.Scrub.absorbOk 688)),
-  Spec.Cmac.tdesFinishApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.finish
-    verified := Proof.CmacTripleDes.Stream.AArch64.finish_framed } (Proof.CmacTripleDes.AArch64.Scrub.finishOk 640))]
+  Spec.Cmac.tdesStreamInitApi.artifact AArch64.target {
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.init
+    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.init },
+  Spec.Cmac.tdesAbsorbApi.artifact AArch64.target {
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.absorb
+    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.absorb },
+  Spec.Cmac.tdesFinishApi.artifact AArch64.target {
+    code := Impl.CmacTripleDes.Stream.AArch64.Fn.finish
+    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.finish }]
 
 end VG.Artifacts.CmacTripleDes.AArch64

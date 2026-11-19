@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Streaming TDEA-CMAC: AArch64 implementation
@@ -149,3 +151,40 @@ def finPre : Prog isa := .seq (.block finishPre) lastLen
 def finish : Prog isa := .seq finPre Impl.CmacTripleDes.AArch64.finalize
 
 end VG.Impl.CmacTripleDes.Stream.AArch64
+
+namespace VG.Impl.CmacTripleDes.Stream.AArch64.Fn
+
+open VG.AArch64
+
+/-- `init` as emitted: its code with its scratch space on the stack
+(`Impl.StackScratch.AArch64.withStackScratch`), then the registers it writes
+that the calling convention does not preserve cleared and its 640 bytes of
+stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns without
+secret residue. -/
+def init : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 640 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+      .v26, .v27, .v28, .v29, .v30, .v31],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 640 .x3 VG.Impl.CmacTripleDes.Stream.AArch64.streamInit)
+
+/-- `absorb` as emitted, as `init`, with 688 bytes of stack. -/
+def absorb : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 688 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+      .v26, .v27, .v28, .v29, .v30, .v31],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 688 .x4 VG.Impl.CmacTripleDes.Stream.AArch64.absorb)
+
+/-- `finish` as emitted, as `init`. -/
+def finish : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 640 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+      .v26, .v27, .v28, .v29, .v30, .v31],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 640 .x3 VG.Impl.CmacTripleDes.Stream.AArch64.finish)
+
+end VG.Impl.CmacTripleDes.Stream.AArch64.Fn
