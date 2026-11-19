@@ -28,7 +28,7 @@ Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamFinish.lean`): `finTag o` pads and absorbs the buffered
 bytes (`flush`), of the text if there is any and else of the additional
 data, then puts the tag into `W + o` (`tag`), for `aad_len` (`s10`) bytes
-of additional data and `text_len` (`s11`) of text (`finTag_ok`).
+of additional data and `text_len` (`s11`) of text (`finTagB_ok`).
 -/
 
 @[expose] public section
@@ -66,66 +66,6 @@ structure FinOut (V : Reg → BitVec 64) (sp : Addr) (o R : Nat) (H : Block) (a 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
-
-theorem finTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
-    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H)
-    (ha : a.length % 16 = (V .s10).toNat % 16) (hP : (V .s11).toNat = ct.length) :
-    WP isa (finTag o) s (FinOut V sp o R H a ct s.mem) := by
-  have h22 := he.fr .s10 (by decide)
-  have h23 := he.fr .s11 (by decide)
-  -- `s6`: the length of the buffered bytes, modulo 16
-  have mid : WP isa (.ite (.zero .s11) (.block [.logicImm .and .s6 .s10 15])
-      (.block [.logicImm .and .s6 .s11 15])) s fun s₂ =>
-      s₂.gpr .s6 = BitVec.ofNat 64 ((ghashInput a ct).length % 16) ∧
-        (∀ r, r ≠ .s6 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
-    refine WP.ite _ (eval_zero (he.ofNat (r := .s11) (by decide)) (V .s11).isLt) (fun ht => ?_) (fun hf => ?_)
-    · have hc : ct = [] := List.eq_nil_of_length_eq_zero (by rw [← hP]; simpa using ht)
-      have e : (ghashInput a ct).length % 16 = (V .s10).toNat % 16 := by
-        rw [hc, Proof.Gcm.ghashInput_nil, ha]
-      have hand := and15 (V .s10)
-      rw [e]
-      crun [Int.reduceNatCast', h22, hand]
-      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
-    · have hc : ct ≠ [] := fun e => by subst e; simp only [List.length_nil] at hP; simp [hP] at hf
-      have e : (ghashInput a ct).length % 16 = (V .s11).toNat % 16 := by
-        rw [Proof.Gcm.ghashInput_of_ne hc, List.length_append, List.length_append, Proof.Gcm.length_zeros, hP]
-        have := Proof.Gcm.length_pad_mod a.length; omega_using [this]
-      have hand := and15 (V .s11)
-      rw [e]
-      crun [Int.reduceNatCast', h23, hand]
-      exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
-  refine WP.seq (WP.mono mid fun s₂ ⟨h26₂, hg₂, hk₂⟩ => ?_)
-  have he₂ := he.keep (fun r hr => hg₂ r (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
-  refine WP.seq (WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := ghashInput a ct) (H := H)
-    ⟨he₂, by rw [hk₂.mem]; exact hH⟩ h26₂) fun s₄ hfl => ?_)
-  have hf₄ := hfl.frame
-  rw [hk₂.mem] at hf₄
-  -- the lengths
-  have h₅ : WP isa (.block [mov .s4 .s10, mov .s6 .s11]) s₄ fun s₅ =>
-      s₅.gpr .s4 = V .s10 ∧ s₅.gpr .s6 = V .s11 ∧ (∀ r, r ≠ .s4 → r ≠ .s6 → s₅.gpr r = s₄.gpr r) ∧
-        Keeps s₄ s₅ := by
-    have e22 := hfl.env.fr .s10 (by decide)
-    have e23 := hfl.env.fr .s11 (by decide)
-    crun [Int.reduceNatCast', mov, e22, e23]
-    exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
-  refine WP.seq (WP.mono h₅ fun s₅ ⟨h24₅, h26₅, hg₅, hk₅⟩ => ?_)
-  have he₅ := hfl.env.keep (fun r hr => hg₅ r (by revert r; decide) (by revert r; decide)) hk₅.sp hk₅.rd hk₅.wr
-  refine WP.mono (tag_ok L ho he₅ h28 hR (H := H) (by rw [hk₅.mem]; exact hfl.hH) rfl) fun s₆ tg => ?_
-  rw [h24₅, h26₅, hP, hk₅.mem] at tg
-  refine ⟨tg.env, fun hab => ?_, (t_tagFrame hf₄).trans tg.frame⟩
-  rw [tg.out]
-  have hw := (hfl.abs (by rw [hk₂.mem]; exact hab)).whole_eq (by
-    simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
-  rw [show ghashInput a ct ++ zeros (padLen (ghashInput a ct).length) = padded a ct from rfl] at hw
-  rw [hw, ciph_frame hf₄ (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact L.cs.sub_right (Lay.stSub (by decide))
-      · exact L.cw'.sub_right (Lay.wSub (by decide))
-      · exact L.cw'.sub_right (Lay.wSub (by decide))
-      · exact he.stk'.c) hR,
-    blockAt_frame hf₄ (j_tFrame L he.stk')]
 
 
 theorem finTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a ct : List Byte} {s : State}
@@ -203,13 +143,13 @@ end
 end
 
 /-!
-# AES-GCM on RISC-V: `vg_aes_gcm_stream_finish`
+# AES-GCM on RISC-V: the body of `vg_aes_gcm_stream_finish_bitsliced`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamFinish.lean`): the entry saves our caller's
 registers and keeps the arguments in `s1`–`s3` and `s9`–`s11` (`fin1_wp`); `finTag 0`
 puts the tag into `W` (`fin_tag`, `fin_out`), and `tagOut` copies it to
-`tag` (`streamFinish_wp`).
+`tag` (`streamFinishB_wp`).
 -/
 
 @[expose] public section
@@ -459,9 +399,5 @@ theorem streamFinishB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List 
     fun i hi => WP.mono (run (a := i.2.1) (ct := i.2.2) (by rw [hi.2.1, toNat_mod16]) hi.2.2)
       fun s' hh => hh.2 i.1 hi.1 hi.2.1)
     fun s' hh => ⟨hh.1, fun iv a c hs hl hp => hh.2 ⟨iv, a, c⟩ ⟨hs, hl, hp⟩⟩
-
-theorem streamFinish_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamFinishRISCV64.pre s₀) :
-    WP isa streamFinish s₀ fun s' => abiPreserved s₀ s' ∧ streamFinishRISCV64.post s₀ s' :=
-  streamFinishB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

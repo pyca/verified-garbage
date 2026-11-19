@@ -26,14 +26,14 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Run
 section
 
 /-!
-# AES-GCM on RISC-V: the pieces of `vg_aes_gcm_seal` and `vg_aes_gcm_open`
+# AES-GCM on RISC-V: the pieces of `vg_aes_gcm_seal_bitsliced` and `vg_aes_gcm_open_bitsliced`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTCrypt.lean`): both keep a streaming state at `W + 16`;
 `oneAad` writes `J₀` and absorbs the additional data, padded (`oneAad_ok`),
 `oneCrypt` runs counter mode over the data from the first counter block
-(`oneCrypt_ok`), and `oneTag o` absorbs the data as ciphertext, padded, then
-the lengths block, and writes the tag to `W + o` (`oneTag_ok`). The pieces
+(`oneCryptB_ok`), and `oneTag o` absorbs the data as ciphertext, padded, then
+the lengths block, and writes the tag to `W + o` (`oneTagB_ok`). The pieces
 are stated for an environment `Env V sp s`, whose registers the entries of
 `seal` and `open` fill, and the addresses of the additional data and the
 data, `A` and `D`, which they keep in `W` (at `aadO` and `dataO`).
@@ -308,24 +308,6 @@ theorem oneCryptB_ok {bs o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env 
   have c0 := Proof.Gcm.ctr_zero s.mem _ (V .s1 + BitVec.ofNat 64 64) (ciphOf s.mem (V .s2) R) hcb
   exact ⟨co.env, by rw [co.out c0, ← Proof.Gcm.gctr_eq], co.frame⟩
 
-theorem oneCryptWith_ok {o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env V sp s)
-    (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat) (hs : DataOk (V .s1) (V .s0) s S (V .s11).toNat)
-    (ha : Alias o S D (V .s11).toNat)
-    (hδ : o = true → V .s9 = D - S)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = S)
-    {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
-    WP isa (oneCryptWith o) s (OC V sp R icb S D s.mem) :=
-  oneCryptB_ok L (bs := false) he h28 hR hd hs ha hδ hDs hcb Bool.noConfusion
-
-/-- `oneCrypt`: in place. -/
-theorem oneCrypt_ok {R : Nat} {D : Addr} {s : State} (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R)
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D)
-    {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
-    WP isa oneCrypt s (OC V sp R icb D D s.mem) :=
-  oneCryptWith_ok L (o := false) he h28 hR hd hd.ok rfl (fun h => Bool.noConfusion h) hDs hcb
-
 end
 
 theorem padded_eq (a c : List Byte) :
@@ -482,14 +464,6 @@ theorem oneTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho :
     · exact t_otSub r hr
 
 
-theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {D : Addr} {s : State}
-    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
-    (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
-    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) :
-    WP isa (oneTag o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) :=
-  oneTagB_ok L (bs := false) ho he h28 hR hH hl hab hd hDs (S' := 0) (D' := 0) (n' := 0) Bool.noConfusion
 end
 
 end VG.Proof.AesGcm.RISCV64
@@ -499,11 +473,12 @@ end
 end
 
 /-!
-# AES-GCM on RISC-V: `vg_aes_gcm_seal`
+# AES-GCM on RISC-V: the entry of `vg_aes_gcm_seal_bitsliced`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTCrypt.lean`): the entry, `oneAad`, `oneCrypt`, `oneTag 0`
-and the tag copied out to `tag` (`seal_wp`).
+and the tag copied out to `tag` (`sealBs_wp`, `OneBs.lean`): the layout the
+entry gives and what it keeps.
 -/
 
 @[expose] public section
@@ -570,155 +545,5 @@ theorem saved_otFrame {sp : Addr} (hk : StkOk c st w sp) {o : Nat} (ho : o = 0 �
   · exact saved_below hk
 
 end
-
-theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.pre s₀) :
-    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealRISCV64.post s₀ s' := by
-  have h' : sealPre s₀ := h
-  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR, hstk,
-    ca, wa⟩ := h'
-  obtain L₀ := oneLay fc fW dcW ca wa
-  obtain hk₀ : StkOk (s₀.gpr .a0) (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp :=
-    one_stk hstk (by simp) (by simp)
-  obtain hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  obtain hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  obtain hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  obtain hTd : (⟨s₀.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (oneR (stackArg s₀ 1)) :=
-    ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
-      (Region.sub_prefix (show 8 ≤ 8 * 2 by decide))).symm
-  refine WP.seq (WP.mono (one1_wp (off := 8) (W := stackArg s₀ 1) (T := stackArg s₀ 0) (.inl rfl) hW wa hstk.1
-    (args_in hA (by decide) (i := 1) (by decide)) rfl (args_in hA (by decide) (i := 0) (by decide)) rfl hTd)
-    fun s₁ h1 => ?_)
-  obtain he₁ := one_env h1 hC hW hk₀
-  obtain L := L₀.v h1.s2 h1.s1 h1.s0
-  have f₁ := h1.frame
-  have hk₁ := h1.keeps
-  obtain cO : ∀ r ∈ [oneR (stackArg s₀ 1)], (⟨s₀.gpr .a0, 256⟩ : Region).Disjoint r := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact dcW.sub_right (Lay.wSub (by decide))
-  -- `oneAad`
-  obtain hH₁ : blockAt s₁.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .a0) := by
-    rw [h1.s2]; exact ctxH_keep f₁ cO
-  obtain hN : DataOk (s₁.gpr .s1) (s₁.gpr .s0) s₁ (s₀.gpr .a2) (s₀.gpr .a3).toNat := by
-    rw [h1.s1, h1.s0]
-    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)), (s₀.gpr .a3).isLt,
-      fn, dnW.sub_right (Lay.wSub (by decide)), dnW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
-  obtain hAd : DataOk (s₁.gpr .s1) (s₁.gpr .s0) s₁ (s₀.gpr .a4) (s₁.gpr .s10).toNat := by
-    rw [h1.s1, h1.s0, h1.s10]
-    exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)), (s₀.gpr .a5).isLt,
-      fa, daW.sub_right (Lay.wSub (by decide)), daW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
-  obtain toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
-  refine WP.seq (WP.mono (WP.with_rdwr (oneAad_ok L he₁ hH₁ h1.s4 (by rw [h1.s5]; exact toN)
-    (by rw [h1.s7]; exact toN) hN hAd (by rw [h1.s0]; exact h1.aad))) fun s₂ ⟨oa, rd₂, wr₂, sp₂⟩ => ?_)
-  -- `oneCrypt`
-  obtain hd₂ : DataW (s₁.gpr .s2) (s₁.gpr .s1) (s₁.gpr .s0) s₂ (s₀.gpr .a6) (s₁.gpr .s11).toNat := by
-    rw [h1.s2, h1.s1, h1.s0, h1.s11]
-    obtain hDw : Covers [⟨s₀.gpr .a6, (s₀.gpr .a7).toNat⟩] s₂.wr := by
-      rw [wr₂, hk₁.wr, hwr]; exact covers_mem (by simp)
-    exact ⟨⟨covers_left hDw, (s₀.gpr .a7).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW,
-      by rw [sp₂, hk₁.sp]; exact hstk.buf (by simp)⟩, hDw, dcd⟩
-  obtain h28 : s₁.gpr .s3 = BitVec.ofNat 64 (s₀.gpr .a1).toNat := by rw [h1.s3]; exact toN
-  obtain hD₂s : s₂.mem.readW (s₁.gpr .s0 + BitVec.ofNat 64 dataO) 64 = s₀.gpr .a6 := by
-    rw [slot_keep oa.frame (slot_j0 L he₁.stk' (by decide)), h1.s0]; exact h1.dat
-  refine WP.seq (WP.mono (WP.with_rdwr (oneCrypt_ok L oa.env h28 hR hd₂ hD₂s oa.cb))
-    fun s₃ ⟨oc, rd₃, wr₃, sp₃⟩ => ?_)
-  -- `oneTag 0`
-  obtain hH₃ : blockAt s₃.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = ctxH s₀.mem (s₀.gpr .a0) := by
-    rw [blockAt_frame oc.frame (fun r hr => (ctx_crFrame L hd₂ r hr).sub_left (Lay.ctxSub (by decide)))]
-    exact oa.hH
-  obtain hb := Nat.mod_lt (bytesAt s₁.mem (s₀.gpr .a4) (s₁.gpr .s10).toNat ++
-    zeros (padLen (bytesAt s₁.mem (s₀.gpr .a4) (s₁.gpr .s10).toNat).length)).length (show 16 > 0 by decide)
-  obtain hab₃ := oa.abs.congr (blockAt_frame oc.frame (stp_crFrame L hd₂ (by decide)))
-    (bytesAt_frame oc.frame (stp_crFrame L hd₂ (by omega_using [])) (by omega_using []))
-  obtain hD₃s : s₃.mem.readW (s₁.gpr .s0 + BitVec.ofNat 64 dataO) 64 = s₀.gpr .a6 := by
-    rw [slot_keep oc.frame (slot_crFrame L hd₂ (by decide))]; exact hD₂s
-  refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L (o := 0) (.inl rfl) oc.env h28 hR hH₃
-    (length_bytesAt _ _ _).symm hab₃ (hd₂.ok.of_eq rd₃ wr₃ sp₃) hD₃s)) fun s₄ ⟨ot, rd₄, wr₄, _⟩ => ?_)
-  -- the tag copied out
-  obtain hTw : Covers [⟨s₁.gpr .s9, 16⟩] s₄.wr := by
-    rw [wr₄, wr₃, wr₂, hk₁.wr, h1.s9, hwr]; exact covers_mem (by simp)
-  obtain hTd' : (⟨s₁.gpr .s9, 16⟩ : Region).Disjoint ⟨s₁.gpr .s0, 16⟩ := by
-    rw [h1.s9, h1.s0]; exact dtW.sub_right (Region.sub_prefix (by decide))
-  refine WP.seq (WP.mono (tagOut_ok ot.env hTw hTd') fun s₅ ⟨hb₅, hf₅, g₅, k₅⟩ => ?_)
-  obtain he₅ := ot.env.keep (fun r hr => g₅ r (by revert r; decide)) k₅.sp k₅.rd k₅.wr
-  have of₄ := ot.frame
-  rw [h1.s1, h1.s0] at of₄
-  have cf₃ := oc.frame
-  rw [h1.s1, h1.s0, h1.s11] at cf₃
-  have jf₂ := oa.frame
-  rw [h1.s1, h1.s0] at jf₂
-  obtain hd₂₀ : DataW (s₀.gpr .a0) (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₂ (s₀.gpr .a6)
-      (s₀.gpr .a7).toNat := by rw [← h1.s2, ← h1.s1, ← h1.s0, ← h1.s11]; exact hd₂
-  have sv₁ : SavedAt s₁.mem (stackArg s₀ 1) s₀ := h1.saved
-  obtain sv₅ : SavedAt s₅.mem (stackArg s₀ 1) s₀ :=
-    (((sv₁.frame jf₂ (saved_j0Frame L₀ hk₀)).frame cf₃ (saved_crFrame L₀ hd₂₀)).frame of₄
-      (saved_otFrame L₀ hk₀ (.inl rfl))).frame (by rw [h1.s9] at hf₅; exact hf₅) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact (dtW.sub_right (Lay.wSub (by decide))).symm)
-  obtain e31 : s₅.gpr .s0 = stackArg s₀ 1 := (he₅.fr _ (by decide)).trans h1.s0
-  refine WP.mono (restore_ok e31 wa (by have := he₅.perm.w; rw [h1.s0] at this; exact Covers.right this) sv₅
-    he₅.sp) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
-  -- the results
-  obtain f₂ : Frame (oneR (stackArg s₀ 1) :: j0Frame (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp)
-      s₀.mem s₂.mem :=
-    (f₁.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..).trans
-      (jf₂.mono fun r hr => List.mem_cons_of_mem _ hr)
-  obtain dc₂ : ∀ r ∈ oneR (stackArg s₀ 1) :: j0Frame (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp,
-      (⟨s₀.gpr .a0, 256⟩ : Region).Disjoint r := by
-    intro r hr
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact dcW.sub_right (Lay.wSub (by decide))
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact L₀.cs
-      · exact dcW.sub_right (Lay.wSub (by decide))
-      · exact dcW.sub_right (Lay.wSub (by decide))
-      · exact hk₀.c
-  obtain dD : ∀ r ∈ oneR (stackArg s₀ 1) :: j0Frame (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp,
-      (⟨s₀.gpr .a6, (s₀.gpr .a7).toNat⟩ : Region).Disjoint r := by
-    intro r hr
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact data_j0 hd₂₀.ok (sp₂.trans hk₁.sp) r hr
-  obtain hc₂ := ciph_keep f₂ dc₂ hR
-  obtain hc₃ : ciphOf s₃.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat = ctxCiph s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat := by
-    rw [ciph_frame cf₃ (ctx_crFrame L₀ hd₂₀) hR, hc₂]
-  obtain hD₂ : bytesAt s₂.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat = bytesAt s₀.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat :=
-    bytesAt_frame f₂ dD (by have := (s₀.gpr .a7).isLt; omega_using [])
-  obtain hiv : bytesAt s₁.mem (s₀.gpr .a2) (s₀.gpr .a3).toNat = bytesAt s₀.mem (s₀.gpr .a2) (s₀.gpr .a3).toNat :=
-    bytesAt_frame f₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .a3).isLt; omega_using [])
-  obtain haad : bytesAt s₁.mem (s₀.gpr .a4) (s₁.gpr .s10).toNat = bytesAt s₀.mem (s₀.gpr .a4) (s₀.gpr .a5).toNat := by
-    rw [h1.s10]
-    exact bytesAt_frame f₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .a5).isLt; omega_using [])
-  obtain hj₃ : blockAt s₃.mem (stackArg s₀ 1 + BitVec.ofNat 64 16) =
-      j0 (ctxH s₀.mem (s₀.gpr .a0)) (bytesAt s₀.mem (s₀.gpr .a2) (s₀.gpr .a3).toNat) := by
-    rw [blockAt_frame cf₃ (by simpa using stp_crFrame L₀ hd₂₀ (d := 0) (k := 16) (by decide)), ← hiv, ← h1.s1]
-    exact oa.j
-  obtain hD₃ : bytesAt s₃.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat =
-      gctr (ctxCiph s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat)
-        (inc32 (j0 (ctxH s₀.mem (s₀.gpr .a0)) (bytesAt s₀.mem (s₀.gpr .a2) (s₀.gpr .a3).toNat)))
-        (bytesAt s₀.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat) := by
-    have := oc.out
-    rw [h1.s11, h1.s2, hc₂, hD₂, hiv] at this
-    exact this
-  obtain hD₄ : bytesAt s₄.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat = bytesAt s₃.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat := by
-    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .a7).isLt; omega_using [])
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact ddW.sub_right (Lay.wSub (by decide))
-    · exact hstk.buf (by simp)
-  obtain hD₅ : bytesAt s₅.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat = bytesAt s₄.mem (s₀.gpr .a6) (s₀.gpr .a7).toNat :=
-    bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h1.s9]; exact ddt)
-      (by have := (s₀.gpr .a7).isLt; omega_using [])
-  have ho := ot.out
-  rw [h1.s2, h1.s1, h1.s11, h1.s0, hc₃, hj₃, haad, BitVec.add_zero, ← Proof.Gcm.fullTag_eq] at ho
-  rw [h1.s0, h1.s9] at hb₅
-  simp only [sealRISCV64, encryptWith, hm, hD₅, hD₄, hD₃, hb₅, ho]
-  refine Prod.ext rfl ?_
-  exact List.take_of_length_le (by rw [Spec.Gcm.fullTag, Proof.Gcm.length_gctr, Proof.Cmac.toBytes_length])
 
 end VG.Proof.AesGcm.RISCV64

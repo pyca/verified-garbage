@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
-import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -57,7 +56,6 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
-meta import VerifiedGarbage.Proof.AesGcm.RISCV64.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.CtxFrame
 meta import VerifiedGarbage.Proof.AesGcm.ScratchGather
 meta import VerifiedGarbage.Proof.Cmac.Frame
@@ -80,9 +78,8 @@ meta import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_gather_bitsliced`
 (`Impl/AesGcm/RISCV64/SealGather.lean`, `sealGatherBs`) is
-`vg_aes_gcm_seal_gather` (`Gather/Fn.lean`, `Gather/CT.lean`,
-`Gather/Verified.lean`, whose proofs these follow) with the buffer `bk` of
-the key context's bitsliced form as its fourth stack argument, and a call
+`vg_aes_gcm_seal_gather` of the other targets, with the buffer `bk` of the
+key context's bitsliced form as its fourth stack argument, and a call
 of `vg_aes_gcm_seal_bitsliced`'s code (`OneBs.lean`), without the clearing
 its registration ends with, as the internal function
 `vg_aes_gcm_seal_bitsliced_core`, by its shared contract

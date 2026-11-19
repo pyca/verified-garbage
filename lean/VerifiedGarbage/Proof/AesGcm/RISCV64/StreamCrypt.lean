@@ -14,15 +14,15 @@ public import VerifiedGarbage.Proof.AesGcm.RISCV64.Crypt
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISC-V: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
+# AES-GCM on RISC-V: the bodies of `vg_aes_gcm_stream_encrypt_bitsliced` and `…_decrypt_bitsliced`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/StreamFinish.lean`): the entry saves our caller's
 registers and keeps the arguments in `s1`–`s11` (`sc1_wp`); `encrypt` runs
 `crypt` on the data and then absorbs what it wrote (`textAbsorb`), `decrypt`
-absorbs the data first; both keep `J₀` (`enc_run`, `dec_run`), which is a
-state for the text so far followed by the new text (`streamEncrypt_wp`,
-`streamDecrypt_wp`).
+absorbs the data first; both keep `J₀` (`enc_runB`, `dec_runB`), which is a
+state for the text so far followed by the new text (`streamEncryptB_wp`,
+`streamDecryptB_wp`).
 -/
 
 @[expose] public section
@@ -360,11 +360,6 @@ theorem enc_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
       blockAt_frame cf (by simpa using stp_crFrame L₀ hd₂₀ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₂ (by simpa using stp_saved L₀ (d := 0) (k := 16) (by decide))]
 
-theorem enc_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
-    (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' :=
-  enc_runB (bs := false) h Bool.noConfusion icb ha hP
-
 theorem dec_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State} (h : streamCryptPreX ex s₀)
     (hbs : bs = true → BsAt s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
@@ -457,11 +452,6 @@ theorem dec_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
   · rw [hm, blockAt_frame cf (by simpa using stp_crFrame L₀ hd₅₀ (d := 0) (k := 16) (by decide))]
     simpa using blk₅ (d := 0) (.inl (by decide))
 
-theorem dec_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
-    (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16) (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' :=
-  dec_runB (bs := false) h Bool.noConfusion icb ha hP
-
 theorem streamEncryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
     (h' : streamCryptPreX ex s₀) (hbs : bs = true → BsAt s₀) :
     WP isa (streamEncryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' := by
@@ -494,10 +484,6 @@ theorem streamEncryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List
     rw [Proof.Gcm.length_gctr, List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' hl']
 
-theorem streamEncrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamEncryptRISCV64.pre s₀) :
-    WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptRISCV64.post s₀ s' :=
-  streamEncryptB_wp (bs := false) (ex := []) h Bool.noConfusion
-
 theorem streamDecryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
     (h' : streamCryptPreX ex s₀) (hbs : bs = true → BsAt s₀) :
     WP isa (streamDecryptB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' := by
@@ -524,9 +510,5 @@ theorem streamDecryptB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List
     refine ⟨eo.j.trans hj, eo₃, ?_⟩
     rw [List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' (Proof.Gcm.length_gctr _ _ _)]
-
-theorem streamDecrypt_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamDecryptRISCV64.pre s₀) :
-    WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptRISCV64.post s₀ s' :=
-  streamDecryptB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

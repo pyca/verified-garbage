@@ -18,14 +18,14 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 
 /-!
-# AES-GCM on RISC-V: `vg_aes_gcm_stream_verify`
+# AES-GCM on RISC-V: the body of `vg_aes_gcm_stream_verify_bitsliced`
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTCrypt.lean`): the entry saves our caller's
 registers and keeps the arguments in `s1`–`s3` and `s8`–`s11` (`ver1_wp`); a tag length
 `tagLenOk` rejects returns 0; otherwise `recv` pads the received tag, `finTag 0`
 puts the tag into `W` and `cmp 0` compares its first bytes with the
-received ones (`ver_run`, `streamVerify_wp`).
+received ones (`ver_runB`, `streamVerifyB_wp`).
 -/
 
 @[expose] public section
@@ -267,11 +267,6 @@ theorem ver_runB [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} 
   have := vp iv hs hl
   rw [h3]; exact this
 
-theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀) {a ct : List Byte} (ha : a.length % 16 = (s₀.gpr .a3).toNat % 16)
-    (hP : (s₀.gpr .a4).toNat = ct.length) :
-    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ VerPost s₀ a ct s' :=
-  ver_runB (bs := false) h Bool.noConfusion ha hP
-
 theorem streamVerifyB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List Region} {s₀ : State}
     (h' : verPreX ex s₀) (hbs : bs = true → BsAtW s₀ .a7) :
     WP isa (streamVerifyB bs) s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' := by
@@ -285,9 +280,5 @@ theorem streamVerifyB_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {ex : List 
       have := hh.2 ⟨a, c⟩ ⟨hl, hp⟩ iv hs hl
       simp only at this ⊢
       split <;> simp_all⟩
-
-theorem streamVerify_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : streamVerifyRISCV64.pre s₀) :
-    WP isa streamVerify s₀ fun s' => abiPreserved s₀ s' ∧ streamVerifyRISCV64.post s₀ s' :=
-  streamVerifyB_wp (bs := false) (ex := []) h Bool.noConfusion
 
 end VG.Proof.AesGcm.RISCV64

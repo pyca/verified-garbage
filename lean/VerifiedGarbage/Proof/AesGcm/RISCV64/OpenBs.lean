@@ -112,7 +112,9 @@ structure BkPre (o : Bool) (s₀ : State) (W Dst kb : Addr) : Prop where
   inr : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 (bkOff o)) 8
   dslot : ∀ r ∈ wF W s₀.sp, (⟨s₀.sp + BitVec.ofNat 64 (bkOff o), 8⟩ : Region).Disjoint r
 
-/-- `OpenMid`, with the buffer `kb` in `s7`. -/
+/-- After the tags are compared, with the result in `s8`, out of place the
+distance to the destination in `s9`, and the buffer `kb` in `s7`, from `s₄`
+(after the entry). -/
 structure OpenMidB (o : Bool) (s₀ : State) (W T Dst kb : Addr) (TL : Nat) (s₄ s : State) : Prop where
   env : Env s.gpr s₀.sp s
   regs : ∀ r ∈ frozen, r ≠ .s7 → r ≠ .s8 → r ≠ .s9 → s.gpr r = s₄.gpr r
@@ -544,7 +546,7 @@ theorem openBs_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : openBsRISC
 
 /-! ## Constant time
 
-As `Verified.lean`'s `openGood_ct` and `open_ct`: once `oneAad` is done,
+Once `oneAad` is done,
 `bkLoad` reads the stack at a public address, `s7` is the buffer in both
 runs (`OneIK`), and the calls take it (`oneTagB_ct`, `oneCryptB_ct`), with
 its round keys carried through the frames of the pieces between. -/

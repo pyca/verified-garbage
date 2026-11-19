@@ -493,9 +493,8 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64 VG.WriteBytes
 open VG.Impl.AesGcm.RISCV64 (mov cryptHead cryptFill splitCtr xorLoop minLen)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  cryptHead_ok CrMid.data_eq ctrArgs_ok ctrWhole_mk cryptWhole_ok tailArgs_ok ctrTail_mk tailKs_ok tailXor_ok
-  cryptTail_ok CrMid.ciph cryptFill_ok crypt_ok CtrCall CtrPost ctr_call ctr_rel
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame cryptHead_ok
+  CrMid.data_eq ctrWhole_mk ctrTail_mk tailXor_ok CrMid.ciph cryptFill_ok CtrCall CtrPost ctr_call ctr_rel
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt)
 open VG.Proof.Gcm (Ctr xorKs)

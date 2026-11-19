@@ -72,7 +72,8 @@ meta import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
 # AES-GCM on RISC-V: the one-shot functions with the round keys bitsliced
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_seal_bitsliced`
-is `vg_aes_gcm_seal` with `bk` as its second stack argument, loaded into `s7`
+is the one-shot `seal` of `Impl/AesGcm/RISCV64.lean` with `bk` as its second
+stack argument, loaded into `s7`
 once `J₀` (which reads the nonce's length there) is done (`bkLoad`), and
 `vg_aes_ctr32_bs` on it for `vg_aes_ctr32` (`oneCryptB`, `oneTagB`). The
 buffer's round keys reach those calls through the frames of what runs

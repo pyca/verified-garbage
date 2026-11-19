@@ -79,10 +79,10 @@ meta import VerifiedGarbage.Impl.StackScratch.RISCV64.Args
 # AES-GCM decryption out of place on RISC-V, with the round keys bitsliced
 
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_open_to_bitsliced`
-is `vg_aes_gcm_open_to` (`OpenTo/Verified.lean`) with `bk` a stack argument
-before the working space's address, through the body `OpenBs.lean` proves
-for both `open`s (`openB_body`, `openGoodB_ct`), as `open_to`'s proofs go
-through `open_body` and `openGood_ct`.
+is `vg_aes_gcm_open_bitsliced`'s body out of place, with its arguments
+(`openToPreR`, `OpenTo/Verified.lean`) and `bk` a stack argument before the
+working space's address, through the body `OpenBs.lean` proves for both
+(`openB_body`, `openGoodB_ct`).
 -/
 
 @[expose] public section
