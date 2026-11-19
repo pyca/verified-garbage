@@ -367,4 +367,32 @@ def streamVerifyBsRISCV64 : Contract isa where
   post := streamVerifyRISCV64.post
   pub := onePub 1
 
+/-- What `vg_aes_gcm_seal_bitsliced` needs: `(ctx = a0, rounds = a1, nonce = a2, nonce_len = a3,
+aad = a4, aad_len = a5, data = a6, len = a7, tag = [sp], bk = [sp + 8], scratch = [sp + 16])`. -/
+def sealBsPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .a0, 256⟩
+  let nonce : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+  let aad : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
+  let data : Region := ⟨s.gpr .a6, (s.gpr .a7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let bk : Region := ⟨stackArg s 1, 1248⟩
+  let scr : Region := ⟨stackArg s 2, 2560⟩
+  s.rd = [ctx, nonce, aad, bk, args s 3] ∧ s.wr = [data, tag, scr] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+    aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 3) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 3) ∧
+    bk.Disjoint data ∧ bk.Disjoint scr ∧
+    (s.gpr .a0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧ (s.gpr .a6).toNat + (s.gpr .a7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧ rounds (s.gpr .a1) ∧
+    stkOk s [ctx, nonce, aad, data, tag, scr, args s 3, bk] ∧ (s.gpr .a0).toNat % 8 = 0 ∧
+    (stackArg s 2).toNat % 8 = 0 ∧ (stackArg s 1).toNat % 8 = 0 ∧
+    Spec.Gcm.CtxSlicedRepr s.mem (stackArg s 1) (s.gpr .a0)
+
+/-- `vg_aes_gcm_seal_bitsliced`: `vg_aes_gcm_seal`'s postcondition. -/
+def sealBsRISCV64 : Contract isa where
+  pre := sealBsPre
+  post := sealRISCV64.post
+  pub := onePub 3
+
 end VG.Proof.AesGcm.RISCV64

@@ -777,7 +777,63 @@ theorem oneAad_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneI c W sp R N
         (fun r hr => g₅ r (by revert r; decide)) k₅, by rw [a26, i]⟩
 
 omit L in
-theorem dataArgs_ct : CT (OneI c W sp R Np n Ad A D Ln) (.block dataArgs) := by
+/-- `OneI` without the nonce, which only `oneAad` reads, and with `K` in `s7`
+(the nonce's length, or once `J₀` is done, the bitsliced round keys). -/
+def OneIK (c W sp : Addr) (R : Nat) (K Ad A D Ln : BitVec 64) (s : State) : Prop :=
+  ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = W + BitVec.ofNat 64 16 ∧ V .s0 = W ∧
+    V .s3 = BitVec.ofNat 64 R ∧ V .s7 = K ∧ V .s10 = A ∧ V .s11 = Ln ∧ Env V sp s ∧
+    DataOk (W + BitVec.ofNat 64 16) W s Ad A.toNat ∧
+    DataOk (W + BitVec.ofNat 64 16) W s D Ln.toNat ∧ s.mem.readW (W + BitVec.ofNat 64 aadO) 64 = Ad ∧
+    s.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D
+
+omit L in
+theorem OneI.toK {s : State} (h : OneI c W sp R Np n Ad A D Ln s) :
+    OneIK c W sp R (BitVec.ofNat 64 n) Ad A D Ln s :=
+  let ⟨V, a, b, d, e, f, i, k, he, _, hA, hD, sa, sd⟩ := h
+  ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩
+
+section
+variable {K : BitVec 64}
+
+omit L in
+/-- `OneIK`, after code that keeps the frozen registers, the regions and the
+slots of `W`. -/
+theorem OneIK.keep {s s' : State} (h : OneIK c W sp R K Ad A D Ln s) {V : Reg → BitVec 64}
+    (hV : ∀ r ∈ frozen, V r = s.gpr r) (he : Env V sp s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) (ha : s'.mem.readW (W + BitVec.ofNat 64 aadO) 64 = s.mem.readW (W + BitVec.ofNat 64 aadO) 64)
+    (hd : s'.mem.readW (W + BitVec.ofNat 64 dataO) 64 = s.mem.readW (W + BitVec.ofNat 64 dataO) 64) :
+    OneIK c W sp R K Ad A D Ln s' := by
+  obtain ⟨V₀, a, b, d, e, f, i, k, he₀, hA, hD, sa, sd⟩ := h
+  have q : ∀ r ∈ frozen, V r = V₀ r := fun r hr => (hV r hr).trans (he₀.fr r hr)
+  refine ⟨V, ?_, ?_, ?_, ?_, ?_, ?_, ?_, he, hA.of_eq hrd hwr hsp, hD.of_eq hrd hwr hsp,
+    ha.trans sa, hd.trans sd⟩
+  · rw [q _ (by decide), a]
+  · rw [q _ (by decide), b]
+  · rw [q _ (by decide), d]
+  · rw [q _ (by decide), e]
+  · rw [q _ (by decide), f]
+  · rw [q _ (by decide), i]
+  · rw [q _ (by decide), k]
+
+omit L in
+/-- `OneIK`, after a block that keeps the frozen registers and the memory. -/
+theorem OneIK.block {s s' : State} (h : OneIK c W sp R K Ad A D Ln s) (hg : ∀ r ∈ frozen, s'.gpr r = s.gpr r)
+    (hk : Keeps s s') : OneIK c W sp R K Ad A D Ln s' := by
+  obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := h
+  exact ⟨V, a, b, d, e, f, i, k, he.keep hg hk.sp hk.rd hk.wr,
+    hA.of_eq hk.rd hk.wr hk.sp, hD.of_eq hk.rd hk.wr hk.sp, by rw [hk.mem]; exact sa, by rw [hk.mem]; exact sd⟩
+
+omit L in
+/-- `OneIK` after a piece whose frame is apart from the slots. -/
+theorem OneIK.frame {s s' : State} (h : OneIK c W sp R K Ad A D Ln s) {V : Reg → BitVec 64}
+    (hV : ∀ r ∈ frozen, V r = s.gpr r) (he : Env V sp s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hsp : s'.sp = s.sp) {rs : List Region} (hf : Frame rs s.mem s'.mem)
+    (hs : ∀ {d : Nat}, 232 ≤ d ∧ d + 8 ≤ 248 → ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r) :
+    OneIK c W sp R K Ad A D Ln s' :=
+  h.keep hV he hrd hwr hsp (slot_keep hf (hs (by decide))) (slot_keep hf (hs (by decide)))
+
+omit L in
+theorem dataArgs_ct : CT (OneIK c W sp R K Ad A D Ln) (.block dataArgs) := by
   obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s11, .s0]) (.block dataArgs)
       h).isSome = true := ⟨_, by taint_decide⟩
   refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, d₁, _, _, _, k₁, h₁, _⟩ ⟨_, _, _, d₂, _, _, _, k₂, h₂, _⟩ =>
@@ -788,60 +844,81 @@ theorem dataArgs_ct : CT (OneI c W sp R Np n Ad A D Ln) (.block dataArgs) := by
   · rw [h₁.s0, h₂.s0, d₁, d₂]
 
 /-- `dataArgs`, for the invariants. -/
-theorem dataArgs_one {s : State} (h : OneI c W sp R Np n Ad A D Ln s) :
-    WP isa (.block dataArgs) s fun s' => OneI c W sp R Np n Ad A D Ln s' ∧ s'.gpr .s4 = D ∧
-      s'.gpr .s5 = BitVec.ofNat 64 Ln.toNat ∧ s'.gpr .s6 = BitVec.ofNat 64 0 := by
+theorem dataArgs_one {s : State} (h : OneIK c W sp R K Ad A D Ln s) :
+    WP isa (.block dataArgs) s fun s' => OneIK c W sp R K Ad A D Ln s' ∧ s'.gpr .s4 = D ∧
+      s'.gpr .s5 = BitVec.ofNat 64 Ln.toNat ∧ s'.gpr .s6 = BitVec.ofNat 64 0 ∧ Keeps s s' := by
   have hs := h
-  obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := h
+  obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := h
   exact WP.mono (dataArgs_ok he (by rw [d]; exact L.wal) (by rw [d]; exact sd)) fun s' ⟨a24, a25, a26, g₁, k₁⟩ =>
-    ⟨OneI.block hs
+    ⟨OneIK.block hs
       (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₁,
-      a24, by rw [a25, k], a26⟩
+      a24, by rw [a25, k], a26, k₁⟩
 
-theorem oneCrypt_ct {o : Bool} {Dst : BitVec 64} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ OD o c W D Dst Ln s ∧ (o = true → s.gpr .s9 = Dst - D))
-      (oneCryptWith o) := by
-  refine CT.seq (J := fun s => (OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s4 = D ∧
+/-- `oneCryptB bs o`: with the round keys bitsliced (`bs`), the buffer `kb`
+in `s7`. -/
+theorem oneCryptB_ct {bs o : Bool} {kb : Addr} {Dst : BitVec 64} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (fun s => OneIK c W sp R K Ad A D Ln s ∧ OD o c W D Dst Ln s ∧ (o = true → s.gpr .s9 = Dst - D) ∧
+      (bs = true → K = kb ∧ BkIn kb c (W + BitVec.ofNat 64 16) W sp R s.mem D Dst Ln.toNat s))
+      (oneCryptB bs o) := by
+  refine CT.seq (J := fun s => (OneIK c W sp R K Ad A D Ln s ∧ s.gpr .s4 = D ∧
       s.gpr .s5 = BitVec.ofNat 64 Ln.toNat ∧ s.gpr .s6 = BitVec.ofNat 64 0) ∧ OD o c W D Dst Ln s ∧
-      (o = true → s.gpr .s9 = Dst - D)) (dataArgs_ct.mono fun s h => h.1)
+      (o = true → s.gpr .s9 = Dst - D) ∧
+      (bs = true → K = kb ∧ BkIn kb c (W + BitVec.ofNat 64 16) W sp R s.mem D Dst Ln.toNat s))
+    (dataArgs_ct.mono fun s h => h.1)
     (fun s h => by
       have hs := h.1
-      obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := h.1
+      obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := h.1
       exact WP.mono (dataArgs_ok he (by rw [d]; exact L.wal) (by rw [d]; exact sd)) fun s' ⟨a24, a25, a26, g₁, k₁⟩ =>
-        ⟨⟨OneI.block hs (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₁,
+        ⟨⟨OneIK.block hs (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₁,
           a24, by rw [a25, k], a26⟩,
-          h.2.1.of_eq k₁.rd k₁.wr k₁.sp, fun ho => (g₁ _ (by decide) (by decide) (by decide)).trans (h.2.2 ho)⟩)
-    ((crypt_ct L (o := o) (R := R) (S := D) (D := Dst) (n := Ln.toNat) (q := 0)).mono
-      fun s ⟨⟨⟨V, a, b, d, e, _, _, k, he, _, _, hD, _⟩, h24, h25, h26⟩, ⟨hW, ha⟩, h9⟩ =>
+          h.2.1.of_eq k₁.rd k₁.wr k₁.sp, fun ho => (g₁ _ (by decide) (by decide) (by decide)).trans (h.2.2.1 ho),
+          fun hb => ⟨(h.2.2.2 hb).1, by rw [k₁.mem]; exact (h.2.2.2 hb).2.of_eq k₁.rd k₁.wr⟩⟩)
+    ((cryptB_ct L (bs := bs) (b := kb) (o := o) (R := R) (S := D) (D := Dst) (n := Ln.toNat) (q := 0)).mono
+      fun s ⟨⟨⟨V, a, b, d, e, f, _, k, he, _, hD, _⟩, h24, h25, h26⟩, ⟨hW, ha⟩, h9, hbk⟩ =>
         ⟨V, blockAt s.mem (V .s1 + BitVec.ofNat 64 48), 0, a, b, d, rfl,
           ⟨he, h24, h25, h26, e, hR, by rw [a, b, d]; exact hW, by rw [b, d]; exact hD, ha,
-            fun ho => by rw [← he.fr .s9 (by decide)]; exact h9 ho⟩⟩)
+            fun ho => by rw [← he.fr .s9 (by decide)]; exact h9 ho⟩,
+          fun hbs => ⟨f.trans (hbk hbs).1, by rw [f, a, b, d, (hbk hbs).1]; exact (hbk hbs).2⟩⟩)
 
-theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    CT (OneI c W sp R Np n Ad A D Ln) (oneTag o) := by
-  refine CT.seq dataArgs_ct (fun s h => dataArgs_one L h) ?_
-  refine CT.seq (J := OneI c W sp R Np n Ad A D Ln)
+/-- `oneTagB bs o`: with the round keys bitsliced (`bs`), the buffer `kb` in
+`s7`. -/
+theorem oneTagB_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} {S' D' : Addr} {n' : Nat} {o : Nat}
+    (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (fun s => OneIK c W sp R K Ad A D Ln s ∧
+      (bs = true → K = kb ∧ BkIn kb c (W + BitVec.ofNat 64 16) W sp R s.mem S' D' n' s)) (oneTagB bs o) := by
+  let B : State → Prop := fun s => bs = true → K = kb ∧
+    BkIn kb c (W + BitVec.ofNat 64 16) W sp R s.mem S' D' n' s
+  have hB : ∀ {s s' : State}, B s → Keeps s s' → B s' := fun hb hk hbs =>
+    ⟨(hb hbs).1, by rw [hk.mem]; exact (hb hbs).2.of_eq hk.rd hk.wr⟩
+  refine CT.seq (J := fun s => (OneIK c W sp R K Ad A D Ln s ∧ s.gpr .s4 = D ∧
+      s.gpr .s5 = BitVec.ofNat 64 Ln.toNat ∧ s.gpr .s6 = BitVec.ofNat 64 0) ∧ B s)
+    (dataArgs_ct.mono fun s h => h.1)
+    (fun s h => WP.mono (dataArgs_one L h.1) fun s' ⟨h₁, a24, a25, a26, k₁⟩ => ⟨⟨h₁, a24, a25, a26⟩, hB h.2 k₁⟩) ?_
+  refine CT.seq (J := fun s => OneIK c W sp R K Ad A D Ln s ∧ B s)
     ((absorb_ct L (yo := 16) (.inr rfl) (D := D) (n := Ln.toNat) (q := 0) (by decide)).mono
-      fun s ⟨⟨V, a, b, d, _, _, _, _, he, _, _, hD, _⟩, h24, h25, h26⟩ =>
+      fun s ⟨⟨⟨V, a, b, d, _, _, _, _, he, _, hD, _⟩, h24, h25, h26⟩, _⟩ =>
         ⟨V, blockAt s.mem (V .s2 + BitVec.ofNat 64 240), [], a, b, d, rfl,
           ⟨he, h24, h25, h26, by rw [b, d]; exact hD, rfl⟩⟩)
-    (fun s ⟨hs, h24, h25, h26⟩ => by
+    (fun s ⟨⟨hs, h24, h25, h26⟩, hb⟩ => by
       have hs' := hs
-      obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hs'
+      obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := hs'
       exact WP.mono (WP.with_rdwr (absorb_ok (L.v a b d) (.inr rfl)
         (⟨he, h24, h25, h26, by rw [b, d]; exact hD, rfl⟩ : AbsIn V sp 16 _ [] D Ln.toNat s)))
-        fun s' ⟨ab, rd, wr, sp'⟩ => OneI.frame hs (fun r hr => (he.fr r hr).symm) ab.env rd wr sp' ab.frame
-          (fun hd' => by rw [← d]; exact slot_abs (L.v a b d) he.stk' hd')) ?_
-  refine CT.seq (J := fun s => OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .s6 = BitVec.ofNat 64 (Ln.toNat % 16)) ?_
-    (fun s hs => ?_) ?_
+        fun s' ⟨ab, rd, wr, sp'⟩ => ⟨OneIK.frame hs (fun r hr => (he.fr r hr).symm) ab.env rd wr sp' ab.frame
+          (fun hd' => by rw [← d]; exact slot_abs (L.v a b d) he.stk' hd'), fun hbs => ⟨(hb hbs).1,
+          (hb hbs).2.frameJ0 L (by rw [← a, ← b, ← d]; exact he.stk') hR
+            (rs := absFrame (W + BitVec.ofNat 64 16) W 16 sp)
+            (by rw [← b, ← d]; exact ab.frame) abs16_j0 rd wr⟩⟩) ?_
+  refine CT.seq (J := fun s => (OneIK c W sp R K Ad A D Ln s ∧ s.gpr .s6 = BitVec.ofNat 64 (Ln.toNat % 16)) ∧
+    B s) ?_ (fun s ⟨hs, hb⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s11])
         (.block [.logicImm .and .s6 .s11 15]) h).isSome = true := ⟨_, by taint_decide⟩
-    refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, _, _, k₁, h₁, _⟩ ⟨_, _, _, _, _, _, _, k₂, h₂, _⟩ =>
+    refine CT.taint _ (fun s₁ s₂ ⟨⟨_, _, _, _, _, _, _, k₁, h₁, _⟩, _⟩ ⟨⟨_, _, _, _, _, _, _, k₂, h₂, _⟩, _⟩ =>
       ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
     simp only [List.mem_singleton] at hr; subst hr
     rw [h₁.fr _ (by decide), h₂.fr _ (by decide), k₁, k₂]
   · have hs' := hs
-    obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hs'
+    obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := hs'
     have h23 := he.fr .s11 (by decide)
     have hand := and15 (V .s11)
     have h₅ : WP isa (.block [.logicImm .and .s6 .s11 15]) s fun s₅ =>
@@ -850,25 +927,29 @@ theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
       crun [Int.reduceNatCast', h23, hand]
       exact ⟨fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl⟩⟩
     exact WP.mono h₅ fun s₅ ⟨a26, g₅, k₅⟩ =>
-      ⟨OneI.block hs
-        (fun r hr => g₅ r (by revert r; decide)) k₅, by rw [a26, k]⟩
+      ⟨⟨OneIK.block hs (fun r hr => g₅ r (by revert r; decide)) k₅, by rw [a26, k]⟩, hB hb k₅⟩
   have hq : Ln.toNat % 16 < 16 := Nat.mod_lt _ (by decide)
-  refine CT.seq (J := OneI c W sp R Np n Ad A D Ln)
-    ((flush_ct L (yo := 16) (.inr rfl) hq).mono fun s ⟨⟨V, a, b, d, _, _, _, _, he, _⟩, h26⟩ =>
+  refine CT.seq (J := fun s => OneIK c W sp R K Ad A D Ln s ∧ B s)
+    ((flush_ct L (yo := 16) (.inr rfl) hq).mono fun s ⟨⟨⟨V, a, b, d, _, _, _, _, he, _⟩, h26⟩, _⟩ =>
       ⟨⟨V, a, b, d, he⟩, h26⟩)
-    (fun s ⟨hs, h26⟩ => by
+    (fun s ⟨⟨hs, h26⟩, hb⟩ => by
       have hs' := hs
-      obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hs'
+      obtain ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩ := hs'
       exact WP.mono (WP.with_rdwr (flush_ok (L.v a b d)
         (yo := 16) (.inr rfl) (x := List.replicate (Ln.toNat % 16) 0) ⟨he, rfl⟩ (by simp [h26])))
-        fun s' ⟨fl, rd, wr, sp'⟩ => OneI.frame hs (fun r hr => (he.fr r hr).symm) fl.env rd wr sp' fl.frame
-          (fun hd' => by rw [← d]; exact slot_t (L.v a b d) he.stk' hd')) ?_
-  refine CT.seq (J := EnvR c (W + BitVec.ofNat 64 16) W sp R) ?_
-    (fun s ⟨V, a, b, d, e, f, i, k, he, _⟩ => ?_) ((tag_ct L ho hR).mono fun _ h => h)
-  · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s10, .s11])
-        (.block [mov .s4 .s10, mov .s6 .s11]) h).isSome = true := ⟨_, by taint_decide⟩
-    refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, _, i₁, k₁, h₁, _⟩ ⟨_, _, _, _, _, _, i₂, k₂, h₂, _⟩ =>
-      ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
+        fun s' ⟨fl, rd, wr, sp'⟩ => ⟨OneIK.frame hs (fun r hr => (he.fr r hr).symm) fl.env rd wr sp' fl.frame
+          (fun hd' => by rw [← d]; exact slot_t (L.v a b d) he.stk' hd'), fun hbs => ⟨(hb hbs).1,
+          (hb hbs).2.frameJ0 L (by rw [← a, ← b, ← d]; exact he.stk') hR
+            (rs := tFrame (W + BitVec.ofNat 64 16) W 16 sp)
+            (by rw [← b, ← d]; exact fl.frame) t16_j0 rd wr⟩⟩) ?_
+  refine CT.seq (J := EnvRB bs kb c (W + BitVec.ofNat 64 16) W sp R S' D' n') ?_
+    (fun s ⟨⟨V, a, b, d, e, f, i, k, he, _⟩, hb⟩ => ?_) ((tagB_ct L ho hR).mono fun _ h => h)
+  · refine CT.taintBs (I := fun s => OneIK c W sp R K Ad A D Ln s ∧ B s)
+      (fun _ => .block [mov .s4 .s10, mov .s6 .s11]) bs [.s10, .s11]
+      (fun s₁ s₂ ⟨⟨_, _, _, _, _, f₁, i₁, k₁, h₁, _⟩, b₁⟩ ⟨⟨_, _, _, _, _, f₂, i₂, k₂, h₂, _⟩, b₂⟩ =>
+        ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_, fun hbs => by
+          rw [h₁.fr _ (by decide), h₂.fr _ (by decide), f₁, f₂]⟩)
+      ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
@@ -878,7 +959,20 @@ theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
       crun [Int.reduceNatCast', mov]
       exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
     exact WP.mono h₅ fun s₅ ⟨hg, hk⟩ => ⟨V, a, b, d, e, he.keep (fun r hr => hg r (by revert r; decide)
-      (by revert r; decide)) hk.sp hk.rd hk.wr⟩
+      (by revert r; decide)) hk.sp hk.rd hk.wr, fun hbs => ⟨f.trans (hb hbs).1, by
+        rw [f, a, b, d, (hb hbs).1, hk.mem]; exact (hb hbs).2.of_eq hk.rd hk.wr⟩⟩
+
+end
+
+theorem oneCrypt_ct {o : Bool} {Dst : BitVec 64} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ OD o c W D Dst Ln s ∧ (o = true → s.gpr .s9 = Dst - D))
+      (oneCryptWith o) :=
+  (oneCryptB_ct L (bs := false) (kb := 0) hR).mono fun _ ⟨h, d, h9⟩ => ⟨h.toK, d, h9, Bool.noConfusion⟩
+
+theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (OneI c W sp R Np n Ad A D Ln) (oneTag o) :=
+  (oneTagB_ct L (bs := false) (kb := 0) (S' := 0) (D' := 0) (n' := 0) ho hR).mono
+    fun _ h => ⟨h.toK, Bool.noConfusion⟩
 
 end
 
@@ -974,6 +1068,14 @@ theorem oneEntry_eq (off : Nat) : oneEntry off = ([.addSp .t1 0, .load .d .t1 .t
 
 theorem oneHead_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
     (.block [.addSp .t1 0, .load .d .t1 .t1 8]) h).isSome = true := ⟨_, by taint_decide⟩
+
+/-- The head of `seal_bitsliced`'s entry, which loads `W` from `sp + 16`. -/
+theorem oneHead16_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
+    (.block [.addSp .t1 0, .load .d .t1 .t1 16]) h).isSome = true := ⟨_, by taint_decide⟩
+
+/-- `bkLoad 8` reads the stack at a public address. -/
+theorem bkLoad_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs []) (.block (bkLoad 8)) h).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem oneRest_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
     (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1]) (.block oneRest) h).isSome = true :=

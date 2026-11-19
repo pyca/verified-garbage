@@ -561,23 +561,39 @@ def dataArgs : List Instr := [.load .d .s4 .s0 dataO, mov .s5 .s11, .li .s6 0]
 
 /-- The data encrypted or decrypted, from the first counter block, in place
 or (`o`, with the distance to the destination in `s9`) to the destination. -/
-def oneCryptWith (o : Bool) : Prog isa := .seq (.block dataArgs) (cryptWith o)
+def oneCryptB (bs o : Bool) : Prog isa := .seq (.block dataArgs) (cryptB bs o)
+
+def oneCryptWith (o : Bool) : Prog isa := oneCryptB false o
 
 def oneCrypt : Prog isa := oneCryptWith false
 
 /-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`. -/
-def oneTag (o : Nat) : Prog isa :=
+def oneTagB (bs : Bool) (o : Nat) : Prog isa :=
   .seq (.block dataArgs)
   (.seq (absorb 16)
   (.seq (.block [.logicImm .and .s6 .s11 15])
   (.seq (flush 16)
   (.seq (.block [mov .s4 .s10, mov .s6 .s11])
-    (tag o)))))
+    (tagB bs o)))))
+
+def oneTag (o : Nat) : Prog isa := oneTagB false o
+
+/-- `s7 := [sp + off]`, the buffer of the bitsliced round keys, a stack
+argument, once `J₀` (which reads the nonce's length in `s7`) is done. -/
+def bkLoad (off : Nat) : List Instr := [.addSp .t2 0, .load .d .s7 .t2 off]
 
 /-- `vg_aes_gcm_seal`, with `tag = [sp]` and `scratch = [sp + 8]`. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 8))
     (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
+
+/-- `vg_aes_gcm_seal_bitsliced`, with `tag = [sp]`, `bk = [sp + 8]` and
+`scratch = [sp + 16]`: `seal`, with `vg_aes_ctr32_bs` on the buffer at `bk`
+(`s7`, once `oneAad` is done). -/
+def sealBs : Prog isa :=
+  .seq (.block (oneEntry 16))
+    (.seq oneAad (.seq (.block (bkLoad 8)) (.seq (oneCryptB true false) (.seq (oneTagB true 0)
+      (.seq (.block tagOut) (.block restore))))))
 
 /-- The entry of `open`, with `tag_len = [sp + 8]` in `s8` and
 `scratch = [sp + 16]`. -/

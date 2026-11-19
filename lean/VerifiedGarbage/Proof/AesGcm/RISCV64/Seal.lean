@@ -77,6 +77,36 @@ theorem data_j0 {st w : Addr} {s : State} {D : Addr} {n : Nat} (hd : DataOk st w
   · exact hd.w.sub_right (Lay.wSub (by decide))
   · exact hsp ▸ hd.sk
 
+/-- The buffer of the bitsliced round keys is apart from what `j0` writes. -/
+theorem BkIn.j0Frame {B c st w sp : Addr} {R : Nat} {m₀ : Mem} {S D : Addr} {n : Nat} {s : State}
+    (hb : BkIn B c st w sp R m₀ S D n s) : ∀ r ∈ j0Frame st w sp, (⟨B, 960⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact hb.st
+  · exact hb.w.sub_right (Lay.wSub (by decide))
+  · exact hb.w.sub_right (Lay.wSub (by decide))
+  · exact hb.sk
+
+/-- The context is apart from what `j0` writes. -/
+theorem ctx_j0Frame {c st w sp : Addr} (L : Lay c st w) (hk : StkOk c st w sp) :
+    ∀ r ∈ j0Frame st w sp, (⟨c, 256⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact L.cs
+  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · exact hk.c
+
+/-- The bitsliced round keys, after code whose frame is within `j0`'s. -/
+theorem BkIn.frameJ0 {B c st w sp : Addr} {R : Nat} {m m' : Mem} {S D : Addr} {n : Nat} {s s' : State}
+    (hb : BkIn B c st w sp R m S D n s) (L : Lay c st w) (hk : StkOk c st w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {rs : List Region} (hf : Frame rs m m') (hj : ∀ r ∈ rs, ∃ r' ∈ RISCV64.j0Frame st w sp, Region.Sub r r')
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : BkIn B c st w sp R m' S D n s' :=
+  hb.frame hR hf (fun r hr => let ⟨r', hr', h⟩ := hj r hr; (hb.j0Frame r' hr').sub_right h)
+    (fun r hr => let ⟨r', hr', h⟩ := hj r hr; (ctx_j0Frame L hk r' hr').sub_right h) hrd hwr
+
 /-- A doubleword apart from a frame's regions keeps its value. -/
 theorem slot_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 8⟩ : Region).Disjoint r) : m'.readW p 64 = m.readW p 64 :=
@@ -258,6 +288,26 @@ include L
 
 /-- `oneCryptWith o`: counter mode over the data (`len`, `s11`, bytes at `S`,
 in `W + dataO`), to `D` (`S` in place), from the counter block `icb`. -/
+theorem oneCryptB_ok {bs o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env V sp s)
+    (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat) (hs : DataOk (V .s1) (V .s0) s S (V .s11).toNat)
+    (ha : Alias o S D (V .s11).toNat)
+    (hδ : o = true → V .s9 = D - S)
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = S)
+    {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb)
+    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S D (V .s11).toNat s) :
+    WP isa (oneCryptB bs o) s (OC V sp R icb S D s.mem) := by
+  refine WP.seq (WP.mono (dataArgs_ok he L.wal hDs) fun s₁ ⟨a24, a25, a26, g₁, k₁⟩ => ?_)
+  have he₁ := he.keep (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide))
+    k₁.sp k₁.rd k₁.wr
+  have ci : CrIn o V sp R icb 0 S D (V .s11).toNat s₁ :=
+    ⟨he₁, a24, a25, by rw [a26], h28, hR, hd.of_eq k₁.rd k₁.wr k₁.sp, hs.of_eq k₁.rd k₁.wr k₁.sp, ha,
+      hδ⟩
+  refine WP.mono (cryptB_ok L ci fun hbs => ((hb hbs).of_eq k₁.rd k₁.wr).memEq k₁.mem) fun s₂ co => ?_
+  rw [k₁.mem] at co
+  have c0 := Proof.Gcm.ctr_zero s.mem _ (V .s1 + BitVec.ofNat 64 64) (ciphOf s.mem (V .s2) R) hcb
+  exact ⟨co.env, by rw [co.out c0, ← Proof.Gcm.gctr_eq], co.frame⟩
+
 theorem oneCryptWith_ok {o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env V sp s)
     (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat) (hs : DataOk (V .s1) (V .s0) s S (V .s11).toNat)
@@ -265,17 +315,8 @@ theorem oneCryptWith_ok {o : Bool} {R : Nat} {S D : Addr} {s : State} (he : Env 
     (hδ : o = true → V .s9 = D - S)
     (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = S)
     {icb : Block} (hcb : blockAt s.mem (V .s1 + BitVec.ofNat 64 48) = icb) :
-    WP isa (oneCryptWith o) s (OC V sp R icb S D s.mem) := by
-  refine WP.seq (WP.mono (dataArgs_ok he L.wal hDs) fun s₁ ⟨a24, a25, a26, g₁, k₁⟩ => ?_)
-  have he₁ := he.keep (fun r hr => g₁ r (by revert r; decide) (by revert r; decide) (by revert r; decide))
-    k₁.sp k₁.rd k₁.wr
-  have ci : CrIn o V sp R icb 0 S D (V .s11).toNat s₁ :=
-    ⟨he₁, a24, a25, by rw [a26], h28, hR, hd.of_eq k₁.rd k₁.wr k₁.sp, hs.of_eq k₁.rd k₁.wr k₁.sp, ha,
-      hδ⟩
-  refine WP.mono (crypt_ok L ci) fun s₂ co => ?_
-  rw [k₁.mem] at co
-  have c0 := Proof.Gcm.ctr_zero s.mem _ (V .s1 + BitVec.ofNat 64 64) (ciphOf s.mem (V .s2) R) hcb
-  exact ⟨co.env, by rw [co.out c0, ← Proof.Gcm.gctr_eq], co.frame⟩
+    WP isa (oneCryptWith o) s (OC V sp R icb S D s.mem) :=
+  oneCryptB_ok L (bs := false) he h28 hR hd hs ha hδ hDs hcb Bool.noConfusion
 
 /-- `oneCrypt`: in place. -/
 theorem oneCrypt_ok {R : Nat} {D : Addr} {s : State} (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R)
@@ -346,13 +387,16 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (V .s0))
 include L
 
-theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {D : Addr} {s : State}
+/-- `oneTag o`, or with the round keys bitsliced (`bs`), from the buffer at `V s7`. -/
+theorem oneTagB_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block}
+    {a : List Byte} {D : Addr} {s : State}
     (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
     (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
     (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat)
-    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) :
-    WP isa (oneTag o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) := by
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) {S' D' : Addr} {n' : Nat}
+    (hb : bs = true → BkIn (V .s7) (V .s2) (V .s1) (V .s0) sp R s.mem S' D' n' s) :
+    WP isa (oneTagB bs o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) := by
   have hk := he.stk'
   have dC : ∀ r ∈ otFrame (V .s1) (V .s0) o sp, (⟨V .s2, 256⟩ : Region).Disjoint r := by
     intro r hr
@@ -376,7 +420,7 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     k₁.sp k₁.rd k₁.wr
   have ai : AbsIn V sp 16 H (a ++ zeros (padLen a.length)) D (V .s11).toNat s₁ :=
     ⟨he₁, a24, a25, by rw [a26, hx], hd.of_eq k₁.rd k₁.wr k₁.sp, by rw [k₁.mem]; exact hH⟩
-  refine WP.seq (WP.mono (absorb_ok L (.inr rfl) ai) fun s₂ ab => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr' (absorb_ok L (.inr rfl) ai)) fun s₂ ⟨ab, rd₂, wr₂⟩ => ?_)
   rw [k₁.mem] at ab
   have h23 := ab.env.fr .s11 (by decide)
   have hand := and15 (V .s11)
@@ -392,8 +436,8 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
   let ct := bytesAt s.mem D (V .s11).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (V .s11).toNat % 16 := by
     simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_using [hx]
-  refine WP.seq (WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct) (H := H)
-    ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx])) fun s₄ fl => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr' (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct)
+    (H := H) ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx]))) fun s₄ ⟨fl, rd₄, wr₄⟩ => ?_)
   rw [k₃.mem] at fl
   have e22 := fl.env.fr .s10 (by decide)
   have e23 := fl.env.fr .s11 (by decide)
@@ -404,11 +448,23 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     exact ⟨fun r a b => by simp [a, b], ⟨rfl, rfl, rfl, rfl⟩⟩
   refine WP.seq (WP.mono h₅ fun s₅ ⟨h24₅, h26₅, g₅, k₅⟩ => ?_)
   have he₅ := fl.env.keep (fun r hr => g₅ r (by revert r; decide) (by revert r; decide)) k₅.sp k₅.rd k₅.wr
-  refine WP.mono (tag_ok L ho he₅ h28 hR (H := H) (by rw [k₅.mem]; exact fl.hH) rfl) fun s₆ tg => ?_
-  rw [h24₅, h26₅, k₅.mem] at tg
   have f₄ : Frame (absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp) s.mem s₄.mem :=
     (ab.frame.mono (fun r hr => List.mem_append_left _ hr)).trans
       (fl.frame.mono (fun r hr => List.mem_append_right _ hr))
+  have hj : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
+      ∃ r' ∈ j0Frame (V .s1) (V .s0) sp, Region.Sub r r' := fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact abs16_j0 r hr
+    · exact t16_j0 r hr
+  refine WP.mono (tagB_ok L (bs := bs) ho he₅ h28 hR (H := H) (by rw [k₅.mem]; exact fl.hH) rfl
+    (S := S') (D := D') (n := n') fun hbs => ?_) fun s₆ tg => ?_
+  · obtain hb₀ := hb hbs
+    rw [k₅.mem]
+    refine hb₀.frame hR f₄ (fun r hr => ?_) (fun r hr => ?_)
+      (by rw [k₅.rd, rd₄, k₃.rd, rd₂, k₁.rd]) (by rw [k₅.wr, wr₄, k₃.wr, wr₂, k₁.wr])
+    · obtain ⟨r', hr', hs⟩ := hj r hr; exact (hb₀.j0Frame r' hr').sub_right hs
+    · obtain ⟨r', hr', hs⟩ := hj r hr; exact (ctx_j0Frame L hk r' hr').sub_right hs
+  rw [h24₅, h26₅, k₅.mem] at tg
   refine ⟨tg.env, ?_, ?_⟩
   · rw [tg.out]
     have hw := (fl.abs (ab.abs hab)).whole_eq (by
@@ -425,6 +481,15 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     · exact abs_otSub r hr
     · exact t_otSub r hr
 
+
+theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {D : Addr} {s : State}
+    (he : Env V sp s) (h28 : V .s3 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hH : blockAt s.mem (V .s2 + BitVec.ofNat 64 240) = H) (hl : (V .s10).toNat = a.length)
+    (hab : Absorbed s.mem (V .s1 + BitVec.ofNat 64 16) (V .s1 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))
+    (hd : DataOk (V .s1) (V .s0) s D (V .s11).toNat)
+    (hDs : s.mem.readW (V .s0 + BitVec.ofNat 64 dataO) 64 = D) :
+    WP isa (oneTag o) s (OT V sp o R H a (blockAt s.mem (V .s1)) D s.mem) :=
+  oneTagB_ok L (bs := false) ho he h28 hR hH hl hab hd hDs (S' := 0) (D' := 0) (n' := 0) Bool.noConfusion
 end
 
 end VG.Proof.AesGcm.RISCV64

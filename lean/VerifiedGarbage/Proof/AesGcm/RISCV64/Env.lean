@@ -155,6 +155,19 @@ theorem Env.keep {V : Reg → BitVec 64} {sp : Addr} {s s' : State} (h : Env V s
     (hwr : s'.wr = s.wr) : Env V sp s' :=
   ⟨fun r hr => (hg r hr).trans (h.fr r hr), hsp.trans h.sp, h.perm.of_eq hrd hwr, hsp ▸ h.stk⟩
 
+/-- `V` with `s7` set to `b`. -/
+def setS7 (V : Reg → BitVec 64) (b : BitVec 64) : Reg → BitVec 64 := fun r => if r = .s7 then b else V r
+
+/-- The environment with `s7` set to `b`, after a block that keeps the other
+registers it fixes. -/
+theorem Env.set7 {V : Reg → BitVec 64} {sp : Addr} {s s' : State} {b : BitVec 64} (h : Env V sp s)
+    (h7 : s'.gpr .s7 = b) (hg : ∀ r ∈ frozen, r ≠ .s7 → s'.gpr r = s.gpr r) (hsp : s'.sp = s.sp)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Env (setS7 V b) sp s' := by
+  refine ⟨fun r hr => ?_, hsp.trans h.sp, h.perm.of_eq hrd hwr, hsp ▸ h.stk⟩
+  by_cases e : r = .s7
+  · subst e; rw [h7]; rfl
+  · rw [hg r hr e, h.fr r hr]; simp only [setS7, e, ↓reduceIte]
+
 /-- What a block that keeps everything but some registers leaves. -/
 structure Keeps (s s' : State) : Prop where
   mem : s'.mem = s.mem
