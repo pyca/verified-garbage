@@ -24,6 +24,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.EcKey.Secp256k1
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.Secp256k1
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 
 /-! ### `Ecdh.AArch64.Secp256k1.Contract`, which only this module used -/
 
@@ -155,5 +158,16 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstr
     Verified AArch64.target VG.Impl.Ecdh.AArch64.Secp256k1.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+
+
+/-- ECDH over secp256k1 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeSecp256k1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeSecp256k1
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst AArch64.abi) 32 :=
+  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.Secp256k1.exchangeApi)
+    { code := VG.Impl.Ecdh.AArch64.Secp256k1.exchange, verified := ecdh_verified hL hI } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.Secp256k1

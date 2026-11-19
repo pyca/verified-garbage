@@ -22,6 +22,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.P224
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 
 /-! ### `Ecdh.AArch64.P224.Contract`, which only this module used -/
 
@@ -158,5 +161,16 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.A
     Verified AArch64.target exchangeP224
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
+
+
+/-- ECDH over P-224 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP224`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP224
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst AArch64.abi) 32 :=
+  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P224.exchangeApi)
+    { code := exchangeP224, verified := ecdh_verified hL hI } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.P224
