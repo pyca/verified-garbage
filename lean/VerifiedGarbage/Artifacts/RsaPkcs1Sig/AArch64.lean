@@ -38,10 +38,10 @@ open VG.Proof.RsaPkcs1Sig.AArch64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (v : CrtImpl) => [
-    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Sign.codeP (privPOf v).name (privPOf v).code
-      verified := Sgn.signPrecomputed_verified (privPOf v) }]) ++
+      verified := Sgn.signPrecomputed_verified (privPOf v) } (Proof.Rsa.AArch64.Scrub.pkcs1SignOk _))]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix

@@ -49,6 +49,16 @@ def scrubStoresL (ks : List Nat) : List Instr := ks.map fun k => .strq .v31 .x9 
 def scrubTailG (W : Nat) (ks : List Nat) : Prog isa :=
   .frame (.alloc W) (.block (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks)) (.free W)
 
+/-- The frame of `W` bytes, `4080 < W < 8176`, with all its 16-byte granules
+zeroed: as two frames, one of `W - 4080` bytes and below it one of 4080, since
+an `alloc` takes less than 4096 bytes; the stores, from the inner frame's
+base, reach the outer one too. -/
+def scrubTailL (W : Nat) : Prog isa :=
+  .frame (.alloc (W - 4080))
+    (.frame (.alloc 4080) (.block (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL (List.range (W / 16))))
+      (.free 4080))
+    (.free (W - 4080))
+
 /-- `c`, then the granules `ks` of the `W` bytes below the stack pointer
 zeroed; nothing if there are none. -/
 def withScrubG (W : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
@@ -97,5 +107,9 @@ secret residue whatever `c` leaves, for code whose frames stay within those
 `W` bytes and that writes no register `cl` leaves (`ScrubAll.noResidue_scrubAll`). -/
 def scrubAll (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
   withScrubG W (List.range (W / 16)) (withRet rb (.seq c (.block (clearsOf cl))))
+
+/-- `scrubAll` for `4080 < W < 8176` bytes of stack, zeroed by `scrubTailL`. -/
+def scrubAllL (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
+  .seq (withRet rb (.seq c (.block (clearsOf cl)))) (scrubTailL W)
 
 end VG.Impl.Residue.AArch64

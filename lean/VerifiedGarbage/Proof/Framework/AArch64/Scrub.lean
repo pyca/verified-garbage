@@ -158,7 +158,7 @@ def inG (b : Addr) (ks : List Nat) (x : Addr) : Bool :=
 /-- `m`, with the granules `ks` from `b` zero. -/
 def zeroG (b : Addr) (ks : List Nat) (m : Mem) : Mem := fun x => if inG b ks x then 0 else m x
 
-theorem zeroG_cons {b : Addr} {k : Nat} {ks : List Nat} {W : Nat} (hk : 16 * k + 16 ≤ W) (hW : W < 4096)
+theorem zeroG_cons {b : Addr} {k : Nat} {ks : List Nat} {W : Nat} (hk : 16 * k + 16 ≤ W) (hW : W < 2 ^ 16)
     (m : Mem) :
     zeroG b ks (m.write (b + BitVec.ofNat 64 (16 * k)) 16 (0 : BitVec 128)) = zeroG b (k :: ks) m := by
   funext x
@@ -184,8 +184,22 @@ theorem zeroG_cons {b : Addr} {k : Nat} {ks : List Nat} {W : Nat} (hk : 16 * k +
 def storesTraceL (b : Addr) (ks : List Nat) : List Leak :=
   ks.map fun k => .addr (b + BitVec.ofNat 64 (16 * k))
 
-theorem storesL_run {W : Nat} (hW : W < 4096) (b : Addr) :
-    ∀ (ks : List Nat) (u : State), u.gpr .x9 = b → u.v .v31 = 0 → (⟨b, W⟩ : Region) ∈ u.wr →
+/-- Each of the granules `ks` from `b` is in a writable region. -/
+def GranulesIn (wr : List Region) (b : Addr) (ks : List Nat) : Prop :=
+  ∀ k ∈ ks, InRegions wr (b + BitVec.ofNat 64 (16 * k)) 16
+
+/-- The granules `ks` of the `W` bytes from `b` are in the region of them. -/
+theorem granulesIn_of {wr : List Region} {b : Addr} {W : Nat} (hW : W < 2 ^ 16) (hR : (⟨b, W⟩ : Region) ∈ wr)
+    {ks : List Nat} (hks : ∀ k ∈ ks, 16 * k + 16 ≤ W) : GranulesIn wr b ks := fun k hk' => by
+  have hk := hks k hk'
+  refine ⟨_, hR, ?_⟩
+  unfold Region.Contains
+  simp only [BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (by omega)]
+  omega
+
+theorem storesL_run {W : Nat} (hW : W < 2 ^ 16) (b : Addr) :
+    ∀ (ks : List Nat) (u : State), u.gpr .x9 = b → u.v .v31 = 0 → GranulesIn u.wr b ks →
       (∀ k ∈ ks, 16 * k + 16 ≤ W) →
       execBlock isa (scrubStoresL ks) u = some ({ u with mem := zeroG b ks u.mem }, storesTraceL b ks)
   | [], u, _, _, _, _ => by
@@ -194,17 +208,12 @@ theorem storesL_run {W : Nat} (hW : W < 4096) (b : Addr) :
   | k :: ks, u, hb, hv, hR, hks => by
     have hk := hks k (List.mem_cons_self ..)
     have hoff : 16 * k % 16 = 0 ∧ 16 * k < 4096 * 16 := ⟨by omega, by omega⟩
-    have hin : InRegions u.wr (b + BitVec.ofNat 64 (16 * k)) 16 := by
-      refine ⟨_, hR, ?_⟩
-      unfold Region.Contains
-      simp only [BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega)]
-      omega
+    have hin : InRegions u.wr (b + BitVec.ofNat 64 (16 * k)) 16 := hR k (List.mem_cons_self ..)
     have hex : exec (.strq .v31 .x9 (16 * k)) u =
         some { u with mem := u.mem.write (b + BitVec.ofNat 64 (16 * k)) 16 0 } := by
       simp only [exec, addr, hoff, and_self, ↓reduceIte, Option.bind_some, State.store, hb, hin, hv]
     have ih := storesL_run hW b ks { u with mem := u.mem.write (b + BitVec.ofNat 64 (16 * k)) 16 0 }
-      hb hv hR (fun k' h => hks k' (List.mem_cons_of_mem _ h))
+      hb hv (fun k' h => hR k' (List.mem_cons_of_mem _ h)) (fun k' h => hks k' (List.mem_cons_of_mem _ h))
     have h1 : execBlock isa [.strq .v31 .x9 (16 * k)] u =
         some ({ u with mem := u.mem.write (b + BitVec.ofNat 64 (16 * k)) 16 0 },
           [.addr (b + BitVec.ofNat 64 (16 * k))]) := by
@@ -248,7 +257,7 @@ theorem tailG_run {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) {ks : List 
   have hb₂ : u₂.gpr .x9 = b := by simp [u₂, u₁, b, State.write]
   have hv₂ : u₂.v .v31 = 0 := by simp [u₂, State.write, State.setV]
   have hR : (⟨b, W⟩ : Region) ∈ u₂.wr := by simp [u₂, u₁, State.write, State.setV]
-  have hs := storesL_run hW.2.1 b ks u₂ hb₂ hv₂ hR hks
+  have hs := storesL_run (by omega) b ks u₂ hb₂ hv₂ (granulesIn_of (by omega) hR hks) hks
   have hblk : execBlock isa (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks) u₁ =
       some ({ u₂ with mem := zeroG b ks u₂.mem }, storesTraceL b ks) := by
     rw [show (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks : List Instr) =
@@ -286,5 +295,150 @@ theorem tailG_run {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) {ks : List 
       have := u.sp.isLt
       omega
     all_goals simp [u₄, u₃, u₂, u₁, b, State.write, State.setV]
+
+/-! ## Two frames
+
+An `alloc` takes less than 4096 bytes. `scrubTailL W` zeroes `W` bytes in
+two frames, of `W - 4080` bytes and below it 4080; once both are released,
+the memory is what one frame of `W` bytes leaves (`lose_lose`), and the
+unknowns are those of `W` bytes, so it ends as `scrubTailG W` does
+(`TailRunG`). -/
+
+theorem toNat_addr_sub {x y : Addr} : (x - y).toNat = (x.toNat + (2 ^ 64 - y.toNat)) % 2 ^ 64 := by
+  rw [BitVec.toNat_sub]; omega
+
+/-- A released frame of `B` bytes from `a` and then one of `A` bytes above
+it, with the unknowns the first left, are one frame of `B + A` bytes. -/
+theorem lose_lose {m : Mem} {a : Addr} {A B : Nat} {u : Nat → BitVec 64} (hB : B % 8 = 0)
+    (hAB : B + A < 2 ^ 64) :
+    lose (lose m a B u) (a + BitVec.ofNat 64 B) A (fun n => u (n + B / 4)) = lose m a (B + A) u := by
+  funext x
+  have ht := (x - a).isLt
+  have hx : (x - (a + BitVec.ofNat 64 B)).toNat = ((x - a).toNat + (2 ^ 64 - B)) % 2 ^ 64 := by
+    simp only [toNat_addr_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+    have := x.isLt; have := a.isLt
+    rw [Nat.mod_eq_of_lt (show B < 2 ^ 64 by omega)]
+    omega
+  unfold lose
+  dsimp only
+  rw [hx]
+  by_cases h₁ : (x - a).toNat < B
+  · have h₂ : ¬ ((x - a).toNat + (2 ^ 64 - B)) % 2 ^ 64 < A := by omega
+    have h₃ : (x - a).toNat < B + A := by omega
+    simp only [h₂, h₁, h₃, ↓reduceIte]
+  · have e : ((x - a).toNat + (2 ^ 64 - B)) % 2 ^ 64 = (x - a).toNat - B := by omega
+    have e₁ : 2 * (((x - a).toNat - B) / 8) + B / 4 = 2 * ((x - a).toNat / 8) := by omega
+    have e₂ : 2 * (((x - a).toNat - B) / 8) + 1 + B / 4 = 2 * ((x - a).toNat / 8) + 1 := by omega
+    have e₃ : ((x - a).toNat - B) % 8 = (x - a).toNat % 8 := by omega
+    rw [e]
+    simp only [h₁, ↓reduceIte, e₁, e₂, e₃]
+    by_cases h₃ : (x - a).toNat - B < A
+    · have h₄ : (x - a).toNat < B + A := by omega
+      simp only [h₃, h₄, ↓reduceIte]
+    · have h₄ : ¬ (x - a).toNat < B + A := by omega
+      simp only [h₃, h₄, ↓reduceIte]
+
+theorem tailL_run {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (u : State) (hsp : W ≤ u.sp.toNat) :
+    ∃ u', Exec isa (scrubTailL W) u (tailTraceG u.sp W (List.range (W / 16))) u' ∧
+      TailRunG W (List.range (W / 16)) u u' := by
+  have hspl := u.sp.isLt
+  let ks := List.range (W / 16)
+  let b := u.sp - BitVec.ofNat 64 W
+  let o := u.sp - BitVec.ofNat 64 (W - 4080)
+  have hbt : b.toNat = u.sp.toNat - W := by
+    simp only [b, toNat_addr_sub, BitVec.toNat_ofNat]; omega
+  have hot : o.toNat = u.sp.toNat - (W - 4080) := by
+    simp only [o, toNat_addr_sub, BitVec.toNat_ofNat]; omega
+  have hob : o - BitVec.ofNat 64 4080 = b := by
+    apply BitVec.eq_of_toNat_eq
+    rw [toNat_addr_sub, hot, hbt, BitVec.toNat_ofNat]; omega
+  have hbo : b + BitVec.ofNat 64 4080 = o := by rw [← hob, BitVec.sub_add_cancel]
+  let u₁ : State := { u with sp := o, wr := ⟨o, W - 4080⟩ :: u.wr }
+  have hpush : isa.push (.alloc (W - 4080)) u = some u₁ := by
+    have : 0 < W - 4080 ∧ W - 4080 < 4096 ∧ (W - 4080) % 16 = 0 ∧ W - 4080 ≤ u.sp.toNat :=
+      ⟨by omega, by omega, by omega, by omega⟩
+    simp only [isa, push, this, and_self, ↓reduceIte]; rfl
+  let u₁' : State := { u₁ with sp := b, wr := ⟨b, 4080⟩ :: u₁.wr }
+  have hpush' : isa.push (.alloc 4080) u₁ = some u₁' := by
+    have : 4080 ≤ u₁.sp.toNat := by show 4080 ≤ o.toNat; omega
+    simp only [isa, push, this, and_self]
+    simp only [u₁', u₁, hob]; rfl
+  let u₂ : State := (u₁'.setV .v31 0).write .x .x9 u₁'.sp
+  have h₂ : execBlock isa [.vop (.movi0 .v31), .addSp .x9 0] u₁' = some (u₂, []) := by
+    simp [execBlock, isa, exec, VOp.eval, addrs, u₂, State.setV]
+  have hb₂ : u₂.gpr .x9 = b := by simp [u₂, u₁', State.write]
+  have hv₂ : u₂.v .v31 = 0 := by simp [u₂, State.write, State.setV]
+  have hR : GranulesIn u₂.wr b ks := by
+    intro k hk
+    have hk' := List.mem_range.mp hk
+    by_cases hlo : 16 * k + 16 ≤ 4080
+    · refine ⟨⟨b, 4080⟩, by simp [u₂, u₁', State.write, State.setV], ?_⟩
+      unfold Region.Contains
+      simp only [BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add, BitVec.toNat_ofNat]
+      rw [Nat.mod_eq_of_lt (by omega)]
+      omega
+    · refine ⟨⟨o, W - 4080⟩, by simp [u₂, u₁', u₁, State.write, State.setV], ?_⟩
+      unfold Region.Contains
+      dsimp only
+      rw [← hbo, ← BitVec.sub_sub, BitVec.add_sub_comm, BitVec.sub_self, BitVec.zero_add,
+        BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 16 * k < 2 ^ 64)]
+      omega
+  have hs := storesL_run (W := W) (by omega) b ks u₂ hb₂ hv₂ hR (fun k hk => by have := List.mem_range.mp hk; omega)
+  have hblk : execBlock isa (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks) u₁' =
+      some ({ u₂ with mem := zeroG b ks u₂.mem }, storesTraceL b ks) := by
+    rw [show (.vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStoresL ks : List Instr) =
+        [.vop (.movi0 .v31), .addSp .x9 0] ++ scrubStoresL ks from rfl,
+      execBlock_append, h₂, Option.bind_some, hs]
+    rfl
+  let u₃ : State := { u₂ with mem := zeroG b ks u₂.mem }
+  let u₄ : State := { u₃ with
+    sp := u₃.sp + BitVec.ofNat 64 4080, wr := u₃.wr.tail,
+    mem := lose u₃.mem u₃.sp 4080 u₃.unknowns, unknowns := fun n => u₃.unknowns (n + 4080 / 4) }
+  have hpop' : isa.pop (.free 4080) u₁' u₃ = some u₄ := by
+    have hc : 0 < 4080 ∧ 4080 < 4096 ∧ 4080 % 16 = 0 ∧ u₃.sp = u₁'.sp ∧ u₃.wr = u₁'.wr ∧
+        u₁'.wr.head? = some ⟨u₁'.sp, 4080⟩ := ⟨by decide, by decide, by decide, rfl, rfl, rfl⟩
+    simp only [isa, pop, hc, and_self, ↓reduceIte]
+    rfl
+  have hsp₄ : u₄.sp = o := by
+    show u₁'.sp + BitVec.ofNat 64 4080 = o
+    exact hbo
+  let u₅ : State := { u₄ with
+    sp := o + BitVec.ofNat 64 (W - 4080), wr := u₄.wr.tail,
+    mem := lose u₄.mem o (W - 4080) u₄.unknowns, unknowns := fun n => u₄.unknowns (n + (W - 4080) / 4) }
+  have hpop : isa.pop (.free (W - 4080)) u₁ u₄ = some u₅ := by
+    have hc : 0 < W - 4080 ∧ W - 4080 < 4096 ∧ (W - 4080) % 16 = 0 ∧ u₄.sp = u₁.sp ∧ u₄.wr = u₁.wr ∧
+        u₁.wr.head? = some ⟨u₁.sp, W - 4080⟩ := ⟨by omega, by omega, by omega, hsp₄, rfl, rfl⟩
+    simp only [isa, pop, hc, and_self, ↓reduceIte]
+    rfl
+  refine ⟨u₅, ?_, ?_⟩
+  · have := Exec.frame (M := isa) hpush (Exec.frame (M := isa) hpush' (Exec.block hblk) hpop') hpop
+    simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at this
+    exact this
+  · constructor
+    · funext q
+      by_cases hq : q = .x9
+      · subst hq; simp [u₅, u₄, u₃, u₂, u₁', b, State.write]
+      · simp [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV, hq]
+    · funext w
+      by_cases hw : w = .v31
+      · subst hw; simp [u₅, u₄, u₃, u₂, u₁', State.write, State.setV]
+      · simp [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV, hw]
+    · show o + BitVec.ofNat 64 (W - 4080) = u.sp
+      exact BitVec.sub_add_cancel _ _
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · rfl
+    · simp only [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV]
+      funext n
+      exact congrArg u.unknowns (by omega)
+    · have key := lose_lose (m := zeroG b ks u.mem) (a := b) (A := W - 4080) (B := 4080) (u := u.unknowns)
+        (by decide) (by omega)
+      rw [show 4080 + (W - 4080) = W by omega, hbo] at key
+      simp only [u₅, u₄, u₃, u₂, u₁', u₁, State.write, State.setV]
+      exact key
 
 end VG.AArch64.Scrub

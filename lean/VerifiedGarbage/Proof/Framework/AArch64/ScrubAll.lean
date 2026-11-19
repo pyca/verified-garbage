@@ -33,6 +33,11 @@ the code may change outside the buffers is within those `W` bytes
 same unknowns, since their traces are the same (`Exec.unknowns_agree`). So it
 serves code generic over the implementations of the functions it calls,
 whose code is not known, as x86-64's `X86_64.Scrub.withScrubAll` does.
+
+An `alloc` takes less than 4096 bytes, so `scrubAll` zeroes less than 4096;
+`scrubAllL` zeroes up to 8160 in two frames, which end as one would
+(`Scrub.tailL_run`). The theorems are stated for any tail that zeroes the `W`
+bytes (`TailOk`, `noResidue_scrubAllT` and `Verified.scrubAllT`).
 -/
 
 @[expose] public section
@@ -532,26 +537,33 @@ theorem not_below {sp x : Addr} {n W : Nat} (hn : n ≤ W) (hW : W ≤ sp.toNat)
   simp only [Region.Contains] at hs
   omega
 
+open VG.AArch64.Scrub in
+/-- `T` zeroes the `W` bytes below the stack pointer and releases them, as
+`scrubTailG W` does (`TailRunG`), from any state that has them, with a trace
+of the stack pointer alone. -/
+def TailOk (W : Nat) (T : Prog isa) : Prop :=
+  ∀ u : State, W ≤ u.sp.toNat → ∃ u', Exec isa T u (tailTraceG u.sp W (List.range (W / 16))) u' ∧
+    TailRunG W (List.range (W / 16)) u u'
+
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
 /-- Code verified against its contract, whose frames stay within the `W`
 bytes below the stack pointer (which the contract leaves it), that writes no
 PSTATE.DIT and calls indirectly only functions whose addresses two runs
-that agree on what is public agree on, run by `scrubAll W rb`, returns
-without secret residue with an `rb`-bit result. -/
-theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
+that agree on what is public agree on, followed by the clearing of the
+registers it may write, the result's fix and a tail that zeroes those `W`
+bytes (`TailOk`), returns without secret residue with an `rb`-bit result. -/
+theorem noResidue_scrubAllT {c T : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
     (hwf : cl.WF) (hkp : cl.Keeps c)
-    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hv : Verified target c k) (hW : W % 16 = 0) (hT : TailOk W T)
     (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat) (hd : 16 * c.aarch64Depth ≤ W)
     (hdit : c.all (fun i => !i.writesDit) = true)
     (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ n ∈ inames c, s₁.syms n = s₂.syms n)
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
-    NoResidue (scrubAll W rb cl c) k rb := by
+    NoResidue (.seq (withRet rb (.seq c (.block (clearsOf cl)))) T) k rb := by
   intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
-  unfold scrubAll at e₁ e₂
-  rw [withScrubG_range hW] at e₁ e₂
   -- One run: the code, the clearing, the result's fix and the tail.
   have run : ∀ s t s'', k.pre s → Exec isa (.seq (withRet rb (.seq c (.block (clearsOf cl))))
-      (scrubTailG W (List.range (W / 16)))) s t s'' →
+      T) s t s'' →
       ∃ (t' : List Leak) (u : State) (g : Reg → BitVec 64), Exec isa c s t' u ∧ abiPreserved s u ∧
         (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ g .x0 >>> rb = (0 : BitVec 64) ∧ TailRunG W (List.range (W / 16)) { cleared cl u with gpr := g } s'' := by
     intro s t s'' hs e
@@ -572,7 +584,7 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : 
     obtain ⟨g, hg, hgq, hg0, -⟩ := retFix_hi hrb (cleared cl u)
     rw [hg] at hb'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj hb')
-    obtain ⟨u', x, tr⟩ := tailG_run hW range_ok { cleared cl u with gpr := g }
+    obtain ⟨u', x, tr⟩ := hT { cleared cl u with gpr := g }
       (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hsp s hs)
     obtain ⟨-, rfl⟩ := Exec.det eb x
     exact ⟨t', u, g, f, ha, hgq, hg0, tr⟩
@@ -633,9 +645,10 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : 
       lose (zeroG (u₂.sp - _) _ u₂.mem) (u₂.sp - _) W u₂.unknowns x
     rw [← hspu, ← hU]
     by_cases hin : (x - (u₁.sp - BitVec.ofNat 64 W)).toNat < W
-    · exact lose_agree (by rw [zeroG_all hW.2.2 _ hin, zeroG_all hW.2.2 _ hin])
+    · exact lose_agree (by rw [zeroG_all hW _ hin, zeroG_all hW _ hin])
     · rw [lose_out hin, lose_out hin, zeroG_out range_ok _ hin, zeroG_out range_ok _ hin]
-      have hd64 : 16 * c.aarch64Depth < 2 ^ 64 := by omega
+      have hd64 : 16 * c.aarch64Depth < 2 ^ 64 := by
+        have := hsp s₁ h₁; have := s₁.sp.isLt; omega
       have hout : ∀ (s u : State), u.sp = s.sp → u.wr = s.wr → W ≤ s.sp.toNat →
           Frame (s.wr ++ [below s.sp (16 * c.aarch64Depth)]) s.mem u.mem →
           (∀ r ∈ s.wr, ¬ r.Contains x 1) → ¬ (x - (u.sp - BitVec.ofNat 64 W)).toNat < W → u.mem x = s.mem x := by
@@ -652,6 +665,45 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : 
           (fun r hr => hx r (List.mem_append_right _ hr)) hin,
         hout s₂ u₂ hsp₂ hwr₂ (hsp s₂ h₂) (Exec.frameSp f₂ hd64) hx₂ (by rw [← hspu]; exact hin)]
       exact hm x hx
+
+open VG.AArch64.Scrub in
+/-- `scrubTailG W` zeroes the `W` bytes below the stack pointer. -/
+theorem tailOk_g {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) :
+    TailOk W (scrubTailG W (List.range (W / 16))) :=
+  fun u h => tailG_run hW range_ok u h
+
+open VG.AArch64.Scrub in
+/-- `scrubTailL W` zeroes the `W` bytes below the stack pointer. -/
+theorem tailOk_l {W : Nat} (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) : TailOk W (scrubTailL W) :=
+  fun u h => tailL_run hW u h
+
+/-- Code verified against its contract, whose frames stay within the `W`
+bytes below the stack pointer (which the contract leaves it), that writes no
+PSTATE.DIT and calls indirectly only functions whose addresses two runs
+that agree on what is public agree on, run by `scrubAll W rb`, returns
+without secret residue with an `rb`-bit result. -/
+theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
+    (hwf : cl.WF) (hkp : cl.Keeps c)
+    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat) (hd : 16 * c.aarch64Depth ≤ W)
+    (hdit : c.all (fun i => !i.writesDit) = true)
+    (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ n ∈ inames c, s₁.syms n = s₂.syms n)
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    NoResidue (scrubAll W rb cl c) k rb := by
+  unfold scrubAll
+  rw [withScrubG_range hW]
+  exact noResidue_scrubAllT hwf hkp hv hW.2.2 (tailOk_g hW) hsp hd hdit hsy hrb
+
+/-- `noResidue_scrubAll` for `4080 < W < 8176` bytes, zeroed by `scrubAllL`. -/
+theorem noResidue_scrubAllL {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
+    (hwf : cl.WF) (hkp : cl.Keeps c)
+    (hv : Verified target c k) (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0)
+    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat) (hd : 16 * c.aarch64Depth ≤ W)
+    (hdit : c.all (fun i => !i.writesDit) = true)
+    (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ n ∈ inames c, s₁.syms n = s₂.syms n)
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    NoResidue (scrubAllL W rb cl c) k rb :=
+  noResidue_scrubAllT hwf hkp hv hW.2.2 (tailOk_l hW) hsp hd hdit hsy hrb
 
 /-! ## Code without frames -/
 
@@ -764,22 +816,27 @@ structure ScrubAllOk (k : Contract isa) (W rb : Nat) : Prop where
   pub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp
 
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
-theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear} (hwf : cl.WF)
+/-- Code verified against its contract, followed by the clearing of the
+registers, the result's fix and a tail that zeroes the `W` bytes below the
+stack pointer (`TailOk`), is verified against it, if the contract has room
+for them and its postcondition reads neither them nor the registers
+(`ScrubAllOk`). -/
+theorem Verified.scrubAllT {c T : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear} (hwf : cl.WF)
     (h : Verified target c k)
-    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
-    Verified target (scrubAll W rb cl c) k := by
+    (hT : TailOk W T) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
+    Verified target (.seq (withRet rb (.seq c (.block (clearsOf cl)))) T) k := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have hrun : ∀ s, k.pre s → ∃ t u g u'',
       Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
       execBlock isa (retFix rb) (cleared cl u) = some ({ cleared cl u with gpr := g }, []) ∧
       (∀ q, q ≠ .x0 → g q = (cleared cl u).gpr q) ∧ (g .x0).setWidth rb = ((cleared cl u).gpr .x0).setWidth rb ∧
-      Exec isa (scrubTailG W (List.range (W / 16))) { cleared cl u with gpr := g }
+      Exec isa T { cleared cl u with gpr := g }
         (tailTraceG u.sp W (List.range (W / 16))) u'' ∧
       TailRunG W (List.range (W / 16)) { cleared cl u with gpr := g } u'' := by
     intro s hs
     obtain ⟨t, u, he, ha, hq⟩ := hcor s hs
     obtain ⟨g, hg, hgq, -, hgx⟩ := retFix_hi hrb (cleared cl u)
-    obtain ⟨u'', ex, tr⟩ := tailG_run hW range_ok { cleared cl u with gpr := g }
+    obtain ⟨u'', ex, tr⟩ := hT { cleared cl u with gpr := g }
       (by show W ≤ u.sp.toNat; rw [ha.2.1]; exact hk.sp s hs)
     exact ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩
   have hx0 : Reg.x0 ∉ cl.gprs := fun h => absurd (hwf.gprs _ h) (by decide)
@@ -787,9 +844,7 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : C
   · obtain ⟨t, u, g, u'', he, ha, hq, hg, hgq, hgx, ex, tr⟩ := hrun s hs
     refine ⟨((t ++ []) ++ []) ++ tailTraceG u.sp W (List.range (W / 16)), u'', ?_,
       ⟨fun q hq' => ?_, by rw [tr.sp]; exact ha.2.1, fun w hw => ?_⟩, ?_⟩
-    · unfold VG.Impl.Residue.AArch64.scrubAll
-      rw [withScrubG_range hW]
-      exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)) ex
+    · exact Exec.seq (Exec.seq (Exec.seq he (Exec.block (clears_run hwf u))) (Exec.block hg)) ex
     · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
       have h0 : q ≠ .x0 := by rintro rfl; simp [preserved] at hq'
       have hng : q ∉ cl.gprs := fun h => preserved_not_all q hq' (hwf.gprs q h)
@@ -810,9 +865,7 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : C
         simp only [reduceCtorEq, ↓reduceIte]
         rw [hgx]
         simp [cleared, hx0]
-  · unfold VG.Impl.Residue.AArch64.scrubAll at e₁ e₂
-    rw [withScrubG_range hW] at e₁ e₂
-    cases e₁ with
+  · cases e₁ with
     | seq a₁ b₁ =>
     cases e₂ with
     | seq a₂ b₂ =>
@@ -845,6 +898,21 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : C
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hr₂)
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
       hct _ _ _ _ _ _ h₁ h₂ hp c₁ c₂, hk.pub s₁ s₂ hp]
+
+theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear} (hwf : cl.WF)
+    (h : Verified target c k)
+    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
+    Verified target (scrubAll W rb cl c) k := by
+  unfold VG.Impl.Residue.AArch64.scrubAll
+  rw [withScrubG_range hW]
+  exact Verified.scrubAllT hwf h (tailOk_g hW) hrb hk
+
+/-- `Verified.scrubAll` for `4080 < W < 8176` bytes, zeroed by `scrubAllL`. -/
+theorem Verified.scrubAllL {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear} (hwf : cl.WF)
+    (h : Verified target c k)
+    (hW : 4080 < W ∧ W < 8176 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
+    Verified target (scrubAllL W rb cl c) k :=
+  Verified.scrubAllT hwf h (tailOk_l hW) hrb hk
 
 open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
 /-- `Verified.scrubAll` for code without frames, under `scrubAll 0`. -/
@@ -1228,7 +1296,8 @@ theorem all_spSafe (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := b
 abbrev retBitsOf {api : Api} (r : Registration api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
-/-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes),
+/-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes;
+by `scrubAllL` for 4096 bytes or more),
 returning without secret residue, if its side conditions hold (checked when
 the registration is evaluated); otherwise `r` itself, which then has no
 proof (`Registration.residue`), as the emitter allows only of what
@@ -1257,6 +1326,26 @@ def withScrubAll {api : Api} (r : Registration api target) (hok : ScrubAllOk r.c
       notWith := r.notWith
       residue := some ⟨noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
         h.2.2.2.2.1⟩ }
+  else if h : (4080 < r.stack ∧ r.stack < 8176 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
+      r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
+      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
+    { suffix := r.suffix
+      tables := r.tables
+      code := scrubAllL r.stack (retBitsOf r) (Clear.of r.code) r.code
+      contract := r.contract
+      verified := Verified.scrubAllL (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok
+      consts := r.consts
+      stack := r.stack
+      ofApi := r.ofApi
+      ofSig := r.ofSig
+      spSafe := all_spSafe _
+      written := r.written
+      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
+      extra := r.extra
+      vendor := r.vendor
+      notWith := r.notWith
+      residue := some ⟨noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1
+        (tablesCall_syms h.2.2.2.1) h.2.2.2.2.1⟩ }
   else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
     { suffix := r.suffix

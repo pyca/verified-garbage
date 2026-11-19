@@ -254,4 +254,28 @@ theorem pkcs1DecryptOk (stack : Nat) :
       rw [toNat_sw, toNat_sw] at hol
       exact writtenMsg_of (e _ (by rw [toNat_sw]; exact hol.symm)) (wordsAt_of hb.2.1) h
 
+theorem writtenOutcome_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.writtenOutcome m₁ o n r v) :
+    Spec.Rsa.writtenOutcome m₂ o n r v := by
+  cases v <;> simpa only [Spec.Rsa.writtenOutcome, e] using h
+
+theorem pkcs1SignOk (stack : Nat) :
+    ScrubAllOk (Spec.RsaPkcs1Sig.signPrecomputedContract abi stack) stack
+      (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits abi.ptrBits) :=
+  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Sig.signPrecomputedSig) fun
+    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+      simp only [Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig, List.cons_append,
+        List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
+      change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
+      change @Curry.apply (Mem → Mem → BitVec (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits abi.ptrBits) → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits abi.ptrBits) → Prop)
+        [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at hp h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      have hol := hp.2.1
+      rw [toNat_sw, toNat_sw] at hol
+      exact writtenOutcome_of (e _ (by rw [toNat_sw]; exact hol.symm)) h
+
 end VG.Proof.Rsa.AArch64.Scrub
