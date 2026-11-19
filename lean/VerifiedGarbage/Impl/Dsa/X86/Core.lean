@@ -51,6 +51,18 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   (.seq (.seq (load n len (slot n 5) a) (load n expLen (slot n 8) e))
   (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
 
+/-- The staging of the product of two powers (`Pow.core2`): `loadPower`'s,
+then the second base into slot 7 and the second exponent after the first. -/
+def loadPower2 (n len expLen : Nat) (modulus : Field) (a e a2 e2 : Pointer) : Prog isa :=
+  .seq (loadPower n len expLen modulus a e)
+    (.seq (load n len (slot n 7) a2) (load n expLen (Pow.exp2 n) e2))
+
+/-- `a^e · a2^e2 mod m`, in one pass over both exponents (`Pow.core2`). -/
+def power2 (len expLen : Nat) (modulus : Field) (a e a2 e2 : Pointer) (output : Nat) : Prog isa :=
+  let n := (len + 7) / 8
+  .seq (loadPower2 n len expLen modulus a e a2 e2)
+    (.seq (Pow.core2 n ((expLen + 3) / 4)) (store len output))
+
 /-- `a b mod m` by a call of the width's shared product (`Arith.mulCall`). -/
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
@@ -91,17 +103,16 @@ def signFinish (qLen : Nat) : Prog isa := sequence [
 def sign (pLen qLen : Nat) : Prog isa :=
   .seq (signStart pLen qLen) (signFinish qLen)
 
-/-- Verification uses two fixed-iteration powers and a product modulo p. -/
+/-- Verification's scalars: `w = s⁻¹`, `u = z w` and `v = r w`, modulo q. -/
 def verifyScalars (qLen : Nat) : Prog isa := sequence [
   power qLen qLen .q .signatureS (.local qMinusTwo) inverse,
   reduce qLen digestPrefix (.input .digest) z,
   product qLen (.local z) (.local inverse) u,
   product qLen (.input .signature) (.local inverse) v]
 
+/-- `g^u y^v mod p`, as one product of two powers, then modulo q. -/
 def verifyPowers (pLen qLen : Nat) : Prog isa := sequence [
-  power pLen qLen .p (.input .g) (.local u) t,
-  power pLen qLen .p (.input .y) (.local v) t2,
-  productMod pLen .p (.local t) (.local t2) t,
+  power2 pLen qLen .p (.input .g) (.local u) (.input .y) (.local v) t,
   reduce qLen (.imm (BitVec.ofNat 32 pLen)) (.local t) u]
 
 def verify (pLen qLen : Nat) : Prog isa :=
