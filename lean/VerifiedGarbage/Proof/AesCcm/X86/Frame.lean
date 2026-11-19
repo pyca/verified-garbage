@@ -630,15 +630,20 @@ theorem open_noEsp : («open» v.callee v.suffix).allInstrs (fun i => !Taint.clo
   decide +kernel
 
 theorem seal_stackUse : stackUse («seal» v.callee v.suffix) ≤ 60 := by
+  have h := Proof.CmacAes.X86.update_stack v
   simp only [«seal», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
-    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, tagOut, stackUse,
-    Proof.CmacAes.X86.update_stack v, v.stack]
+    updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, tagOut, stackUse, v.stack]
+  generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
+  revert x
   decide +kernel
 
 theorem open_stackUse : stackUse («open» v.callee v.suffix) ≤ 60 := by
+  have h := Proof.CmacAes.X86.update_stack v
   simp only [«open», ccmEntry, Impl.AesGcm.X86.entry, ctrs, mac, b0, aad, aadHead, header, absorbPad, updBlock,
     updCall, Impl.CmacAes.Stream.X86.call6, tag, ctr, ctrCall, mask, Impl.AesGcm.X86.recv, Impl.AesGcm.X86.cmp,
-    stackUse, Proof.CmacAes.X86.update_stack v, v.stack]
+    stackUse, v.stack]
+  generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
+  revert x
   decide +kernel
 
 /-- A state satisfying `vg_aes_ccm_seal`'s precondition, without the working
