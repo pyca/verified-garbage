@@ -166,6 +166,17 @@ def copyLoop : Prog isa :=
   .loop (.block [.movzx8 .eax (at_ .edi 0), .store8 (at_ .edx 0) .al, .alu .add .edi (imm 1),
     .alu .add .edx (imm 1), .alu .sub .ecx (imm 1)]) .ne
 
+/-- The 4 bytes at `edi` ANDed with `ebx`, and on to the next 4 of the `ecx`;
+CF is set when fewer than 4 are left. -/
+def maskWord : List Instr :=
+  [.mov .edx (.mem (at_ .edi 0)), .alu .and .edx (.reg .ebx), .store (at_ .edi 0) .edx, .alu .add .edi (imm 4),
+   .alu .sub .ecx (imm 4), .alu .cmp .ecx (imm 4)]
+
+/-- ANDs the `ecx` bytes at `edi` with `ebx`, 4 at a time while 4 are left,
+advancing `edi`; `ecx` is then the number of bytes left, at most 3. -/
+def maskWords : Prog isa :=
+  .seq (.block [.alu .cmp .ecx (imm 4)]) (.ite .b (.block []) (.loop (.block maskWord) .ae))
+
 /-- The register holding the bytes XORed with the keystream: the destination
 `edi` in place, `esi` out of place. -/
 def xorSrc (to : Bool) : Reg := if to then .esi else .edi

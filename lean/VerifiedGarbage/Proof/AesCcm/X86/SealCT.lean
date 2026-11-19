@@ -1070,8 +1070,9 @@ namespace VG.Proof.AesCcm.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesCcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
-open VG.Impl.AesGcm.X86 (at_ imm slot zero4 copyLoop tglO tpO rO)
+open VG.Impl.AesGcm.X86 (at_ imm slot zero4 copyLoop maskWords tglO tpO rO)
 open VG.Proof.AesGcm.X86 (w64 w64_add slotv in_of_covers covers_left succ_ofNat32 add_zero32 pred_count pred_beq bytesAt_succ
+  maskWords_ok
   length_bytesAt and_self_beq32 WEnv padLoop_ok zero4_fold toNat_ofNat32 LoopPre CopyPost copyLoop_ok CT)
 
 /-! ## `mask` -/
@@ -1158,13 +1159,34 @@ theorem mask_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
     · cmems [wr₁]
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have hfD := hD.wrap
+  refine WP.seq (WP.mono (maskWords_ok s₂ hn32 (by omega_arith) di₂ cx₂ bx₂ (by rw [rd₂, wr₂]; exact hD.rd)
+    (by rw [wr₂]; exact hDw)) fun s₃ ⟨j₀, hj₀, hlt₀, di₃, cx₃, m₃, g₃, rd₃, wr₃⟩ => ?_)
+  obtain ⟨s₄, run₄, g₄, m₄, zf₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa [.alu .test .ecx (.reg .ecx)] s₃ = some s₄ ∧
+      s₄.gpr = s₃.gpr ∧ s₄.mem = s₃.mem ∧ s₄.zf = some (decide (n - j₀ = 0)) ∧ s₄.rd = s₃.rd ∧ s₄.wr = s₃.wr := by
+    refine ⟨_, by crun [], ?_, ?_, ?_, ?_, ?_⟩
+    · rfl
+    · rfl
+    · cmems [cx₃]; rw [and_self_beq32 (by omega_arith)]
+    · rfl
+    · rfl
+  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
+  obtain mem₄ : s₄.mem = writeBytes s.mem (w64 D) (if c then bytesAt s.mem (w64 D) j₀ else zeros j₀) := by
+    rw [m₄, m₃, m₂]; rfl
+  obtain gg₄ : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → s₄.gpr r = s₂.gpr r := fun r h₁ h₂ h₃ => by
+    rw [g₄, g₃ r h₁ h₂ h₃]
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂]
+  refine WP.ite (decide (n - j₀ = 0)) (eval_e zf₄) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · obtain rfl : j₀ = n := by have := of_decide_eq_true hb; omega_arith
+    exact ⟨⟨by rw [gg₄ _ (by decide) (by decide) (by decide), bp₂],
+      by rw [gg₄ _ (by decide) (by decide) (by decide), sp₂], E.perm.of_eq rd₄' wr₄'⟩, rd₄', wr₄', mem₄⟩
+  obtain hj₁ : j₀ < n := by have := of_decide_eq_false hb; omega_arith
   refine WP.loop (M := isa) (body := .block maskBody) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j < n ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
       t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧
       t.mem = writeBytes s.mem (w64 D) (if c then bytesAt s.mem (w64 D) j else zeros j) ∧
-      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s₂.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - 0) _
-    ⟨0, rfl, hn0, by rw [di₂, add_zero32], by rw [cx₂, Nat.sub_zero], by
-      rw [m₂]; cases c <;> simp [Spec.Aes.bytesAt, zeros, writeBytes_nil], fun r _ _ _ => rfl, rd₂, wr₂⟩
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s₂.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - j₀) _
+    ⟨j₀, rfl, hj₁, by rw [g₄, di₃], by rw [g₄, cx₃], mem₄, gg₄, rd₄', wr₄'⟩
   rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok t (P := D) (i := j) (n := n) (c := c) di cx
     (by rw [g _ (by decide) (by decide) (by decide), bx₂]) (w64_add (by omega_arith))

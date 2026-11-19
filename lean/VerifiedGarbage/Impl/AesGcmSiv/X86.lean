@@ -77,7 +77,7 @@ is right) affect timing.
 namespace VG.Impl.AesGcmSiv.X86
 
 open VG.X86
-open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry restore zero4 copyLoop xorLoop Callees ctrCall ghCall
+open VG.Impl.AesGcm.X86 (at_ imm slot argOp keep entry restore zero4 copyLoop xorLoop maskWords Callees ctrCall ghCall
   keyCall)
 
 abbrev tagO : Nat := 0
@@ -339,13 +339,17 @@ def cmp : List Instr :=
    .alu .or .eax (.reg .ecx), .mov .ecx (slot (tagO + 12)), .alu .xor .ecx (slot (t2O + 12)),
    .alu .or .eax (.reg .ecx), .alu .cmp .eax (imm 1), .mov .eax (imm 0), .alu .adc .eax (imm 0)]
 
-/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept. -/
+/-- Every byte of the data ANDed with `0 − eax`, with `eax` kept: four at a
+time while four are left (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (.reg .eax), .mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block [.mov .edi (slot dataO)])
-        (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
-          .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)))
+        (.seq maskWords
+          (.seq (.block [.alu .test .ecx (.reg .ecx)])
+            (.ite .e (.block [])
+              (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
+                .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))))))
 
 /-! ## The functions -/
 
