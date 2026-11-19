@@ -22607,22 +22607,26 @@ vg_dsa_verify_prevalidated:
 	jne 267b
 	mov eax, 1
 	mov DWORD PTR [edi+1624], eax
+	mov eax, DWORD PTR [edi+316]
+	shr eax, 31
+	cmp eax, 1
+	je 268f
 	mov eax, 0
 	mov ebp, edi
-268:
+270:
 	mov DWORD PTR [ebp+2144], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 268b
+	jne 270b
 	mov eax, 1
 	mov DWORD PTR [edi+2144], eax
 	mov esi, 2080
-269:
+271:
 	mov ecx, 0
 	mov ebp, edi
-270:
+272:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, 0
 	cmp edx, ecx
@@ -22633,13 +22637,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 270b
+	jne 272b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [edi+1360], eax
 	mov ecx, 0
 	mov ebp, edi
-271:
+273:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, 0
 	cmp edx, ecx
@@ -22650,7 +22654,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 271b
+	jne 273b
 	mov eax, DWORD PTR [edi+1360]
 	mov edx, 0
 	cmp edx, ecx
@@ -22659,7 +22663,7 @@ vg_dsa_verify_prevalidated:
 	xor eax, -1
 	mov ecx, eax
 	mov ebp, edi
-272:
+274:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, DWORD PTR [ebp+584]
 	xor edx, eax
@@ -22670,10 +22674,80 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 272b
+	jne 274b
 	sub esi, 1
 	cmp esi, 0
-	jne 269b
+	jne 271b
+	jmp 269f
+268:
+	mov eax, 0
+	mov ebp, edi
+275:
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 275b
+	mov eax, -2147483648
+	mov DWORD PTR [edi+2396], eax
+	mov esi, 33
+276:
+	mov ecx, 0
+	mov ebp, edi
+277:
+	mov eax, DWORD PTR [ebp+2144]
+	mov edx, 0
+	cmp edx, ecx
+	adc eax, DWORD PTR [ebp+2144]
+	mov DWORD PTR [ebp+1104], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 277b
+	mov eax, 0
+	sub eax, ecx
+	mov DWORD PTR [edi+1360], eax
+	mov ecx, 0
+	mov ebp, edi
+278:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	mov DWORD PTR [ebp+584], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 278b
+	mov eax, DWORD PTR [edi+1360]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, 0
+	sbb eax, eax
+	xor eax, -1
+	mov ecx, eax
+	mov ebp, edi
+279:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, DWORD PTR [ebp+584]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 279b
+	sub esi, 1
+	cmp esi, 0
+	jne 276b
+269:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -22836,13 +22910,13 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov eax, 0
 	mov ebp, edi
-273:
+280:
 	mov DWORD PTR [ebp+3184], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 273b
+	jne 280b
 	mov eax, 1
 	mov DWORD PTR [edi+3184], eax
 	lea esp, [esp-36]
@@ -22867,7 +22941,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-274:
+281:
 	mov eax, DWORD PTR [ebp+3184]
 	mov edx, DWORD PTR [ebp+3184]
 	xor edx, eax
@@ -22878,7 +22952,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 274b
+	jne 281b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -22901,7 +22975,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-275:
+282:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -22912,10 +22986,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 275b
+	jne 282b
 	mov ecx, 0
 	mov ebp, edi
-276:
+283:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+3704]
 	xor edx, eax
@@ -22926,9 +23000,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 276b
+	jne 283b
 	mov esi, 160
-277:
+284:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -22958,7 +23032,7 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+4], eax
 	mov ecx, 0
 	mov ebp, edi
-278:
+285:
 	mov eax, DWORD PTR [ebp+1624]
 	mov edx, DWORD PTR [ebp+1624]
 	xor edx, eax
@@ -22969,7 +23043,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 278b
+	jne 285b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 1
 	sub eax, 1
@@ -22977,7 +23051,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-279:
+286:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2664]
 	xor edx, eax
@@ -22988,7 +23062,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 279b
+	jne 286b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 2
 	sub eax, 1
@@ -22996,7 +23070,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-280:
+287:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -23007,7 +23081,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 280b
+	jne 287b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 3
 	sub eax, 1
@@ -23015,7 +23089,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-281:
+288:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+1880]
 	xor edx, eax
@@ -23026,7 +23100,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 281b
+	jne 288b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -23049,7 +23123,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-282:
+289:
 	mov eax, DWORD PTR [ebp+4224]
 	mov ebx, eax
 	shr ebx, 31
@@ -23061,10 +23135,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 282b
+	jne 289b
 	mov ecx, 0
 	mov ebp, edi
-283:
+290:
 	mov eax, DWORD PTR [ebp+4480]
 	mov ebx, eax
 	shr ebx, 31
@@ -23076,19 +23150,19 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 283b
+	jne 290b
 	sub esi, 1
 	cmp esi, 0
-	jne 277b
+	jne 284b
 	mov eax, 0
 	mov ebp, edi
-284:
+291:
 	mov DWORD PTR [ebp+3704], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 284b
+	jne 291b
 	mov eax, 1
 	mov DWORD PTR [edi+3704], eax
 	lea esp, [esp-36]
@@ -23117,7 +23191,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-285:
+292:
 	mov eax, DWORD PTR [ebp+3184]
 	and eax, ecx
 	bswap eax
@@ -23127,12 +23201,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 285b
+	jne 292b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-286:
+293:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23141,7 +23215,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 286b
+	jne 293b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, edi
@@ -23163,7 +23237,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-287:
+294:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -23173,13 +23247,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 287b
+	jne 294b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-288:
+295:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -23188,14 +23262,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 288b
+	jne 295b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-289:
+296:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+512], eax
@@ -23204,12 +23278,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 289b
+	jne 296b
 	mov eax, 0
 	mov DWORD PTR [edi+532], eax
 	mov ecx, 0
 	mov ebp, edi
-290:
+297:
 	mov eax, DWORD PTR [ebp+344]
 	mov edx, 0
 	cmp edx, ecx
@@ -23219,12 +23293,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 290b
+	jne 297b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-291:
+298:
 	mov eax, DWORD PTR [ebp+512]
 	mov edx, 0
 	cmp edx, ecx
@@ -23234,7 +23308,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 291b
+	jne 298b
 	mov eax, ecx
 	or eax, ebx
 	xor eax, -1
@@ -23255,7 +23329,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 380
 	mov ebp, edi
-292:
+299:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23264,21 +23338,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 292b
+	jne 299b
 	mov eax, 0
 	mov ebp, edi
-293:
+2100:
 	mov DWORD PTR [ebp+6272], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 293b
+	jne 2100b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+6396], eax
 	mov ecx, 0
 	mov ebp, edi
-294:
+2101:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23288,24 +23362,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 294b
+	jne 2101b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-295:
+2102:
 	mov DWORD PTR [ebp+6272], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 295b
+	jne 2102b
 	mov eax, 1
 	mov DWORD PTR [edi+6400], eax
 	mov ecx, 0
 	mov ebp, edi
-296:
+2103:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23315,25 +23389,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 296b
+	jne 2103b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+32], edx
 	mov eax, 0
 	mov ebp, edi
-297:
+2104:
 	mov DWORD PTR [ebp+6272], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 297b
+	jne 2104b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+6524], eax
 	mov ecx, 0
 	mov ebp, edi
-298:
+2105:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23343,24 +23417,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 298b
+	jne 2105b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-299:
+2106:
 	mov DWORD PTR [ebp+6272], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 299b
+	jne 2106b
 	mov eax, 1
 	mov DWORD PTR [edi+6528], eax
 	mov ecx, 0
 	mov ebp, edi
-2100:
+2107:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23370,25 +23444,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2100b
+	jne 2107b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+36], edx
 	mov eax, 0
 	mov ebp, edi
-2101:
+2108:
 	mov DWORD PTR [ebp+6272], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2101b
+	jne 2108b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+6652], eax
 	mov ecx, 0
 	mov ebp, edi
-2102:
+2109:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23398,7 +23472,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2102b
+	jne 2109b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -23410,7 +23484,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2103:
+2110:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23419,21 +23493,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2103b
+	jne 2110b
 	mov eax, 0
 	mov ebp, edi
-2104:
+2111:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2104b
+	jne 2111b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+656], eax
 	mov ecx, 0
 	mov ebp, edi
-2105:
+2112:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23443,24 +23517,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2105b
+	jne 2112b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2106:
+2113:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2106b
+	jne 2113b
 	mov eax, 1
 	mov DWORD PTR [edi+660], eax
 	mov ecx, 0
 	mov ebp, edi
-2107:
+2114:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23470,25 +23544,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2107b
+	jne 2114b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+44], edx
 	mov eax, 0
 	mov ebp, edi
-2108:
+2115:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2108b
+	jne 2115b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+664], eax
 	mov ecx, 0
 	mov ebp, edi
-2109:
+2116:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23498,24 +23572,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2109b
+	jne 2116b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2110:
+2117:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2110b
+	jne 2117b
 	mov eax, 1
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2111:
+2118:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23525,25 +23599,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2111b
+	jne 2118b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+48], edx
 	mov eax, 0
 	mov ebp, edi
-2112:
+2119:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2112b
+	jne 2119b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2113:
+2120:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23553,7 +23627,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2113b
+	jne 2120b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -23594,12 +23668,12 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8240], edx
 	mov eax, DWORD PTR [edi+8244]
 	cmp eax, 0
-	je 2114f
+	je 2121f
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2116:
+2123:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23608,21 +23682,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2116b
+	jne 2123b
 	mov eax, 0
 	mov ebp, edi
-2117:
+2124:
 	mov DWORD PTR [ebp+568], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2117b
+	jne 2124b
 	mov eax, 2
 	mov DWORD PTR [edi+568], eax
 	mov ecx, 0
 	mov ebp, edi
-2118:
+2125:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -23633,14 +23707,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2118b
+	jne 2125b
 	mov esi, edi
 	add esi, 14912
 	mov ecx, -1
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2119:
+2126:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -23650,148 +23724,87 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2119b
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2120:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2120b
-	mov esi, DWORD PTR [edi+8212]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2121:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+424], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2121b
-	mov ecx, 0
-	mov ebp, edi
-2122:
-	mov eax, DWORD PTR [ebp+424]
-	mov edx, 0
-	cmp edx, ecx
-	sbb eax, DWORD PTR [ebp+64]
-	sbb ecx, ecx
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2122b
-	mov eax, ecx
-	mov ebx, eax
-	mov ecx, 0
-	mov ebp, edi
-2123:
-	or ecx, DWORD PTR [ebp+424]
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2123b
-	mov edx, ecx
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	and edx, ebx
-	mov eax, DWORD PTR [edi+8244]
-	and eax, edx
-	mov DWORD PTR [edi+8244], eax
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2124:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2124b
-	mov esi, DWORD PTR [edi+8212]
-	add esi, DWORD PTR [edi+8232]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2125:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+424], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2125b
-	mov ecx, 0
-	mov ebp, edi
-2126:
-	mov eax, DWORD PTR [ebp+424]
-	mov edx, 0
-	cmp edx, ecx
-	sbb eax, DWORD PTR [ebp+64]
-	sbb ecx, ecx
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
 	jne 2126b
-	mov eax, ecx
-	mov ebx, eax
-	mov ecx, 0
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
 	mov ebp, edi
 2127:
-	or ecx, DWORD PTR [ebp+424]
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
 	jne 2127b
-	mov edx, ecx
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	and edx, ebx
-	mov eax, DWORD PTR [edi+8244]
-	and eax, edx
-	mov DWORD PTR [edi+8244], eax
-	mov esi, DWORD PTR [edi+8196]
+	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
 2128:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
-	mov DWORD PTR [ebp+64], eax
+	mov DWORD PTR [ebp+424], eax
 	sub ebx, 4
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
 	jne 2128b
+	mov ecx, 0
+	mov ebp, edi
+2129:
+	mov eax, DWORD PTR [ebp+424]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2129b
+	mov eax, ecx
+	mov ebx, eax
+	mov ecx, 0
+	mov ebp, edi
+2130:
+	or ecx, DWORD PTR [ebp+424]
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2130b
+	mov edx, ecx
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	and edx, ebx
+	mov eax, DWORD PTR [edi+8244]
+	and eax, edx
+	mov DWORD PTR [edi+8244], eax
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2131:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2131b
 	mov esi, DWORD PTR [edi+8212]
 	add esi, DWORD PTR [edi+8232]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2129:
+2132:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -23800,13 +23813,74 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2129b
+	jne 2132b
+	mov ecx, 0
+	mov ebp, edi
+2133:
+	mov eax, DWORD PTR [ebp+424]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2133b
+	mov eax, ecx
+	mov ebx, eax
+	mov ecx, 0
+	mov ebp, edi
+2134:
+	or ecx, DWORD PTR [ebp+424]
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2134b
+	mov edx, ecx
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	and edx, ebx
+	mov eax, DWORD PTR [edi+8244]
+	and eax, edx
+	mov DWORD PTR [edi+8244], eax
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2135:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2135b
+	mov esi, DWORD PTR [edi+8212]
+	add esi, DWORD PTR [edi+8232]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2136:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+424], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2136b
 	mov esi, edi
 	add esi, 14912
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2130:
+2137:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -23815,7 +23889,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2130b
+	jne 2137b
 	mov eax, 89
 	push eax
 	push edi
@@ -23828,7 +23902,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2131:
+2138:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -23838,12 +23912,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2131b
+	jne 2138b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2132:
+2139:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23852,7 +23926,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2132b
+	jne 2139b
 	mov esi, DWORD PTR [edi+8220]
 	mov ebx, DWORD PTR [edi+8240]
 	mov eax, 89
@@ -23871,7 +23945,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2133:
+2140:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -23881,12 +23955,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2133b
+	jne 2140b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2134:
+2141:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23895,13 +23969,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2134b
+	jne 2141b
 	mov esi, edi
 	add esi, 14880
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2135:
+2142:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -23910,13 +23984,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2135b
+	jne 2142b
 	mov esi, edi
 	add esi, 14784
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2136:
+2143:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -23925,7 +23999,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2136b
+	jne 2143b
 	mov eax, 89
 	push eax
 	push edi
@@ -23938,7 +24012,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2137:
+2144:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -23948,12 +24022,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2137b
+	jne 2144b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2138:
+2145:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -23962,12 +24036,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2138b
+	jne 2145b
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2139:
+2146:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -23976,13 +24050,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2139b
+	jne 2146b
 	mov esi, edi
 	add esi, 14784
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2140:
+2147:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -23991,7 +24065,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2140b
+	jne 2147b
 	mov eax, 89
 	push eax
 	push edi
@@ -24004,7 +24078,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2141:
+2148:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -24014,12 +24088,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2141b
+	jne 2148b
 	mov esi, DWORD PTR [edi+8192]
 	mov ebx, esi
 	add ebx, 380
 	mov ebp, edi
-2142:
+2149:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -24028,12 +24102,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2142b
+	jne 2149b
 	mov esi, DWORD PTR [edi+8200]
 	mov ebx, esi
 	add ebx, 380
 	mov ebp, edi
-2143:
+2150:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+3944], eax
@@ -24042,13 +24116,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2143b
+	jne 2150b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2144:
+2151:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+6272], eax
@@ -24057,21 +24131,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2144b
+	jne 2151b
 	mov eax, 0
 	mov ebp, edi
-2145:
+2152:
 	mov DWORD PTR [ebp+6304], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 352
 	cmp ebp, edx
-	jne 2145b
+	jne 2152b
 	mov esi, DWORD PTR [edi+8204]
 	mov ebx, esi
 	add ebx, 380
 	mov ebp, edi
-2146:
+2153:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+5496], eax
@@ -24080,13 +24154,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2146b
+	jne 2153b
 	mov esi, edi
 	add esi, 14848
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2147:
+2154:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+6656], eax
@@ -24095,16 +24169,16 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2147b
+	jne 2154b
 	mov eax, 0
 	mov ebp, edi
-2148:
+2155:
 	mov DWORD PTR [ebp+6688], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 352
 	cmp ebp, edx
-	jne 2148b
+	jne 2155b
 	mov ebx, DWORD PTR [edi+64]
 	mov ecx, ebx
 	mov eax, ebx
@@ -24140,31 +24214,35 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi], eax
 	mov eax, 0
 	mov ebp, edi
-2149:
+2156:
 	mov DWORD PTR [ebp+2392], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2149b
+	jne 2156b
 	mov eax, 1
 	mov DWORD PTR [edi+2392], eax
+	mov eax, DWORD PTR [edi+444]
+	shr eax, 31
+	cmp eax, 1
+	je 2157f
 	mov eax, 0
 	mov ebp, edi
-2150:
+2159:
 	mov DWORD PTR [ebp+3168], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2150b
+	jne 2159b
 	mov eax, 1
 	mov DWORD PTR [edi+3168], eax
 	mov esi, 3120
-2151:
+2160:
 	mov ecx, 0
 	mov ebp, edi
-2152:
+2161:
 	mov eax, DWORD PTR [ebp+3168]
 	mov edx, 0
 	cmp edx, ecx
@@ -24175,13 +24253,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2152b
+	jne 2161b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [edi+2000], eax
 	mov ecx, 0
 	mov ebp, edi
-2153:
+2162:
 	mov eax, DWORD PTR [ebp+1616]
 	mov edx, 0
 	cmp edx, ecx
@@ -24192,7 +24270,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2153b
+	jne 2162b
 	mov eax, DWORD PTR [edi+2000]
 	mov edx, 0
 	cmp edx, ecx
@@ -24201,7 +24279,7 @@ vg_dsa_verify_prevalidated:
 	xor eax, -1
 	mov ecx, eax
 	mov ebp, edi
-2154:
+2163:
 	mov eax, DWORD PTR [ebp+1616]
 	mov edx, DWORD PTR [ebp+840]
 	xor edx, eax
@@ -24212,10 +24290,80 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2154b
+	jne 2163b
 	sub esi, 1
 	cmp esi, 0
-	jne 2151b
+	jne 2160b
+	jmp 2158f
+2157:
+	mov eax, 0
+	mov ebp, edi
+2164:
+	mov DWORD PTR [ebp+3168], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 384
+	cmp ebp, edx
+	jne 2164b
+	mov eax, -2147483648
+	mov DWORD PTR [edi+3548], eax
+	mov esi, 49
+2165:
+	mov ecx, 0
+	mov ebp, edi
+2166:
+	mov eax, DWORD PTR [ebp+3168]
+	mov edx, 0
+	cmp edx, ecx
+	adc eax, DWORD PTR [ebp+3168]
+	mov DWORD PTR [ebp+1616], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 384
+	cmp ebp, edx
+	jne 2166b
+	mov eax, 0
+	sub eax, ecx
+	mov DWORD PTR [edi+2000], eax
+	mov ecx, 0
+	mov ebp, edi
+2167:
+	mov eax, DWORD PTR [ebp+1616]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	mov DWORD PTR [ebp+840], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 384
+	cmp ebp, edx
+	jne 2167b
+	mov eax, DWORD PTR [edi+2000]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, 0
+	sbb eax, eax
+	xor eax, -1
+	mov ecx, eax
+	mov ebp, edi
+2168:
+	mov eax, DWORD PTR [ebp+1616]
+	mov edx, DWORD PTR [ebp+840]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebp+3168], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 384
+	cmp ebp, edx
+	jne 2168b
+	sub esi, 1
+	cmp esi, 0
+	jne 2165b
+2158:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 881
@@ -24378,13 +24526,13 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov eax, 0
 	mov ebp, edi
-2155:
+2169:
 	mov DWORD PTR [ebp+4720], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2155b
+	jne 2169b
 	mov eax, 1
 	mov DWORD PTR [edi+4720], eax
 	lea esp, [esp-36]
@@ -24409,7 +24557,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2156:
+2170:
 	mov eax, DWORD PTR [ebp+4720]
 	mov edx, DWORD PTR [ebp+4720]
 	xor edx, eax
@@ -24420,7 +24568,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2156b
+	jne 2170b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 881
@@ -24443,7 +24591,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2157:
+2171:
 	mov eax, DWORD PTR [ebp+3168]
 	mov edx, DWORD PTR [ebp+3168]
 	xor edx, eax
@@ -24454,10 +24602,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2157b
+	jne 2171b
 	mov ecx, 0
 	mov ebp, edi
-2158:
+2172:
 	mov eax, DWORD PTR [ebp+5496]
 	mov edx, DWORD PTR [ebp+5496]
 	xor edx, eax
@@ -24468,9 +24616,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2158b
+	jne 2172b
 	mov esi, 256
-2159:
+2173:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 881
@@ -24500,7 +24648,7 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+4], eax
 	mov ecx, 0
 	mov ebp, edi
-2160:
+2174:
 	mov eax, DWORD PTR [ebp+2392]
 	mov edx, DWORD PTR [ebp+2392]
 	xor edx, eax
@@ -24511,7 +24659,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2160b
+	jne 2174b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 1
 	sub eax, 1
@@ -24519,7 +24667,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2161:
+2175:
 	mov eax, DWORD PTR [ebp+5496]
 	mov edx, DWORD PTR [ebp+3944]
 	xor edx, eax
@@ -24530,7 +24678,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2161b
+	jne 2175b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 2
 	sub eax, 1
@@ -24538,7 +24686,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2162:
+2176:
 	mov eax, DWORD PTR [ebp+5496]
 	mov edx, DWORD PTR [ebp+3168]
 	xor edx, eax
@@ -24549,7 +24697,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2162b
+	jne 2176b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 3
 	sub eax, 1
@@ -24557,7 +24705,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2163:
+2177:
 	mov eax, DWORD PTR [ebp+5496]
 	mov edx, DWORD PTR [ebp+2776]
 	xor edx, eax
@@ -24568,7 +24716,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2163b
+	jne 2177b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 881
@@ -24591,7 +24739,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2164:
+2178:
 	mov eax, DWORD PTR [ebp+6272]
 	mov ebx, eax
 	shr ebx, 31
@@ -24603,10 +24751,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2164b
+	jne 2178b
 	mov ecx, 0
 	mov ebp, edi
-2165:
+2179:
 	mov eax, DWORD PTR [ebp+6656]
 	mov ebx, eax
 	shr ebx, 31
@@ -24618,19 +24766,19 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2165b
+	jne 2179b
 	sub esi, 1
 	cmp esi, 0
-	jne 2159b
+	jne 2173b
 	mov eax, 0
 	mov ebp, edi
-2166:
+2180:
 	mov DWORD PTR [ebp+5496], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2166b
+	jne 2180b
 	mov eax, 1
 	mov DWORD PTR [edi+5496], eax
 	lea esp, [esp-36]
@@ -24659,7 +24807,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 380
 	mov ebp, edi
-2167:
+2181:
 	mov eax, DWORD PTR [ebp+4720]
 	and eax, ecx
 	bswap eax
@@ -24669,12 +24817,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 384
 	cmp ebp, edx
-	jne 2167b
+	jne 2181b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2168:
+2182:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -24683,7 +24831,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2168b
+	jne 2182b
 	mov esi, edi
 	add esi, 14944
 	mov ebx, 384
@@ -24703,7 +24851,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2169:
+2183:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -24713,13 +24861,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2169b
+	jne 2183b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2170:
+2184:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -24728,12 +24876,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2170b
+	jne 2184b
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2171:
+2185:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -24742,10 +24890,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2171b
+	jne 2185b
 	mov ecx, 0
 	mov ebp, edi
-2172:
+2186:
 	mov eax, DWORD PTR [ebp+424]
 	mov edx, 0
 	cmp edx, ecx
@@ -24755,12 +24903,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2172b
+	jne 2186b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2173:
+2187:
 	mov eax, DWORD PTR [ebp+640]
 	mov edx, 0
 	cmp edx, ecx
@@ -24770,7 +24918,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2173b
+	jne 2187b
 	mov eax, ecx
 	or eax, ebx
 	xor eax, -1
@@ -24780,10 +24928,10 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8244], eax
 	mov eax, DWORD PTR [edi+8244]
 	and eax, 1
-	jmp 2115f
-2114:
+	jmp 2122f
+2121:
 	mov eax, 0
-2115:
+2122:
 215:
 	jmp 211f
 210:
@@ -24791,7 +24939,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2174:
+2188:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -24800,21 +24948,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2174b
+	jne 2188b
 	mov eax, 0
 	mov ebp, edi
-2175:
+2189:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2175b
+	jne 2189b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+4348], eax
 	mov ecx, 0
 	mov ebp, edi
-2176:
+2190:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24824,24 +24972,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2176b
+	jne 2190b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2177:
+2191:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2177b
+	jne 2191b
 	mov eax, 1
 	mov DWORD PTR [edi+4352], eax
 	mov ecx, 0
 	mov ebp, edi
-2178:
+2192:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24851,25 +24999,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2178b
+	jne 2192b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+32], edx
 	mov eax, 0
 	mov ebp, edi
-2179:
+2193:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2179b
+	jne 2193b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+4476], eax
 	mov ecx, 0
 	mov ebp, edi
-2180:
+2194:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24879,7 +25027,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2180b
+	jne 2194b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -24893,7 +25041,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2181:
+2195:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -24902,21 +25050,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2181b
+	jne 2195b
 	mov eax, 0
 	mov ebp, edi
-2182:
+2196:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2182b
+	jne 2196b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+656], eax
 	mov ecx, 0
 	mov ebp, edi
-2183:
+2197:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24926,24 +25074,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2183b
+	jne 2197b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2184:
+2198:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2184b
+	jne 2198b
 	mov eax, 1
 	mov DWORD PTR [edi+660], eax
 	mov ecx, 0
 	mov ebp, edi
-2185:
+2199:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24953,25 +25101,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2185b
+	jne 2199b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+44], edx
 	mov eax, 0
 	mov ebp, edi
-2186:
+2200:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2186b
+	jne 2200b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+664], eax
 	mov ecx, 0
 	mov ebp, edi
-2187:
+2201:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -24981,24 +25129,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2187b
+	jne 2201b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2188:
+2202:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2188b
+	jne 2202b
 	mov eax, 1
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2189:
+2203:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -25008,25 +25156,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2189b
+	jne 2203b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+48], edx
 	mov eax, 0
 	mov ebp, edi
-2190:
+2204:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2190b
+	jne 2204b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2191:
+2205:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -25036,7 +25184,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2191b
+	jne 2205b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -25077,12 +25225,12 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8240], edx
 	mov eax, DWORD PTR [edi+8244]
 	cmp eax, 0
-	je 2192f
+	je 2206f
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2194:
+2208:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -25091,21 +25239,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2194b
+	jne 2208b
 	mov eax, 0
 	mov ebp, edi
-2195:
+2209:
 	mov DWORD PTR [ebp+568], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2195b
+	jne 2209b
 	mov eax, 2
 	mov DWORD PTR [edi+568], eax
 	mov ecx, 0
 	mov ebp, edi
-2196:
+2210:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -25116,240 +25264,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2196b
-	mov esi, edi
-	add esi, 14912
-	mov ecx, -1
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2197:
-	mov eax, DWORD PTR [ebp+496]
-	and eax, ecx
-	bswap eax
-	mov DWORD PTR [ebx], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2197b
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2198:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2198b
-	mov esi, DWORD PTR [edi+8212]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2199:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+424], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2199b
-	mov ecx, 0
-	mov ebp, edi
-2200:
-	mov eax, DWORD PTR [ebp+424]
-	mov edx, 0
-	cmp edx, ecx
-	sbb eax, DWORD PTR [ebp+64]
-	sbb ecx, ecx
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2200b
-	mov eax, ecx
-	mov ebx, eax
-	mov ecx, 0
-	mov ebp, edi
-2201:
-	or ecx, DWORD PTR [ebp+424]
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2201b
-	mov edx, ecx
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	and edx, ebx
-	mov eax, DWORD PTR [edi+8244]
-	and eax, edx
-	mov DWORD PTR [edi+8244], eax
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2202:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2202b
-	mov esi, DWORD PTR [edi+8212]
-	add esi, DWORD PTR [edi+8232]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2203:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+424], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2203b
-	mov ecx, 0
-	mov ebp, edi
-2204:
-	mov eax, DWORD PTR [ebp+424]
-	mov edx, 0
-	cmp edx, ecx
-	sbb eax, DWORD PTR [ebp+64]
-	sbb ecx, ecx
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2204b
-	mov eax, ecx
-	mov ebx, eax
-	mov ecx, 0
-	mov ebp, edi
-2205:
-	or ecx, DWORD PTR [ebp+424]
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2205b
-	mov edx, ecx
-	mov ecx, 0
-	sub ecx, edx
-	sbb edx, edx
-	and edx, ebx
-	mov eax, DWORD PTR [edi+8244]
-	and eax, edx
-	mov DWORD PTR [edi+8244], eax
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2206:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2206b
-	mov esi, DWORD PTR [edi+8212]
-	add esi, DWORD PTR [edi+8232]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2207:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+424], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2207b
-	mov esi, edi
-	add esi, 14912
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2208:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+640], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2208b
-	mov eax, 89
-	push eax
-	push edi
-	call {vg_dsa_pow_4_8}
-	pop eax
-	pop eax
-	mov esi, edi
-	add esi, 14784
-	mov ecx, -1
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2209:
-	mov eax, DWORD PTR [ebp+496]
-	and eax, ecx
-	bswap eax
-	mov DWORD PTR [ebx], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
-	jne 2209b
-	mov esi, DWORD PTR [edi+8196]
-	mov ebx, esi
-	add ebx, 28
-	mov ebp, edi
-2210:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+64], eax
-	sub ebx, 4
-	add ebp, 4
-	mov edx, edi
-	add edx, 32
-	cmp ebp, edx
 	jne 2210b
-	mov esi, DWORD PTR [edi+8220]
-	mov ebx, DWORD PTR [edi+8240]
-	mov eax, 89
-	push ebx
-	push esi
-	push eax
-	push edi
-	call {vg_dsa_reduce_4}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
 	mov esi, edi
-	add esi, 14880
+	add esi, 14912
 	mov ecx, -1
 	mov ebx, esi
 	add ebx, 28
@@ -25379,8 +25296,7 @@ vg_dsa_verify_prevalidated:
 	add edx, 32
 	cmp ebp, edx
 	jne 2212b
-	mov esi, edi
-	add esi, 14880
+	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
@@ -25394,44 +25310,38 @@ vg_dsa_verify_prevalidated:
 	add edx, 32
 	cmp ebp, edx
 	jne 2213b
-	mov esi, edi
-	add esi, 14784
-	mov ebx, esi
-	add ebx, 28
+	mov ecx, 0
 	mov ebp, edi
 2214:
-	mov eax, DWORD PTR [ebx]
-	bswap eax
-	mov DWORD PTR [ebp+640], eax
-	sub ebx, 4
+	mov eax, DWORD PTR [ebp+424]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	sbb ecx, ecx
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
 	jne 2214b
-	mov eax, 89
-	push eax
-	push edi
-	call {vg_dsa_mulmod_4}
-	pop eax
-	pop eax
-	mov esi, edi
-	add esi, 14816
-	mov ecx, -1
-	mov ebx, esi
-	add ebx, 28
+	mov eax, ecx
+	mov ebx, eax
+	mov ecx, 0
 	mov ebp, edi
 2215:
-	mov eax, DWORD PTR [ebp+496]
-	and eax, ecx
-	bswap eax
-	mov DWORD PTR [ebx], eax
-	sub ebx, 4
+	or ecx, DWORD PTR [ebp+424]
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
 	jne 2215b
+	mov edx, ecx
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	and edx, ebx
+	mov eax, DWORD PTR [edi+8244]
+	and eax, edx
+	mov DWORD PTR [edi+8244], eax
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
@@ -25447,6 +25357,7 @@ vg_dsa_verify_prevalidated:
 	cmp ebp, edx
 	jne 2216b
 	mov esi, DWORD PTR [edi+8212]
+	add esi, DWORD PTR [edi+8232]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
@@ -25460,12 +25371,73 @@ vg_dsa_verify_prevalidated:
 	add edx, 32
 	cmp ebp, edx
 	jne 2217b
-	mov esi, edi
-	add esi, 14784
+	mov ecx, 0
+	mov ebp, edi
+2218:
+	mov eax, DWORD PTR [ebp+424]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2218b
+	mov eax, ecx
+	mov ebx, eax
+	mov ecx, 0
+	mov ebp, edi
+2219:
+	or ecx, DWORD PTR [ebp+424]
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2219b
+	mov edx, ecx
+	mov ecx, 0
+	sub ecx, edx
+	sbb edx, edx
+	and edx, ebx
+	mov eax, DWORD PTR [edi+8244]
+	and eax, edx
+	mov DWORD PTR [edi+8244], eax
+	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2218:
+2220:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2220b
+	mov esi, DWORD PTR [edi+8212]
+	add esi, DWORD PTR [edi+8232]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2221:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+424], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2221b
+	mov esi, edi
+	add esi, 14912
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2222:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -25474,7 +25446,183 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2218b
+	jne 2222b
+	mov eax, 89
+	push eax
+	push edi
+	call {vg_dsa_pow_4_8}
+	pop eax
+	pop eax
+	mov esi, edi
+	add esi, 14784
+	mov ecx, -1
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2223:
+	mov eax, DWORD PTR [ebp+496]
+	and eax, ecx
+	bswap eax
+	mov DWORD PTR [ebx], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2223b
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2224:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2224b
+	mov esi, DWORD PTR [edi+8220]
+	mov ebx, DWORD PTR [edi+8240]
+	mov eax, 89
+	push ebx
+	push esi
+	push eax
+	push edi
+	call {vg_dsa_reduce_4}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	mov esi, edi
+	add esi, 14880
+	mov ecx, -1
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2225:
+	mov eax, DWORD PTR [ebp+496]
+	and eax, ecx
+	bswap eax
+	mov DWORD PTR [ebx], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2225b
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2226:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2226b
+	mov esi, edi
+	add esi, 14880
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2227:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+424], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2227b
+	mov esi, edi
+	add esi, 14784
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2228:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+640], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2228b
+	mov eax, 89
+	push eax
+	push edi
+	call {vg_dsa_mulmod_4}
+	pop eax
+	pop eax
+	mov esi, edi
+	add esi, 14816
+	mov ecx, -1
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2229:
+	mov eax, DWORD PTR [ebp+496]
+	and eax, ecx
+	bswap eax
+	mov DWORD PTR [ebx], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2229b
+	mov esi, DWORD PTR [edi+8196]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2230:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+64], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2230b
+	mov esi, DWORD PTR [edi+8212]
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2231:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+424], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2231b
+	mov esi, edi
+	add esi, 14784
+	mov ebx, esi
+	add ebx, 28
+	mov ebp, edi
+2232:
+	mov eax, DWORD PTR [ebx]
+	bswap eax
+	mov DWORD PTR [ebp+640], eax
+	sub ebx, 4
+	add ebp, 4
+	mov edx, edi
+	add edx, 32
+	cmp ebp, edx
+	jne 2232b
 	mov eax, 89
 	push eax
 	push edi
@@ -25487,7 +25635,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2219:
+2233:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -25497,12 +25645,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2219b
+	jne 2233b
 	mov esi, DWORD PTR [edi+8192]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2220:
+2234:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -25511,12 +25659,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2220b
+	jne 2234b
 	mov esi, DWORD PTR [edi+8200]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2221:
+2235:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+2664], eax
@@ -25525,13 +25673,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2221b
+	jne 2235b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2222:
+2236:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+4224], eax
@@ -25540,21 +25688,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2222b
+	jne 2236b
 	mov eax, 0
 	mov ebp, edi
-2223:
+2237:
 	mov DWORD PTR [ebp+4256], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 224
 	cmp ebp, edx
-	jne 2223b
+	jne 2237b
 	mov esi, DWORD PTR [edi+8204]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2224:
+2238:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+3704], eax
@@ -25563,13 +25711,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2224b
+	jne 2238b
 	mov esi, edi
 	add esi, 14848
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2225:
+2239:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+4480], eax
@@ -25578,16 +25726,16 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2225b
+	jne 2239b
 	mov eax, 0
 	mov ebp, edi
-2226:
+2240:
 	mov DWORD PTR [ebp+4512], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 224
 	cmp ebp, edx
-	jne 2226b
+	jne 2240b
 	mov ebx, DWORD PTR [edi+64]
 	mov ecx, ebx
 	mov eax, ebx
@@ -25623,31 +25771,35 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi], eax
 	mov eax, 0
 	mov ebp, edi
-2227:
+2241:
 	mov DWORD PTR [ebp+1624], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2227b
+	jne 2241b
 	mov eax, 1
 	mov DWORD PTR [edi+1624], eax
+	mov eax, DWORD PTR [edi+316]
+	shr eax, 31
+	cmp eax, 1
+	je 2242f
 	mov eax, 0
 	mov ebp, edi
-2228:
+2244:
 	mov DWORD PTR [ebp+2144], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2228b
+	jne 2244b
 	mov eax, 1
 	mov DWORD PTR [edi+2144], eax
 	mov esi, 2080
-2229:
+2245:
 	mov ecx, 0
 	mov ebp, edi
-2230:
+2246:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, 0
 	cmp edx, ecx
@@ -25658,13 +25810,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2230b
+	jne 2246b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [edi+1360], eax
 	mov ecx, 0
 	mov ebp, edi
-2231:
+2247:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, 0
 	cmp edx, ecx
@@ -25675,7 +25827,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2231b
+	jne 2247b
 	mov eax, DWORD PTR [edi+1360]
 	mov edx, 0
 	cmp edx, ecx
@@ -25684,7 +25836,7 @@ vg_dsa_verify_prevalidated:
 	xor eax, -1
 	mov ecx, eax
 	mov ebp, edi
-2232:
+2248:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, DWORD PTR [ebp+584]
 	xor edx, eax
@@ -25695,10 +25847,80 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2232b
+	jne 2248b
 	sub esi, 1
 	cmp esi, 0
-	jne 2229b
+	jne 2245b
+	jmp 2243f
+2242:
+	mov eax, 0
+	mov ebp, edi
+2249:
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2249b
+	mov eax, -2147483648
+	mov DWORD PTR [edi+2396], eax
+	mov esi, 33
+2250:
+	mov ecx, 0
+	mov ebp, edi
+2251:
+	mov eax, DWORD PTR [ebp+2144]
+	mov edx, 0
+	cmp edx, ecx
+	adc eax, DWORD PTR [ebp+2144]
+	mov DWORD PTR [ebp+1104], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2251b
+	mov eax, 0
+	sub eax, ecx
+	mov DWORD PTR [edi+1360], eax
+	mov ecx, 0
+	mov ebp, edi
+2252:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	mov DWORD PTR [ebp+584], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2252b
+	mov eax, DWORD PTR [edi+1360]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, 0
+	sbb eax, eax
+	xor eax, -1
+	mov ecx, eax
+	mov ebp, edi
+2253:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, DWORD PTR [ebp+584]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2253b
+	sub esi, 1
+	cmp esi, 0
+	jne 2250b
+2243:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -25861,13 +26083,13 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov eax, 0
 	mov ebp, edi
-2233:
+2254:
 	mov DWORD PTR [ebp+3184], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2233b
+	jne 2254b
 	mov eax, 1
 	mov DWORD PTR [edi+3184], eax
 	lea esp, [esp-36]
@@ -25892,7 +26114,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2234:
+2255:
 	mov eax, DWORD PTR [ebp+3184]
 	mov edx, DWORD PTR [ebp+3184]
 	xor edx, eax
@@ -25903,7 +26125,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2234b
+	jne 2255b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -25926,7 +26148,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2235:
+2256:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -25937,10 +26159,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2235b
+	jne 2256b
 	mov ecx, 0
 	mov ebp, edi
-2236:
+2257:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+3704]
 	xor edx, eax
@@ -25951,9 +26173,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2236b
+	jne 2257b
 	mov esi, 256
-2237:
+2258:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -25983,7 +26205,7 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+4], eax
 	mov ecx, 0
 	mov ebp, edi
-2238:
+2259:
 	mov eax, DWORD PTR [ebp+1624]
 	mov edx, DWORD PTR [ebp+1624]
 	xor edx, eax
@@ -25994,7 +26216,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2238b
+	jne 2259b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 1
 	sub eax, 1
@@ -26002,7 +26224,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2239:
+2260:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2664]
 	xor edx, eax
@@ -26013,7 +26235,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2239b
+	jne 2260b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 2
 	sub eax, 1
@@ -26021,7 +26243,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2240:
+2261:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -26032,7 +26254,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2240b
+	jne 2261b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 3
 	sub eax, 1
@@ -26040,7 +26262,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2241:
+2262:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+1880]
 	xor edx, eax
@@ -26051,7 +26273,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2241b
+	jne 2262b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -26074,7 +26296,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2242:
+2263:
 	mov eax, DWORD PTR [ebp+4224]
 	mov ebx, eax
 	shr ebx, 31
@@ -26086,10 +26308,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2242b
+	jne 2263b
 	mov ecx, 0
 	mov ebp, edi
-2243:
+2264:
 	mov eax, DWORD PTR [ebp+4480]
 	mov ebx, eax
 	shr ebx, 31
@@ -26101,19 +26323,19 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2243b
+	jne 2264b
 	sub esi, 1
 	cmp esi, 0
-	jne 2237b
+	jne 2258b
 	mov eax, 0
 	mov ebp, edi
-2244:
+2265:
 	mov DWORD PTR [ebp+3704], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2244b
+	jne 2265b
 	mov eax, 1
 	mov DWORD PTR [edi+3704], eax
 	lea esp, [esp-36]
@@ -26142,7 +26364,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2245:
+2266:
 	mov eax, DWORD PTR [ebp+3184]
 	and eax, ecx
 	bswap eax
@@ -26152,12 +26374,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2245b
+	jne 2266b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2246:
+2267:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26166,7 +26388,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2246b
+	jne 2267b
 	mov esi, edi
 	add esi, 14944
 	mov ebx, 256
@@ -26186,7 +26408,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2247:
+2268:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -26196,13 +26418,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2247b
+	jne 2268b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2248:
+2269:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26211,12 +26433,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2248b
+	jne 2269b
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 28
 	mov ebp, edi
-2249:
+2270:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -26225,10 +26447,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2249b
+	jne 2270b
 	mov ecx, 0
 	mov ebp, edi
-2250:
+2271:
 	mov eax, DWORD PTR [ebp+424]
 	mov edx, 0
 	cmp edx, ecx
@@ -26238,12 +26460,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2250b
+	jne 2271b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2251:
+2272:
 	mov eax, DWORD PTR [ebp+640]
 	mov edx, 0
 	cmp edx, ecx
@@ -26253,7 +26475,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2251b
+	jne 2272b
 	mov eax, ecx
 	or eax, ebx
 	xor eax, -1
@@ -26263,10 +26485,10 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8244], eax
 	mov eax, DWORD PTR [edi+8244]
 	and eax, 1
-	jmp 2193f
-2192:
+	jmp 2207f
+2206:
 	mov eax, 0
-2193:
+2207:
 211:
 	jmp 27f
 26:
@@ -26274,7 +26496,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2252:
+2273:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26283,21 +26505,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2252b
+	jne 2273b
 	mov eax, 0
 	mov ebp, edi
-2253:
+2274:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2253b
+	jne 2274b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+4348], eax
 	mov ecx, 0
 	mov ebp, edi
-2254:
+2275:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26307,24 +26529,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2254b
+	jne 2275b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2255:
+2276:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2255b
+	jne 2276b
 	mov eax, 1
 	mov DWORD PTR [edi+4352], eax
 	mov ecx, 0
 	mov ebp, edi
-2256:
+2277:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26334,25 +26556,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2256b
+	jne 2277b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+32], edx
 	mov eax, 0
 	mov ebp, edi
-2257:
+2278:
 	mov DWORD PTR [ebp+4224], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2257b
+	jne 2278b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+4476], eax
 	mov ecx, 0
 	mov ebp, edi
-2258:
+2279:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26362,7 +26584,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2258b
+	jne 2279b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -26376,7 +26598,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2259:
+2280:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26385,23 +26607,23 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2259b
+	jne 2280b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov eax, 0
 	mov ebp, edi
-2260:
+2281:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2260b
+	jne 2281b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+656], eax
 	mov ecx, 0
 	mov ebp, edi
-2261:
+2282:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26411,24 +26633,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2261b
+	jne 2282b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2262:
+2283:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2262b
+	jne 2283b
 	mov eax, 1
 	mov DWORD PTR [edi+660], eax
 	mov ecx, 0
 	mov ebp, edi
-2263:
+2284:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26438,25 +26660,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2263b
+	jne 2284b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+44], edx
 	mov eax, 0
 	mov ebp, edi
-2264:
+2285:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2264b
+	jne 2285b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+664], eax
 	mov ecx, 0
 	mov ebp, edi
-2265:
+2286:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26466,24 +26688,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2265b
+	jne 2286b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2266:
+2287:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2266b
+	jne 2287b
 	mov eax, 1
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2267:
+2288:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26493,25 +26715,25 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2267b
+	jne 2288b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
 	mov DWORD PTR [edi+48], edx
 	mov eax, 0
 	mov ebp, edi
-2268:
+2289:
 	mov DWORD PTR [ebp+640], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2268b
+	jne 2289b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2269:
+2290:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26521,7 +26743,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2269b
+	jne 2290b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -26562,12 +26784,12 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8240], edx
 	mov eax, DWORD PTR [edi+8244]
 	cmp eax, 0
-	je 2270f
+	je 2291f
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2272:
+2293:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26576,23 +26798,23 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2272b
+	jne 2293b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov eax, 0
 	mov ebp, edi
-2273:
+2294:
 	mov DWORD PTR [ebp+568], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2273b
+	jne 2294b
 	mov eax, 2
 	mov DWORD PTR [edi+568], eax
 	mov ecx, 0
 	mov ebp, edi
-2274:
+2295:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -26603,14 +26825,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2274b
+	jne 2295b
 	mov esi, edi
 	add esi, 14912
 	mov ecx, -1
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2275:
+2296:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -26620,12 +26842,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2275b
+	jne 2296b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2276:
+2297:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26634,14 +26856,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2276b
+	jne 2297b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2277:
+2298:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26650,12 +26872,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2277b
+	jne 2298b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov ecx, 0
 	mov ebp, edi
-2278:
+2299:
 	mov eax, DWORD PTR [ebp+424]
 	mov edx, 0
 	cmp edx, ecx
@@ -26665,18 +26887,18 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2278b
+	jne 2299b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2279:
+2300:
 	or ecx, DWORD PTR [ebp+424]
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2279b
+	jne 2300b
 	mov edx, ecx
 	mov ecx, 0
 	sub ecx, edx
@@ -26689,7 +26911,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2280:
+2301:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26698,7 +26920,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2280b
+	jne 2301b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, DWORD PTR [edi+8212]
@@ -26706,7 +26928,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2281:
+2302:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26715,12 +26937,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2281b
+	jne 2302b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov ecx, 0
 	mov ebp, edi
-2282:
+2303:
 	mov eax, DWORD PTR [ebp+424]
 	mov edx, 0
 	cmp edx, ecx
@@ -26730,18 +26952,18 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2282b
+	jne 2303b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2283:
+2304:
 	or ecx, DWORD PTR [ebp+424]
 	add ebp, 4
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2283b
+	jne 2304b
 	mov edx, ecx
 	mov ecx, 0
 	sub ecx, edx
@@ -26754,7 +26976,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2284:
+2305:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26763,7 +26985,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2284b
+	jne 2305b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, DWORD PTR [edi+8212]
@@ -26771,7 +26993,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2285:
+2306:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26780,7 +27002,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2285b
+	jne 2306b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov esi, edi
@@ -26788,7 +27010,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2286:
+2307:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -26797,7 +27019,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2286b
+	jne 2307b
 	mov eax, 0
 	mov DWORD PTR [edi+668], eax
 	mov eax, 89
@@ -26812,7 +27034,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2287:
+2308:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -26822,12 +27044,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2287b
+	jne 2308b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2288:
+2309:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26836,7 +27058,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2288b
+	jne 2309b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, DWORD PTR [edi+8220]
@@ -26857,7 +27079,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2289:
+2310:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -26867,12 +27089,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2289b
+	jne 2310b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2290:
+2311:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26881,7 +27103,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2290b
+	jne 2311b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, edi
@@ -26889,7 +27111,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2291:
+2312:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26898,7 +27120,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2291b
+	jne 2312b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov esi, edi
@@ -26906,7 +27128,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2292:
+2313:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -26915,7 +27137,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2292b
+	jne 2313b
 	mov eax, 0
 	mov DWORD PTR [edi+668], eax
 	mov eax, 89
@@ -26930,7 +27152,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2293:
+2314:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -26940,12 +27162,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2293b
+	jne 2314b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2294:
+2315:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -26954,14 +27176,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2294b
+	jne 2315b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2295:
+2316:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -26970,7 +27192,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2295b
+	jne 2316b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov esi, edi
@@ -26978,7 +27200,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2296:
+2317:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -26987,7 +27209,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2296b
+	jne 2317b
 	mov eax, 0
 	mov DWORD PTR [edi+668], eax
 	mov eax, 89
@@ -27002,7 +27224,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2297:
+2318:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -27012,12 +27234,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2297b
+	jne 2318b
 	mov esi, DWORD PTR [edi+8192]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2298:
+2319:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -27026,12 +27248,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2298b
+	jne 2319b
 	mov esi, DWORD PTR [edi+8200]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2299:
+2320:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+2664], eax
@@ -27040,13 +27262,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2299b
+	jne 2320b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2300:
+2321:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+4224], eax
@@ -27055,21 +27277,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2300b
+	jne 2321b
 	mov eax, 0
 	mov ebp, edi
-2301:
+2322:
 	mov DWORD PTR [ebp+4252], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 228
 	cmp ebp, edx
-	jne 2301b
+	jne 2322b
 	mov esi, DWORD PTR [edi+8204]
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2302:
+2323:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+3704], eax
@@ -27078,13 +27300,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2302b
+	jne 2323b
 	mov esi, edi
 	add esi, 14848
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2303:
+2324:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+4480], eax
@@ -27093,16 +27315,16 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2303b
+	jne 2324b
 	mov eax, 0
 	mov ebp, edi
-2304:
+2325:
 	mov DWORD PTR [ebp+4508], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 228
 	cmp ebp, edx
-	jne 2304b
+	jne 2325b
 	mov ebx, DWORD PTR [edi+64]
 	mov ecx, ebx
 	mov eax, ebx
@@ -27138,31 +27360,35 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi], eax
 	mov eax, 0
 	mov ebp, edi
-2305:
+2326:
 	mov DWORD PTR [ebp+1624], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2305b
+	jne 2326b
 	mov eax, 1
 	mov DWORD PTR [edi+1624], eax
+	mov eax, DWORD PTR [edi+316]
+	shr eax, 31
+	cmp eax, 1
+	je 2327f
 	mov eax, 0
 	mov ebp, edi
-2306:
+2329:
 	mov DWORD PTR [ebp+2144], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2306b
+	jne 2329b
 	mov eax, 1
 	mov DWORD PTR [edi+2144], eax
 	mov esi, 2080
-2307:
+2330:
 	mov ecx, 0
 	mov ebp, edi
-2308:
+2331:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, 0
 	cmp edx, ecx
@@ -27173,13 +27399,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2308b
+	jne 2331b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [edi+1360], eax
 	mov ecx, 0
 	mov ebp, edi
-2309:
+2332:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, 0
 	cmp edx, ecx
@@ -27190,7 +27416,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2309b
+	jne 2332b
 	mov eax, DWORD PTR [edi+1360]
 	mov edx, 0
 	cmp edx, ecx
@@ -27199,7 +27425,7 @@ vg_dsa_verify_prevalidated:
 	xor eax, -1
 	mov ecx, eax
 	mov ebp, edi
-2310:
+2333:
 	mov eax, DWORD PTR [ebp+1104]
 	mov edx, DWORD PTR [ebp+584]
 	xor edx, eax
@@ -27210,10 +27436,80 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2310b
+	jne 2333b
 	sub esi, 1
 	cmp esi, 0
-	jne 2307b
+	jne 2330b
+	jmp 2328f
+2327:
+	mov eax, 0
+	mov ebp, edi
+2334:
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2334b
+	mov eax, -2147483648
+	mov DWORD PTR [edi+2396], eax
+	mov esi, 33
+2335:
+	mov ecx, 0
+	mov ebp, edi
+2336:
+	mov eax, DWORD PTR [ebp+2144]
+	mov edx, 0
+	cmp edx, ecx
+	adc eax, DWORD PTR [ebp+2144]
+	mov DWORD PTR [ebp+1104], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2336b
+	mov eax, 0
+	sub eax, ecx
+	mov DWORD PTR [edi+1360], eax
+	mov ecx, 0
+	mov ebp, edi
+2337:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	mov DWORD PTR [ebp+584], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2337b
+	mov eax, DWORD PTR [edi+1360]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, 0
+	sbb eax, eax
+	xor eax, -1
+	mov ecx, eax
+	mov ebp, edi
+2338:
+	mov eax, DWORD PTR [ebp+1104]
+	mov edx, DWORD PTR [ebp+584]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebp+2144], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 256
+	cmp ebp, edx
+	jne 2338b
+	sub esi, 1
+	cmp esi, 0
+	jne 2335b
+2328:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -27376,13 +27672,13 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov eax, 0
 	mov ebp, edi
-2311:
+2339:
 	mov DWORD PTR [ebp+3184], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2311b
+	jne 2339b
 	mov eax, 1
 	mov DWORD PTR [edi+3184], eax
 	lea esp, [esp-36]
@@ -27407,7 +27703,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2312:
+2340:
 	mov eax, DWORD PTR [ebp+3184]
 	mov edx, DWORD PTR [ebp+3184]
 	xor edx, eax
@@ -27418,7 +27714,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2312b
+	jne 2340b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -27441,7 +27737,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2313:
+2341:
 	mov eax, DWORD PTR [ebp+2144]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -27452,10 +27748,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2313b
+	jne 2341b
 	mov ecx, 0
 	mov ebp, edi
-2314:
+2342:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+3704]
 	xor edx, eax
@@ -27466,9 +27762,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2314b
+	jne 2342b
 	mov esi, 224
-2315:
+2343:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -27498,7 +27794,7 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+4], eax
 	mov ecx, 0
 	mov ebp, edi
-2316:
+2344:
 	mov eax, DWORD PTR [ebp+1624]
 	mov edx, DWORD PTR [ebp+1624]
 	xor edx, eax
@@ -27509,7 +27805,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2316b
+	jne 2344b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 1
 	sub eax, 1
@@ -27517,7 +27813,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2317:
+2345:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2664]
 	xor edx, eax
@@ -27528,7 +27824,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2317b
+	jne 2345b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 2
 	sub eax, 1
@@ -27536,7 +27832,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2318:
+2346:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+2144]
 	xor edx, eax
@@ -27547,7 +27843,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2318b
+	jne 2346b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 3
 	sub eax, 1
@@ -27555,7 +27851,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2319:
+2347:
 	mov eax, DWORD PTR [ebp+3704]
 	mov edx, DWORD PTR [ebp+1880]
 	xor edx, eax
@@ -27566,7 +27862,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2319b
+	jne 2347b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 593
@@ -27589,7 +27885,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2320:
+2348:
 	mov eax, DWORD PTR [ebp+4224]
 	mov ebx, eax
 	shr ebx, 31
@@ -27601,10 +27897,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2320b
+	jne 2348b
 	mov ecx, 0
 	mov ebp, edi
-2321:
+2349:
 	mov eax, DWORD PTR [ebp+4480]
 	mov ebx, eax
 	shr ebx, 31
@@ -27616,19 +27912,19 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2321b
+	jne 2349b
 	sub esi, 1
 	cmp esi, 0
-	jne 2315b
+	jne 2343b
 	mov eax, 0
 	mov ebp, edi
-2322:
+2350:
 	mov DWORD PTR [ebp+3704], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2322b
+	jne 2350b
 	mov eax, 1
 	mov DWORD PTR [edi+3704], eax
 	lea esp, [esp-36]
@@ -27657,7 +27953,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 252
 	mov ebp, edi
-2323:
+2351:
 	mov eax, DWORD PTR [ebp+3184]
 	and eax, ecx
 	bswap eax
@@ -27667,12 +27963,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 256
 	cmp ebp, edx
-	jne 2323b
+	jne 2351b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2324:
+2352:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -27681,7 +27977,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2324b
+	jne 2352b
 	mov eax, 0
 	mov DWORD PTR [edi+92], eax
 	mov esi, edi
@@ -27703,7 +27999,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2325:
+2353:
 	mov eax, DWORD PTR [ebp+496]
 	and eax, ecx
 	bswap eax
@@ -27713,13 +28009,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2325b
+	jne 2353b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2326:
+2354:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+424], eax
@@ -27728,14 +28024,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2326b
+	jne 2354b
 	mov eax, 0
 	mov DWORD PTR [edi+452], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 24
 	mov ebp, edi
-2327:
+2355:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+640], eax
@@ -27744,12 +28040,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 28
 	cmp ebp, edx
-	jne 2327b
+	jne 2355b
 	mov eax, 0
 	mov DWORD PTR [edi+668], eax
 	mov ecx, 0
 	mov ebp, edi
-2328:
+2356:
 	mov eax, DWORD PTR [ebp+424]
 	mov edx, 0
 	cmp edx, ecx
@@ -27759,12 +28055,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2328b
+	jne 2356b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2329:
+2357:
 	mov eax, DWORD PTR [ebp+640]
 	mov edx, 0
 	cmp edx, ecx
@@ -27774,7 +28070,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 32
 	cmp ebp, edx
-	jne 2329b
+	jne 2357b
 	mov eax, ecx
 	or eax, ebx
 	xor eax, -1
@@ -27784,10 +28080,10 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8244], eax
 	mov eax, DWORD PTR [edi+8244]
 	and eax, 1
-	jmp 2271f
-2270:
+	jmp 2292f
+2291:
 	mov eax, 0
-2271:
+2292:
 27:
 	jmp 23f
 22:
@@ -27795,7 +28091,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 124
 	mov ebp, edi
-2330:
+2358:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -27804,21 +28100,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2330b
+	jne 2358b
 	mov eax, 0
 	mov ebp, edi
-2331:
+2359:
 	mov DWORD PTR [ebp+2176], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2331b
+	jne 2359b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+2300], eax
 	mov ecx, 0
 	mov ebp, edi
-2332:
+2360:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -27828,7 +28124,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2332b
+	jne 2360b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
@@ -27844,7 +28140,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2333:
+2361:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -27853,23 +28149,23 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2333b
+	jne 2361b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov eax, 0
 	mov ebp, edi
-2334:
+2362:
 	mov DWORD PTR [ebp+512], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2334b
+	jne 2362b
 	mov eax, -2147483648
 	mov DWORD PTR [edi+528], eax
 	mov ecx, 0
 	mov ebp, edi
-2335:
+2363:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -27879,24 +28175,24 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2335b
+	jne 2363b
 	mov eax, ecx
 	xor eax, -1
 	mov ebx, eax
 	mov eax, 0
 	mov ebp, edi
-2336:
+2364:
 	mov DWORD PTR [ebp+512], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2336b
+	jne 2364b
 	mov eax, 1
 	mov DWORD PTR [edi+532], eax
 	mov ecx, 0
 	mov ebp, edi
-2337:
+2365:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -27906,7 +28202,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2337b
+	jne 2365b
 	mov eax, ecx
 	and eax, ebx
 	mov edx, eax
@@ -27950,12 +28246,12 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8240], edx
 	mov eax, DWORD PTR [edi+8244]
 	cmp eax, 0
-	je 2338f
+	je 2366f
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2340:
+2368:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -27964,23 +28260,23 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2340b
+	jne 2368b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov eax, 0
 	mov ebp, edi
-2341:
+2369:
 	mov DWORD PTR [ebp+456], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2341b
+	jne 2369b
 	mov eax, 2
 	mov DWORD PTR [edi+456], eax
 	mov ecx, 0
 	mov ebp, edi
-2342:
+2370:
 	mov eax, DWORD PTR [ebp+64]
 	mov edx, 0
 	cmp edx, ecx
@@ -27991,14 +28287,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2342b
+	jne 2370b
 	mov esi, edi
 	add esi, 14912
 	mov ecx, -1
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2343:
+2371:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -28008,12 +28304,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2343b
+	jne 2371b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2344:
+2372:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28022,14 +28318,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2344b
+	jne 2372b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2345:
+2373:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -28038,12 +28334,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2345b
+	jne 2373b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov ecx, 0
 	mov ebp, edi
-2346:
+2374:
 	mov eax, DWORD PTR [ebp+344]
 	mov edx, 0
 	cmp edx, ecx
@@ -28053,18 +28349,18 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2346b
+	jne 2374b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2347:
+2375:
 	or ecx, DWORD PTR [ebp+344]
 	add ebp, 4
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2347b
+	jne 2375b
 	mov edx, ecx
 	mov ecx, 0
 	sub ecx, edx
@@ -28077,7 +28373,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2348:
+2376:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28086,7 +28382,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2348b
+	jne 2376b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, DWORD PTR [edi+8212]
@@ -28094,7 +28390,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2349:
+2377:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -28103,12 +28399,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2349b
+	jne 2377b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov ecx, 0
 	mov ebp, edi
-2350:
+2378:
 	mov eax, DWORD PTR [ebp+344]
 	mov edx, 0
 	cmp edx, ecx
@@ -28118,18 +28414,18 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2350b
+	jne 2378b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2351:
+2379:
 	or ecx, DWORD PTR [ebp+344]
 	add ebp, 4
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2351b
+	jne 2379b
 	mov edx, ecx
 	mov ecx, 0
 	sub ecx, edx
@@ -28142,7 +28438,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2352:
+2380:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28151,7 +28447,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2352b
+	jne 2380b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, DWORD PTR [edi+8212]
@@ -28159,7 +28455,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2353:
+2381:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -28168,7 +28464,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2353b
+	jne 2381b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov esi, edi
@@ -28176,7 +28472,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2354:
+2382:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+512], eax
@@ -28185,7 +28481,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2354b
+	jne 2382b
 	mov eax, 0
 	mov DWORD PTR [edi+532], eax
 	mov eax, 71
@@ -28200,7 +28496,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2355:
+2383:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -28210,12 +28506,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2355b
+	jne 2383b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2356:
+2384:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28224,7 +28520,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2356b
+	jne 2384b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, DWORD PTR [edi+8220]
@@ -28245,7 +28541,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2357:
+2385:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -28255,12 +28551,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2357b
+	jne 2385b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2358:
+2386:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28269,7 +28565,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2358b
+	jne 2386b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, edi
@@ -28277,7 +28573,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2359:
+2387:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -28286,7 +28582,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2359b
+	jne 2387b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov esi, edi
@@ -28294,7 +28590,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2360:
+2388:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+512], eax
@@ -28303,7 +28599,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2360b
+	jne 2388b
 	mov eax, 0
 	mov DWORD PTR [edi+532], eax
 	mov eax, 71
@@ -28318,7 +28614,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2361:
+2389:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -28328,12 +28624,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2361b
+	jne 2389b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2362:
+2390:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28342,14 +28638,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2362b
+	jne 2390b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2363:
+2391:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -28358,7 +28654,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2363b
+	jne 2391b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov esi, edi
@@ -28366,7 +28662,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2364:
+2392:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+512], eax
@@ -28375,7 +28671,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2364b
+	jne 2392b
 	mov eax, 0
 	mov DWORD PTR [edi+532], eax
 	mov eax, 71
@@ -28390,7 +28686,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2365:
+2393:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -28400,12 +28696,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2365b
+	jne 2393b
 	mov esi, DWORD PTR [edi+8192]
 	mov ebx, esi
 	add ebx, 124
 	mov ebp, edi
-2366:
+2394:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -28414,12 +28710,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2366b
+	jne 2394b
 	mov esi, DWORD PTR [edi+8200]
 	mov ebx, esi
 	add ebx, 124
 	mov ebp, edi
-2367:
+2395:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+1384], eax
@@ -28428,13 +28724,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2367b
+	jne 2395b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2368:
+2396:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+2176], eax
@@ -28443,21 +28739,21 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2368b
+	jne 2396b
 	mov eax, 0
 	mov ebp, edi
-2369:
+2397:
 	mov DWORD PTR [ebp+2196], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 108
 	cmp ebp, edx
-	jne 2369b
+	jne 2397b
 	mov esi, DWORD PTR [edi+8204]
 	mov ebx, esi
 	add ebx, 124
 	mov ebp, edi
-2370:
+2398:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+1912], eax
@@ -28466,13 +28762,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2370b
+	jne 2398b
 	mov esi, edi
 	add esi, 14848
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2371:
+2399:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+2304], eax
@@ -28481,16 +28777,16 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2371b
+	jne 2399b
 	mov eax, 0
 	mov ebp, edi
-2372:
+2400:
 	mov DWORD PTR [ebp+2324], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 108
 	cmp ebp, edx
-	jne 2372b
+	jne 2400b
 	mov ebx, DWORD PTR [edi+64]
 	mov ecx, ebx
 	mov eax, ebx
@@ -28526,31 +28822,35 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi], eax
 	mov eax, 0
 	mov ebp, edi
-2373:
+2401:
 	mov DWORD PTR [ebp+856], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2373b
+	jne 2401b
 	mov eax, 1
 	mov DWORD PTR [edi+856], eax
+	mov eax, DWORD PTR [edi+188]
+	shr eax, 31
+	cmp eax, 1
+	je 2402f
 	mov eax, 0
 	mov ebp, edi
-2374:
+2404:
 	mov DWORD PTR [ebp+1120], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2374b
+	jne 2404b
 	mov eax, 1
 	mov DWORD PTR [edi+1120], eax
 	mov esi, 1040
-2375:
+2405:
 	mov ecx, 0
 	mov ebp, edi
-2376:
+2406:
 	mov eax, DWORD PTR [ebp+1120]
 	mov edx, 0
 	cmp edx, ecx
@@ -28561,13 +28861,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2376b
+	jne 2406b
 	mov eax, 0
 	sub eax, ecx
 	mov DWORD PTR [edi+720], eax
 	mov ecx, 0
 	mov ebp, edi
-2377:
+2407:
 	mov eax, DWORD PTR [ebp+592]
 	mov edx, 0
 	cmp edx, ecx
@@ -28578,7 +28878,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2377b
+	jne 2407b
 	mov eax, DWORD PTR [edi+720]
 	mov edx, 0
 	cmp edx, ecx
@@ -28587,7 +28887,7 @@ vg_dsa_verify_prevalidated:
 	xor eax, -1
 	mov ecx, eax
 	mov ebp, edi
-2378:
+2408:
 	mov eax, DWORD PTR [ebp+592]
 	mov edx, DWORD PTR [ebp+328]
 	xor edx, eax
@@ -28598,10 +28898,80 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2378b
+	jne 2408b
 	sub esi, 1
 	cmp esi, 0
-	jne 2375b
+	jne 2405b
+	jmp 2403f
+2402:
+	mov eax, 0
+	mov ebp, edi
+2409:
+	mov DWORD PTR [ebp+1120], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 128
+	cmp ebp, edx
+	jne 2409b
+	mov eax, -2147483648
+	mov DWORD PTR [edi+1244], eax
+	mov esi, 17
+2410:
+	mov ecx, 0
+	mov ebp, edi
+2411:
+	mov eax, DWORD PTR [ebp+1120]
+	mov edx, 0
+	cmp edx, ecx
+	adc eax, DWORD PTR [ebp+1120]
+	mov DWORD PTR [ebp+592], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 128
+	cmp ebp, edx
+	jne 2411b
+	mov eax, 0
+	sub eax, ecx
+	mov DWORD PTR [edi+720], eax
+	mov ecx, 0
+	mov ebp, edi
+2412:
+	mov eax, DWORD PTR [ebp+592]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, DWORD PTR [ebp+64]
+	mov DWORD PTR [ebp+328], eax
+	sbb ecx, ecx
+	add ebp, 4
+	mov edx, edi
+	add edx, 128
+	cmp ebp, edx
+	jne 2412b
+	mov eax, DWORD PTR [edi+720]
+	mov edx, 0
+	cmp edx, ecx
+	sbb eax, 0
+	sbb eax, eax
+	xor eax, -1
+	mov ecx, eax
+	mov ebp, edi
+2413:
+	mov eax, DWORD PTR [ebp+592]
+	mov edx, DWORD PTR [ebp+328]
+	xor edx, eax
+	and edx, ecx
+	xor eax, edx
+	mov DWORD PTR [ebp+1120], eax
+	add ebp, 4
+	mov edx, edi
+	add edx, 128
+	cmp ebp, edx
+	jne 2413b
+	sub esi, 1
+	cmp esi, 0
+	jne 2410b
+2403:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 305
@@ -28764,13 +29134,13 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov eax, 0
 	mov ebp, edi
-2379:
+2414:
 	mov DWORD PTR [ebp+1648], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2379b
+	jne 2414b
 	mov eax, 1
 	mov DWORD PTR [edi+1648], eax
 	lea esp, [esp-36]
@@ -28795,7 +29165,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2380:
+2415:
 	mov eax, DWORD PTR [ebp+1648]
 	mov edx, DWORD PTR [ebp+1648]
 	xor edx, eax
@@ -28806,7 +29176,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2380b
+	jne 2415b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 305
@@ -28829,7 +29199,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2381:
+2416:
 	mov eax, DWORD PTR [ebp+1120]
 	mov edx, DWORD PTR [ebp+1120]
 	xor edx, eax
@@ -28840,10 +29210,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2381b
+	jne 2416b
 	mov ecx, 0
 	mov ebp, edi
-2382:
+2417:
 	mov eax, DWORD PTR [ebp+1912]
 	mov edx, DWORD PTR [ebp+1912]
 	xor edx, eax
@@ -28854,9 +29224,9 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2382b
+	jne 2417b
 	mov esi, 160
-2383:
+2418:
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 305
@@ -28886,7 +29256,7 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+4], eax
 	mov ecx, 0
 	mov ebp, edi
-2384:
+2419:
 	mov eax, DWORD PTR [ebp+856]
 	mov edx, DWORD PTR [ebp+856]
 	xor edx, eax
@@ -28897,7 +29267,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2384b
+	jne 2419b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 1
 	sub eax, 1
@@ -28905,7 +29275,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2385:
+2420:
 	mov eax, DWORD PTR [ebp+1912]
 	mov edx, DWORD PTR [ebp+1384]
 	xor edx, eax
@@ -28916,7 +29286,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2385b
+	jne 2420b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 2
 	sub eax, 1
@@ -28924,7 +29294,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2386:
+2421:
 	mov eax, DWORD PTR [ebp+1912]
 	mov edx, DWORD PTR [ebp+1120]
 	xor edx, eax
@@ -28935,7 +29305,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2386b
+	jne 2421b
 	mov eax, DWORD PTR [edi+4]
 	xor eax, 3
 	sub eax, 1
@@ -28943,7 +29313,7 @@ vg_dsa_verify_prevalidated:
 	mov ecx, 0
 	sub ecx, eax
 	mov ebp, edi
-2387:
+2422:
 	mov eax, DWORD PTR [ebp+1912]
 	mov edx, DWORD PTR [ebp+984]
 	xor edx, eax
@@ -28954,7 +29324,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2387b
+	jne 2422b
 	lea esp, [esp-36]
 	mov DWORD PTR [esp], edi
 	mov eax, 305
@@ -28977,7 +29347,7 @@ vg_dsa_verify_prevalidated:
 	lea esp, [esp+36]
 	mov ecx, 0
 	mov ebp, edi
-2388:
+2423:
 	mov eax, DWORD PTR [ebp+2176]
 	mov ebx, eax
 	shr ebx, 31
@@ -28989,10 +29359,10 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2388b
+	jne 2423b
 	mov ecx, 0
 	mov ebp, edi
-2389:
+2424:
 	mov eax, DWORD PTR [ebp+2304]
 	mov ebx, eax
 	shr ebx, 31
@@ -29004,19 +29374,19 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2389b
+	jne 2424b
 	sub esi, 1
 	cmp esi, 0
-	jne 2383b
+	jne 2418b
 	mov eax, 0
 	mov ebp, edi
-2390:
+2425:
 	mov DWORD PTR [ebp+1912], eax
 	add ebp, 4
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2390b
+	jne 2425b
 	mov eax, 1
 	mov DWORD PTR [edi+1912], eax
 	lea esp, [esp-36]
@@ -29045,7 +29415,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 124
 	mov ebp, edi
-2391:
+2426:
 	mov eax, DWORD PTR [ebp+1648]
 	and eax, ecx
 	bswap eax
@@ -29055,12 +29425,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 128
 	cmp ebp, edx
-	jne 2391b
+	jne 2426b
 	mov esi, DWORD PTR [edi+8196]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2392:
+2427:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+64], eax
@@ -29069,7 +29439,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2392b
+	jne 2427b
 	mov eax, 0
 	mov DWORD PTR [edi+84], eax
 	mov esi, edi
@@ -29091,7 +29461,7 @@ vg_dsa_verify_prevalidated:
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2393:
+2428:
 	mov eax, DWORD PTR [ebp+400]
 	and eax, ecx
 	bswap eax
@@ -29101,13 +29471,13 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2393b
+	jne 2428b
 	mov esi, edi
 	add esi, 14816
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2394:
+2429:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+344], eax
@@ -29116,14 +29486,14 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2394b
+	jne 2429b
 	mov eax, 0
 	mov DWORD PTR [edi+364], eax
 	mov esi, DWORD PTR [edi+8212]
 	mov ebx, esi
 	add ebx, 16
 	mov ebp, edi
-2395:
+2430:
 	mov eax, DWORD PTR [ebx]
 	bswap eax
 	mov DWORD PTR [ebp+512], eax
@@ -29132,12 +29502,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 20
 	cmp ebp, edx
-	jne 2395b
+	jne 2430b
 	mov eax, 0
 	mov DWORD PTR [edi+532], eax
 	mov ecx, 0
 	mov ebp, edi
-2396:
+2431:
 	mov eax, DWORD PTR [ebp+344]
 	mov edx, 0
 	cmp edx, ecx
@@ -29147,12 +29517,12 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2396b
+	jne 2431b
 	mov eax, ecx
 	mov ebx, eax
 	mov ecx, 0
 	mov ebp, edi
-2397:
+2432:
 	mov eax, DWORD PTR [ebp+512]
 	mov edx, 0
 	cmp edx, ecx
@@ -29162,7 +29532,7 @@ vg_dsa_verify_prevalidated:
 	mov edx, edi
 	add edx, 24
 	cmp ebp, edx
-	jne 2397b
+	jne 2432b
 	mov eax, ecx
 	or eax, ebx
 	xor eax, -1
@@ -29172,10 +29542,10 @@ vg_dsa_verify_prevalidated:
 	mov DWORD PTR [edi+8244], eax
 	mov eax, DWORD PTR [edi+8244]
 	and eax, 1
-	jmp 2339f
-2338:
+	jmp 2367f
+2366:
 	mov eax, 0
-2339:
+2367:
 23:
 	mov ebx, DWORD PTR [edi+8256]
 	mov ebp, DWORD PTR [edi+8260]

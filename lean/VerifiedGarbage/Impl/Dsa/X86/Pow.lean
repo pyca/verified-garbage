@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Mont.X86.CombPower
+public import VerifiedGarbage.Impl.Dsa.X86.CombSetup
 public import VerifiedGarbage.Impl.Dsa.HelperLayout
 
 /-! # Shared DSA modular exponentiation on IA-32
@@ -94,7 +95,9 @@ def body (n e : Nat) : Prog isa :=
 their top bits down: each iteration squares the result and multiplies it by
 one of `1`, `g`, `y` and `g y` (in Montgomery form), the entry of the two
 bits, read by masked selections of every entry: `32 e` squarings and as
-many multiplications, where two exponentiations take `128 e`. The caller
+many multiplications, where two exponentiations take `128 e`. Its modulus
+is public, so its context starts from the modulus's top bit where that is
+set (`setup2`). The caller
 loads `g` into slot 5, `y` into slot 7, `u` into slot 8 and `v` after it
 (`exp2`). Slot 6 is the result and slot 7 the selected entry; the entries
 are `R` and `g y R` in slot 3, which only the setup uses (`cellR`,
@@ -143,8 +146,13 @@ def step2 (n e : Nat) : Prog isa :=
   .seq (Comb.shiftOne e (slot n 8)) <| .seq (Comb.shiftOne e (exp2 n))
     (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
 
+/-- `R² mod m` in slot 4, as `setup`, for a modulus that is public: from
+`2^(65 n) mod m` by `Comb.seed`, which starts from the modulus's top bit
+where it is set. -/
+def setup2 (n : Nat) : Prog isa := .seq (Comb.seed n) (squarings n 6)
+
 def core2 (n e : Nat) : Prog isa :=
-  .seq (setup n) <| .seq (table2 n) <|
+  .seq (setup2 n) <| .seq (table2 n) <|
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * e)))]) <|
   .seq (.loop (step2 n e) .ne) (finish n)
 

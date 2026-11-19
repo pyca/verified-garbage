@@ -799,7 +799,7 @@ theorem callPower2P_relCT (L : CallLayout) (a b a2 b2 : Pointer) (output : Nat)
         H.pointer A, H.pointer B⟩, H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩,
       H.1.operand A2 (by omega_using [W]) (by omega_using [W]), H.2.operand A2 (by omega_using [W]) (by omega_using [W]),
       H.1.operand B2 (by omega_using [W]) (by omega_using [W]), H.2.operand B2 (by omega_using [W]) (by omega_using [W]),
-      H.pointer A2, H.pointer B2⟩
+      H.pointer A2, H.pointer B2, H.1.moduli.pValue.trans H.2.moduli.pValue.symm⟩
   · intro s R
     exact WP.mono (stagePower2P_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
       (R.operand B (by omega_using [W]) (by omega_using [W])) (R.operand A2 (by omega_using [W]) (by omega_using [W]))
