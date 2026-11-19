@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.EcKey.AArch64.P192.Lit
@@ -241,7 +243,8 @@ theorem post_of {s s' : State} (h : PkPost p192 s s') : pkAArch64.post s s' := b
   rw [show Spec.EcKey.publicKey p192.C (dk p192 s) = pk s.mem (s.gpr .x1) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_a64 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : pkAArch64.pre s) :
+theorem pk_a64 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (s : State) (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP192 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p192_ok hI) hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
@@ -258,5 +261,15 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP192 :=
 theorem pk_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
     Verified AArch64.target publicKeyP192 (Spec.EcKey.P192.inst.publicKeyContract AArch64.abi) :=
   Verified.of_correct (pk_a64 hL hI) pk_ct implies
+
+/-- `vg_ec_p192_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.publicKeyP192`), meets its contract in constant time and
+returns without secret residue. -/
+theorem pk_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP192
+      (Spec.EcKey.P192.inst.publicKeyContract AArch64.abi) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P192.publicKeyApi)
+    { code := publicKeyP192, verified := pk_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.publicKeyOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.AArch64.P192
