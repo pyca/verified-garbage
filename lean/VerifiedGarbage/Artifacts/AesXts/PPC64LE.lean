@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.PPC64LE.Verified
-public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Verified
+public import VerifiedGarbage.Proof.AesXts.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -11,14 +10,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.AesXts.PPC64LE
 
-open VG.Proof.AesXts.PPC64LE
-
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptUnitApi.artifact PPC64LE.target {
-    code := Impl.AesXts.PPC64LEUnit.encrypt
-    verified := Unit.encrypt_verified },
-  Spec.Xts.aesDecryptUnitApi.artifact PPC64LE.target {
-    code := Impl.AesXts.PPC64LEUnit.decrypt
-    verified := Unit.decrypt_verified }]
+  Spec.Xts.aesEncryptUnitApi.artifact PPC64LE.target Proof.AesXts.PPC64LE.Scrub.encryptUnitReg,
+  Spec.Xts.aesDecryptUnitApi.artifact PPC64LE.target Proof.AesXts.PPC64LE.Scrub.decryptUnitReg]
 
 end VG.Artifacts.AesXts.PPC64LE

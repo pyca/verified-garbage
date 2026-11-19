@@ -31,7 +31,7 @@ open VG.Proof.Hmac.Generic.Common (readW_reloc bytesAt_reloc)
 
 /-- SHA-224's functions: SHA-256's streaming state, 96 bytes, and working
 space, 20 words; a 28-byte digest, of the 32 bytes `finalize` writes. -/
-def sha224H : Hash := ⟨64, 96, 28, 32, 20, "vg_sha224_init", Impl.Sha256.Arm.Stream.init224,
+def sha224H : Hash := ⟨64, 96, 28, 32, 20, "vg_sha224_init_core", Impl.Sha256.Arm.Stream.init224,
   "vg_sha256_update_scratch", Impl.Sha256.Arm.Stream.update, "vg_sha256_finalize_scratch", Impl.Sha256.Arm.Stream.finalize⟩
 
 /-- The representation moves with the state's bytes. -/

@@ -79,7 +79,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	bne 21b
 	add r12, sp, #0
 	ldr r0, [sp, #220]
-	bl {vg_sha256_init}
+	bl {vg_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #1552
@@ -88,20 +88,20 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	str r1, [r12, #4]
 	mov r2, #0
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #208
 	str r1, [r12, #0]
 	ldr r2, [sp, #152]
 	mov r3, #0
-	bl {vg_sha256_finalize}
+	bl {vg_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #96
 	add r2, r0, #208
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r1, [sp, #172]
@@ -110,7 +110,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #240
@@ -119,7 +119,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	ldr r2, [sp, #152]
 	add r2, r2, #64
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	mov r0, #0
 	str r0, [r12, #76]
@@ -155,7 +155,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	add r1, r0, #96
 	add r2, r0, #240
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #192
@@ -164,7 +164,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r2, [sp, #76]
@@ -174,7 +174,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	add r1, r0, #96
 	mov r2, #74
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r1, [sp, #76]
 	add r1, r1, #1
@@ -222,7 +222,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	add r1, r0, #96
 	add r2, r0, #240
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #192
@@ -231,7 +231,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r2, [sp, #76]
@@ -241,7 +241,7 @@ vg_rsa_pkcs1_decrypt_precomputed_umaal:
 	add r1, r0, #96
 	mov r2, #75
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r1, [sp, #76]
 	add r1, r1, #1
@@ -612,7 +612,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	bne 21b
 	add r12, sp, #0
 	ldr r0, [sp, #220]
-	bl {vg_sha256_init}
+	bl {vg_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #1552
@@ -621,20 +621,20 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str r1, [r12, #4]
 	mov r2, #0
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #208
 	str r1, [r12, #0]
 	ldr r2, [sp, #152]
 	mov r3, #0
-	bl {vg_sha256_finalize}
+	bl {vg_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #96
 	add r2, r0, #208
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r1, [sp, #172]
@@ -643,7 +643,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #240
@@ -652,7 +652,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	ldr r2, [sp, #152]
 	add r2, r2, #64
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	mov r0, #0
 	str r0, [r12, #76]
@@ -688,7 +688,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add r1, r0, #96
 	add r2, r0, #240
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #192
@@ -697,7 +697,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r2, [sp, #76]
@@ -707,7 +707,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add r1, r0, #96
 	mov r2, #74
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r1, [sp, #76]
 	add r1, r1, #1
@@ -755,7 +755,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add r1, r0, #96
 	add r2, r0, #240
 	mov r3, #32
-	bl {vg_hmac_sha256_init}
+	bl {vg_hmac_sha256_init_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	add r1, r0, #192
@@ -764,7 +764,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	str r1, [r12, #4]
 	mov r2, #64
 	mov r3, #0
-	bl {vg_sha256_update}
+	bl {vg_sha256_update_core}
 	add r12, sp, #0
 	ldr r0, [sp, #220]
 	ldr r2, [sp, #76]
@@ -774,7 +774,7 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	add r1, r0, #96
 	mov r2, #75
 	mov r3, #0
-	bl {vg_hmac_sha256_finalize}
+	bl {vg_hmac_sha256_finalize_core}
 	add r12, sp, #0
 	ldr r1, [sp, #76]
 	add r1, r1, #1

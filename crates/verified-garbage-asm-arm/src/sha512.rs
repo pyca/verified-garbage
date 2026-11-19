@@ -974,7 +974,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha384_init}
+bl {vg_sha384_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1158,7 +1158,7 @@ str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
 bx lr",
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1196,7 +1196,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1380,7 +1380,7 @@ str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1418,7 +1418,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_224_init}
+bl {vg_sha512_224_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1602,7 +1602,7 @@ str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
 bx lr",
-        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
+        vg_sha512_224_init_core = sym super::sha512::vg_sha512_224_init_core::vg_sha512_224_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1640,7 +1640,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_256_init}
+bl {vg_sha512_256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1824,11 +1824,19 @@ str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
 bx lr",
-        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
+        vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_224_init_core.rs"]
+pub(crate) mod vg_sha512_224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_256_init_core.rs"]
+pub(crate) mod vg_sha512_256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
@@ -1837,6 +1845,10 @@ pub(crate) mod vg_sha512_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch.rs"]
 pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_init_core.rs"]
+pub(crate) mod vg_sha512_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_state_digest.rs"]
