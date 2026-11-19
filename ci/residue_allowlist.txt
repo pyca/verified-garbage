@@ -531,12 +531,6 @@ powerpc64le vg_chacha20_poly1305_seal
 powerpc64le vg_chacha20_poly1305_seal_gather
 powerpc64le vg_chacha20_set_nonce
 powerpc64le vg_ct_eq
-powerpc64le vg_ed25519_key_pair
-powerpc64le vg_ed25519_sign_expanded
-powerpc64le vg_ed25519_verify
-powerpc64le vg_ed448_public_key
-powerpc64le vg_ed448_sign_cached
-powerpc64le vg_ed448_verify
 powerpc64le vg_rc4_apply
 powerpc64le vg_rc4_init
 powerpc64le vg_scrypt
@@ -550,10 +544,6 @@ powerpc64le vg_sm4_gcm_stream_encrypt
 powerpc64le vg_sm4_gcm_stream_finish
 powerpc64le vg_sm4_gcm_stream_init
 powerpc64le vg_sm4_gcm_stream_verify
-powerpc64le vg_x25519_base
-powerpc64le vg_x25519_exchange
-powerpc64le vg_x448_base
-powerpc64le vg_x448_exchange
 riscv64 vg_aes_ccm_open
 riscv64 vg_aes_ccm_seal
 riscv64 vg_aes_gcm_init

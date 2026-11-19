@@ -9,6 +9,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Ed448.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignVerified
@@ -21,14 +22,8 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyVerified
 namespace VG.Artifacts.Ed448.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact PPC64LE.target {
-    code := Impl.Ed448.PPC64LE.Whole.publicKeyCode
-    verified := Proof.Ed448.PPC64LE.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok },
-  Spec.Ed448.signCachedApi.artifact PPC64LE.target {
-    code := Impl.Ed448.PPC64LE.Whole.signCachedCode
-    verified := Proof.Ed448.PPC64LE.Whole.signCached_framed Proof.Ed448.baseLadder2_ok },
-  Spec.Ed448.verifyApi.artifact PPC64LE.target {
-    code := Impl.Ed448.PPC64LE.Whole.verifyCode
-    verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }]
+  Spec.Ed448.publicKeyApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.publicKeyReg,
+  Spec.Ed448.signCachedApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.signCachedReg,
+  Spec.Ed448.verifyApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.verifyReg]
 
 end VG.Artifacts.Ed448.PPC64LE
