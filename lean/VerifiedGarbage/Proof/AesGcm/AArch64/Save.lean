@@ -41,10 +41,11 @@ abbrev savedR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 128, 88⟩
 def SavedAt (m : Mem) (W : Addr) (s₀ : State) : Prop :=
   ∀ p ∈ saved, m.readW (W + BitVec.ofNat 64 p.2) 64 = s₀.gpr p.1
 
-theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 2560⟩] s.wr) :
+/-- `save` writes only the first 256 bytes at `W`. -/
+theorem save_ok256 (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 256⟩] s.wr) :
     ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = savedMem s.mem W s.gpr := by
-  have w (d : Nat) (h : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 := in_off hw h (by decide)
+  have w (d : Nat) (h : d + 8 ≤ 256) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 := in_off hw h (by decide)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, save, saved, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
@@ -55,6 +56,11 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
     rfl, ?_⟩
   refine ⟨rfl, rfl, rfl, rfl, ?_⟩
   simp only [savedMem, saved, List.foldl, Mem.writeW, BitVec.setWidth_eq]
+
+theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 2560⟩] s.wr) :
+    ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = savedMem s.mem W s.gpr :=
+  save_ok256 s b hb (covers_prefix hw (by decide))
 
 theorem readW_writeW_other (m : Mem) (b : Addr) {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
     (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
@@ -112,12 +118,14 @@ theorem SavedAt.frame {m m' : Mem} {W : Addr} {s₀ : State} (h : SavedAt m W s�
   rw [hf.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (Region.contains_self _ _)
     (fun r hr => (hd r hr).sub_left hs) (by decide), h p hp]
 
-theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr)) :
+theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr))
+    (hk : 256 ≤ k := by decide) :
     ∃ s', runBlock isa restore s = some s' ∧
       (∀ p ∈ saved, s'.gpr p.1 = s.mem.readW (W + BitVec.ofNat 64 p.2) 64) ∧
       (∀ r, r ∉ saved.map (·.1) → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  have r (d : Nat) (h : d + 8 ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) 8 := in_off hr h (by decide)
+  have r (d : Nat) (h : d + 8 ≤ 256) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) 8 :=
+    in_off (covers_prefix hr hk) h (by decide)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write,
@@ -135,10 +143,10 @@ theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) (hr : Covers [�
 
 /-- The end of every function: our caller's registers restored. -/
 theorem exit_ok {s s₀ : State} {W : Addr} (h19 : s.gpr .x19 = W) (hsp : s.sp = s₀.sp)
-    (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) :
+    {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) (hk : 256 ≤ k := by decide) :
     WP isa (.block restore) s fun s' => GprAbi s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .x0 = s.gpr .x0 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s', run, hsv, hother, sp', hm, rd', wr'⟩ := restore_ok s h19 hr
+  obtain ⟨s', run, hsv, hother, sp', hm, rd', wr'⟩ := restore_ok s h19 hr hk
   refine WP.of_runBlock ⟨s', run, ⟨fun r hr' => ?_, by rw [sp', hsp]⟩, hm, hother .x0 (by decide), rd', wr'⟩
   have hin : r ∈ saved.map (·.1) := (by decide : ∀ r ∈ preserved, r ∈ saved.map (·.1)) r hr'
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hin

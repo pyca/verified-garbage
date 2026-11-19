@@ -3,42 +3,9 @@
 //! `assembly/sha3.s`.
 #![allow(dead_code)]
 
-/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 144.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r"sub sp, sp, #16
-add r12, sp, #0
-str lr, [r12, #8]
-str r3, [r12, #0]
-ldr lr, [sp, #16]
-str lr, [r12, #4]
-mov r3, r2
-mov r2, r1
-mov r1, #144
-bl {vg_keccak_absorb_scratch}
-ldr lr, [sp, #8]
-add sp, sp, #16
-bx lr",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
-}
-
 /// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
 ///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -50,7 +17,7 @@ bx lr",
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_224_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #648
 add r12, sp, #0
@@ -295,42 +262,9 @@ bx lr",
     )
 }
 
-/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r"sub sp, sp, #16
-add r12, sp, #0
-str lr, [r12, #8]
-str r3, [r12, #0]
-ldr lr, [sp, #16]
-str lr, [r12, #4]
-mov r3, r2
-mov r2, r1
-mov r1, #136
-bl {vg_keccak_absorb_scratch}
-ldr lr, [sp, #8]
-add sp, sp, #16
-bx lr",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
-}
-
 /// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. A computation starts from the all-zero state, at position 0.
 ///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -342,7 +276,7 @@ bx lr",
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_256_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #648
 add r12, sp, #0
@@ -587,42 +521,9 @@ bx lr",
     )
 }
 
-/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 104.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r"sub sp, sp, #16
-add r12, sp, #0
-str lr, [r12, #8]
-str r3, [r12, #0]
-ldr lr, [sp, #16]
-str lr, [r12, #4]
-mov r3, r2
-mov r2, r1
-mov r1, #104
-bl {vg_keccak_absorb_scratch}
-ldr lr, [sp, #8]
-add sp, sp, #16
-bx lr",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
-}
-
 /// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
 ///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -634,7 +535,7 @@ bx lr",
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_384_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #648
 add r12, sp, #0
@@ -879,42 +780,9 @@ bx lr",
     )
 }
 
-/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 72.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r"sub sp, sp, #16
-add r12, sp, #0
-str lr, [r12, #8]
-str r3, [r12, #0]
-ldr lr, [sp, #16]
-str lr, [r12, #4]
-mov r3, r2
-mov r2, r1
-mov r1, #72
-bl {vg_keccak_absorb_scratch}
-ldr lr, [sp, #8]
-add sp, sp, #16
-bx lr",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
-}
-
 /// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
 ///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -926,7 +794,7 @@ bx lr",
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha3_512_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #648
 add r12, sp, #0
@@ -1171,42 +1039,9 @@ bx lr",
     )
 }
 
-/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 168.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    core::arch::naked_asm!(
-        r"sub sp, sp, #16
-add r12, sp, #0
-str lr, [r12, #8]
-str r3, [r12, #0]
-ldr lr, [sp, #16]
-str lr, [r12, #4]
-mov r3, r2
-mov r2, r1
-mov r1, #168
-bl {vg_keccak_absorb_scratch}
-ldr lr, [sp, #8]
-add sp, sp, #16
-bx lr",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-    )
-}
-
 /// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. A computation starts from the all-zero state, at position 0.
 ///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
+/// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -1218,7 +1053,7 @@ bx lr",
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_shake128_absorb(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #648
 add r12, sp, #0

@@ -23,7 +23,8 @@ section
 
 Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Ccm/Contract.lean`, which imply these
-(`Verified.lean`), with a 2560-byte `work` buffer appended
+(`Verified.lean`), with a `work` buffer appended of `384 + N` bytes, `N` those
+the functions called need (`UpdateImpl.scratch`: 2176, or none)
 (`Proof/AesCcm/Scratch.lean`). A call (`bl`) stores nothing in memory, so no
 stack is used; `seal` and `open` read their last three arguments from the
 stack, which they may only read.
@@ -45,44 +46,44 @@ abbrev rounds (r : BitVec 64) : Prop := r.toNat = 10 ∨ r.toNat = 12 ∨ r.toNa
 /-- What `vg_aes_ccm_seal` and `vg_aes_ccm_open` both need, but for the
 permissions: `(schedule = x0, rounds = x1, nonce = x2, nonce_len = x3,
 aad = x4, aad_len = x5, data = x6, len = x7, tag = [sp], tag_len = [sp + 8],
-work = [sp + 16])`. -/
-def oneLay (s : State) : Prop :=
+work = [sp + 16])`, `work` of `384 + N` bytes. -/
+def oneLay (N : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
+  let work : Region := ⟨stackArg s 2, 384 + N⟩
   sch.Disjoint data ∧ sch.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ tag.Disjoint data ∧ tag.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s) ∧ work.Disjoint (args s) ∧
     (s.gpr .x0).toNat + 240 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
+    (stackArg s 2).toNat + (384 + N) ≤ 2 ^ 64 ∧ s.sp.toNat + 24 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
     valid (stackArg s 1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat = true
 
 /-- What `vg_aes_ccm_seal` needs: `oneLay`, with `tag` the `tag_len` bytes to
 write. -/
-def sealPre (s : State) : Prop :=
+def sealPre (N : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
-  s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ oneLay s
+  let work : Region := ⟨stackArg s 2, 384 + N⟩
+  s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ oneLay N s
 
 /-- What `vg_aes_ccm_open` needs: `oneLay`, with the received tag the
 `tag_len` bytes at `tag`, to read. -/
-def openPre (s : State) : Prop :=
+def openPre (N : Nat) (s : State) : Prop :=
   let sch : Region := ⟨s.gpr .x0, 240⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
-  s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay s
+  let work : Region := ⟨stackArg s 2, 384 + N⟩
+  s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay N s
 
 def onePub (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -90,8 +91,8 @@ def onePub (s₁ s₂ : State) : Prop :=
     s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧ ∀ i < 3, stackArg s₁ i = stackArg s₂ i
 
 /-- `vg_aes_ccm_seal`. -/
-def sealAArch64 : Contract isa where
-  pre := sealPre
+def sealAArch64 (N : Nat) : Contract isa where
+  pre := sealPre N
   post s s' :=
     encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (stackArg s 1).toNat
         (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
@@ -117,8 +118,8 @@ def openLeak (s : State) : List Nat :=
   if ¬rounds (s.gpr .x1) then [] else [if (openRes s).isSome = true then 1 else 0]
 
 /-- `vg_aes_ccm_open`. -/
-def openAArch64 : Contract isa where
-  pre := openPre
+def openAArch64 (N : Nat) : Contract isa where
+  pre := openPre N
   post s s' := openOut (openRes s) (s'.gpr .x0) (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat) (s.gpr .x7).toNat
   pub s₁ s₂ := onePub s₁ s₂ ∧ openLeak s₁ = openLeak s₂
 
@@ -132,8 +133,8 @@ end
 # AES-CCM on AArch64: where everything is
 
 Untrusted: everything here is checked by Lean. The public values of a call
-(`Cx`): the key schedule (240 bytes at `K`), the working space (2560 bytes at
-`W`), the data (`n` bytes at `D`), the associated data (`al` bytes at `A`),
+(`Cx`): the key schedule (240 bytes at `K`), the working space (`384 + N`
+bytes at `W`, `N` those of the functions called), the data (`n` bytes at `D`), the associated data (`al` bytes at `A`),
 the tag (`tl` bytes at `T`), the rounds, the tag length and the nonce length,
 and the stack pointer; what
 the precondition says of them (`Lay`); what a state may access (`Perm`); the
@@ -204,17 +205,20 @@ structure Cx where
   nl : Nat
   SP : Addr
   T : Addr
+  /-- The bytes of `W` from 384 on, the working space of the functions called. -/
+  N : Nat
+  N_le : N ≤ 2176
 
 /-- What the precondition says of the public values. -/
 structure Lay (c : Cx) : Prop where
   kw : c.K.toNat + 240 ≤ 2 ^ 64
-  ww : c.W.toNat + 2560 ≤ 2 ^ 64
+  ww : c.W.toNat + (384 + c.N) ≤ 2 ^ 64
   dw : c.D.toNat + c.n ≤ 2 ^ 64
   aw : c.A.toNat + c.al ≤ 2 ^ 64
-  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 384 + c.N⟩
   k_d : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 2560⟩
-  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 384 + c.N⟩
+  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 384 + c.N⟩
   a_d : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.D, c.n⟩
   rounds : c.R = 10 ∨ c.R = 12 ∨ c.R = 14
   n_lt : c.n < 2 ^ 64
@@ -226,13 +230,13 @@ structure Lay (c : Cx) : Prop where
   h13 : c.nl ≤ 13
   hn : c.n < 256 ^ (15 - c.nl)
   tw : c.T.toNat + c.tl ≤ 2 ^ 64
-  t_w : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  t_w : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W, 384 + c.N⟩
   t_d : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.D, c.n⟩
 
 /-- What a state may access. -/
 structure Perm (c : Cx) (s : State) : Prop where
   k : Covers [⟨c.K, 240⟩] (s.rd ++ s.wr)
-  w : Covers [⟨c.W, 2560⟩] s.wr
+  w : Covers [⟨c.W, 384 + c.N⟩] s.wr
   d : Covers [⟨c.D, c.n⟩] s.wr
   a : Covers [⟨c.A, c.al⟩] (s.rd ++ s.wr)
   t : Covers [⟨c.T, c.tl⟩] (s.rd ++ s.wr)
@@ -281,36 +285,42 @@ theorem Env.of_saved {c : Cx} {s s' : State} (h : Env c s)
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n N : Nat} (h : d + n ≤ 384 + N) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 384 + N⟩ :=
   Offset.sub_base _ h
 
 variable {c : Cx} (L : Lay c)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 384 + c.N) (hd : d + k ≤ 384 + c.N) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
+  Offset.disjoint _ h (by omega_using [ha, L.ww, c.N_le]) (by omega_using [hd, L.ww, c.N_le])
 
 /-- `W` and a part of it. -/
-theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 2560) :
+theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 384 + c.N) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ := by
   simpa using L.w_w (a := 0) (n := n) (.inl (by omega_using [h])) (by omega_using [h, hd]) hd
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 384 + c.N) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 384 + c.N) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem a_w' {d k : Nat} (hd : d + k ≤ 384 + c.N) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem wrapW {d : Nat} (hd : d < 2560) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
+theorem wrapW {d : Nat} (hd : d < 384 + c.N) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, c.N_le]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
+
+/-- The working space of the functions called does not wrap around. -/
+theorem wrapHi : (c.W + BitVec.ofNat 64 384).toNat + c.N ≤ 2 ^ 64 := by
+  by_cases hN : c.N = 0
+  · rw [hN, Nat.add_zero]; exact Nat.le_of_lt (BitVec.isLt _)
+  · rw [L.wrapW (by omega)]; have := L.ww; omega
 
 end Lay
 
@@ -319,16 +329,16 @@ namespace Perm
 variable {c : Cx} {s : State} (P : Perm c s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
-  in_off P.w h (by decide)
+theorem wW {d n : Nat} (h : d + n ≤ 384 + c.N) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
+  in_off P.w h (by have := c.N_le; omega)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 384 + c.N) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off P.w h (by decide)
+theorem wC {d n : Nat} (h : d + n ≤ 384 + c.N) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off P.w h (by have := c.N_le; omega)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 384 + c.N) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
 
 end Perm
@@ -340,7 +350,7 @@ structure Buf (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
   rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
   lt : len < 2 ^ 64
   wrap : P.toNat + len ≤ 2 ^ 64
-  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 384 + c.N⟩
 
 namespace Buf
 
@@ -374,7 +384,7 @@ theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
 theorem slice {a k : Nat} (hk : a + k ≤ len) : Buf c s (P + BitVec.ofNat 64 a) k :=
   (h.drop (k := a) (by omega_using [hk])).take (by omega_using [hk])
 
-theorem wd {d k : Nat} (hd : d + k ≤ 2560) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem wd {d k : Nat} (hd : d + k ≤ 384 + c.N) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   h.w.sub_right (Lay.wSub hd)
 
 end Buf
@@ -392,15 +402,16 @@ the working space of the functions called. -/
 structure Src (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
   rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
   wrap : P.toNat + len ≤ 2 ^ 64
-  qs : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 384, 2176⟩
+  qs : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 384, c.N⟩
 
 theorem Buf.src {c : Cx} {s : State} {P : Addr} {len : Nat} (h : Buf c s P len) : Src c s P len :=
-  ⟨h.rd, h.wrap, h.wd (by decide)⟩
+  ⟨h.rd, h.wrap, h.wd (Nat.le_refl _)⟩
 
 /-- Bytes of `W` below 384 as data. -/
-theorem Lay.srcW {c : Cx} (L : Lay c) {s : State} (P : Perm c s) {t k : Nat} (hk : t + k ≤ 384) :
+theorem Lay.srcW {c : Cx} (L : Lay c) {s : State} (P : Perm c s) {t k : Nat} (hk : t + k ≤ 384)
+    (ht : t < 384 := by decide) :
     Src c s (c.W + BitVec.ofNat 64 t) k :=
-  ⟨P.wCR (by omega_using [hk]), by rw [L.wrapW (by omega_using [hk])]; have := L.ww; omega_using [hk, this], L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)⟩
+  ⟨P.wCR (by omega), by rw [L.wrapW (by omega)]; have := L.ww; omega_using [hk, this], L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (Nat.le_refl _)⟩
 
 /-! ## The slots -/
 
@@ -412,21 +423,21 @@ structure Slots (c : Cx) (m : Mem) : Prop where
   nlen : m.readW (c.W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 c.nl
   tag : m.readW (c.W + BitVec.ofNat 64 240) 64 = c.T
 
-/-- The parts of `W` the pieces write: `[0, 112)` and `[256, 2560)`. -/
+/-- The parts of `W` the pieces write: `[0, 112)` and `[256, 384 + N)`. -/
 abbrev wLo (W : Addr) : Region := ⟨W, 112⟩
-abbrev wHi (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 2304⟩
+abbrev wHi (W : Addr) (N : Nat) : Region := ⟨W + BitVec.ofNat 64 256, 128 + N⟩
 
 /-- What the pieces may change: those parts of `W` and the data. -/
-abbrev mutR (c : Cx) : List Region := [wLo c.W, wHi c.W, ⟨c.D, c.n⟩]
+abbrev mutR (c : Cx) : List Region := [wLo c.W, wHi c.W c.N, ⟨c.D, c.n⟩]
 
 /-- A part of `W` the pieces write, within `mutR`. -/
 theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 112) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨wLo c.W, by simp, Offset.sub_base _ h⟩
 
-theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560) :
+theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 384 + c.N) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨wHi c.W, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
+  ⟨wHi c.W c.N, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -437,23 +448,23 @@ theorem kept_mut {c : Cx} (L : Lay c) {d k : Nat} (hd : 112 ≤ d ∧ d + k ≤ 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (L.w0_w (n := 112) (d := d) (k := k) hd.1 (by omega_using [hd])).symm
-  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by omega)
   · exact (L.d_w' (by omega_using [hd])).symm
 
 theorem k_mut {c : Cx} (L : Lay c) : ∀ r ∈ mutR c, (⟨c.K, 240⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact L.k_w.sub_right (Region.sub_prefix (by decide))
-  · exact L.k_w' (by decide)
+  · exact L.k_w.sub_right (Region.sub_prefix (by omega))
+  · exact L.k_w' (by omega)
   · exact L.k_d
 
 theorem a_mut {c : Cx} (L : Lay c) : ∀ r ∈ mutR c, (⟨c.A, c.al⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact L.a_w.sub_right (Region.sub_prefix (by decide))
-  · exact L.a_w' (by decide)
+  · exact L.a_w.sub_right (Region.sub_prefix (by omega))
+  · exact L.a_w' (by omega)
   · exact L.a_d
 
 section
@@ -484,8 +495,8 @@ theorem tag_mut (ht : c.tl ≤ 16) : bytesAt m' c.T c.tl = bytesAt m c.T c.tl :=
   Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact L.t_w.sub_right (Region.sub_prefix (by decide))
-    · exact L.t_w.sub_right (Lay.wSub (by decide))
+    · exact L.t_w.sub_right (Region.sub_prefix (by omega))
+    · exact L.t_w.sub_right (Lay.wSub (by omega))
     · exact L.t_d) (by omega_using [ht])
 
 end

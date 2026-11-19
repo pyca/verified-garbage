@@ -26,9 +26,9 @@ namespace VG.Proof.AesGcmSiv.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesGcmSiv.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
-open VG.Impl.AesGcm.X86 (at_ imm slot)
+open VG.Impl.AesGcm.X86 (at_ imm slot maskWords)
 open VG.Proof.AesGcm.X86 (w64 slotv slotv_eq bytes16_eq xor4_eq_zero w64_add in_of_covers succ_ofNat32 add_zero32
-  pred_count pred_beq bytesAt_succ length_bytesAt and_self_beq32 readW_writeW_off covers_left)
+  pred_count pred_beq bytesAt_succ length_bytesAt and_self_beq32 readW_writeW_off covers_left maskWords_ok)
 
 /-- `cmp eax, 1` and `adc` of 0 after the OR of the XORs of two blocks' words:
 1 if they are equal, else 0. -/
@@ -169,13 +169,49 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
   have sp₁ := E₁.esp
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have hfD := L.dw
+  obtain bx₂ : s₂.gpr .ebx = 0 - (if c then 1 else 0) := by
+    rw [g₂ _ (by decide), bx₁]; cases c <;> rfl
+  refine WP.seq (WP.mono (maskWords_ok s₂ hn32 hfD di₂ (by rw [g₂ _ (by decide), cx₁]) bx₂
+    (by rw [rd₂, wr₂]; exact covers_left E.perm.d) (by rw [wr₂]; exact E.perm.d))
+    fun s₃ ⟨j₀, hj₀, hlt₀, di₃, cx₃, m₃, g₃, rd₃, wr₃⟩ => ?_)
+  obtain ⟨s₄, run₄, g₄, m₄, zf₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa [.alu .test .ecx (.reg .ecx)] s₃ = some s₄ ∧
+      s₄.gpr = s₃.gpr ∧ s₄.mem = s₃.mem ∧ s₄.zf = some (decide (p.n - j₀ = 0)) ∧ s₄.rd = s₃.rd ∧
+      s₄.wr = s₃.wr := by
+    refine ⟨_, by grun [], ?_, ?_, ?_, ?_, ?_⟩
+    · rfl
+    · rfl
+    · gmems [cx₃]; rw [and_self_beq32 (by omega_using [hn32])]
+    · rfl
+    · rfl
+  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
+  obtain mem₄ : s₄.mem =
+      writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) j₀ else Spec.GcmSiv.zeros j₀) := by
+    rw [m₄, m₃, m₂]; rfl
+  obtain gg₄ : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → s₄.gpr r = s₂.gpr r := fun r h₁ h₂ h₃ => by
+    rw [g₄, g₃ r h₁ h₂ h₃]
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂]
+  refine WP.ite (decide (p.n - j₀ = 0)) (eval_e zf₄) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · obtain e : j₀ = p.n := by have := of_decide_eq_true hb; omega_using [hj₀, this]
+    rw [e] at mem₄
+    obtain fm : Frame (mutR p) s.mem s₄.mem := by
+      rw [mem₄]
+      have f0 : Frame [⟨w64 p.D, p.n⟩] s.mem (writeBytes s.mem (w64 p.D)
+          (if c then bytesAt s.mem (w64 p.D) p.n else Spec.GcmSiv.zeros p.n)) :=
+        writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
+      exact frame_toMut f0 fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq
+        exact ⟨⟨w64 p.D, p.n⟩, by simp, fun _ h => h⟩
+    exact ⟨E.mut L (by rw [gg₄ _ (by decide) (by decide) (by decide), g₂ _ (by decide), bp₁])
+      (by rw [gg₄ _ (by decide) (by decide) (by decide), g₂ _ (by decide), sp₁]) rd₄' wr₄' fm, rd₄', wr₄',
+      by rw [gg₄ _ (by decide) (by decide) (by decide), g₂ _ (by decide), ax₁], mem₄⟩
+  obtain hj₁ : j₀ < p.n := by have := of_decide_eq_false hb; omega_using [hj₀, this]
   refine WP.loop (M := isa) (body := .block maskBody) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ j, k = p.n - j ∧ j < p.n ∧ t.gpr .edi = p.D + BitVec.ofNat 32 j ∧
       t.gpr .ecx = BitVec.ofNat 32 (p.n - j) ∧
       t.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) j else Spec.GcmSiv.zeros j) ∧
-      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s₂.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (p.n - 0) _
-    ⟨0, rfl, hn0, by rw [di₂, add_zero32], by rw [g₂ _ (by decide), cx₁, Nat.sub_zero], by
-      rw [m₂]; cases c <;> simp [Spec.Aes.bytesAt, Spec.GcmSiv.zeros, writeBytes_nil], fun r _ _ _ => rfl, rd₂, wr₂⟩
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s₂.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (p.n - j₀) _
+    ⟨j₀, rfl, hj₁, by rw [g₄, di₃], by rw [g₄, cx₃], mem₄, gg₄, rd₄', wr₄'⟩
   rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok t (P := p.D) (i := j) (n := p.n) (c := c) di cx
     (by rw [g _ (by decide) (by decide) (by decide), g₂ _ (by decide), bx₁]) (w64_add (by omega_using [hfD, hj]))

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha1_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh84AEhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOMH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPhAAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOSAAgE4="
 20:
 .base64 "Uf4h+CAA4TimAgh80f8h+CAAAfg4AYf6QAGn+kgBx/pQAef6WAEH+2ABJ/sAAKc6AADDOgAA5DoAAAY7AAAlO9AAhzoAAHQ4"
 bl {vg_sha1_init}
@@ -84,6 +86,8 @@ b 21b"#,
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha1I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 84 bytes.
@@ -101,7 +105,7 @@ bl {vg_sha1_finalize_scratch}
 bl {vg_sha1_update_scratch}
 .base64 "AAB0OFQAgDjQALU4AADVOA=="
 bl {vg_sha1_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITggAIBO""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkaAAleqwANXquAD16sAAFevIADXrqAC16iAAAegwACE4pgMIfOABITgAAAA4wf0h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPiAAQz4iAEM+JABDPiYAQz4oAEM+KgBDPiwAQz4uAEM+MABDPjIAQz40AEM+NgBDPjgAQz46AEM+PABDPj4AQz4AAIM+AgCDPgQAgz4GAIM+EACITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5IACATg==""#,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
     )
@@ -110,6 +114,10 @@ bl {vg_sha1_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha1_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha1_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_core.rs"]
+pub(crate) mod vg_hmac_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha1_init_scratch.rs"]

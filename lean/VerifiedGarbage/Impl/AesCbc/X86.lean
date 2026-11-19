@@ -11,10 +11,10 @@ public import VerifiedGarbage.Impl.CmacAes.X86
 on the stack (cdecl), composed of calls of the verified
 `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on one block at a time,
 in place. They are generic over the implementation they call (`Blocks`):
-each is emitted once for each implementation (e.g.
-`vg_aes_cbc_encrypt_aesni` calls `vg_aes_encrypt_blocks_aesni`), but
-`vg_aes_cbc_decrypt` with AES-NI, which deciphers the blocks itself, six at
-a time (`Impl/AesCbc/X86/Decrypt.lean`).
+each is emitted once for each implementation, but with AES-NI, whose
+code makes no call: `vg_aes_cbc_decrypt` deciphers the blocks itself, six at
+a time (`Impl/AesCbc/X86/Decrypt.lean`), and `vg_aes_cbc_encrypt` keeps the
+chaining value in `xmm0` for all the blocks (`encryptNi`).
 
 They are built from AES-CMAC's pieces (`Impl/CmacAes/X86.lean`), whose
 arguments are in the same places: `setup` saves our caller's `ebx`, `esi`,
@@ -42,6 +42,12 @@ changed.
 * `decryptZ`, each block: `Cⱼ` saved in the scratch buffer, deciphered in
   place, XORed with the chaining value `Cⱼ₋₁`, and the saved `Cⱼ` copied to
   the chaining value.
+* `encryptNi`: the chaining value loaded from `iv` into `xmm0` once and
+  stored there once (AES-CMAC's `niPre` and `niPost`); each block is XORed
+  into it, enciphered there with the round keys loaded from the schedule
+  (`Impl.Aes.X86.AesNi.aes`), and stored over the block. It uses no stack,
+  and of the scratch buffer only the 16 bytes where it saves the registers,
+  which it zeroes.
 
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
@@ -53,7 +59,7 @@ namespace VG.Impl.AesCbc.X86
 
 open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
-open VG.Impl.CmacAes.X86 (argOp setup advance restore xor4 zero4)
+open VG.Impl.CmacAes.X86 (argOp at_ setup advance restore xor4 zero4 niPre niPost)
 
 /-- The offset of the saved ciphertext block in the scratch buffer. -/
 def cOff : Nat := 2048
@@ -97,6 +103,24 @@ def encBody (b : Blocks) : Prog isa := .seq (.block encPre) (.seq (blkCall b) (.
 /-- `vg_aes_cbc_encrypt` around `b`, leaving of the scratch buffer only what
 `b` writes changed. -/
 def encryptZ (b : Blocks) : Prog isa := wholeZ (encBody b)
+
+/-- One block with AES-NI: the block at `esi` XORed into the chaining value
+in `xmm0` (through `xmm7`), which is enciphered there (the round keys
+through `xmm6`) and stored over the block, and on to the next block; ZF is
+set when none is left. -/
+def niEncBody : Prog isa :=
+  .seq (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm0 .xmm7)])
+    (.seq (Impl.Aes.X86.AesNi.aes [.xmm0])
+      (.block [.movdquStore (at_ .esi 0) .xmm0, .alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)]))
+
+/-- The blocks with AES-NI: the chaining value loaded into `xmm0`, the
+blocks, and the chaining value stored. -/
+def niEncMid : Prog isa := .seq (.block niPre) (.seq (.loop niEncBody .ne) (.block niPost))
+
+/-- `vg_aes_cbc_encrypt` with AES-NI, leaving the scratch buffer as it was
+but for the zeros where it saved the registers. -/
+def encryptNi : Prog isa :=
+  .seq (.block setup) (.seq (.ite .e (.block []) niEncMid) (.block (restore 5 ++ zeroSaved)))
 
 /-! ## `vg_aes_cbc_decrypt` -/
 

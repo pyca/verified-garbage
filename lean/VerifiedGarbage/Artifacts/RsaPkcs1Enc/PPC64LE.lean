@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.EncVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecP
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -14,11 +11,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaPkcs1Enc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
-    verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.codeP_verified },
-  Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
-    verified := Proof.RsaPkcs1Enc.PPC64LE.Rnd.code_verified }]
+  Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target
+    Proof.RsaPkcs1Enc.PPC64LE.Scrub.decryptPrecomputedReg,
+  Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target Proof.RsaPkcs1Enc.PPC64LE.Scrub.encryptRandomReg]
 
 end VG.Artifacts.RsaPkcs1Enc.PPC64LE

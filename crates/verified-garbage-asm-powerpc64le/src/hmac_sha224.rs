@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -61,7 +63,7 @@ b 212f
 bl {vg_sha256_update_scratch}
 .base64 "oACV6rAA1eq4APXqwAAV68gANeuoALXqIAAB6DAAITimAwh8YAMhOA=="
 21:
-.base64 "IACATg=="
+.base64 "AAAAOEH8IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPiwAgz4uAIM+MACDPjIAgz40AIM+NgCDPjgAgz46AIM+PACDPj4Agz4AAMM+AgDDPgQAwz4GAMM+CADDPgoAwz4MAMM+DgDDPhAAwz4SAMM+FADDPhYAwz4YAMM+GgDDPhwAwz4eAMM+IADDPiIAwz4kAMM+JgDDPjAAyE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg=="
 20:
 .base64 "0fwh+CAA4TimAgh80f8h+CAAAfhQAYf6WAGn+mABx/poAef6cAEH+3gBJ/sAAKc6AADDOgAA5DoAAAY7AAAlO9AAhzoAAHQ4"
 bl {vg_sha224_init}
@@ -84,6 +86,8 @@ b 21b"#,
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
@@ -101,7 +105,7 @@ bl {vg_sha256_finalize_scratch}
 bl {vg_sha256_update_scratch}
 .base64 "AAB0OFwAgDjQALU4AADVOA=="
 bl {vg_sha256_finalize_scratch}
-.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4IACATg==""#,
+.base64 "0AAVgQAAF5HUABWBBAAXkdgAFYEIABeR3AAVgQwAF5HgABWBEAAXkeQAFYEUABeR6AAVgRgAF5GgAJXqsADV6rgA9erAABXryAA166gAteogAAHoMAAhOKYDCHxgAyE4AAAAOEH8IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4IAEM+CgBDPgwAQz4OAEM+EABDPhIAQz4UAEM+FgBDPhgAQz4aAEM+HABDPh4AQz4gAEM+IgBDPiQAQz4mAEM+KABDPioAQz4sAEM+LgBDPjAAQz4yAEM+NABDPjYAQz44AEM+OgBDPjwAQz4+AEM+AACDPgIAgz4EAIM+BgCDPggAgz4KAIM+DACDPg4Agz4QAIM+EgCDPhQAgz4WAIM+GACDPhoAgz4cAIM+HgCDPiAAgz4iAIM+JACDPiYAgz4oAIM+KgCDPiwAgz4uAIM+MACDPjIAgz40AIM+NgCDPjgAgz46AIM+PACDPj4Agz4AAMM+AgDDPgQAwz4GAMM+CADDPgoAwz4MAMM+DgDDPhAAwz4SAMM+FADDPhYAwz4YAMM+GgDDPhwAwz4eAMM+IADDPiIAwz4kAMM+JgDDPjAAyE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
     )
@@ -110,6 +114,10 @@ bl {vg_sha256_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha224_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha224_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha224_init_core.rs"]
+pub(crate) mod vg_hmac_sha224_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha224_init_scratch.rs"]

@@ -169,18 +169,18 @@ theorem update_verified' (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
     exact ⟨p1, trivial, p2, p3, p4, p5, p6⟩
 
 theorem update_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
-    Verified AArch64.target (update v.callee rate) (Spec.Sha3.updateContract AArch64.abi rate 16) := by
+    Verified AArch64.target (update v.callee rate) (Proof.Sha3.updateScratchContract AArch64.abi rate 16) := by
   obtain h0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   refine (update_verified' v hr).of_implies
-    { pre := by sig_implies_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
-      post := by sig_implies_post [Spec.Sha3.updateContract, Spec.Sha3.updateSig,
-          Spec.Sha3.updatePre, Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
-      pub := by sig_implies_pub [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre,
-          Spec.Sha3.updatePost, updateAArch64, AArch64.abi, AArch64.argRegs]
+    { pre := by sig_implies_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
+      post := by sig_implies_post [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig,
+          Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
+      pub := by sig_implies_pub [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre,
+          Proof.Sha3.updateScratchPost, updateAArch64, AArch64.abi, AArch64.argRegs]
       sat := ?_ }
   refine ⟨updateSat, ?_⟩
-  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
+  sig_pre [Proof.Sha3.updateScratchContract, Proof.Sha3.updateScratchSig, Proof.Sha3.updateScratchPre, Proof.Sha3.updateScratchPost,
     AArch64.abi, AArch64.argRegs, updateSat, Stream.Absorb.sat]
   sig_and_intros
   all_goals first
@@ -191,14 +191,14 @@ theorem update_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
 
 /-! ## `absorb`: `update` with its working space on the stack -/
 
-/-- A state satisfying `absorbContract`'s precondition (with no data), with
+/-- A state satisfying `updateContract`'s precondition (with no data), with
 656 bytes of stack. -/
 def absorbSat : State := { updateSat with wr := [⟨0x1000, 200⟩] }
 
 theorem absorbSat_pre {rate : Nat} (h0 : 0 < rate) :
-    ∃ s, (Spec.Sha3.absorbContract AArch64.abi rate 656).pre s := by
+    ∃ s, (Spec.Sha3.updateContract AArch64.abi rate 656).pre s := by
   refine ⟨absorbSat, ?_⟩
-  sig_pre [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost,
+  sig_pre [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
     AArch64.abi, AArch64.argRegs, absorbSat, updateSat, Stream.Absorb.sat]
   sig_and_intros
   all_goals first
@@ -207,19 +207,19 @@ theorem absorbSat_pre {rate : Nat} (h0 : 0 < rate) :
     | exact Region.disjoint_of_sep (by decide)
     | exact h0
 
-/-- `vg_<f>_absorb`: `update`, with its working space `scratch` in a frame of
+/-- `vg_<f>_update`: `update`, with its working space `scratch` in a frame of
 640 bytes on the stack (`withStackScratch`), which `update`'s contract with
-`scratch` (`Sig.scratchContract`, by `rfl` `updateContract`) proves
+`scratch` (`Sig.scratchContract`, by `rfl` `updateScratchContract`) proves
 (`Verified.stackScratch`): nothing is left in the caller's memory. -/
 theorem absorb_verified (v : Permutation) {rate : Nat} (hr : rate ∈ rates) :
     Verified AArch64.target
       (absorb v.callee rate)
-      (Spec.Sha3.absorbContract AArch64.abi rate 656) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sha3.absorbSig) (nm := "scratch") (e := .u64) (n := 80)
-    (pre := Spec.Sha3.absorbPre rate AArch64.abi.ptrBits)
-    (post := Spec.Sha3.absorbPost rate AArch64.abi.ptrBits) (wa := true) (stack := 16) (bytes := 640)
+      (Spec.Sha3.updateContract AArch64.abi rate 656) :=
+  AArch64.Verified.stackScratch (sig := Spec.Sha3.updateSig) (nm := "scratch") (e := .u64) (n := 80)
+    (pre := Spec.Sha3.updatePre rate AArch64.abi.ptrBits)
+    (post := Spec.Sha3.updatePost rate AArch64.abi.ptrBits) (wa := true) (stack := 16) (bytes := 640)
     (update_verified v hr) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.absorbPost_out rate _ vs m m₁ m₂ r hl hb h)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out rate _ vs m m₁ m₂ r hl hb h)
     (absorbSat_pre (by simp [rates] at hr; omega_using [hr]))
 
 /-! ## SHAKE's `finalize` -/
@@ -967,13 +967,13 @@ macro "fin_ct" v:term : term => `(finBody_ct $v (by decide) (by decide) (by tain
 
 theorem update_sha3_224 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_224.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_224.rate 16) :=
   update_verified v (by decide)
 
 theorem absorb_sha3_224 (v : Permutation) :
     Verified AArch64.target
       (absorb v.callee Spec.Sha3.hashSha3_224.rate)
-      (Spec.Sha3.absorbContract AArch64.abi Spec.Sha3.hashSha3_224.rate 656) :=
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_224.rate 656) :=
   absorb_verified v (by decide)
 
 theorem finalize_sha3_224 (v : Permutation) :
@@ -991,13 +991,13 @@ theorem finalize_sha3_224 (v : Permutation) :
 
 theorem update_sha3_256 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_256.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_256.rate 16) :=
   update_verified v (by decide)
 
 theorem absorb_sha3_256 (v : Permutation) :
     Verified AArch64.target
       (absorb v.callee Spec.Sha3.hashSha3_256.rate)
-      (Spec.Sha3.absorbContract AArch64.abi Spec.Sha3.hashSha3_256.rate 656) :=
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_256.rate 656) :=
   absorb_verified v (by decide)
 
 theorem finalize_sha3_256 (v : Permutation) :
@@ -1015,13 +1015,13 @@ theorem finalize_sha3_256 (v : Permutation) :
 
 theorem update_sha3_384 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_384.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_384.rate 16) :=
   update_verified v (by decide)
 
 theorem absorb_sha3_384 (v : Permutation) :
     Verified AArch64.target
       (absorb v.callee Spec.Sha3.hashSha3_384.rate)
-      (Spec.Sha3.absorbContract AArch64.abi Spec.Sha3.hashSha3_384.rate 656) :=
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_384.rate 656) :=
   absorb_verified v (by decide)
 
 theorem finalize_sha3_384 (v : Permutation) :
@@ -1039,13 +1039,13 @@ theorem finalize_sha3_384 (v : Permutation) :
 
 theorem update_sha3_512 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_512.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.hashSha3_512.rate 16) :=
   update_verified v (by decide)
 
 theorem absorb_sha3_512 (v : Permutation) :
     Verified AArch64.target
       (absorb v.callee Spec.Sha3.hashSha3_512.rate)
-      (Spec.Sha3.absorbContract AArch64.abi Spec.Sha3.hashSha3_512.rate 656) :=
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.hashSha3_512.rate 656) :=
   absorb_verified v (by decide)
 
 theorem finalize_sha3_512 (v : Permutation) :
@@ -1063,13 +1063,13 @@ theorem finalize_sha3_512 (v : Permutation) :
 
 theorem update_shake128 (v : Permutation) :
     Verified AArch64.target (update v.callee Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.xofShake128.rate 16) :=
+      (Proof.Sha3.updateScratchContract AArch64.abi Spec.Sha3.xofShake128.rate 16) :=
   update_verified v (by decide)
 
 theorem absorb_shake128 (v : Permutation) :
     Verified AArch64.target
       (absorb v.callee Spec.Sha3.xofShake128.rate)
-      (Spec.Sha3.absorbContract AArch64.abi Spec.Sha3.xofShake128.rate 656) :=
+      (Spec.Sha3.updateContract AArch64.abi Spec.Sha3.xofShake128.rate 656) :=
   absorb_verified v (by decide)
 
 theorem finalize_shake128 (v : Permutation) :

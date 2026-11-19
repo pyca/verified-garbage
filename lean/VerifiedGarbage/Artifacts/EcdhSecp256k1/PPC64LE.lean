@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.Secp256k1.PPC64LE
-public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Spec.Ecdh.Secp256k1
 public import VerifiedGarbage.TCB.PPC64LE.Print
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
 
 /-! # ECDH over secp256k1 (SP 800-56A) on PPC64LE -/
@@ -19,8 +14,6 @@ namespace VG.Artifacts.EcdhSecp256k1.PPC64LE
 open VG.Proof.Secp256k1.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.Secp256k1.exchangeApi.artifact PPC64LE.target {
-    code := Impl.Ecdh.PPC64LE.exchangeSecp256k1
-    verified := Proof.Ecdh.PPC64LE.Secp256k1.ecdh_verified hasLaw.law }]
+  Spec.Ecdh.Secp256k1.exchangeApi.artifact PPC64LE.target (Proof.Ecdh.PPC64LE.Scrub.secp256k1Exchange hasLaw.law)]
 
 end VG.Artifacts.EcdhSecp256k1.PPC64LE

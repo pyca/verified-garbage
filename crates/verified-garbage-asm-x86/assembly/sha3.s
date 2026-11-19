@@ -5,25 +5,6 @@
 // gives.
 
 vg_sha3_224_update:
-	lea esp, [esp-24]
-	mov eax, DWORD PTR [esp+28]
-	mov DWORD PTR [esp], eax
-	mov eax, 144
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+32]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+36]
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+40]
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+44]
-	mov DWORD PTR [esp+20], eax
-	call {vg_keccak_absorb_scratch}
-	lea esp, [esp+24]
-	ret
-	.p2align 6
-
-vg_sha3_224_absorb:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -277,25 +258,6 @@ vg_sha3_224_finalize:
 	.p2align 6
 
 vg_sha3_256_update:
-	lea esp, [esp-24]
-	mov eax, DWORD PTR [esp+28]
-	mov DWORD PTR [esp], eax
-	mov eax, 136
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+32]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+36]
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+40]
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+44]
-	mov DWORD PTR [esp+20], eax
-	call {vg_keccak_absorb_scratch}
-	lea esp, [esp+24]
-	ret
-	.p2align 6
-
-vg_sha3_256_absorb:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -549,25 +511,6 @@ vg_sha3_256_finalize:
 	.p2align 6
 
 vg_sha3_384_update:
-	lea esp, [esp-24]
-	mov eax, DWORD PTR [esp+28]
-	mov DWORD PTR [esp], eax
-	mov eax, 104
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+32]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+36]
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+40]
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+44]
-	mov DWORD PTR [esp+20], eax
-	call {vg_keccak_absorb_scratch}
-	lea esp, [esp+24]
-	ret
-	.p2align 6
-
-vg_sha3_384_absorb:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -821,25 +764,6 @@ vg_sha3_384_finalize:
 	.p2align 6
 
 vg_sha3_512_update:
-	lea esp, [esp-24]
-	mov eax, DWORD PTR [esp+28]
-	mov DWORD PTR [esp], eax
-	mov eax, 72
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+32]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+36]
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+40]
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+44]
-	mov DWORD PTR [esp+20], eax
-	call {vg_keccak_absorb_scratch}
-	lea esp, [esp+24]
-	ret
-	.p2align 6
-
-vg_sha3_512_absorb:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax
@@ -1093,25 +1017,6 @@ vg_sha3_512_finalize:
 	.p2align 6
 
 vg_shake128_update:
-	lea esp, [esp-24]
-	mov eax, DWORD PTR [esp+28]
-	mov DWORD PTR [esp], eax
-	mov eax, 168
-	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+32]
-	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+36]
-	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+40]
-	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+44]
-	mov DWORD PTR [esp+20], eax
-	call {vg_keccak_absorb_scratch}
-	lea esp, [esp+24]
-	ret
-	.p2align 6
-
-vg_shake128_absorb:
 	lea esp, [esp-664]
 	mov eax, DWORD PTR [esp+668]
 	mov DWORD PTR [esp+4], eax

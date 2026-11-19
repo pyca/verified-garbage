@@ -5,21 +5,6 @@
 // gives.
 
 vg_sha3_224_update:
-	sub sp, sp, #16
-	add r12, sp, #0
-	str lr, [r12, #8]
-	str r3, [r12, #0]
-	ldr lr, [sp, #16]
-	str lr, [r12, #4]
-	mov r3, r2
-	mov r2, r1
-	mov r1, #144
-	bl {vg_keccak_absorb_scratch}
-	ldr lr, [sp, #8]
-	add sp, sp, #16
-	bx lr
-
-vg_sha3_224_absorb:
 	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]
@@ -243,21 +228,6 @@ vg_sha3_224_finalize:
 	bx lr
 
 vg_sha3_256_update:
-	sub sp, sp, #16
-	add r12, sp, #0
-	str lr, [r12, #8]
-	str r3, [r12, #0]
-	ldr lr, [sp, #16]
-	str lr, [r12, #4]
-	mov r3, r2
-	mov r2, r1
-	mov r1, #136
-	bl {vg_keccak_absorb_scratch}
-	ldr lr, [sp, #8]
-	add sp, sp, #16
-	bx lr
-
-vg_sha3_256_absorb:
 	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]
@@ -481,21 +451,6 @@ vg_sha3_256_finalize:
 	bx lr
 
 vg_sha3_384_update:
-	sub sp, sp, #16
-	add r12, sp, #0
-	str lr, [r12, #8]
-	str r3, [r12, #0]
-	ldr lr, [sp, #16]
-	str lr, [r12, #4]
-	mov r3, r2
-	mov r2, r1
-	mov r1, #104
-	bl {vg_keccak_absorb_scratch}
-	ldr lr, [sp, #8]
-	add sp, sp, #16
-	bx lr
-
-vg_sha3_384_absorb:
 	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]
@@ -719,21 +674,6 @@ vg_sha3_384_finalize:
 	bx lr
 
 vg_sha3_512_update:
-	sub sp, sp, #16
-	add r12, sp, #0
-	str lr, [r12, #8]
-	str r3, [r12, #0]
-	ldr lr, [sp, #16]
-	str lr, [r12, #4]
-	mov r3, r2
-	mov r2, r1
-	mov r1, #72
-	bl {vg_keccak_absorb_scratch}
-	ldr lr, [sp, #8]
-	add sp, sp, #16
-	bx lr
-
-vg_sha3_512_absorb:
 	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]
@@ -957,21 +897,6 @@ vg_sha3_512_finalize:
 	bx lr
 
 vg_shake128_update:
-	sub sp, sp, #16
-	add r12, sp, #0
-	str lr, [r12, #8]
-	str r3, [r12, #0]
-	ldr lr, [sp, #16]
-	str lr, [r12, #4]
-	mov r3, r2
-	mov r2, r1
-	mov r1, #168
-	bl {vg_keccak_absorb_scratch}
-	ldr lr, [sp, #8]
-	add sp, sp, #16
-	bx lr
-
-vg_shake128_absorb:
 	sub sp, sp, #648
 	add r12, sp, #0
 	str lr, [r12, #4]

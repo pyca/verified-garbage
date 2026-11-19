@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -401,7 +403,7 @@ bnez t5, 293b
 .base64 "AUMjsGkAiUUzRboAfRV9kSqV"
 281:
 21:
-.base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWGCgA=="
+.base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWGBQhMBAYFBEQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gjMFNqIzRTaiM4U2ojPFNqIzBTbCM0U2wjOFNsIzxTbCMwU24jNFNuIzhTbiM8U24jMFNwIzRTcCM4U3AjPFNwIzBTciM0U3IjOFNyIzxTciMwU3QjNFN0IzhTdCM8U3QjMFN2IzRTdiM4U3YjPFN2IzBTeCM0U3gjOFN4IzxTeCMwU3ojNFN6IzhTeiM8U3ojMFN8IzRTfCM4U3wjPFN8IzBTfiM0U34jOFN+IzxTfhMBAaYKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWBMBAVpBARMBAX8CFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
@@ -410,6 +412,8 @@ bnez t5, 293b
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -815,7 +819,7 @@ bnez t5, 2105b
 .base64 "AUU="
 291:
 21:
-.base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWGCgA=="
+.base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWGBQk1xCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxRxYQIVAZGBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )

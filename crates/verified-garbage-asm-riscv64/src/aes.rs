@@ -71,6 +71,10 @@ pub(crate) mod vg_aes_cfb128_encrypt_core;
 pub(crate) mod vg_aes_ctr32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_bs.rs"]
+pub(crate) mod vg_aes_ctr32_bs;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
 pub(crate) mod vg_aes_ctr32_to;
 

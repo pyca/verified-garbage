@@ -89,7 +89,7 @@ and blocks chained.
 namespace VG.Impl.AesCcm.X86
 
 open VG.X86
-open VG.Impl.AesGcm.X86 (at_ imm slot argOp saveAt restore keep zero4 copyLoop xorLoop minLen splitWhole
+open VG.Impl.AesGcm.X86 (at_ imm slot argOp saveAt restore keep zero4 copyLoop xorLoop maskWords minLen splitWhole
   recv cmp entry Fn tglO rO vO tpO dO nO bO)
 
 /-! ## The working space -/
@@ -244,13 +244,17 @@ def ctr : Prog isa :=
 
 /-! ## Masking the data -/
 
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok`: four at a time while four
+are left (`maskWords`), then one at a time. -/
 def mask : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
       (.seq (.block [.mov .ebx (imm 0), .alu .sub .ebx (slot okO), .mov .edi (slot dataO)])
-        (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
-          .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne)))
+        (.seq maskWords
+          (.seq (.block [.alu .test .ecx (.reg .ecx)])
+            (.ite .e (.block [])
+              (.loop (.block [.movzx8 .edx (at_ .edi 0), .alu .and .edx (.reg .ebx), .store8 (at_ .edi 0) .dl,
+                .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))))))
 
 /-! ## The functions -/
 

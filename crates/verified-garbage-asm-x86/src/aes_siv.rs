@@ -246,10 +246,22 @@ call {vg_cmac_aes_finalize_aesni}
 211:
 .base64 "i0UAM0Vwi00EM010CciLTQgzTXgJyItNDDNNfAnIg/gBuAAAAACD0ACJhdgAAACLjcQAAACFyQ=="
 je 220f
-.base64 "uwAAAAArndgAAACLvcAAAAA="
+.base64 "uwAAAAArndgAAACLvcAAAACD+QQ="
+jb 222f
+224:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 224b
+jmp 223f
 222:
+223:
+.base64 "hck="
+je 225f
+227:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 222b
+jne 227b
+jmp 226f
+225:
+226:
 jmp 221f
 220:
 221:
@@ -492,10 +504,22 @@ call {vg_cmac_aes_finalize}
 211:
 .base64 "i0UAM0Vwi00EM010CciLTQgzTXgJyItNDDNNfAnIg/gBuAAAAACD0ACJhdgAAACLjcQAAACFyQ=="
 je 220f
-.base64 "uwAAAAArndgAAACLvcAAAAA="
+.base64 "uwAAAAArndgAAACLvcAAAACD+QQ="
+jb 222f
+224:
+.base64 "ixch2okXg8cEg+kEg/kE"
+jae 224b
+jmp 223f
 222:
+223:
+.base64 "hck="
+je 225f
+227:
 .base64 "D7YXIdqIF4PHAYPpAQ=="
-jne 222b
+jne 227b
+jmp 226f
+225:
+226:
 jmp 221f
 220:
 221:

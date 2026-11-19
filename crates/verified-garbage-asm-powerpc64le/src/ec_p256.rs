@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.
@@ -383,7 +385,7 @@ bl {vg_p256_mul_mod_p}
 bl {vg_p256_mul_mod_p}
 .base64 "oAWAOAAFoDjAAMA4"
 bl {vg_p256_mul_mod_p}
-.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6QQAgDg4UIR8AACOmKAEg+g4UIR8GQDAOCg1jnyoBIPoOFCEfBEAwDgoNY58sASD6DhQhHwJAMA4KDWOfLgEg+g4UIR8AQDAOCg1jnygBYPoOFCEfDkAwDgoNY58qAWD6DhQhHwxAMA4KDWOfLAFg+g4UIR8KQDAOCg1jny4BYPoOFCEfCEAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfCAAgE4=""#,
+.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6QQAgDg4UIR8AACOmKAEg+g4UIR8GQDAOCg1jnyoBIPoOFCEfBEAwDgoNY58sASD6DhQhHwJAMA4KDWOfLgEg+g4UIR8AQDAOCg1jnygBYPoOFCEfDkAwDgoNY58qAWD6DhQhHwxAMA4KDWOfLAFg+g4UIR8KQDAOCg1jny4BYPoOFCEfCEAwDgoNY58AQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfAAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxJRSEsSccxIgAIBO""#,
         vg_p256_sub_mod_p = sym super::ec_p256::vg_p256_sub_mod_p::vg_p256_sub_mod_p,
         vg_p256_point_madd = sym super::ec_p256::vg_p256_point_madd::vg_p256_point_madd,
         vg_p256_mul_mod_p = sym super::ec_p256::vg_p256_mul_mod_p::vg_p256_mul_mod_p,

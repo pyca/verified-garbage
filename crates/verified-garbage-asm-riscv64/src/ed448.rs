@@ -5,6 +5,8 @@
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -27,7 +29,7 @@ call {vg_keccak_pad}
 call {vg_keccak_squeeze}
 .base64 "g0cNAImDigcjAP0Ag0d9A5PnBwijC/0CgUcjDP0CXoXqhWaG"
 call {vg_ed448_scalar_base}
-.base64 "gzCNCYM7jQcDPA0IgzyNCAM9DQkKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HDWGCgA=="
+.base64 "gzCNCYM7jQcDPA0IgzyNCAM9DQkKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BSM4/wUjPP8FIzD/ByM0/wcjOP8HDWGBQhMBAa0KgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1ITAQFTAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
@@ -37,6 +39,8 @@ call {vg_ed448_scalar_base}
 }
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -97,7 +101,7 @@ call {vg_keccak_squeeze}
 call {vg_ed448_scalar_reduce}
 .base64 "EwWUA5OFDRAThg0Uk4aNCCaH"
 call {vg_ed448_scalar_mul_add}
-.base64 "gUcjuP0AI7z9ACOw/QIjtP0CI7j9AiO8/QIjsP0EI7T9BCO4/QQjvP0EI7D9BiO0/QYjuP0GI7z9BiOw/QgjtP0II7j9CCO8/QgjsP0KI7T9CiO4/QojvP0KI7D9DCO0/QwjuP0MI7z9DCOw/Q4jtP0OI7j9DiO8/Q4jsP0QI7T9ECO4/RAjvP0QI7D9EiO0/RIjuP0SI7z9EiOw/RQjtP0UI7j9FCO8/RQjsP0WI7T9FiO4/RYjvP0Wg7ANIAO0DRyDtI0cA7kNHYO7jR0DvA0eg7yNHgO9DR+DvY0fEwEBIYKA"
+.base64 "gUcjuP0AI7z9ACOw/QIjtP0CI7j9AiO8/QIjsP0EI7T9BCO4/QQjvP0EI7D9BiO0/QYjuP0GI7z9BiOw/QgjtP0II7j9CCO8/QgjsP0KI7T9CiO4/QojvP0KI7D9DCO0/QwjuP0MI7z9DCOw/Q4jtP0OI7j9DiO8/Q4jsP0QI7T9ECO4/RAjvP0QI7D9EiO0/RIjuP0SI7z9EiOw/RQjtP0UI7j9FCO8/RQjsP0WI7T9FiO4/RYjvP0Wg7ANIAO0DRyDtI0cA7kNHYO7jR0DvA0eg7yNHgO9DR+DvY0fEwEBIYFCEwEBlgqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiIzBTJCM0UyQjOFMkIzxTJCMwUyYjNFMmIzhTJiM8UyYjMFMoIzRTKCM4UygjPFMoIzBTKiM0UyojOFMqIzxTKiMwUywjNFMsIzhTLCM8UywjMFMuIzRTLiM4Uy4jPFMuIzBTMCM0UzAjOFMwIzxTMCMwUzIjNFMyIzhTMiM8UzIjMFM0IzRTNCM4UzQjPFM0IzBTNiM0UzYjOFM2IzxTNiMwUzgjNFM4IzhTOCM8UzgjMFM6IzRTOiM4UzojPFM6IzBTPCM0UzwjOFM8IzxTPCMwUz4jNFM+IzhTPiM8Uz4jMFNAIzRTQCM4U0AjPFNAIzBTQiM0U0IjOFNCIzxTQiMwU0QjNFNEIzhTRCM8U0QjMFNGIzRTRiM4U0YjPFNGIzBTSCM0U0gjOFNIIzxTSCMwU0ojNFNKIzhTSiM8U0ojMFNMIzRTTCM4U0wjPFNMIzBTTiM0U04jOFNOIzxTTiMwU1AjNFNQIzhTUCM8U1AjMFNSIzRTUiM4U1IjPFNSIzBTVCM0U1QjOFNUIzxTVCMwU1YjNFNWIzhTViM8U1YjMFNYIzRTWCM4U1gjPFNYIzBTWiM0U1ojOFNaIzxTWiMwU1wjNFNcIzhTXCM8U1wjMFNeIzRTXiM4U14jPFNeIzBTYCM0U2AjOFNgIzxTYCMwU2IjNFNiIzhTYiM8U2IjMFNkIzRTZCM4U2QjPFNkIzBTZiM0U2YjOFNmIzxTZiMwU2gjNFNoIzhTaCM8U2gTAQFqAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
@@ -109,6 +113,8 @@ call {vg_ed448_scalar_mul_add}
 }
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -150,7 +156,7 @@ call {vg_ed448_scalar_reduce}
 call {vg_ed448_verify_equation}
 .base64 "g7ANG4O0DRiDu40YA7wNGYO8jRkDvQ0ag72NGg=="
 21:
-.base64 "OWGCgA=="
+.base64 "OWGBQhMBAZsKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYiM4U2IjPFNiIzBTZCM0U2QTAQFlAhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_keccak_absorb = sym super::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,

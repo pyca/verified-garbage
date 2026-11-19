@@ -19,9 +19,12 @@ loop reaches streaming callers without changing their buffering proof.
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
 subkeys (240–271), the chaining value (272–287) and the bytes held back
 (288–303), so bytes 0–271 are `vg_cmac_aes_finalize`'s `key`. The scratch
-buffer of `init` and `finish` (2304 bytes): `[0, 2176)` is the working space
-of the functions called, and `[2176, 2232)` our caller's callee-saved
-registers and our return address `x30`. `absorb`'s (`64 + n` bytes, for a
+buffer of `init` holds our caller's callee-saved registers and our return
+address `x30` in `[0, 32)` and the working space of the functions called
+after it, from `initWOff`; `finish`'s holds the registers in `[0, 16)` and
+the working space from `finWOff`. The working space is as large as the
+implementations called need (`Ctr32Impl.scratch`), so the code does not
+depend on its size. `absorb`'s (`64 + n` bytes, for a
 chaining implementation that needs `n`): `[8, 64)` holds the registers and
 `[64, 64 + n)` is the working space of the function called. A call (`bl`)
 stores nothing in memory, so no stack is used.
@@ -63,7 +66,10 @@ open VG.Impl.CmacAes.AArch64 (mov)
 /-! ## `vg_cmac_aes_init` -/
 
 /-- The registers saved in the scratch buffer, and where. -/
-def initSaved : List (Reg × Nat) := [(.x19, 2176), (.x20, 2184), (.x21, 2192), (.x30, 2200)]
+def initSaved : List (Reg × Nat) := [(.x19, 0), (.x20, 8), (.x21, 16), (.x30, 24)]
+
+/-- The offset of the working space of the functions `init` calls. -/
+def initWOff : Nat := 32
 
 /-- Saves the registers, keeps the state in `x19`, the scratch buffer in
 `x20` and the rounds (`key_len / 4 + 6`) in `x21`, and sets up the arguments
@@ -71,15 +77,15 @@ of `vg_aes_expand_key_scratch(key = x0, key_len = x1, schedule = x2, scratch = x
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str .x r .x3 d) ++
   [mov .x19 .x0, mov .x20 .x3, .lsr .x .x21 .x2 2, .addImm .x .x21 .x21 6, mov .x0 .x1, mov .x1 .x2,
-   mov .x2 .x19]
+   mov .x2 .x19, .addImm .x .x3 .x3 initWOff]
 
 /-- The arguments of `vg_cmac_aes_subkeys(schedule = x0, rounds = x1, subkeys = x2, scratch = x3)`. -/
-def initMid : List Instr := [mov .x0 .x19, mov .x1 .x21, .addImm .x .x2 .x19 240, mov .x3 .x20]
+def initMid : List Instr := [mov .x0 .x19, mov .x1 .x21, .addImm .x .x2 .x19 240, .addImm .x .x3 .x20 initWOff]
 
 /-- The chaining value zeroed, and the registers restored (`x20` last). -/
 def initPost : List Instr :=
-  [.movz .x .x9 0 0, .str .x .x9 .x19 272, .str .x .x9 .x19 280, .ldr .x .x30 .x20 2200,
-   .ldr .x .x19 .x20 2176, .ldr .x .x21 .x20 2192, .ldr .x .x20 .x20 2184]
+  [.movz .x .x9 0 0, .str .x .x9 .x19 272, .str .x .x9 .x19 280, .ldr .x .x30 .x20 24,
+   .ldr .x .x19 .x20 0, .ldr .x .x21 .x20 16, .ldr .x .x20 .x20 8]
 
 def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block initPre)
@@ -164,13 +170,16 @@ def absorb (u : Impl.CmacAes.AArch64.Update) : Prog isa :=
 
 /-! ## `vg_cmac_aes_finish` -/
 
+/-- The offset of the working space of the function `finish` calls. -/
+def finWOff : Nat := 16
+
 /-- The chaining value copied to `out`, `x19` and `x30` saved and the scratch
 buffer kept in `x19`, and the arguments of
 `vg_cmac_aes_finalize(key = x0, rounds = x1, state = x2, last = x3, last_len = x4, scratch = x5)`
 but `last_len`, which is `count` in `x4` so far. -/
 def finishPre : List Instr :=
   [.ldr .x .x9 .x0 272, .str .x .x9 .x3 0, .ldr .x .x9 .x0 280, .str .x .x9 .x3 8,
-   .str .x .x19 .x4 2176, .str .x .x30 .x4 2184, mov .x19 .x4, mov .x5 .x4, mov .x4 .x2, mov .x2 .x3,
+   .str .x .x19 .x4 0, .str .x .x30 .x4 8, mov .x19 .x4, .addImm .x .x5 .x4 finWOff, mov .x4 .x2, mov .x2 .x3,
    .addImm .x .x3 .x0 288]
 
 /-- `last_len`: the number of bytes held back for `count` (in `x4`). -/
@@ -182,7 +191,7 @@ def lastLen : Prog isa :=
 def finPre : Prog isa := .seq (.block finishPre) lastLen
 
 /-- The registers restored. -/
-def finishPost : List Instr := [.ldr .x .x30 .x19 2184, .ldr .x .x19 .x19 2176]
+def finishPost : List Instr := [.ldr .x .x30 .x19 8, .ldr .x .x19 .x19 0]
 
 def finish (c : Ctr32) (sfx : String) : Prog isa :=
   .seq finPre (.seq (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.AArch64.finalize c))

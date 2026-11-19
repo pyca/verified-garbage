@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
@@ -2489,7 +2491,7 @@ bl {vg_brainpoolp256r1_mul_mod_p}
 bl {vg_brainpoolp256r1_mul_mod_n}
 .base64 "QAWAOAAFoDggBcA4"
 bl {vg_brainpoolp256r1_sub_mod_n}
-.base64 "QAKj6EgCg+h4I6V8UAKD6HgjpXxYAoPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfMAFg+g4KIR8wAWD+EAFo+hIBYPoeCOlfFAFg+h4I6V8WAWD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTjABYPoOCiEfMAFg/jABUPpAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfHAAITggAIBO""#,
+.base64 "QAKj6EgCg+h4I6V8UAKD6HgjpXxYAoPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfMAFg+g4KIR8wAWD+EAFo+hIBYPoeCOlfFAFg+h4I6V8WAWD6HgjpXwAAIA4UCCFfHgrhHzgD4R4AACgOFAopHwAAIA4UCClfP//pTjABYPoOCiEfMAFg/jABUPpAQCAODggRH0QAAPopgMIfAAAw+kIAOPreCODfHAAITgAAAA4kf8h+CAAgTkAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4cAAhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfMQEABDEDCEQxBRCEMQcYxDElFISxJxzEiAAgE4=""#,
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
         vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
@@ -2503,6 +2505,8 @@ bl {vg_brainpoolp256r1_sub_mod_n}
 /// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2581,7 +2585,7 @@ bne %cr0, 213b
 214:
 .base64 "AADEmAEAhDj//6U4AAAlKA=="
 bne %cr0, 214b
-.base64 "UAIhOCAAAegwACE4pgMIfCAAgE4=""#,
+.base64 "UAIhOCAAAegwACE4pgMIfAAAADgh/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+PAADPj4AAz4AAEM+AgBDPgQAQz4GAEM+CABDPgoAQz4MAEM+DgBDPhAAQz4SAEM+FABDPhYAQz4YAEM+GgBDPhwAQz4eAEM+IABDPiIAQz4kAEM+JgBDPigAQz4qAEM+LABDPi4AQz4wAEM+MgBDPjQAQz42AEM+OABDPjoAQz48AEM+PgBDPgAAgz4CAIM+BACDPgYAgz4IAIM+CgCDPgwAgz4OAIM+EACDPhIAgz4UAIM+FgCDPhgAgz4aAIM+HACDPh4Agz4gAIM+IgCDPiQAgz4mAIM+KACDPioAgz4sAIM+LgCDPjgAiE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDkUAAB8xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ecdsa_brainpoolp256r1_sign_k = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
     )
 }

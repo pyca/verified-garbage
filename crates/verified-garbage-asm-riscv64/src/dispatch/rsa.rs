@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_rsa_public_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes, and aligned for `u64`.
@@ -31,6 +33,8 @@ pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
 ///
 /// It runs `vg_rsa_private_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -59,6 +63,8 @@ pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
 ///
 /// It runs `vg_rsa_crt_values`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -91,6 +97,8 @@ pub unsafe fn vg_rsa_crt_values_auto(_dit: verified_garbage_cpu::Dit<'_>, dp: *m
 ///
 /// It runs `vg_rsa_check_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -122,6 +130,8 @@ pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *con
 /// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
 ///
 /// It runs `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

@@ -40,6 +40,15 @@ structure Ctr32Impl where
   ok : ∀ s, Proof.Aes.ctr32AArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s'
   ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub callee.code
+  /-- The bytes of `scratch` it needs: none, or `ctr32AArch64`'s 2048. A
+  caller allocates only these (`ctr32AArch64With`), so that it has less of its
+  stack to zero on return. -/
+  scratch : Nat
+  scratch_ok : scratch = 0 ∨ scratch = 2048
+  okW : ∀ s, (Proof.Aes.ctr32AArch64With scratch).pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.ctr32AArch64With scratch).post s s'
+  ctW : ConstantTime isa (Proof.Aes.ctr32AArch64With scratch).pre (Proof.Aes.ctr32AArch64With scratch).pub
+    callee.code
   /-- It never writes v8–v15. -/
   keepsV : callee.code.allInstrs keepsV = true
   /-- Its out-of-place form, an internal function proven against
@@ -73,6 +82,10 @@ def scalar : Ctr32Impl where
   noFrames := by lit_decide
   ok := OneBlock.ctr32N_correct
   ct := OneBlock.ctr32N_ct
+  scratch := 2048
+  scratch_ok := .inr rfl
+  okW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact OneBlock.ctr32N_correct
+  ctW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact OneBlock.ctr32N_ct
   keepsV := by lit_decide
   to := .scalarTo
   toNoFrames := by lit_decide
@@ -93,6 +106,10 @@ def aese : Ctr32Impl where
   noFrames := by lit_decide
   ok := Aese.ctr32_correct
   ct := Aese.ctr32_ct
+  scratch := 0
+  scratch_ok := .inl rfl
+  okW := Aese.ctr32_correctW 0
+  ctW := Aese.ctr32_ctW 0
   keepsV := by lit_decide
   to := .aeseTo
   toNoFrames := by lit_decide

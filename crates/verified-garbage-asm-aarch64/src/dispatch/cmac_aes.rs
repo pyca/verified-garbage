@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_absorb_aes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AES_FEATURES`); `vg_cmac_aes_absorb_neon` if detection reports some CPU feature; or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -62,13 +64,15 @@ pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_init_aes` if the CPU supports its features (`VG_CMAC_AES_INIT_AES_FEATURES`); `vg_cmac_aes_init_neon` if detection reports some CPU feature; or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `key` may overlap the 2208 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], key: *const u8, key_len: usize) {
@@ -116,6 +120,8 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_finish_aes` if the CPU supports its features (`VG_CMAC_AES_FINISH_AES_FEATURES`); `vg_cmac_aes_finish_neon` if detection reports some CPU feature; or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
@@ -123,7 +129,7 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 2192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_cmac_aes_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {

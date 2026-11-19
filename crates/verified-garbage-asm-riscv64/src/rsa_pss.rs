@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -991,7 +993,7 @@ j 2239f
 2239:
 .base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWE="
 21:
-.base64 "goA="
+.base64 "gUJNcQqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUcWECFQGRgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
@@ -1000,6 +1002,8 @@ j 2239f
 /// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1697,7 +1701,7 @@ bnez t5, 2189b
 2169:
 .base64 "ioIDtAIBg7SCAQO5AgKDuYICA7oCA4O6ggMDuwIEg7uCBAO8AgWDvIIFA70CBoO9ggaDsAIHCWE="
 21:
-.base64 "goA="
+.base64 "gUITAQGBQREKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFCM4UxQjPFMUIzBTFiM0UxYjOFMWIzxTFiMwUxgjNFMYIzhTGCM8UxgjMFMaIzRTGiM4UxojPFMaIzBTHCM0UxwjOFMcIzxTHCMwUx4jNFMeIzhTHiM8Ux4jMFMgIzRTICM4UyAjPFMgIzBTIiM0UyIjOFMiIzxTIiMwUyQjNFMkIzhTJCM8UyQjMFMmIzRTJiM4UyYjPFMmIzBTKCM0UygjOFMoIzxTKCMwUyojNFMqIzhTKiM8UyojMFMsIzRTLCM4UywjPFMsIzBTLiM0Uy4jOFMuIzxTLiMwUzAjNFMwIzhTMCM8UzAjMFMyIzRTMiM4UzIjPFMyIzBTNCM0UzQjOFM0IzxTNCMwUzYjNFM2IzhTNiM8UzYjMFM4IzRTOCM4UzgjPFM4IzBTOiM0UzojOFM6IzxTOiMwUzwjNFM8IzhTPCM8UzwjMFM+IzRTPiM4Uz4jPFM+IzBTQCM0U0AjOFNAIzxTQCMwU0IjNFNCIzhTQiM8U0IjMFNEIzRTRCM4U0QjPFNEIzBTRiM0U0YjOFNGIzxTRiMwU0gjNFNIIzhTSCM8U0gjMFNKIzRTSiM4U0ojPFNKIzBTTCM0U0wjOFNMIzxTTCMwU04jNFNOIzhTTiM8U04jMFNQIzRTUCM4U1AjPFNQIzBTUiM0U1IjOFNSIzxTUiMwU1QjNFNUIzhTVCM8U1QjMFNWIzRTViM4U1YjPFNWIzBTWCM0U1gjOFNYIzxTWCMwU1ojNFNaIzhTWiM8U1ojMFNcIzRTXCM4U1wjPFNcIzBTXiM0U14jOFNeIzxTXiMwU2AjNFNgIzhTYCM8U2AjMFNiIzRTYiM4U2IjPFNiIzBTZCM0U2QjOFNkIzxTZCMwU2YjNFNmIzhTZiM8U2YjMFNoIzRTaCM4U2gjPFNoIzBTaiM0U2ojOFNqIzxTaiMwU2wjNFNsIzhTbCM8U2wjMFNuIzRTbiM4U24jPFNuIzBTcCM0U3AjOFNwIzxTcCMwU3IjNFNyIzhTciM8U3IjMFN0IzRTdCM4U3QjPFN0IzBTdiM0U3YjOFN2IzxTdiMwU3gjNFN4IzhTeCM8U3gjMFN6IzRTeiM4U3ojPFN6IzBTfCM0U3wjOFN8IzxTfCMwU34jNFN+IzhTfiM8U34TAQGmCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyIjMFMkIzRTJCM4UyQjPFMkIzBTJiM0UyYjOFMmIzxTJiMwUygjNFMoIzhTKCM8UygjMFMqIzRTKiM4UyojPFMqIzBTLCM0UywjOFMsIzxTLCMwUy4jNFMuIzhTLiM8Uy4jMFMwIzRTMCM4UzAjPFMwIzBTMiM0UzIjOFMyIzxTMiMwUzQjNFM0IzhTNCM8UzQjMFM2IzRTNiM4UzYjPFM2IzBTOCM0UzgjOFM4IzxTOCMwUzojNFM6IzhTOiM8UzojMFM8IzRTPCM4UzwjPFM8IzBTPiM0Uz4jOFM+IzxTPiMwU0AjNFNAIzhTQCM8U0AjMFNCIzRTQiM4U0IjPFNCIzBTRCM0U0QjOFNEIzxTRCMwU0YjNFNGIzhTRiM8U0YjMFNIIzRTSCM4U0gjPFNIIzBTSiM0U0ojOFNKIzxTSiMwU0wjNFNMIzhTTCM8U0wjMFNOIzRTTiM4U04jPFNOIzBTUCM0U1AjOFNQIzxTUCMwU1IjNFNSIzhTUiM8U1IjMFNUIzRTVCM4U1QjPFNUIzBTViM0U1YjOFNWIzxTViMwU1gjNFNYIzhTWCM8U1gTAQFaQQETAQF/AhUBkYFFAUaBRgFHgUcBSIFIgUIBQ4FDAU6BTgFPgU+CgA=="
 .option pop"#,
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )

@@ -351,4 +351,138 @@ theorem xorLoop_ct {I : State → Prop} (hr : ∀ s₁ s₂, I s₁ → I s₂ �
     CT I xorLoop :=
   CT.taint _ hr (by taint_decide)
 
+/-! ## `maskWords` -/
+
+theorem mask_word32 (w : BitVec 32) (c : Bool) :
+    (w &&& ((0 : BitVec 32) - (if c then 1 else 0))) = if c then w else 0 := by
+  cases c
+  · simp
+  · rw [show (if true = true then (1 : BitVec 32) else 0) = 1 from rfl,
+      show (0 : BitVec 32) - 1 = BitVec.allOnes 32 by decide, BitVec.and_allOnes]
+    rfl
+
+theorem add4_ofNat32 (x : BitVec 32) (i : Nat) :
+    x + BitVec.ofNat 32 i + BitVec.ofNat 32 4 = x + BitVec.ofNat 32 (i + 4) := by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+
+theorem in4_of_covers {rs : List Region} {p : Addr} {n i : Nat} (h : Covers [⟨p, n⟩] rs) (hi : i + 4 ≤ n)
+    (hn : n < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 i) 4 :=
+  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base p hi (by omega_using [hi, hn])⟩
+
+/-- The first `j` bytes of the data at `P`, kept (`c`) or zeroed. -/
+abbrev masked (m : Mem) (P : Addr) (c : Bool) (j : Nat) : List Byte :=
+  if c then bytesAt m P j else List.replicate j 0
+
+theorem length_masked (m : Mem) (P : Addr) (c : Bool) (j : Nat) : (masked m P c j).length = j := by
+  cases c <;> simp [masked, length_bytesAt]
+
+/-- A word of the data, kept or zeroed after the `j` bytes before it. -/
+theorem masked_word (m : Mem) (P : Addr) (c : Bool) (j : Nat) (hj : j + 4 < 2 ^ 64) :
+    (writeBytes m P (masked m P c j)).writeW (P + BitVec.ofNat 64 j)
+      (if c then (writeBytes m P (masked m P c j)).readW (P + BitVec.ofNat 64 j) 32 else 0 : BitVec 32) =
+      writeBytes m P (masked m P c (j + 4)) := by
+  obtain hl := length_masked m P c j
+  obtain hk : ∀ k < 4, writeBytes m P (masked m P c j) (P + BitVec.ofNat 64 j + BitVec.ofNat 64 k) =
+      m (P + BitVec.ofNat 64 (j + k)) := fun k hk => by
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+    simp only [writeBytes, hl]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hk]),
+      ite_eq_right (by omega_using [])]
+  show Mem.write _ _ 4 _ = _
+  rw [write_eq_writeBytes]
+  obtain ha := writeBytes_append m P (masked m P c j)
+    ((List.range 4).map fun k => (BitVec.setWidth (8 * 4)
+      (if c then (writeBytes m P (masked m P c j)).readW (P + BitVec.ofNat 64 j) 32 else 0 : BitVec 32)).extractLsb'
+        (8 * k) 8) (by rw [hl]; simp only [List.length_map, List.length_range]; omega_using [hj])
+  rw [hl] at ha
+  rw [ha]
+  refine congrArg (writeBytes m P) ?_
+  cases c
+  · show List.replicate j 0 ++ _ = List.replicate (j + 4) 0
+    rw [← List.replicate_append_replicate]
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    rfl
+  · obtain e : bytesAt m P (j + 4) =
+        bytesAt m P j ++ (List.range 4).map fun k => m (P + BitVec.ofNat 64 (j + k)) := by
+      simp only [bytesAt, List.range_add, List.map_append, List.map_map]
+      rfl
+    show bytesAt m P j ++ _ = bytesAt m P (j + 4)
+    rw [e]
+    refine congrArg _ (List.map_congr_left fun k hk' => ?_)
+    obtain hk4 := List.mem_range.mp hk'
+    show BitVec.extractLsb' (8 * k) 8 (BitVec.setWidth 32 ((writeBytes m P (masked m P true j)).readW _ 32)) = _
+    rw [BitVec.setWidth_eq, ← Mem.readW_byte _ _ hk4, hk k hk4]
+
+theorem maskWord_ok (s : State) {P : BitVec 32} {i n : Nat} {c : Bool} (hs : s.gpr .edi = P + BitVec.ofNat 32 i)
+    (hc : s.gpr .ecx = BitVec.ofNat 32 (n - i)) (hb : s.gpr .ebx = 0 - (if c then 1 else 0))
+    (eP : w64 (P + BitVec.ofNat 32 i) = w64 P + BitVec.ofNat 64 i)
+    (r : InRegions (s.rd ++ s.wr) (w64 P + BitVec.ofNat 64 i) 4) (w : InRegions s.wr (w64 P + BitVec.ofNat 64 i) 4) :
+    ∃ s', runBlock isa maskWord s = some s' ∧
+      s'.mem = s.mem.writeW (w64 P + BitVec.ofNat 64 i)
+        (if c then s.mem.readW (w64 P + BitVec.ofNat 64 i) 32 else 0 : BitVec 32) ∧
+      s'.gpr .edi = P + BitVec.ofNat 32 (i + 4) ∧ s'.gpr .ecx = BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 4 ∧
+      s'.cf = some (decide ((BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 4).toNat < (BitVec.ofNat 32 4).toNat)) ∧
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by xrun [maskWord, add_zero32, hs, eP, r, w], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setMem, gpr_setMem, mem_setReg, mem_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+      reduceCtorEq, hb, mask_word32]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hs, add4_ofNat32]
+  · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hc]
+  · simp only [cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg, gpr_arithFlags, ite_true, ite_false,
+      reduceCtorEq, hc]
+  · intro r h₁ h₂ h₃; simp [gpr_setMem, gpr_setReg, h₁, h₂, h₃]
+  all_goals rfl
+
+/-- What `maskWords` leaves of `n` bytes at `D`: the first `j` masked, with
+fewer than 4 left. -/
+theorem maskWords_ok (s : State) {D : BitVec 32} {n : Nat} {c : Bool} (hn : n < 2 ^ 32) (hfit : D.toNat + n ≤ 2 ^ 32)
+    (hdi : s.gpr .edi = D) (hcx : s.gpr .ecx = BitVec.ofNat 32 n) (hbx : s.gpr .ebx = 0 - (if c then 1 else 0))
+    (hrd : Covers [⟨w64 D, n⟩] (s.rd ++ s.wr)) (hwr : Covers [⟨w64 D, n⟩] s.wr) :
+    WP isa maskWords s fun t => ∃ j, j ≤ n ∧ n - j < 4 ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
+      t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧ t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j) ∧
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain ⟨s₁, run₁, g₁, m₁, cf₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .ecx (imm 4)] s = some s₁ ∧
+      s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.cf = some (decide (n < 4)) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+    · rfl
+    · rfl
+    · simp only [cf_arithFlags, hcx]
+      rw [toNat_ofNat32 hn]
+      rfl
+    · rfl
+    · rfl
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (n < 4)) (show isa.eval .b s₁ = _ from cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  · exact ⟨0, Nat.zero_le _, by simpa using of_decide_eq_true hb, by rw [g₁, hdi, add_zero32],
+      by rw [g₁, hcx, Nat.sub_zero], by rw [m₁]; cases c <;> simp [masked, bytesAt, writeBytes_nil],
+      fun r _ _ _ => by rw [g₁], rd₁, wr₁⟩
+  obtain h4 : 4 ≤ n := Nat.le_of_not_lt (of_decide_eq_false hb)
+  refine WP.loop (M := isa) (body := .block maskWord) (c := .ae)
+    (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j + 4 ≤ n ∧ t.gpr .edi = D + BitVec.ofNat 32 j ∧
+      t.gpr .ecx = BitVec.ofNat 32 (n - j) ∧ t.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c j) ∧
+      (∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (n - 0) _
+    ⟨0, rfl, h4, by rw [g₁, hdi, add_zero32], by rw [g₁, hcx, Nat.sub_zero],
+      by rw [m₁]; cases c <;> simp [masked, bytesAt, writeBytes_nil], fun r _ _ _ => by rw [g₁], rd₁, wr₁⟩
+  rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
+  obtain ⟨t', run', mem', di', cx', cf', g', rd', wr'⟩ := maskWord_ok t (P := D) (i := j) (n := n) (c := c) di cx
+    (by rw [g _ (by decide) (by decide) (by decide), hbx]) (w64_add (by omega_using [hj, hfit]))
+    (by rw [rd, wr]; exact in4_of_covers hrd hj (by omega_using [hn]))
+    (by rw [wr]; exact in4_of_covers hwr hj (by omega_using [hn]))
+  refine WP.of_runBlock ⟨t', run', ?_⟩
+  obtain hmem : t'.mem = writeBytes s.mem (w64 D) (masked s.mem (w64 D) c (j + 4)) := by
+    rw [mem', mem, masked_word _ _ _ _ (by omega_using [hj, hn])]
+  obtain cxn : BitVec.ofNat 32 (n - j) - BitVec.ofNat 32 4 = BitVec.ofNat 32 (n - (j + 4)) := by
+    rw [ofNat_sub32 (by omega_using [hj]) (by omega_using [hn])]; congr 1
+  obtain hcf : t'.cf = some (decide (n - (j + 4) < 4)) := by
+    rw [cf', cxn, toNat_ofNat32 (by omega_using [hn])]; rfl
+  obtain gg : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
+    rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
+  by_cases he : n - (j + 4) < 4
+  · left
+    exact ⟨by simp [eval, hcf, he], j + 4, hj, he, di', by rw [cx', cxn], hmem, gg, by rw [rd', rd],
+      by rw [wr', wr]⟩
+  · right
+    exact ⟨by simp [eval, hcf, he], n - (j + 4), by omega_using [hj], j + 4, rfl, by omega_using [he], di',
+      by rw [cx', cxn], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
+
 end VG.Proof.AesGcm.X86

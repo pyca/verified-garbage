@@ -36,21 +36,9 @@ open VG.Proof.AesSiv.AArch64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Siv.initApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3
-        (Impl.AesSiv.AArch64.init v.expand v.callee v.suffix)
-      verified := init_framed v }]) ++
+    Spec.Siv.initApi.artifact AArch64.target (initReg v)]) ++
   (VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
-    Spec.Siv.encryptApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
-        (Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix)
-      verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v) },
-    Spec.Siv.decryptApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
-        (Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix)
-      verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v) }])
+    Spec.Siv.encryptApi.artifact AArch64.target (encryptReg v),
+    Spec.Siv.decryptApi.artifact AArch64.target (decryptReg v)])
 
 end VG.Artifacts.AesSiv.AArch64

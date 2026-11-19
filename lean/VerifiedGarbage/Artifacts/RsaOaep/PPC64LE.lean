@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Inst
-public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -12,19 +11,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.RsaOaep.PPC64LE
 
-open VG.Proof.RsaOaep.PPC64LE (OK enc_ok decP_ok)
-open VG.Proof.MdHashTable.PPC64LE (mvars tables fns3)
+open VG.Proof.RsaOaep.PPC64LE (OK)
+open VG.Proof.MdHashTable.PPC64LE (mvars)
 
 def artifacts : List Artifact :=
   if h : OK mvars then [
-    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target {
-      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
-      code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
-      verified := decP_ok mvars h },
-    Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target {
-      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
-      code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
-      verified := enc_ok mvars h }]
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target
+      (Proof.RsaOaep.PPC64LE.Scrub.decryptReg h),
+    Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target (Proof.RsaOaep.PPC64LE.Scrub.encryptReg h)]
   else []
 
 end VG.Artifacts.RsaOaep.PPC64LE

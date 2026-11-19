@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.X86.Callee
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
 
 /-!
 # AES-CMAC: x86 (32-bit) implementation
@@ -31,7 +32,12 @@ caller's `ebx`, `esi`, `edi` and `ebp`.
 * `update` keeps only the pointer to the next block (`esi`) across the
   calls, and reloads its other arguments from the stack; it stops when the
   pointer reaches `data + 16 n`. Each block, the counter block is `C ⊕ Mᵢ`
-  and the state, zeroed, receives `CIPH_K(C ⊕ Mᵢ)`.
+  and the state, zeroed, receives `CIPH_K(C ⊕ Mᵢ)`. Over the AES-NI
+  implementation of `vg_aes_ctr32_to` it makes no call (`updateNi`): the
+  chaining value stays in `xmm0` for all the blocks, loaded from the state
+  once and stored once, and each block is XORed into it and enciphered
+  there, with the round keys loaded from the schedule
+  (`Impl.Aes.X86.AesNi.aes`).
 * `finalize` forms `Mₙ` in the counter block: `Mₙ* ⊕ K1` for a complete
   block, else `Mₙ*` copied a byte at a time onto zeros, `0x80` after it, and
   XORed with `K2`. It XORs in the chaining value and calls `vg_aes_ctr32_to`
@@ -136,8 +142,41 @@ def advance : List Instr :=
 /-- One block. -/
 def body (c : Impl.Aes.X86.Ctr32) : Prog isa := .seq (.block chainIn) (.seq (ctrCall c) (.block advance))
 
-def update (c : Impl.Aes.X86.Ctr32) : Prog isa :=
+/-- The chaining by calls of `c`, a block a call. -/
+def updateCalls (c : Impl.Aes.X86.Ctr32) : Prog isa :=
   .seq (.block setup) (.seq (.ite .e (.block []) (.loop (body c) .ne)) (.block (restore 5)))
+
+/-- The number of blocks in `edi`, the schedule in `eax`, `rounds` in `ecx`,
+the state's address in `edx` and the chaining value in `xmm0`. -/
+def niPre : List Instr :=
+  [.mov .edi (argOp 4), .mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (argOp 2),
+   .movdquLoad .xmm0 (at_ .edx 0)]
+
+/-- One block with AES-NI: the block at `esi` XORed into the chaining value
+in `xmm0` (through `xmm7`), which is enciphered there (the round keys
+through `xmm6`), and on to the next block; ZF is set when none is left. -/
+def niBody : Prog isa :=
+  .seq (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm0 .xmm7)])
+    (.seq (Impl.Aes.X86.AesNi.aes [.xmm0]) (.block [.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)]))
+
+/-- The chaining value stored in the state. -/
+def niPost : List Instr := [.movdquStore (at_ .edx 0) .xmm0]
+
+/-- The chaining with AES-NI, the chaining value in `xmm0` for all the
+blocks. It uses no stack, and of the scratch buffer only the 16 bytes where
+it saves the registers. -/
+def updateNi : Prog isa :=
+  .seq (.block setup)
+    (.seq (.ite .e (.block []) (.seq (.block niPre) (.seq (.loop niBody .ne) (.block niPost))))
+      (.block (restore 5)))
+
+/-- `c` is the AES-NI implementation of `vg_aes_ctr32_to`, whose chaining
+enciphers the blocks itself. -/
+def hardware (c : Impl.Aes.X86.Ctr32) : Bool := c.name == "vg_aes_ctr32_to_aesni"
+
+/-- `vg_cmac_aes_update` over `c`: with AES-NI, the chaining in a register;
+otherwise the chaining by calls of `c`. -/
+def update (c : Impl.Aes.X86.Ctr32) : Prog isa := if hardware c then updateNi else updateCalls c
 
 /-! ## `vg_cmac_aes_finalize` -/
 

@@ -2,65 +2,11 @@
 //! The dispatchers of the verified `sha3` functions for `aarch64`
 //! (`crate::sha3`, `VG.Rust.dispatcher`).
 
-/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_224_update_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_224_UPDATE_SHA3_FEATURES`); or else `vg_sha3_224_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 144.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha3_224_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
-        {
-            return crate::sha3::vg_sha3_224_update_sha3;
-        }
-        crate::sha3::vg_sha3_224_update
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, pos, data, len, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, data, len, scratch) }
-}
-
-/// Absorbs data into a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, 144), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 144`. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 144. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_224_absorb_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_224_ABSORB_SHA3_FEATURES`); or else `vg_sha3_224_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -73,7 +19,7 @@ pub unsafe fn vg_sha3_224_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_224_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub unsafe fn vg_sha3_224_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -81,13 +27,13 @@ pub unsafe fn vg_sha3_224_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_ABSORB_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_224_ABSORB_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_224_ABSORB_SHA3_FEATURES))
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
         {
-            return crate::sha3::vg_sha3_224_absorb_sha3;
+            return crate::sha3::vg_sha3_224_update_sha3;
         }
-        crate::sha3::vg_sha3_224_absorb
+        crate::sha3::vg_sha3_224_update
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
@@ -113,6 +59,8 @@ pub unsafe fn vg_sha3_224_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_224_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_224_FINALIZE_SHA3_FEATURES`); or else `vg_sha3_224_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -159,65 +107,11 @@ pub unsafe fn vg_sha3_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, out) }
 }
 
-/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_256_update_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_256_UPDATE_SHA3_FEATURES`); or else `vg_sha3_256_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 136.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha3_256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
-        {
-            return crate::sha3::vg_sha3_256_update_sha3;
-        }
-        crate::sha3::vg_sha3_256_update
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, pos, data, len, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, data, len, scratch) }
-}
-
-/// Absorbs data into a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, 136), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 136`. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 136. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_256_absorb_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_256_ABSORB_SHA3_FEATURES`); or else `vg_sha3_256_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -230,7 +124,7 @@ pub unsafe fn vg_sha3_256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_256_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub unsafe fn vg_sha3_256_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -238,13 +132,13 @@ pub unsafe fn vg_sha3_256_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_ABSORB_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_256_ABSORB_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_256_ABSORB_SHA3_FEATURES))
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
         {
-            return crate::sha3::vg_sha3_256_absorb_sha3;
+            return crate::sha3::vg_sha3_256_update_sha3;
         }
-        crate::sha3::vg_sha3_256_absorb
+        crate::sha3::vg_sha3_256_update
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
@@ -270,6 +164,8 @@ pub unsafe fn vg_sha3_256_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_256_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_256_FINALIZE_SHA3_FEATURES`); or else `vg_sha3_256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -316,65 +212,11 @@ pub unsafe fn vg_sha3_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, out) }
 }
 
-/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_384_update_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_384_UPDATE_SHA3_FEATURES`); or else `vg_sha3_384_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 104.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha3_384_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
-        {
-            return crate::sha3::vg_sha3_384_update_sha3;
-        }
-        crate::sha3::vg_sha3_384_update
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, pos, data, len, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, data, len, scratch) }
-}
-
-/// Absorbs data into a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, 104), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 104`. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 104. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_384_absorb_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_384_ABSORB_SHA3_FEATURES`); or else `vg_sha3_384_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -387,7 +229,7 @@ pub unsafe fn vg_sha3_384_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_384_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub unsafe fn vg_sha3_384_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -395,13 +237,13 @@ pub unsafe fn vg_sha3_384_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_ABSORB_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_384_ABSORB_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_384_ABSORB_SHA3_FEATURES))
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
         {
-            return crate::sha3::vg_sha3_384_absorb_sha3;
+            return crate::sha3::vg_sha3_384_update_sha3;
         }
-        crate::sha3::vg_sha3_384_absorb
+        crate::sha3::vg_sha3_384_update
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
@@ -427,6 +269,8 @@ pub unsafe fn vg_sha3_384_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_384_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_384_FINALIZE_SHA3_FEATURES`); or else `vg_sha3_384_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -473,65 +317,11 @@ pub unsafe fn vg_sha3_384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, out) }
 }
 
-/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_512_update_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_512_UPDATE_SHA3_FEATURES`); or else `vg_sha3_512_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 72.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha3_512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
-        {
-            return crate::sha3::vg_sha3_512_update_sha3;
-        }
-        crate::sha3::vg_sha3_512_update
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, pos, data, len, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, data, len, scratch) }
-}
-
-/// Absorbs data into a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, 72), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 72`. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 72. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_512_absorb_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_512_ABSORB_SHA3_FEATURES`); or else `vg_sha3_512_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -544,7 +334,7 @@ pub unsafe fn vg_sha3_512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_sha3_512_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub unsafe fn vg_sha3_512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -552,13 +342,13 @@ pub unsafe fn vg_sha3_512_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_ABSORB_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_512_ABSORB_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHA3_512_ABSORB_SHA3_FEATURES))
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
         {
-            return crate::sha3::vg_sha3_512_absorb_sha3;
+            return crate::sha3::vg_sha3_512_update_sha3;
         }
-        crate::sha3::vg_sha3_512_absorb
+        crate::sha3::vg_sha3_512_update
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
@@ -584,6 +374,8 @@ pub unsafe fn vg_sha3_512_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sha3_512_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHA3_512_FINALIZE_SHA3_FEATURES`); or else `vg_sha3_512_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -630,65 +422,11 @@ pub unsafe fn vg_sha3_512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, out) }
 }
 
-/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. `*scratch` is its working space. A computation starts from the all-zero state, at position 0.
+/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. A computation starts from the all-zero state, at position 0.
 ///
 /// Contract: `VG.Spec.Sha3.updateContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake128_update_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE128_UPDATE_SHA3_FEATURES`); or else `vg_shake128_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * `pos` must be less than 168.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_shake128_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
-        {
-            return crate::sha3::vg_shake128_update_sha3;
-        }
-        crate::sha3::vg_shake128_update
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(state, pos, data, len, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, pos, data, len, scratch) }
-}
-
-/// Absorbs data into a SHAKE128 computation: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, 168), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % 168`. A computation starts from the all-zero state, at position 0.
-///
-/// Contract: `VG.Spec.Sha3.absorbContract` with the rate 168. Constant time: only the pointers, `pos` and `len` may affect timing, not the state or the data.
-///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake128_absorb_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE128_ABSORB_SHA3_FEATURES`); or else `vg_shake128_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -701,7 +439,7 @@ pub unsafe fn vg_shake128_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_shake128_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
+pub unsafe fn vg_shake128_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize {
     /// The type of the implementations.
     type Impl = unsafe extern "C" fn(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize) -> usize;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -709,13 +447,13 @@ pub unsafe fn vg_shake128_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_ABSORB_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_ABSORB_SHA3_FEATURES) }
-            || cpu.contains(crate::sha3::VG_SHAKE128_ABSORB_SHA3_FEATURES))
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
         {
-            return crate::sha3::vg_shake128_absorb_sha3;
+            return crate::sha3::vg_shake128_update_sha3;
         }
-        crate::sha3::vg_shake128_absorb
+        crate::sha3::vg_shake128_update
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
@@ -741,6 +479,8 @@ pub unsafe fn vg_shake128_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake128_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE128_FINALIZE_SHA3_FEATURES`); or else `vg_shake128_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -789,6 +529,8 @@ pub unsafe fn vg_shake128_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake128_squeeze_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE128_SQUEEZE_SHA3_FEATURES`); or else `vg_shake128_squeeze`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -840,6 +582,8 @@ pub unsafe fn vg_shake128_squeeze_auto(_dit: verified_garbage_cpu::Dit<'_>, stat
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake256_finalize_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE256_FINALIZE_SHA3_FEATURES`); or else `vg_shake256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -887,6 +631,8 @@ pub unsafe fn vg_shake256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_shake256_squeeze_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_SHAKE256_SQUEEZE_SHA3_FEATURES`); or else `vg_shake256_squeeze`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

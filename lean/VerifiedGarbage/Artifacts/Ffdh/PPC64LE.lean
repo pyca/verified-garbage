@@ -2,16 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Verified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.PcCT
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Verified
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on PPC64LE -/
@@ -29,34 +22,17 @@ def direct : List Artifact := [
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
     verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified
     residue := some ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩ },
-  Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.Domain.checkPublic
-    verified := Proof.Ffdh.PPC64LE.Domain.cp_verified },
-  Spec.Ffdh.checkDomainApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.VettedValidation.code
-    verified := Proof.Ffdh.PPC64LE.VettedValidation.verified },
-  Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.Domain.exchange
-    verified := Proof.Ffdh.PPC64LE.Domain.ex_verified },
-  Spec.Ffdh.derivePublicApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.Derive.derivePublic
-    verified := Proof.Ffdh.PPC64LE.Derive.dp_verified },
-  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
-    verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
-  Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
-    code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
-    verified := Proof.Ffdh.PPC64LE.Cached.pc_verified },
-  Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target {
-    code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
-    verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }]
+  Spec.Ffdh.checkPublicApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkPublicReg,
+  Spec.Ffdh.checkDomainApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkDomainReg,
+  Spec.Ffdh.exchangeApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.exchangeReg,
+  Spec.Ffdh.derivePublicApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.derivePublicReg,
+  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkPrivateReg,
+  Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.precomputeReg,
+  Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.cachedKeySearchReg]
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
-    Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target {
-      suffix := v.suffix
-      code := Proof.Ffdh.PPC64LE.Generation.searchCode v
-      verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }])
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.map fun v =>
+    Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target (Proof.Ffdh.PPC64LE.Scrub.searchReg v))
 
 end VG.Artifacts.Ffdh.PPC64LE

@@ -1529,8 +1529,11 @@ theorem init_stackUse : stackUse (init v.expand v.callee v.suffix) ≤ 52 := by
   decide +kernel
 
 theorem absorb_stackUse : stackUse (absorb v.callee v.suffix) ≤ 60 := by
+  have h := Proof.CmacAes.X86.update_stack v
   simp only [absorb, absorbPre, absorbPost, call6, countHeld, held, fill, copy, chain1, chain2,
-    stackUse, Proof.CmacAes.X86.update_stack v]
+    stackUse]
+  generalize stackUse (Impl.CmacAes.X86.update v.callee) = x at h ⊢
+  revert x
   decide +kernel
 
 theorem finish_stackUse : stackUse (finish v.callee v.suffix) ≤ 60 := by

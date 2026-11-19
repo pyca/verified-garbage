@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -581,7 +583,7 @@ bl {vg_secp256k1_mul_mod_p}
 bl {vg_secp256k1_mul_mod_p}
 .base64 "oASAOIAEoDjAAMA4"
 bl {vg_secp256k1_mul_mod_p}
-.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6aAEg+g4UIR8GADAOCg1jnyoBIPoOFCEfBAAwDgoNY58sASD6DhQhHwIAMA4KDWOfLgEg+g4UIR8AADAOCg1jnwBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8IACATg==""#,
+.base64 "AAAAOP//AGD//wBkAQDAOEAE44BgAAOBFALnfFA46HwUMud8IgDmeEQE44BkAAOBFALnfFA46HwUMud8IgDmeEgE44BoAAOBFALnfFA46HwUMud8IgDmeEwE44BsAAOBFALnfFA46HwUMud8IgDmeFAE44BwAAOBFALnfFA46HwUMud8IgDmeFQE44B0AAOBFALnfFA46HwUMud8IgDmeFgE44B4AAOBFALnfFA46HwUMud8IgDmeFwE44B8AAOBFALnfFA46HwUMud8IgDmeP//pjh4K6l8QASj6EgEg+h4I6V8UASD6HgjpXxYBIPoeCOlfAAAgDhQIIV8eCuEfOAPhHgAAKA4UCikfDhIpXzABYPoOCiEfMAFg/hAAqPoSAKD6HgjpXxQAoPoeCOlfFgCg+h4I6V8AACAOFAghXx4K4R84A+EeAAAoDhQKKR8wAWD6DgohHzABYP4wAVD6aAEg+g4UIR8GADAOCg1jnyoBIPoOFCEfBAAwDgoNY58sASD6DhQhHwIAMA4KDWOfLgEg+g4UIR8AADAOCg1jnwBAIA4OCBEfRAAA+imAwh8AADD6QgA4+t4I4N8AAAAOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5FAAAfCAAgE4=""#,
         vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,

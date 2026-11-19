@@ -1,0 +1,207 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.RandomSign.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Generate.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Validate.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prevalidated.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-!
+# DSA on PPC64LE, without secret residue
+
+`vg_dsa_derive_key`, `vg_dsa_generate_key`, `vg_dsa_sign_random_prevalidated`,
+`vg_dsa_validate_public_key`, `vg_dsa_validate_private_key`,
+`vg_dsa_verify_prevalidated` and `vg_dsa_parameter_search`, each followed by
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which clears the
+volatile registers and the stack their frames used, which they do not wipe
+themselves. Their postconditions read the memory on return only within
+their outputs, as x86-64's (`Proof/Dsa/X86_64/Scrub.lean`): the validations
+and verification not at all, the others the octets at `out` and the words at
+`used` (and the parameter search's counter).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.PPC64LE.Scrub
+
+open VG.PPC64LE VG.PPC64LE.Scrub
+
+/-! ## Postconditions -/
+
+/-- The byte `k` of a region of more than `k` bytes at `o`. -/
+theorem contains_of {o : Addr} {k N : Nat} (hk : k < N) : Region.Contains ⟨o, N⟩ (o + BitVec.ofNat 64 k) 1 := by
+  simp only [Region.Contains]
+  rw [BitVec.add_comm o, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
+  have := Nat.mod_le k (2 ^ 64)
+  omega_using [hk]
+
+/-- The `n` octets at `o` read the memory only within `⟨o, n * 1⟩`. -/
+theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n : Nat}
+    (h : ∀ a, Region.Contains ⟨o, n * 1⟩ a 1 → m₁ a = m₂ a) :
+    Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n := by
+  simp only [Spec.Rsa.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have := List.mem_range.mp hi
+  exact (h _ (contains_of (by omega_using [this]))).symm
+
+/-- The `n` words at `o` read the memory only within `⟨o, N⟩`, `n * 8 ≤ N`. -/
+theorem wordsAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
+    (h : ∀ a, Region.Contains ⟨o, N⟩ a 1 → m₁ a = m₂ a) (hN : n * 8 ≤ N := by omega) :
+    Spec.Rsa.wordsAt m₂ o n = Spec.Rsa.wordsAt m₁ o n :=
+  List.map_congr_left fun i hi => Mem.readW_congr fun t ht => by
+    have := List.mem_range.mp hi
+    rw [Offset.add_add]
+    exact (h _ (contains_of (by simp only [Nat.reduceDiv] at ht; omega_using [hN, ht, this]))).symm
+
+theorem toNat_sw (cs : List (String × List (BitVec 64))) (x : BitVec 64) :
+    (x.setWidth (abi.withConsts cs).ptrBits).toNat = x.toNat := by
+  rw [BitVec.toNat_setWidth, (ScrubAbi.consts cs).ptrBits]
+  exact Nat.mod_eq_of_lt x.isLt
+
+theorem validatePublicKeyOut (stack : Nat) :
+    PostOut (Spec.Dsa.validatePublicKeyContract abi stack) (Spec.Dsa.validatePublicKeySig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [_, _, _, _, _, _], _, _, _, _, _, _, h => h
+
+theorem validatePrivateKeyOut (stack : Nat) :
+    PostOut (Spec.Dsa.validatePrivateKeyContract abi stack) (Spec.Dsa.validatePrivateKeySig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [_, _, _, _, _, _], _, _, _, _, _, _, h => h
+
+theorem verifyPrevalidatedOut (stack : Nat) :
+    PostOut (Spec.Dsa.verifyPrevalidatedContract abi stack) (Spec.Dsa.verifySig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [_, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+
+theorem randomSignPrevalidatedOut (stack : Nat) :
+    PostOut (Spec.Dsa.randomSignPrevalidatedContract abi stack) (Spec.Dsa.randomSignSig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Dsa.randomSignSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ ?hX, wordsAt_of hb.2.1]
+      · exact h
+      · exact toNat_sw [] outLen
+
+theorem generateKeyOut (stack : Nat) :
+    PostOut (Spec.Dsa.generateKeyContract abi stack) (Spec.Dsa.generateKeySig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Dsa.generateKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ ?hX, wordsAt_of hb.2.1]
+      · exact h
+      · exact toNat_sw [] outLen
+
+theorem deriveKeyOut (stack : Nat) :
+    PostOut (Spec.Dsa.deriveKeyContract abi stack) (Spec.Dsa.deriveKeySig.retBits 64) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Dsa.deriveKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ ?hX]
+      · exact h
+      · exact toNat_sw [] outLen
+
+theorem parameterSearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
+    PostOut (Spec.Dsa.parameterSearchContract (abi.withConsts cs) stack)
+      (Spec.Dsa.parameterSearchSig.retBits 64) :=
+  postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
+    | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      have e : ∀ X, X = outLen.toNat → Spec.Rsa.bytesAt m₂ out X = Spec.Rsa.bytesAt m₁ out X :=
+        fun X hX => hX ▸ bytesAt_of hb.1
+      rw [e _ ?hX, wordsAt_of hb.2.1, wordsAt_of hb.2.2.2.2]
+      · exact h
+      · exact toNat_sw cs outLen
+
+/-! ## The registrations -/
+
+/-- `Spec.Dsa.deriveKeyApi`. -/
+def deriveKeyReg : Registration Spec.Dsa.deriveKeyApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.Derive.derive
+      verified := Proof.Dsa.PPC64LE.deriveKey_verified }
+    (deriveKeyOut _)
+
+/-- `Spec.Dsa.randomSignPrevalidatedApi`. -/
+def randomSignPrevalidatedReg : Registration Spec.Dsa.randomSignPrevalidatedApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.RandomSign.code
+      verified := Proof.Dsa.PPC64LE.randomSign_verified }
+    (randomSignPrevalidatedOut _)
+
+/-- `Spec.Dsa.generateKeyApi`. -/
+def generateKeyReg : Registration Spec.Dsa.generateKeyApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.Generate.code
+      verified := Proof.Dsa.PPC64LE.generate_verified }
+    (generateKeyOut _)
+
+/-- `Spec.Dsa.validatePublicKeyApi`. -/
+def validatePublicKeyReg : Registration Spec.Dsa.validatePublicKeyApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.Prevalidated.validate
+      verified := Proof.Dsa.PPC64LE.validate_verified }
+    (validatePublicKeyOut _)
+
+/-- `Spec.Dsa.validatePrivateKeyApi`. -/
+def validatePrivateKeyReg : Registration Spec.Dsa.validatePrivateKeyApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.PrevalidatedSign.validate
+      verified := Proof.Dsa.PPC64LE.validatePrivate_verified }
+    (validatePrivateKeyOut _)
+
+/-- `Spec.Dsa.verifyPrevalidatedApi`. -/
+def verifyPrevalidatedReg : Registration Spec.Dsa.verifyPrevalidatedApi PPC64LE.target :=
+  withScrub {
+      code := Impl.Dsa.PPC64LE.Prevalidated.verify
+      verified := Proof.Dsa.PPC64LE.prevalidated_verified }
+    (verifyPrevalidatedOut _)
+
+/-- `Spec.Dsa.parameterSearchApi`, over the Miller-Rabin round `v`. -/
+def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :
+    Registration Spec.Dsa.parameterSearchApi PPC64LE.target :=
+  withScrub {
+      suffix := v.suffix
+      code := Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)
+      verified := Gen.search_params v }
+    (parameterSearchOut Impl.RsaKeyGen.TrialTable32.consts 176)
+
+/-- All are scrubbed: the side conditions of `withScrub` hold. The
+parameter search's code is too long for `decide`; the emitter refuses it if it
+is not scrubbed, as `ci/residue_allowlist.txt` no longer lists it. -/
+example : deriveKeyReg.residue.isSome ∧ randomSignPrevalidatedReg.residue.isSome ∧
+    generateKeyReg.residue.isSome ∧ validatePublicKeyReg.residue.isSome ∧
+    validatePrivateKeyReg.residue.isSome ∧ verifyPrevalidatedReg.residue.isSome := by
+  decide
+
+end VG.Proof.Dsa.PPC64LE.Scrub
