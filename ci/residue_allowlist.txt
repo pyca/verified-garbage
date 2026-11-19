@@ -525,10 +525,6 @@ powerpc64le vg_blake2s_update
 powerpc64le vg_camellia_ctr_final
 powerpc64le vg_chacha20_apply
 powerpc64le vg_chacha20_init
-powerpc64le vg_chacha20_poly1305_open
-powerpc64le vg_chacha20_poly1305_open_to
-powerpc64le vg_chacha20_poly1305_seal
-powerpc64le vg_chacha20_poly1305_seal_gather
 powerpc64le vg_chacha20_set_nonce
 powerpc64le vg_ct_eq
 powerpc64le vg_ed25519_key_pair

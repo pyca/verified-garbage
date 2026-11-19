@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Gather.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
@@ -13,19 +12,9 @@ import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 namespace VG.Artifacts.ChaCha20Poly1305.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.ChaCha20Poly1305.sealApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
-      (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«seal»)
-    verified := Proof.ChaCha20Poly1305.PPC64LE.seal_framed },
-  Spec.ChaCha20Poly1305.openZeroApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
-      (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«open»)
-    verified := Proof.ChaCha20Poly1305.PPC64LE.open_framed },
-  Spec.ChaCha20Poly1305.openToApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchArgsWiped 768 1 82 Impl.ChaCha20Poly1305.PPC64LE.openTo
-    verified := Proof.ChaCha20Poly1305.PPC64LE.openTo_framed },
-  Spec.ChaCha20Poly1305.sealGatherApi.artifact PPC64LE.target {
-    code := Impl.ChaCha20Poly1305.PPC64LE.SealGather.sealGather
-    verified := Proof.ChaCha20Poly1305.PPC64LE.Gather.sealGather_verified }]
+  Spec.ChaCha20Poly1305.sealApi.artifact PPC64LE.target Proof.ChaCha20Poly1305.PPC64LE.Scrub.sealReg,
+  Spec.ChaCha20Poly1305.openZeroApi.artifact PPC64LE.target Proof.ChaCha20Poly1305.PPC64LE.Scrub.openReg,
+  Spec.ChaCha20Poly1305.openToApi.artifact PPC64LE.target Proof.ChaCha20Poly1305.PPC64LE.Scrub.openToReg,
+  Spec.ChaCha20Poly1305.sealGatherApi.artifact PPC64LE.target Proof.ChaCha20Poly1305.PPC64LE.Scrub.sealGatherReg]
 
 end VG.Artifacts.ChaCha20Poly1305.PPC64LE
