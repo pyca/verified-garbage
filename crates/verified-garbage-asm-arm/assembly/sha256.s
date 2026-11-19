@@ -38,10 +38,10 @@ vg_sha224_init:
 	bx lr
 
 vg_sha224_finalize:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -135,11 +135,11 @@ vg_sha224_finalize:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
-	sub sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #19
+	mov r3, #5
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -156,7 +156,7 @@ vg_sha224_finalize:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	add sp, sp, #624
+	add sp, sp, #176
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -373,12 +373,12 @@ vg_sha256_init:
 	bx lr
 
 vg_sha256_update:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #12]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
-	ldr lr, [sp, #628]
+	ldr lr, [sp, #180]
 	str lr, [r12, #4]
 	add lr, sp, #16
 	str lr, [r12, #8]
@@ -504,11 +504,11 @@ vg_sha256_update:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
-	sub sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #19
+	mov r3, #5
 223:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -525,7 +525,7 @@ vg_sha256_update:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	add sp, sp, #624
+	add sp, sp, #176
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -535,10 +535,10 @@ vg_sha256_update:
 	bx lr
 
 vg_sha256_finalize:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -635,11 +635,11 @@ vg_sha256_finalize:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
-	sub sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #19
+	mov r3, #5
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -656,7 +656,7 @@ vg_sha256_finalize:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	add sp, sp, #624
+	add sp, sp, #176
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0

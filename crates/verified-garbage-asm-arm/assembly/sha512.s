@@ -233,12 +233,12 @@ vg_sha512_256_init:
 	bx lr
 
 vg_sha512_update:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #12]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
-	ldr lr, [sp, #1396]
+	ldr lr, [sp, #292]
 	str lr, [r12, #4]
 	add lr, sp, #16
 	str lr, [r12, #8]
@@ -364,11 +364,11 @@ vg_sha512_update:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
-	sub sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #43
+	mov r3, #9
 223:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -381,11 +381,7 @@ vg_sha512_update:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 223b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #1392
+	add sp, sp, #288
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -395,10 +391,10 @@ vg_sha512_update:
 	bx lr
 
 vg_sha512_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -524,11 +520,11 @@ vg_sha512_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
-	sub sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #43
+	mov r3, #9
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -541,11 +537,7 @@ vg_sha512_finalize:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 28b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #1392
+	add sp, sp, #288
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -555,10 +547,10 @@ vg_sha512_finalize:
 	bx lr
 
 vg_sha384_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -672,11 +664,11 @@ vg_sha384_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
-	sub sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #43
+	mov r3, #9
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -689,11 +681,7 @@ vg_sha384_finalize:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 28b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #1392
+	add sp, sp, #288
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -703,10 +691,10 @@ vg_sha384_finalize:
 	bx lr
 
 vg_sha512_256_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -808,11 +796,11 @@ vg_sha512_256_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
-	sub sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #43
+	mov r3, #9
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -825,11 +813,7 @@ vg_sha512_256_finalize:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 28b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #1392
+	add sp, sp, #288
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -839,10 +823,10 @@ vg_sha512_256_finalize:
 	bx lr
 
 vg_sha512_224_finalize:
-	sub sp, sp, #1392
+	sub sp, sp, #288
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #1392]
+	ldr lr, [sp, #288]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -941,11 +925,11 @@ vg_sha512_224_finalize:
 	ldr r10, [r3, #248]
 	ldr r11, [r3, #252]
 	ldr lr, [r3, #256]
-	add sp, sp, #1392
-	sub sp, sp, #1392
+	add sp, sp, #288
+	sub sp, sp, #288
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #43
+	mov r3, #9
 28:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -958,11 +942,7 @@ vg_sha512_224_finalize:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 28b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #1392
+	add sp, sp, #288
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
