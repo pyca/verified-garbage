@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP384r1.EcdhLit
 public import VerifiedGarbage.Proof.BrainpoolP384r1.RISCV64.Law
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # ECDH over brainpoolP384r1 (SP 800-56A) on RISC-V -/
 
@@ -20,7 +21,7 @@ namespace VG.Artifacts.EcdhBrainpoolP384r1.RISCV64
 open VG.Proof.BrainpoolP384r1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.Ecdh.RISCV64.ecdhBrainpoolP384r1
     verified := Proof.Ecdh.RISCV64.BrainpoolP384r1.ecdh_verified hasLaw.law }
     (Proof.EcKey.RISCV64.Scrub.exchangeOut _ _ []))]
