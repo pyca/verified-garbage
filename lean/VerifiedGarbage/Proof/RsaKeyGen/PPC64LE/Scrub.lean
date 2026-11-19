@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
@@ -11,6 +12,7 @@ public import VerifiedGarbage.Proof.Divstep.TcSBounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSA key generation on PPC64LE, without secret residue
@@ -100,10 +102,12 @@ theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
 
 /-- `Spec.RsaKeyGen.keyInitApi`. -/
 def keyInitReg : Registration Spec.RsaKeyGen.keyInitApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
       verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     keyInitOut
+    (by dsimp only; lit_decide)
 
 /-- `Spec.RsaKeyGen.keySearchApi`, with the Miller–Rabin round `v`. -/
 def keySearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl) :

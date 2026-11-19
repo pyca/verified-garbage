@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubWiped
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.Spec.Idea.Cbc
@@ -19,16 +18,17 @@ public import VerifiedGarbage.Proof.Idea.ScrubLocal
 import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # IDEA on PPC64LE, without secret residue
 
 Key expansion, key inversion and ECB, which have no frames, are followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which wipes no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which wipes no
 stack for them. The CBC, CFB64 and OFB functions zero their whole frame
 themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the
-volatile registers after them (`PPC64LE.Scrub.withScrubWiped`). Their
+volatile registers after them (`PPC64LE.Scrub.scrubWipedOf`). Their
 postconditions read the memory on return only within their buffers, as on
 RISC-V (`Proof/Idea/RISCV64/Scrub.lean`).
 -/
@@ -217,83 +217,84 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract PPC64LE.abi stack)
 
 /-- `Spec.Idea.expandKeyApi`. -/
 def expandKeyReg : Registration Spec.Idea.expandKeyApi PPC64LE.target :=
-  withScrub { code := Impl.Idea.PPC64LE.expandKey, verified := Proof.Idea.PPC64LE.expandKey_verified } (expandKeyOut _)
+  scrubOf { code := Impl.Idea.PPC64LE.expandKey, verified := Proof.Idea.PPC64LE.expandKey_verified }
+    0 ⟨false, false, [.r10, .r11, .r12], false, []⟩ (expandKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.invertKeyApi`. -/
 def invertKeyReg : Registration Spec.Idea.invertKeyApi PPC64LE.target :=
-  withScrub { code := Impl.Idea.PPC64LE.invertKey, verified := Proof.Idea.PPC64LE.invertKey_verified } (invertKeyOut _)
+  scrubOf { code := Impl.Idea.PPC64LE.invertKey, verified := Proof.Idea.PPC64LE.invertKey_verified }
+    0 ⟨true, false, [.r5, .r6, .r7, .r8, .r9, .r11, .r12], false, []⟩ (invertKeyOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.ecbApi`. -/
 def ecbReg : Registration Spec.Idea.ecbApi PPC64LE.target :=
-  withScrub { code := Impl.Idea.PPC64LE.ecb, verified := Proof.Idea.PPC64LE.ecb_verified } (ecbOut _)
+  scrubOf { code := Impl.Idea.PPC64LE.ecb, verified := Proof.Idea.PPC64LE.ecb_verified }
+    0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ (ecbOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cbcEncryptChainedApi`. -/
 def cbcEncryptChainedReg : Registration Spec.Idea.cbcEncryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cbcEncryptChained
       verified := Proof.Idea.PPC64LE.cbcEnc_framed Proof.Idea.PPC64LE.Modes.cbcEncryptChained_verified }
-    96 .r7 8 Impl.Idea.PPC64LE.cbcEncryptChained rfl (cbcEncryptOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cbcEncryptChained
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cbcEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cbcDecryptChainedApi`. -/
 def cbcDecryptChainedReg : Registration Spec.Idea.cbcDecryptChainedApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cbcDecryptChained
       verified := Proof.Idea.PPC64LE.cbcDec_framed Proof.Idea.PPC64LE.Modes.cbcDecryptChained_verified }
-    96 .r7 8 Impl.Idea.PPC64LE.cbcDecryptChained rfl (cbcDecryptOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cbcDecryptChained
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cbcDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cfbEncryptApi`. -/
 def cfbEncryptReg : Registration Spec.Idea.cfbEncryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncrypt
       verified := Proof.Idea.PPC64LE.cfbEnc_framed Proof.Idea.PPC64LE.Modes.cfbEncrypt_verified }
-    96 .r7 8 Impl.Idea.PPC64LE.cfbEncrypt rfl (cfbEncryptOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cfbEncrypt
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cfbEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cfbDecryptApi`. -/
 def cfbDecryptReg : Registration Spec.Idea.cfbDecryptApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecrypt
       verified := Proof.Idea.PPC64LE.cfbDec_framed Proof.Idea.PPC64LE.Modes.cfbDecrypt_verified }
-    96 .r7 8 Impl.Idea.PPC64LE.cfbDecrypt rfl (cfbDecryptOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cfbDecrypt
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cfbDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cfbEncryptFinalApi`. -/
 def cfbEncryptFinalReg : Registration Spec.Idea.cfbEncryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncryptFinal
       verified := Proof.Idea.PPC64LE.FbFinal.cfbEncryptFinal_framed }
-    96 .r7 8 Impl.Idea.PPC64LE.cfbEncryptFinal rfl (cfbEncryptFinalOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cfbEncryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.cfbDecryptFinalApi`. -/
 def cfbDecryptFinalReg : Registration Spec.Idea.cfbDecryptFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecryptFinal
       verified := Proof.Idea.PPC64LE.FbFinal.cfbDecryptFinal_framed }
-    96 .r7 8 Impl.Idea.PPC64LE.cfbDecryptFinal rfl (cfbDecryptFinalOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.cfbDecryptFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.ofbApi`. -/
 def ofbReg : Registration Spec.Idea.ofbApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.ofb
       verified := Proof.Idea.PPC64LE.ofb_framed Proof.Idea.PPC64LE.Modes.ofb_verified }
-    96 .r7 8 Impl.Idea.PPC64LE.ofb rfl (ofbOut _)
+    96 .r7 8 Impl.Idea.PPC64LE.ofb
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ofbOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Idea.ofbFinalApi`. -/
 def ofbFinalReg : Registration Spec.Idea.ofbFinalApi PPC64LE.target :=
-  withScrubWiped {
+  scrubWipedOf {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.ofbFinal
       verified := Proof.Idea.PPC64LE.FbFinal.ofbFinal_framed }
-    96 .r7 8 Impl.Idea.PPC64LE.ofbFinal rfl (ofbFinalOut _)
-
-/-- All are scrubbed: the side conditions of `withScrub` and `withScrubWiped` hold. -/
-example : expandKeyReg.residue.isSome ∧
-    invertKeyReg.residue.isSome ∧
-    ecbReg.residue.isSome ∧
-    cbcEncryptChainedReg.residue.isSome ∧
-    cbcDecryptChainedReg.residue.isSome ∧
-    cfbEncryptReg.residue.isSome ∧
-    cfbDecryptReg.residue.isSome ∧
-    cfbEncryptFinalReg.residue.isSome ∧
-    cfbDecryptFinalReg.residue.isSome ∧
-    ofbReg.residue.isSome ∧
-    ofbFinalReg.residue.isSome := by decide
+    96 .r7 8 Impl.Idea.PPC64LE.ofbFinal
+    ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Idea.PPC64LE.Scrub

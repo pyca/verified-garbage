@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -66,6 +67,7 @@ import VerifiedGarbage.Proof.EcKey.PPC64LE.P256CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P384.CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.CombLit
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Elliptic-curve public keys on PPC64LE, without secret residue
@@ -95,10 +97,12 @@ def p192PublicKey (hL : Law Spec.P192.curve) : Registration Spec.EcKey.P192.publ
 
 /-- `Spec.EcKey.P192.inst.compressPublicKeyApi`. -/
 def p192Compress : Registration Spec.EcKey.P192.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressP192
       verified := Proof.EcKey.Compressed.PPC64LE.P192.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P192.inst.decompressPublicKeyApi`. -/
 def p192Decompress (hL : Law Spec.P192.curve) : Registration Spec.EcKey.P192.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -116,10 +120,12 @@ def p224PublicKey (hL : Law Spec.P224.curve) : Registration Spec.EcKey.P224.publ
 
 /-- `Spec.EcKey.P224.inst.compressPublicKeyApi`. -/
 def p224Compress : Registration Spec.EcKey.P224.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressP224
       verified := Proof.EcKey.Compressed.PPC64LE.P224.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P224.inst.decompressPublicKeyApi`. -/
 def p224Decompress (hL : Law Spec.P224.curve) : Registration Spec.EcKey.P224.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -137,10 +143,12 @@ def p256PublicKey (hL : Law Spec.P256.curve) : Registration Spec.EcKey.P256.publ
 
 /-- `Spec.EcKey.P256.inst.compressPublicKeyApi`. -/
 def p256Compress : Registration Spec.EcKey.P256.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressP256
       verified := Proof.EcKey.Compressed.PPC64LE.P256.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P256.inst.decompressPublicKeyApi`. -/
 def p256Decompress (hL : Law Spec.P256.curve) : Registration Spec.EcKey.P256.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -158,10 +166,12 @@ def p384PublicKey (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.publ
 
 /-- `Spec.EcKey.P384.inst.compressPublicKeyApi`. -/
 def p384Compress : Registration Spec.EcKey.P384.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressP384
       verified := Proof.EcKey.Compressed.PPC64LE.P384.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P384.inst.decompressPublicKeyApi`. -/
 def p384Decompress (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -179,10 +189,12 @@ def p521PublicKey (hL : Law Spec.P521.curve) : Registration Spec.EcKey.P521.publ
 
 /-- `Spec.EcKey.P521.inst.compressPublicKeyApi`. -/
 def p521Compress : Registration Spec.EcKey.P521.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressP521
       verified := Proof.EcKey.Compressed.PPC64LE.P521.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P521.inst.decompressPublicKeyApi`. -/
 def p521Decompress (hL : Law Spec.P521.curve) : Registration Spec.EcKey.P521.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -200,10 +212,12 @@ def secp256k1PublicKey (hL : Law Spec.Secp256k1.curve) : Registration Spec.EcKey
 
 /-- `Spec.EcKey.Secp256k1.inst.compressPublicKeyApi`. -/
 def secp256k1Compress : Registration Spec.EcKey.Secp256k1.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressSecp256k1
       verified := Proof.EcKey.Compressed.PPC64LE.Secp256k1.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi`. -/
 def secp256k1Decompress (hL : Law Spec.Secp256k1.curve) : Registration Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -221,10 +235,12 @@ def brainpoolp256r1PublicKey (hL : Law Spec.BrainpoolP256r1.curve) : Registratio
 
 /-- `Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi`. -/
 def brainpoolp256r1Compress : Registration Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP256r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP256r1.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi`. -/
 def brainpoolp256r1Decompress (hL : Law Spec.BrainpoolP256r1.curve) : Registration Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -242,10 +258,12 @@ def brainpoolp384r1PublicKey (hL : Law Spec.BrainpoolP384r1.curve) : Registratio
 
 /-- `Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi`. -/
 def brainpoolp384r1Compress : Registration Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP384r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi`. -/
 def brainpoolp384r1Decompress (hL : Law Spec.BrainpoolP384r1.curve) : Registration Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi PPC64LE.target :=
@@ -263,10 +281,12 @@ def brainpoolp512r1PublicKey (hL : Law Spec.BrainpoolP512r1.curve) : Registratio
 
 /-- `Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi`. -/
 def brainpoolp512r1Compress : Registration Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP512r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi`. -/
 def brainpoolp512r1Decompress (hL : Law Spec.BrainpoolP512r1.curve) : Registration Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi PPC64LE.target :=

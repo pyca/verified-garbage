@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Poly1305.PPC64LE.Shared
 public import VerifiedGarbage.Spec.Poly1305.Contract
@@ -9,12 +9,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Poly1305.Scratch
 import VerifiedGarbage.Proof.Poly1305.BlocksScratch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Poly1305 on PPC64LE, without secret residue
 
 `vg_poly1305_init`, `vg_poly1305_update` and `vg_poly1305_finalize`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
 clears the volatile registers and the stack its frames used: `update` and
 `finalize` keep their working space in a 160-byte frame they do not wipe
 themselves (`withStackScratch`). Their postconditions read the memory on
@@ -81,27 +82,29 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract PPC64LE.abi stack)
 
 /-- `Spec.Poly1305.initApi`. -/
 def initReg : Registration Spec.Poly1305.initApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.Poly1305.PPC64LE.init
       verified := Proof.Poly1305.PPC64LE.Shared.init }
+    0 ⟨false, false, [.r5, .r6, .r7, .r8], false, []⟩
     (initOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Poly1305.updateApi`. -/
 def updateReg : Registration Spec.Poly1305.updateApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.Poly1305.PPC64LE.update
       verified := Proof.Poly1305.PPC64LE.Shared.update }
+    160 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (updateOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Poly1305.finalizeApi`. -/
 def finalizeReg : Registration Spec.Poly1305.finalizeApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.Poly1305.PPC64LE.finalize
       verified := Proof.Poly1305.PPC64LE.Shared.finalize }
+    160 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (finalizeOut _)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. -/
-example : initReg.residue.isSome ∧ updateReg.residue.isSome ∧ finalizeReg.residue.isSome := by
-  decide
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Poly1305.PPC64LE.Scrub

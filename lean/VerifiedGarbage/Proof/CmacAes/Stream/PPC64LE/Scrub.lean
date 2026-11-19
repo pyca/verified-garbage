@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Frame
 import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Streaming AES-CMAC on PPC64LE, without secret residue
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.withScrub`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
 clears the volatile registers they may write and the stack their frames used:
 they keep their working space, the key schedule among it, in a 2336-byte
 frame they do not wipe themselves (`withStackScratch`). Their postconditions
@@ -39,27 +40,32 @@ theorem finishOut (stack : Nat) : PostOut (Spec.Cmac.aesFinishContract PPC64LE.a
 
 /-- `Spec.Cmac.aesInitApi`. -/
 def initReg : Registration Spec.Cmac.aesInitApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch 2336 .r6 Impl.CmacAes.Stream.PPC64LE.init
       verified := Proof.CmacAes.Stream.PPC64LE.init_framed }
+    2336 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v19]⟩
     (initOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Cmac.aesAbsorbApi`. -/
 def absorbReg : Registration Spec.Cmac.aesAbsorbApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch 2336 .r8 Impl.CmacAes.Stream.PPC64LE.absorb
       verified := Proof.CmacAes.Stream.PPC64LE.absorb_framed }
+    2336 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v19]⟩
     (absorbOut _)
+    (by dsimp only; lit_decide)
 
 /-- `Spec.Cmac.aesFinishApi`. -/
 def finishReg : Registration Spec.Cmac.aesFinishApi PPC64LE.target :=
-  withScrub {
+  scrubOf {
       code := Impl.StackScratch.PPC64LE.withStackScratch 2336 .r7 Impl.CmacAes.Stream.PPC64LE.finish
       verified := Proof.CmacAes.Stream.PPC64LE.finish_framed }
+    2336 ⟨true, false, [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v19]⟩
     (finishOut _)
-
-/-- All are scrubbed: the side conditions of `withScrub` hold. -/
-example : initReg.residue.isSome ∧ absorbReg.residue.isSome ∧ finishReg.residue.isSome := by
-  decide
+    (by dsimp only; lit_decide)
 
 end VG.Proof.CmacAes.Stream.PPC64LE.Scrub
