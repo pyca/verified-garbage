@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.BrainpoolP384r1.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP384r1.RISCV64
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on RISC-V -/
 
@@ -23,15 +24,15 @@ namespace VG.Artifacts.EcBrainpoolP384r1.RISCV64
 open VG.Proof.BrainpoolP384r1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.Ecdh.RISCV64.publicKeyBrainpoolP384r1
     verified := Proof.Ecdh.RISCV64.BrainpoolP384r1.pk_verified hasLaw.law }
     (Proof.EcKey.RISCV64.Scrub.publicKeyOut _ _ [])),
-  Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.EcKey.Compressed.RISCV64.compressBrainpoolP384r1
     verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP384r1.compress_verified }
     (Proof.EcKey.RISCV64.Scrub.compressOut _ _ [])),
-  Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.withScrub {
+  Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
     code := Impl.EcKey.Compressed.RISCV64.decompressBrainpoolP384r1
     verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP384r1.decompress_verified hasLaw.law }
     (Proof.EcKey.RISCV64.Scrub.decompressOut _ _ []))]
