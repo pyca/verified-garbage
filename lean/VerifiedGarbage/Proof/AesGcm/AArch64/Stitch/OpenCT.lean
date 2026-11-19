@@ -66,9 +66,9 @@ theorem openDec_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
     (wr₂c : s₂c.wr = s₂.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = t.rd → u.wr = t.wr →
       Frame [workR Wn W, ⟨O, n⟩] t.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) :
-    Stitch.SInM Ctx (W + BitVec.ofNat 64 16) W SP H (bytesAt t.mem A al ++ zeros (padLen (bytesAt t.mem A al).length))
+    Stitch.SInM Wn Ctx (W + BitVec.ofNat 64 16) W SP H (bytesAt t.mem A al ++ zeros (padLen (bytesAt t.mem A al).length))
         (inc32 (Spec.Gcm.j0 H (bytesAt t.mem Np 12))) R D O n to s₂c ∧
-      Stitch.TbOk Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂c ∧
+      Stitch.TbOk Wn Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂c ∧
       Frame [workR Wn W, ⟨O, n⟩] t.mem s₂c.mem ∧ Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂c := by
   have L := o.lay
   obtain he₂c : Env Wn Ctx (W + BitVec.ofNat 64 16) W SP s₂c := h₂.env.keep (fun r hr => g₂c r (by
@@ -103,8 +103,8 @@ theorem openBlk_ok {Wn : Nat} {H : Block} {to : Bool} {O : Addr} {s₀ t s₂ s�
     (h₂ : FFront Wn Ctx (W + BitVec.ofNat 64 16) W SP H (bytesAt t.mem Np 12) (bytesAt t.mem A al) D n t s₂)
     (g₂c : ∀ r, r ≠ .x15 → s₂c.gpr r = s₂.gpr r) (rd₂c : s₂c.rd = s₂.rd) (wr₂c : s₂c.wr = s₂.wr)
     (F₂c : Frame [workR Wn W, ⟨O, n⟩] t.mem s₂c.mem)
-    (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n (fun _ => bytesAt s₂c.mem D (Stitch.pre n))
-      s₂c s₂') (hin : Stitch.SInM Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n to s₂c)
+    (hm : Stitch.SMid Wn Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n (fun _ => bytesAt s₂c.mem D (Stitch.pre n))
+      s₂c s₂') (hin : Stitch.SInM Wn Ctx (W + BitVec.ofNat 64 16) W SP H x icb R D O n to s₂c)
     (key₂c : KeyAt H s₂c.mem W) :
     WP isa (.block (Impl.AesGcm.AArch64.Stitch.whole ++ ([.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] : List Instr) ++
         absSeg2 16)) s₂' fun s₆ => ∃ s₃ : State, ∃ X : Addr,

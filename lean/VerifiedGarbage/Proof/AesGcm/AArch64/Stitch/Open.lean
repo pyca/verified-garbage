@@ -654,7 +654,7 @@ theorem openRunASX_ok {Wn : Nat} (v : GcmImpl) (hMK : MulKey) (gh : Gh8Ok) {tb :
   obtain key₂c : KeyAt H s₂c.mem W := h₂.key.frame fcb (cbF_disj (L.w_w (.inl (by decide)) (by decide) (by decide)))
   obtain hH₂c : blockAt s₂c.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame fcb (dcb (L.cw'.sub_left (Lay.ctxSub (by decide)))), h₂.hH]
-  obtain hTb : Stitch.TbOk Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂c :=
+  obtain hTb : Stitch.TbOk Wn Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂c :=
     fun u heu hm' hrd hwr _ => htb u heu (by rw [hrd, rd₂c, h₂.rd]) (by rw [hwr, wr₂c, h₂.wr])
       (by rw [hm']; exact F₂c) (by rw [hm']; exact key₂c)
   obtain hmode : cond to (s₂c.gpr .x15 = O ∧ (⟨D, n⟩ : Region).Disjoint ⟨O, n⟩) (O = D) := by

@@ -346,8 +346,8 @@ theorem stIn_of {H : Block} {iv a : List Byte} {R n : Nat} {D : Addr} {ρ σ s�
     (hwr : σ.wr = ρ.wr)
     (htb : ∀ u : State, Env Wn Ctx (W + BitVec.ofNat 64 16) W SP u → u.rd = ρ.rd → u.wr = ρ.wr →
       Frame [workR Wn W, ⟨D, n⟩] ρ.mem u.mem → KeyAt H u.mem W → WP isa (.block tb) u (Stitch.TblPost W H u)) :
-    Stitch.SIn Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
-      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D n s₂ ∧ Stitch.TbOk Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂ ∧
+    Stitch.SIn Wn Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
+      (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D n s₂ ∧ Stitch.TbOk Wn Ctx (W + BitVec.ofNat 64 16) W SP H tb s₂ ∧
       Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₂.mem := by
   obtain F₂ : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₂.mem :=
     hf.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_cons_self .., frontFrame'_work W r hr⟩)
@@ -364,7 +364,7 @@ theorem stOut_of {H : Block} {iv a : List Byte} {R n : Nat} {D Tg : Addr} {ρ σ
     (hd : DataW Wn Ctx (W + BitVec.ofNat 64 16) W σ D n) (h22 : σ.gpr .x22 = BitVec.ofNat 64 R)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : σ.gpr .x28 = Tg) (F₂ : Frame [workR Wn W, ⟨D, n⟩] ρ.mem s₂.mem)
     (hrd : σ.rd = ρ.rd) (hwr : σ.wr = ρ.wr)
-    (hm : Stitch.SMid Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
+    (hm : Stitch.SMid Wn Ctx (W + BitVec.ofNat 64 16) W SP H (a ++ Spec.Gcm.zeros (Spec.Gcm.padLen a.length))
       (Spec.Gcm.inc32 (Spec.Gcm.j0 H iv)) R D D n c s₂ s₃)
     (x23 : s₄.gpr .x23 = D + BitVec.ofNat 64 (Stitch.pre n))
     (x27 : s₄.gpr .x27 = D + BitVec.ofNat 64 (Stitch.pre n))
