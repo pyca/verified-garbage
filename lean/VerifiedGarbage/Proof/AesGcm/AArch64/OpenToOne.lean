@@ -108,8 +108,8 @@ theorem failTo_rel {Wn : Nat} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat}
 
 /-- `vg_aes_gcm_open_to` (`openG c true w`, with `work` the stack argument
 `w`: 4, or 5 after the powers) leaks only whether the tag is right. -/
-theorem openTo_ctW (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {pre : State → Prop}
-    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openToPreXW (Wn := Wn) w (extra s) s (extraW s)) :
+theorem openTo_ctW {Wn : Nat} (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {pre : State → Prop}
+    {extra extraW : State → List Region} (hpre : ∀ s, pre s → openToPreXW (Wn := Wn) w (extra s) s (extraW s)) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openToLeakOf s₁ = openToLeakOf s₂)
       (openG v.callees true w) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
@@ -151,7 +151,7 @@ theorem openTo_ctW (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {pre : State �
     (fun o' hT hok _ => openMainG_post v true o' hT hok)
     fun p₁ p₂ rt₁ rt₂ hok _ _ => openMainG_rel v true p₁ p₂ rt₁ rt₂ hok hb
 
-theorem openTo_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) : ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (openG v.callees true 4) :=
+theorem openTo_ct {Wn : Nat} (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) : ConstantTime isa (openToAArch64 Wn).pre (openToAArch64 Wn).pub (openG v.callees true 4) :=
   openTo_ctW v (.inl rfl) (extra := fun _ => []) (extraW := fun _ => []) fun _ h => h
 
 /-! ## `Verified` -/
@@ -164,7 +164,7 @@ theorem openTo_keepsV (v : GcmImpl) : (openG v.callees true 4).allInstrs keepsV 
     v.ctr.toKeepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel
 
-theorem openTo_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) :
+theorem openTo_correct {Wn : Nat} (v : GcmImpl) (s : State) (hs : (openToAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (openG v.callees true 4) s t s' ∧ abiPreserved s s' ∧ (openToAArch64 Wn).post s s' :=
   WP.withPreservedV (openTo_wp v (.inl rfl) hs) (openTo_keepsV v)
 
@@ -177,7 +177,7 @@ def openToSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 40⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 2560⟩]
 
-theorem openTo_verified (v : GcmImpl) :
+theorem openTo_verified (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     Verified AArch64.target (openG v.callees true 4) (Proof.AesGcm.openToScratchContract AArch64.abi) :=
   Verified.of_correct (openTo_correct v) (openTo_ct v) (by
     sig_implies [Proof.AesGcm.openToScratchContract, Proof.AesGcm.openToScratchSig, Spec.Gcm.openToPre,
@@ -200,7 +200,7 @@ theorem openToFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract AArch64.a
 
 /-- `open_to` in a frame of 2608 bytes holding its working space and copies of
 its four other stack arguments. -/
-theorem openTo_framed (v : GcmImpl) :
+theorem openTo_framed (v : GcmImpl) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | assumption | exact v.ctr.scratch_le) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openG v.callees true 4))
       (Proof.AesGcm.openToRoundsContract AArch64.abi 2608) :=
