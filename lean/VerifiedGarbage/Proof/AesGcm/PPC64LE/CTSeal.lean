@@ -66,7 +66,7 @@ variable {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln T : BitVec 6
 /-- `OneI`, with the tag's address `T` in `r20`, which the state may write, as
 it may the bulk helper's working space at `W + 448`. -/
 def OneT (c W sp : Addr) (R : Nat) (Np : Addr) (n : Nat) (Ad A D Ln T : BitVec 64) (s : State) : Prop :=
-  OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .r20 = T ∧ Covers [⟨T, 16⟩] s.wr ∧ Covers [⟨W + 448, 2112⟩] s.wr
+  OneI c W sp R Np n Ad A D Ln s ∧ s.gpr .r20 = T ∧ Covers [⟨T, 16⟩] s.wr ∧ Covers [⟨W + 448, 704⟩] s.wr
 
 theorem OneT.keep {s s' : State} (h : OneT c W sp R Np n Ad A D Ln T s) {V : Reg → BitVec 64}
     (hV : ∀ r ∈ frozen, V r = s.gpr r) (he : Env V sp s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
@@ -87,7 +87,7 @@ include L K hR hTW
 /-- `seal` after its entry. -/
 theorem sealWithBody_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
     (bodyCorrect : SealFused.BodyCorrect textBody)
-    (bodyCT : CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ Covers [⟨W + 448, 2112⟩] s.wr) textBody) :
+    (bodyCT : CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ Covers [⟨W + 448, 704⟩] s.wr) textBody) :
     CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .r24 = Np ∧
     s.gpr .r25 = BitVec.ofNat 64 n)
     (.seq oneAad (.seq textBody (.seq (.block tagOut) (.block restore)))) := by
@@ -121,7 +121,7 @@ theorem sealWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
     (bodyCorrect : SealFused.BodyCorrect textBody)
     (bodyCT : ∀ {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D Ln : BitVec 64},
       Lay c (W+BitVec.ofNat 64 16) W → SealFused.KernS c W D Ln.toNat → (R=10 ∨ R=12 ∨ R=14) →
-      CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ Covers [⟨W + 448, 2112⟩] s.wr) textBody) :
+      CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ Covers [⟨W + 448, 704⟩] s.wr) textBody) :
     ConstantTime isa sealPPC64LE.pre sealPPC64LE.pub (sealWith textBody) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
@@ -148,9 +148,9 @@ theorem sealWith_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {textBody : Prog isa}
         simp only [SealEntry.entryRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption,ea1⟩)
 
-  · have hW₀ : Covers [⟨stackArg s 1, 2560⟩] s.wr :=
+  · have hW₀ : Covers [⟨stackArg s 1, 1152⟩] s.wr :=
       Covers.trans (Covers.of_mem (by simp [sealWrites])) (SealAccess.of_pre hs).writes
-    have hK : Covers [⟨stackArg s 1 + 448, 2112⟩] s.wr := covers_off hW₀ (d := 448) (n := 2112) (by decide) (by decide)
+    have hK : Covers [⟨stackArg s 1 + 448, 704⟩] s.wr := covers_off hW₀ (d := 448) (n := 704) (by decide) (by decide)
     have := WP.with_rdwr (sealEntry_wp hs)
     rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
     rw [ea1] at hK

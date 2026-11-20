@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Arm.P192.Scrub -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Impl.EcKey.P192.ArmFn
+public import VerifiedGarbage.Proof.EcKey.Arm.P192.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P192.Arm.Law
@@ -14,11 +15,26 @@ namespace VG.Artifacts.EcP192.Arm
 open VG.Proof.P192.Arm (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P192.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P192.Scrub.publicKeyReg hasLaw.law),
-  Spec.EcKey.P192.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P192.Scrub.publicKeyUReg hasLaw.law),
-  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.P192.Scrub.compressReg,
-  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P192.Scrub.decompressReg hasLaw.law),
-  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.P192.Scrub.compressUReg,
-  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.P192.Scrub.decompressUReg hasLaw.law)]
+  Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.publicKeyP192
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP192 hasLaw.law) },
+  Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.publicKeyP192U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP192U hasLaw.law) },
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.compressP192
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP192 },
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.decompressP192
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP192 hasLaw.law) },
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.compressP192U
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP192U },
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.decompressP192U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP192U hasLaw.law) }]
 
 end VG.Artifacts.EcP192.Arm

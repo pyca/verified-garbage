@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -1033,9 +1033,12 @@ end
 `vg_poly1305_update` and `vg_poly1305_finalize`, with either arithmetic
 (`update umaal`, `finalize umaal`), keep their working space in a frame.
 Their postconditions read the memory on return only within the state and
-`out` (`Arm.Scrub.PostOut`), so each is registered followed by a wipe of the
-stack its contract reserves (`Arm.Scrub.scrubRegF`), and by instructions
-that set the registers a callee may change and the flags to constants.
+`out` (`Arm.Scrub.PostOut`). Each is emitted with its cleanup
+(`Impl.Poly1305.Arm.Fn`): a wipe of the stack its contract reserves, then
+instructions that set the registers a callee may change and the flags to
+constants. The code has the same shape with either arithmetic, so what the
+cleanup needs of it (`CodeOk`) is proven once for both, and `Fn` has the
+theorem of each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
 -/
 
 @[expose] public section
@@ -1116,34 +1119,43 @@ theorem finalizeOut (stack : Nat) :
 
 theorem frameOk_144 : FrameOk 144 := by decide
 
-theorem update_armStack (umaal : Bool) :
-    armStack (Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)) ≤ 144 := by
-  cases umaal <;> lit_decide
+/-- `finalize`, with either arithmetic, has no frame and makes no indirect
+call: its shape is the same for both, only its blocks' instructions differ. -/
+theorem finalize_codeOk (umaal : Bool) : CodeOk (Impl.Poly1305.Arm.finalize umaal) 0 := by
+  simp only [CodeOk, Impl.Poly1305.Arm.finalize, Impl.Poly1305.Arm.padBuf, armStack, noIcall,
+    Nat.max_self, Nat.le_refl, Bool.and_self, and_self]
 
-theorem finalize_armStack (umaal : Bool) :
-    armStack (Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)) ≤ 144 := by
-  cases umaal <;> lit_decide
+theorem update_codeOk (umaal : Bool) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)) 144 := by
+  simp only [CodeOk, Impl.StackScratch.Arm.withStackScratch, Impl.Poly1305.Arm.update,
+    Impl.Poly1305.Arm.fill, Impl.Poly1305.Arm.fillCount, Impl.Poly1305.Arm.copyIn,
+    Impl.Poly1305.Arm.body, armStack, noIcall, Nat.max_self, Nat.zero_add, Nat.le_refl,
+    Bool.and_self, and_self]
 
-theorem update_noIcall (umaal : Bool) :
-    noIcall (Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)) = true := by
-  cases umaal <;> lit_decide
-
-def updateReg (umaal : Bool) (suffix : String) : Registration Spec.Poly1305.updateApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)
-      verified := update_framed }
-    (update_armStack umaal) (update_noIcall umaal) frameOk_144 (updateOut _) rfl
-
-theorem finalize_noIcall (umaal : Bool) :
-    noIcall (Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)) = true := by
-  cases umaal <;> lit_decide
-
-def finalizeReg (umaal : Bool) (suffix : String) : Registration Spec.Poly1305.finalizeApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)
-      verified := finalize_framed }
-    (finalize_armStack umaal) (finalize_noIcall umaal) frameOk_144 (finalizeOut _) rfl
+theorem finalize_framed_codeOk (umaal : Bool) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)) 144 :=
+  CodeOk.alloc (n := 0) (CodeOk.seq (CodeOk.block _) (finalize_codeOk umaal))
 
 end VG.Proof.Poly1305.Arm.Scrub
+
+namespace VG.Proof.Poly1305.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_poly1305_update`, with either arithmetic. -/
+theorem update (umaal : Bool) :
+    VerifiedScrubbed target (Impl.Poly1305.Arm.Fn.update umaal) (Spec.Poly1305.updateContract abi 144) 0 :=
+  verifiedScrubbedF (api := Spec.Poly1305.updateApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)
+      verified := update_framed }
+    (Scrub.updateOut _) (scrubSideF_of (Scrub.update_codeOk umaal) Scrub.frameOk_144 _)
+
+/-- `vg_poly1305_finalize`, with either arithmetic. -/
+theorem finalize (umaal : Bool) :
+    VerifiedScrubbed target (Impl.Poly1305.Arm.Fn.finalize umaal) (Spec.Poly1305.finalizeContract abi 144) 0 :=
+  verifiedScrubbedF (api := Spec.Poly1305.finalizeApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)
+      verified := finalize_framed }
+    (Scrub.finalizeOut _) (scrubSideF_of (Scrub.finalize_framed_codeOk umaal) Scrub.frameOk_144 _)
+
+end VG.Proof.Poly1305.Arm.Fn

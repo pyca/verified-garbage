@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombMain
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
@@ -17,27 +18,11 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
 namespace VG.Artifacts.EcdsaSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT secp256k1CombCurve secp256k1T_verified secp256k1CombCurveU secp256k1UT_verified)
-open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
-      Impl.Ecdsa.Arm.verifySecp256k1Comb
-    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHash_verified hasLaw.law) },
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
-    suffix := "_umaal"
-    code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
-      Impl.Ecdsa.Arm.verifySecp256k1CombU
-    verified := .unscrubbed (Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHashU_verified hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
-    tables := [("hmac", tables vars)]
-    code := signCodeT (secp256k1CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-    verified := .unscrubbed (secp256k1T_verified hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
-    suffix := "_umaal"
-    tables := [("hmac", tables vars)]
-    code := signCodeT (secp256k1CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-    verified := .unscrubbed (secp256k1UT_verified hasLaw.law) }]
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.verifyReg hasLaw.law),
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.verifyUReg hasLaw.law),
+  Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.signReg hasLaw.law),
+  Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.signUReg hasLaw.law)]
 
 end VG.Artifacts.EcdsaSecp256k1.Arm

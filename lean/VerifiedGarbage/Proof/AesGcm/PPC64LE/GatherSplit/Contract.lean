@@ -57,8 +57,8 @@ theorem entered_desc {σ₁ σ₂ e₁ e₂ : State} (h₁ : Lay σ₁) (h₂ : 
   exact hdesc j hj
 
 theorem body_rel (hv : SealOk)
-    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pub sealCode)
     {σ₁ σ₂ e₁ e₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hq : gatherPub σ₁ σ₂)
     (he₁ : Entered σ₁ e₁) (he₂ : Entered σ₂ e₂) :
     RelCT isa (Eq2 e₁ e₂) body TT := by
@@ -109,7 +109,7 @@ section
 # AES-GCM encryption out of place, from a list of slices, PPC64LE: the shared contract
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_aes_gcm_seal_gather`, with the 2832 bytes of stack below the stack
+`vg_aes_gcm_seal_gather`, with the 1424 bytes of stack below the stack
 pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`):
 its postcondition from the one the proof is written against
 (`gatherPost_of`), its public arguments as `gatherPub` (`gatherPub_of`), and
@@ -128,12 +128,12 @@ theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).post s s' := by
+    (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 1424).post s s' := by
   sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2832).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 1424).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, PPC64LE.abi,
     PPC64LE.argRegs, stackArgs_three, List.append_eq] at hp
@@ -168,12 +168,12 @@ open VG.Proof.AesGcm.PPC64LE.Gather
 open VG.Proof.ChaCha20Poly1305.PPC64LE.Gather (filter_true' filter_false' filterMap_some' filterMap_none' pairFacts_ro)
 
 
-def contract : Contract isa := Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 2960
+def contract : Contract isa := Proof.AesGcm.sealGatherRoundsContract PPC64LE.abi 1552
 
 structure Layout (s : State) : Prop where
   base : Gather.Lay s
-  stack : ∀ r∈[cR s,nR s,aR s,dsR s]++lsR s++[dR s,tgR s,argR s], (below s.sp 2960).Disjoint r
-  space : 2960≤s.sp.toNat
+  stack : ∀ r∈[cR s,nR s,aR s,dsR s]++lsR s++[dR s,tgR s,argR s], (below s.sp 1552).Disjoint r
+  space : 1552≤s.sp.toNat
 
 
 theorem layout_pre {s : State} (h : contract.pre s) : Layout s := by
@@ -188,7 +188,7 @@ theorem layout_pre {s : State} (h : contract.pre s) : Layout s := by
   rw [pairFacts_ro _ (by simp)] at h
   obtain ⟨w₁,w₂,rd,wr,⟨cd,ct,nd,nt,ad,at_,dt,dds,⟨dl,da⟩,tds,⟨tl,ta⟩,-⟩,
     bc,bn,ba,bd,bt,⟨bds,bl,barg⟩,oc,on,oa,od,ot,⟨ods,ol⟩,hR,hg⟩ := h
-  have hb : Region.Sub (stkR s) (below s.sp 2960) := below_sub (by decide) (by decide)
+  have hb : Region.Sub (stkR s) (below s.sp 1552) := below_sub (by decide) (by decide)
   have hp : gatherPre s :=
     ⟨by rw [rd]; simp,wr,cd,ct,nd,nt,ad,at_,dds.symm,tds.symm,
       fun r hr => ⟨(dl r hr).symm,(tl r hr).symm⟩,dt,da,ta,

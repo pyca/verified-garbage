@@ -14,7 +14,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_checked_precomputed() {
         r#".base64 "U1VWV42kJADz//+J4AWAAAAAiQQki4QkGA0AAIlEJASLhCQcDQAAiUQkCIuEJCANAACJRCQMi4QkLA0AAIlEJBCLhCQwDQAAiUQkFIuEJDQNAACJRCQYi4QkOA0AAIlEJByLhCQ8DQAAiUQkIIuEJEANAACJRCQki4QkRA0AAIlEJCiLhCRIDQAAiUQkLIuEJEwNAACJRCQwi4QkUA0AAIlEJDSLhCRUDQAAiUQkOIuEJFgNAACJRCQ8i4QkXA0AAIlEJECLhCRgDQAAiUQkRIuEJCANAACDwAfB6AMBwIuMJGgNAAApwYlMJEwBwAHAAcADhCRkDQAAiUQkSA=="
 call {vg_rsa_private_crt_precomputed}
 .base64 "iUQkUIngBYAEAACJBCSLhCQgDQAAg8AHwegDAcCJRCQEi4QkHA0AAIlEJAiLhCQgDQAAiUQkDIuEJFwNAACJRCQQi4QkYA0AAIlEJBQ="
-call {vg_rsa_public_precompute}
+call {vg_rsa_public_precompute_core}
 .base64 "iUQkVIuEJBQNAACJBCSLhCQYDQAAiUQkBIngBYAEAACJRCQIi4QkIA0AAIPAB8HoAwHAiUQkDIuEJCQNAACJRCQQi4QkKA0AAIlEJBSJ4AWAAAAAiUQkGIuEJDANAACJRCQci4QkXA0AAIlEJCCLhCRgDQAAiUQkJA=="
 call {vg_rsa_public_precomputed_checked}
 .base64 "I0QkUCNEJFSD4AGJw4u0JBQNAACLvCQsDQAAi4wkIA0AAL0AAAAA"
@@ -28,7 +28,7 @@ jne 21b
 .base64 "idiNpCQADQAAizwki2wkCIt0JARbW1tbww=="
 .p2align 6"#,
         vg_rsa_private_crt_precomputed = sym crate::rsa::vg_rsa_private_crt_precomputed::vg_rsa_private_crt_precomputed,
-        vg_rsa_public_precompute = sym crate::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precompute_core = sym crate::rsa::vg_rsa_public_precompute_core::vg_rsa_public_precompute_core,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -46,6 +48,9 @@ structure Ctr32Impl where
   stack to zero on return. -/
   scratch : Nat
   scratch_ok : scratch = 0 ∨ scratch = 2048
+  /-- `scratch` is what `Impl/` states of `callee` (`Impl.Aes.AArch64.Ctr32.scratch`),
+  from which the functions that call it size their frames. -/
+  scratch_eq : callee.scratch = scratch
   okW : ∀ s, (Proof.Aes.ctr32AArch64With scratch).pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.ctr32AArch64With scratch).post s s'
   ctW : ConstantTime isa (Proof.Aes.ctr32AArch64With scratch).pre (Proof.Aes.ctr32AArch64With scratch).pub
@@ -70,10 +75,13 @@ structure Ctr32Impl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
-  /-- The registers `callee.code` writes: a caller's tail clears them with
-  its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this
-  to the code. -/
-  clear : Impl.Residue.AArch64.Clear
+  /-- `callee.code` writes, of the registers the calling convention does not
+  preserve, only those `Impl/` states (`callee.clear`): what the cleanup of a
+  function that calls it needs of it (`ScrubAll.scrubSide_union`). -/
+  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
+  /-- The same of `to`, which needs the same `scratch`. -/
+  toScrub : AArch64.ScrubAll.calleeSide to.code to.clear = true
+  toScratch_eq : to.scratch = scratch
   /-- The implementation of `vg_aes_expand_key` that goes with it, which
   needs no more CPU features. -/
   expand : Impl.Aes.AArch64.ExpandKey
@@ -82,6 +90,13 @@ structure Ctr32Impl where
     ∃ t s', Exec isa expand.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s'
   expandCt : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub expand.code
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
+  /-- `expand.code` writes only the registers `Impl/` states
+  (`expand.clear`), as `scrub` is of `callee.code`. -/
+  expandScrub : AArch64.ScrubAll.calleeSide expand.code expand.clear = true
+
+/-- Code without frames uses no stack. -/
+theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
+  induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
 
 namespace Ctr32Impl
 
@@ -98,6 +113,7 @@ def scalar : Ctr32Impl where
   ct := OneBlock.ctr32N_ct
   scratch := 2048
   scratch_ok := .inr rfl
+  scratch_eq := rfl
   okW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact OneBlock.ctr32N_correct
   ctW := by rw [Proof.Aes.ctr32AArch64With_2048]; exact OneBlock.ctr32N_ct
   keepsV := by lit_decide
@@ -110,15 +126,15 @@ def scalar : Ctr32Impl where
   toKeepsV := by lit_decide
   suffix := ""
   features := []
-  clear := ⟨[.x1, .x3, .x4, .x6, .x8, .x9, .x10],
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-     .v26, .v27, .v28, .v29, .v30, .v31],
-    []⟩
+  scrub := by lit_decide
+  toScrub := by lit_decide
+  toScratch_eq := rfl
   expand := .scalar
   expandNoFrames := by lit_decide
   expandOk := expandKey_correct
   expandCt := expandKey_ct
   expandKeepsV := by lit_decide
+  expandScrub := by lit_decide
 
 /-- The implementation with the Cryptographic Extension, `vg_aes_ctr32_aes`. -/
 def aese : Ctr32Impl where
@@ -128,6 +144,7 @@ def aese : Ctr32Impl where
   ct := Aese.ctr32_ct
   scratch := 0
   scratch_ok := .inl rfl
+  scratch_eq := rfl
   okW := Aese.ctr32_correctW 0
   ctW := Aese.ctr32_ctW 0
   keepsV := by lit_decide
@@ -140,15 +157,15 @@ def aese : Ctr32Impl where
   toKeepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]
-  clear := ⟨[.x3, .x4, .x6, .x7, .x9, .x10, .x12, .x13],
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-     .v26, .v27, .v28, .v29, .v30, .v31],
-    []⟩
+  scrub := by lit_decide
+  toScrub := by lit_decide
+  toScratch_eq := rfl
   expand := .aese
   expandNoFrames := by lit_decide
   expandOk := Aese.Key.expandKey_correct
   expandCt := Aese.Key.expandKey_ct
   expandKeepsV := by lit_decide
+  expandScrub := by lit_decide
 
 end Ctr32Impl
 

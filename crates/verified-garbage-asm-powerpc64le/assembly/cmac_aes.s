@@ -5,13 +5,13 @@
 // gives.
 
 vg_cmac_aes_init:
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r6, %r1, 32
 	mflr %r0
-	std %r0, 2200(%r6)
-	std %r14, 2176(%r6)
-	std %r16, 2192(%r6)
-	std %r15, 2184(%r6)
+	std %r0, 88(%r6)
+	std %r14, 64(%r6)
+	std %r16, 80(%r6)
+	std %r15, 72(%r6)
 	or %r14, %r3, %r3
 	or %r15, %r6, %r6
 	rldicl %r16, %r5, 62, 2
@@ -28,14 +28,14 @@ vg_cmac_aes_init:
 	li %r9, 0
 	std %r9, 272(%r14)
 	std %r9, 280(%r14)
-	ld %r0, 2200(%r15)
-	ld %r14, 2176(%r15)
-	ld %r16, 2192(%r15)
-	ld %r15, 2184(%r15)
+	ld %r0, 88(%r15)
+	ld %r14, 64(%r15)
+	ld %r16, 80(%r15)
+	ld %r15, 72(%r15)
 	mtlr %r0
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r0, 0
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -53,57 +53,7 @@ vg_cmac_aes_init:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -128,16 +78,16 @@ vg_cmac_aes_init:
 	blr
 
 vg_cmac_aes_absorb:
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r8, %r1, 32
 	mflr %r0
-	std %r0, 2176(%r8)
-	std %r14, 2184(%r8)
-	std %r15, 2192(%r8)
-	std %r16, 2200(%r8)
-	std %r17, 2208(%r8)
-	std %r18, 2216(%r8)
-	std %r19, 2224(%r8)
+	std %r0, 64(%r8)
+	std %r14, 72(%r8)
+	std %r15, 80(%r8)
+	std %r16, 88(%r8)
+	std %r17, 96(%r8)
+	std %r18, 104(%r8)
+	std %r19, 112(%r8)
 	or %r14, %r3, %r3
 	or %r15, %r4, %r4
 	or %r16, %r6, %r6
@@ -238,17 +188,17 @@ vg_cmac_aes_absorb:
 	b 214f
 213:
 214:
-	ld %r0, 2176(%r19)
-	ld %r14, 2184(%r19)
-	ld %r15, 2192(%r19)
-	ld %r16, 2200(%r19)
-	ld %r17, 2208(%r19)
-	ld %r18, 2216(%r19)
-	ld %r19, 2224(%r19)
+	ld %r0, 64(%r19)
+	ld %r14, 72(%r19)
+	ld %r15, 80(%r19)
+	ld %r16, 88(%r19)
+	ld %r17, 96(%r19)
+	ld %r18, 104(%r19)
+	ld %r19, 112(%r19)
 	mtlr %r0
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r0, 0
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -266,57 +216,7 @@ vg_cmac_aes_absorb:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -340,15 +240,15 @@ vg_cmac_aes_absorb:
 	blr
 
 vg_cmac_aes_finish:
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r7, %r1, 32
 	mflr %r0
 	ld %r9, 272(%r3)
 	std %r9, 0(%r6)
 	ld %r9, 280(%r3)
 	std %r9, 8(%r6)
-	std %r0, 2184(%r7)
-	std %r14, 2176(%r7)
+	std %r0, 72(%r7)
+	std %r14, 64(%r7)
 	or %r14, %r7, %r7
 	or %r8, %r7, %r7
 	or %r7, %r5, %r5
@@ -364,12 +264,12 @@ vg_cmac_aes_finish:
 20:
 21:
 	bl {vg_cmac_aes_finalize}
-	ld %r0, 2184(%r14)
-	ld %r14, 2176(%r14)
+	ld %r0, 72(%r14)
+	ld %r14, 64(%r14)
 	mtlr %r0
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r0, 0
-	stdu %r1, -2336(%r1)
+	stdu %r1, -160(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -387,57 +287,7 @@ vg_cmac_aes_finish:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r1, %r1, 2336
+	addi %r1, %r1, 160
 	li %r5, 0
 	li %r6, 0
 	li %r7, 0

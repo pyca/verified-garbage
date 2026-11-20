@@ -73,4 +73,24 @@ def bodyFrom (secret : Prog isa) (compress : Prog isa) (suffix : String) : Prog 
 def codeExpanded (compress : Prog isa) (suffix : String) : Prog isa :=
   wrap (bodyFrom PublicKey.copyExpanded compress suffix)
 
+/-! ## The function, as emitted -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_ed25519_sign_expanded`'s own instructions write. -/
+def signExpandedOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩
+
+/-- `vg_ed25519_sign_expanded` over an implementation of SHA-512's compression
+function: `codeExpanded`, then its cleanup (`Impl.Residue.AArch64.scrubAll`),
+which clears the registers its own instructions and the compression function
+write that the calling convention does not preserve, and zeroes its 352
+bytes of stack, so that it returns without secret residue. -/
+def signExpanded (c : Sha512.AArch64.Stream.Compress) : Prog isa :=
+  scrubAll 352 0 (signExpandedOwn.union c.clear) (codeExpanded c.code c.suffix)
+
+end Fn
+
 end VG.Impl.Ed25519.AArch64.SignCached

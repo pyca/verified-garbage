@@ -125,9 +125,9 @@ theorem Layout.kernel {base : State} {n count : Nat} (lay : Layout base n count)
   refine ⟨(kernel_source base).2.trans lay.left,?_,by have := lay.bound; have := lay.wrapper.core.size; omega_arith,?_,?_⟩
   · simpa only [kernelBase,Blocks.bulkArgsState,Blocks.wrapperEntryState,Blocks.wrapperConfigState,
       RegUpd.rd_write,RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false] using lay.reads
-  · have hd := lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])
-    have hs : Region.Sub (Blocks.coreWork (kernelBase base)) ⟨base.gpr .r9,2112⟩ := by
-      change Region.Sub ⟨base.gpr .r9+64,2048⟩ ⟨base.gpr .r9,2112⟩
+  · have hd := lay.disjoint ⟨base.gpr .r9,704⟩ (by simp [Blocks.wrapperFullWrites])
+    have hs : Region.Sub (Blocks.coreWork (kernelBase base)) ⟨base.gpr .r9,704⟩ := by
+      change Region.Sub ⟨base.gpr .r9+64,640⟩ ⟨base.gpr .r9,704⟩
       exact Offset.sub_base _ (by decide)
     simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs
   · have hd := lay.disjoint (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
@@ -143,7 +143,7 @@ theorem header_source {base : State} {n count i : Nat} (lay : Layout base n coun
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
-  exact ((lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])).sub_left
+  exact ((lay.disjoint ⟨base.gpr .r9,704⟩ (by simp [Blocks.wrapperFullWrites])).sub_left
     (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))).sub_right
       (Region.sub_prefix (by decide))
 
@@ -232,19 +232,19 @@ theorem saved_core {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layou
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64,88⟩
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
-  · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64+128,1920⟩
+  · change Region.Disjoint ⟨base.gpr .r9+152,16⟩ ⟨base.gpr .r9+64+128,512⟩
     have h : base.gpr .r9+64+128=base.gpr .r9+BitVec.ofNat 64 192 := by
       change base.gpr .r9+BitVec.ofNat 64 64+BitVec.ofNat 64 128=_
       exact Offset.add_add ..
     rw [h]
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
   · exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))).sub_right
         (Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega_using []))
   · exact (lay.wrapper.scratch (Blocks.coreCounter (Blocks.wrapperView base)) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))
   · exact (lay.wrapper.scratch (Blocks.coreY (Blocks.wrapperView base)) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
+      (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))
 
 
 theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
@@ -463,7 +463,7 @@ theorem copy_saved {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : L
   subst r
   rw [hs.ptr]
   exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
-    (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
+    (Offset.sub_base _ (d := 152) (n := 16) (k := 704) (by decide))).sub_right
       (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega_using [this]))
 
 
@@ -551,9 +551,9 @@ theorem slot_read {base s : State} {n count : Nat} (lay : Layout base n count)
     ∀ p ∈ extraSaved, InRegions (s.rd++s.wr) (s.gpr .r31+BitVec.ofNat 64 p.2) 8 := by
   intro p hp
   rw [hrd,hwr,hwork]
-  have ho : ∀ p ∈ extraSaved, 64≤p.2 ∧ p.2+8≤2112 := by decide
+  have ho : ∀ p ∈ extraSaved, 64≤p.2 ∧ p.2+8≤704 := by decide
   exact Covers.right lay.wrapper.core.writes _ _ ⟨Blocks.coreWork (Blocks.wrapperView base),by simp,
-    Offset.contains _ (d := p.2) (n := 8) (e := 64) (k := 2048) (ho p hp).1 (ho p hp).2 (by decide)⟩
+    Offset.contains _ (d := p.2) (n := 8) (e := 64) (k := 640) (ho p hp).1 (ho p hp).2 (by decide)⟩
 
 
 theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.GhashLaw] (dec : Bool)

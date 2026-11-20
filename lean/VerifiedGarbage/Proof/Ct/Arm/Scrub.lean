@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ct.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ct.Arm
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Constant-time comparison on ARMv7, without secret residue
 
-`vg_ct_eq` saves `r4` in a frame, so it is registered with the stack its
-contract reserves zeroed on return (`Arm.Scrub.scrubRegF`). Its proof is
-with the 4 bytes of that frame, which is no frame size of the model
-(`FrameOk`), so it is registered with 8 (`Arm.Scrub.Verified.stack_le`). Its
+`vg_ct_eq` saves `r4` in a frame, so its cleanup zeroes the stack its
+contract reserves on return (`Impl.Ct.Arm.Fn.eq`, `Arm.Scrub.scrubF`), and
+`Fn.eq` below states that it returns without secret residue
+(`Arm.Scrub.verifiedScrubbedF`). Its proof is with the 4 bytes of that
+frame, which is no frame size of the model (`FrameOk`), so its contract
+reserves 8 (`Arm.Scrub.Verified.stack_le`). Its
 postcondition reads no memory on return (`Arm.Scrub.PostOut`): it writes
 none, as on the other targets (`Proof/Ct/RISCV64Scrub.lean`).
 -/
@@ -48,9 +48,17 @@ theorem eq_noIcallArm : noIcall Impl.Ct.Arm.eq = true := by lit_decide
 
 theorem eq_armStackArm : armStack Impl.Ct.Arm.eq ≤ 8 := by lit_decide
 
-/-- `Spec.Ct.eqApi`, with its stack wiped on return. -/
-def eqRegArm : Registration Spec.Ct.eqApi target :=
-  scrubRegF { code := Impl.Ct.Arm.eq, verified := verified8 }
-    eq_armStackArm eq_noIcallArm (by decide) eqOutArm rfl
+theorem eq_codeOkArm : CodeOk Impl.Ct.Arm.eq 8 := ⟨eq_armStackArm, eq_noIcallArm⟩
 
 end VG.Proof.Ct.Arm.Scrub
+
+namespace VG.Proof.Ct.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_ct_eq`. -/
+theorem eq : VerifiedScrubbed target Impl.Ct.Arm.Fn.eq (Spec.Ct.eqContract abi 8) 32 :=
+  verifiedScrubbedF (api := Spec.Ct.eqApi) { code := Impl.Ct.Arm.eq, verified := Scrub.verified8 }
+    Scrub.eqOutArm (scrubSideF_of Scrub.eq_codeOkArm (by decide) _)
+
+end VG.Proof.Ct.Arm.Fn

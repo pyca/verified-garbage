@@ -91,7 +91,7 @@ pub unsafe fn vg_sha512_256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
@@ -114,7 +114,7 @@ pub unsafe fn vg_sha512_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
@@ -137,7 +137,7 @@ pub unsafe fn vg_sha512_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
@@ -160,7 +160,7 @@ pub unsafe fn vg_sha384_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
@@ -183,7 +183,7 @@ pub unsafe fn vg_sha512_256_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sha512_224_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {

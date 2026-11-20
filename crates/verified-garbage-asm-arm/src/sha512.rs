@@ -298,16 +298,16 @@ bx lr",
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #12]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
-ldr lr, [sp, #1396]
+ldr lr, [sp, #292]
 str lr, [r12, #4]
 add lr, sp, #16
 str lr, [r12, #8]
@@ -433,11 +433,11 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
-sub sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #43
+mov r3, #9
 223:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -450,11 +450,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 223b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #1392
+add sp, sp, #288
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -479,14 +475,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -612,11 +608,11 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
-sub sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #43
+mov r3, #9
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -629,11 +625,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #1392
+add sp, sp, #288
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -658,14 +650,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -779,11 +771,11 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
-sub sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #43
+mov r3, #9
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -796,11 +788,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #1392
+add sp, sp, #288
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -825,14 +813,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -934,11 +922,11 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
-sub sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #43
+mov r3, #9
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -951,11 +939,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #1392
+add sp, sp, #288
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -980,14 +964,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -1086,11 +1070,11 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
-sub sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #43
+mov r3, #9
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -1103,11 +1087,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #1392
+add sp, sp, #288
 mov r0, #0
 mov r1, #0
 mov r2, #0

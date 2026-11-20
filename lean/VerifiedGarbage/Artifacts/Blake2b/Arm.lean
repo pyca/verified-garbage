@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
-public import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+public import VerifiedGarbage.Proof.Blake2.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,14 +11,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Blake2b.Arm
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initBApi.artifact Arm.target {
-    code := Impl.Blake2.Arm.Stream.init Spec.Blake2.b
-    verified := .unscrubbed Proof.Blake2.ArmB.initB_verified },
-  Spec.Blake2.updateBApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    verified := .unscrubbed Proof.Blake2.ArmB.updateB_framed },
-  Spec.Blake2.finalizeBApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    verified := .unscrubbed Proof.Blake2.ArmB.finalizeB_framed }]
+  Spec.Blake2.initBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.initBReg,
+  Spec.Blake2.updateBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.updateBReg,
+  Spec.Blake2.finalizeBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.finalizeBReg]
 
 end VG.Artifacts.Blake2b.Arm

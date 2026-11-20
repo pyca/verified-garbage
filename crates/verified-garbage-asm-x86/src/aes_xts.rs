@@ -10,6 +10,8 @@ pub const VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -42,7 +44,7 @@ call {vg_aes_xts_encrypt_aesni}
 jmp 21f
 20:
 21:
-.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
+.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAGYP78C5AAAAAI1kJMzzD38EJPMPf0QkEPMPf0QkIIlMJDCNZCQ0uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
     )
@@ -54,6 +56,8 @@ pub const VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES: verified_garbage_cpu::Features
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -92,7 +96,7 @@ jmp 21f
 call {vg_aes_xts_decrypt_aesni}
 .base64 "WFhYWFhY"
 21:
-.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
+.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAGYP78C5AAAAAI1kJMzzD38EJPMPf0QkEPMPf0QkIIlMJDCNZCQ0uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni::vg_aes_xts_encrypt_aesni,
         vg_aes_xts_decrypt_aesni = sym super::aes_xts::vg_aes_xts_decrypt_aesni::vg_aes_xts_decrypt_aesni,
@@ -102,6 +106,8 @@ call {vg_aes_xts_decrypt_aesni}
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -134,7 +140,7 @@ call {vg_aes_xts_encrypt}
 jmp 21f
 20:
 21:
-.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
+.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAGYP78C5AAAAAI1kJMzzD38EJPMPf0QkEPMPf0QkIIlMJDCNZCQ0uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
     )
@@ -143,6 +149,8 @@ jmp 21f
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -180,7 +188,7 @@ jmp 21f
 call {vg_aes_xts_decrypt}
 .base64 "WFhYWFhY"
 21:
-.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAMM="
+.base64 "i0QkHIuYoAgAAIuwpAgAAIu4qAgAAIuorAgAAGYP78C5AAAAAI1kJMzzD38EJPMPf0QkEPMPf0QkIIlMJDCNZCQ0uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt::vg_aes_xts_decrypt,

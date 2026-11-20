@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -400,18 +401,9 @@ end VG.Arm
 
 namespace VG.Arm.Scrub
 
-/-- Zero what of the result `r1 ++ r0` is above its `rb` bits. -/
-def retFix (rb : Nat) : List Instr :=
-  if rb = 0 then [.mov .r0 (.imm 0), .mov .r1 (.imm 0)]
-  else if rb ≤ 32 then [.mov .r1 (.imm 0)] else []
-
-/-- Set the registers a callee may change, but the result, and the flags to
-constants. -/
-def tail (rb : Nat) : List Instr :=
-  retFix rb ++ [.mov .r2 (.imm 0), .mov .r3 (.imm 0), .mov .r12 (.imm 0), .cmp .r2 (.reg .r2)]
-
-/-- `c`, then `tail rb`. -/
-def scrub (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (tail rb))
+/-! The cleanup is code (`Impl/Residue/Arm.lean`); its names are also this
+namespace's, as they were before it moved there. -/
+export VG.Impl.Residue.Arm (retFix tail scrub wipeChunk wipeLoop wipeBody wipeBelow scrubF)
 
 /-- A result on ARM is of 0, 32 or 64 bits. -/
 theorem retBits_cases (sig : Sig) : sig.retBits 32 = 0 ∨ sig.retBits 32 = 32 ∨ sig.retBits 32 = 64 := by
@@ -789,29 +781,6 @@ theorem postOut_of_local {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 /-- A frame size the model accepts. -/
 abbrev FrameOk (n : Nat) : Prop :=
   0 < n ∧ n < 4096 ∧ n % 8 = 0 ∧ encodable (BitVec.ofNat 32 n) = true
-
-/-- One pass of the looped wipe: the 8 words at `r12` zeroed, `r12` past
-them, and `r3`, the passes left, one fewer, which the flags then say is zero
-or not. -/
-def wipeChunk : List Instr :=
-  wipeStores 8 ++ [.dp .add .r12 .r12 (.imm 32), .subs .r3 .r3 (.imm 1)]
-
-/-- The `n` bytes at the stack pointer zeroed by a loop: `n / 32` passes of
-`wipeChunk`, then a store for each word of what is left. -/
-def wipeLoop (n : Nat) : Prog isa :=
-  .seq (.block [.addSp .r12 0, .mov .r2 (.imm 0), .mov .r3 (.imm (BitVec.ofNat 32 (n / 32)))])
-    (.seq (.loop (.block wipeChunk) .ne) (.block (wipeStores (n % 32 / 4))))
-
-/-- The `n` bytes at the stack pointer zeroed: by a loop from 64 bytes, from
-where it is the shorter code, and below by a store for each word. -/
-def wipeBody (n : Nat) : Prog isa :=
-  if 64 ≤ n then wipeLoop n else .block (wipe (n / 4))
-
-/-- Zero the `n` bytes below the stack pointer, in a frame of them. -/
-def wipeBelow (n : Nat) : Prog isa := .frame (.alloc n) (wipeBody n) (.free n)
-
-/-- `c`, then the `n` bytes below the stack pointer zeroed, then `tail rb`. -/
-def scrubF (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
 
 /-- The trace of `wipeStores words` from a state whose `r12` is `p`. -/
 def wipeTr (p : BitVec 32) (words : Nat) : List Leak :=

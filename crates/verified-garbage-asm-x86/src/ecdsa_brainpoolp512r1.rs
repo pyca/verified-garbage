@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -774,7 +776,7 @@ call {vg_brainpoolp512r1_mul_mod_p}
 call {vg_brainpoolp512r1_mul_mod_n}
 .base64 "WFhYWLgACgAAucAJAAC6QAoAAFBRUlc="
 call {vg_brainpoolp512r1_sub_mod_n}
-.base64 "WFhYWIuXQAQAAAuXRAQAAAuXSAQAAAuXTAQAAAuXUAQAAAuXVAQAAAuXWAQAAAuXXAQAAAuXYAQAAAuXZAQAAAuXaAQAAAuXbAQAAAuXcAQAAAuXdAQAAAuXeAQAAAuXfAQAALkAAAAAKdEZ0ouHQAsAACHQiYdACwAAi5dACgAAC5dECgAAC5dICgAAC5dMCgAAC5dQCgAAC5dUCgAAC5dYCgAAC5dcCgAAC5dgCgAAC5dkCgAAC5doCgAAC5dsCgAAC5dwCgAAC5d0CgAAC5d4CgAAC5d8CgAAuQAAAAAp0RnSg/L/i4dACwAAIdCJh0ALAACLj0ALAACJyIPgAYn6ixqLcgSLagyLegiNZCRsww=="
+.base64 "WFhYWIuXQAQAAAuXRAQAAAuXSAQAAAuXTAQAAAuXUAQAAAuXVAQAAAuXWAQAAAuXXAQAAAuXYAQAAAuXZAQAAAuXaAQAAAuXbAQAAAuXcAQAAAuXdAQAAAuXeAQAAAuXfAQAALkAAAAAKdEZ0ouHQAsAACHQiYdACwAAi5dACgAAC5dECgAAC5dICgAAC5dMCgAAC5dQCgAAC5dUCgAAC5dYCgAAC5dcCgAAC5dgCgAAC5dkCgAAC5doCgAAC5dsCgAAC5dwCgAAC5d0CgAAC5d4CgAAC5d8CgAAuQAAAAAp0RnSg/L/i4dACwAAIdCJh0ALAACLj0ALAACJyIPgAYn6ixqLcgSLagyLegiNZCRsZg/vwI1kJIDzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcI2kJIAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_brainpoolp512r1_mul_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
         vg_brainpoolp512r1_add_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_mod_p::vg_brainpoolp512r1_add_mod_p,
@@ -788,6 +790,8 @@ call {vg_brainpoolp512r1_sub_mod_n}
 /// Deterministic ECDSA signature generation over brainpoolP512r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (64 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (64 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -851,7 +855,7 @@ jne 210b
 .base64 "i7wkFAIAAIPHAIu0JJQAAAC4AAAAAInig8JAi4wkkAAAAIusJBQCAACBxYABAACLnCQYAgAAi1sEVVFSUFZX/9NYWFhYWFiLlCQUAgAAg8IAi7QkFAIAAIHGwAAAAIuEJJQAAAADhCSQAAAAg8AAuQAAAACJ54PHQIusJBQCAACBxYABAACLnCQYAgAAi1sIVVdRUFZS/9NYWFhYWFi6AQAAAIXS"
 29:
 jne 24b
-.base64 "uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAi5wkgAAAAIu0JIQAAACLvCSIAAAAi6wkjAAAAI2kJAACAADD"
+.base64 "uQAAAACJDCSJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiJTCQciUwkIIlMJCSJTCQoiUwkLIlMJDCJTCQ0iUwkOIlMJDyJTCRAiUwkRIlMJEiJTCRMiUwkUIlMJFSJTCRYiUwkXIlMJGCJTCRkiUwkaIlMJGyJTCRwiUwkdIlMJHiJTCR8iYwkmAAAAImMJJwAAACJjCSgAAAAiYwkpAAAAImMJKgAAACJjCSsAAAAiYwksAAAAImMJLQAAACJjCS4AAAAiYwkvAAAAImMJMAAAACJjCTEAAAAiYwkyAAAAImMJMwAAACJjCTQAAAAiYwk1AAAAImMJNgAAACJjCTcAAAAiYwk4AAAAImMJOQAAACJjCToAAAAiYwk7AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAImMJPwAAACJjCQAAQAAiYwkBAEAAImMJAgBAACJjCQMAQAAiYwkEAEAAImMJBQBAACJjCQYAQAAiYwkHAEAAImMJCABAACJjCQkAQAAiYwkKAEAAImMJCwBAACJjCQwAQAAiYwkNAEAAImMJDgBAACJjCQ8AQAAiYwkQAEAAImMJEQBAACJjCRIAQAAiYwkTAEAAImMJFABAACJjCRUAQAAiYwkWAEAAImMJFwBAACJjCRgAQAAiYwkZAEAAImMJGgBAACJjCRsAQAAiYwkcAEAAImMJHQBAACJjCR4AQAAiYwkfAEAAImMJIABAACJjCSEAQAAiYwkiAEAAImMJIwBAACJjCSQAQAAiYwklAEAAImMJJgBAACJjCScAQAAiYwkoAEAAImMJKQBAACJjCSoAQAAiYwkrAEAAImMJLABAACJjCS0AQAAiYwkuAEAAImMJLwBAACJjCTAAQAAiYwkxAEAAImMJMgBAACJjCTMAQAAiYwk0AEAAImMJNQBAACJjCTYAQAAiYwk3AEAAImMJOABAACJjCTkAQAAiYwk6AEAAImMJOwBAACJjCTwAQAAiYwk9AEAAImMJPgBAACJjCT8AQAAi5wkgAAAAIu0JIQAAACLvCSIAAAAi6wkjAAAAI2kJAACAABmD+/AuQAAAACNpCS0/f//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAACJjCRAAgAAiYwkRAIAAImMJEgCAACNpCRMAgAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_ecdsa_brainpoolp512r1_sign_k = sym super::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign_k::vg_ecdsa_brainpoolp512r1_sign_k,
     )

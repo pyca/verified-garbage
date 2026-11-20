@@ -121,8 +121,14 @@ instructions in an ISA model) go in their own PR before either.
    lemma joins the two (`AArch64.ScrubAll.scrubSide_union`): never a proof
    over the list of variants, which evaluates every variant's code again
    for every caller, and never `variants.attach` in a registration file.
-   On x86 (32-bit), whose tail clears every register a callee may change,
-   the variant states only `calleeOk` of each code it gives (no MMX, no
+   On x86 (32-bit) the cleanup is `Impl.Scrub.X86.scrub rb c` (code that
+   calls nothing) or `scrubF rb W c` (frames, calls, table calls), with the
+   result's bits and the stack as literals in the function's `Fn`
+   definition, and the theorem comes from `X86.Scrub.verifiedScrubbed` or
+   `verifiedScrubbedF` (`Proof/Framework/X86/ScrubFn.lean`;
+   `Impl.Sha3.X86.Fn`, `Proof/Sha3/X86/Scrub.lean`, `Artifacts/Sha3/X86.lean`).
+   Its tail clears every register a callee may change, so for code generic
+   over a variant the variant states only `calleeOk` of each code it gives (no MMX, no
    indirect call: `Ctr32Impl.scrub`, by `lit_decide`) besides its stack;
    the function's code with a stub of the variant (code `.block []`) is
    evaluated once (`scrubFSide … = true`, `lit_decide`), `fill_calls`
@@ -133,6 +139,27 @@ instructions in an ISA model) go in their own PR before either.
    On AArch64 the cleanup is `Impl.Residue.AArch64.scrubAll` and the
    theorem comes from `AArch64.ScrubAll.verifiedScrubbed`
    (`Proof/Framework/AArch64/ScrubProved.lean`).
+   On ARM the cleanup is `Impl.Residue.Arm.scrub rb c` for code without
+   frames (`Code.noFrames`: it writes memory only in its buffers) and
+   `Impl.Residue.Arm.scrubF rb n c` for code with frames, which first
+   zeroes the `n` bytes of stack its contract reserves; both set the
+   registers a callee may change, but the result's `rb` bits, and the flags
+   to constants, whatever the code writes. The theorem comes from
+   `Arm.Scrub.verifiedScrubbed` (side condition `Code.noFrames`) or
+   `Arm.Scrub.verifiedScrubbedF` (`scrubSideF c n ts`, which
+   `scrubSideF_of` gives from `CodeOk c n` and `FrameOk n`), which also needs
+   that the postcondition reads the memory on return only within the
+   buffers (`Arm.Scrub.PostOut`, by `postOut_of_local`)
+   (`Proof/Framework/Arm/ScrubProved.lean`; `Fn` in
+   `Impl/Sm3/Arm/Stream.lean`, `Proof/Sm3/Arm/Scrub.lean`,
+   `Artifacts/Sm3/Arm.lean`). `n` is a frame of the model, a multiple of 8
+   bytes (`FrameOk`), so code proven with another number is first proven
+   with the next one (`Arm.Scrub.Verified.stack_le`, as
+   `Proof/Ct/Arm/Scrub.lean` does). For code generic over a variant, each
+   variant proves `CodeOk` of its own code where it is defined (by
+   `lit_decide`), the function proves its own shape once for any variant
+   (`CodeOk.call`, `CodeOk.seq`, `CodeOk.alloc`, …), and `scrubSideF_of`
+   joins them.
    On a target whose `Proof/Framework/` does not yet state its scrub as a
    theorem about named code, build the registration in `Proof/` with that
    target's form and let the registration file bind it by name, never
@@ -140,16 +167,7 @@ instructions in an ISA model) go in their own PR before either.
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
    hold secrets and which gives that proof; the registration file binds the
-   result. On ARM, a function without frames (`Code.noFrames`: it writes
-   memory only in its buffers) is scrubbed with `Arm.Scrub.scrubReg`
-   (`Proof/Framework/Arm/Scrub.lean`), which sets the registers a callee may
-   change, but the result, and the flags to constants; one with frames
-   with `Arm.Scrub.scrubRegF`, which first zeroes the stack its contract
-   reserves, given that its postcondition reads the memory on return only
-   within its buffers (`Arm.Scrub.PostOut`, by `postOut_of_local`); that stack
-   is a frame of the model, a multiple of 8 bytes (`FrameOk`), so code proven
-   with another number is registered with the next one
-   (`Arm.Scrub.Verified.stack_le`, as `Proof/MlDsa/Arm/Scrub.lean` does).
+   result.
    Only functions `ci/residue_allowlist.txt` already lists may go
    without (`verified := .unscrubbed h`, of an `h : Verified …`): the list
    only shrinks (`ci/check_residue_allowlist.py`), and the

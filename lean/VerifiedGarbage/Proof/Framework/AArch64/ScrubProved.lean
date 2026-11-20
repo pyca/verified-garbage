@@ -277,6 +277,21 @@ theorem scrubSide_union0 {c : Prog isa} {rb : Nat} {own cl : Clear}
     rw [List.contains_iff_mem.mpr (keptG_union_left (List.contains_iff_mem.mp hm))] at h1
     exact absurd h1 (by decide)
 
+/-- The link registers that `a` has, `a` with more has: the last premise of
+`scrubSide_union` and `scrubSide_union0` for a function whose own registers
+are themselves a union (it calls two implementations). -/
+theorem linkRegs_union {a b : Clear} (h : (linkRegs.all fun q => !(keptG a).contains q) = true) :
+    (linkRegs.all fun q => !(keptG (a.union b)).contains q) = true := by
+  rw [List.all_eq_true] at h ⊢
+  intro q hq
+  have h1 := h q hq
+  rw [Bool.not_eq_true'] at h1 ⊢
+  cases hm : (keptG (a.union b)).contains q with
+  | false => rfl
+  | true =>
+    rw [List.contains_iff_mem.mpr (keptG_union_left (List.contains_iff_mem.mp hm))] at h1
+    exact absurd h1 (by decide)
+
 /-- `r`'s code with its cleanup (`scrubAll`, over its whole stack, the
 registers `cl` cleared) meets `r`'s contract in constant time and returns
 without secret residue: what `scrubAllOf` registers, as the theorem about

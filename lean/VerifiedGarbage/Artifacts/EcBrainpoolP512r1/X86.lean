@@ -57,8 +57,14 @@ namespace VG.Artifacts.EcBrainpoolP512r1.X86
 open VG.Proof.BrainpoolP512r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact X86.target (Proof.EcKey.X86.BrainpoolP512r1.Scrub.publicKeyReg hasLaw.law),
-  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact X86.target Proof.EcKey.X86.BrainpoolP512r1.Scrub.compressReg,
-  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.BrainpoolP512r1.Scrub.decompressReg hasLaw.law)]
+  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.publicKeyBrainpoolP512r1
+    verified := .scrubbed (Proof.EcKey.X86.BrainpoolP512r1.Scrub.publicKey_scrubbed hasLaw.law) },
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.compressBrainpoolP512r1
+    verified := .scrubbed Proof.EcKey.X86.BrainpoolP512r1.Scrub.compress_scrubbed },
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.decompressBrainpoolP512r1
+    verified := .scrubbed (Proof.EcKey.X86.BrainpoolP512r1.Scrub.decompress_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcBrainpoolP512r1.X86

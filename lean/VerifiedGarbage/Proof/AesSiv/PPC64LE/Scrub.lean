@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_aes_siv_init`, `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, each
 followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
 clears the volatile registers they may write and the whole frame
-(`withStackScratch`: 2592 bytes for `init`, 2608 for the others) that holds
+(`withStackScratch`: 144 bytes for `init`, 480 for the others) that holds
 their working space, the key schedules and their callees' working space
 among it, which they do not wipe themselves. Their postconditions read the
 memory on return only within the context, the data and `siv`, as on
@@ -70,9 +70,9 @@ theorem decryptOut (stack : Nat) :
 /-- `Spec.Siv.initApi`. -/
 def initReg : Registration Spec.Siv.initApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 Impl.AesSiv.PPC64LE.init
+      code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r6 Impl.AesSiv.PPC64LE.init
       verified := Proof.AesSiv.PPC64LE.init_framed }
-    2592 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v19]⟩
     (initOut _)
     (by dsimp only; lit_decide)
@@ -80,9 +80,9 @@ def initReg : Registration Spec.Siv.initApi PPC64LE.target :=
 /-- `Spec.Siv.encryptApi`. -/
 def encryptReg : Registration Spec.Siv.encryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.encrypt
+      code := Impl.StackScratch.PPC64LE.withStackScratch 480 .r10 Impl.AesSiv.PPC64LE.encrypt
       verified := Proof.AesSiv.encrypt_keyed Proof.AesSiv.PPC64LE.encrypt_framed }
-    2608 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    480 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (encryptOut _)
     (by dsimp only; lit_decide)
@@ -90,9 +90,9 @@ def encryptReg : Registration Spec.Siv.encryptApi PPC64LE.target :=
 /-- `Spec.Siv.decryptApi`. -/
 def decryptReg : Registration Spec.Siv.decryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10 Impl.AesSiv.PPC64LE.decrypt
+      code := Impl.StackScratch.PPC64LE.withStackScratch 480 .r10 Impl.AesSiv.PPC64LE.decrypt
       verified := Proof.AesSiv.decrypt_keyed Proof.AesSiv.PPC64LE.decrypt_framed }
-    2608 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    480 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (decryptOut _)
     (by dsimp only; lit_decide)

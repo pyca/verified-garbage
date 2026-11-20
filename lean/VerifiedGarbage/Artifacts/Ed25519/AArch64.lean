@@ -45,11 +45,10 @@ namespace VG.Artifacts.Ed25519.AArch64.SignExpanded
 
 def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
   [
-  Spec.Ed25519.signExpandedApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ed25519.signExpandedApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
-    verified := Proof.Ed25519.AArch64.SignCached.signExpanded_verified v }
-    Proof.Ed25519.AArch64.Scrub.signExpandedOk)]
+    code := Impl.Ed25519.AArch64.SignCached.Fn.signExpanded v.impl
+    verified := .scrubbed (Proof.Ed25519.AArch64.SignCached.signExpanded_scrubbed v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
@@ -61,11 +60,10 @@ namespace VG.Artifacts.Ed25519.AArch64.VerifyMessage
 
 def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
   [
-    Spec.Ed25519.verifyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Ed25519.verifyApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
-      verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v }
-      Proof.Ed25519.AArch64.Scrub.verifyOk)]
+      code := Impl.Ed25519.AArch64.VerifyMessage.Fn.verify v.impl
+      verified := .scrubbed (Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_scrubbed v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v

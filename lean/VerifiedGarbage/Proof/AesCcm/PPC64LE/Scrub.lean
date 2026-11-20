@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_aes_ccm_seal` and `vg_aes_ccm_open`, each followed by
 `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
-volatile registers they may write and the whole 2688-byte frame
+volatile registers they may write and the whole 576-byte frame
 (`withStackScratchArgs`) that holds their working space, the key schedule
 and their callees' working space among it, which they do not wipe
 themselves. Their postconditions read the memory on return only within the
@@ -66,9 +66,9 @@ theorem openOut (stack : Nat) :
 /-- `Spec.Ccm.sealApi`. -/
 def sealReg : Registration Spec.Ccm.sealApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«seal»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«seal»
       verified := Proof.AesCcm.seal_keyed seal_framed }
-    2688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (sealOut _)
     (by dsimp only; lit_decide)
@@ -76,9 +76,9 @@ def sealReg : Registration Spec.Ccm.sealApi PPC64LE.target :=
 /-- `Spec.Ccm.openApi`. -/
 def openReg : Registration Spec.Ccm.openApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«open»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«open»
       verified := Proof.AesCcm.open_keyed open_framed }
-    2688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v19]⟩
     (openOut _)
     (by dsimp only; lit_decide)

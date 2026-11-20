@@ -27,8 +27,8 @@ in both lanes). Two groups of registers take the odd and the even entries,
 so that the loads of one overlap the masks of the other, and are combined by
 `orr` (`selPass`). Each group accumulates at most four pairs: an entry's
 `n` pairs in one pass over the table if `n ≤ 4`, else `x`'s and then `y`'s
-`n / 2` in two for even `n`, else three at a time (`n` a multiple of 3),
-stored at `E.x`, which `E.y` continues. The entry's `Z` is `1`
+`n / 2` in two for even `n`, else three at a time and the one or two pairs
+left (odd `n`), stored at `E.x`, which `E.y` continues. The entry's `Z` is `1`
 (Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
@@ -173,14 +173,18 @@ def selZ : List Instr :=
   .subs .x .x4 .x2 .x5 :: (List.range K.M.n).flatMap fun i =>
     const64 .x6 (wordOf K.one i) ++ [.csel .x .x6 .x6 .x7, st .x6 (K.E.z + 8 * i)]
 
-/-- The pairs of an entry of an odd number `n` of words (`n` a multiple of
-3): `n / 3` passes of three pairs each, from byte `48 i`, under the mask of
-a zero magnitude set to those of `(0, R)` (`R` from word `n`), and stored at
-`E.x + 48 i`, which `E.y = E.x + 8 n` continues. -/
+/-- Pass `i` over `c ≤ 3` pairs of an entry: from byte `48 i`, under the mask
+of a zero magnitude set to those of `(0, R)` (`R` from word `n`), and stored
+at `E.x + 48 i`, which `E.y = E.x + 8 n` continues. -/
+def selPart (c i : Nat) : List Instr :=
+  K.selPass (48 * i) c ++ selOne ((K.one <<< (64 * K.M.n)) >>> (384 * i)) c 0 c ++
+    selStore c 0 c (K.E.x + 48 * i)
+
+/-- The pairs of an entry of an odd number `n` of words: `n / 3` passes of
+three pairs each (`selPart`), then one of the `n mod 3` pairs left, if any. -/
 def selThirds : List Instr :=
-  (List.range (K.M.n / 3)).flatMap fun i =>
-    K.selPass (48 * i) 3 ++ selOne ((K.one <<< (64 * K.M.n)) >>> (384 * i)) 3 0 3 ++
-    selStore 3 0 3 (K.E.x + 48 * i)
+  (List.range (K.M.n / 3)).flatMap (K.selPart 3) ++
+    if K.M.n % 3 = 0 then [] else K.selPart (K.M.n % 3) (K.M.n / 3)
 
 /-- The entry of table `x19` for the magnitude in `x2` into `E`: the table's
 address into `x16`, the broadcasts, then the entry's pairs selected (if

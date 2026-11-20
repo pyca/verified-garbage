@@ -43,9 +43,9 @@ b 23f
 23:
 .base64 "AAA5KA=="
 beq %cr0, 211f
-.base64 "eOujf3jjhH9422V/ePPGf3jLJ39AAB85"
+.base64 "eOujf3jjhH9422V/ePPGf3jLJ38="
 bl {vg_aes_ctr32}
-.base64 "8AB9OHjTRH9488V/eMsmf0AA/zg="
+.base64 "8AB9OHjTRH9488V/eMsmfw=="
 bl {vg_ghash}
 b 212f
 211:

@@ -10,6 +10,8 @@ pub const VG_AES_OCB_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -27,7 +29,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: u
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "WFhYWIHtAAIAAIuVsAAAALgAAAAAiYLwAAAAiYL0AAAAiYL4AAAAiYL8AAAAidCLjbwAAADB6QKDwQaBwvAAAAC7AQAAAIHFAAIAAFVTUlFQ"
 call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAww=="
+.base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAZg/vwLkAAAAAjaQk1PX///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAA8w9/hCSgBgAA8w9/hCSwBgAA8w9/hCTABgAA8w9/hCTQBgAA8w9/hCTgBgAA8w9/hCTwBgAA8w9/hCQABwAA8w9/hCQQBwAA8w9/hCQgBwAA8w9/hCQwBwAA8w9/hCRABwAA8w9/hCRQBwAA8w9/hCRgBwAA8w9/hCRwBwAA8w9/hCSABwAA8w9/hCSQBwAA8w9/hCSgBwAA8w9/hCSwBwAA8w9/hCTABwAA8w9/hCTQBwAA8w9/hCTgBwAA8w9/hCTwBwAA8w9/hCQACAAA8w9/hCQQCAAA8w9/hCQgCAAA8w9/hCQwCAAA8w9/hCRACAAA8w9/hCRQCAAA8w9/hCRgCAAA8w9/hCRwCAAA8w9/hCSACAAA8w9/hCSQCAAA8w9/hCSgCAAA8w9/hCSwCAAA8w9/hCTACAAA8w9/hCTQCAAA8w9/hCTgCAAA8w9/hCTwCAAA8w9/hCQACQAA8w9/hCQQCQAA8w9/hCQgCQAA8w9/hCQwCQAA8w9/hCRACQAA8w9/hCRQCQAA8w9/hCRgCQAA8w9/hCRwCQAA8w9/hCSACQAA8w9/hCSQCQAA8w9/hCSgCQAA8w9/hCSwCQAA8w9/hCTACQAA8w9/hCTQCQAA8w9/hCTgCQAA8w9/hCTwCQAA8w9/hCQACgAA8w9/hCQQCgAAiYwkIAoAAImMJCQKAACJjCQoCgAAjaQkLAoAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
@@ -40,6 +42,8 @@ pub const VG_AES_OCB_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -283,7 +287,7 @@ call {vg_aes_encrypt_blocks_aesni}
 274:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 274b
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJLj1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAImMJEAKAACJjCRECgAAjaQkSAoAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
@@ -295,6 +299,8 @@ pub const VG_AES_OCB_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verif
 /// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -559,7 +565,7 @@ jne 281b
 jmp 280f
 279:
 280:
-.base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJLj1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAImMJEAKAACJjCRECgAAjaQkSAoAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
@@ -569,6 +575,8 @@ jmp 280f
 /// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -586,7 +594,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
 call {vg_aes_expand_key_scratch}
 .base64 "WFhYWIHtAAIAAIuVsAAAALgAAAAAiYLwAAAAiYL0AAAAiYL4AAAAiYL8AAAAidCLjbwAAADB6QKDwQaBwvAAAAC7AQAAAIHFAAIAAFVTUlFQ"
 call {vg_aes_encrypt_blocks}
-.base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAww=="
+.base64 "WFhYWFiB7QACAACLnYAAAACLtYQAAACLvYgAAACLrYwAAACNpCQUCgAAZg/vwLkAAAAAjaQk1PX///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAA8w9/hCSgBgAA8w9/hCSwBgAA8w9/hCTABgAA8w9/hCTQBgAA8w9/hCTgBgAA8w9/hCTwBgAA8w9/hCQABwAA8w9/hCQQBwAA8w9/hCQgBwAA8w9/hCQwBwAA8w9/hCRABwAA8w9/hCRQBwAA8w9/hCRgBwAA8w9/hCRwBwAA8w9/hCSABwAA8w9/hCSQBwAA8w9/hCSgBwAA8w9/hCSwBwAA8w9/hCTABwAA8w9/hCTQBwAA8w9/hCTgBwAA8w9/hCTwBwAA8w9/hCQACAAA8w9/hCQQCAAA8w9/hCQgCAAA8w9/hCQwCAAA8w9/hCRACAAA8w9/hCRQCAAA8w9/hCRgCAAA8w9/hCRwCAAA8w9/hCSACAAA8w9/hCSQCAAA8w9/hCSgCAAA8w9/hCSwCAAA8w9/hCTACAAA8w9/hCTQCAAA8w9/hCTgCAAA8w9/hCTwCAAA8w9/hCQACQAA8w9/hCQQCQAA8w9/hCQgCQAA8w9/hCQwCQAA8w9/hCRACQAA8w9/hCRQCQAA8w9/hCRgCQAA8w9/hCRwCQAA8w9/hCSACQAA8w9/hCSQCQAA8w9/hCSgCQAA8w9/hCSwCQAA8w9/hCTACQAA8w9/hCTQCQAA8w9/hCTgCQAA8w9/hCTwCQAA8w9/hCQACgAA8w9/hCQQCgAAiYwkIAoAAImMJCQKAACJjCQoCgAAjaQkLAoAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
@@ -596,6 +604,8 @@ call {vg_aes_encrypt_blocks}
 /// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -838,7 +848,7 @@ call {vg_aes_encrypt_blocks}
 274:
 .base64 "D7YHiAKDxwGDwgGD6QE="
 jne 274b
-.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJLj1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAImMJEAKAACJjCRECgAAjaQkSAoAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -847,6 +857,8 @@ jne 274b
 /// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1110,7 +1122,7 @@ jne 281b
 jmp 280f
 279:
 280:
-.base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAMM="
+.base64 "i4UcAQAAi52AAAAAi7WEAAAAi72IAAAAi62MAAAAjaQkMAoAAGYP78C5AAAAAI2kJLj1///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAPMPf4QkMAEAAPMPf4QkQAEAAPMPf4QkUAEAAPMPf4QkYAEAAPMPf4QkcAEAAPMPf4QkgAEAAPMPf4QkkAEAAPMPf4QkoAEAAPMPf4QksAEAAPMPf4QkwAEAAPMPf4Qk0AEAAPMPf4Qk4AEAAPMPf4Qk8AEAAPMPf4QkAAIAAPMPf4QkEAIAAPMPf4QkIAIAAPMPf4QkMAIAAPMPf4QkQAIAAPMPf4QkUAIAAPMPf4QkYAIAAPMPf4QkcAIAAPMPf4QkgAIAAPMPf4QkkAIAAPMPf4QkoAIAAPMPf4QksAIAAPMPf4QkwAIAAPMPf4Qk0AIAAPMPf4Qk4AIAAPMPf4Qk8AIAAPMPf4QkAAMAAPMPf4QkEAMAAPMPf4QkIAMAAPMPf4QkMAMAAPMPf4QkQAMAAPMPf4QkUAMAAPMPf4QkYAMAAPMPf4QkcAMAAPMPf4QkgAMAAPMPf4QkkAMAAPMPf4QkoAMAAPMPf4QksAMAAPMPf4QkwAMAAPMPf4Qk0AMAAPMPf4Qk4AMAAPMPf4Qk8AMAAPMPf4QkAAQAAPMPf4QkEAQAAPMPf4QkIAQAAPMPf4QkMAQAAPMPf4QkQAQAAPMPf4QkUAQAAPMPf4QkYAQAAPMPf4QkcAQAAPMPf4QkgAQAAPMPf4QkkAQAAPMPf4QkoAQAAPMPf4QksAQAAPMPf4QkwAQAAPMPf4Qk0AQAAPMPf4Qk4AQAAPMPf4Qk8AQAAPMPf4QkAAUAAPMPf4QkEAUAAPMPf4QkIAUAAPMPf4QkMAUAAPMPf4QkQAUAAPMPf4QkUAUAAPMPf4QkYAUAAPMPf4QkcAUAAPMPf4QkgAUAAPMPf4QkkAUAAPMPf4QkoAUAAPMPf4QksAUAAPMPf4QkwAUAAPMPf4Qk0AUAAPMPf4Qk4AUAAPMPf4Qk8AUAAPMPf4QkAAYAAPMPf4QkEAYAAPMPf4QkIAYAAPMPf4QkMAYAAPMPf4QkQAYAAPMPf4QkUAYAAPMPf4QkYAYAAPMPf4QkcAYAAPMPf4QkgAYAAPMPf4QkkAYAAPMPf4QkoAYAAPMPf4QksAYAAPMPf4QkwAYAAPMPf4Qk0AYAAPMPf4Qk4AYAAPMPf4Qk8AYAAPMPf4QkAAcAAPMPf4QkEAcAAPMPf4QkIAcAAPMPf4QkMAcAAPMPf4QkQAcAAPMPf4QkUAcAAPMPf4QkYAcAAPMPf4QkcAcAAPMPf4QkgAcAAPMPf4QkkAcAAPMPf4QkoAcAAPMPf4QksAcAAPMPf4QkwAcAAPMPf4Qk0AcAAPMPf4Qk4AcAAPMPf4Qk8AcAAPMPf4QkAAgAAPMPf4QkEAgAAPMPf4QkIAgAAPMPf4QkMAgAAPMPf4QkQAgAAPMPf4QkUAgAAPMPf4QkYAgAAPMPf4QkcAgAAPMPf4QkgAgAAPMPf4QkkAgAAPMPf4QkoAgAAPMPf4QksAgAAPMPf4QkwAgAAPMPf4Qk0AgAAPMPf4Qk4AgAAPMPf4Qk8AgAAPMPf4QkAAkAAPMPf4QkEAkAAPMPf4QkIAkAAPMPf4QkMAkAAPMPf4QkQAkAAPMPf4QkUAkAAPMPf4QkYAkAAPMPf4QkcAkAAPMPf4QkgAkAAPMPf4QkkAkAAPMPf4QkoAkAAPMPf4QksAkAAPMPf4QkwAkAAPMPf4Qk0AkAAPMPf4Qk4AkAAPMPf4Qk8AkAAPMPf4QkAAoAAPMPf4QkEAoAAPMPf4QkIAoAAPMPf4QkMAoAAImMJEAKAACJjCRECgAAjaQkSAoAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,

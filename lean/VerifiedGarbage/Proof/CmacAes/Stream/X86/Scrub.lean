@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
@@ -12,6 +16,10 @@ meta import VerifiedGarbage.Impl.CmacAes.Stream.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 /-!
 # What the cleanup of streaming AES-CMAC needs of its code (x86, 32-bit)
@@ -28,8 +36,11 @@ proves of any implementation by walking only CMAC's code. `vg_cmac_aes_update`
 chains in a register with AES-NI and by calls otherwise
 (`Impl.CmacAes.X86.hardware`), so `absorb` has a stub of each.
 
-The registrations of each variant give these as `scrubFOf`'s `hs`, with the
-contract's stack as `W`: they evaluate no code.
+The registrations of each variant (`initReg`, `absorbReg`, `finishReg`) give
+these as `scrubFOf`'s `hs`, with the contract's stack as `W`: they evaluate
+no code. Their postconditions read the memory on return only within the
+state and the tag, by the target-independent lemmas of
+`Proof/CmacAes/Stream/Scratch.lean`.
 -/
 
 @[expose] public section
@@ -106,5 +117,48 @@ theorem absorb_scrub (v : Ctr32Impl) :
 theorem finish_scrub (v : Ctr32Impl) :
     scrubFSide (withStackScratch 2332 5 (finish v.callee v.suffix)) [] 2392 = true :=
   scrubFSide_of_fill (finish_fill _ _ (calleeSide_of_eq v.stack v.scrub)) finish_side
+
+/-! ## Postconditions -/
+
+theorem initOut (stack : Nat) :
+    PostOut (Spec.Cmac.aesInitContract X86.abi stack) (Spec.Cmac.aesInitSig.retBits 32) :=
+  postOut_of_local ScrubAbi.plain (Proof.CmacAes.Stream.initPostOut_local _)
+
+theorem absorbOut (stack : Nat) :
+    PostOut (Spec.Cmac.aesAbsorbContract X86.abi stack) (Spec.Cmac.aesAbsorbSig.retBits 32) :=
+  postOut_of_local ScrubAbi.plain (Proof.CmacAes.Stream.absorbPostOut_local _)
+
+theorem finishOut (stack : Nat) :
+    PostOut (Spec.Cmac.aesFinishContract X86.abi stack) (Spec.Cmac.aesFinishSig.retBits 32) :=
+  postOut_of_local ScrubAbi.plain (Proof.CmacAes.Stream.finishPostOut_local _)
+
+/-! ## The registrations -/
+
+/-- `vg_cmac_aes_init` over `v`. -/
+def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86.target :=
+  scrubFOf {
+      suffix := v.suffix
+      code := withStackScratch 2324 3 (init v.expand v.callee v.suffix)
+      verified := Proof.CmacAes.Stream.X86.init_framed v
+      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.init_spSafe v) }
+    (initOut _) 2376 (init_scrub v)
+
+/-- `vg_cmac_aes_absorb` over `v`. -/
+def absorbReg (v : Ctr32Impl) : Registration Spec.Cmac.aesAbsorbApi X86.target :=
+  scrubFOf {
+      suffix := v.suffix
+      code := withStackScratch 2336 6 (absorb v.callee v.suffix)
+      verified := Proof.CmacAes.Stream.X86.absorb_framed v
+      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.absorb_spSafe v) }
+    (absorbOut _) 2396 (absorb_scrub v)
+
+/-- `vg_cmac_aes_finish` over `v`. -/
+def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86.target :=
+  scrubFOf {
+      suffix := v.suffix
+      code := withStackScratch 2332 5 (finish v.callee v.suffix)
+      verified := Proof.CmacAes.Stream.X86.finish_framed v
+      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.finish_spSafe v) }
+    (finishOut _) 2392 (finish_scrub v)
 
 end VG.Proof.CmacAes.Stream.X86.Scrub

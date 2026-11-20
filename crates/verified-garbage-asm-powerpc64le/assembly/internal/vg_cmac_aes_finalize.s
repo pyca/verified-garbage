@@ -6,15 +6,15 @@
 
 vg_cmac_aes_finalize:
 	mflr %r0
-	std %r0, 2064(%r8)
-	std %r14, 2072(%r8)
+	std %r0, 16(%r8)
+	std %r14, 24(%r8)
 	addi %r9, %r7, -16
 	cmpldi %cr0, %r9, 0
 	beq %cr0, 20f
 	li %r9, 0
-	std %r9, 2048(%r8)
-	std %r9, 2056(%r8)
-	addi %r10, %r8, 2048
+	std %r9, 0(%r8)
+	std %r9, 8(%r8)
+	addi %r10, %r8, 0
 	or %r11, %r6, %r6
 	or %r12, %r7, %r7
 	cmpldi %cr0, %r7, 0
@@ -32,38 +32,37 @@ vg_cmac_aes_finalize:
 23:
 	li %r9, 128
 	stb %r9, 0(%r10)
-	ld %r9, 2048(%r8)
+	ld %r9, 0(%r8)
 	ld %r10, 256(%r3)
 	xor %r9, %r9, %r10
-	std %r9, 2048(%r8)
-	ld %r9, 2056(%r8)
+	std %r9, 0(%r8)
+	ld %r9, 8(%r8)
 	ld %r10, 264(%r3)
 	xor %r9, %r9, %r10
-	std %r9, 2056(%r8)
+	std %r9, 8(%r8)
 	b 21f
 20:
 	ld %r9, 0(%r6)
 	ld %r10, 240(%r3)
 	xor %r9, %r9, %r10
-	std %r9, 2048(%r8)
+	std %r9, 0(%r8)
 	ld %r9, 8(%r6)
 	ld %r10, 248(%r3)
 	xor %r9, %r9, %r10
-	std %r9, 2056(%r8)
+	std %r9, 8(%r8)
 21:
 	ld %r9, 0(%r5)
-	ld %r10, 2048(%r8)
+	ld %r10, 0(%r8)
 	xor %r9, %r9, %r10
 	std %r9, 0(%r5)
 	ld %r9, 8(%r5)
-	ld %r10, 2056(%r8)
+	ld %r10, 8(%r8)
 	xor %r9, %r9, %r10
 	std %r9, 8(%r5)
 	or %r14, %r8, %r8
 	li %r6, 1
-	or %r7, %r14, %r14
 	bl {vg_aes_encrypt_blocks}
-	ld %r0, 2064(%r14)
-	ld %r14, 2072(%r14)
+	ld %r0, 16(%r14)
+	ld %r14, 24(%r14)
 	mtlr %r0
 	blr

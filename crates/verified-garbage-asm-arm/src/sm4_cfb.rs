@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2509,6 +2511,33 @@ str r2, [r12, #1500]
 str r2, [r12, #1504]
 str r2, [r12, #1508]
 add sp, sp, #1520
+sub sp, sp, #1520
+add r12, sp, #0
+mov r2, #0
+mov r3, #47
+221:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 221b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1520
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
@@ -2517,6 +2546,8 @@ bx lr",
 /// SM4-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4's forward function (encryption) under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5017,6 +5048,33 @@ str r2, [r12, #1500]
 str r2, [r12, #1504]
 str r2, [r12, #1508]
 add sp, sp, #1520
+sub sp, sp, #1520
+add r12, sp, #0
+mov r2, #0
+mov r3, #47
+223:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 223b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1520
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
@@ -5026,13 +5084,15 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 1568 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -5071,7 +5131,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_sm4_ecb_encrypt}
+bl {vg_sm4_ecb_encrypt_core}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -5156,8 +5216,31 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #80
+sub sp, sp, #1568
+add r12, sp, #0
+mov r2, #0
+mov r3, #49
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+add sp, sp, #1568
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sm4_ecb_encrypt = sym super::sm4::vg_sm4_ecb_encrypt,
+        vg_sm4_ecb_encrypt_core = sym super::sm4::vg_sm4_ecb_encrypt_core::vg_sm4_ecb_encrypt_core,
     )
 }
 
@@ -5165,13 +5248,15 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 1568 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_cfb128_decrypt_final(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -5210,7 +5295,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_sm4_ecb_encrypt}
+bl {vg_sm4_ecb_encrypt_core}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -5303,7 +5388,30 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #80
+sub sp, sp, #1568
+add r12, sp, #0
+mov r2, #0
+mov r3, #49
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+add sp, sp, #1568
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sm4_ecb_encrypt = sym super::sm4::vg_sm4_ecb_encrypt,
+        vg_sm4_ecb_encrypt_core = sym super::sm4::vg_sm4_ecb_encrypt_core::vg_sm4_ecb_encrypt_core,
     )
 }

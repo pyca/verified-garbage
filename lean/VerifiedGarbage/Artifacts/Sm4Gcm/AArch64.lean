@@ -20,42 +20,42 @@ namespace VG.Artifacts.Sm4Gcm.AArch64.Sm4Gcm
 open VG.Proof.Sm4Gcm.AArch64
 
 /-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+def artifactsOf (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackArgScratch 784 0 (Impl.Sm4Gcm.AArch64.«seal» v.callees)
-    verified := .unscrubbed (seal_framed v) },
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
+    code := Impl.StackScratch.AArch64.withStackArgScratch 784 0 (Impl.Sm4Gcm.AArch64.«seal» (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (seal_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.callees)
-    verified := .unscrubbed (open_framed v) },
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
+    code := Impl.StackScratch.AArch64.withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (open_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
-    suffix := v.suffix
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
-      (Impl.Sm4Gcm.AArch64.streamEncrypt v.callees)
-    verified := .unscrubbed (streamEncrypt_framed v) },
+      (Impl.Sm4Gcm.AArch64.streamEncrypt (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (streamEncrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) },
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target {
-    suffix := v.suffix
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
-      (Impl.Sm4Gcm.AArch64.streamDecrypt v.callees)
-    verified := .unscrubbed (streamDecrypt_framed v) },
+      (Impl.Sm4Gcm.AArch64.streamDecrypt (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (streamDecrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) },
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target {
-    suffix := v.suffix
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x5
-      (Impl.Sm4Gcm.AArch64.streamFinish v.callees)
-    verified := .unscrubbed (streamFinish_framed v) },
+      (Impl.Sm4Gcm.AArch64.streamFinish (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (streamFinish_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) },
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target {
-    suffix := v.suffix
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
-      (Impl.Sm4Gcm.AArch64.streamVerify v.callees)
-    verified := .unscrubbed (streamVerify_framed v) }]
+      (Impl.Sm4Gcm.AArch64.streamVerify (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (streamVerify_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) }]
 
 /-- `vg_sm4_gcm_init`, which calls only the implementation of `vg_sm4_ctr32`. -/
-def artifactsInit (v : GcmImpl) : List Artifact := [
+def artifactsInit (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact AArch64.target {
-    suffix := v.ctrSuffix
-    code := Impl.StackScratch.AArch64.withStackScratch 768 .x2 (Impl.Sm4Gcm.AArch64.init v.callees)
-    verified := .unscrubbed (init_framed v) }]
+    suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).ctrSuffix
+    code := Impl.StackScratch.AArch64.withStackScratch 768 .x2 (Impl.Sm4Gcm.AArch64.init (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
+    verified := .unscrubbed (init_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr)) }]
 
 /-- `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`: AES-GCM's code and
 proofs, calling the implementation of `vg_ghash` the variant `v` names (and no
@@ -79,9 +79,9 @@ that call only one of the two with the baseline implementation of the other,
 of which the other variants would be the same functions. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   (match v.gh with
-    | .scalar => artifactsInit ⟨v.gh.impl, v.ctr.impl⟩
+    | .scalar => artifactsInit v
     | .aes | .neon => []) ++
-  artifactsOf ⟨v.gh.impl, v.ctr.impl⟩ ++
+  artifactsOf v ++
   (match v.ctr with
     | .scalar => artifactsAes v
     | .sm4 => [])

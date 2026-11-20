@@ -98,10 +98,10 @@ theorem pwRestShort_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ 
 /-! ## `vg_aes_gcm_seal_with_powers` -/
 
 /-- `pwTbl 8` writes the table, from the powers in `pw`. -/
-theorem pwTbl_for {s : State} (hs : sealPwN s) : TbForP 2560 (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
+theorem pwTbl_for {Wn : Nat} {s : State} (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) : TbForP Wn (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
   fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCall_of hs (Y := stackArg s 2 + BitVec.ofNat 64 512)
-      (S := stackArg s 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
+      (S := stackArg s 2 + BitVec.ofNat 64 512) (Lay.wSub (by omega)) (Lay.wSub (by omega)) hrd hwr he.sp hf
     obtain ⟨ol, -, -, -⟩ := sealLay hs.1
     have hH : Spec.Gcm.blockAt u.mem (s.gpr .x0 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem (s.gpr .x0) :=
       blockAt_frame hf fun r hr => by
@@ -116,17 +116,17 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
 include hMK gh
 
-theorem sealPwS_correctN (s : State) (hs : sealPwN s) :
+theorem sealPwS_correctN {Wn : Nat} (s : State) (hs : sealPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealAArch64.post s s' :=
+      (sealAArch64 Wn).post s s' :=
   WP.withPreservedV (sealWithSh_wp (w := 2) v _ hMK gh (.inr rfl) hs.1
       (fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
         have q := gwCall_of hs sY sS hrd hwr hsp hf
         pwSel_call v g (k := 8) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_for hs))
     (stitchSealWithS_keepsV v (.inr rfl) (pwTbl_keepsV (.inl rfl)) (pwSel_keepsV v g (.inl rfl)))
 
-theorem sealPwS_ctN :
-    ConstantTime isa sealPwN (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) :=
+theorem sealPwS_ctN {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
+    ConstantTime isa (sealPwN Wn) (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) :=
   sealWithSh_ct (w := 2) v _ hMK gh (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCall_of p sY sS hrd hwr hsp hf
@@ -147,9 +147,9 @@ theorem sealPwS_ctN :
       have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
       have e1 : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by decide)
       obtain ⟨hP₁, hs₁, -⟩ := gwCall_of p₁ (Y := stackArg σ₁ 2 + BitVec.ofNat 64 512)
-        (S := stackArg σ₁ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₁ w₁ sp₁ f₁
+        (S := stackArg σ₁ 2 + BitVec.ofNat 64 512) (Lay.wSub (by omega)) (Lay.wSub (by omega)) r₁ w₁ sp₁ f₁
       obtain ⟨hP₂, hs₂, -⟩ := gwCall_of p₂ (Y := stackArg σ₂ 2 + BitVec.ofNat 64 512)
-        (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
+        (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by omega)) (Lay.wSub (by omega)) r₂ w₂
         (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂)
       rw [← e1] at hP₂
       exact pwTbl_rel (.inl rfl) (fun hsp hr => pwRestEnc_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂)
@@ -158,9 +158,9 @@ theorem sealPwS_ctN :
       have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
       have e1 : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by decide)
       obtain ⟨hP₁, hs₁, -⟩ := gwCall_of p₁ (Y := stackArg σ₁ 2 + BitVec.ofNat 64 512)
-        (S := stackArg σ₁ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₁ w₁ sp₁ f₁
+        (S := stackArg σ₁ 2 + BitVec.ofNat 64 512) (Lay.wSub (by omega)) (Lay.wSub (by omega)) r₁ w₁ sp₁ f₁
       obtain ⟨hP₂, hs₂, -⟩ := gwCall_of p₂ (Y := stackArg σ₂ 2 + BitVec.ofNat 64 512)
-        (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
+        (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by omega)) (Lay.wSub (by omega)) r₂ w₂
         (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂)
       rw [← e1] at hP₂
       exact pwTbl_relR shRegs (.inl rfl) (fun hsp hr => pwRestShort_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂
@@ -174,24 +174,24 @@ variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey
   (gh : Gh8Ok)
 include hMK gh
 
-theorem sealPwS_correct (s : State) (hs : sealPwAArch64.pre s) :
+theorem sealPwS_correct {Wn : Nat} (s : State) (hs : (sealPwAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      sealPwAArch64.post s s' := by
+      (sealPwAArch64 Wn).post s s' := by
   obtain ⟨t, s₁, he, ha, hp⟩ := sealPwS_correctN v g hMK gh _ (narrowP_pre hs)
   exact ⟨t, _, narrowP_exec hs he, ha, hp⟩
 
-theorem sealPwS_ct :
-    ConstantTime isa sealPwAArch64.pre sealPwAArch64.pub (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) := by
+theorem sealPwS_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
+    ConstantTime isa (sealPwAArch64 Wn).pre (sealPwAArch64 Wn).pub (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨u₁, r₁, f₁, -⟩ := sealPwS_correctN v g hMK gh _ (narrowP_pre h₁)
   obtain ⟨u₂, r₂, f₂, -⟩ := sealPwS_correctN v g hMK gh _ (narrowP_pre h₂)
   rw [(Exec.det e₁ (narrowP_exec h₁ f₁)).1, (Exec.det e₂ (narrowP_exec h₂ f₂)).1]
-  exact sealPwS_ctN v g hMK gh _ _ _ _ _ _ (narrowP_pre h₁) (narrowP_pre h₂) hq f₁ f₂
+  exact sealPwS_ctN v g hMK gh hWn hWs hv _ _ _ _ _ _ (narrowP_pre h₁) (narrowP_pre h₂) hq f₁ f₂
 
 theorem sealPwS_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn)
       (Proof.AesGcm.sealWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (sealPwS_correct v g hMK gh) (sealPwS_ct v g hMK gh)
+  Verified.of_correct (sealPwS_correct (Wn := 2560) v g hMK gh) (sealPwS_ct (Wn := 2560) v g hMK gh)
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
           Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
@@ -219,6 +219,44 @@ theorem sealPwS_verified :
           | exact Region.disjoint_of_sep (by decide)
           | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) sealSatPw_zero⟩ }
 
+
+theorem sealPwS_verifiedW {Wn : Nat} (h : Wn = 1024 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn)
+      (Proof.AesGcm.sealWithPowersScratchContract AArch64.abi (n := Wn / 8)) := by
+  have hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by omega
+  have hWs : 1024 ≤ Wn := by omega
+  exact Verified.of_correct (sealPwS_correct v g hMK gh) (sealPwS_ct v g hMK gh)
+      { pre := by
+            rcases h with rfl | rfl <;>
+            sig_implies_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
+              Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
+              sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+              AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        post := by
+            rcases h with rfl | rfl <;>
+            sig_implies_post [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
+              Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
+              sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+              AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        pub := by
+            rcases h with rfl | rfl <;>
+            sig_implies_pub [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
+              Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, Proof.AesGcm.sealWithPowersRoundsPost, Proof.AesGcm.sealRoundsPost,
+              sealPwAArch64, sealPwW, pwR, sealAArch64, onePub, args, rounds, AArch64.abi, AArch64.argRegs,
+              AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+        sat := ⟨sealSatPwW Wn, by
+            rcases h with rfl | rfl <;>
+            (sig_pre [Proof.AesGcm.sealWithPowersScratchContract, Proof.AesGcm.sealWithPowersScratchSig,
+              Spec.Gcm.sealWithPowersPre, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
+              AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop, sealSatPwW, sealSatPw, sealSat,
+              stackArg, stackArgAddr, Mem.readW, Mem.read]
+             sig_and_intros
+             all_goals first
+               | rfl
+               | decide
+               | exact Region.disjoint_of_sep (by decide)
+               | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) sealSatPw_zero)⟩ }
+
 end
 
 theorem sealPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok) :
@@ -231,5 +269,21 @@ theorem sealPwS_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch6
     (sealPwS_verified v g hMK gh) (by decide) (by decide) (Proof.AesGcm.sealWithPowersPre_local _)
     (Proof.AesGcm.sealWithPowersPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealWithPowersPostOut_local _ vs m m₁ m₂ r hl) sealFrameSatPw_pre
+
+
+/-- `sealPwS_framed` with `Wn` bytes of working space, in a frame of `Wn + 32`. -/
+theorem sealPwS_framedW (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
+    {Wn : Nat} (h : Wn = 1024 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (Wn + 32) 2 (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn))
+      (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi (Wn + 32)) := by
+  rw [show Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi (Wn + 32) =
+    Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi (0 + (Wn + 32)) by rw [Nat.zero_add]]
+  exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealWithPowersSig) (nm := "work") (e := .u64)
+    (n := Wn / 8) (pre := Spec.Gcm.sealWithPowersPre AArch64.abi.ptrBits)
+    (post := Proof.AesGcm.sealWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := Wn + 32)
+    (sealPwS_verifiedW v g hMK gh h hv) (by decide) (by rcases h with rfl | rfl <;> decide)
+    (Proof.AesGcm.sealWithPowersPre_local _) (Proof.AesGcm.sealWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealWithPowersPostOut_local _ vs m m₁ m₂ r hl) (sealFrameSatPw_preW (by omega))
 
 end VG.Proof.AesGcm.AArch64.Fast

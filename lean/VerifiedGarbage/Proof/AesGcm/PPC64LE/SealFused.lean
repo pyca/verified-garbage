@@ -34,17 +34,17 @@ open VG VG.PPC64LE
 
 def blockReads (s : State) : List Region := [⟨s.gpr .r3,256⟩]
 def blockWrites (s : State) : List Region :=
-  [⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩,⟨s.gpr .r7,(s.gpr .r8).toNat*16⟩,⟨s.gpr .r9,2112⟩]
+  [⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩,⟨s.gpr .r7,(s.gpr .r8).toNat*16⟩,⟨s.gpr .r9,704⟩]
 
-/-- The bulk helper's working space, `W + 448` (2112 bytes, past the 288
+/-- The bulk helper's working space, `W + 448` (704 bytes, past the 288
 bytes of `W` the pieces use), apart from the context, the state and the data,
 and writable. -/
 structure Kern (V : Reg → BitVec 64) (s : State) : Prop where
-  fit : (V .r31).toNat + 2560 ≤ 2 ^ 64
-  ctx : (⟨V .r29, 256⟩ : Region).Disjoint ⟨V .r31 + 448, 2112⟩
-  st : (⟨V .r30, 80⟩ : Region).Disjoint ⟨V .r31 + 448, 2112⟩
-  data : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + 448, 2112⟩
-  wr : Covers [⟨V .r31 + 448, 2112⟩] s.wr
+  fit : (V .r31).toNat + 1152 ≤ 2 ^ 64
+  ctx : (⟨V .r29, 256⟩ : Region).Disjoint ⟨V .r31 + 448, 704⟩
+  st : (⟨V .r30, 80⟩ : Region).Disjoint ⟨V .r31 + 448, 704⟩
+  data : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + 448, 704⟩
+  wr : Covers [⟨V .r31 + 448, 704⟩] s.wr
 
 theorem Kern.of_eq {V : Reg → BitVec 64} {s t : State} (h : Kern V s) (hw : t.wr = s.wr) : Kern V t :=
   { h with wr := by rw [hw]; exact h.wr }
@@ -52,17 +52,17 @@ theorem Kern.of_eq {V : Reg → BitVec 64} {s t : State} (h : Kern V s) (hw : t.
 /-- `Kern`'s facts that do not depend on the state, for the context at `c`,
 `W` at `w` and the data (`n` bytes at `D`); the state is at `W + 16`. -/
 structure KernS (c w D : Addr) (n : Nat) : Prop where
-  fit : w.toNat + 2560 ≤ 2 ^ 64
-  ctx : (⟨c, 256⟩ : Region).Disjoint ⟨w + 448, 2112⟩
-  data : (⟨D, n⟩ : Region).Disjoint ⟨w + 448, 2112⟩
+  fit : w.toNat + 1152 ≤ 2 ^ 64
+  ctx : (⟨c, 256⟩ : Region).Disjoint ⟨w + 448, 704⟩
+  data : (⟨D, n⟩ : Region).Disjoint ⟨w + 448, 704⟩
 
 theorem KernS.kern {V : Reg → BitVec 64} {s : State}
     (K : KernS (V .r29) (V .r31) (V .r27) (V .r23).toNat) (h30 : V .r30 = V .r31 + BitVec.ofNat 64 16)
-    (hw : Covers [⟨V .r31 + 448, 2112⟩] s.wr) : Kern V s :=
+    (hw : Covers [⟨V .r31 + 448, 704⟩] s.wr) : Kern V s :=
   ⟨K.fit, K.ctx, by rw [h30]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide), K.data, hw⟩
 
 structure BlockCall (s : State) : Prop where
-  pre : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
+  pre : (Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88).pre
     (s.callEntry.withRegions (blockReads s) (blockWrites s))
   reads : Covers (blockReads s++blockWrites s) (s.rd++s.wr)
   writes : Covers (blockWrites s) s.wr
@@ -73,18 +73,18 @@ structure BlockPost (s t : State) : Prop where
   sp : t.sp=s.sp
   saved : ∀ r ∈ preserved, t.gpr r=s.gpr r
   frame : Frame (blockWrites s) s.mem t.mem
-  out : (Proof.Gcm.encryptBlocksContract PPC64LE.abi).post s t
+  out : (Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88).post s t
 
 
 theorem block_call [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s : State} (h : BlockCall s) :
     WP isa (.call "vg_aes_gcm_encrypt_blocks" Impl.AesGcm.PPC64LE.Blocks.encrypt) s (BlockPost s) := by
-  refine WP.call (k := Proof.Gcm.encryptBlocksContract PPC64LE.abi)
+  refine WP.call (k := Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88)
     VG.Proof.AesGcm.PPC64LE.Blocks.encrypt_correct (rd := blockReads s) (wr := blockWrites s)
     h.pre h.reads h.writes ?_
   intro t hrd hwr hsp hf hcs _ hp
   refine ⟨hrd,hwr,hsp,hcs,hf,?_⟩
-  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp ⊢
+  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs] at hp ⊢
   exact hp
 
 def argsState (s : State) : State :=
@@ -136,7 +136,7 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
     (L : Lay (V .r29) (V .r30) (V .r31)) (K : Kern V s) (he : Env V sp s)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat)
     (hR : V .r28=BitVec.ofNat 64 R) (hv : R=10 ∨ R=12 ∨ R=14) :
-    (Proof.Gcm.encryptBlocksContract PPC64LE.abi).pre
+    (Proof.Gcm.encryptBlocksContractOf PPC64LE.abi 88).pre
       ((argsState s).callEntry.withRegions (blockReads (argsState s)) (blockWrites (argsState s))) := by
   have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
   have h8 : (s.gpr .r23 >>> 4).toNat=(V .r23).toNat/16 := by
@@ -145,7 +145,7 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
   have hr : (s.gpr .r28).toNat=R := by
     rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega_using [h])]
   have hc := hd.take (k := ((V .r23).toNat/16)*16) (by omega_using [])
-  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs,
+  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs,
     blockReads,blockWrites]
   simp only [he.r29,he.r30,he.r31,he.fr .r27 (by decide),h8,hr]
   refine ⟨?_,?_,hc.ctx,?_,?_,?_,?_,?_,?_,?_,L.cw,?_,?_,hc.ok.fit,?_,?_⟩
@@ -160,14 +160,14 @@ theorem args_call_pre {V : Reg → BitVec 64} {sp : Addr} {s : State} {R : Nat}
   · exact K.data.sub_left (Region.sub_prefix (by omega_using []))
   · exact fit_offset _ L.sw (by decide) (off := 48) (n := 16) (by decide)
   · exact fit_offset _ L.sw (by decide) (off := 16) (n := 16) (by decide)
-  · exact fit_offset _ K.fit (by decide) (off := 448) (n := 2112) (by decide)
+  · exact fit_offset _ K.fit (by decide) (off := 448) (n := 704) (by decide)
   · exact hv
 
 
 theorem args_regions {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp s) :
     blockReads (argsState s)=[⟨V .r29,256⟩] ∧
     blockWrites (argsState s)=[⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩] := by
+      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,704⟩] := by
   constructor
   · simp only [blockReads,argsState,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,he.r29]
   · have hnlt : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
@@ -210,7 +210,7 @@ structure WholeOutWith (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem)
     Spec.Gcm.ghashFrom (Spec.Gcm.ctxH m (V .r29)) (Spec.Gcm.blockAt m (V .r30+16))
       (Spec.Gcm.blocksAt t.mem (V .r27) ((V .r23).toNat/16))
   frame : Frame [⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-    ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩] m t.mem
+    ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,704⟩] m t.mem
 
 abbrev WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (m : Mem) (t : State) :=
   WholeOutWith V sp R m (Spec.Gcm.blocksAt m (V .r27) ((V .r23).toNat/16)) t
@@ -235,7 +235,7 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   have hr : (s.gpr .r28).toNat=R := by
     rw [he.fr .r28 (by decide),hR,toNat64 (by rcases hv with h | h | h <;> omega_using [h])]
   have hp := ht.out
-  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs] at hp
+  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs] at hp
   simp only [he.r29,he.r30,he.fr .r27 (by decide),hr,h8] at hp
   refine ⟨(args_env he).of_saved ht.saved ht.sp ht.rd ht.wr,hp.1,hp.2.1,?_,?_⟩
   · rw [hp.1]; exact hp.2.2
@@ -384,7 +384,7 @@ theorem whole_ctx_disjoint {V : Reg → BitVec 64} {s : State}
     (L : Lay (V .r29) (V .r30) (V .r31)) (K : Kern V s)
     (hd : DataW (V .r29) (V .r30) (V .r31) s (V .r27) (V .r23).toNat) :
     ∀ r ∈ [⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩],
+      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,704⟩],
       (⟨V .r29,256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -424,11 +424,11 @@ theorem WholeOutWith.j0 {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {s t : Sta
 
 def bodyFrame (V : Reg → BitVec 64) : List Region :=
   [⟨V .r27,(V .r23).toNat⟩,⟨V .r30,80⟩,⟨V .r31,16⟩,
-    ⟨V .r31+96,16⟩,⟨V .r31+448,2112⟩]
+    ⟨V .r31+96,16⟩,⟨V .r31+448,704⟩]
 
 theorem whole_body_sub (V : Reg → BitVec 64) :
     ∀ r ∈ [⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,2112⟩],
+      ⟨V .r27,((V .r23).toNat/16)*16⟩,⟨V .r31+448,704⟩],
       ∃ r' ∈ bodyFrame V, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

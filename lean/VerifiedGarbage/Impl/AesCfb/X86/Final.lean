@@ -16,8 +16,8 @@ They are generic over the implementation of the block functions they call
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
 2. a call of the whole-block function of the same direction and
-   implementation (`vg_aes_cfb128_encrypt` and its variants,
-   `Impl/AesCfb/X86.lean`) on the `len / 16` whole blocks, its six
+   implementation (`vg_aes_cfb128_encrypt`'s code,
+   `vg_aes_cfb128_encrypt_core`, and its variants, `Impl/AesCfb/X86.lean`) on the `len / 16` whole blocks, its six
    arguments pushed in a frame of their own, which leaves the last
    ciphertext block `Cₙ₋₁` in `iv`;
 3. if `u = len mod 16` bytes are left, a call of the block function on the
@@ -83,13 +83,16 @@ def final (name : String) (whole : Prog isa) (b : Blocks) : Prog isa :=
   .seq (.block (finalSave ++ wholeArgs)) (.seq (wholeCall name whole)
     (.seq (.block tailTest) (.seq (.ite .e (.block []) (finalTail b)) (.block finalRestore))))
 
-/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt` with the
-block function `b`, whose callers' names end in `sfx`. -/
+/-- `vg_aes_cfb128_encrypt_final`, calling `vg_aes_cfb128_encrypt`'s code
+with the block function `b`, whose callers' names end in `sfx`, as an
+internal function of its own, `vg_aes_cfb128_encrypt<sfx>_core`:
+`vg_aes_cfb128_encrypt` may also clear what it leaves. -/
 def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_encrypt" ++ sfx) (encrypt b) b
+  final ("vg_aes_cfb128_encrypt" ++ sfx ++ "_core") (encrypt b) b
 
-/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`. -/
+/-- `vg_aes_cfb128_decrypt_final`, calling `vg_aes_cfb128_decrypt`'s code, as
+`vg_aes_cfb128_decrypt<sfx>_core`. -/
 def decryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  final ("vg_aes_cfb128_decrypt" ++ sfx) (decrypt b) b
+  final ("vg_aes_cfb128_decrypt" ++ sfx ++ "_core") (decrypt b) b
 
 end VG.Impl.AesCfb.X86

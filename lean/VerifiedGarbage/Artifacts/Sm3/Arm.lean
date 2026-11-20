@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Sm3.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact Arm.target Proof.Sm3.Arm.Scrub.initReg,
-  Spec.Sm3.updateApi.artifact Arm.target Proof.Sm3.Arm.Scrub.updateReg,
-  Spec.Sm3.finalizeApi.artifact Arm.target Proof.Sm3.Arm.Scrub.finalizeReg]
+  Spec.Sm3.initApi.artifact Arm.target {
+    code := Impl.Sm3.Arm.Fn.init
+    verified := .scrubbed Proof.Sm3.Arm.Fn.init },
+  Spec.Sm3.updateApi.artifact Arm.target {
+    code := Impl.Sm3.Arm.Fn.update
+    verified := .scrubbed Proof.Sm3.Arm.Fn.update },
+  Spec.Sm3.finalizeApi.artifact Arm.target {
+    code := Impl.Sm3.Arm.Fn.finalize
+    verified := .scrubbed Proof.Sm3.Arm.Fn.finalize }]
 
 end VG.Artifacts.Sm3.Arm

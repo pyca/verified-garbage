@@ -262,16 +262,16 @@ open VG.Proof.Gcm (Absorbed)
 def DstX (c W sp : Addr) (S Ln : BitVec 64) (Dst : Addr) (s : State) : Prop :=
   DataW c (W + BitVec.ofNat 64 16) W s Dst Ln.toNat ∧ (⟨S, Ln.toNat⟩ : Region).Disjoint ⟨Dst, Ln.toNat⟩ ∧
     InRegions (s.rd ++ s.wr) (sp + BitVec.ofNat 64 120) 8 ∧ s.mem.readW (sp + BitVec.ofNat 64 120) 64 = Dst ∧
-    (⟨sp + BitVec.ofNat 64 120, 8⟩ : Region).Disjoint ⟨W, 2560⟩ ∧
-    W.toNat + 2560 ≤ 2 ^ 64 ∧ (⟨c, 256⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧
-    (⟨S, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧ (⟨Dst, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 2112⟩ ∧
-    Covers [⟨W + BitVec.ofNat 64 448, 2112⟩] s.wr
+    (⟨sp + BitVec.ofNat 64 120, 8⟩ : Region).Disjoint ⟨W, 1152⟩ ∧
+    W.toNat + 1152 ≤ 2 ^ 64 ∧ (⟨c, 256⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 704⟩ ∧
+    (⟨S, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 704⟩ ∧ (⟨Dst, Ln.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 448, 704⟩ ∧
+    Covers [⟨W + BitVec.ofNat 64 448, 704⟩] s.wr
 
 abbrev DOk : Addr → Addr → Addr → State → Addr → Nat → Prop := fun _ st w s D n => DataOk st w s D n
 
 theorem DstX.frame {c W sp : Addr} {S Ln : BitVec 64} {Dst : Addr} {s t : State} (h : DstX c W sp S Ln Dst s)
     (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem t.mem)
-    (hW : ∀ r ∈ rs, ∃ r' ∈ [(⟨W, 2560⟩ : Region)], Region.Sub r r') : DstX c W sp S Ln Dst t := by
+    (hW : ∀ r ∈ rs, ∃ r' ∈ [(⟨W, 1152⟩ : Region)], Region.Sub r r') : DstX c W sp S Ln Dst t := by
   obtain ⟨hd, hsd, hi, hv, hA, k₁, k₂, k₃, k₄, k₅⟩ := h
   refine ⟨hd.of_eq hrd hwr, hsd, by rw [hrd, hwr]; exact hi, ?_, hA, k₁, k₂, k₃, k₄, by rw [hwr]; exact k₅⟩
   rw [Frame.readW hf (Region.contains_self _ _) (fun r hr => by
@@ -414,7 +414,7 @@ theorem split_dstx {t₀ s : State} (h : splitPre t₀) (h1 : SO1 (stackArg t₀
     have := in_off hA (d := 24) (n := 8) (by decide) (by decide)
     rwa [stackArgAddr_0, add_ofNat_assoc] at this
   · rw [hk₁.wr, hwr]
-    exact covers_off (p := stackArg t₀ 2) (k := 2560) (covers_mem (by simp)) (by decide) (by decide)
+    exact covers_off (p := stackArg t₀ 2) (k := 1152) (covers_mem (by simp)) (by decide) (by decide)
 
 theorem split_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     ConstantTime isa splitPPC64LE.pre splitPPC64LE.pub openSplit := by
@@ -543,7 +543,7 @@ end
 # AES-GCM decryption out of place, in one pass, PPC64LE: `Verified`
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_aes_gcm_open_to`, with the 2720 bytes of stack below the stack pointer
+`vg_aes_gcm_open_to`, with the 1312 bytes of stack below the stack pointer
 that its frame uses (`Proof.AesGcm.openToRoundsContract`), implies the one
 the proof is written against (`toK`, `to_implies`), and so the code, calling
 `vg_aes_gcm_open_split` by its contract (`split_correct`, `split_ct`), is
@@ -566,7 +566,7 @@ theorem openTo_correct (hv : SplitOk) (s : State) (hs : toK.pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := openTo_wp hv hs
   exact ⟨t, s', he, ha, hp⟩
 
-theorem toPre_of_spec {s : State} (h : (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720).pre s) : ToPre s := by
+theorem toPre_of_spec {s : State} (h : (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312).pre s) : ToPre s := by
   sig_pre [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre, PPC64LE.abi, PPC64LE.argRegs,
     List.getD, List.range, List.range.loop] at h
   obtain ⟨w₁, w₂, rd, wr, kd, nd, ad, sd, dt, da, bk, bn, ba, bs, bd, bt, barg, ok, on, oa, os, od, ot, hR, dl⟩ := h
@@ -574,13 +574,13 @@ theorem toPre_of_spec {s : State} (h : (Proof.AesGcm.openToRoundsContract PPC64L
   exact ⟨w₁, w₂, rd, wr, kd, nd, ad, sd, dt, da, bk, bn, ba, bs, bd, bt, barg, ok, on, oa, os, od, ot, hR, dl⟩
 
 theorem toPost_of {s s' : State} (h : toPost s s') :
-    (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720).post s s' := by
+    (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312).post s s' := by
   sig_post [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Proof.AesGcm.openToRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, List.range, List.range.loop]
   intro _
   exact h
 
-theorem toPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720).pub s₁ s₂) :
+theorem toPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312).pub s₁ s₂) :
     toPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToLeak, PPC64LE.abi,
     PPC64LE.argRegs, List.range, List.range.loop] at hp
@@ -600,18 +600,18 @@ def toSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0, 0⟩, ⟨0x9060, 32⟩]
   wr := [⟨0, 0⟩]
 
-theorem toSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720).pre s := by
+theorem toSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312).pre s := by
   implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre,
     Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr,
     List.getD, List.range, List.range.loop]
     [toSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using toSat
 
-theorem to_implies : toK.Implies (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720) :=
+theorem to_implies : toK.Implies (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312) :=
   ⟨fun _ h => toPre_of_spec h, fun _ _ _ h => toPost_of h, fun _ _ _ _ h => toPub_of h, toSat_pre⟩
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_gcm_open_split` by its contract. -/
 theorem openTo_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target openTo (Proof.AesGcm.openToRoundsContract PPC64LE.abi 2720) :=
+    Verified PPC64LE.target openTo (Proof.AesGcm.openToRoundsContract PPC64LE.abi 1312) :=
   Verified.of_correct (k := toK) (openTo_correct split_correct) (openTo_ct split_correct split_ct)
     to_implies
 

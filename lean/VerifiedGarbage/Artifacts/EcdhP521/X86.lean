@@ -48,6 +48,8 @@ namespace VG.Artifacts.EcdhP521.X86
 open VG.Proof.P521.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P521.exchangeApi.artifact X86.target (Proof.Ecdh.X86.P521.Scrub.exchangeReg hasLaw.law)]
+  Spec.Ecdh.P521.exchangeApi.artifact X86.target {
+    code := Impl.Ecdh.X86.Fn.exchangeP521
+    verified := .scrubbed (Proof.Ecdh.X86.P521.Scrub.exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP521.X86

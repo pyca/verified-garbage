@@ -603,11 +603,11 @@ b 27f
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2672 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1264 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "kfUh+AAAgTnQCgzoYAAM+HAADDhoAAz4AACBOWgAjOmAAEz6iABs+pAAjPqYAKz6oADM+qgA7PqwAAz7uAAs+8AATPvIAGz70ACM+9gArPvgAMz76ADs+6YCCHzwAAz4eGOffXgbfXx4I5x8EADfO3gruHx4M9l8eDPSfHg79Xx4QxZ9eEs7fXhTV30AAIE5YACM6vT/2TgAACYo"
+        r#".base64 "Efsh+AAAgTlQBQzoYAAM+HAADDhoAAz4AACBOWgAjOmAAEz6iABs+pAAjPqYAKz6oADM+qgA7PqwAAz7uAAs+8AATPvIAGz70ACM+9gArPvgAMz76ADs+6YCCHzwAAz4eGOffXgbfXx4I5x8EADfO3gruHx4M9l8eDPSfHg79Xx4QxZ9eEs7fXhTV30AAIE5YACM6vT/2TgAACYo"
 beq %cr0, 20f
 .base64 "AAAAOAAAHvgIAB74AABAOwAAOSg="
 beq %cr0, 22f
@@ -927,7 +927,7 @@ bl {vg_ghash}
 .base64 "EAB+6AAAf/gYAH7oCAB/+Hjro39444R/ePPFfwAA3zgBAOA4"
 bl {vg_aes_ctr32}
 241:
-.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzrcAohOAAAADiR9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz4cAohOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+.base64 "AAB/6AAAdPgIAH/oCAB0+Hj77H/wAAzopgMIfIAATOqIAGzqkACM6pgArOqgAMzqqADs6rAADOu4ACzrwABM68gAbOvQAIzr2ACs6+AAzOvoAOzr8AQhOAAAADgR+yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjwBCE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -951,11 +951,11 @@ bl {vg_aes_ctr32}
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "gfUh+AAAgTngCgzoYAAM+OgKDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6gAAIDuC8GB6AAAgKA=="
+        r#".base64 "Afsh+AAAgTlgBQzoYAAM+GgFDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6gAAIDuC8GB6AAAgKA=="
 beq %cr0, 20f
 .base64 "AuFgegAAICg="
 beq %cr0, 22f
@@ -1224,7 +1224,7 @@ b 27f
 26:
 .base64 "AABgOA=="
 27:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4AAAAOIH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+IAKITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsABSE4AAAAOAH7IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz4AAUhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -1249,7 +1249,7 @@ b 27f
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2960 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 1552 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -1312,7 +1312,7 @@ b 212f
 bl {vg_aes_gcm_seal_core}
 .base64 "AACBOZgADOimAwh8"
 21:
-.base64 "oAAhOAAAADhx9CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPiQCyE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+.base64 "oAAhOAAAADjx+SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+BAGITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_aes_gcm_seal_split = sym super::aes::vg_aes_gcm_seal_split::vg_aes_gcm_seal_split,
         vg_aes_gcm_seal_core = sym super::aes::vg_aes_gcm_seal_core::vg_aes_gcm_seal_core,
     )
@@ -1337,17 +1337,17 @@ bl {vg_aes_gcm_seal_core}
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2720 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 1312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "YfUh+AAAgTmmAgh8mAAM+BALDOhgAAz4GAsM6GgADPigAAw4cAAM+AALDOh4AAz4"
+        r#".base64 "4foh+AAAgTmmAgh8mAAM+JAFDOhgAAz4mAUM6GgADPigAAw4cAAM+IAFDOh4AAz4"
 bl {vg_aes_gcm_open_split}
 .base64 "AAADKA=="
 beq %cr0, 20f
 b 21f
 20:
-.base64 "AACBOQALLOkIC0zpAABgOQAAKig="
+.base64 "AACBOYAFLOmIBUzpAABgOQAAKig="
 beq %cr0, 22f
 24:
 .base64 "AABpmQEAKTn//0o5AAAqKA=="
@@ -1356,7 +1356,7 @@ b 23f
 22:
 23:
 21:
-.base64 "AACBOZgADOimAwh8oAohOAAAADhh9SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+KAKITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcRMKRHEVEoRxFxrEcRkjBHEbK0RxHTOEcR87xHEhBASxIwxEsSUUhLEnHMSIACATg==""#,
+.base64 "AACBOZgADOimAwh8IAUhOAAAADjh+iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4IAUhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_aes_gcm_open_split = sym super::aes::vg_aes_gcm_open_split::vg_aes_gcm_open_split,
     )
 }

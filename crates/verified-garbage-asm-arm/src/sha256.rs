@@ -62,14 +62,14 @@ bx lr",
 /// * `out` must be valid for reads and writes of 28 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -163,11 +163,11 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
-sub sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
 add r12, sp, #0
 mov r2, #0
-mov r3, #19
+mov r3, #5
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -184,7 +184,7 @@ str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
 str r2, [r12, #12]
-add sp, sp, #624
+add sp, sp, #176
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -447,16 +447,16 @@ bx lr",
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #12]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
-ldr lr, [sp, #628]
+ldr lr, [sp, #180]
 str lr, [r12, #4]
 add lr, sp, #16
 str lr, [r12, #8]
@@ -582,11 +582,11 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
-sub sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
 add r12, sp, #0
 mov r2, #0
-mov r3, #19
+mov r3, #5
 223:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -603,7 +603,7 @@ str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
 str r2, [r12, #12]
-add sp, sp, #624
+add sp, sp, #176
 mov r0, #0
 mov r1, #0
 mov r2, #0
@@ -627,14 +627,14 @@ bx lr",
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #624
+        r"sub sp, sp, #176
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #624]
+ldr lr, [sp, #176]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -731,11 +731,11 @@ ldr r9, [r3, #132]
 ldr r10, [r3, #136]
 ldr r11, [r3, #140]
 ldr lr, [r3, #144]
-add sp, sp, #624
-sub sp, sp, #624
+add sp, sp, #176
+sub sp, sp, #176
 add r12, sp, #0
 mov r2, #0
-mov r3, #19
+mov r3, #5
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -752,7 +752,7 @@ str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
 str r2, [r12, #12]
-add sp, sp, #624
+add sp, sp, #176
 mov r0, #0
 mov r1, #0
 mov r2, #0

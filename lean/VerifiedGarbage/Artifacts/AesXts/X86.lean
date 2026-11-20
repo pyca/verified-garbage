@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.X86.Verified
-public import VerifiedGarbage.Proof.AesXts.X86.Unit.Verified
+public import VerifiedGarbage.Proof.AesXts.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -12,19 +11,11 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesXts.X86
 
-open VG.Proof.AesXts.X86
+open VG.Proof.AesXts.X86.Scrub
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
-    Spec.Xts.aesEncryptUnitApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)
-      verified := .unscrubbed (Unit.encrypt_verified v)
-      spSafe := Unit.encrypt_spSafe v },
-    Spec.Xts.aesDecryptUnitApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)
-      verified := .unscrubbed (Unit.decrypt_verified v)
-      spSafe := Unit.decrypt_spSafe v }]
+    Spec.Xts.aesEncryptUnitApi.artifact X86.target (encryptUnitReg v),
+    Spec.Xts.aesDecryptUnitApi.artifact X86.target (decryptUnitReg v)]
 
 end VG.Artifacts.AesXts.X86

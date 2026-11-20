@@ -5411,6 +5411,11 @@ vg_rsa_crt_values_umaal:
 	ldr r10, [r12, #44]
 	ldr r11, [r12, #48]
 	ldr lr, [r12, #52]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_recover_primes_det_umaal:
@@ -13150,6 +13155,29 @@ vg_rsa_recover_primes_det_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_crt_values:
@@ -18964,6 +18992,11 @@ vg_rsa_crt_values:
 	ldr r10, [r12, #44]
 	ldr r11, [r12, #48]
 	ldr lr, [r12, #52]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_recover_primes_det:
@@ -26903,6 +26936,29 @@ vg_rsa_recover_primes_det:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_check_key_umaal:
@@ -34036,6 +34092,11 @@ vg_rsa_check_key_umaal:
 	ldr r10, [r12, #44]
 	ldr r11, [r12, #48]
 	ldr lr, [r12, #52]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_check_key:
@@ -41407,6 +41468,11 @@ vg_rsa_check_key:
 	ldr r10, [r12, #44]
 	ldr r11, [r12, #48]
 	ldr lr, [r12, #52]
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_private_precompute_umaal:
@@ -55640,6 +55706,30 @@ vg_rsa_private_precompute_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #168
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+2749:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2749b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #168
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_private_precompute:
@@ -71223,6 +71313,30 @@ vg_rsa_private_precompute:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #168
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+2749:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2749b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #168
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_public_precompute_umaal:
@@ -73758,6 +73872,29 @@ vg_rsa_public_precompute_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_rsa_public_precompute:
@@ -76514,4 +76651,27 @@ vg_rsa_public_precompute:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #56
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	str r2, [r12, #32]
+	str r2, [r12, #36]
+	str r2, [r12, #40]
+	str r2, [r12, #44]
+	str r2, [r12, #48]
+	str r2, [r12, #52]
+	add sp, sp, #56
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

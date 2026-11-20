@@ -136,10 +136,10 @@ theorem rel_upd {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
   Proof.CmacAes.Stream.PPC64LE.upd_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
 
 /-- A call of `vg_aes_ctr32` with the same arguments in both runs. -/
-theorem rel_ctr {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
-    (h₁ : Proof.AesCtr.PPC64LE.CtrCall σ₁ K C D S R n) (h₂ : Proof.AesCtr.PPC64LE.CtrCall σ₂ K C D S R n)
+theorem rel_ctr {σ₁ σ₂ : State} {K C D : Addr} {R n : Nat}
+    (h₁ : Proof.AesCtr.PPC64LE.CtrCallF σ₁ K C D R n) (h₂ : Proof.AesCtr.PPC64LE.CtrCallF σ₂ K C D R n)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesCtr.PPC64LE.ctrCall TT :=
-  Proof.AesCtr.PPC64LE.ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
+  Proof.AesCtr.PPC64LE.ctr_relF fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
 
 /-- After a call of `vg_cmac_aes_update`: the environment and our registers. -/
 theorem upd_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
@@ -151,11 +151,11 @@ theorem upd_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)⟩)
 
 /-- After a call of `vg_aes_ctr32`: the environment and our registers. -/
-theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
-    (h : Proof.AesCtr.PPC64LE.CtrCall s K C D S R n) :
+theorem ctr_runs {c : Cx} {s : State} {K C D : Addr} {R n : Nat} (E : Env c s)
+    (h : Proof.AesCtr.PPC64LE.CtrCallF s K C D R n) :
     Runs Impl.AesCtr.PPC64LE.ctrCall s fun s' => Env c s' ∧ s'.sp = s.sp ∧
       ∀ r ∈ [Reg.r18, .r19, .r20, .r21], s'.gpr r = s.gpr r :=
-  Runs.of_wp (WP.mono (Proof.AesCtr.PPC64LE.ctr_call h) fun _ U =>
+  Runs.of_wp (WP.mono (Proof.AesCtr.PPC64LE.ctr_callF h) fun _ U =>
     ⟨E.of_pk (PK.ofSaved U.rd U.wr U.sp U.saved), U.sp, fun r hr => U.saved r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)⟩)
 

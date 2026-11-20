@@ -447,7 +447,7 @@ theorem long_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr} {n : N
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-    · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
   -- The result.
   · rw [m₁] at f₂ t₂
     obtain dt : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 tailO, 32⟩ : Region)], (⟨c.C, 512⟩ : Region).Disjoint r := by

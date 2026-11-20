@@ -10,6 +10,8 @@ pub const VG_AES_OFB_AESNI_FEATURES: verified_garbage_cpu::Features = verified_g
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -34,7 +36,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78C5AAAAAI1kJOjzD38EJIlMJBCJTCQUjWQkGLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
@@ -46,6 +48,8 @@ pub const VG_AES_OFB_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -62,7 +66,7 @@ pub const VG_AES_OFB_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = veri
 pub(crate) unsafe extern "C" fn vg_aes_ofb_final_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0ItEJDSJRCQEi0QkOIlEJAiLRCQ8iUQkDItEJECJRCQQi0QkRIlEJBSLRCRIiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
-call {vg_aes_ofb_aesni}
+call {vg_aes_ofb_aesni_core}
 .base64 "WFhYWFhYi0QkFIPgD4XA"
 je 20f
 .base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
@@ -74,9 +78,9 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMMM="
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_aes_ofb_aesni = sym super::aes_ofb::vg_aes_ofb_aesni,
+        vg_aes_ofb_aesni_core = sym super::aes_ofb::vg_aes_ofb_aesni_core::vg_aes_ofb_aesni_core,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
@@ -84,6 +88,8 @@ jmp 21f
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -108,7 +114,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAGYP78C5AAAAAI1kJOjzD38EJIlMJBCJTCQUjWQkGLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -117,6 +123,8 @@ jmp 21f
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -132,7 +140,7 @@ jmp 21f
 pub(crate) unsafe extern "C" fn vg_aes_ofb_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "jWQk0ItEJDSJRCQEi0QkOIlEJAiLRCQ8iUQkDItEJECJRCQQi0QkRIlEJBSLRCRIiUQkGIngg8AgiUQkHItEJByJGIlwBIl4CIloDItEJASLTCQIi1QkDItcJBCLdCQUwe4Ei3wkGFdWU1JRUA=="
-call {vg_aes_ofb}
+call {vg_aes_ofb_core}
 .base64 "WFhYWFhYi0QkFIPgD4XA"
 je 20f
 .base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
@@ -144,9 +152,17 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMMM="
+.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
-        vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
+        vg_aes_ofb_core = sym super::aes_ofb::vg_aes_ofb_core::vg_aes_ofb_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ofb_aesni_core.rs"]
+pub(crate) mod vg_aes_ofb_aesni_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ofb_core.rs"]
+pub(crate) mod vg_aes_ofb_core;

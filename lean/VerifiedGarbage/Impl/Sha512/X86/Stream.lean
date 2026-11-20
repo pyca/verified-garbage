@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.X86
 public import VerifiedGarbage.Impl.MdStream.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Streaming SHA-512: x86 (32-bit) implementation
@@ -72,3 +74,35 @@ def params512_224 : Params := { params with out := out64 3 ++ outHi 3 }
 def finalizeDigest (P : Params) : Prog isa := MdStream.X86.finalize P "vg_sha512_compress" compress
 
 end VG.Impl.Sha512.X86.Stream
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup: the `init`s, which call nothing and have no
+frame, then the clearing of the registers a callee may change
+(`Impl.Scrub.X86.scrub 0`); `update` and the `finalize`s, in a frame of their
+own (`withStackScratch`), then the zeroing of the `W` bytes of stack below
+`esp` that they and the compression function use and that clearing
+(`Impl.Scrub.X86.scrubF 0 W`), so that each returns without secret residue.
+The one-shot digests are `Impl/Sha512/X86/Digest.lean`'s. -/
+
+namespace VG.Impl.Sha512.X86.Fn
+
+open VG.X86
+
+/-- `vg_<f>_init` from the initial hash value `iv`, as emitted. -/
+def init (iv : Spec.Sha512.HashValue) : Prog isa := Impl.Scrub.X86.scrub 0 (Stream.init iv)
+
+/-- `vg_sha512_update`, as emitted. -/
+def update : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 1424 (Impl.StackScratch.X86.withStackScratch 1404 5 Stream.update)
+
+/-- `vg_sha512_finalize`, as emitted. -/
+def finalize : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 Stream.finalize)
+
+/-- `vg_<f>_finalize` writing the digest `P.out` writes (`Stream.params384`, …), as
+emitted. -/
+def finalizeDigest (P : Impl.MdStream.X86.Params) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 (Stream.finalizeDigest P))
+
+end VG.Impl.Sha512.X86.Fn

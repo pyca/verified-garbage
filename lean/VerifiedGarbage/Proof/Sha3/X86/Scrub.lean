@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.X86.Instances
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Sha3.Instances
 public import VerifiedGarbage.Impl.Sha3.X86.Instances
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha3.X86.Instances
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Sha3.Instances
 meta import VerifiedGarbage.Impl.Sha3.X86.Instances
@@ -25,9 +25,10 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 # SHA-3's `finalize` and SHAKE's `finalize` and `squeeze` on x86 (32-bit), without secret residue
 
 Each keeps the sponge's working space in a frame of its own and calls the
-sponge's padding or squeezing (`Impl.Sha3.X86.Instances`): scrubbed with
-`X86.Scrub.scrubFOf`, which zeroes the stack it and its callee use and then
-clears the registers a callee may change, given that its postcondition reads
+sponge's padding or squeezing (`Impl.Sha3.X86.Instances`). The code as
+emitted (`Impl.Sha3.X86.Fn`) then zeroes the stack it and its callee use and
+clears the registers a callee may change, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads
 the memory on return only within the buffers (`Proof.Sha3.PostOut`, and
 `xofSqueezeOut` for SHAKE's `squeeze`, whose `outlen` is a 32-bit word here).
 -/
@@ -82,66 +83,90 @@ theorem xofSqueezeOut (X : Xof) (stack : Nat) :
     PostOut (xofSqueezeContract X86.abi X stack) (xofSqueezeSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain (xofSqueezePost_out32 X)
 
-/-- `vg_sha3_224_finalize`. -/
-def finalizeSha3_224Reg : Registration finalizeSha3_224Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.finalize hashSha3_224.rate hashSha3_224.len
+/-- `vg_sha3_224_finalize` as emitted (`Impl.Sha3.X86.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_sha3_224_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_224.rate hashSha3_224.len)
+      (finalizeContract X86.abi hashSha3_224 680) 0 :=
+  verifiedScrubbedF (api := finalizeSha3_224Api)
+    { code := Impl.Sha3.X86.Instances.finalize hashSha3_224.rate hashSha3_224.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_224 }
     (finalizeOut _ (by decide) _)
 
-/-- `vg_sha3_256_finalize`. -/
-def finalizeSha3_256Reg : Registration finalizeSha3_256Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.finalize hashSha3_256.rate hashSha3_256.len
+/-- `vg_sha3_256_finalize` as emitted (`Impl.Sha3.X86.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_sha3_256_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_256.rate hashSha3_256.len)
+      (finalizeContract X86.abi hashSha3_256 680) 0 :=
+  verifiedScrubbedF (api := finalizeSha3_256Api)
+    { code := Impl.Sha3.X86.Instances.finalize hashSha3_256.rate hashSha3_256.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_256 }
     (finalizeOut _ (by decide) _)
 
-/-- `vg_sha3_384_finalize`. -/
-def finalizeSha3_384Reg : Registration finalizeSha3_384Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.finalize hashSha3_384.rate hashSha3_384.len
+/-- `vg_sha3_384_finalize` as emitted (`Impl.Sha3.X86.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_sha3_384_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_384.rate hashSha3_384.len)
+      (finalizeContract X86.abi hashSha3_384 680) 0 :=
+  verifiedScrubbedF (api := finalizeSha3_384Api)
+    { code := Impl.Sha3.X86.Instances.finalize hashSha3_384.rate hashSha3_384.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_384 }
     (finalizeOut _ (by decide) _)
 
-/-- `vg_sha3_512_finalize`. -/
-def finalizeSha3_512Reg : Registration finalizeSha3_512Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.finalize hashSha3_512.rate hashSha3_512.len
+/-- `vg_sha3_512_finalize` as emitted (`Impl.Sha3.X86.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_sha3_512_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_512.rate hashSha3_512.len)
+      (finalizeContract X86.abi hashSha3_512 680) 0 :=
+  verifiedScrubbedF (api := finalizeSha3_512Api)
+    { code := Impl.Sha3.X86.Instances.finalize hashSha3_512.rate hashSha3_512.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_512 }
     (finalizeOut _ (by decide) _)
 
-/-- `vg_shake128_finalize`. -/
-def finalizeShake128Reg : Registration finalizeShake128Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.xofFinalize xofShake128.rate
+/-- `vg_shake128_finalize` as emitted (`Impl.Sha3.X86.Fn.xofFinalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_shake128_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofFinalize xofShake128.rate)
+      (xofFinalizeContract X86.abi xofShake128 676) 0 :=
+  verifiedScrubbedF (api := finalizeShake128Api)
+    { code := Impl.Sha3.X86.Instances.xofFinalize xofShake128.rate
       stack := 676
       verified := Proof.Sha3.X86.Instances.finalize_shake128 }
     (xofFinalizeOut _ _)
 
-/-- `vg_shake256_finalize`. -/
-def finalizeShake256Reg : Registration finalizeShake256Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.xofFinalize xofShake256.rate
+/-- `vg_shake256_finalize` as emitted (`Impl.Sha3.X86.Fn.xofFinalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_shake256_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofFinalize xofShake256.rate)
+      (xofFinalizeContract X86.abi xofShake256 676) 0 :=
+  verifiedScrubbedF (api := finalizeShake256Api)
+    { code := Impl.Sha3.X86.Instances.xofFinalize xofShake256.rate
       stack := 676
       verified := Proof.Sha3.X86.Instances.finalize_shake256 }
     (xofFinalizeOut _ _)
 
-/-- `vg_shake128_squeeze`. -/
-def squeezeShake128Reg : Registration squeezeShake128Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.xofSqueeze xofShake128.rate
+/-- `vg_shake128_squeeze` as emitted (`Impl.Sha3.X86.Fn.xofSqueeze`) meets its contract in
+constant time and returns without secret residue. -/
+theorem squeeze_shake128_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofSqueeze xofShake128.rate)
+      (xofSqueezeContract X86.abi xofShake128 680) 32 :=
+  verifiedScrubbedF (api := squeezeShake128Api)
+    { code := Impl.Sha3.X86.Instances.xofSqueeze xofShake128.rate
       stack := 680
       verified := Proof.Sha3.X86.Instances.squeeze_shake128 }
     (xofSqueezeOut _ _)
 
-/-- `vg_shake256_squeeze`. -/
-def squeezeShake256Reg : Registration squeezeShake256Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.xofSqueeze xofShake256.rate
+/-- `vg_shake256_squeeze` as emitted (`Impl.Sha3.X86.Fn.xofSqueeze`) meets its contract in
+constant time and returns without secret residue. -/
+theorem squeeze_shake256_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofSqueeze xofShake256.rate)
+      (xofSqueezeContract X86.abi xofShake256 680) 32 :=
+  verifiedScrubbedF (api := squeezeShake256Api)
+    { code := Impl.Sha3.X86.Instances.xofSqueeze xofShake256.rate
       stack := 680
       verified := Proof.Sha3.X86.Instances.squeeze_shake256 }
     (xofSqueezeOut _ _)

@@ -11,6 +11,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Aes.Arm
 
 def artifacts : List Artifact := [
-  Spec.Aes.expandKeyApi.artifact Arm.target Proof.Aes.Arm.Scrub.expandKeyReg]
+  Spec.Aes.expandKeyApi.artifact Arm.target {
+    code := Impl.Aes.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Aes.Arm.Fn.expandKey }]
 
 end VG.Artifacts.Aes.Arm

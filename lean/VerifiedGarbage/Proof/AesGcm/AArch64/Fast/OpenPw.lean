@@ -35,21 +35,21 @@ abbrev pwRO (s : State) : Region := ⟨stackArg s 2, 128⟩
 /-- What `vg_aes_gcm_open_with_powers` needs, on the regions its proofs run
 on: `openPreXW 3`, with `pw` readable, apart from the text and the working
 space, and holding the powers of the hash subkey. -/
-def openPwN (s : State) : Prop :=
-  openPreXW 3 [pwRO s] s ∧ (pwRO s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
-    (pwRO s).Disjoint ⟨stackArg s 3, 2560⟩ ∧
+def openPwN (Wn : Nat) (s : State) : Prop :=
+  openPreXW 3 [pwRO s] s (Wn := Wn) ∧ (pwRO s).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩ ∧
+    (pwRO s).Disjoint ⟨stackArg s 3, Wn⟩ ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 2) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- What `vg_aes_gcm_open_with_powers` needs: `openPreXW 3`, with `pw`
 readable before the stack arguments, holding the powers. -/
-def openPwW (s : State) : Prop :=
+def openPwW (Wn : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
   let pw : Region := pwRO s
-  let work : Region := ⟨stackArg s 3, 2560⟩
+  let work : Region := ⟨stackArg s 3, Wn⟩
   s.rd = [ctx, nonce, aad, tag, pw, args s 4] ∧ s.wr = [data, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ pw.Disjoint data ∧
@@ -57,13 +57,13 @@ def openPwW (s : State) : Prop :=
     work.Disjoint (args s 4) ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 3).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 4 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
+    (stackArg s 3).toNat + Wn ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 4 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1) ∧
     Spec.Gcm.Powers8Repr s.mem (stackArg s 2) (Spec.Gcm.ctxH s.mem (s.gpr .x0))
 
 /-- `vg_aes_gcm_open_with_powers`. -/
-def openPwAArch64 : Contract isa where
-  pre := openPwW
-  post := openAArch64.post
+def openPwAArch64 (Wn : Nat := 2560) : Contract isa where
+  pre := openPwW Wn
+  post := (openAArch64 Wn).post
   pub s₁ s₂ := onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂
 
 /-! ## The call of `vg_ghash_with_powers` -/
@@ -71,9 +71,9 @@ def openPwAArch64 : Contract isa where
 /-- At the call, with memory changed since the entry only in the working
 space and the text: `pw` is at `[sp + 16]`, readable, apart from the
 accumulator and the working space of the call, and holds the powers. -/
-theorem gwCallO_of {σ s : State} {Y S : Addr} (hs : openPwN σ) (sY : Region.Sub ⟨Y, 16⟩ (workR 2560 (stackArg σ 3)))
-    (sS : Region.Sub ⟨S, 256⟩ (workR 2560 (stackArg σ 3))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
-    (hf : Frame [workR 2560 (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) :
+theorem gwCallO_of {Wn : Nat} {σ s : State} {Y S : Addr} (hs : openPwN Wn σ) (sY : Region.Sub ⟨Y, 16⟩ (workR Wn (stackArg σ 3)))
+    (sS : Region.Sub ⟨S, 256⟩ (workR Wn (stackArg σ 3))) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr) (hsp : s.sp = σ.sp)
+    (hf : Frame [workR Wn (stackArg σ 3), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) :
     s.mem.readW (s.sp + BitVec.ofNat 64 16) 64 = stackArg σ 2 ∧
       InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 16) 8 ∧
       GhWCall s (σ.gpr .x0) Y S (stackArg σ 2) := by
@@ -119,16 +119,16 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem openPw_correctN (s : State) (hs : openPwN s) :
+theorem openPw_correctN {Wn : Nat} (s : State) (hs : openPwN Wn s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      openAArch64.post s s' :=
+      (openAArch64 Wn).post s s' :=
   WP.withPreservedV (openWithE_wp (w := 3) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of hs sY sS hrd hwr hsp hf
       pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
     (fastOpenWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr (.inl rfl))))
 
-theorem openPw_ctN :
-    ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
+theorem openPw_ctN {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
+    ConstantTime isa (openPwN Wn) (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) :=
   openWithE_ct (w := 3) v _ hMK (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
@@ -157,18 +157,18 @@ def narrowRdPO (s : State) : List Region :=
 /-- `s` with the readable regions of the proofs. -/
 def narrowPO (s : State) : State := s.withRegions (narrowRdPO s) s.wr
 
-theorem narrowPO_pre {s : State} (h : openPwW s) : openPwN (narrowPO s) := by
+theorem narrowPO_pre {Wn : Nat} {s : State} (h : openPwW Wn s) : openPwN Wn (narrowPO s) := by
   obtain ⟨-, hwr, cd, cw, nd, nw, ad, aw, pd, dw, da, tw, pw, wa, b0, b2, b4, b6, b1, bsp, hr, rep⟩ := h
   exact ⟨⟨rfl, hwr, cd, cw, nd, nw, ad, aw, dw, da, tw, wa, b0, b2, b4, b6, b1, bsp, hr⟩, pd, pw, rep⟩
 
-theorem narrowPO_covers {s : State} (h : openPwW s) :
+theorem narrowPO_covers {Wn : Nat} {s : State} (h : openPwW Wn s) :
     Covers ((narrowPO s).rd ++ (narrowPO s).wr) (s.rd ++ s.wr) := by
   rw [show (narrowPO s).rd = narrowRdPO s from rfl, show (narrowPO s).wr = s.wr from rfl, h.1]
   refine Covers.append (Covers.of_mem fun r hr => ?_) (Covers.refl _)
   simp only [narrowRdPO, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
-theorem narrowPO_exec {c : Prog isa} {s s₁ : State} {t : List Leak} (h : openPwW s)
+theorem narrowPO_exec {Wn : Nat} {c : Prog isa} {s s₁ : State} {t : List Leak} (h : openPwW Wn s)
     (he : Exec isa c (narrowPO s) t s₁) : Exec isa c s t (s₁.withRegions s.rd s.wr) := by
   have := Exec.widen he (narrowPO_covers h) (Covers.refl _)
   rwa [show (narrowPO s).withRegions s.rd s.wr = s from rfl] at this
@@ -193,24 +193,24 @@ section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey)
 include hMK
 
-theorem openPw_correct (s : State) (hs : openPwAArch64.pre s) :
+theorem openPw_correct {Wn : Nat} (s : State) (hs : (openPwAArch64 Wn).pre s) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
-      openPwAArch64.post s s' := by
+      (openPwAArch64 Wn).post s s' := by
   obtain ⟨t, s₁, he, ha, hp⟩ := openPw_correctN v g hMK _ (narrowPO_pre hs)
   exact ⟨t, _, narrowPO_exec hs he, ha, hp⟩
 
-theorem openPw_ct :
-    ConstantTime isa openPwAArch64.pre openPwAArch64.pub (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) := by
+theorem openPw_ct {Wn : Nat} (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hv : v.ctr.scratch ≤ Wn - 512 := by first | with_reducible assumption | exact v.ctr.scratch_le) :
+    ConstantTime isa (openPwAArch64 Wn).pre (openPwAArch64 Wn).pub (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂
   obtain ⟨u₁, r₁, f₁, -⟩ := openPw_correctN v g hMK _ (narrowPO_pre h₁)
   obtain ⟨u₂, r₂, f₂, -⟩ := openPw_correctN v g hMK _ (narrowPO_pre h₂)
   rw [(Exec.det e₁ (narrowPO_exec h₁ f₁)).1, (Exec.det e₂ (narrowPO_exec h₂ f₂)).1]
-  exact openPw_ctN v g hMK _ _ _ _ _ _ (narrowPO_pre h₁) (narrowPO_pre h₂) hq f₁ f₂
+  exact openPw_ctN v g hMK hWn hv _ _ _ _ _ _ (narrowPO_pre h₁) (narrowPO_pre h₂) hq f₁ f₂
 
 theorem openPw_verified :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
       (Proof.AesGcm.openWithPowersScratchContract AArch64.abi) :=
-  Verified.of_correct (openPw_correct v g hMK) (openPw_ct v g hMK)
+  Verified.of_correct (openPw_correct (Wn := 2560) v g hMK) (openPw_ct (Wn := 2560) v g hMK)
     { pre := by
         sig_implies_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
           Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
@@ -240,6 +240,49 @@ theorem openPw_verified :
           | decide
           | exact Region.disjoint_of_sep (by decide)
           | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) openSatPw_zero⟩ }
+
+
+/-- `openSatPw` with `F` bytes of working space. -/
+def openSatPwW (F : Nat) : State := { openSatPw with wr := [⟨0x4000, 0⟩, ⟨0x5000, F⟩] }
+
+theorem openPw_verifiedW {Wn : Nat} (h : Wn = 768 ∨ Wn = 1024 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn)
+      (Proof.AesGcm.openWithPowersScratchContract AArch64.abi (n := Wn / 8)) := by
+  have hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by omega
+  exact Verified.of_correct (openPw_correct v g hMK) (openPw_ct v g hMK)
+      { pre := by
+          rcases h with rfl | rfl | rfl <;>
+          sig_implies_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
+            Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
+            Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
+            openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+            List.getD, List.range, List.range.loop]
+        post := by
+          rcases h with rfl | rfl | rfl <;>
+          sig_implies_post [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
+            Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
+            Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
+            openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+            List.getD, List.range, List.range.loop]
+        pub := by
+          rcases h with rfl | rfl | rfl <;>
+          sig_implies_pub [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
+            Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
+            Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, openPwAArch64, openPwW, pwRO, openAArch64, onePub,
+            openRes, openLeakOf, args, rounds, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+            List.getD, List.range, List.range.loop]
+        sat := ⟨openSatPwW Wn, by
+          rcases h with rfl | rfl | rfl <;>
+          (sig_pre [Proof.AesGcm.openWithPowersScratchContract, Proof.AesGcm.openWithPowersScratchSig,
+            Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, AArch64.abi, AArch64.argRegs,
+            AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop, openSatPwW, openSatPw, openSat,
+            stackArg, stackArgAddr, Mem.readW, Mem.read]
+           sig_and_intros
+           all_goals first
+             | rfl
+             | decide
+             | exact Region.disjoint_of_sep (by decide)
+             | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) openSatPw_zero)⟩ }
 
 end
 
@@ -275,6 +318,41 @@ theorem openPw_framed (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64
     (openPw_verified v g hMK) (by decide) (by decide) (Proof.AesGcm.openWithPowersPre_local _)
     (Proof.AesGcm.openWithPowersPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openWithPowersPostOut_local _ vs m m₁ m₂ r hl) openFrameSatPw_pre
+    (hleak := Proof.AesGcm.openWithPowersLeak_local _)
+
+
+theorem openFrameSatPw_preW {B : Nat} (h : B = 800 ∨ B = 1056 ∨ B = 2592) :
+    ∃ s, (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi B).pre s := by
+  refine ⟨openFrameSatPw, ?_⟩
+  rcases h with rfl | rfl | rfl <;>
+  (sig_pre [Proof.AesGcm.openWithPowersRoundsContract, Spec.Gcm.openWithPowersSig, Spec.Gcm.openSig, Spec.Gcm.withPowersParam,
+    Spec.Gcm.openWithPowersPre, Spec.Gcm.openPre, Proof.AesGcm.openWithPowersRoundsPost, Proof.AesGcm.openRoundsPost,
+    Spec.Gcm.openWithPowersLeak, Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+    AArch64.stackArgAddr, List.getD, List.range, List.range.loop, List.cons_append, List.nil_append,
+    openFrameSatPw, openSatPw, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+   sig_and_intros
+   all_goals first
+     | rfl
+     | decide
+     | exact Region.disjoint_of_sep (by decide)
+     | exact Proof.AesGcm.powers8Repr_of_zeroMem (by decide) openSatPw_zero)
+
+/-- `openPw_framed` with `Wn` bytes of working space, in a frame of `Wn + 32`. -/
+theorem openPw_framedW (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {Wn : Nat}
+    (h : Wn = 768 ∨ Wn = 1024 ∨ Wn = 2560) (hv : v.ctr.scratch ≤ Wn - 512) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackArgScratch (Wn + 32) 3 (Impl.AesGcm.AArch64.Fast.openWithPw v.callees g.fn))
+      (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi (Wn + 32)) := by
+  rw [show Proof.AesGcm.openWithPowersRoundsContract AArch64.abi (Wn + 32) =
+    Proof.AesGcm.openWithPowersRoundsContract AArch64.abi (0 + (Wn + 32)) by rw [Nat.zero_add]]
+  exact AArch64.Verified.stackArgScratch (sig := Spec.Gcm.openWithPowersSig) (nm := "work") (e := .u64)
+    (n := Wn / 8) (pre := Spec.Gcm.openWithPowersPre AArch64.abi.ptrBits)
+    (post := Proof.AesGcm.openWithPowersRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := Wn + 32)
+    (leak := some (Spec.Gcm.openWithPowersLeak AArch64.abi.ptrBits))
+    (openPw_verifiedW v g hMK h hv) (by decide) (by rcases h with rfl | rfl | rfl <;> decide)
+    (Proof.AesGcm.openWithPowersPre_local _)
+    (Proof.AesGcm.openWithPowersPost_local _)
+    (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openWithPowersPostOut_local _ vs m m₁ m₂ r hl) (openFrameSatPw_preW (by omega))
     (hleak := Proof.AesGcm.openWithPowersLeak_local _)
 
 end VG.Proof.AesGcm.AArch64.Fast

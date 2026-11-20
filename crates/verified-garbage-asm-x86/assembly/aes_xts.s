@@ -114,6 +114,25 @@ vg_aes_xts_encrypt_unit_aesni:
 	mov esi, DWORD PTR [eax+2212]
 	mov edi, DWORD PTR [eax+2216]
 	mov ebp, DWORD PTR [eax+2220]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-52]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	mov DWORD PTR [esp+48], ecx
+	lea esp, [esp+52]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -298,6 +317,25 @@ vg_aes_xts_decrypt_unit_aesni:
 	mov esi, DWORD PTR [eax+2212]
 	mov edi, DWORD PTR [eax+2216]
 	mov ebp, DWORD PTR [eax+2220]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-52]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	mov DWORD PTR [esp+48], ecx
+	lea esp, [esp+52]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -411,6 +449,25 @@ vg_aes_xts_encrypt_unit:
 	mov esi, DWORD PTR [eax+2212]
 	mov edi, DWORD PTR [eax+2216]
 	mov ebp, DWORD PTR [eax+2220]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-52]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	mov DWORD PTR [esp+48], ecx
+	lea esp, [esp+52]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -595,5 +652,24 @@ vg_aes_xts_decrypt_unit:
 	mov esi, DWORD PTR [eax+2212]
 	mov edi, DWORD PTR [eax+2216]
 	mov ebp, DWORD PTR [eax+2220]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-52]
+	movdqu XMMWORD PTR [esp], xmm0
+	movdqu XMMWORD PTR [esp+16], xmm0
+	movdqu XMMWORD PTR [esp+32], xmm0
+	mov DWORD PTR [esp+48], ecx
+	lea esp, [esp+52]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Fn
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Scrub
@@ -15,6 +16,7 @@ import VerifiedGarbage.Proof.Gcm.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 public import VerifiedGarbage.Impl.Gcm.AArch64.Neon
+public import VerifiedGarbage.Impl.Gcm.AArch64
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -1383,6 +1385,125 @@ theorem sealGatherSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch6
   have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
       scrubSide (Impl.AesGcm.AArch64.SealGather.sealGather ⟨Spec.Gcm.sealApi.name ++ g.impl.suffix, sealScrubbed g⟩)
         2592 (Spec.Gcm.sealGatherSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `sealBasePw` of the variants without code that reads the powers. -/
+theorem sealBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode g.impl)) 2576 (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode g.impl)) 2576 (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `openBasePw` of the variants without code that reads the powers. -/
+theorem openBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode g.impl)) 2592 (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode g.impl)) 2592 (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `openToBasePw` of the variants without code that reads the powers. -/
+theorem openToBasePwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode g.impl)) 2608 (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode g.impl)) 2608 (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+
+/-- `initSide`, for `seal_with_powers` of the variants with code that reads the powers, `w`. -/
+theorem sealPwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) (w : GhashWithImpl)
+    (hw : w ∈ g.impl.gh.withPowers) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 32) 2 (sealPwCode g.impl w))
+      (gcmPwWn g.impl + 32) (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g => g.impl.gh.withPowers.all fun w =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 32) 2 (sealPwCode g.impl w))
+        (gcmPwWn g.impl + 32) (Spec.Gcm.sealWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  have h₁ := List.all_eq_true.mp h g hg
+  rw [Option.mem_def.mp hw, Option.all_some] at h₁
+  exact h₁
+
+/-- `initSide`, for `open_with_powers` of the variants with code that reads the powers, `w`. -/
+theorem openPwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) (w : GhashWithImpl)
+    (hw : w ∈ g.impl.gh.withPowers) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 32) 3 (openPwCode g.impl w))
+      (gcmPwWn g.impl + 32) (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g => g.impl.gh.withPowers.all fun w =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 32) 3 (openPwCode g.impl w))
+        (gcmPwWn g.impl + 32) (Spec.Gcm.openWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  have h₁ := List.all_eq_true.mp h g hg
+  rw [Option.mem_def.mp hw, Option.all_some] at h₁
+  exact h₁
+
+/-- `initSide`, for `openTo_with_powers` of the variants with code that reads the powers, `w`. -/
+theorem openToPwSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) (w : GhashWithImpl)
+    (hw : w ∈ g.impl.gh.withPowers) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 48) 5 (openToPwCode g.impl w))
+      (gcmPwWn g.impl + 48) (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g => g.impl.gh.withPowers.all fun w =>
+      scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (gcmPwWn g.impl + 48) 5 (openToPwCode g.impl w))
+        (gcmPwWn g.impl + 48) (Spec.Gcm.openToWithPowersSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  have h₁ := List.all_eq_true.mp h g hg
+  rw [Option.mem_def.mp hw, Option.all_some] at h₁
+  exact h₁
+
+
+/-- `initSide`, for `vg_aes_gcm_store_powers` without the instructions of `FEAT_PMULL`. -/
+theorem storePowersSide :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers) 80
+      (Spec.Gcm.storePowersSig.retBits abi.ptrBits) clear [] = true := by lit_decide
+
+
+/-- `initSide`, for `vg_aes_gcm_stream_init`. -/
+theorem streamInitSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x4 (Impl.AesGcm.AArch64.streamInit g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamInitSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x4 (Impl.AesGcm.AArch64.streamInit g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamInitSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `vg_aes_gcm_stream_aad`. -/
+theorem streamAadSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x5 (Impl.AesGcm.AArch64.streamAad g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamAadSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x5 (Impl.AesGcm.AArch64.streamAad g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamAadSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `vg_aes_gcm_stream_encrypt`. -/
+theorem streamEncryptSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamEncrypt g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamCryptSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamEncrypt g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamCryptSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `vg_aes_gcm_stream_decrypt`. -/
+theorem streamDecryptSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamDecrypt g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamCryptSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamDecrypt g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamCryptSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `vg_aes_gcm_stream_finish`. -/
+theorem streamFinishSide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x6 (Impl.AesGcm.AArch64.streamFinish g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamFinishSig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x6 (Impl.AesGcm.AArch64.streamFinish g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamFinishSig.retBits abi.ptrBits) clear []) = true := by lit_decide
+  exact List.all_eq_true.mp h g hg
+
+/-- `initSide`, for `vg_aes_gcm_stream_verify`. -/
+theorem streamVerifySide (g : GcmVariant) (hg : g ∈ Proof.Variants.AesGcm.AArch64.variants) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamVerify g.impl.callees))
+      (gcmWn g.impl) (Spec.Gcm.streamVerifySig.retBits abi.ptrBits) clear [] = true := by
+  have h : (Proof.Variants.AesGcm.AArch64.variants.all fun g =>
+      scrubSide (Impl.StackScratch.AArch64.withStackScratch (gcmWn g.impl) .x7 (Impl.AesGcm.AArch64.streamVerify g.impl.callees))
+        (gcmWn g.impl) (Spec.Gcm.streamVerifySig.retBits abi.ptrBits) clear []) = true := by lit_decide
   exact List.all_eq_true.mp h g hg
 
 end VG.Proof.AesGcm.AArch64.Scrub

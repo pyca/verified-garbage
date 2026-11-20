@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Ed448.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.WholeLocal
@@ -20,7 +21,8 @@ meta import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 meta import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.Ed448.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Proof.Ed448.WholeLocal
@@ -36,9 +38,9 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_ed448_public_key`, `vg_ed448_sign_cached` and `vg_ed448_verify` keep
 their working space in frames of their own and call the Keccak sponge and
-the scalar and point functions: each is scrubbed with `X86.Scrub.scrubFOf`,
-which zeroes the stack it and its callees use and then clears the registers
-a callee may change, given that the postconditions of the public key and the
+the scalar and point functions: each, as emitted (`Impl.Ed448.X86.Fn`),
+zeroes the stack it and its callees use and then clears the registers a
+callee may change (`X86.Scrub.verifiedScrubbedF`), given that the postconditions of the public key and the
 signature read the memory on return only within their outputs, and that of
 the verification not at all (as RISC-V's `Proof/Ed448/RISCV64/Scrub.lean`
 proves them).
@@ -82,23 +84,29 @@ theorem verifyOut :
     | [_, _, _, _, _, _, _], _ => exact h
 
 /-- `vg_ed448_public_key`. -/
-def publicKeyReg : Registration Spec.Ed448.publicKeyApi target :=
-  scrubFOf {
-      code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
+theorem publicKey_scrubbed :
+    VerifiedScrubbed target Impl.Ed448.X86.Fn.publicKey
+      (Spec.Ed448.publicKeyContract X86.abi 280) 0 :=
+  verifiedScrubbedF (api := Spec.Ed448.publicKeyApi)
+    { code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
       verified := PublicKey.publicKey_verified scalarBase_calleeOk }
     (publicKeyOut _)
 
 /-- `vg_ed448_sign_cached`. -/
-def signCachedReg : Registration Spec.Ed448.signCachedApi target :=
-  scrubFOf {
-      code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
+theorem signCached_scrubbed :
+    VerifiedScrubbed target Impl.Ed448.X86.Fn.signCached
+      (Spec.Ed448.signCachedContract X86.abi 280) 0 :=
+  verifiedScrubbedF (api := Spec.Ed448.signCachedApi)
+    { code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
       verified := SignCached.signCached_verified scalarBase_calleeOk }
     (signCachedOut _)
 
 /-- `vg_ed448_verify`. -/
-def verifyReg : Registration Spec.Ed448.verifyApi target :=
-  scrubFOf {
-      code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
+theorem verify_scrubbed :
+    VerifiedScrubbed target Impl.Ed448.X86.Fn.verify
+      (Spec.Ed448.verifyContract X86.abi 280) 32 :=
+  verifiedScrubbedF (api := Spec.Ed448.verifyApi)
+    { code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
       verified := Verify.verify_verified verifyEquation_calleeOk }
     (verifyOut _)
 

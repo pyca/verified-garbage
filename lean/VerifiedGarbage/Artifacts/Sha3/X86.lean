@@ -13,18 +13,44 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 namespace VG.Artifacts.Sha3.X86
 
 def artifacts : List Artifact := [
-  Spec.Sha3.updateSha3_224Api.artifact X86.target Proof.Sha3.X86.Absorb.absorbSha3_224Reg,
-  Spec.Sha3.finalizeSha3_224Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeSha3_224Reg,
-  Spec.Sha3.updateSha3_256Api.artifact X86.target Proof.Sha3.X86.Absorb.absorbSha3_256Reg,
-  Spec.Sha3.finalizeSha3_256Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeSha3_256Reg,
-  Spec.Sha3.updateSha3_384Api.artifact X86.target Proof.Sha3.X86.Absorb.absorbSha3_384Reg,
-  Spec.Sha3.finalizeSha3_384Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeSha3_384Reg,
-  Spec.Sha3.updateSha3_512Api.artifact X86.target Proof.Sha3.X86.Absorb.absorbSha3_512Reg,
-  Spec.Sha3.finalizeSha3_512Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeSha3_512Reg,
-  Spec.Sha3.updateShake128Api.artifact X86.target Proof.Sha3.X86.Absorb.absorbShake128Reg,
-  Spec.Sha3.finalizeShake128Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeShake128Reg,
-  Spec.Sha3.squeezeShake128Api.artifact X86.target Proof.Sha3.X86.Scrub.squeezeShake128Reg,
-  Spec.Sha3.finalizeShake256Api.artifact X86.target Proof.Sha3.X86.Scrub.finalizeShake256Reg,
-  Spec.Sha3.squeezeShake256Api.artifact X86.target Proof.Sha3.X86.Scrub.squeezeShake256Reg]
+  Spec.Sha3.updateSha3_224Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_224.rate
+    verified := .scrubbed Proof.Sha3.X86.Absorb.update_sha3_224_scrubbed },
+  Spec.Sha3.finalizeSha3_224Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_sha3_224_scrubbed },
+  Spec.Sha3.updateSha3_256Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_256.rate
+    verified := .scrubbed Proof.Sha3.X86.Absorb.update_sha3_256_scrubbed },
+  Spec.Sha3.finalizeSha3_256Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_sha3_256_scrubbed },
+  Spec.Sha3.updateSha3_384Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_384.rate
+    verified := .scrubbed Proof.Sha3.X86.Absorb.update_sha3_384_scrubbed },
+  Spec.Sha3.finalizeSha3_384Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_sha3_384_scrubbed },
+  Spec.Sha3.updateSha3_512Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_512.rate
+    verified := .scrubbed Proof.Sha3.X86.Absorb.update_sha3_512_scrubbed },
+  Spec.Sha3.finalizeSha3_512Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_sha3_512_scrubbed },
+  Spec.Sha3.updateShake128Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.update Spec.Sha3.xofShake128.rate
+    verified := .scrubbed Proof.Sha3.X86.Absorb.update_shake128_scrubbed },
+  Spec.Sha3.finalizeShake128Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.xofFinalize Spec.Sha3.xofShake128.rate
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_shake128_scrubbed },
+  Spec.Sha3.squeezeShake128Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.xofSqueeze Spec.Sha3.xofShake128.rate
+    verified := .scrubbed Proof.Sha3.X86.Scrub.squeeze_shake128_scrubbed },
+  Spec.Sha3.finalizeShake256Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.xofFinalize Spec.Sha3.xofShake256.rate
+    verified := .scrubbed Proof.Sha3.X86.Scrub.finalize_shake256_scrubbed },
+  Spec.Sha3.squeezeShake256Api.artifact X86.target {
+    code := Impl.Sha3.X86.Fn.xofSqueeze Spec.Sha3.xofShake256.rate
+    verified := .scrubbed Proof.Sha3.X86.Scrub.squeeze_shake256_scrubbed }]
 
 end VG.Artifacts.Sha3.X86
