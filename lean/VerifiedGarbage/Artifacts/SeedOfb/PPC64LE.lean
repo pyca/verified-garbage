@@ -16,7 +16,11 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalLit
 namespace VG.Artifacts.SeedOfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Seed.ofbApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.ofbReg,
-  Spec.Seed.ofbFinalApi.artifact PPC64LE.target Proof.Seed.PPC64LE.Scrub.ofbFinalReg]
+  Spec.Seed.ofbApi.artifact PPC64LE.target {
+    code := Impl.Seed.PPC64LE.Fn.ofb
+    verified := .scrubbed Proof.Seed.PPC64LE.Scrub.ofb_scrubbed },
+  Spec.Seed.ofbFinalApi.artifact PPC64LE.target {
+    code := Impl.Seed.PPC64LE.Fn.ofbFinal
+    verified := .scrubbed Proof.Seed.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.SeedOfb.PPC64LE
