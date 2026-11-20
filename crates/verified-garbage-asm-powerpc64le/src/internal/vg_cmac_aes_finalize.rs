@@ -11,9 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize() {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfBAICPgYCMj58P8nOQAAKSg="
+        r#".base64 "pgIIfBAACPgYAMj58P8nOQAAKSg="
 beq %cr0, 20f
-.base64 "AAAgOQAIKPkICCj5AAhIOXgzy3x4O+x8AAAnKA=="
+.base64 "AAAgOQAAKPkIACj5AABIOXgzy3x4O+x8AAAnKA=="
 beq %cr0, 22f
 24:
 .base64 "AAAriQAAKpkBAGs5AQBKOf//jDkAACwo"
@@ -21,14 +21,14 @@ bne %cr0, 24b
 b 23f
 22:
 23:
-.base64 "gAAgOQAAKpkACCjpAAFD6XhSKX0ACCj5CAgo6QgBQ+l4Uil9CAgo+Q=="
+.base64 "gAAgOQAAKpkAACjpAAFD6XhSKX0AACj5CAAo6QgBQ+l4Uil9CAAo+Q=="
 b 21f
 20:
-.base64 "AAAm6fAAQ+l4Uil9AAgo+QgAJun4AEPpeFIpfQgIKPk="
+.base64 "AAAm6fAAQ+l4Uil9AAAo+QgAJun4AEPpeFIpfQgAKPk="
 21:
-.base64 "AAAl6QAISOl4Uil9AAAl+QgAJekICEjpeFIpfQgAJfl4Qw59AQDAOHhzx30="
+.base64 "AAAl6QAASOl4Uil9AAAl+QgAJekIAEjpeFIpfQgAJfl4Qw59AQDAOA=="
 bl {vg_aes_encrypt_blocks}
-.base64 "EAgO6BgIzummAwh8IACATg==""#,
+.base64 "EAAO6BgAzummAwh8IACATg==""#,
         vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

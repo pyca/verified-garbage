@@ -390,7 +390,7 @@ theorem stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreLayou
     hmask ptrs offs wrs states procs) fun t ht => ?_
   obtain dis : (⟨base.gpr .r10+128,512⟩ : Region).Disjoint (Blocks.coreData base n) :=
     (lay.scratch (Blocks.coreData base n) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 128) (n := 512) (k := 2048) (by decide))
+      (Offset.sub_base _ (d := 128) (n := 512) (k := 640) (by decide))
   refine ⟨?_,?_,?_,ht.processed,?_,?_,?_,?_,?_⟩
   · exact fxs.update (ht.keep.mono (by simp [Blocks.loopGprs]))
       (ht.v .v19 (by decide)) (ht.v .v13 (by decide))
@@ -672,7 +672,7 @@ theorem dec_stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreL
     hmask ptrs offs wrs states procs) fun t ht => ?_
   obtain dis : (⟨base.gpr .r10+128,512⟩ : Region).Disjoint (Blocks.coreData base n) :=
     (lay.scratch (Blocks.coreData base n) (by simp)).symm.sub_left
-      (Offset.sub_base _ (d := 128) (n := 512) (k := 2048) (by decide))
+      (Offset.sub_base _ (d := 128) (n := 512) (k := 640) (by decide))
   refine ⟨?_,?_,?_,ht.processed,?_,?_,?_,?_,?_⟩
   · exact fxs.update (ht.keep.mono (by simp [Blocks.loopGprs]))
       (ht.v .v19 (by decide)) (ht.v .v13 (by decide))

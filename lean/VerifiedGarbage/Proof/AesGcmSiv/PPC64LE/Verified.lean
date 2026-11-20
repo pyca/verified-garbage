@@ -125,7 +125,7 @@ namespace VG.Proof.AesGcmSiv.PPC64LE
 open VG VG.PPC64LE
 open VG.Proof.Gather.PPC64LE (Eq2 TT rel_taint)
 open VG.Proof.AesCcm.PPC64LE (Runs Runs.of_wp Runs.keep)
-open VG.Proof.AesGcm.PPC64LE (CtrCall GhCall KeyCall)
+open VG.Proof.AesGcm.PPC64LE (CtrCallF GhCallF KeyCallF)
 
 /-- The registers the environment pins. -/
 abbrev envRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22]
@@ -181,36 +181,36 @@ theorem kept_saved {c : Cx} {s s' : State} (E : Env c s) (hrd : s'.rd = s.rd) (h
 
 /-! ## The calls -/
 
-theorem rel_ctr {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat} (h₁ : CtrCall σ₁ K C D S R n)
-    (h₂ : CtrCall σ₂ K C D S R n) (hsp : σ₁.sp = σ₂.sp) :
+theorem rel_ctr {σ₁ σ₂ : State} {K C D : Addr} {R n : Nat} (h₁ : CtrCallF σ₁ K C D R n)
+    (h₂ : CtrCallF σ₂ K C D R n) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.ctrCall TT :=
-  Proof.AesGcm.PPC64LE.ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
+  Proof.AesGcm.PPC64LE.ctr_relF fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, R, n, h₁, h₂, hsp⟩
 
-theorem rel_gh [VG.Proof.Gcm.PPC64LE.GhashLaw] {σ₁ σ₂ : State} {H Y D S : Addr} {n : Nat} (h₁ : GhCall σ₁ H Y D S n) (h₂ : GhCall σ₂ H Y D S n)
+theorem rel_gh [VG.Proof.Gcm.PPC64LE.GhashLaw] {σ₁ σ₂ : State} {H Y D : Addr} {n : Nat} (h₁ : GhCallF σ₁ H Y D n) (h₂ : GhCallF σ₂ H Y D n)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.ghCall TT :=
-  Proof.AesGcm.PPC64LE.gh_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, S, n, h₁, h₂, hsp⟩
+  Proof.AesGcm.PPC64LE.gh_relF fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, n, h₁, h₂, hsp⟩
 
-theorem rel_key {σ₁ σ₂ : State} {K : Addr} {kl : Nat} {C S : Addr} (h₁ : KeyCall σ₁ K kl C S)
-    (h₂ : KeyCall σ₂ K kl C S) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.keyCall TT :=
-  Proof.AesGcm.PPC64LE.key_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, kl, C, S, h₁, h₂, hsp⟩
+theorem rel_key {σ₁ σ₂ : State} {K : Addr} {kl : Nat} {C : Addr} (h₁ : KeyCallF σ₁ K kl C)
+    (h₂ : KeyCallF σ₂ K kl C) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.keyCall TT :=
+  Proof.AesGcm.PPC64LE.key_relF fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, kl, C, h₁, h₂, hsp⟩
 
-theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s) (h : CtrCall s K C D S R n) :
+theorem ctr_runs {c : Cx} {s : State} {K C D : Addr} {R n : Nat} (E : Env c s) (h : CtrCallF s K C D R n) :
     Runs Impl.AesGcm.PPC64LE.ctrCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.ctr_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
+  Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.ctr_callF h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
-theorem gh_runs [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
+theorem gh_runs [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {s : State} {H Y D : Addr} {n : Nat} (E : Env c s) (h : GhCallF s H Y D n) :
     Runs Impl.AesGcm.PPC64LE.ghCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.gh_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
+  Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.gh_callF h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
-theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.PPC64LE.BCall σ₁ K D S R n)
-    (h₂ : Proof.AesOcb.PPC64LE.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :
+theorem rel_enc {σ₁ σ₂ : State} {K D : Addr} {R n : Nat} (h₁ : Proof.AesOcb.PPC64LE.BCall σ₁ K D R n)
+    (h₂ : Proof.AesOcb.PPC64LE.BCall σ₂ K D R n) (hsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcmSiv.PPC64LE.encCall TT :=
-  Proof.AesOcb.PPC64LE.blk_rel Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct
-    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, S, R, n, h₁, h₂, hsp⟩
+  Proof.AesOcb.PPC64LE.blk_rel Proof.Aes.PPC64LE.encryptBlocksF_correct Proof.Aes.PPC64LE.encryptBlocksF_ct
+    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, R, n, h₁, h₂, hsp⟩
 
-theorem enc_runs {c : Cx} {s : State} {K D S : Addr} {R n : Nat} (E : Env c s)
-    (h : Proof.AesOcb.PPC64LE.BCall s K D S R n) : Runs Impl.AesGcmSiv.PPC64LE.encCall s (Kept c s) :=
-  Runs.of_wp (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
+theorem enc_runs {c : Cx} {s : State} {K D : Addr} {R n : Nat} (E : Env c s)
+    (h : Proof.AesOcb.PPC64LE.BCall s K D R n) : Runs Impl.AesGcmSiv.PPC64LE.encCall s (Kept c s) :=
+  Runs.of_wp (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocksF_correct
     Proof.AesOcb.PPC64LE.encryptBlocks_noFrames h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
 end VG.Proof.AesGcmSiv.PPC64LE
@@ -248,7 +248,7 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
 open VG.Proof.ChaCha20Poly1305.PPC64LE (wp_li)
 open VG.Proof.Gather.PPC64LE (Eq2 TT eval_nonzero)
 open VG.Proof.AesCcm.PPC64LE (Runs Runs.of_wp Runs.mono Runs.and Runs.block_append rel_seqR rel_of_eq2 rel_post)
-open VG.Proof.AesGcm.PPC64LE (CtrCall)
+open VG.Proof.AesGcm.PPC64LE (CtrCallF)
 
 /-- `derive`. -/
 theorem derive_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp) :
@@ -272,8 +272,8 @@ theorem derive_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
 /-- `expand`'s block: the call's arguments, and what it keeps. -/
 theorem expArgs_runs {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
     Runs (.block expandArgs) t fun t' =>
-      Proof.AesGcm.PPC64LE.KeyCall t' (c.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen c.R) (c.W + BitVec.ofNat 64 256)
-        (c.W + BitVec.ofNat 64 1776) ∧ Kept c t t' :=
+      Proof.AesGcm.PPC64LE.KeyCallF t' (c.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen c.R) (c.W + BitVec.ofNat 64 256)
+        ∧ Kept c t t' :=
   (Runs.and (Runs.of_wp (expArgs_wp L E)) (Runs.kept E [.r3, .r4, .r5, .r6] (by decide +kernel))).mono
     fun _ ⟨⟨_, _, kc⟩, K⟩ => ⟨kc, K⟩
 
@@ -568,7 +568,7 @@ include L E₁ E₂ hsp
 
 /-- `absTail`: the last `r` bytes at `P`. -/
 theorem absTail_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hc₁ : Covers [⟨P, r⟩] (σ₁.rd ++ σ₁.wr))
-    (hc₂ : Covers [⟨P, r⟩] (σ₂.rd ++ σ₂.wr)) (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 3824⟩)
+    (hc₂ : Covers [⟨P, r⟩] (σ₂.rd ++ σ₂.wr)) (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 1520⟩)
     (h23₁ : σ₁.gpr .r23 = P) (h23₂ : σ₂.gpr .r23 = P) (h24₁ : σ₁.gpr .r24 = BitVec.ofNat 64 r)
     (h24₂ : σ₂.gpr .r24 = BitVec.ofNat 64 r) : RelCT isa (Eq2 σ₁ σ₂) absTail TT := by
   unfold absTail
@@ -584,7 +584,7 @@ theorem absTail_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {P : Addr} {r : Nat} (hr1 : 
 
 /-- `absorb`: the `m` bytes at `Q`. -/
 theorem absorb_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hQ₁ : Src c σ₁ Q m) (hQ₂ : Src c σ₂ Q m)
-    (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 3824⟩) (h23₁ : σ₁.gpr .r23 = Q) (h23₂ : σ₂.gpr .r23 = Q)
+    (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 1520⟩) (h23₁ : σ₁.gpr .r23 = Q) (h23₂ : σ₂.gpr .r23 = Q)
     (h24₁ : σ₁.gpr .r24 = BitVec.ofNat 64 m) (h24₂ : σ₂.gpr .r24 = BitVec.ofNat 64 m) :
     RelCT isa (Eq2 σ₁ σ₂) absorb TT := by
   unfold absorb wholeLeft
@@ -688,7 +688,7 @@ section
 
 Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/GcmSiv/Contract.lean`, which imply these
-(`Verified.lean`), with a 3824-byte `work` buffer appended
+(`Verified.lean`), with a 1520-byte `work` buffer appended
 (`Proof/AesGcmSiv/Scratch.lean`), its address the one stack argument. A call
 (`bl`) stores nothing in memory, so no stack is used.
 -/
@@ -715,13 +715,13 @@ def oneLay (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let tag : Region := ⟨s.gpr .r10, 16⟩
-  let work : Region := ⟨stackArg s 0, 3824⟩
+  let work : Region := ⟨stackArg s 0, 1520⟩
   sch.Disjoint data ∧ sch.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ tag.Disjoint data ∧ tag.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s) ∧ work.Disjoint (args s) ∧
     (s.gpr .r3).toNat + 240 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 12 ≤ 2 ^ 64 ∧
     (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧
-    (s.gpr .r10).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 3824 ≤ 2 ^ 64 ∧
+    (s.gpr .r10).toNat + 16 ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 1520 ≤ 2 ^ 64 ∧
     (stackArgAddr s 0).toNat + 8 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- What `vg_aes_gcm_siv_seal` needs: `oneLay`, with `tag` the 16 bytes to
@@ -732,7 +732,7 @@ def sealPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let tag : Region := ⟨s.gpr .r10, 16⟩
-  let work : Region := ⟨stackArg s 0, 3824⟩
+  let work : Region := ⟨stackArg s 0, 1520⟩
   s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ tag.Disjoint (args s) ∧ oneLay s
 
 /-- What `vg_aes_gcm_siv_open` needs: `oneLay`, with the received tag the 16
@@ -743,7 +743,7 @@ def openPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let tag : Region := ⟨s.gpr .r10, 16⟩
-  let work : Region := ⟨stackArg s 0, 3824⟩
+  let work : Region := ⟨stackArg s 0, 1520⟩
   s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay s
 
 def onePub (s₁ s₂ : State) : Prop :=
@@ -839,7 +839,7 @@ structure Args (c : Cx) (s : State) : Prop where
   w : stackArg s 0 = c.W
   perm : Perm c s
   argsC : Covers [args s] (s.rd ++ s.wr)
-  argsW : (args s).Disjoint ⟨c.W, 3824⟩
+  argsW : (args s).Disjoint ⟨c.W, 1520⟩
 
 theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
@@ -852,7 +852,7 @@ theorem args_of_lay {s : State} (h : oneLay s)
     (hk : Covers [⟨s.gpr .r3, 240⟩] (s.rd ++ s.wr)) (hN : Covers [⟨s.gpr .r5, 12⟩] (s.rd ++ s.wr))
     (hA : Covers [⟨s.gpr .r6, (s.gpr .r7).toNat⟩] (s.rd ++ s.wr)) (ha : Covers [args s] (s.rd ++ s.wr))
     (hT : Covers [⟨s.gpr .r10, 16⟩] (s.rd ++ s.wr))
-    (hD : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 0, 3824⟩] s.wr) :
+    (hD : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 0, 1520⟩] s.wr) :
     Args (cxOf s) s := by
   obtain ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9, _, d11, b1, b2, b3, b4, b5, b6, _, hR⟩ := h
   exact {
@@ -875,7 +875,7 @@ theorem args_of_seal {s : State} (h : sealPre s) : Args (cxOf s) s ∧ Covers [�
   obtain ⟨hrd, hwr, _, hl⟩ := h
   obtain mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩, args s],
       Covers [r] (s.rd ++ s.wr) := fun r hr => covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨s.gpr .r10, 16⟩, ⟨stackArg s 0, 3824⟩],
+  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨s.gpr .r10, 16⟩, ⟨stackArg s 0, 1520⟩],
       Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (Covers.right (mwr _ (by simp))) (mwr _ (by simp)) (mwr _ (by simp)), mwr _ (by simp)⟩
@@ -886,7 +886,7 @@ theorem args_of_open {s : State} (h : openPre s) : Args (cxOf s) s := by
   obtain mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, 12⟩, ⟨s.gpr .r6, (s.gpr .r7).toNat⟩,
       ⟨s.gpr .r10, 16⟩, args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨stackArg s 0, 3824⟩], Covers [r] s.wr :=
+  obtain mwr : ∀ r ∈ [(⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region), ⟨stackArg s 0, 1520⟩], Covers [r] s.wr :=
     fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (mwr _ (by simp)) (mwr _ (by simp))
@@ -895,15 +895,15 @@ theorem args_of_open {s : State} (h : openPre s) : Args (cxOf s) s := by
 
 /-- What the pieces write: the parts of `W` below the slots and above them,
 and the data. -/
-abbrev mutR (c : Cx) : List Region := [⟨c.W, 128⟩, ⟨c.W + BitVec.ofNat 64 240, 3584⟩, ⟨c.D, c.n⟩]
+abbrev mutR (c : Cx) : List Region := [⟨c.W, 128⟩, ⟨c.W + BitVec.ofNat 64 240, 1280⟩, ⟨c.D, c.n⟩]
 
 theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 128) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨⟨c.W, 128⟩, by simp, Offset.sub_base _ h⟩
 
-theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 3824) :
+theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 1520) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨c.W + BitVec.ofNat 64 240, 3584⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
+  ⟨⟨c.W + BitVec.ofNat 64 240, 1280⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -1474,14 +1474,14 @@ abbrev TagInputEq : Prop := ∀ a n pt d : List Byte, Spec.GcmSiv.tagInput a n p
 /-- Regions of `W` as offsets and lengths. -/
 abbrev wRs (W : Addr) (rs : List (Nat × Nat)) : List Region := rs.map fun q => ⟨W + BitVec.ofNat 64 q.1, q.2⟩
 
-theorem keyR_eq (W : Addr) : keyR W = wRs W [(16, 112), (240, 16), (256, 3568)] := rfl
+theorem keyR_eq (W : Addr) : keyR W = wRs W [(16, 112), (240, 16), (256, 1264)] := rfl
 
-theorem polyR_eq (W : Addr) : polyR W = wRs W [(96, 16), (240, 16), (80, 16), (496, 1280)] := rfl
+theorem polyR_eq (W : Addr) : polyR W = wRs W [(96, 16), (240, 16), (80, 16), (496, 1024)] := rfl
 
-theorem tagR_eq (W : Addr) (o : Nat) : tagR W o = wRs W [(112, 16), (o, 16), (1776, 2048)] := rfl
+theorem tagR_eq (W : Addr) (o : Nat) : tagR W o = wRs W [(112, 16), (o, 16)] := rfl
 
 /-- Parts of `W` the pieces write are within `mutR`. -/
-theorem wRs_mut {c : Cx} {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 ≤ 128 ∨ (240 ≤ q.1 ∧ q.1 + q.2 ≤ 3824)) :
+theorem wRs_mut {c : Cx} {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 ≤ 128 ∨ (240 ≤ q.1 ∧ q.1 + q.2 ≤ 1520)) :
     ∀ r ∈ wRs c.W rs, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
@@ -1492,24 +1492,23 @@ theorem wRs_mut {c : Cx} {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 �
 theorem cryR_mut (c : Cx) : ∀ r ∈ cryR c.W c.D c.n, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact sub_lo (by decide)
-  · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_hi (by decide) (by decide)
   · exact sub_data
 
 /-- A part of `W` missing the parts `rs` of `W`. -/
 theorem w_keep {c : Cx} (L : Lay c) {rs : List (Nat × Nat)} {d k : Nat}
-    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 3824) (hd : d + k ≤ 3824) :
+    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 1520) (hd : d + k ≤ 1520) :
     ∀ r ∈ wRs c.W rs, (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
   exact L.w_w (h q hq).1 hd (h q hq).2
 
 /-- A buffer missing `W` misses the parts `rs` of `W`. -/
-theorem buf_keep {c : Cx} {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3824⟩)
-    {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 ≤ 3824) :
+theorem buf_keep {c : Cx} {P : Addr} {len : Nat} (hP : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 1520⟩)
+    {rs : List (Nat × Nat)} (h : ∀ q ∈ rs, q.1 + q.2 ≤ 1520) :
     ∀ r ∈ wRs c.W rs, (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
@@ -1527,7 +1526,7 @@ theorem ciph_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr
 
 /-- The entry keeps a buffer missing `W`. -/
 theorem entry_buf {c : Cx} {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) {P : Addr} {len : Nat}
-    (hP : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3824⟩) (hl : len ≤ 2 ^ 64) : bytesAt s₁.mem P len = bytesAt s.mem P len :=
+    (hP : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 1520⟩) (hl : len ≤ 2 ^ 64) : bytesAt s₁.mem P len = bytesAt s.mem P len :=
   bytesAt_keep hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hP.sub_right (Lay.wSub (by decide))) hl
 
@@ -1597,8 +1596,7 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   obtain t₅ : bytesAt s₅.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s₄.mem (c.W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+      rcases hr with rfl | rfl | rfl | rfl
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
@@ -1753,8 +1751,7 @@ theorem open_rel [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
     have dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n,
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      rcases hr with rfl | rfl | rfl | rfl
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
@@ -1823,12 +1820,11 @@ theorem decrypt_eq (hti : TagInputEq) (ciph : Spec.GcmSiv.Cipher) (kl : Nat) (no
   simp only [hti]
 
 /-- A buffer missing `W` and the data misses what counter mode writes. -/
-theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 3824⟩)
+theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 1520⟩)
     (hd : (⟨P, len⟩ : Region).Disjoint ⟨c.D, c.n⟩) : ∀ r ∈ cryR c.W c.D c.n, (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact hw.sub_right (Lay.wSub (by decide))
+  rcases hr with rfl | rfl | rfl | rfl
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
@@ -1863,9 +1859,8 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   obtain dC : ∀ {d : Nat}, d + 16 ≤ 96 → ∀ r ∈ cryR c.W c.D c.n, (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r :=
     fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact L.w_w (.inl hd) (by omega_using [hd]) (by decide)
-      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
       · exact (L.d_w' (by omega_using [hd])).symm
@@ -2009,11 +2004,11 @@ time, given that the tag input computed with GHASH is the RFC's
 `Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`, so that only that leaf
 imports its algebra), a state satisfying each
 precondition, and the shared contracts of `Spec/GcmSiv/Contract.lean` with
-the working space as a last argument (`Proof/AesGcmSiv/Scratch.lean`, 478
+the working space as a last argument (`Proof/AesGcmSiv/Scratch.lean`, 190
 doublewords), with no stack: a call (`bl`) stores nothing in memory, and
 each function saves the return address in the working space. Then the code
 in a frame that allocates the working space (`Verified.stackScratchArgs`):
-it is the first stack argument, so the frame of 3936 bytes holds the
+it is the first stack argument, so the frame of 1632 bytes holds the
 frame's own header and Parameter Save Area, the address of the working
 space and the working space.
 -/
@@ -2044,18 +2039,18 @@ def sealSat : State where
   sp := 0x8000
   mem a := bif Nat.beq a.toNat 0x8061 then 0x50 else 0
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x8060, 8⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x4800, 16⟩, ⟨0x5000, 3824⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x4800, 16⟩, ⟨0x5000, 1520⟩]
 
 /-- A state satisfying the precondition of `vg_aes_gcm_siv_open`: as
 `sealSat`, with the tag read only. -/
 def openSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4800, 16⟩, ⟨0x8060, 8⟩],
-                 wr := [⟨0x4000, 0⟩, ⟨0x5000, 3824⟩] }
+                 wr := [⟨0x4000, 0⟩, ⟨0x5000, 1520⟩] }
 
 /-! ## The shared contracts -/
 
 theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
-    Verified PPC64LE.target «seal» (Proof.AesGcmSiv.sealScratchContract PPC64LE.abi 478) :=
+    Verified PPC64LE.target «seal» (Proof.AesGcmSiv.sealScratchContract PPC64LE.abi 190) :=
   Verified.of_correct (seal_correct hti) seal_ct
       { pre := by
           intro s h
@@ -2092,7 +2087,7 @@ theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
             [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat }
 
 theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
-    Verified PPC64LE.target «open» (Proof.AesGcmSiv.openScratchContract PPC64LE.abi 478) :=
+    Verified PPC64LE.target «open» (Proof.AesGcmSiv.openScratchContract PPC64LE.abi 190) :=
   Verified.of_correct (open_correct hti) open_ct
       { pre := by
           intro s h
@@ -2147,18 +2142,18 @@ working space: no stack arguments. -/
 def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩], wr := [⟨0x4000, 0⟩, ⟨0x4800, 16⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 3936).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 1632).pre s := by
   implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr, List.getD, List.range,
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «seal»)
-      (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 3936) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 «seal»)
+      (Proof.AesGcmSiv.sealRoundsContract PPC64LE.abi 1632) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
-    (n := 478) (pre := Spec.GcmSiv.sealPre PPC64LE.abi.ptrBits)
-    (post := Proof.AesGcmSiv.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
+    (n := 190) (pre := Spec.GcmSiv.sealPre PPC64LE.abi.ptrBits)
+    (post := Proof.AesGcmSiv.sealRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 1632) (m := 0)
     (seal_verified hti) (by decide) (by decide) (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcmSiv.sealPostOut_local _ vs m m₁ m₂ r hl)
     sealFrameSat_pre
@@ -2168,18 +2163,18 @@ working space: no stack arguments. -/
 def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4800, 16⟩], wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 3936).pre s := by
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 1632).pre s := by
   implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, PPC64LE.abi, PPC64LE.argRegs, PPC64LE.stackArg, PPC64LE.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, sealSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 «open»)
-      (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 3936) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 «open»)
+      (Proof.AesGcmSiv.openRoundsContract PPC64LE.abi 1632) :=
   Verified.stackScratchArgs (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
-    (n := 478) (pre := Spec.GcmSiv.openPre PPC64LE.abi.ptrBits)
-    (post := Proof.AesGcmSiv.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3936) (m := 0)
+    (n := 190) (pre := Spec.GcmSiv.openPre PPC64LE.abi.ptrBits)
+    (post := Proof.AesGcmSiv.openRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0) (bytes := 1632) (m := 0)
     (leak := some (Spec.GcmSiv.openLeak PPC64LE.abi.ptrBits))
     (Proof.AesGcmSiv.Verified.of_openScratch (open_verified hti)) (by decide) (by decide)
     (Proof.AesGcmSiv.openPre_local _) (Proof.AesGcmSiv.openPost_local _)

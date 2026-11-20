@@ -75,10 +75,9 @@ theorem decrypt_wp {c : Cx} {s : State} (Ar : Args c s) (hA : Ads c s.mem s) :
   obtain a₆ : bytesAt s₆.mem (c.W + BitVec.ofNat 64 dO) 16 = bytesAt s₅.mem (c.W + BitVec.ofNat 64 dO) 16 :=
     Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact (L.d_w' (by decide)).symm
-      · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)) (by decide)
+      · exact L.w_w (.inr (by decide)) (by decide) (by decide)) (by decide)
   obtain mac₆ : Spec.Siv.ctxMac s₆.mem c.C c.R = Spec.Siv.ctxMac s.mem c.C c.R := by
     rw [ctxMac_frame f₆ (ctrR_c L) L.rb, wf₅.ctxMac L]
   -- The plaintext as S2V's string, and S2V's end.

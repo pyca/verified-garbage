@@ -41,7 +41,7 @@ def BI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (s : State) : Prop :=
 
 /-- `BI`, with the bulk helper's working space writable. -/
 def BK (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (s : State) : Prop :=
-  BI c st w sp R A D N s ∧ Covers [⟨w + 448, 2112⟩] s.wr
+  BI c st w sp R A D N s ∧ Covers [⟨w + 448, 704⟩] s.wr
 
 def bodyPublic : List Reg := [.r22,.r23,.r27,.r28,.r29,.r30,.r31]
 
@@ -67,7 +67,7 @@ def ArgsI (c st w sp : Addr) (R : Nat) (A D N : BitVec 64) (t : State) : Prop :=
 
 theorem kern_of {c st w : Addr} {D N : BitVec 64} {V : Reg → BitVec 64} {s : State}
     (K : KernS c w D N.toNat) (hstw : st = w + BitVec.ofNat 64 16) (hc : V .r29 = c) (hst : V .r30 = st)
-    (hw : V .r31 = w) (hd : V .r27 = D) (hn : V .r23 = N) (hk : Covers [⟨w + 448, 2112⟩] s.wr) :
+    (hw : V .r31 = w) (hd : V .r27 = D) (hn : V .r23 = N) (hk : Covers [⟨w + 448, 704⟩] s.wr) :
     Kern V s :=
   KernS.kern (by rw [hc, hw, hd, hn]; exact K) (by rw [hst, hw]; exact hstw) (by rw [hw]; exact hk)
 
@@ -89,7 +89,7 @@ theorem block_call_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpms
   refine ⟨blockReads (argsState s),blockWrites (argsState s),
     blockReads (argsState t),blockWrites (argsState t),hcs.pre,hct.pre,?_,
     hcs.reads,hcs.writes,hct.reads,hct.writes⟩
-  sig_eval [Proof.Gcm.encryptBlocksContract,Proof.Gcm.cryptBlocksSig,PPC64LE.abi,PPC64LE.argRegs]
+  sig_eval [Proof.Gcm.encryptBlocksContractOf,Proof.Gcm.cryptBlocksSigOf,PPC64LE.abi,PPC64LE.argRegs]
   simp only [he.r29,he'.r29,he.r30,he'.r30,he.r31,he'.r31,he.r28,he'.r28,
     he.fr .r27 (by decide),he'.fr .r27 (by decide),he.fr .r23 (by decide),he'.fr .r23 (by decide),
     hc,hc',hst,hst',hw,hw',hR,hR',hd,hd',hn,hn',he.sp,he'.sp]
@@ -234,10 +234,10 @@ theorem selector_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs b
 theorem body_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {c W sp : Addr} {R : Nat} {Np : Addr} {n : Nat} {Ad A D N : BitVec 64}
     (L : Lay c (W+BitVec.ofNat 64 16) W) (K : KernS c W D N.toNat) (hv : R=10 ∨ R=12 ∨ R=14) :
-    CT (fun s => OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 2112⟩] s.wr)
+    CT (fun s => OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 704⟩] s.wr)
       Impl.AesGcm.PPC64LE.SealFused.body := by
   obtain ⟨_,hc⟩ := selector_taint
-  refine CT.seq (J := fun s => (OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 2112⟩] s.wr) ∧
+  refine CT.seq (J := fun s => (OneI c W sp R Np n Ad A D N s ∧ Covers [⟨W + 448, 704⟩] s.wr) ∧
     s.gpr .r12=BitVec.ofNat 64 (N.toNat/512))
     (CT.taint bodyPublic (fun _ _ hs ht => bi_agree (one_bi hs.1) (one_bi ht.1)) hc)
     (fun s ⟨hs, hk⟩ => ?_) ?_

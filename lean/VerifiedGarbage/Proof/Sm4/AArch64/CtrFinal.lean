@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.AesCfb.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 import VerifiedGarbage.Proof.AesCtr.AArch64.Final
 import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 import VerifiedGarbage.Proof.AesCtr.AArch64.CT
@@ -211,6 +212,10 @@ structure CtrImpl where
   noDit : code.all (fun i => !i.writesDit) = true
   keepsV : code.allInstrs keepsV = true
   suffix : String
+  /-- The registers the code writes that the calling convention does not
+  preserve: what a function that calls it clears before returning. -/
+  clear : Impl.Residue.AArch64.Clear
+  scrub : AArch64.ScrubAll.calleeSide code clear = true
 
 namespace CtrImpl
 
@@ -224,6 +229,8 @@ def scalar : CtrImpl where
   noDit := ctr_noDit
   keepsV := ctrFramed_keepsV
   suffix := ""
+  clear := Impl.Sm4.AArch64.Fn.ctrClear
+  scrub := by lit_decide
 
 /-- `vg_sm4_ctr_sm4`, with the Armv8 SM4 instructions. -/
 def sm4 : CtrImpl where
@@ -235,6 +242,8 @@ def sm4 : CtrImpl where
   noDit := ctrSm4_noDit
   keepsV := ctrFramedSm4_keepsV
   suffix := "_sm4"
+  clear := Impl.Sm4.AArch64.Fn.ctrSm4Clear
+  scrub := by lit_decide
 
 end CtrImpl
 

@@ -48,10 +48,10 @@ def subkeysPPC64LE : Contract isa where
   pre s :=
     let sched : Region := ⟨s.gpr .r3, 240⟩
     let subk : Region := ⟨s.gpr .r5, 32⟩
-    let scr : Region := ⟨s.gpr .r6, 2176⟩
+    let scr : Region := ⟨s.gpr .r6, 64⟩
     s.rd = [sched] ∧ s.wr = [subk, scr] ∧
       sched.Disjoint subk ∧ sched.Disjoint scr ∧ subk.Disjoint scr ∧
-      (s.gpr .r5).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 2176 ≤ 2 ^ 64 ∧
+      (s.gpr .r5).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 64 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
   post s s' :=
     let ks := Spec.Cmac.subkeys (ciphAt s.mem (s.gpr .r3) (s.gpr .r4).toNat) 16
@@ -66,12 +66,12 @@ def updatePPC64LE : Contract isa where
     let sched : Region := ⟨s.gpr .r3, 240⟩
     let state : Region := ⟨s.gpr .r5, 16⟩
     let data : Region := ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 2176⟩
+    let scr : Region := ⟨s.gpr .r8, 64⟩
     s.rd = [sched, data] ∧ s.wr = [state, scr] ∧
       sched.Disjoint state ∧ sched.Disjoint scr ∧ data.Disjoint state ∧ data.Disjoint scr ∧
       state.Disjoint scr ∧
       (s.gpr .r5).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 16 * (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r8).toNat + 2176 ≤ 2 ^ 64 ∧
+      (s.gpr .r8).toNat + 64 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
   post s s' :=
     Spec.Aes.bytesAt s'.mem (s.gpr .r5) 16 =
@@ -87,12 +87,12 @@ def finalizePPC64LE : Contract isa where
     let key : Region := ⟨s.gpr .r3, 272⟩
     let state : Region := ⟨s.gpr .r5, 16⟩
     let last : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 2176⟩
+    let scr : Region := ⟨s.gpr .r8, 64⟩
     s.rd = [key, last] ∧ s.wr = [state, scr] ∧
       key.Disjoint state ∧ key.Disjoint scr ∧ last.Disjoint state ∧ last.Disjoint scr ∧
       state.Disjoint scr ∧
       (s.gpr .r3).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 2176 ≤ 2 ^ 64 ∧
+      (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 64 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14) ∧
       (s.gpr .r7).toNat ≤ 16
   post s s' :=
@@ -128,7 +128,7 @@ restored (`Spill.restore_ok`).
 namespace VG.Proof.CmacAes.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.CmacAes.PPC64LE
-open VG.Proof.AesCbc.PPC64LE (CallPre CallPost blk_call in_rw)
+open VG.Proof.AesCbc.PPC64LE (CallPreF CallPostF blk_callF in_rw)
 open VG.Proof.Cmac (dblHi dblLo)
 open VG.Spec.Aes (bytesAt)
 
@@ -262,12 +262,12 @@ structure SPre (s₀ : State) (W K S : Addr) (R : Nat) : Prop where
   r6 : s₀.gpr .r6 = S
   r4 : (s₀.gpr .r4).toNat = R
   rd : s₀.rd = [⟨W, 240⟩]
-  wr : s₀.wr = [⟨K, 32⟩, ⟨S, 2176⟩]
+  wr : s₀.wr = [⟨K, 32⟩, ⟨S, 64⟩]
   sch_k : (⟨W, 240⟩ : Region).Disjoint ⟨K, 32⟩
-  sch_scr : (⟨W, 240⟩ : Region).Disjoint ⟨S, 2176⟩
-  k_scr : (⟨K, 32⟩ : Region).Disjoint ⟨S, 2176⟩
+  sch_scr : (⟨W, 240⟩ : Region).Disjoint ⟨S, 64⟩
+  k_scr : (⟨K, 32⟩ : Region).Disjoint ⟨S, 64⟩
   k_wrap : K.toNat + 32 ≤ 2 ^ 64
-  scr_wrap : S.toNat + 2176 ≤ 2 ^ 64
+  scr_wrap : S.toNat + 64 ≤ 2 ^ 64
   rounds : R = 10 ∨ R = 12 ∨ R = 14
 
 theorem SPre.of {s₀ : State} (h : subkeysPPC64LE.pre s₀) :
@@ -286,7 +286,7 @@ theorem bytesAt_32 (m : Mem) (p : Addr) :
   congr 1
   rw [BitVec.ofNat_add]
 
-theorem sk_bound : ∀ p ∈ skSaved, 2064 ≤ p.2 ∧ p.2 + 8 ≤ 2088 := by decide
+theorem sk_bound : ∀ p ∈ skSaved, 0 ≤ p.2 ∧ p.2 + 8 ≤ 24 := by decide
 
 theorem preserved_ne (r : Reg) (hr : r ∈ preserved) :
     r ≠ .r0 ∧ r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧
@@ -305,7 +305,7 @@ abbrev preMem (s₀ : State) (K S : Addr) : Mem :=
 
 /-- What `subkeysPre` leaves. -/
 structure SkMid (s₀ : State) (W K S : Addr) (R : Nat) (s : State) : Prop where
-  pre : CallPre s W K S R
+  pre : CallPreF s W K R
   r14 : s.gpr .r14 = K
   r15 : s.gpr .r15 = S
   keep : ∀ r ∈ preserved, r ≠ .r14 → r ≠ .r15 → s.gpr r = s₀.gpr r
@@ -318,8 +318,8 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
   have hRr := hp.rounds
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
-  have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
+  have inS (d : Nat) (h : d + 8 ≤ 64) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
+    rw [hp.wr]; exact in_rw (r := ⟨S, 64⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 8 := by
     rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   rw [subkeysPre, show skSaved.map (fun (r, d) => Instr.store .d r .r6 d) = Spill.saveCode .r6 skSaved from rfl]
@@ -344,44 +344,37 @@ theorem subkeysPre_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W 
     (by rw [u₃.wr, u₂.wr, u₁.wr, wrt]; simpa using inK 0 (by decide)) fun s₄ u₄ => ?_
   refine wp_std (a := K + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₄.gpr, k₃])
     (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, wrt]; exact inK 8 (by decide)) fun s₅ u₅ => ?_
-  refine wp_mr fun s₆ u₆ => wp_li (by decide) fun s₇ u₇ => wp_mr fun s₈ u₈ => wp_nil ?_
-  obtain rd₈ : s₈.rd = s₀.rd := by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, rdt]
-  obtain wr₈ : s₈.wr = s₀.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, wrt]
-  refine ⟨CallPre.mk ?_ ?_ ?_ ?_ ?_ hRr (hp.sch_k.sub_right (Region.sub_prefix (by decide)))
-      (hp.sch_scr.sub_right (Region.sub_prefix (by decide)))
-      ((hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)))
+  refine wp_mr fun s₆ u₆ => wp_li (by decide) fun s₇ u₇ => wp_nil ?_
+  obtain rd₈ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, rdt]
+  obtain wr₈ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, wrt]
+  refine ⟨CallPreF.mk ?_ ?_ ?_ ?_ hRr (hp.sch_k.sub_right (Region.sub_prefix (by decide)))
       (by omega_arith) ?_ ?_, ?_, ?_, fun r hr h14 h15 => ?_, ?_, rd₈, wr₈⟩
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), gt _ (by decide), hp.r3]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), gt _ (by decide), ← hp.r4,
       BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, u₄.gpr,
+  · rw [u₇.other _ (by decide), u₆.gpr, u₅.gpr, u₄.gpr,
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, gt _ (by decide), hp.r5]
-  · rw [u₈.other _ (by decide), u₇.gpr]
-  · rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
-      u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), gt _ (by decide), hp.r6]
+  · rw [u₇.gpr]
   · rw [rd₈, wr₈, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨⟨W, 240⟩, by simp, 0, by simp, by simp⟩
     · exact ⟨⟨K, 32⟩, by simp, 0, by simp, by simp⟩
-    · exact ⟨⟨S, 2176⟩, by simp, 0, by simp, by simp⟩
   · rw [wr₈, hp.wr]
     refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨⟨K, 32⟩, by simp, 0, by simp, by simp⟩
-    · exact ⟨⟨S, 2176⟩, by simp, 0, by simp, by simp⟩
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨K, 32⟩, by simp, 0, by simp, by simp⟩
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, gt _ (by decide), hp.r5]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr,
       u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), gt _ (by decide), hp.r6]
-  · obtain ⟨h0', -, -, h5, h6, h7, -, h9, -⟩ := preserved_ne r hr
-    rw [u₈.other _ h7, u₇.other _ h6, u₆.other _ h5, u₅.gpr, u₄.gpr, u₃.other _ h9, u₂.other _ h15,
+  · obtain ⟨h0', -, -, h5, h6, -, -, h9, -⟩ := preserved_ne r hr
+    rw [u₇.other _ h6, u₆.other _ h5, u₅.gpr, u₄.gpr, u₃.other _ h9, u₂.other _ h15,
       u₁.other _ h14, gt _ h0']
-  · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.gpr, u₄.mem, u₃.gpr, u₃.mem, u₂.mem, u₁.mem, memt]; rfl
+  · rw [u₇.mem, u₆.mem, u₅.mem, u₄.gpr, u₄.mem, u₃.gpr, u₃.mem, u₂.mem, u₁.mem, memt]; rfl
 
 theorem subkeys_wp {s₀ : State} (h0 : subkeysPPC64LE.pre s₀) :
     WP isa subkeys s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.lr = s₀.lr ∧
@@ -394,14 +387,14 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysPPC64LE.pre s₀) :
   obtain hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_arith
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
-  have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
+  have inS (d : Nat) (h : d + 8 ≤ 64) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
+    rw [hp.wr]; exact in_rw (r := ⟨S, 64⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 8 := by
     rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   have rIn (a : Addr) (h : InRegions s₀.wr a 8) : InRegions (s₀.rd ++ s₀.wr) a 8 := by
     obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.seq (WP.mono (subkeysPre_wp hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (blk_call (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
+  refine WP.seq (WP.mono (blk_callF (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocksF_correct
     AesCbc.PPC64LE.encryptBlocks_noFrames h₁.pre) fun s₂ c => ?_)
   have g₂ (r : Reg) (hr : r ∈ preserved) : s₂.gpr r = s₁.gpr r := c.saved r hr
   obtain rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, h₁.rd, h₁.wr]
@@ -417,7 +410,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysPPC64LE.pre s₀) :
     (by rw [wr₃, wr₂]; exact inK 16 (by decide)) (by rw [wr₃, wr₂]; exact inK 24 (by decide))
     fun s₄ g₄ mem₄ rd₄ wr₄ => ?_
   -- The memory.
-  have slotS (p : Reg × Nat) (hp' : p ∈ skSaved) : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 2176⟩ :=
+  have slotS (p : Reg × Nat) (hp' : p ∈ skSaved) : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 64⟩ :=
     Offset.sub_base _ (by have := sk_bound p hp'; omega_arith)
   have slotK (p : Reg × Nat) (hp' : p ∈ skSaved) (e : Nat) (he : e ≤ 16) :
       (⟨S + BitVec.ofNat 64 p.2, 8⟩ : Region).Disjoint ⟨K + BitVec.ofNat 64 e, 16⟩ :=
@@ -429,10 +422,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysPPC64LE.pre s₀) :
     exact (Spill.saveMem_saved (by decide) s₀.mem S _).frame (Proof.Cmac.frame_store2 K _ _) fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact slotK0 p hp'
   obtain sv₂ := sv₁.frame c.frame fun p hp' r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact slotK0 p hp'
-    · exact Offset.disjoint_base _ (by have := sk_bound p hp'; omega_arith) (by have := sk_bound p hp'; omega_arith)
+    simp only [List.mem_singleton] at hr; subst hr; exact slotK0 p hp'
   obtain sv₃ : Spill.Saved S (s₀.write .r0 s₀.lr).gpr skSaved s₃.mem := by
     rw [mem₃]; exact sv₂.frame (dblMem_frame _ _ _ _) fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact slotK p hp' 0 (by decide)
@@ -458,12 +448,12 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysPPC64LE.pre s₀) :
       rw [g₄ r h9 h10 h11 h12, g₃ r h9 h10 h11 h12, g₂ r hr, h₁.keep r hr (fun e => hv (.inl e))
         (fun e => hv (.inr e)), h0]
   · show s₅.gpr .r0 = _
-    rw [r₅.gpr (.r0, 2080) (by decide)]; simp [State.write]
+    rw [r₅.gpr (.r0, 16) (by decide)]; simp [State.write]
   · show bytesAt s₅.mem (s₀.gpr .r5) 32 = _
     obtain schB : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
       rw [h₁.mem]
       refine (Proof.Cmac.bytesAt_frame (Proof.Cmac.frame_store2 K _ _) (fun r hr => ?_) (by omega_arith)).trans
-        (Proof.Cmac.bytesAt_frame (Spill.saveMem_frame (lo := 2064) (n := 24) (fun p hp' => sk_bound p hp')
+        (Proof.Cmac.bytesAt_frame (Spill.saveMem_frame (lo := 0) (n := 24) (fun p hp' => sk_bound p hp')
           (by omega_arith) s₀.mem S _) (fun r hr => ?_) (by omega_arith))
       · simp only [List.mem_singleton] at hr; subst hr
         exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))

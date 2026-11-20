@@ -1,17 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvBatch
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.RdVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.PrivPreVerified
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
+public import VerifiedGarbage.Proof.Rsa.AArch64.Fn
 public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # RSA (RFC 8017) on AArch64 -/
@@ -21,20 +12,20 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.Rsa.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Rsa.publicPrecomputeApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.precompute_verified _ } (Proof.Rsa.AArch64.Scrub.publicPrecomputeOk _)),
-  Spec.Rsa.privatePrecomputeApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.Rsa.AArch64.PrivPre.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Bignum.AArch64.PrivPre.privPre_verified _ } (Proof.Rsa.AArch64.Scrub.privatePrecomputeOk _)),
-  Spec.Rsa.crtValuesApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.Rsa.AArch64.Keys.CrtValues.code
-    verified := Proof.Rsa.AArch64.cv_verified } (Proof.Rsa.AArch64.Scrub.crtValuesOk _)),
-  Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.Rsa.AArch64.RecoverDet.code
-    verified := Proof.Rsa.AArch64.Rd.rd_verified } (Proof.Rsa.AArch64.Scrub.recoverPrimesDetOk _)),
-  Spec.Rsa.checkKeyApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.Rsa.AArch64.CheckKey.code
-    verified := Proof.Rsa.AArch64.ck_verified } (Proof.Rsa.AArch64.Scrub.checkKeyOk _))]
+  Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.Fn.publicPrecompute
+    verified := .scrubbed Proof.Rsa.AArch64.Fn.publicPrecompute },
+  Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.Fn.privatePrecompute
+    verified := .scrubbed Proof.Rsa.AArch64.Fn.privatePrecompute },
+  Spec.Rsa.crtValuesApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.Fn.crtValues
+    verified := .scrubbed Proof.Rsa.AArch64.Fn.crtValues },
+  Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.Fn.recoverPrimesDet
+    verified := .scrubbed Proof.Rsa.AArch64.Fn.recoverPrimesDet },
+  Spec.Rsa.checkKeyApi.artifact AArch64.target {
+    code := Impl.Rsa.AArch64.Fn.checkKey
+    verified := .scrubbed Proof.Rsa.AArch64.Fn.checkKey }]
 
 end VG.Artifacts.Rsa.AArch64

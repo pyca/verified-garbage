@@ -76,9 +76,9 @@ theorem rel_fin {σ₁ σ₂ : State} {K St Q S : Addr} {L R : Nat}
   Proof.CmacAes.Stream.PPC64LE.fin_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
 
 /-- A call of `vg_aes_ctr32` with the same arguments in both runs. -/
-theorem rel_ctr {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat}
-    (h₁ : Proof.AesCtr.PPC64LE.CtrCall σ₁ K C D S R n) (h₂ : Proof.AesCtr.PPC64LE.CtrCall σ₂ K C D S R n)
+theorem rel_ctr {σ₁ σ₂ : State} {K C D : Addr} {R n : Nat}
+    (h₁ : Proof.AesCtr.PPC64LE.CtrCallF σ₁ K C D R n) (h₂ : Proof.AesCtr.PPC64LE.CtrCallF σ₂ K C D R n)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesCtr.PPC64LE.ctrCall TT :=
-  Proof.AesCtr.PPC64LE.ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
+  Proof.AesCtr.PPC64LE.ctr_relF fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨h₁, h₂, hsp⟩
 
 end VG.Proof.AesSiv.PPC64LE

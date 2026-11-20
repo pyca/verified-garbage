@@ -269,10 +269,10 @@ def bulk : Prog isa := .seq (.block bulkArgs) (.seq code (.block bulkRest))
 def maybeBulk : Prog isa := .ite (.zero .d .r12) (.block []) bulk
 
 def tailCtrArgs : List Instr :=
- [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, mov .r7 .r25, .addi .r8 .r31 64]
+ [mov .r3 .r29, mov .r4 .r28, mov .r5 .r27, mov .r6 .r30, mov .r7 .r25]
 
 def tailGhArgs : List Instr :=
- [.addi .r3 .r29 240, mov .r4 .r26, mov .r5 .r30, mov .r6 .r25, .addi .r7 .r31 64]
+ [.addi .r3 .r29 240, mov .r4 .r26, mov .r5 .r30, mov .r6 .r25]
 
 def tail : Prog isa := .ite (.zero .d .r25) (.block [])
  (.seq (.block tailCtrArgs)
@@ -291,7 +291,7 @@ def wrapperExit : List Instr :=
  wrapperSaved.map (fun (r,o) => .load .d r .r12 o)
 
 /-- `vg_aes_gcm_encrypt_blocks(ctx, Nr, counter, y, data, n, scratch)`.
-The signature grants 2112 scratch bytes: 64 for the wrapper, 2048 for its code. -/
+The signature grants 704 scratch bytes: 64 for the wrapper, 640 for its code. -/
 def encrypt : Prog isa := .ite (.zero .d .r8) (.block [])
  (.seq (.block wrapperEntry)
  (.seq maybeBulk

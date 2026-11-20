@@ -77,7 +77,7 @@ theorem ofNat_and15 {n : Nat} (hn : n < 2 ^ 64) :
 /-- The regions the CBC-MAC's pieces write: the MAC state at `W + y`, `B`
 and the working space of the functions called. -/
 abbrev macR (W : Addr) (y : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩]
+  [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 384, 64⟩]
 
 /-- What a piece of the CBC-MAC leaves: the MAC state `Y` at `W + y`. -/
 structure Absorbed (c : Cx) (y : Nat) (s : State) (Y : List Byte) (s' : State) : Prop where
