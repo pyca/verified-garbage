@@ -245,7 +245,7 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi tar
 /-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted, if
 any (see the module's documentation). -/
 def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
-  if v.free then []
+  if v.scratch = 0 then []
   else if v.dec.name = "vg_aes_decrypt_blocks_neon" then [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := decryptNeon
