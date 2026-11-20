@@ -25,42 +25,42 @@ def artifactsOf (v : GcmVariant) (hv : v ∈ VG.Proof.Variants.Sm4Gcm.AArch64.va
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 0 (Impl.Sm4Gcm.AArch64.«seal» (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := seal_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
+    verified := seal_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
     Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.sealOk _ (Nat.zero_lt_succ _))
     (Proof.Sm4Gcm.AArch64.Scrub.sealSide v hv)),
   Spec.Sm4.Gcm.openApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := open_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
+    verified := open_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
     Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.openOk _)
     (Proof.Sm4Gcm.AArch64.Scrub.openSide v hv)),
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamEncrypt (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := streamEncrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
-    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamEncryptOk _ Proof.Sm4Gcm.AArch64.Scrub.pos4032)
+    verified := streamEncrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamEncryptOk _ (Proof.Sm4Gcm.AArch64.Scrub.pos768 _))
     (Proof.Sm4Gcm.AArch64.Scrub.streamEncryptSide v hv)),
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamDecrypt (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := streamDecrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
-    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamDecryptOk _ Proof.Sm4Gcm.AArch64.Scrub.pos4032)
+    verified := streamDecrypt_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamDecryptOk _ (Proof.Sm4Gcm.AArch64.Scrub.pos768 _))
     (Proof.Sm4Gcm.AArch64.Scrub.streamDecryptSide v hv)),
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x5
       (Impl.Sm4Gcm.AArch64.streamFinish (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := streamFinish_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
-    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamFinishOk _ Proof.Sm4Gcm.AArch64.Scrub.pos4032)
+    verified := streamFinish_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamFinishOk _ (Proof.Sm4Gcm.AArch64.Scrub.pos768 _))
     (Proof.Sm4Gcm.AArch64.Scrub.streamFinishSide v hv)),
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamVerify (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := streamVerify_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
-    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamVerifyOk _ Proof.Sm4Gcm.AArch64.Scrub.pos4032)
+    verified := streamVerify_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.streamVerifyOk _ (Proof.Sm4Gcm.AArch64.Scrub.pos768 _))
     (Proof.Sm4Gcm.AArch64.Scrub.streamVerifySide v hv))]
 
 /-- `vg_sm4_gcm_init`, which calls only the implementation of `vg_sm4_ctr32`. -/
@@ -68,8 +68,8 @@ def artifactsInit (v : GcmVariant) (hv : v ∈ VG.Proof.Variants.Sm4Gcm.AArch64.
   Spec.Sm4.Gcm.initApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
     suffix := (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).ctrSuffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x2 (Impl.Sm4Gcm.AArch64.init (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl).callees)
-    verified := init_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) }
-    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.initOk _ Proof.Sm4Gcm.AArch64.Scrub.pos4032)
+    verified := init_framed (⟨v.gh.impl, v.ctr.impl⟩ : GcmImpl) (CtrName.stack_cases v.ctr) }
+    Proof.AesGcm.AArch64.Scrub.clear (Proof.Sm4Gcm.AArch64.Scrub.initOk _ (Proof.Sm4Gcm.AArch64.Scrub.pos768 _))
     (Proof.Sm4Gcm.AArch64.Scrub.initSide v hv))]
 
 /-- `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`: AES-GCM's code and
