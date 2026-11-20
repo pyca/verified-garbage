@@ -64,6 +64,8 @@ materialized function by a free variable, returning the abstracted literal and t
 functions, in the order of the free variables. -/
 meta partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
     StateT (Array Name) MetaM Expr := do
+  -- A block contains instructions, with no callee positions to abstract.
+  if e.isAppOfArity ``Code.block 3 then return e
   if e.isAppOfArity ``Code.call 4 then
     let body := e.appArg!
     for (g, v) in lits do
