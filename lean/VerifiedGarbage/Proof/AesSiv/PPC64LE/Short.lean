@@ -204,7 +204,7 @@ theorem macWith_one (ciph : Spec.Cmac.Cipher) (k1 k2 T : List Byte) (hT : T.leng
 /-- `shortMac`: the CMAC of the tail, one complete block, into `W + out`. -/
 theorem shortMac_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {out : Nat} (hout : out = 0 ∨ out = tO) :
     WP isa (shortMac out) s fun s' => PK s s' ∧
-      Frame [⟨c.W + BitVec.ofNat 64 out, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 2176⟩] s.mem s'.mem ∧
+      Frame [⟨c.W + BitVec.ofNat 64 out, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 64⟩] s.mem s'.mem ∧
       bytesAt s'.mem (c.W + BitVec.ofNat 64 out) 16 =
         Spec.Siv.ctxMac s.mem c.C c.R (bytesAt s.mem (c.W + BitVec.ofNat 64 tailO) 16) := by
   have hRb := L.rb
@@ -239,7 +239,7 @@ theorem shortMac_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {out : Nat} (
   have m₆ : t₆.mem = s₁.mem := by rw [v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
   refine WP.mono (fin_call_raw F) fun s₂ h₂ => ⟨pk₁.trans (pk₆.trans (PK.ofSaved h₂.rd h₂.wr h₂.sp h₂.saved)),
     ?_, ?_⟩
-  · have f₁ : Frame [⟨c.W + BitVec.ofNat 64 out, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 2176⟩] s.mem s₁.mem := by
+  · have f₁ : Frame [⟨c.W + BitVec.ofNat 64 out, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 64⟩] s.mem s₁.mem := by
       rw [m₁]; exact (Proof.Cmac.frame_store2 _ _ _).mono (by simp)
     exact f₁.trans (by rw [← m₆]; exact h₂.frame)
   -- What the call reads.
@@ -277,11 +277,11 @@ theorem short_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Addr} {n : 
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨c.W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
   · have dc : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 tailO, 16⟩ : Region), ⟨c.W + BitVec.ofNat 64 dbO, 16⟩],
         (⟨c.C, 512⟩ : Region).Disjoint r := by
       intro r hr

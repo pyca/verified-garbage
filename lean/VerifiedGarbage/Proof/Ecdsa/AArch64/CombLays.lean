@@ -86,9 +86,9 @@ theorem tcombLay (hc : BaseCfgOk c) : TCombLay c.combCfg size := by
   have hbits : c.combCfg.bits = bitsAt c.n 0 := rfl
   have hw : c.combCfg.w = 7 := rfl
   have hJ : c.combCfg.J = (64 * c.n + 6) / 7 := rfl
-  have h2 := hc.n2
+  have h4 := hc.n4
   refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 9; omega_arith,
-    fun h => ⟨by rcases h2 with h2 | h2 <;> [exact absurd (show c.n % 2 = 1 from h) (by omega_arith); exact h2],
+    fun h => ⟨by have : c.n % 2 = 1 := h; show 5 ≤ c.n; omega_arith,
       by show 64 + 8 * c.n * 21 = 64 + 8 * c.n * 20 + 8 * c.n; rw [Nat.mul_succ]; omega_arith⟩,
     ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   · rw [hk, hw, hJ]; omega_arith

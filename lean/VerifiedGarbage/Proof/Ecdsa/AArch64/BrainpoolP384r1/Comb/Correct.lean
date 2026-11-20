@@ -34,7 +34,6 @@ private theorem with_tables_ok (c : Cfg) (h : BaseCfgOk c)
   minv_n := h.minv_n
   red_p := h.red_p
   red_n := h.red_n
-  n2 := h.n2
   len8 := h.len8
   len_lo := h.len_lo
   len_hi := h.len_hi

@@ -20,20 +20,20 @@ open VG.Proof.AesCfb.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
-    Spec.Cfb.aesEncryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Cfb.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCfb.AArch64.encrypt v.enc
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v) } Proof.Aes.AArch64.ModesScrub.cfbEncryptOk),
+      code := Impl.AesCfb.AArch64.Fn.encrypt v.encClear v.enc
+      verified := .scrubbed (Final.encrypt_scrubbed v) },
     Spec.Cfb.aesDecryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAllW {
       suffix := v.suffix
       code := Caller.decrypt v
       verified := Proof.AesCfb.decrypt_keyed (Caller.verified v)
       written := Caller.written v
       writtenOk := Caller.written_ok v } Proof.Aes.AArch64.ModesScrub.cfbDecryptOk),
-    Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.encryptCode v)
-      verified := Proof.AesCfb.encryptFinal_keyed (Final.encryptFinal_framed v) } Proof.Aes.AArch64.ModesScrub.cfbEncryptFinalOk),
+      code := Impl.AesCfb.AArch64.Fn.encryptFinal v.encClear v.enc v.suffix
+      verified := .scrubbed (Final.encryptFinal_scrubbed v) },
     Spec.Cfb.aesDecryptFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.decryptCode v)

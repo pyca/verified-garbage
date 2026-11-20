@@ -43,21 +43,21 @@ open VG.Spec.Aes (bytesAt)
 /-! ## Writes within `W` -/
 
 /-- A frame within `W`. -/
-abbrev WF (c : Cx) (m m' : Mem) : Prop := Frame [⟨c.W, 2576⟩] m m'
+abbrev WF (c : Cx) (m m' : Mem) : Prop := Frame [⟨c.W, 448⟩] m m'
 
 theorem WF.of {c : Cx} {rs : List Region} {m m' : Mem} (h : Frame rs m m')
-    (hs : ∀ r ∈ rs, Region.Sub r ⟨c.W, 2576⟩) : WF c m m' :=
+    (hs : ∀ r ∈ rs, Region.Sub r ⟨c.W, 448⟩) : WF c m m' :=
   h.sub fun r hr => ⟨_, List.mem_singleton_self _, hs r hr⟩
 
 theorem WF.trans {c : Cx} {m₁ m₂ m₃ : Mem} (h₁ : WF c m₁ m₂) (h₂ : WF c m₂ m₃) : WF c m₁ m₃ :=
   Frame.trans h₁ h₂
 
-theorem wR_sub {c : Cx} : ∀ r ∈ wR c, Region.Sub r ⟨c.W, 2576⟩ := by
+theorem wR_sub {c : Cx} : ∀ r ∈ wR c, Region.Sub r ⟨c.W, 448⟩ := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact Lay.wSub (by decide)
 
-theorem oR_sub {c : Cx} {out : Nat} (h : out + 16 ≤ 2576) : ∀ r ∈ oR c out, Region.Sub r ⟨c.W, 2576⟩ := by
+theorem oR_sub {c : Cx} {out : Nat} (h : out + 16 ≤ 448) : ∀ r ∈ oR c out, Region.Sub r ⟨c.W, 448⟩ := by
   intro r hr
   rcases List.mem_cons.mp hr with rfl | hr
   · exact Lay.wSub h
@@ -170,18 +170,16 @@ theorem mutR_oR {c : Cx} {out : Nat} (h : out + 16 ≤ 128) : ∀ r ∈ oR c out
 theorem mutR_ctrR {c : Cx} : ∀ r ∈ ctrR c, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact sub_data
   · exact sub_lo (by decide)
-  · exact sub_hi (by decide) (by decide)
 
 theorem ctrR_W0 {c : Cx} (L : Lay c) :
     ∀ r ∈ ctrR c, (⟨c.W + BitVec.ofNat 64 0, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact (L.d_w' (by decide)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
 /-- `vg_aes_siv_encrypt`: `encryptWith`'s synthetic IV at `siv` and ciphertext

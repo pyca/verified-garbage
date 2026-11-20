@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -74,6 +76,10 @@ structure Ctr32Impl where
   its own (`ScrubAll.clearUnion`), and its `ScrubAll.scrubSide` holds this
   to the code. -/
   clear : Impl.Residue.AArch64.Clear
+  /-- `callee.code` writes, of the registers the calling convention does not
+  preserve, only those of `clear`: what the cleanup of a function that calls
+  it needs of it (`ScrubAll.scrubSide_union`). -/
+  scrub : AArch64.ScrubAll.calleeSide callee.code clear = true
   /-- The implementation of `vg_aes_expand_key` that goes with it, which
   needs no more CPU features. -/
   expand : Impl.Aes.AArch64.ExpandKey
@@ -82,6 +88,10 @@ structure Ctr32Impl where
     ∃ t s', Exec isa expand.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s'
   expandCt : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub expand.code
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
+
+/-- Code without frames uses no stack. -/
+theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
+  induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
 
 namespace Ctr32Impl
 
@@ -114,6 +124,7 @@ def scalar : Ctr32Impl where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
      .v26, .v27, .v28, .v29, .v30, .v31],
     []⟩
+  scrub := by lit_decide
   expand := .scalar
   expandNoFrames := by lit_decide
   expandOk := expandKey_correct
@@ -144,6 +155,7 @@ def aese : Ctr32Impl where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
      .v26, .v27, .v28, .v29, .v30, .v31],
     []⟩
+  scrub := by lit_decide
   expand := .aese
   expandNoFrames := by lit_decide
   expandOk := Aese.Key.expandKey_correct
