@@ -16,6 +16,10 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Entering Intel's MXCSR mitigation of MCDT on x86-64: the proofs
@@ -381,10 +385,22 @@ theorem enterOut : Scrub.PostOut (Spec.Mcdt.enterContract abi 8) (Spec.Mcdt.ente
     obtain rfl := List.eq_nil_of_length_eq_zero hlen
     exact h
 
-/-- `vg_mcdt_enter`, its registers and its 8 bytes of stack cleared before
-it returns (`RScrub.withScrubAllR`, which follows MXCSR through the code:
-every `ldmxcsr` loads what two runs agree on). -/
-def enterReg : Registration Spec.Mcdt.enterApi X86_64.target :=
-  RScrub.withScrubAllR { code := enter, stack := 8, verified := verified } enterOut
+/-- `vg_mcdt_enter` as emitted, `enterCall`: `enter`, then its cleanup
+(`scrubTail`), which clears only the registers `enter` writes and wipes its
+8 bytes of stack, every call of it the same code (`Rust.checkCalls`), meets
+its contract in constant time and returns without secret residue: every
+`ldmxcsr` in it loads what two runs agree on. -/
+theorem enter_scrubbed :
+    VerifiedScrubbed X86_64.target Impl.Mcdt.X86_64.enterCall (Spec.Mcdt.enterContract abi 8) 32 := by
+  have e : Impl.Mcdt.X86_64.enterCall = Impl.Scrub.X86_64.scrub .sse 32 (Scrub.xsFor false [0])
+      (Impl.Scrub.X86_64.psOf [0]) [.rcx, .rdx] [0] [8] enter .avx := by kernel_rfl
+  rw [e]
+  have h := Scrub.scrubSideG_ok (api := Spec.Mcdt.enterApi) { code := enter, stack := 8, verified := verified }
+    .sse .avx false [0] [8] [.rcx, .rdx] (by lit_decide) enterOut (RScrub.resOk_allC _ _ (by decide) rfl)
+    (by decide)
+  exact ⟨h.1, h.2⟩
+
+theorem enter_spSafe : Impl.Mcdt.X86_64.enterCall.all (fun i => !X86_64.isa.writesSp i) = true := by
+  sp_safe
 
 end VG.Proof.Mcdt.X86_64
