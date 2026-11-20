@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.HmacFin
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the functions, verified
@@ -151,6 +152,20 @@ theorem mdFinalize_side (P : Impl.MdStream.AArch64.Params) (n : String) {c : Pro
     | exact fun _ => hc
     | refine And.imp ?_ ?_
 
+/-- The shared one-shot digest (`Impl.MdStream.AArch64.OneShot.digest`), likewise. -/
+theorem mdDigest_side (P : Impl.MdStream.AArch64.Params) (init : Prog isa) (n : String) {c : Prog isa}
+    (h0 : sideAll p (Impl.MdStream.AArch64.OneShot.digest P init "" (.block [])) = true)
+    (hc : sideAll p c = true) : sideAll p (Impl.MdStream.AArch64.OneShot.digest P init n c) = true := by
+  simp only [Impl.MdStream.AArch64.OneShot.digest, Impl.MdStream.AArch64.OneShot.body,
+    Impl.MdStream.AArch64.OneShot.whole, Impl.MdStream.AArch64.OneShot.tail,
+    Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hc
+    | refine And.imp ?_ ?_
+
 /-- What the cleanup of the functions as emitted needs of every instruction
 (`ScrubAll.verifiedScrubbedOf`): that it does not write PSTATE.DIT. -/
 abbrev noDit : Instr → Bool := fun i => !i.writesDit
@@ -223,11 +238,36 @@ theorem sideAll_withStackScratchWiped {bytes words : Nat} {r : Reg} {c : Prog is
 
 end
 
+/-- How deeply the frames of the shared streaming functions nest: one, their
+own, over a compression function that has none. -/
+theorem mdUpdate_depth (P : Impl.MdStream.AArch64.Params) (n : String) (c : Prog isa)
+    (h : (Impl.MdStream.AArch64.updateMain P n c).aarch64Depth = 0) :
+    (Impl.MdStream.AArch64.update P n c).aarch64Depth ≤ 1 := by
+  simp only [Impl.MdStream.AArch64.update, Code.aarch64Depth, h, Instr.frameUnits, Nat.zero_add, Nat.le_refl]
+
+theorem mdFinalize_depth (P : Impl.MdStream.AArch64.Params) (n : String) (c : Prog isa)
+    (h : (Impl.MdStream.AArch64.finalizeMain P n c).aarch64Depth = 0) :
+    (Impl.MdStream.AArch64.finalize P n c).aarch64Depth ≤ 1 := by
+  simp only [Impl.MdStream.AArch64.finalize, Code.aarch64Depth, h, Instr.frameUnits, Nat.zero_add, Nat.le_refl]
+
 /-- The frames of code whose own nest at most once, in a frame of `F` bytes,
 fit in `16 + F` bytes of stack. -/
 theorem depth_frame_le {F : Nat} {r : Reg} {c : Prog isa} (h : c.aarch64Depth ≤ 1) :
     16 * (Impl.StackScratch.AArch64.withStackScratch F r c).aarch64Depth ≤ 16 + F := by
   rw [ScrubAll.depth_withStackScratch]; omega
+
+/-- The frame of the shared one-shot digest is its only one, over an `init`
+and a compression function that have none. -/
+theorem mdDigest_depth (P : Impl.MdStream.AArch64.Params) (init : Prog isa) (n : String) (c : Prog isa)
+    (hi : init.aarch64Depth = 0) (hc : c.noFrames = true) :
+    16 * (Impl.MdStream.AArch64.OneShot.digest P init n c).aarch64Depth ≤
+      Impl.MdStream.AArch64.OneShot.frameBytes P := by
+  simp only [Impl.MdStream.AArch64.OneShot.digest, Impl.MdStream.AArch64.OneShot.body,
+    Impl.MdStream.AArch64.OneShot.whole, Impl.MdStream.AArch64.OneShot.tail,
+    Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith,
+    Impl.MdStream.AArch64.OneShot.copyTail, Impl.MdStream.AArch64.OneShot.bytesTail, Code.aarch64Depth, hi,
+    fdepth_of_noFrames hc, Instr.frameUnits, Nat.max_self, Nat.zero_add]
+  exact Nat.mul_div_le _ _
 
 theorem hmacInitAny_fdepth {H : Hash} (hi : H.initC.aarch64Depth ≤ 1) (hu : H.updC.aarch64Depth ≤ 1)
     (hf : H.finC.aarch64Depth ≤ 1) (hc : H.compC.noFrames = true) : H.hmacInitAny.aarch64Depth ≤ 1 := by

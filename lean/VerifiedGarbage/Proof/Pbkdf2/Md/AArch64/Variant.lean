@@ -1025,44 +1025,6 @@ namespace VG.Proof.Pbkdf2.Md.AArch64
 open VG.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 
-/-- One of the streaming functions made with an implementation of a hash
-function's compression function, which `Generic/MdHash/AArch64/Stream.lean`
-emits, naming it with the variant's suffix: its `Api` (in `Spec/`), and its
-code, verified against the contract the `Api` gives it (`ofApi`, as
-`Artifact.ofApi`) with `stack` bytes of stack, whose postcondition reads the
-memory on return only within its buffers (`scrubOk`), so that it is
-registered scrubbed whole (`StreamFn.reg`). -/
-structure StreamFn where
-  api : Api
-  code : Prog AArch64.target.isa
-  contract : Contract AArch64.target.isa
-  stack : Nat := 0
-  verified : Verified AArch64.target code contract
-  ofSig : ∃ pre post leak,
-      contract = api.sig.contract (AArch64.target.abi) pre post api.writeArgs stack leak := by
-    exact ⟨_, _, _, rfl⟩
-  ofApi : contract = api.contract AArch64.target.abi stack := by exact rfl
-  spSafe : code.all (fun i => !AArch64.target.isa.writesSp i) = true
-  scrubOk : AArch64.ScrubAll.ScrubAllOk contract stack (api.sig.retBits AArch64.abi.ptrBits)
-
-/-- `f` as a registration of its `Api` (`Api.artifact`), as it is. -/
-def StreamFn.reg₀ (f : StreamFn) : Unscrubbed f.api AArch64.target where
-  consts := []
-  tables := []
-  code := f.code
-  contract := f.contract
-  stack := f.stack
-  verified := f.verified
-  ofApi := f.ofApi
-  ofSig := f.ofSig
-  spSafe := f.spSafe
-
-/-- `f` as a registration of its `Api` (`Api.artifact`), returning with the
-registers it may write cleared and its stack zeroed
-(`AArch64.ScrubAll.withScrubAll`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api AArch64.target :=
-  AArch64.ScrubAll.withScrubAll f.reg₀ f.scrubOk
-
 /-- The bytes of the frame in which HMAC's `init` and `finalize` (of
 instance `I`) keep their working space, for their `_scratch` forms. -/
 def hmacFrame (I : Spec.Hmac.Instance) : Nat := 8 * I.scratch
@@ -1168,10 +1130,6 @@ structure MdHash where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
-  /-- The streaming `update` and `finalize` made with this implementation of
-  the compression function, when no other variant shares them (otherwise
-  they are in the hash function's registration file). -/
-  stream : List StreamFn := []
 
 namespace MdHash
 
@@ -1343,7 +1301,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hiE : initW = H.initW) (hfE : finW = H.finW) (hle : 8 * initW ≤ anyFrame I)
     (hlt : I.pbkdf2Scratch < 510 ∧ initW < 510 ∧ finW < 510)
     (cs : CalleeSide H) (S : CoreSide (core H))
-    (suffix : String) (features : List String) (stream : List StreamFn := []) : MdHash where
+    (suffix : String) (features : List String) : MdHash where
   H := H
   I := I
   ok := hH
@@ -1377,7 +1335,6 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   coreSide := S
   suffix := suffix
   features := features
-  stream := stream
 
 namespace MdHash
 
