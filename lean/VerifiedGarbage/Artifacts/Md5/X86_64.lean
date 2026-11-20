@@ -38,6 +38,6 @@ def artifacts : List Artifact := [
   Spec.Md5.finalizeApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.finalize, verified := .scrubbed Proof.Md5.X86_64.finalize_scrubbed, spSafe := Proof.Md5.X86_64.finalize_spSafe }] ++
   (VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
-      f.api.artifact X86_64.target { f.reg with suffix := v.suffix})
+      f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })
 
 end VG.Artifacts.Md5.X86_64
