@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.AesCcm.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -623,38 +626,51 @@ theorem open_res (v : UpdateImpl) (fu : Proof.CmacAes.X86_64.UpdateFree v.callee
 
 end Selective
 
-/-- `vg_aes_ccm_seal` over `v`. Over an implementation of AES that needs
-working space, its frame of 2.6 KB is wiped whole on return
-(`withScrubAll`). Scratch-free callees permit selective wiping with the
-functional frame and public setup proofs above. -/
-def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
-  let r : Unscrubbed Spec.Ccm.sealApi X86_64.target := {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee)
-    stack := 2624
-    verified := Proof.AesCcm.seal_keyed (seal_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) }
-  match v.free, v.ctr.free with
-  | some fu, some fc =>
-    if hi : UpperLock.inames («seal» v.callee v.ctr.callee) = [] then
-      RScrub.withScrubResC r (sealOut _) tightKs tightChunks (seal_res v fu fc hi)
-    else withScrubAll r (sealOut _)
-  | _, _ => withScrubAll r (sealOut _)
+/-- `Spec.Ccm.sealApi`'s function over `v`, as emitted (`Impl.AesCcm.X86_64.Fn.«seal»`), its frame wiped
+whole on return, meets its contract in constant time and returns without
+secret residue: its code is its code over a stub, with `v`'s where it calls
+them (`Fill`). -/
+theorem seal_scrubbed (v : UpdateImpl) :
+    VerifiedScrubbed target (Impl.AesCcm.X86_64.Fn.«seal» (v.level.join v.ctr.level) v.callee v.ctr.callee)
+      (Spec.Ccm.sealApi.contract X86_64.abi 2624) 0 := by
+  have := X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left v.level v.ctr.level) (Nat.le_refl _) v.side
+  have := X86_64.Scrub.calleeSide_mono (n' := 8) (X86_64.Scrub.level_join_right v.level v.ctr.level) (Nat.zero_le _) v.ctr.side
+  exact X86_64.Scrub.verifiedScrubbedAllFill (api := Spec.Ccm.sealApi) (ks := 0) (n := fun s => if s = "u" then 8 else 8)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» ⟨"u", .block []⟩ ⟨"", .block [], v.ctr.callee.scrOff⟩))
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee)
+      stack := 2624
+      verified := Proof.AesCcm.seal_keyed (seal_framed v)
+      spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) }
+    _ (sealOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.ctr.scrOk with h | h <;> rw [h] <;> lit_decide)
 
-/-- `vg_aes_ccm_open` over `v`, as `sealReg`. -/
-def openReg (v : UpdateImpl) : Registration Spec.Ccm.openApi X86_64.target :=
-  let r : Unscrubbed Spec.Ccm.openApi X86_64.target := {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee)
-    stack := 2624
-    verified := Proof.AesCcm.open_keyed (open_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }
-  match v.free, v.ctr.free with
-  | some fu, some fc =>
-    if hi : UpperLock.inames («open» v.callee v.ctr.callee) = [] then
-      RScrub.withScrubResC r (openOut _) tightKs tightChunks (open_res v fu fc hi)
-    else withScrubAll r (openOut _)
-  | _, _ => withScrubAll r (openOut _)
+theorem seal_spSafeFn (v : UpdateImpl) :
+    (Impl.AesCcm.X86_64.Fn.«seal» (v.level.join v.ctr.level) v.callee v.ctr.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (seal_spSafe v))
+
+/-- `Spec.Ccm.openApi`'s function over `v`, as emitted (`Impl.AesCcm.X86_64.Fn.«open»`), its frame wiped
+whole on return, meets its contract in constant time and returns without
+secret residue: its code is its code over a stub, with `v`'s where it calls
+them (`Fill`). -/
+theorem open_scrubbed (v : UpdateImpl) :
+    VerifiedScrubbed target (Impl.AesCcm.X86_64.Fn.«open» (v.level.join v.ctr.level) v.callee v.ctr.callee)
+      (Spec.Ccm.openApi.contract X86_64.abi 2624) 32 := by
+  have := X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left v.level v.ctr.level) (Nat.le_refl _) v.side
+  have := X86_64.Scrub.calleeSide_mono (n' := 8) (X86_64.Scrub.level_join_right v.level v.ctr.level) (Nat.zero_le _) v.ctr.side
+  exact X86_64.Scrub.verifiedScrubbedAllFill (api := Spec.Ccm.openApi) (ks := 0) (n := fun s => if s = "u" then 8 else 8)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» ⟨"u", .block []⟩ ⟨"", .block [], v.ctr.callee.scrOff⟩))
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee)
+      stack := 2624
+      verified := Proof.AesCcm.open_keyed (open_framed v)
+      spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }
+    _ (openOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.ctr.scrOk with h | h <;> rw [h] <;> lit_decide)
+
+theorem open_spSafeFn (v : UpdateImpl) :
+    (Impl.AesCcm.X86_64.Fn.«open» (v.level.join v.ctr.level) v.callee v.ctr.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (open_spSafe v))
 
 end
 
