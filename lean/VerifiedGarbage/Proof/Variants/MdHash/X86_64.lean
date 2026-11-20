@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx2
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512ShaNi
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha512Avx512
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubAll
 
 /-! # The implementations of `MdHash` on x86-64 -/
 
@@ -148,5 +149,28 @@ def sha512Fins : List FinImpl := [Sha512ShaNi.fin512, Sha512Avx2.fin512, Sha512.
 def sha512_224Fins : List FinImpl := [Sha512ShaNi.fin512_224, Sha512Avx2.fin512_224, Sha512.fin512_224]
 
 def sha512_256Fins : List FinImpl := [Sha512ShaNi.fin512_256, Sha512Avx2.fin512_256, Sha512.fin512_256]
+
+/-! ## PBKDF2's `pbkdf2`
+
+Each variant's PBKDF2, with what its cleanup needs (`Pbkdf2Impl`), in the
+order of the variants. -/
+
+open Proof.Pbkdf2.Md.X86_64 (Pbkdf2Impl)
+
+def md5Pbkdf2s : List Pbkdf2Impl := [⟨md5, .sse, by lit_decide⟩]
+
+def sha1Pbkdf2s : List Pbkdf2Impl := [⟨sha1ShaNi, .sse, by lit_decide⟩, ⟨sha1AvxBmi, .avx, by lit_decide⟩, ⟨sha1, .sse, by lit_decide⟩]
+
+def sha224Pbkdf2s : List Pbkdf2Impl := [⟨sha224ShaNi, .sse, by lit_decide⟩, ⟨sha224Avx2, .avx, by lit_decide⟩, ⟨sha224, .sse, by lit_decide⟩]
+
+def sha256Pbkdf2s : List Pbkdf2Impl := [⟨sha256ShaNi, .sse, by lit_decide⟩, ⟨sha256Avx2, .avx, by lit_decide⟩, ⟨sha256, .sse, by lit_decide⟩]
+
+def sha384Pbkdf2s : List Pbkdf2Impl := [⟨sha384ShaNi, .avx, by lit_decide⟩, ⟨sha384Avx2, .avx, by lit_decide⟩, ⟨sha384, .sse, by lit_decide⟩]
+
+def sha512Pbkdf2s : List Pbkdf2Impl := [⟨sha512ShaNi, .avx, by lit_decide⟩, ⟨sha512Avx2, .avx, by lit_decide⟩, ⟨sha512, .sse, by lit_decide⟩]
+
+def sha512_224Pbkdf2s : List Pbkdf2Impl := [⟨sha512_224ShaNi, .avx, by lit_decide⟩, ⟨sha512_224Avx2, .avx, by lit_decide⟩, ⟨sha512_224, .sse, by lit_decide⟩]
+
+def sha512_256Pbkdf2s : List Pbkdf2Impl := [⟨sha512_256ShaNi, .avx, by lit_decide⟩, ⟨sha512_256Avx2, .avx, by lit_decide⟩, ⟨sha512_256, .sse, by lit_decide⟩]
 
 end VG.Proof.Variants.MdHash.X86_64
