@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Impl.MlDsa.X86.Fn
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
@@ -340,37 +345,72 @@ theorem preparedVerifyMessage_verified :
 
 /-! ### What the cleanup needs of the code -/
 
-theorem sign_side : scrubFSide (Impl.MlDsa.X86.Sign.signOf p module) [] 136 = true := by
+omit h in
+private theorem core_side {f : Prog isa} (hf : calleeSide f 136 = true) :
+    scrubFSide f [] 136 = true := by
+  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq, calleeOk_iff] at hf
+  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
+  exact ⟨⟨⟨⟨hf.1, tablesCall_of_noIcall hf.2.1 _⟩, hf.2.2⟩, by decide⟩, by decide⟩
+
+private theorem sign_callee : calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem signPrepared_side : scrubFSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) [] 136 = true := by
+theorem sign_side : scrubFSide (Impl.MlDsa.X86.Sign.signOf p module) [] 136 = true :=
+  core_side (sign_callee h)
+
+private theorem signPrepared_callee : calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem verify_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyOf p module) [] 136 = true := by
+theorem signPrepared_side : scrubFSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) [] 136 = true :=
+  core_side (signPrepared_callee h)
+
+private theorem verify_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem verifyPrepared_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) [] 136 = true := by
+theorem verify_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyOf p module) [] 136 = true :=
+  core_side (verify_callee h)
+
+private theorem verifyPrepared_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+
+theorem verifyPrepared_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) [] 136 = true :=
+  core_side (verifyPrepared_callee h)
+
+omit h in
+private theorem signMessage_of_callee (params : Params) (n : String) (f : Prog isa)
+    (hf : calleeSide f 136 = true) :
+    scrubFSide (Impl.MlDsa.X86.Message.signMessage n f params) [] 176 = true := by
+  apply scrubFSide_of_fillB (a := Impl.MlDsa.X86.Message.signMessage "" (holeStub 136) params)
+  · fillB_calls
+  · kernel_rfl
+
+omit h in
+private theorem verifyMessageCached_of_callee (params : Params) (n : String) (f : Prog isa)
+    (hf : calleeSide f 136 = true) :
+    scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached n f params) [] 172 = true := by
+  apply scrubFSide_of_fillB (a := Impl.MlDsa.X86.Message.verifyMessageCached "" (holeStub 136) params)
+  · fillB_calls
+  · kernel_rfl
 
 theorem signMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.entryName module)
-      (Impl.MlDsa.X86.Sign.signOf p module) p) [] 176 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Sign.signOf p module) p) [] 176 = true :=
+  signMessage_of_callee p _ _ (sign_callee h)
 
 theorem preparedSignMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedEntryName module)
-      (Impl.MlDsa.X86.Sign.signPreparedOf p module) p) [] 176 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Sign.signPreparedOf p module) p) [] 176 = true :=
+  signMessage_of_callee p _ _ (signPrepared_callee h)
 
 theorem verifyMessageCached_side :
     scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.entryName module)
-      (Impl.MlDsa.X86.Verify.verifyOf p module) p) [] 172 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Verify.verifyOf p module) p) [] 172 = true :=
+  verifyMessageCached_of_callee p _ _ (verify_callee h)
 
 theorem preparedVerifyMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedEntryName module)
-      (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) p) [] 172 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) p) [] 172 = true :=
+  verifyMessageCached_of_callee p _ _ (verifyPrepared_callee h)
 
 end
 
