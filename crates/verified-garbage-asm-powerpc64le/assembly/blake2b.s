@@ -95,17 +95,17 @@ vg_blake2b_init:
 	blr
 
 vg_blake2b_update:
-	stdu %r1, -608(%r1)
+	stdu %r1, -192(%r1)
 	addi %r7, %r1, 32
 	mflr %r0
 	stdu %r1, -48(%r1)
 	std %r0, 32(%r1)
-	std %r26, 512(%r7)
-	std %r27, 520(%r7)
-	std %r28, 528(%r7)
-	std %r29, 536(%r7)
-	std %r30, 544(%r7)
-	std %r31, 552(%r7)
+	std %r26, 104(%r7)
+	std %r27, 112(%r7)
+	std %r28, 120(%r7)
+	std %r29, 128(%r7)
+	std %r30, 136(%r7)
+	std %r31, 144(%r7)
 	addi %r26, %r3, 0
 	addi %r27, %r7, 0
 	addi %r28, %r5, 0
@@ -215,41 +215,19 @@ vg_blake2b_update:
 	b 23f
 22:
 23:
-	ld %r26, 512(%r27)
-	ld %r28, 528(%r27)
-	ld %r29, 536(%r27)
-	ld %r30, 544(%r27)
-	ld %r31, 552(%r27)
-	ld %r27, 520(%r27)
+	ld %r26, 104(%r27)
+	ld %r28, 120(%r27)
+	ld %r29, 128(%r27)
+	ld %r30, 136(%r27)
+	ld %r31, 144(%r27)
+	ld %r27, 112(%r27)
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
-	addi %r1, %r1, 608
+	addi %r1, %r1, 192
 	li %r0, 0
-	stdu %r1, -656(%r1)
+	stdu %r1, -240(%r1)
 	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -276,11 +254,7 @@ vg_blake2b_update:
 	std %r0, 184(%r12)
 	std %r0, 192(%r12)
 	std %r0, 200(%r12)
-	std %r0, 208(%r12)
-	std %r0, 216(%r12)
-	std %r0, 224(%r12)
-	std %r0, 232(%r12)
-	addi %r1, %r1, 656
+	addi %r1, %r1, 240
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -294,17 +268,17 @@ vg_blake2b_update:
 	blr
 
 vg_blake2b_finalize:
-	stdu %r1, -608(%r1)
+	stdu %r1, -192(%r1)
 	addi %r6, %r1, 32
 	mflr %r0
 	stdu %r1, -48(%r1)
 	std %r0, 32(%r1)
-	std %r26, 512(%r6)
-	std %r27, 520(%r6)
-	std %r28, 528(%r6)
-	std %r29, 536(%r6)
-	std %r30, 544(%r6)
-	std %r31, 552(%r6)
+	std %r26, 104(%r6)
+	std %r27, 112(%r6)
+	std %r28, 120(%r6)
+	std %r29, 128(%r6)
+	std %r30, 136(%r6)
+	std %r31, 144(%r6)
 	addi %r26, %r3, 0
 	addi %r27, %r6, 0
 	addi %r28, %r5, 0
@@ -357,41 +331,19 @@ vg_blake2b_finalize:
 	std %r9, 48(%r28)
 	ld %r9, 56(%r26)
 	std %r9, 56(%r28)
-	ld %r26, 512(%r27)
-	ld %r28, 528(%r27)
-	ld %r29, 536(%r27)
-	ld %r30, 544(%r27)
-	ld %r31, 552(%r27)
-	ld %r27, 520(%r27)
+	ld %r26, 104(%r27)
+	ld %r28, 120(%r27)
+	ld %r29, 128(%r27)
+	ld %r30, 136(%r27)
+	ld %r31, 144(%r27)
+	ld %r27, 112(%r27)
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48
 	mtlr %r0
-	addi %r1, %r1, 608
+	addi %r1, %r1, 192
 	li %r0, 0
-	stdu %r1, -656(%r1)
+	stdu %r1, -240(%r1)
 	addi %r12, %r1, 32
-	std %r0, 0(%r12)
-	std %r0, 8(%r12)
-	std %r0, 16(%r12)
-	std %r0, 24(%r12)
-	std %r0, 32(%r12)
-	std %r0, 40(%r12)
-	std %r0, 48(%r12)
-	std %r0, 56(%r12)
-	std %r0, 64(%r12)
-	std %r0, 72(%r12)
-	std %r0, 80(%r12)
-	std %r0, 88(%r12)
-	std %r0, 96(%r12)
-	std %r0, 104(%r12)
-	std %r0, 112(%r12)
-	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -418,11 +370,7 @@ vg_blake2b_finalize:
 	std %r0, 184(%r12)
 	std %r0, 192(%r12)
 	std %r0, 200(%r12)
-	std %r0, 208(%r12)
-	std %r0, 216(%r12)
-	std %r0, 224(%r12)
-	std %r0, 232(%r12)
-	addi %r1, %r1, 656
+	addi %r1, %r1, 240
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0

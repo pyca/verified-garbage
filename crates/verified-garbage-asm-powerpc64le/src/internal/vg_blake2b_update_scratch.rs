@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_update_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "pgIIfNH/IfggAAH4AAJH+wgCZ/sQAof7GAKn+yACx/soAuf7AABDOwAAZzsAAIU7AACmOwAA5Dv//987fwAgOThI3n8BAN47AAA/KA=="
+        r#".base64 "pgIIfNH/IfggAAH4aABH+3AAZ/t4AIf7gACn+4gAx/uQAOf7AABDOwAAZzsAAIU7AACmOwAA5Dv//987fwAgOThI3n8BAN47AAA/KA=="
 beq %cr0, 20f
 b 21f
 20:
@@ -71,7 +71,7 @@ b 216f
 b 23f
 22:
 23:
-.base64 "AAJb6xACm+sYArvrIALb6ygC++sIAnvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
+.base64 "aABb63gAm+uAALvriADb65AA++twAHvrIAAB6DAAITimAwh8IACATg==""#,
+        vg_blake2b_compress = sym crate::argon2::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
