@@ -13,7 +13,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.X448.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.X448.exchangeApi.artifact PPC64LE.target Proof.X448.PPC64LE.Scrub.exchangeReg,
-  Spec.X448.x448BaseApi.artifact PPC64LE.target Proof.X448.PPC64LE.Scrub.baseReg]
+  Spec.X448.exchangeApi.artifact PPC64LE.target {
+    code := Impl.X448.PPC64LE.Fn.exchange
+    verified := .scrubbed Proof.X448.PPC64LE.Scrub.exchange_scrubbed },
+  Spec.X448.x448BaseApi.artifact PPC64LE.target {
+    code := Impl.X448.PPC64LE.Fn.base
+    verified := .scrubbed Proof.X448.PPC64LE.Scrub.base_scrubbed }]
 
 end VG.Artifacts.X448.PPC64LE
