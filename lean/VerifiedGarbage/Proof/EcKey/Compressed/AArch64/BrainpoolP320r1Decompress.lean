@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP320r1.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
@@ -67,5 +70,16 @@ materialize_shared baseline := code
     (by lit_decide) (by lit_decide) (by lit_decide)) ct
     (decompress_implies Spec.EcKey.BrainpoolP320r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
+
+/-- `vg_ec_brainpoolp320r1_decompress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.decompressBrainpoolP320r1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hL : Proof.Weierstrass.Law Spec.BrainpoolP320r1.curve)
+    (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.decompressBrainpoolP320r1
+      (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract abi 0) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi)
+    { code := code, verified := verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.decompressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.BrainpoolP320r1Decompress

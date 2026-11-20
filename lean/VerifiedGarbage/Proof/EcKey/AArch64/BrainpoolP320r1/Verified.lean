@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP320r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP320r1.Lit
@@ -258,5 +260,16 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyBrainpoolP
 theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
     Verified AArch64.target publicKeyBrainpoolP320r1 (Spec.EcKey.BrainpoolP320r1.inst.publicKeyContract AArch64.abi) :=
   Verified.of_correct (pk_a64 hL hI) pk_ct implies
+
+/-- `vg_ec_brainpoolp320r1_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP320r1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem pk_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
+    (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP320r1
+      (Spec.EcKey.BrainpoolP320r1.inst.publicKeyContract AArch64.abi) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.BrainpoolP320r1.publicKeyApi)
+    { code := publicKeyBrainpoolP320r1, verified := pk_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.publicKeyOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.AArch64.BrainpoolP320r1
