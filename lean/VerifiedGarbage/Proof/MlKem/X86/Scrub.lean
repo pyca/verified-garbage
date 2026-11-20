@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.MlKem.X86.Wipe
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlKem.X86.CallWipe
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEk
@@ -9,7 +10,8 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.MlKem.X86.Wipe
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.MlKem.X86.CallWipe
 meta import VerifiedGarbage.Proof.MlKem.X86.CheckEk
@@ -24,10 +26,11 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 
 Key generation, encapsulation (with `H(ek)` given or not), decapsulation and
 the encapsulation key check call other functions and have frames: each is
-followed by the zeroing of the stack its contract reserves below `esp` (120
-bytes, 136 for encapsulation with `H(ek)`, 16 for the key check), then by
-`Impl.Scrub.X86.tail` (`X86.Scrub.scrubFOf`), which clears the registers a
-callee may change but the result's bits, the flags and `xmm0`–`xmm7`.
+followed, as emitted (`Impl.MlKem.X86.Fn`), by the zeroing of the stack its
+contract reserves below `esp` (120 bytes, 136 for encapsulation with
+`H(ek)`, 16 for the key check), then by `Impl.Scrub.X86.tail`, which clears
+the registers a callee may change but the result's bits, the flags and
+`xmm0`–`xmm7` (`X86.Scrub.verifiedScrubbedF`).
 
 Their postconditions read the memory on return only within their buffers
 (`X86.Scrub.PostOut`, by `postOut_of_local`): the outputs, and `scratch`,
@@ -157,56 +160,76 @@ theorem checkEk1024Out (stack : Nat) :
     dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
     exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
 /-- `vg_mlkem768_keygen`. -/
-def keyGenReg : Registration Spec.MlKem.keyGenApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.keyGen, verified := Proof.MlKem.X86.Wipe.keyGen_verified }
+theorem keyGen_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.keyGen (Spec.MlKem.keyGenContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem.keyGenApi)
+    { code := Impl.MlKem.X86.Wipe.keyGen, verified := Proof.MlKem.X86.Wipe.keyGen_verified }
     (by exact keyGenOut _)
 
 /-- `vg_mlkem768_encaps_h`. -/
-def encapsHReg : Registration Spec.MlKem.encapsHApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.encapsH, verified := Proof.MlKem.X86.Wipe.encapsH_verified }
+theorem encapsH_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.encapsH (Spec.MlKem.encapsHContract X86.abi 136) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem.encapsHApi)
+    { code := Impl.MlKem.X86.Wipe.encapsH, verified := Proof.MlKem.X86.Wipe.encapsH_verified }
     (by exact encapsHOut _)
 
 /-- `vg_mlkem768_encaps`. -/
-def encapsReg : Registration Spec.MlKem.encapsApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.encaps, verified := Proof.MlKem.X86.Wipe.encaps_verified }
+theorem encaps_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.encaps (Spec.MlKem.encapsContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem.encapsApi)
+    { code := Impl.MlKem.X86.Wipe.encaps, verified := Proof.MlKem.X86.Wipe.encaps_verified }
     (by exact encapsOut _)
 
 /-- `vg_mlkem768_decaps`. -/
-def decapsReg : Registration Spec.MlKem.decapsApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.decaps, verified := Proof.MlKem.X86.Wipe.decaps_verified }
+theorem decaps_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.decaps (Spec.MlKem.decapsContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem.decapsApi)
+    { code := Impl.MlKem.X86.Wipe.decaps, verified := Proof.MlKem.X86.Wipe.decaps_verified }
     (by exact decapsOut _)
 
 /-- `vg_mlkem768_check_ek`. -/
-def checkEkReg : Registration Spec.MlKem.checkEkApi target :=
-  scrubFOf { code := Impl.MlKem.X86.checkEk, verified := Proof.MlKem.X86.CheckEk.verified }
+theorem checkEk_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.checkEk (Spec.MlKem.checkEkContract X86.abi 16) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem.checkEkApi)
+    { code := Impl.MlKem.X86.checkEk, verified := Proof.MlKem.X86.CheckEk.verified }
     (by exact checkEkOut _)
 
 /-- `vg_mlkem1024_keygen`. -/
-def keyGen1024Reg : Registration Spec.MlKem1024.keyGenApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.keyGen1024, verified := Proof.MlKem.X86.Wipe.keyGen1024_verified }
+theorem keyGen1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.keyGen1024 (Spec.MlKem1024.keyGenContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem1024.keyGenApi)
+    { code := Impl.MlKem.X86.Wipe.keyGen1024, verified := Proof.MlKem.X86.Wipe.keyGen1024_verified }
     (by exact keyGen1024Out _)
 
 /-- `vg_mlkem1024_encaps_h`. -/
-def encapsH1024Reg : Registration Spec.MlKem1024.encapsHApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.encapsH1024, verified := Proof.MlKem.X86.Wipe.encapsH1024_verified }
+theorem encapsH1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.encapsH1024 (Spec.MlKem1024.encapsHContract X86.abi 136) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem1024.encapsHApi)
+    { code := Impl.MlKem.X86.Wipe.encapsH1024, verified := Proof.MlKem.X86.Wipe.encapsH1024_verified }
     (by exact encapsH1024Out _)
 
 /-- `vg_mlkem1024_encaps`. -/
-def encaps1024Reg : Registration Spec.MlKem1024.encapsApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.encaps1024, verified := Proof.MlKem.X86.Wipe.encaps1024_verified }
+theorem encaps1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.encaps1024 (Spec.MlKem1024.encapsContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem1024.encapsApi)
+    { code := Impl.MlKem.X86.Wipe.encaps1024, verified := Proof.MlKem.X86.Wipe.encaps1024_verified }
     (by exact encaps1024Out _)
 
 /-- `vg_mlkem1024_decaps`. -/
-def decaps1024Reg : Registration Spec.MlKem1024.decapsApi target :=
-  scrubFOf { code := Impl.MlKem.X86.Wipe.decaps1024, verified := Proof.MlKem.X86.Wipe.decaps1024_verified }
+theorem decaps1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.decaps1024 (Spec.MlKem1024.decapsContract X86.abi 120) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem1024.decapsApi)
+    { code := Impl.MlKem.X86.Wipe.decaps1024, verified := Proof.MlKem.X86.Wipe.decaps1024_verified }
     (by exact decaps1024Out _)
 
 /-- `vg_mlkem1024_check_ek`. -/
-def checkEk1024Reg : Registration Spec.MlKem1024.checkEkApi target :=
-  scrubFOf { code := Impl.MlKem1024.X86.checkEk, verified := Proof.MlKem1024.X86.CheckEk.verified }
+theorem checkEk1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86.Fn.checkEk1024 (Spec.MlKem1024.checkEkContract X86.abi 16) 32 :=
+  verifiedScrubbedF (api := Spec.MlKem1024.checkEkApi)
+    { code := Impl.MlKem1024.X86.checkEk, verified := Proof.MlKem1024.X86.CheckEk.verified }
     (by exact checkEk1024Out _)
 
 end VG.Proof.MlKem.X86.Scrub
