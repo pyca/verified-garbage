@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+import VerifiedGarbage.Proof.Poly1305.X86.BlocksFn
 import VerifiedGarbage.Proof.Poly1305.X86.Init
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.X86.Finalize
