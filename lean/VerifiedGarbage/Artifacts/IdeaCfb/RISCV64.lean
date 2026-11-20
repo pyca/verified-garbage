@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Idea.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Idea.RISCV64.ModesLit
@@ -13,9 +14,17 @@ import VerifiedGarbage.Proof.Idea.RISCV64.FbFinalLit
 namespace VG.Artifacts.IdeaCfb.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Idea.cfbEncryptApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.cfbEncryptReg,
-  Spec.Idea.cfbDecryptApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.cfbDecryptReg,
-  Spec.Idea.cfbEncryptFinalApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.cfbEncryptFinalReg,
-  Spec.Idea.cfbDecryptFinalApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.cfbDecryptFinalReg]
+  Spec.Idea.cfbEncryptApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbEncrypt_scrubbed },
+  Spec.Idea.cfbDecryptApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbDecrypt_scrubbed },
+  Spec.Idea.cfbEncryptFinalApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.Idea.cfbDecryptFinalApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.RISCV64
