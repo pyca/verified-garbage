@@ -85,18 +85,18 @@ open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK brainpoolp320r1 brainpoolp320r1T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hu : ∀ w ∈ vs, Proof.Ecdsa.Rfc6979.X86_64.HmacUp w) : List Artifact :=
   if hv : OK vs ∧ "VG_BRAINPOOLP320R1_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (brainpoolp320r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vs
-      verified := brainpoolp320r1T_verified hasLaw.law hasLaw.inv vs hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.brainpoolp320r1S.combConsts _ _))]
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86_64.target
+      { tables := [("hmac", tables vs)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (brainpoolp320r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vs)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.brainpoolp320r1T_scrubbed hasLaw.law hasLaw.inv vs hv hu)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.brainpoolp320r1T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.Ecdsa.Rfc6979.X86_64.variants_up
 
 end VG.Artifacts.EcdsaBrainpoolP320r1.X86_64.Rfc6979
 

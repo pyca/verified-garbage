@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
@@ -150,5 +153,29 @@ theorem p521T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
   cases adx
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p521_stub (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries := by
+  cases adx <;> (dsimp only [SignStub, cfgS, cfgT, p521Of, cond, p521, p521x]; exact ⟨by lit_decide, by lit_decide⟩)
+
+/-- `vg_ecdsa_p521_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p521T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.X86_64.p521.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p521SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs
+      verified := p521T_verified adx hL hT hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p521.combConsts _ _) rfl rfl hu (p521_stub adx hL hT hI)
+
+theorem p521T_spSafe (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

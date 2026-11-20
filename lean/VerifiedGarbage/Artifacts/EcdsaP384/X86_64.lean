@@ -95,19 +95,17 @@ open VG.Proof.Variants.MdHash.X86_64 (variants)
 
 def artifacts : List Artifact :=
   if hv : OK variants ∧ "VG_P384_COMB" ∉ names variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      tables := [("hmac", tables variants)]
-      code := signCodeT (p384Of false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv)
-        Spec.Ecdsa.Rfc6979.Curves.p384.tries variants
-      verified := p384T_verified false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p384.combConsts _ _)),
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := "_adx"
-      tables := [("hmac", tables variants)]
-      code := signCodeT (p384Of true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv)
-        Spec.Ecdsa.Rfc6979.Curves.p384.tries variants
-      verified := p384T_verified true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p384.combConsts _ _))]
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target
+      { tables := [("hmac", tables variants)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p384Of false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p384.tries variants)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p384T_scrubbed false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p384T_spSafe false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants },
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target
+      { suffix := "_adx"
+        tables := [("hmac", tables variants)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p384Of true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p384.tries variants)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p384T_scrubbed true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p384T_spSafe true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants }]
   else []
 
 end VG.Artifacts.EcdsaP384.X86_64.Rfc6979
