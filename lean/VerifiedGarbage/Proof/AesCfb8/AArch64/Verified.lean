@@ -1097,18 +1097,18 @@ place of the block function, and of each implementation where it is defined
 (`BlocksImpl.encScrub`). -/
 
 private theorem encrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block []⟩) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt b) = true := by
   simp only [Impl.AesCfb8.AArch64.encrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem encrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block []⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.encClear) [] = true := by
+    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
   refine AArch64.ScrubAll.scrubSide_union0 ?_ (by decide)
     (encrypt_all v.enc (AArch64.ScrubAll.sideAll_union_left encrypt_own)
       (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
@@ -1117,25 +1117,25 @@ theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
 
 /-- `vg_aes_cfb8_encrypt` as emitted, cleanup included. -/
 theorem encrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
-    VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.encrypt v.encClear v.enc)
+    VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.encrypt v.enc)
       (Spec.Cfb8.aesEncryptContract AArch64.abi 0) 0 :=
   AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb8.aesEncryptApi)
     { code := Impl.AesCfb8.AArch64.encrypt v.enc, verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) } _
     Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk (encrypt_side v)
 
 private theorem decrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block []⟩) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt b) = true := by
   simp only [Impl.AesCfb8.AArch64.decrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem decrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block []⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem decrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.decrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.encClear) [] = true := by
+    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.decrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
   refine AArch64.ScrubAll.scrubSide_union0 ?_ (by decide)
     (decrypt_all v.enc (AArch64.ScrubAll.sideAll_union_left decrypt_own)
       (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
@@ -1144,7 +1144,7 @@ theorem decrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
 
 /-- `vg_aes_cfb8_decrypt` as emitted, cleanup included. -/
 theorem decrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
-    VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.decrypt v.encClear v.enc)
+    VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.decrypt v.enc)
       (Spec.Cfb8.aesDecryptContract AArch64.abi 0) 0 :=
   AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb8.aesDecryptApi)
     { code := Impl.AesCfb8.AArch64.decrypt v.enc, verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) } _

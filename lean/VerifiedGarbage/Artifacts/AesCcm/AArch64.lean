@@ -17,11 +17,11 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
     Spec.Ccm.sealApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCcm.AArch64.Fn.seal v.clear v.ctr.clear v.scratch v.callee v.ctr.callee
+      code := Impl.AesCcm.AArch64.Fn.seal v.callee v.ctr.callee
       verified := .scrubbed (seal_scrubbed v) },
     Spec.Ccm.openApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCcm.AArch64.Fn.open v.clear v.ctr.clear v.scratch v.callee v.ctr.callee
+      code := Impl.AesCcm.AArch64.Fn.open v.callee v.ctr.callee
       verified := .scrubbed (open_scrubbed v) }]
 
 end VG.Artifacts.AesCcm.AArch64

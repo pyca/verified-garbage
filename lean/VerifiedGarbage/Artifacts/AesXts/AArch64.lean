@@ -20,11 +20,11 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
     Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.Fn.encrypt v.encClear v.enc
+      code := Impl.AesXts.AArch64Unit.Fn.encrypt v.enc
       verified := .scrubbed (encrypt_scrubbed v) },
     Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.Fn.decrypt v.encClear v.decClear v.enc v.dec
+      code := Impl.AesXts.AArch64Unit.Fn.decrypt v.enc v.dec
       verified := .scrubbed (decrypt_scrubbed v) }]
 
 end VG.Artifacts.AesXts.AArch64

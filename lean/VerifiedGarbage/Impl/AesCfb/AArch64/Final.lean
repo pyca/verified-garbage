@@ -90,7 +90,7 @@ Each function is its code, then its cleanup
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the block function it calls
-writes (`cl`). -/
+states it writes (`b.clear`). -/
 
 namespace Fn
 
@@ -101,16 +101,16 @@ def encryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x16, .x17], [], []
 
 /-- `vg_aes_cfb128_encrypt`: `encrypt`, its registers cleared; it uses no
 stack. -/
-def encrypt (cl : Clear) (b : Blocks) : Prog isa :=
-  scrubAll 0 0 (encryptOwn.union cl) (AesCfb.AArch64.encrypt b)
+def encrypt (b : Blocks) : Prog isa :=
+  scrubAll 0 0 (encryptOwn.union b.clear) (AesCfb.AArch64.encrypt b)
 
 /-- The registers `vg_aes_cfb128_encrypt_final`'s own instructions write. -/
 def encryptFinalOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x6, .x7, .x9, .x10, .x16, .x17], [], []⟩
 
 /-- `vg_aes_cfb128_encrypt_final`: `encryptFinal` with `save` in its frame,
 its registers cleared and its 64 bytes of stack zeroed. -/
-def encryptFinal (cl : Clear) (b : Blocks) (sfx : String) : Prog isa :=
-  scrubAll 64 0 (encryptFinalOwn.union cl)
+def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
+  scrubAll 64 0 (encryptFinalOwn.union b.clear)
     (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (AesCfb.AArch64.encryptFinal b sfx))
 
 end Fn

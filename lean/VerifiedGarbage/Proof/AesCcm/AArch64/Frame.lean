@@ -359,7 +359,7 @@ namespace VG.Proof.AesCcm.AArch64
 open VG VG.AArch64 VG.AArch64.ScrubAll VG.Impl.AesCcm.AArch64
 
 private theorem seal_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
-    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block []⟩ ⟨"", .block []⟩)) = true)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩)) = true)
     (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
     sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» u c)) = true := by
   simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, sideAll,
@@ -367,7 +367,7 @@ private theorem seal_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch6
   simp only [h0, hu, hc, and_self]
 
 private theorem seal_own (B : Nat) :
-    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block []⟩ ⟨"", .block []⟩))
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩))
       Impl.AesCcm.AArch64.Fn.sealOwn = true := by
   kernel_rfl
 
@@ -378,7 +378,7 @@ private theorem seal_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch
 
 theorem seal_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
     scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee)) (416 + v.scratch) 0
-      ((Impl.AesCcm.AArch64.Fn.sealOwn.union v.clear).union v.ctr.clear) [] = true := by
+      ((Impl.AesCcm.AArch64.Fn.sealOwn.union v.callee.clear).union v.ctr.callee.clear) [] = true := by
   refine scrubSide_union ?_ ?_ (by decide)
     (seal_all _ v.callee v.ctr.callee (sideAll_union_left (sideAll_union_left (seal_own _)))
       (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
@@ -392,15 +392,17 @@ theorem seal_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
 /-- `vg_aes_ccm_seal` as emitted, cleanup included. -/
 theorem seal_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     VerifiedScrubbed AArch64.target
-      (Impl.AesCcm.AArch64.Fn.seal v.clear v.ctr.clear v.scratch v.callee v.ctr.callee)
-      (Spec.Ccm.sealContract AArch64.abi (416 + v.scratch)) 0 :=
-  verifiedScrubbed (api := Spec.Ccm.sealApi)
+      (Impl.AesCcm.AArch64.Fn.seal v.callee v.ctr.callee)
+      (Spec.Ccm.sealContract AArch64.abi (416 + v.scratch)) 0 := by
+  unfold Impl.AesCcm.AArch64.Fn.seal
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Ccm.sealApi)
     { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee)
       verified := Proof.AesCcm.seal_keyed (seal_framed v) } _
     (Scrub.sealOk _) (seal_side v)
 
 private theorem open_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
-    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block []⟩ ⟨"", .block []⟩)) = true)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩)) = true)
     (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
     sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» u c)) = true := by
   simp only [Impl.StackScratch.AArch64.withStackArgScratch, «open», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, sideAll,
@@ -408,7 +410,7 @@ private theorem open_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch6
   simp only [h0, hu, hc, and_self]
 
 private theorem open_own (B : Nat) :
-    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block []⟩ ⟨"", .block []⟩))
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩))
       Impl.AesCcm.AArch64.Fn.openOwn = true := by
   kernel_rfl
 
@@ -419,7 +421,7 @@ private theorem open_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch
 
 theorem open_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
     scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee)) (416 + v.scratch) 32
-      ((Impl.AesCcm.AArch64.Fn.openOwn.union v.clear).union v.ctr.clear) [] = true := by
+      ((Impl.AesCcm.AArch64.Fn.openOwn.union v.callee.clear).union v.ctr.callee.clear) [] = true := by
   refine scrubSide_union ?_ ?_ (by decide)
     (open_all _ v.callee v.ctr.callee (sideAll_union_left (sideAll_union_left (open_own _)))
       (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
@@ -433,9 +435,11 @@ theorem open_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
 /-- `vg_aes_ccm_open` as emitted, cleanup included. -/
 theorem open_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
     VerifiedScrubbed AArch64.target
-      (Impl.AesCcm.AArch64.Fn.open v.clear v.ctr.clear v.scratch v.callee v.ctr.callee)
-      (Spec.Ccm.openContract AArch64.abi (416 + v.scratch)) 32 :=
-  verifiedScrubbed (api := Spec.Ccm.openApi)
+      (Impl.AesCcm.AArch64.Fn.open v.callee v.ctr.callee)
+      (Spec.Ccm.openContract AArch64.abi (416 + v.scratch)) 32 := by
+  unfold Impl.AesCcm.AArch64.Fn.open
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Ccm.openApi)
     { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee)
       verified := Proof.AesCcm.open_keyed (open_framed v) } _
     (Scrub.openOk _) (open_side v)

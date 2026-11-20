@@ -84,27 +84,27 @@ and of each implementation where it is defined (`XtsImpl.encScrub`,
 open VG.AArch64.ScrubAll
 
 private theorem encrypt_all {p : Instr → Bool} (f : Impl.Aes.AArch64.Blocks)
-    (h0 : sideAll p (encrypt ⟨"", .block []⟩) = true) (hc : sideAll p f.code = true) :
+    (h0 : sideAll p (encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true) (hc : sideAll p f.code = true) :
     sideAll p (encrypt f) = true := by
   simp only [encrypt, tweak, encSteal, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem decrypt_all {p : Instr → Bool} (e d : Impl.Aes.AArch64.Blocks)
-    (h0 : sideAll p (decrypt ⟨"", .block []⟩ ⟨"", .block []⟩) = true) (he : sideAll p e.code = true)
+    (h0 : sideAll p (decrypt ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩⟩) = true) (he : sideAll p e.code = true)
     (hd : sideAll p d.code = true) : sideAll p (decrypt e d) = true := by
   simp only [decrypt, tweak, decSteal, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, he, hd, and_self]
 
 private theorem encrypt_own :
-    calleeSide (encrypt ⟨"", .block []⟩) Impl.AesXts.AArch64Unit.Fn.encryptOwn = true := by
+    calleeSide (encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesXts.AArch64Unit.Fn.encryptOwn = true := by
   kernel_rfl
 
 private theorem decrypt_own :
-    calleeSide (decrypt ⟨"", .block []⟩ ⟨"", .block []⟩) Impl.AesXts.AArch64Unit.Fn.decryptOwn = true := by
+    calleeSide (decrypt ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesXts.AArch64Unit.Fn.decryptOwn = true := by
   kernel_rfl
 
 theorem encrypt_side (v : XtsImpl) :
-    scrubSide (encrypt v.enc) 0 0 (Impl.AesXts.AArch64Unit.Fn.encryptOwn.union v.encClear) [] = true := by
+    scrubSide (encrypt v.enc) 0 0 (Impl.AesXts.AArch64Unit.Fn.encryptOwn.union v.enc.clear) [] = true := by
   refine scrubSide_union0 ?_ (by decide)
     (encrypt_all v.enc (sideAll_union_left encrypt_own) (sideAll_union_right v.encScrub)) (by decide)
   simp only [encrypt, tweak, encSteal, swap, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
@@ -112,7 +112,7 @@ theorem encrypt_side (v : XtsImpl) :
 
 theorem decrypt_side (v : XtsImpl) :
     scrubSide (decrypt v.enc v.dec) 0 0
-      ((Impl.AesXts.AArch64Unit.Fn.decryptOwn.union v.encClear).union v.decClear) [] = true := by
+      ((Impl.AesXts.AArch64Unit.Fn.decryptOwn.union v.enc.clear).union v.dec.clear) [] = true := by
   refine scrubSide_union0 ?_ (by decide)
     (decrypt_all v.enc v.dec (sideAll_union_left (sideAll_union_left decrypt_own))
       (sideAll_union_left (sideAll_union_right v.encScrub)) (sideAll_union_right v.decScrub))
@@ -123,7 +123,7 @@ theorem decrypt_side (v : XtsImpl) :
 
 /-- `vg_aes_xts_encrypt_unit` as emitted, cleanup included. -/
 theorem encrypt_scrubbed (v : XtsImpl) :
-    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.encrypt v.encClear v.enc)
+    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.encrypt v.enc)
       (Spec.Xts.aesEncryptUnitContract AArch64.abi) 0 :=
   verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi)
     { code := encrypt v.enc, verified := encrypt_verified v } _
@@ -131,7 +131,7 @@ theorem encrypt_scrubbed (v : XtsImpl) :
 
 /-- `vg_aes_xts_decrypt_unit` as emitted, cleanup included. -/
 theorem decrypt_scrubbed (v : XtsImpl) :
-    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.decrypt v.encClear v.decClear v.enc v.dec)
+    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.decrypt v.enc v.dec)
       (Spec.Xts.aesDecryptUnitContract AArch64.abi) 0 :=
   verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi)
     { code := decrypt v.enc v.dec, verified := decrypt_verified v } _
