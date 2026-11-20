@@ -286,7 +286,7 @@ structure XOk (c st w x : Addr) : Prop where
   fit : x.toNat + sBytes ≤ 2 ^ 64
   cx : (⟨c, 256⟩ : Region).Disjoint (xR x)
   sx : (⟨st, 80⟩ : Region).Disjoint (xR x)
-  wx : (⟨w, 2560⟩ : Region).Disjoint (xR x)
+  wx : (⟨w, 288⟩ : Region).Disjoint (xR x)
 
 /-- The cipher of the key schedule at `C`. -/
 abbrev ciphOf (m : Mem) (C : Addr) : Block → Block :=

@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Blake2.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Streaming BLAKE2: AArch64 implementation
@@ -203,3 +206,40 @@ def init : Prog isa :=
 end
 
 end VG.Impl.Blake2.AArch64.Stream
+
+/-! ## The functions as emitted -/
+
+namespace VG.Impl.Blake2.AArch64.Fn
+
+open VG.AArch64
+
+variable {w : Nat} (P : Spec.Blake2.Params w)
+
+/-- `init` as emitted: its code, then `x9`, the one register it writes that
+the calling convention does not preserve, cleared
+(`Impl.Residue.AArch64.withClears`), so that it returns without secret
+residue. -/
+def init : Prog isa :=
+  VG.Impl.Residue.AArch64.withClears [.x9] [] none (Stream.init P)
+
+/-- `update` as emitted: its code with its scratch space on the stack
+(`Impl.StackScratch.AArch64.withStackScratch`), then the registers it writes
+that the calling convention does not preserve cleared and its 128 bytes of
+stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns without
+secret residue. -/
+def update : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 128 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Stream.update P))
+
+/-- `finalize` as emitted, as `update`. -/
+def finalize : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 128 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Stream.finalize P))
+
+end VG.Impl.Blake2.AArch64.Fn

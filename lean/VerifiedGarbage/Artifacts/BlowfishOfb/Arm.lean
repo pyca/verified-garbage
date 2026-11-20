@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
+public import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
 
 /-! # Blowfish-OFB on ARMv7 -/
 
@@ -14,10 +12,10 @@ namespace VG.Artifacts.BlowfishOfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofb
-    verified := Proof.Blowfish.Arm.ofb_framed },
+    code := Impl.Blowfish.Arm.Fn.ofb
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.ofb },
   Spec.Blowfish.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofbFinal
-    verified := Proof.Blowfish.Arm.ofbFinal_framed }]
+    code := Impl.Blowfish.Arm.Fn.ofbFinal
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.BlowfishOfb.Arm

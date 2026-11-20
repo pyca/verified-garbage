@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.Frame
+public import VerifiedGarbage.Proof.Rc4.X86.Scrub
+public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Rc4.X86.Lit
@@ -13,10 +14,10 @@ namespace VG.Artifacts.Rc4.X86
 
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.init
-    verified := Proof.Rc4.X86.init_framed },
+    code := Impl.Rc4.X86.Fn.init
+    verified := .scrubbed Proof.Rc4.X86.Scrub.init_scrubbed },
   Spec.Rc4.applyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.apply
-    verified := Proof.Rc4.X86.apply_framed }]
+    code := Impl.Rc4.X86.Fn.apply
+    verified := .scrubbed Proof.Rc4.X86.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.Rc4.X86

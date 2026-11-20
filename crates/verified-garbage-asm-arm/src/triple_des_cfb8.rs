@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -52,7 +54,7 @@ str r9, [r8, #52]
 mov r0, r4
 add r1, r8, #48
 mov r2, #1
-bl {vg_triple_des_ecb_encrypt}
+bl {vg_triple_des_ecb_encrypt_entry}
 ldrb r9, [r6, #0]
 ldrb r10, [r8, #48]
 eor r9, r9, r10
@@ -109,14 +111,39 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #64
+sub sp, sp, #1088
+add r12, sp, #0
+mov r2, #0
+mov r3, #34
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+add sp, sp, #1088
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
+        vg_triple_des_ecb_encrypt_entry = sym super::triple_des::vg_triple_des_ecb_encrypt_entry::vg_triple_des_ecb_encrypt_entry,
     )
 }
 
 /// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -163,7 +190,7 @@ str r9, [r8, #52]
 mov r0, r4
 add r1, r8, #48
 mov r2, #1
-bl {vg_triple_des_ecb_encrypt}
+bl {vg_triple_des_ecb_encrypt_entry}
 ldrb r9, [r8, #41]
 strb r9, [r8, #40]
 ldrb r9, [r8, #42]
@@ -220,7 +247,30 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #64
+sub sp, sp, #1088
+add r12, sp, #0
+mov r2, #0
+mov r3, #34
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+add sp, sp, #1088
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
+        vg_triple_des_ecb_encrypt_entry = sym super::triple_des::vg_triple_des_ecb_encrypt_entry::vg_triple_des_ecb_encrypt_entry,
     )
 }

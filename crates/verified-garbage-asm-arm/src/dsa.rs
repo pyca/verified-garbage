@@ -420,6 +420,8 @@ add sp, sp, #112
 sub sp, sp, #144
 add r12, sp, #0
 mov r2, #0
+mov r3, #4
+244:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -428,34 +430,13 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
+add r12, r12, #32
+subs r3, r3, #1
+bne 244b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
 add sp, sp, #144
 mov r1, #0
 mov r2, #0
@@ -14789,6 +14770,8 @@ add sp, sp, #112
 sub sp, sp, #144
 add r12, sp, #0
 mov r2, #0
+mov r3, #4
+239:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -14797,34 +14780,13 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
+add r12, r12, #32
+subs r3, r3, #1
+bne 239b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
 add sp, sp, #144
 mov r1, #0
 mov r2, #0
@@ -39428,6 +39390,8 @@ add sp, sp, #112
 sub sp, sp, #144
 add r12, sp, #0
 mov r2, #0
+mov r3, #4
+244:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -39436,34 +39400,13 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
+add r12, r12, #32
+subs r3, r3, #1
+bne 244b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
 add sp, sp, #144
 mov r1, #0
 mov r2, #0
@@ -53779,6 +53722,8 @@ add sp, sp, #112
 sub sp, sp, #144
 add r12, sp, #0
 mov r2, #0
+mov r3, #4
+239:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -53787,34 +53732,13 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
+add r12, r12, #32
+subs r3, r3, #1
+bne 239b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
 add sp, sp, #144
 mov r1, #0
 mov r2, #0
@@ -88382,6 +88306,8 @@ pub const VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -93972,6 +93898,32 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
+sub sp, sp, #304
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+2352:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2352b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_umaal = sym super::dsa::vg_dsa_probable_prime_umaal::vg_dsa_probable_prime_umaal,
@@ -93986,6 +93938,8 @@ bx lr",
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -99575,6 +99529,32 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
+sub sp, sp, #304
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+2352:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2352b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime::vg_dsa_probable_prime,

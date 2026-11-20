@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
@@ -95,6 +96,10 @@ structure Compress where
   /-- It never reads or writes PSTATE.DIT, so its callers' runs agree from any mode
   (`ConstantTime.withDit`). -/
   noDit : code.all (fun i => !i.touchesDit) = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`ScrubAll.verifiedScrubbedOf`). -/
+  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre

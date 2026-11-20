@@ -52,4 +52,26 @@ def body (name : String) (hash : HPrime.Hash) : Prog isa :=
   .seq prepare (.seq Parameters.code (InitialBody.code name hash))
 
 def code (name : String) (hash : HPrime.Hash) : Prog isa := frame (body name hash) saved
+
+/-! ## The function, as emitted -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_argon2_derive`'s own instructions write. -/
+def deriveOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v16], []⟩
+
+/-- `vg_argon2_derive` over the hash functions `hash`, whose H′ is the
+internal function `vg_argon2_hprime` with the suffix `sfx`: `code`, then its
+cleanup (`Impl.Residue.AArch64.scrubAll`), which clears the registers its own
+instructions and the hash functions write that the calling convention does
+not preserve, and zeroes its 400 bytes of stack, so that it returns without
+secret residue. -/
+def derive (hash : HPrime.Hash) (sfx : String) : Prog isa :=
+  scrubAll 400 0 (deriveOwn.union hash.clear) (code ("vg_argon2_hprime" ++ sfx) hash)
+
+end Fn
 end VG.Impl.Argon2.AArch64.Derive

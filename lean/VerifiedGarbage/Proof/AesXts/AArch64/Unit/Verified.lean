@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 public import VerifiedGarbage.Proof.AesXts.Spec
 import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
 import VerifiedGarbage.Proof.AesXts.AArch64.CT
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.AesXts.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # XTS-AES of data units on AArch64: `Verified`
@@ -65,5 +68,73 @@ theorem decrypt_verified (v : XtsImpl) :
     sig_implies [Spec.Xts.aesDecryptUnitContract, Spec.Xts.aesUnitSig, Spec.Xts.aesUnitPre,
       Spec.Xts.aesDecryptUnitPost, unitAArch64, unitPre, unitPub, xtsOf, W, K, R, I, D, Len, S, schR, tschR, iR,
       dataR, scrR, AArch64.abi, AArch64.argRegs] [unitSat] using unitSat)
+
+/-! ## The functions, as emitted
+
+`vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit` with their cleanup
+(`Impl.AesXts.AArch64Unit.Fn`), around an implementation `v` of
+`vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`: each meets its contract in
+constant time and returns without secret residue (`VerifiedScrubbed`), which
+is what its registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the functions it calls,
+and of each implementation where it is defined (`XtsImpl.encScrub`,
+`XtsImpl.decScrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem encrypt_all {p : Instr → Bool} (f : Impl.Aes.AArch64.Blocks)
+    (h0 : sideAll p (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p f.code = true) :
+    sideAll p (encrypt f) = true := by
+  simp only [encrypt, tweak, encSteal, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem decrypt_all {p : Instr → Bool} (e d : Impl.Aes.AArch64.Blocks)
+    (h0 : sideAll p (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (he : sideAll p e.code = true)
+    (hd : sideAll p d.code = true) : sideAll p (decrypt e d) = true := by
+  simp only [decrypt, tweak, decSteal, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, he, hd, and_self]
+
+private theorem encrypt_own :
+    calleeSide (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64Unit.Fn.encryptOwn = true := by
+  kernel_rfl
+
+private theorem decrypt_own :
+    calleeSide (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64Unit.Fn.decryptOwn = true := by
+  kernel_rfl
+
+theorem encrypt_side (v : XtsImpl) :
+    scrubSide (encrypt v.enc) 0 0 (Impl.AesXts.AArch64Unit.Fn.encryptOwn.union v.enc.clear) [] = true := by
+  refine scrubSide_union0 ?_ (by decide)
+    (encrypt_all v.enc (sideAll_union_left encrypt_own) (sideAll_union_right v.encScrub)) (by decide)
+  simp only [encrypt, tweak, encSteal, swap, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
+  decide
+
+theorem decrypt_side (v : XtsImpl) :
+    scrubSide (decrypt v.enc v.dec) 0 0
+      ((Impl.AesXts.AArch64Unit.Fn.decryptOwn.union v.enc.clear).union v.dec.clear) [] = true := by
+  refine scrubSide_union0 ?_ (by decide)
+    (decrypt_all v.enc v.dec (sideAll_union_left (sideAll_union_left decrypt_own))
+      (sideAll_union_left (sideAll_union_right v.encScrub)) (sideAll_union_right v.decScrub))
+    (linkRegs_union (by decide))
+  simp only [decrypt, tweak, decSteal, swap, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames,
+    Proof.Aes.AArch64.depth_of_noFrames v.decNoFrames]
+  decide
+
+/-- `vg_aes_xts_encrypt_unit` as emitted, cleanup included. -/
+theorem encrypt_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.encrypt v.enc)
+      (Spec.Xts.aesEncryptUnitContract AArch64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi)
+    { code := encrypt v.enc, verified := encrypt_verified v } _
+    Proof.AesXts.AArch64.Scrub.encryptOk (encrypt_side v)
+
+/-- `vg_aes_xts_decrypt_unit` as emitted, cleanup included. -/
+theorem decrypt_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.decrypt v.enc v.dec)
+      (Spec.Xts.aesDecryptUnitContract AArch64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi)
+    { code := decrypt v.enc v.dec, verified := decrypt_verified v } _
+    Proof.AesXts.AArch64.Scrub.decryptOk (decrypt_side v)
 
 end VG.Proof.AesXts.AArch64.Unit

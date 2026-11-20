@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
+public import VerifiedGarbage.Impl.Sha3.AArch64.Instances
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Framework.Contract
@@ -221,14 +222,18 @@ structure Permutation where
   /-- The `target_vendor` of the CPUs it is faster on, which callers that are
   faster with it only there give their implementations (`Artifact.vendor`). -/
   vendor : Option String := none
-  /-- The registers its code (`callee.code`) writes, of those the calling
-  convention does not preserve: what the tail of a function that calls it
-  clears for it, with the registers the function's own code writes
-  (`ScrubAll.clearUnion`), so that neither is found from the code when the
-  function's registration is evaluated. A caller's side condition
-  (`ScrubAll.scrubSide`), proved of every implementation it is registered
-  with, is what holds this to the code. -/
-  clear : Impl.Residue.AArch64.Clear
+  /-- Its code writes, of the registers the calling convention does not
+  preserve, only those `callee.clear` lists, writes no PSTATE.DIT and calls
+  nothing indirectly (`ScrubAll.calleeSide`, which the kernel evaluates where
+  the implementation is defined): what the cleanup of every function that
+  calls it needs of it, so that each proves the rest of its own instructions
+  only, whatever the implementation. -/
+  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
+  /-- An absorb the implementation gives as a whole writes only what
+  `vg_sha3_*_update` clears: `Impl.Sha3.AArch64.Fn.updateOwn` and
+  `callee.clear`. -/
+  absorbOverrideScrub : ∀ code, callee.absorbOverride = some code →
+    AArch64.ScrubAll.calleeSide code (Impl.Sha3.AArch64.Fn.updateOwn.union callee.clear) = true
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
@@ -370,7 +375,8 @@ theorem scalarSums : Taint.AllOk VectorTaint.taint (Callers.sums .scalar) :=
 def Permutation.scalar : Permutation where
   callee := .scalar
   features := []
-  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15], [], []⟩
+  scrub := by lit_decide
+  absorbOverrideScrub := by intro code h; cases h
   ok := permute_correct
   noFrames := permute_noFrames
   noDit := by lit_decide

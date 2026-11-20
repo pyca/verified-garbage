@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Md5.initContract`. The streaming state is the MD buffer followed by a buffered partial block (`VG.Spec.Md5.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -26,6 +28,12 @@ str r12, [r0, #8]
 movw r12, #21622
 movt r12, #4146
 str r12, [r0, #12]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -33,6 +41,8 @@ bx lr",
 /// Absorbs data into an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -175,6 +185,29 @@ ldr r10, [r3, #88]
 ldr r11, [r3, #92]
 ldr lr, [r3, #96]
 add sp, sp, #128
+sub sp, sp, #128
+add r12, sp, #0
+mov r2, #0
+mov r3, #4
+223:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 223b
+add sp, sp, #128
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -183,6 +216,8 @@ bx lr",
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -277,6 +312,29 @@ ldr r10, [r3, #88]
 ldr r11, [r3, #92]
 ldr lr, [r3, #96]
 add sp, sp, #128
+sub sp, sp, #128
+add r12, sp, #0
+mov r2, #0
+mov r3, #4
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #128
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -289,6 +347,10 @@ pub(crate) mod vg_md5_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_md5_finalize_scratch.rs"]
 pub(crate) mod vg_md5_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_md5_init_core.rs"]
+pub(crate) mod vg_md5_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_md5_state_digest.rs"]

@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
-public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
+public import VerifiedGarbage.Proof.AesSiv.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,17 +10,15 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesSiv.Arm
 
-open VG.Proof.AesSiv.Arm
-
 def artifacts : List Artifact := [
   Spec.Siv.initApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesSiv.Arm.init
-    verified := init_framed },
+    code := Impl.AesSiv.Arm.Fn.init
+    verified := .scrubbed Proof.AesSiv.Arm.Fn.init },
   Spec.Siv.encryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.encrypt
-    verified := Proof.AesSiv.encrypt_keyed encrypt_framed },
+    code := Impl.AesSiv.Arm.Fn.encrypt
+    verified := .scrubbed Proof.AesSiv.Arm.Fn.encrypt },
   Spec.Siv.decryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2608 3 Impl.AesSiv.Arm.decrypt
-    verified := Proof.AesSiv.decrypt_keyed decrypt_framed }]
+    code := Impl.AesSiv.Arm.Fn.decrypt
+    verified := .scrubbed Proof.AesSiv.Arm.Fn.decrypt }]
 
 end VG.Artifacts.AesSiv.Arm

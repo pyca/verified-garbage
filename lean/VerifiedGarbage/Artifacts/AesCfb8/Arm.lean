@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Arm.Verified
+public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -10,14 +10,12 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.AesCfb8.Arm
 
-open VG.Proof.AesCfb8.Arm
-
 def artifacts : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact Arm.target {
-    code := Impl.AesCfb8.Arm.encrypt
-    verified := Proof.AesCfb8.encrypt_keyed encrypt_verified },
+    code := Impl.Aes.Arm.Fn.cfb8Encrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.cfb8Encrypt },
   Spec.Cfb8.aesDecryptApi.artifact Arm.target {
-    code := Impl.AesCfb8.Arm.decrypt
-    verified := Proof.AesCfb8.decrypt_keyed decrypt_verified }]
+    code := Impl.Aes.Arm.Fn.cfb8Decrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.cfb8Decrypt }]
 
 end VG.Artifacts.AesCfb8.Arm

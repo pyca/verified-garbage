@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 
@@ -105,6 +106,19 @@ def brainpoolp256r1 : TableInstance where
 
 /-- `vg_ecdsa_brainpoolp256r1_sign` on every target. -/
 def brainpoolp256r1SignApi : Api := brainpoolp256r1.signApi
+
+/-- brainpoolP320r1 (`Spec/Ecdsa/BrainpoolP320r1.lean`):
+`vg_ecdsa_brainpoolp320r1_sign`, in the module `ecdsa_brainpoolp320r1`. At
+most 128 candidates whatever the hash function: a
+candidate is the leftmost 320 bits of `V`, and `n < 0.826 · 2^320`, so each
+is unsuitable with probability about `0.174` (`2^-2.52`), and all 128 with
+probability under `2^-322`. -/
+def brainpoolp320r1 : TableInstance where
+  ecdsa := Ecdsa.BrainpoolP320r1.inst
+  tries := 128
+
+/-- `vg_ecdsa_brainpoolp320r1_sign` on every target. -/
+def brainpoolp320r1SignApi : Api := brainpoolp320r1.signApi
 
 /-- brainpoolP384r1 (`Spec/Ecdsa/BrainpoolP384r1.lean`):
 `vg_ecdsa_brainpoolp384r1_sign`, in the module `ecdsa_brainpoolp384r1`. At

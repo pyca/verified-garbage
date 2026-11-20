@@ -1,35 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Frame
+public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
+public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86.Mmx
-public import VerifiedGarbage.Proof.Framework.X86.Sse
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Select32
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Rc2.Word32
-public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-public import VerifiedGarbage.Proof.Rc2.X86.KeyIO
-public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
-public import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.TripleDes.EcbMemory
-public import VerifiedGarbage.Proof.TripleDes.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Round
-public import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Word
-public import VerifiedGarbage.Proof.TripleDes.X86.Bytes
-public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
-public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 
 /-! # Triple DES on x86 -/
 
@@ -39,13 +14,13 @@ namespace VG.Artifacts.TripleDes.X86
 
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey
-    verified := Proof.TripleDes.X86.expandKey_framed },
+    code := Impl.TripleDes.X86.Fn.expandKey
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.expandKey_scrubbed },
   Spec.TripleDes.ecbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt
-    verified := Proof.TripleDes.X86.ecb_framed .encrypt },
+    code := Impl.TripleDes.X86.Fn.ecbEncrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.TripleDes.ecbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt
-    verified := Proof.TripleDes.X86.ecb_framed .decrypt }]
+    code := Impl.TripleDes.X86.Fn.ecbDecrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.TripleDes.X86

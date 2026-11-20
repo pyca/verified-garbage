@@ -78,11 +78,9 @@ namespace VG.Artifacts.EcdsaBrainpoolP512r1.AArch64
 open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
-      Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verify
-    verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verifyHash_verified hasLaw.law hasLaw.inv } Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1VerifyClear
-    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1VerifySide)] ++
+  Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact AArch64.target {
+    code := Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1Verify hasLaw.law hasLaw.inv) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.AArch64

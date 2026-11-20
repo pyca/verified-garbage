@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.FbVerified
+public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Camellia.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 
 /-! # Camellia-OFB on ARMv7 -/
 
@@ -14,10 +12,10 @@ namespace VG.Artifacts.CamelliaOfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.ofb
-    verified := Proof.Camellia.Arm.ofb_framed },
+    code := Impl.Camellia.Arm.Fn.ofb
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ofb },
   Spec.Camellia.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ofbFinal
-    verified := Proof.Camellia.Arm.ofbFinal_framed }]
+    code := Impl.Camellia.Arm.Fn.ofbFinal
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.CamelliaOfb.Arm

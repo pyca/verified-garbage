@@ -47,7 +47,7 @@ section
 
 What the proof needs of the curve (`RfcCurve`): the code of
 `vg_ecdsa_<curve>_sign` for curves of `n` words (`Impl.Ecdsa.X86_64.Cfg`),
-the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4, 6 or 8 words
+the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4, 5, 6 or 8 words
 (32, 48 or 64 bytes, or P-192's 24 and P-224's 28 in 4) whose order `n` has
 exactly `8 Q` bits and `2^(8 Q) < 2 n` (so that `bits2octets` is one
 conditional subtraction), or, if `big`, P-521's (9 words, 66 bytes, 521
@@ -173,11 +173,11 @@ structure RfcCurve where
   `n` has fewer bits than they do (P-521's), so that `h` is the digest's
   integer and `core` takes it shifted (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.big`). -/
   big : Bool
-  /-- Scalars of 4, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
+  /-- Scalars of 4, 5, 6 or 8 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `big`, of 9 words and
   66 bytes, and `n` of 521 bits. -/
   sizes : if big then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 4 ∨ E.n = 6 ∨ E.n = 8) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧
+    else (E.n = 4 ∨ E.n = 6 ∨ E.n = 8 ∨ E.n = 5) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧
       nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
@@ -205,7 +205,7 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.big = false) :
-    (R.E.n = 4 ∨ R.E.n = 6 ∨ R.E.n = 8) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ (R.E.C.len = 28 ∨ R.E.C.len = 24)) ∧
+    (R.E.n = 4 ∨ R.E.n = 6 ∨ R.E.n = 8 ∨ R.E.n = 5) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ (R.E.C.len = 28 ∨ R.E.C.len = 24)) ∧
       nBits R.E.C = 8 * R.E.C.len ∧ 2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
@@ -214,12 +214,12 @@ theorem sizesW (h : R.big = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C
 
 theorem n4 : 4 ≤ R.E.n := by
   cases h : R.big
-  · rcases (R.sizesA h).1 with h | h | h <;> omega_using [h]
+  · rcases (R.sizesA h).1 with h | h | h | h <;> omega_using [h]
   · rw [(R.sizesW h).1]; omega_using []
 
 theorem n9 : R.E.n ≤ 9 := by
   cases h : R.big
-  · rcases (R.sizesA h).1 with h | h | h <;> omega_using [h]
+  · rcases (R.sizesA h).1 with h | h | h | h <;> omega_using [h]
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last possibly zero. -/
@@ -1171,7 +1171,7 @@ theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 18
 /-- Unless `big`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most 8 words. -/
 theorem sizesA (h : P.R.big = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 8 ∧ P.Q ≤ 64 := by
   have := P.R.sizesA h
-  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega_using [this]
+  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, w] <;> omega_using [this]
 
 /-- If `big`, P-521's sizes, longer than any digest. -/
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D < P.Q := by

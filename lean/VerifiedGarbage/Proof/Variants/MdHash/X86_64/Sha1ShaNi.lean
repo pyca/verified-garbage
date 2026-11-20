@@ -115,7 +115,7 @@ code (`X86_64.RTaint`) finds may hold secrets. -/
 def updateKs : List Nat := keep_for% Spec.Sha1.updateApi.sig updF.stack updF.code
 
 theorem updateRes : ResOk updF.code updF.contract updF.stack updateKs (chunks updF.stack) :=
-  RScrub.resOk_reg0 updF.reg updateKs (by taint_decide)
+  RScrub.resOk_reg0 updF.unscrubbed updateKs (by taint_decide)
 
 def update : StreamFn := updF.scrub .sse updateKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (updOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) updateRes
@@ -126,7 +126,7 @@ theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
 def finalizeKs : List Nat := keep_for% Spec.Sha1.finalizeApi.sig finF.stack finF.code
 
 theorem finalizeRes : ResOk finF.code finF.contract finF.stack finalizeKs (chunks finF.stack) :=
-  RScrub.resOk_reg0 finF.reg finalizeKs (by taint_decide)
+  RScrub.resOk_reg0 finF.unscrubbed finalizeKs (by taint_decide)
 
 def finalize : StreamFn := finF.scrub .sse finalizeKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (finOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) finalizeRes
@@ -137,7 +137,7 @@ theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits 
 def digestKs : List Nat := keep_for% Spec.Sha1.digestApi.sig digF.stack digF.code
 
 theorem digestRes : ResOk digF.code digF.contract digF.stack digestKs (chunks digF.stack) :=
-  RScrub.resOk_reg0 digF.reg digestKs (by taint_decide)
+  RScrub.resOk_reg0 digF.unscrubbed digestKs (by taint_decide)
 
 def digest : StreamFn := digF.scrub .sse digestKs (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (digOut0 compress Proof.Sha1.X86_64.Stream.shani_ok0) digestRes

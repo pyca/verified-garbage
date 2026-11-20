@@ -12,9 +12,9 @@
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_256_init_scratch() {
     core::arch::naked_asm!(
         r#".base64 "i0QkFImYEAEAAImwFAEAAIm4GAEAAImoHAEAAInFi1wkBIt0JAhT"
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "WFY="
-call {vg_sha512_256_init}
+call {vg_sha512_256_init_core}
 .base64 "WLk2NjY2iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtciUtgiUtkiUtoiUtsiUtwiUt0iUt4iUt8iYuAAAAAiYuEAAAAiYuIAAAAiYuMAAAAiYuQAAAAiYuUAAAAiYuYAAAAiYucAAAAiYugAAAAiYukAAAAiYuoAAAAiYusAAAAiYuwAAAAiYu0AAAAiYu4AAAAiYu8AAAAi3wkDItMJBCJ2oPCQIXJ"
 je 20f
 22:
@@ -29,7 +29,7 @@ call {vg_sha512_compress}
 call {vg_sha512_compress}
 .base64 "WFhYWInoi5gQAQAAi7AUAQAAi7gYAQAAi6gcAQAAww=="
 .p2align 6"#,
-        vg_sha512_256_init = sym crate::sha512::vg_sha512_256_init,
+        vg_sha512_256_init_core = sym crate::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_compress = sym crate::sha512::vg_sha512_compress::vg_sha512_compress,
     )
 }

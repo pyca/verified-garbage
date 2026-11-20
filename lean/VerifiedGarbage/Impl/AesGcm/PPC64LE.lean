@@ -11,18 +11,24 @@ The AES-GCM key setup and the start of a streaming encryption or decryption
 (`init`, `stream_init`, `stream_aad`, `Spec/Gcm/Contract.lean`), composed of
 calls of the verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and
 `vg_ghash`, as on ARMv7 (`Impl/AesGcm/ARM.lean`). A call (`bl`) stores
-nothing in memory and the callees use no stack, so the functions use none
-but the frame holding their working space.
+nothing in memory, and the callees use no stack and no working space (they
+are passed none: `Proof.Aes.ctr32PPC64LEF`, `Proof.Gcm.ghashPPC64LEF` and
+`Proof.Aes.expandKeyDirectPPC64LE` leave it out), so the functions use none
+but the frame holding their own working space.
 
 ## The working space
 
-Every function has a buffer `W` of 2560 bytes (`scratch`):
+Every function has a buffer `W` of 288 bytes (`scratch`):
 
 * `[96, 112)`: a block `T`: a partial block padded with zeros, or the
   lengths block (or `init`'s zero counter block);
 * `[128, 240)`: our caller's `r18`–`r31`, and `[240, 248)` our return
   address (a call replaces the link register);
-* `[512, 2560)`: the working space of the functions called.
+* `[256, 288)`: the tags `verify` and `open` compare (`rO`, `vO`).
+
+`seal` and `open` keep their state at `[16, 96)` and `open` its tag at
+`[112, 128)`; `seal` (`SealFused.lean`) passes the bulk of the data to a
+helper whose working space follows, at `W + 448`, in a larger `W`.
 
 ## Registers
 
@@ -66,7 +72,6 @@ def mov (d n : Reg) : Instr := .logic .or d n n
 /-! ## The working space -/
 
 def tO : Nat := 96
-def scrO : Nat := 512
 def lrO : Nat := 240
 /-- The received tag, padded with zeros, in `verify`. -/
 def rO : Nat := 256
@@ -126,8 +131,7 @@ def minLen : Prog isa :=
 
 /-- `vg_ghash` of the block at `b + o` into the accumulator at `r30 + yo`. -/
 def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
-  .seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r5 b o, .li .r6 1, .addi .r7 .r31 scrO])
-    ghCall
+  .seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r5 b o, .li .r6 1]) ghCall
 
 /-- Before the buffer is absorbed: the buffer filled from `r24` (`r5`
 bytes), the arguments advanced, and `r6` zero if the buffer is full. -/
@@ -151,7 +155,7 @@ def splitWhole : List Instr :=
 def absorbWhole (yo : Nat) : Prog isa :=
   .seq (.block splitWhole)
     (.ite (.zero .d .r6) (.block [])
-      (.seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo, .addi .r7 .r31 scrO]) ghCall))
+      (.seq (.block [.addi .r3 .r29 240, .addi .r4 .r30 yo]) ghCall))
 
 /-- The last `r25` bytes at `r24` buffered. -/
 def absorbTail : Prog isa :=
@@ -199,10 +203,9 @@ def splitCtr : List Instr :=
    .add .r24 .r24 .r9, mov .r25 .r8]
 
 /-- The arguments of `vg_aes_ctr32` but the data and their number: the key
-schedule, the rounds, the counter block (at `r30 + c`) and the working
-space. -/
+schedule, the rounds and the counter block (at `r30 + c`). -/
 def ctrArgs (c : Nat) : List Instr :=
-  [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 c, .addi .r8 .r31 scrO]
+  [mov .r3 .r29, mov .r4 .r28, .addi .r5 .r30 c]
 
 /-- Whole blocks: `split` leaves their number in `r7`; if there are any,
 `args` and `call` on them, in place (`cryptWhole`) or to a destination
@@ -245,7 +248,7 @@ def crypt : Prog isa :=
 it with the counter block `J₀` at the state. -/
 def tagArgs (o : Nat) : List Instr :=
   [.load .d .r3 .r30 16, .store .d .r3 .r31 o, .load .d .r3 .r30 24, .store .d .r3 .r31 (o + 8),
-   mov .r3 .r29, mov .r4 .r28, mov .r5 .r30, .addi .r6 .r31 o, .li .r7 1, .addi .r8 .r31 scrO]
+   mov .r3 .r29, mov .r4 .r28, mov .r5 .r30, .addi .r6 .r31 o, .li .r7 1]
 
 /-- The tag into `W + o`, after the lengths block of `r24` and `r26` bytes. -/
 def tag (o : Nat) : Prog isa :=
@@ -323,15 +326,14 @@ def j0 : Prog isa :=
 
 /-- `vg_aes_gcm_init(key = r3, key_len = r4, ctx = r5, scratch = r6)`. -/
 def initPre : List Instr :=
-  save .r6 ++ ([mov .r29 .r5, .lsr .d .r28 .r4 2, .addi .r28 .r28 6, .addi .r6 .r31 scrO] :
-    List Instr)
+  save .r6 ++ ([mov .r29 .r5, .lsr .d .r28 .r4 2, .addi .r28 .r28 6] : List Instr)
 
 /-- The hash subkey's block and `T` zeroed, and the arguments of
 `vg_aes_ctr32` on them. -/
 def initArgs : List Instr :=
   [.li .r0 0, .store .d .r0 .r29 240, .store .d .r0 .r29 248, .store .d .r0 .r31 tO,
    .store .d .r0 .r31 (tO + 8), mov .r3 .r29, mov .r4 .r28, .addi .r5 .r31 tO, .addi .r6 .r29 240,
-   .li .r7 1, .addi .r8 .r31 scrO]
+   .li .r7 1]
 
 def init : Prog isa :=
   .seq (.block initPre)

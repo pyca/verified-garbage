@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbVerified
-public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.WideVerified
-public import VerifiedGarbage.Proof.TripleDes.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
+public import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -15,16 +12,16 @@ namespace VG.Artifacts.TripleDesCfb.Arm
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
-    verified := Proof.TripleDes.Arm.cfbEncrypt_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbEncrypt },
   Spec.TripleDes.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cfbDecrypt
-    verified := Proof.TripleDes.Arm.Bitsliced.cfbDecrypt_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbDecrypt },
   Spec.TripleDes.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
-    verified := Proof.TripleDes.Arm.cfbEncryptFinal_framed },
+    code := Impl.TripleDes.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbEncryptFinal },
   Spec.TripleDes.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal
-    verified := Proof.TripleDes.Arm.cfbDecryptFinal_framed }]
+    code := Impl.TripleDes.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.TripleDesCfb.Arm

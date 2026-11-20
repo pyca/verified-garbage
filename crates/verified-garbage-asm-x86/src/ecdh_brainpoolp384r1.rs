@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -454,7 +456,7 @@ jne 27b
 call {vg_brainpoolp384r1_mul_mod_p}
 .base64 "WFhYWLgAAQAAuaAGAAC60AYAAFBRUlc="
 call {vg_brainpoolp384r1_mul_mod_p}
-.base64 "WFhYWIuXQAYAACtXcIuXRAYAABtXdIuXSAYAABtXeIuXTAYAABtXfIuXUAYAABuXgAAAAIuXVAYAABuXhAAAAIuXWAYAABuXiAAAAIuXXAYAABuXjAAAAIuXYAYAABuXkAAAAIuXZAYAABuXlAAAAIuXaAYAABuXmAAAAIuXbAYAABuXnAAAABnAicOLl0AGAAALl0QGAAALl0gGAAALl0wGAAALl1AGAAALl1QGAAALl1gGAAALl1wGAAALl2AGAAALl2QGAAALl2gGAAALl2wGAAC5AAAAACnRGdIh2ouHgAgAACHQiYeACAAAi5dAAwAAC5dEAwAAC5dIAwAAC5dMAwAAC5dQAwAAC5dUAwAAC5dYAwAAC5dcAwAAC5dgAwAAC5dkAwAAC5doAwAAC5dsAwAAuQAAAAAp0RnSi4eACAAAIdCJh4AIAACLj4AIAACLXCQEi4fQBgAAIcgPyIlDLIuH1AYAACHID8iJQyiLh9gGAAAhyA/IiUMki4fcBgAAIcgPyIlDIIuH4AYAACHID8iJQxyLh+QGAAAhyA/IiUMYi4foBgAAIcgPyIlDFIuH7AYAACHID8iJQxCLh/AGAAAhyA/IiUMMi4f0BgAAIcgPyIlDCIuH+AYAACHID8iJQwSLh/wGAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuXQAYAACtXcIuXRAYAABtXdIuXSAYAABtXeIuXTAYAABtXfIuXUAYAABuXgAAAAIuXVAYAABuXhAAAAIuXWAYAABuXiAAAAIuXXAYAABuXjAAAAIuXYAYAABuXkAAAAIuXZAYAABuXlAAAAIuXaAYAABuXmAAAAIuXbAYAABuXnAAAABnAicOLl0AGAAALl0QGAAALl0gGAAALl0wGAAALl1AGAAALl1QGAAALl1gGAAALl1wGAAALl2AGAAALl2QGAAALl2gGAAALl2wGAAC5AAAAACnRGdIh2ouHgAgAACHQiYeACAAAi5dAAwAAC5dEAwAAC5dIAwAAC5dMAwAAC5dQAwAAC5dUAwAAC5dYAwAAC5dcAwAAC5dgAwAAC5dkAwAAC5doAwAAC5dsAwAAuQAAAAAp0RnSi4eACAAAIdCJh4AIAACLj4AIAACLXCQEi4fQBgAAIcgPyIlDLIuH1AYAACHID8iJQyiLh9gGAAAhyA/IiUMki4fcBgAAIcgPyIlDIIuH4AYAACHID8iJQxyLh+QGAAAhyA/IiUMYi4foBgAAIcgPyIlDFIuH7AYAACHID8iJQxCLh/AGAAAhyA/IiUMMi4f0BgAAIcgPyIlDCIuH+AYAACHID8iJQwSLh/wGAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLeghmD+/AuQAAAACNZCTk8w9/BCSJTCQQiUwkFIlMJBiNZCQcugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_brainpoolp384r1_mul_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_p::vg_brainpoolp384r1_mul_mod_p,
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,

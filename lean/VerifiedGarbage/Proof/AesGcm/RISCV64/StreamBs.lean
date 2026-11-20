@@ -204,7 +204,9 @@ def CIB (b c st w sp D : Addr) (R : Nat) (N A T : BitVec 64) (s : State) : Prop 
   ∃ V icb P, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s9 = D ∧ V .s8 = N ∧ V .s10 = A ∧ V .s11 = T ∧
     P % 16 = T.toNat % 16 ∧ CrIn false V sp R icb P D D N.toNat s ∧ BkB true b V sp R s.mem D D N.toNat s
 
-/-- After the entry of `decrypt`: `DI`, with the buffer at `b` in `s7`. -/
+/-- After the entry of `decrypt`: the arguments kept, `len` (`N`) bytes at
+`data` (`D`), after `aad_len` (`A`) bytes of additional data and `text_len`
+(`T`) of text, `R` rounds, and the buffer at `b` in `s7`. -/
 def DIB (b c st w sp D : Addr) (R : Nat) (N A T : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s9 = D ∧ V .s8 = N ∧ V .s10 = A ∧
     V .s11 = T ∧ V .s3 = BitVec.ofNat 64 R ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ Env V sp s ∧ DataW c st w s D N.toNat ∧
@@ -941,6 +943,59 @@ def streamVerifyBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.st
     streamVerifyBsOut
     (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamVerifyBsOut (hbp_nil _)
       (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamVerifyBs) 4624 32
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-! ## `vg_aes_gcm_init`, `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad`
+
+The functions that write the key context and start the message, which the
+Rust code calls with the bitsliced functions above (they do not read the
+bitsliced round keys), without secret residue. `vg_aes_gcm_init` expands the
+key schedule into its working space, all of its stack, which the residue
+analysis finds may then all be secret: it is cleared whole
+(`RISCV64.Scrub.scrubOf`). `vg_aes_gcm_stream_init` and
+`vg_aes_gcm_stream_aad` leave secret what the plain streaming functions
+above do (the working space past its first 400 bytes and the 2048 bytes
+`vg_ghash` uses below it), and clear those runs only. -/
+
+theorem initOut :
+    PostOut (Spec.Gcm.initContract RISCV64.abi 2560) (Spec.Gcm.initSig.retBits 64) :=
+  postOut_of_local_pre ScrubAbi.plain (Proof.AesGcm.initPostOut_local _)
+
+theorem streamInitOut :
+    PostOut (Spec.Gcm.streamInitContract RISCV64.abi 4608) (Spec.Gcm.streamInitSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.streamInitPostOut_local _)
+
+theorem streamAadOut :
+    PostOut (Spec.Gcm.streamAadContract RISCV64.abi 4608) (Spec.Gcm.streamAadSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.streamAadPostOut_local _)
+
+/-- `Spec.Gcm.initApi`. -/
+def initReg : Registration Spec.Gcm.initApi RISCV64.target :=
+  scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
+      verified := init_framed }
+    initOut
+
+/-- `Spec.Gcm.streamInitApi`. -/
+def streamInitReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamInitApi RISCV64.target :=
+  scrubSelOf {
+      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
+      verified := streamInit_framed }
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
+    streamInitOut
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamInitOut (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit) 4608 0
+      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+
+/-- `Spec.Gcm.streamAadApi`. -/
+def streamAadReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamAadApi RISCV64.target :=
+  scrubSelOf {
+      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
+      verified := streamAad_framed }
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
+    streamAadOut
+    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamAadOut (hbp_nil _)
+      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad) 4608 0
       rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
 
 end VG.Proof.AesGcm.RISCV64

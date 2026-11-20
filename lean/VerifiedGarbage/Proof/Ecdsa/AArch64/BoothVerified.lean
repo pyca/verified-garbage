@@ -1,4 +1,7 @@
 module
+public import VerifiedGarbage.Impl.EcKey.P256.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
@@ -51,5 +54,16 @@ theorem booth_pk_verified (hL : Law Spec.P256.curve) (hI : InvSounds)
     Verified AArch64.target Impl.P256.Booth.publicKey
       (Spec.EcKey.P256.inst.publicKeyContract (AArch64.abi.withConsts p256.combConsts)) :=
   booth_pk_verified_of_comb hL hI (Ecdsa.AArch64.booth_comb_correct hL hI hT)
+
+/-- `vg_ec_p256_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.publicKeyP256`), meets its contract in constant time and
+returns without secret residue. -/
+theorem booth_pk_scrubbed (hL : Law Spec.P256.curve) (hI : InvSounds)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP256
+      (Spec.EcKey.P256.inst.publicKeyContract (AArch64.abi.withConsts p256.combConsts)) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P256.publicKeyApi)
+    { code := Impl.P256.Booth.publicKey, verified := booth_pk_verified hL hI hT } _
+    (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.AArch64

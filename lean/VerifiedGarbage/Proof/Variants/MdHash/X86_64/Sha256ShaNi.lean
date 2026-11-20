@@ -114,11 +114,11 @@ def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig finF.stack finF.co
 def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig digF.stack digF.code
 
 theorem updRes : ResOk updF.code updF.contract updF.stack updKs
-    (chunks updF.stack) := RScrub.resOk_reg0 updF.reg updKs (by taint_decide)
+    (chunks updF.stack) := RScrub.resOk_reg0 updF.unscrubbed updKs (by taint_decide)
 theorem finRes : ResOk finF.code finF.contract finF.stack finKs
-    (chunks finF.stack) := RScrub.resOk_reg0 finF.reg finKs (by taint_decide)
+    (chunks finF.stack) := RScrub.resOk_reg0 finF.unscrubbed finKs (by taint_decide)
 theorem digRes : ResOk digF.code digF.contract digF.stack digKs
-    (chunks digF.stack) := RScrub.resOk_reg0 digF.reg digKs (by taint_decide)
+    (chunks digF.stack) := RScrub.resOk_reg0 digF.unscrubbed digKs (by taint_decide)
 
 def update : StreamFn := updF.scrub .sse updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
   (by decide) (updOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) updRes
@@ -143,10 +143,10 @@ def dig224Ks : List Nat :=
 
 theorem fin224Res : ResOk fin224F.code fin224F.contract
     fin224F.stack fin224Ks (chunks fin224F.stack) :=
-  RScrub.resOk_reg0 fin224F.reg fin224Ks (by taint_decide)
+  RScrub.resOk_reg0 fin224F.unscrubbed fin224Ks (by taint_decide)
 theorem dig224Res : ResOk dig224F.code dig224F.contract
     dig224F.stack dig224Ks (chunks dig224F.stack) :=
-  RScrub.resOk_reg0 dig224F.reg dig224Ks (by taint_decide)
+  RScrub.resOk_reg0 dig224F.unscrubbed dig224Ks (by taint_decide)
 
 def finalize224 : StreamFn := fin224F.scrub .sse fin224Ks (by lit_decide) (by decide) (by decide)
   (by lit_decide) (by decide) (Sha224.finOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0) fin224Res

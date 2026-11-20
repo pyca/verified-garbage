@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
@@ -1094,6 +1095,11 @@ structure BlocksImpl where
     enc.code
   encNosp : NoSp enc.code
   encSpSafe : enc.code.all (fun i => !isa.writesSp i) = true
+  /-- `enc`'s code has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  encScrub : calleeOk enc.code = true
   /-- `vg_aes_decrypt_blocks`: its symbol and code. -/
   dec : Impl.Aes.X86.Blocks
   decStack : stackUse dec.code = 0
@@ -1103,6 +1109,8 @@ structure BlocksImpl where
     (Proof.Aes.blocksX86 Spec.Aes.invCipher).pub dec.code
   decNosp : NoSp dec.code
   decSpSafe : dec.code.all (fun i => !isa.writesSp i) = true
+  /-- `encScrub`, of `dec`. -/
+  decScrub : calleeOk dec.code = true
   /-- `enc` writes no byte of `scratch` at offset `encWritten` or beyond:
   its callers need to zero only the first `encWritten` bytes. -/
   encWritten : Nat
@@ -1130,6 +1138,8 @@ structure BlocksImpl where
   expandCt : ConstantTime isa Proof.Aes.expandKeyX86.pre Proof.Aes.expandKeyX86.pub expand.code
   expandNosp : NoSp expand.code
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
+  /-- `encScrub`, of `expand`. -/
+  expandScrub : calleeOk expand.code = true
 
 namespace BlocksImpl
 
@@ -1141,12 +1151,14 @@ def scalar : BlocksImpl where
   encCt := encryptBlocks_ct
   encNosp := NoSp.of_all (by lit_decide)
   encSpSafe := Code.all_of_spTest (by lit_decide)
+  encScrub := by lit_decide
   dec := .decScalar
   decStack := by lit_decide
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
   decSpSafe := Code.all_of_spTest (by lit_decide)
+  decScrub := by lit_decide
   encWritten := 2048
   encWrittenLe := Nat.le_refl _
   encWrittenOk := fun _ _ _ _ _ _ h1 h2 => absurd h2 (Nat.not_lt.mpr h1)
@@ -1161,6 +1173,7 @@ def scalar : BlocksImpl where
   expandCt := Ctr32Impl.scalar.expandCt
   expandNosp := Ctr32Impl.scalar.expandNosp
   expandSpSafe := Ctr32Impl.scalar.expandSpSafe
+  expandScrub := Ctr32Impl.scalar.expandScrub
 
 /-- AES-NI. -/
 def aesni : BlocksImpl where
@@ -1170,12 +1183,14 @@ def aesni : BlocksImpl where
   encCt := AesNi.encryptBlocks_ct
   encNosp := NoSp.of_all (by lit_decide)
   encSpSafe := Code.all_of_spTest (by lit_decide)
+  encScrub := by lit_decide
   dec := .decAesni
   decStack := by lit_decide
   decOk := AesNi.decryptBlocks_correct
   decCt := AesNi.decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
   decSpSafe := Code.all_of_spTest (by lit_decide)
+  decScrub := by lit_decide
   encWritten := 0
   encWrittenLe := Nat.zero_le _
   encWrittenOk := AesNi.encryptBlocks_unwritten
@@ -1190,6 +1205,7 @@ def aesni : BlocksImpl where
   expandCt := Ctr32Impl.aesni.expandCt
   expandNosp := Ctr32Impl.aesni.expandNosp
   expandSpSafe := Ctr32Impl.aesni.expandSpSafe
+  expandScrub := Ctr32Impl.aesni.expandScrub
 
 end BlocksImpl
 

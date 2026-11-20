@@ -83,6 +83,18 @@ vg_aes_cfb8_encrypt:
 	ldr r9, [r10, #2084]
 	ldr lr, [r10, #2092]
 	ldr r10, [r10, #2088]
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_cfb8_decrypt:
@@ -164,4 +176,16 @@ vg_aes_cfb8_decrypt:
 	ldr r9, [r10, #2084]
 	ldr lr, [r10, #2092]
 	ldr r10, [r10, #2088]
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

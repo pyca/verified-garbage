@@ -71,7 +71,10 @@ def final (name : String) (whole : Prog isa) : Prog isa :=
   .seq (.block finalSetup) (.seq (wholeFrame name whole)
     (.seq (.block [.cmp .r8 (.imm 0)]) (.seq (.ite .eq (.block []) (finalTail name whole)) (.block finalEnd))))
 
-/-- `vg_aes_ctr_final`, calling `vg_aes_ctr`. -/
-def cryptFinal : Prog isa := final "vg_aes_ctr" crypt
+/-- `vg_aes_ctr_final`, calling `vg_aes_ctr`'s code as it is verified, under a
+name of its own (`vg_aes_ctr_entry`), which the emitter writes as an internal
+function, since the artifact is that code scrubbed
+(`Proof/Aes/Arm/Scrub.lean`). -/
+def cryptFinal : Prog isa := final "vg_aes_ctr_entry" crypt
 
 end VG.Impl.AesCtr.Arm

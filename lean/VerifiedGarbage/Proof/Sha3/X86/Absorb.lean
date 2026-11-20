@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86.Instances
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sha3.PostOut
 public import VerifiedGarbage.Spec.Sha3.Instances
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Sha3.X86.Instances
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Spec.Sha3.Instances
@@ -33,12 +33,13 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 (`Impl.Sha3.X86.Instances.absorb`, `withStackScratch`): proven from
 `update`'s proof (`X86.Verified.stackScratch`, the contract with `scratch`
 being `updateScratchContract` by `rfl`), and returning without secret residue
-(`X86.Scrub.scrubFOf`, which zeroes the 704 bytes of stack below `esp` that
-it and `update` use, and clears the registers a callee may change), so that
-nothing is left in the caller's memory. What the scrub needs of the code (its
-stack use within the 704 bytes, no indirect call, no MMX instruction) is one
-Boolean, `X86.Scrub.scrubFSide`, which `scrubFOf` proves by evaluating the
-code once (`lit_decide`).
+(`update_sha3_224_scrubbed` and the others, of the code with its cleanup,
+`Impl.Sha3.X86.Fn.update`, which zeroes the 704 bytes of stack below `esp`
+that it and `update` use, and clears the registers a callee may change), so
+that nothing is left in the caller's memory: `X86.Scrub.verifiedScrubbedF`.
+What the cleanup needs of the code (its stack use within the 704 bytes, no
+indirect call, no MMX instruction) is one Boolean, `X86.Scrub.scrubFSide`,
+which the kernel evaluates once (`lit_decide`).
 -/
 
 @[expose] public section
@@ -87,10 +88,13 @@ theorem absorb_sha3_224 : Verified X86.target (Impl.Sha3.X86.Instances.absorb Sp
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out _ _ vs mm m₁ m₂ r hl hb h)
     absorbSat_sha3_224
 
-/-- `vg_sha3_224_update`. -/
-def absorbSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_224.rate
+/-- `vg_sha3_224_update` as emitted (`Impl.Sha3.X86.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_sha3_224_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_224.rate)
+      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_224.rate 704) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_224Api)
+    { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_224.rate
       verified := absorb_sha3_224 }
     (absorbOut _ _)
 
@@ -109,10 +113,13 @@ theorem absorb_sha3_256 : Verified X86.target (Impl.Sha3.X86.Instances.absorb Sp
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out _ _ vs mm m₁ m₂ r hl hb h)
     absorbSat_sha3_256
 
-/-- `vg_sha3_256_update`. -/
-def absorbSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_256.rate
+/-- `vg_sha3_256_update` as emitted (`Impl.Sha3.X86.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_sha3_256_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_256.rate)
+      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_256.rate 704) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_256Api)
+    { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_256.rate
       verified := absorb_sha3_256 }
     (absorbOut _ _)
 
@@ -131,10 +138,13 @@ theorem absorb_sha3_384 : Verified X86.target (Impl.Sha3.X86.Instances.absorb Sp
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out _ _ vs mm m₁ m₂ r hl hb h)
     absorbSat_sha3_384
 
-/-- `vg_sha3_384_update`. -/
-def absorbSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_384.rate
+/-- `vg_sha3_384_update` as emitted (`Impl.Sha3.X86.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_sha3_384_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_384.rate)
+      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_384.rate 704) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_384Api)
+    { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_384.rate
       verified := absorb_sha3_384 }
     (absorbOut _ _)
 
@@ -153,10 +163,13 @@ theorem absorb_sha3_512 : Verified X86.target (Impl.Sha3.X86.Instances.absorb Sp
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out _ _ vs mm m₁ m₂ r hl hb h)
     absorbSat_sha3_512
 
-/-- `vg_sha3_512_update`. -/
-def absorbSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_512.rate
+/-- `vg_sha3_512_update` as emitted (`Impl.Sha3.X86.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_sha3_512_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_512.rate)
+      (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_512.rate 704) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_512Api)
+    { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_512.rate
       verified := absorb_sha3_512 }
     (absorbOut _ _)
 
@@ -175,10 +188,13 @@ theorem absorb_shake128 : Verified X86.target (Impl.Sha3.X86.Instances.absorb Sp
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Sha3.PostOut.updatePost_out _ _ vs mm m₁ m₂ r hl hb h)
     absorbSat_shake128
 
-/-- `vg_shake128_update`. -/
-def absorbShake128Reg : Registration Spec.Sha3.updateShake128Api target :=
-  scrubFOf {
-      code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.xofShake128.rate
+/-- `vg_shake128_update` as emitted (`Impl.Sha3.X86.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_shake128_scrubbed :
+    VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.xofShake128.rate)
+      (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake128.rate 704) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateShake128Api)
+    { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.xofShake128.rate
       verified := absorb_shake128 }
     (absorbOut _ _)
 

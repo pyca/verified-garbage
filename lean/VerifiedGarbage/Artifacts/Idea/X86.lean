@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.Verified
-public import VerifiedGarbage.Proof.Idea.X86.Key
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Idea.X86.Scrub
+public import VerifiedGarbage.Impl.Idea.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.Lit
@@ -17,13 +14,13 @@ namespace VG.Artifacts.Idea.X86
 
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact X86.target {
-    code := Impl.Idea.X86.expandKey
-    verified := Proof.Idea.X86.expandKey_verified },
+    code := Impl.Idea.X86.Fn.expandKey
+    verified := .scrubbed Proof.Idea.X86.Scrub.expandKey_scrubbed },
   Spec.Idea.invertKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 32 2 Impl.Idea.X86.invertKey
-    verified := Proof.Idea.X86.invertKey_framed },
+    code := Impl.Idea.X86.Fn.invertKey
+    verified := .scrubbed Proof.Idea.X86.Scrub.invertKey_scrubbed },
   Spec.Idea.ecbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 152 3 Proof.Idea.X86.wipedWords Impl.Idea.X86.ecb
-    verified := Proof.Idea.X86.ecb_framed }]
+    code := Impl.Idea.X86.Fn.ecb
+    verified := .scrubbed Proof.Idea.X86.Scrub.ecb_scrubbed }]
 
 end VG.Artifacts.Idea.X86

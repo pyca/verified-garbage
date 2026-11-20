@@ -39,6 +39,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P384.X86.Law
+public import VerifiedGarbage.Proof.Ecdh.X86.P384.Scrub
 
 /-! # ECDH over P-384 (SP 800-56A) on x86 -/
 
@@ -50,7 +51,7 @@ open VG.Proof.P384.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact X86.target {
-    code := Impl.Ecdh.X86.exchangeP384
-    verified := Proof.Ecdh.X86.P384.ecdh_verified hasLaw.law }]
+    code := Impl.Ecdh.X86.Fn.exchangeP384
+    verified := .scrubbed (Proof.Ecdh.X86.P384.Scrub.exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP384.X86

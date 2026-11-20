@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.FbVerified
-public import VerifiedGarbage.Proof.Idea.X86.FbFinalVerified
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Idea.X86.Scrub
+public import VerifiedGarbage.Impl.Idea.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.ModesLit
@@ -18,16 +15,16 @@ namespace VG.Artifacts.IdeaCfb.X86
 
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbEncrypt
-    verified := Proof.Idea.X86.Fb.cfbEncrypt_framed },
+    code := Impl.Idea.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Idea.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Idea.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbDecrypt
-    verified := Proof.Idea.X86.Fb.cfbDecrypt_framed },
+    code := Impl.Idea.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Idea.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.Idea.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbEncryptFinal
-    verified := Proof.Idea.X86.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Idea.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Idea.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Idea.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbDecryptFinal
-    verified := Proof.Idea.X86.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Idea.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Idea.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.X86

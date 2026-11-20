@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.AArch64.Verified
 public import VerifiedGarbage.Proof.AesCtr.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Aes.AArch64.ModesScrub
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
 
@@ -17,13 +15,13 @@ open VG.Proof.AesCtr.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Ctr.aesApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Ctr.aesApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCtr.AArch64.crypt v.callee
-      verified := Proof.AesCtr.keyed (crypt_verified v) } Proof.Aes.AArch64.ModesScrub.ctrOk),
-    Spec.Ctr.aesFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      code := Impl.AesCtr.AArch64.Fn.crypt v.callee
+      verified := .scrubbed (Final.crypt_scrubbed v) },
+    Spec.Ctr.aesFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (Impl.AesCtr.AArch64.cryptFinal v.callee v.suffix)
-      verified := Proof.AesCtr.final_keyed (Final.cryptFinal_framed v) } Proof.Aes.AArch64.ModesScrub.ctrFinalOk)]
+      code := Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix
+      verified := .scrubbed (Final.cryptFinal_scrubbed v) }]
 
 end VG.Artifacts.AesCtr.AArch64

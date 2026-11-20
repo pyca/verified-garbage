@@ -40,6 +40,26 @@ theorem init_framed (v : GcmImpl) :
     (Proof.AesGcm.initPostOut_local _)
     initFrameSat_pre
 
+theorem initFrameSat_pre1024 : ∃ s, (Spec.Gcm.initContract AArch64.abi 1024).pre s := by
+  implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
+    AArch64.abi, AArch64.argRegs] [initFrameSat, initSat] using initFrameSat
+
+/-- `init` in a frame of `gcmInitWn v` bytes: 1024 over an implementation of
+counter mode that needs no working space, else 2560. -/
+theorem init_framedW (v : GcmImpl) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (gcmInitWn v) .x3 (init v.callees))
+      (Spec.Gcm.initContract AArch64.abi (gcmInitWn v)) := by
+  obtain hv := init_verifiedW v (gcmInitWn_cases v) (gcmInitWn_hv v)
+  rcases gcmInitWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 128)
+      (pre := Spec.Gcm.initPre AArch64.abi.ptrBits) (post := Spec.Gcm.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 1024) hv (by decide) (by decide)
+      (Proof.AesGcm.initPostOut_local _) initFrameSat_pre1024
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+      (pre := Spec.Gcm.initPre AArch64.abi.ptrBits) (post := Spec.Gcm.initPost AArch64.abi.ptrBits)
+      (wa := true) (stack := 0) (bytes := 2560) hv (by decide) (by decide)
+      (Proof.AesGcm.initPostOut_local _) initFrameSat_pre
+
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition, without the
 working space. -/
 def streamInitFrameSat : State := { streamInitSat with wr := [⟨0x3000, 80⟩] }
@@ -156,6 +176,12 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract AArch64.abi 2
     List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
+theorem sealFrameSat_pre784 : ∃ s, (Proof.AesGcm.sealRoundsContract AArch64.abi 784).pre s := by
+  implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space: `tag` at 0 and `tag_len` 0, its two stack arguments. -/
 def openFrameSat : State :=
@@ -167,5 +193,137 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract AArch64.abi 2
     Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
     List.getD, List.range, List.range.loop] [openFrameSat, openSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
+
+theorem openFrameSat_pre800 : ∃ s, (Proof.AesGcm.openRoundsContract AArch64.abi 800).pre s := by
+  implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost,
+    Spec.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop] [openFrameSat, openSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+/-! ## The stream functions in frames of `gcmWn v` bytes -/
+
+theorem streamInitFrameSat_pre768 : ∃ s, (Spec.Gcm.streamInitContract AArch64.abi 768).pre s := by
+  implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
+    AArch64.abi, AArch64.argRegs] [streamInitFrameSat, streamInitSat] using streamInitFrameSat
+
+theorem streamInit_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x4 (streamInit v.callees))
+      (Spec.Gcm.streamInitContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamInit_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+      (n := 96) (post := Spec.Gcm.streamInitPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamInitPostOut_local _ vs m m₁ m₂ r hl) streamInitFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
+      (n := 320) (post := Spec.Gcm.streamInitPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamInitPostOut_local _ vs m m₁ m₂ r hl) streamInitFrameSat_pre
+
+theorem streamAadFrameSat_pre768 : ∃ s, (Spec.Gcm.streamAadContract AArch64.abi 768).pre s := by
+  implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
+    AArch64.abi, AArch64.argRegs] [streamAadFrameSat, streamAadSat] using streamAadFrameSat
+
+theorem streamAad_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x5 (streamAad v.callees))
+      (Spec.Gcm.streamAadContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamAad_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+      (n := 96) (post := Spec.Gcm.streamAadPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamAadPostOut_local _ vs m m₁ m₂ r hl) streamAadFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
+      (n := 320) (post := Spec.Gcm.streamAadPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamAadPostOut_local _ vs m m₁ m₂ r hl) streamAadFrameSat_pre
+
+theorem streamEncryptFrameSat_pre768 : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract AArch64.abi 768).pre s := by
+  implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamEncryptRoundsPost, AArch64.abi, AArch64.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamEncrypt_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x7 (streamEncrypt v.callees))
+      (Proof.AesGcm.streamEncryptRoundsContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamEncrypt_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamEncryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamEncryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
+
+theorem streamDecryptFrameSat_pre768 : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract AArch64.abi 768).pre s := by
+  implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Proof.AesGcm.streamDecryptRoundsPost, AArch64.abi, AArch64.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamDecrypt_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x7 (streamDecrypt v.callees))
+      (Proof.AesGcm.streamDecryptRoundsContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamDecrypt_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamDecryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamDecryptRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
+
+theorem finFrameSat_pre768 : ∃ s, (Proof.AesGcm.streamFinishRoundsContract AArch64.abi 768).pre s := by
+  implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Proof.AesGcm.streamFinishRoundsPost, AArch64.abi, AArch64.argRegs] [finFrameSat, finSat] using finFrameSat
+
+theorem streamFinish_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x6 (streamFinish v.callees))
+      (Proof.AesGcm.streamFinishRoundsContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamFinish_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.streamFinishPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamFinishRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.streamFinishPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamFinishRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre
+
+theorem verFrameSat_pre768 : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract AArch64.abi 768).pre s := by
+  implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Proof.AesGcm.streamVerifyRoundsPost, AArch64.abi, AArch64.argRegs] [verFrameSat, verSat] using verFrameSat
+
+theorem streamVerify_framedW (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch (gcmWn v) .x7 (streamVerify v.callees))
+      (Proof.AesGcm.streamVerifyRoundsContract AArch64.abi (gcmWn v)) := by
+  obtain hv := streamVerify_verifiedW v (gcmWn_cases v) (gcmWn_hv v)
+  rcases gcmWn_cases v with h | h <;> rw [h] at hv ⊢ <;> simp only [Nat.reduceDiv] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+      (n := 96) (pre := Spec.Gcm.streamVerifyPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamVerifyRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 768) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre768
+  · exact AArch64.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
+      (n := 320) (pre := Spec.Gcm.streamVerifyPre AArch64.abi.ptrBits)
+      (post := Proof.AesGcm.streamVerifyRoundsPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+      (bytes := 2560) hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre
 
 end VG.Proof.AesGcm.AArch64

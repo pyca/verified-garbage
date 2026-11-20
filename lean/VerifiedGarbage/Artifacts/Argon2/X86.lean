@@ -17,6 +17,6 @@ namespace VG.Artifacts.Argon2.X86
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact X86.target {
     code := Impl.Argon2.X86.Derive.derive
-    verified := Proof.Argon2.X86.Derive.deriveShared_verified }]
+    verified := .unscrubbed Proof.Argon2.X86.Derive.deriveShared_verified }]
 
 end VG.Artifacts.Argon2.X86

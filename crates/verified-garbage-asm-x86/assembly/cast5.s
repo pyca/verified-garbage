@@ -3333,6 +3333,22 @@ vg_cast5_expand_key:
 	mov edi, DWORD PTR [esi+72]
 	mov ebp, DWORD PTR [esi+76]
 	mov esi, DWORD PTR [esi+68]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-4]
+	mov DWORD PTR [esp], ecx
+	lea esp, [esp+4]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -3960,6 +3976,22 @@ vg_cast5_ecb_encrypt:
 	mov edi, DWORD PTR [esi+40]
 	mov ebp, DWORD PTR [esi+44]
 	mov esi, DWORD PTR [esi+36]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-4]
+	mov DWORD PTR [esp], ecx
+	lea esp, [esp+4]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -4590,5 +4622,21 @@ vg_cast5_ecb_decrypt:
 	mov edi, DWORD PTR [esi+40]
 	mov ebp, DWORD PTR [esi+44]
 	mov esi, DWORD PTR [esi+36]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-4]
+	mov DWORD PTR [esp], ecx
+	lea esp, [esp+4]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

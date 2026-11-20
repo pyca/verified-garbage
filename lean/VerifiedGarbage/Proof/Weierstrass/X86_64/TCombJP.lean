@@ -292,11 +292,8 @@ theorem TEntryPostJ.self {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Na
   ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, fun _ _ => rfl, fun x hx => by rw [hm]; exact E.lt x hx,
     by unfold tmv; rw [hm]; exact E.rep, by unfold tmv; rw [hm]; exact E.z⟩
 
-theorem rdi_not_powClob (n : Nat) : Reg.rdi ∉ powClob n := fun h => by
-  simp only [powClob, List.mem_cons] at h
-  rcases h with h | h
-  · cases h
-  · exact rdi_not_clob n h
+theorem rdi_not_powClob (n : Nat) : Reg.rdi ∉ powClob n :=
+  not_powClob (by decide) (by decide) (rdi_not_clob n)
 
 /-- Table `j`'s bytes are past the working space. -/
 theorem row_out {K : TCombCfg} {base T : Addr} {size : Nat} {ws : List (BitVec 64)}

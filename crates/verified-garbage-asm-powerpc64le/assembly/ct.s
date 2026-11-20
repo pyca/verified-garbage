@@ -32,4 +32,12 @@ vg_ct_eq:
 	addi %r7, %r7, -1
 	rldicl %r3, %r7, 1, 63
 21:
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
 	blr

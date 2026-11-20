@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
-public import VerifiedGarbage.Proof.Blowfish.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 
 /-! # Blowfish-OFB on x86 -/
@@ -15,10 +15,10 @@ namespace VG.Artifacts.BlowfishOfb.X86
 
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
-    verified := Proof.Blowfish.X86.Fb.ofb_framed },
+    code := Impl.Blowfish.X86.Fn.ofb
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.ofb_scrubbed },
   Spec.Blowfish.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
-    verified := Proof.Blowfish.X86.FbFinal.ofbFinal_framed }]
+    code := Impl.Blowfish.X86.Fn.ofbFinal
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishOfb.X86

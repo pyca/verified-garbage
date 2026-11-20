@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-public import VerifiedGarbage.Proof.Camellia.X86.FbFinalVerified
-import VerifiedGarbage.Proof.Camellia.X86.FbLit
+public import VerifiedGarbage.Proof.Camellia.X86.Scrub
+public import VerifiedGarbage.Impl.Camellia.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Camellia.X86.FbLit
 import VerifiedGarbage.Proof.Camellia.X86.FbFinalLit
 
 /-! # Camellia-CFB128 on x86 -/
@@ -15,16 +15,16 @@ namespace VG.Artifacts.CamelliaCfb.X86
 
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncrypt
-    verified := Proof.Camellia.X86.Fb.cfbEncrypt_framed },
+    code := Impl.Camellia.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Camellia.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecrypt
-    verified := Proof.Camellia.X86.Fb.cfbDecrypt_framed },
+    code := Impl.Camellia.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Camellia.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncryptFinal
-    verified := Proof.Camellia.X86.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Camellia.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Camellia.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecryptFinal
-    verified := Proof.Camellia.X86.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Camellia.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Camellia.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.X86

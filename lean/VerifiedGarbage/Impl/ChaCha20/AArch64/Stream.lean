@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
+public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # Streaming ChaCha20: AArch64 implementation
@@ -147,3 +149,37 @@ def apply (x : XorCallee) : Prog isa :=
     (.seq part1 (.seq (part2 x) (.seq part3 (.block finish)))))
 
 end VG.Impl.ChaCha20.AArch64.Stream
+
+/-! ## The functions, as emitted
+
+`vg_chacha20_apply` is its code above, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`; it uses no stack): the registers it writes
+that the calling convention does not preserve are cleared, but the 32 bits of
+its result, so that it returns without secret residue. The registers are
+those its own instructions write, stated here, and those the stream it calls
+states it writes (`XorCallee.clear`). -/
+
+namespace VG.Impl.ChaCha20.AArch64.Fn
+
+open VG.AArch64
+open VG.Impl.ChaCha20.AArch64 (XorCallee)
+open VG.Impl.Residue.AArch64 (Clear scrubAll withClears)
+
+/-- `vg_chacha20_init`: `Stream.init`, then `x9`–`x11` and `x13`, which hold
+words of the key and nonce, cleared. -/
+def init : Prog isa := withClears [.x9, .x10, .x11, .x13] [] none Stream.init
+
+/-- `vg_chacha20_set_nonce`: `Stream.setNonce`, then `x9`–`x11` and `x13`
+cleared. -/
+def setNonce : Prog isa := withClears [.x9, .x10, .x11, .x13] [] none Stream.setNonce
+
+/-- The registers `apply` writes itself. -/
+def applyOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [], []⟩
+
+/-- `vg_chacha20_apply`, with the stream `c`. -/
+def apply (c : XorCallee) : Prog isa :=
+  scrubAll 0 32 (applyOwn.union c.clear) (Stream.apply c)
+
+end VG.Impl.ChaCha20.AArch64.Fn

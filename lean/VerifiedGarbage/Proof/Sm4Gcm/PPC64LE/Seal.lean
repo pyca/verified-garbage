@@ -86,31 +86,28 @@ end
 
 /-- The regions `oneTag o` writes. -/
 abbrev otFrame (st w x : Addr) (o : Nat) : List Region :=
-  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, ⟨w + BitVec.ofNat 64 512, 256⟩, xR x]
+  [⟨st, 48⟩, ⟨w + BitVec.ofNat 64 96, 16⟩, ⟨w + BitVec.ofNat 64 o, 16⟩, xR x]
 
 theorem abs_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ absFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
-    · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
 theorem t_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ tFrame st w 16, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨⟨w + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
 
 theorem tag_otSub {st w x : Addr} {o : Nat} : ∀ r ∈ tagFrame st w x o, ∃ r' ∈ otFrame st w x o, Region.Sub r r' :=
   fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
 
@@ -138,11 +135,10 @@ theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
   have dC : ∀ r ∈ otFrame (V .r30) (V .r31) (V .r28) o, (⟨V .r29, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact X.cx
   have dJ : ∀ r ∈ absFrame (V .r30) (V .r31) 16 ++ tFrame (V .r30) (V .r31) 16,
       (⟨V .r30, 16⟩ : Region).Disjoint r := by
@@ -283,7 +279,7 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off =
   exact ⟨trivial, fun r a => by simp [a], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 theorem one1_wp {s₀ : State} {off : Nat} {W X : Addr} (hoff : off = 96 ∨ off = 104)
-    (hW : Covers [⟨W, 2560⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
+    (hW : Covers [⟨W, 288⟩] s₀.wr) (hWi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 off) 8)
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W)
     (hXi : InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 (off + 8)) 8)
     (hXv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 (off + 8)) 64 = X)
@@ -390,7 +386,7 @@ end
 
 Untrusted: everything here is checked by Lean. As AES-GCM's
 (`Proof/AesGcm/PPC64LE/Seal.lean`), with SM4's counter mode, which uses the
-working space past AES-GCM's 2560 bytes: the entry, `oneAad`, `oneCrypt`,
+working space past AES-GCM's 288 bytes: the entry, `oneAad`, `oneCrypt`,
 `oneTag 0` and the tag copied out to `tag` (`seal_wp`).
 -/
 
@@ -409,10 +405,10 @@ open VG.Proof.Gcm (Absorbed)
 
 /-- After the entry, the environment. -/
 theorem one_env {s₀ s₁ : State} {W X : Addr} (h1 : SO1 W X s₀ s₁)
-    (hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr)) (hW : Covers [⟨W, 2560⟩] s₀.wr) :
+    (hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr)) (hW : Covers [⟨W, 288⟩] s₀.wr) :
     Env s₁.gpr s₀.sp s₁ := by
   obtain perm : Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₁ :=
-    (⟨hC, covers_off hW (show 16 + 80 ≤ 2560 by decide) (by decide), hW⟩ :
+    (⟨hC, covers_off hW (show 16 + 80 ≤ 288 by decide) (by decide), hW⟩ :
       Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₀).of_eq h1.en.keeps.rd h1.en.keeps.wr
   exact ⟨fun _ _ => rfl, h1.en.keeps.sp, by rw [h1.r29, h1.r30, h1.r31]; exact perm⟩
 
@@ -428,11 +424,10 @@ include L X
 theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st w x o, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 48) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
-  · exact saved_w (by decide) (.inr (by decide))
   · exact X.wx.sub_left (Lay.wSub (by decide))
 
 end
@@ -445,7 +440,7 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
   obtain L₀ := oneLay fc fW dcW
   obtain X₀ := oneX fx dcx dwx
   obtain hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  obtain hW : Covers [⟨stackArg s₀ 0, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  obtain hW : Covers [⟨stackArg s₀ 0, 288⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   obtain hXw : Covers [xR (stackArg s₀ 1)] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   obtain hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   obtain hXd : (⟨s₀.sp + BitVec.ofNat 64 (96 + 8), 8⟩ : Region).Disjoint (savedR (stackArg s₀ 0)) := by
@@ -530,9 +525,8 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
     rcases List.mem_cons.mp hr with rfl | hr
     · exact dcW.sub_right (Lay.wSub (by decide))
     · simp only [j0Frame, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · exact L₀.cs
-      · exact dcW.sub_right (Lay.wSub (by decide))
       · exact dcW.sub_right (Lay.wSub (by decide))
   obtain dD : ∀ r ∈ savedR (stackArg s₀ 0) :: j0Frame (stackArg s₀ 0 + BitVec.ofNat 64 16) (stackArg s₀ 0),
       (⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩ : Region).Disjoint r := by
@@ -568,8 +562,7 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
   obtain hD₄ : bytesAt s₄.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₃.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
     refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .r9).isLt; omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ddW.sub_right (Lay.wSub (by decide))
+    rcases hr with rfl | rfl | rfl | rfl
     · exact ddW.sub_right (Lay.wSub (by decide))
     · exact ddW.sub_right (Lay.wSub (by decide))
     · exact ddW.sub_right (Lay.wSub (by decide))

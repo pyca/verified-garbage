@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.X86.Verified
+public import VerifiedGarbage.Impl.AesCfb8.X86
+public import VerifiedGarbage.Proof.AesCfb8.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -11,19 +12,17 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesCfb8.X86
 
-open VG.Proof.AesCfb8.X86
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Cfb8.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb8.X86.encrypt v.enc
-      verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
-      spSafe := encrypt_spSafe v },
+      code := Impl.AesCfb8.X86.Fn.encrypt v.enc
+      verified := .scrubbed (Proof.AesCfb8.X86.Scrub.encrypt_scrubbed v)
+      spSafe := Proof.AesCfb8.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Cfb8.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb8.X86.decrypt v.enc
-      verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
-      spSafe := decrypt_spSafe v }]
+      code := Impl.AesCfb8.X86.Fn.decrypt v.enc
+      verified := .scrubbed (Proof.AesCfb8.X86.Scrub.decrypt_scrubbed v)
+      spSafe := Proof.AesCfb8.X86.Scrub.decrypt_fnSpSafe v }]
 
 end VG.Artifacts.AesCfb8.X86

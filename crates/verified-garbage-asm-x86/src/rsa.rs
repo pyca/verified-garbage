@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1634,7 +1636,7 @@ jne 2507b
 jne 2508b
 .base64 "i4eEAAAA"
 21:
-.base64 "ix+LbwSLdwiLfwzD"
+.base64 "ix+LbwSLdwiLfwy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
@@ -1642,6 +1644,8 @@ jne 2508b
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -2750,7 +2754,7 @@ jmp 210f
 .base64 "uAAAAAA="
 210:
 21:
-.base64 "ix+LbwSLdwiLfwzD"
+.base64 "ix+LbwSLdwiLfwy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
@@ -2758,6 +2762,8 @@ jmp 210f
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_checked` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3669,7 +3675,7 @@ jne 2277b
 jne 2278b
 .base64 "i4eEAAAA"
 21:
-.base64 "ix+LbwSLdwiLfwzD"
+.base64 "ix+LbwSLdwiLfwxmD+/AuQAAAACNZCTM8w9/BCTzD39EJBDzD39EJCCJTCQwjWQkNLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_rsa_keygen_inverse = sym super::rsa_keygen::vg_rsa_keygen_inverse::vg_rsa_keygen_inverse,
     )
@@ -3678,6 +3684,8 @@ jne 2278b
 /// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3775,7 +3783,7 @@ jne 219b
 jne 220b
 .base64 "uAEAAAA="
 21:
-.base64 "ix+LbwSLdwiLfwzD"
+.base64 "ix+LbwSLdwiLfwxmD+/AjWQkoPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQjWQkYLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
@@ -3784,6 +3792,8 @@ jne 220b
 /// The values of an RSA private key that its operations need and that do not depend on their input, so that they are computed once per key rather than once per operation: what the `_precomputed` private-key operations take. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, and the factors `p` (`p_len` bytes) and `q` (`q_len` bytes), most significant first, writes to `pre`, least significant word first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the key is checked when it is loaded (`vg_rsa_check_key`).
 ///
 /// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3806,7 +3816,7 @@ jne 220b
 pub(crate) unsafe extern "C" fn vg_rsa_private_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "jWQkoItEJGSJBCSLRCRwg8AHwegDAcCJRCQEi0QkbIlEJAiLRCRwiUQkDIuEJIQAAACJRCQQi4QkiAAAAIlEJBQ="
-call {vg_rsa_public_precompute}
+call {vg_rsa_public_precompute_core}
 .base64 "iUQkUItEJGSJBCSLRCRwiUQkBItEJGyJRCQIi0QkcIlEJAyLRCRwiUQkFItEJHSJRCQYi0QkeIlEJByLRCR8iUQkIIuEJIAAAACJRCQki0QkdIlEJCiLRCR4iUQkLItEJHyJRCQwi4QkgAAAAIlEJDSLRCR0iUQkOItEJHiJRCQ8i4QkhAAAAIlEJECLhCSIAAAAiUQkRItEJHCDwAfB6AMBwAHAAcADRCRkiUQkEA=="
 call {vg_rsa_private_precompute_primes}
 .base64 "I0QkUIPgAYlEJFCJdCRYiWwkXItsJHCDxQfB7QMB7QHtAe0B7QNsJGSLTCRwg8EHwekDAckByQHJAcmDwSCLtCSEAAAAgcYIDQAAAc4BzgHOAc4BzgHOAc4BzgHOAc4BzgHOAc4BzgHOAc6LTCR4g8EHwekDiciD6ALB6B8BwQHJAckByQ=="
@@ -3821,9 +3831,9 @@ jne 21b
 22:
 .base64 "D7YCI0QkVIgCg8IBg+kBg/kA"
 jne 22b
-.base64 "i0QkUI1kJGDD"
+.base64 "i0QkUI1kJGBmD+/AuQAAAACNpCQ8////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAACJjCTAAAAAjaQkxAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
-        vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precompute_core = sym super::rsa::vg_rsa_public_precompute_core::vg_rsa_public_precompute_core,
         vg_rsa_private_precompute_primes = sym super::rsa::vg_rsa_private_precompute_primes::vg_rsa_private_precompute_primes,
     )
 }
@@ -3855,6 +3865,10 @@ pub(crate) mod vg_rsa_private_crt_precomputed;
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_private_precompute_primes.rs"]
 pub(crate) mod vg_rsa_private_precompute_primes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_public_precompute_core.rs"]
+pub(crate) mod vg_rsa_public_precompute_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rsa_public_precomputed_checked.rs"]

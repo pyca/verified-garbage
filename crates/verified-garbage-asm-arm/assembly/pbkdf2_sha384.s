@@ -40,7 +40,7 @@ vg_pbkdf2_hmac_sha384:
 	movw r12, #2484
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha384_init}
+	bl {vg_sha384_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -202,4 +202,27 @@ vg_pbkdf2_hmac_sha384:
 	ldr lr, [r11, #1900]
 	ldr r11, [r11, #1904]
 	add sp, sp, #3456
+	sub sp, sp, #3488
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #109
+211:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 211b
+	add sp, sp, #3488
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

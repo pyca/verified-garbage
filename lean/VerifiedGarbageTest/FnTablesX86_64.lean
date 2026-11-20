@@ -214,7 +214,7 @@ def artifact : Artifact where
   tables := tables
   code := code
   contract := contract
-  verified := verified
+  verified := .unscrubbed verified
   stack := 8
 
 def prepared : Rust.Prepared := .of (.of artifact)

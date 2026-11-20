@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -2983,6 +2985,33 @@ str r2, [r12, #1444]
 str r2, [r12, #1448]
 str r2, [r12, #1452]
 add sp, sp, #1456
+sub sp, sp, #1456
+add r12, sp, #0
+mov r2, #0
+mov r3, #45
+21:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1456
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -2991,12 +3020,14 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 1488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
@@ -3006,6 +3037,33 @@ mov r3, #0
 bl {vg_sm4_ecb}
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #1488
+add r12, sp, #0
+mov r2, #0
+mov r3, #46
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1488
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sm4_ecb = sym super::sm4::vg_sm4_ecb::vg_sm4_ecb,
     )
@@ -3015,12 +3073,14 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 1480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 1488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
@@ -3030,6 +3090,33 @@ mov r3, #1
 bl {vg_sm4_ecb}
 mov lr, r4
 ldr r4, [sp], #8
+sub sp, sp, #1488
+add r12, sp, #0
+mov r2, #0
+mov r3, #46
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1488
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sm4_ecb = sym super::sm4::vg_sm4_ecb::vg_sm4_ecb,
     )
@@ -3042,6 +3129,14 @@ pub(crate) mod vg_sm4_ctr32;
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_ecb.rs"]
 pub(crate) mod vg_sm4_ecb;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ecb_encrypt_core.rs"]
+pub(crate) mod vg_sm4_ecb_encrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_expand_key_core.rs"]
+pub(crate) mod vg_sm4_expand_key_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]

@@ -1,6 +1,6 @@
 module
 
--- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP384r1's and brainpoolP512r1's verification next), and not imported by the other curves' verification proofs
+-- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP320r1's, brainpoolP384r1's and brainpoolP512r1's verification next), and not imported by the other curves' verification proofs
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.CombGeneral
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
@@ -202,7 +202,7 @@ theorem winMulA_ok (hc : BaseCfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Ad
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]

@@ -347,7 +347,7 @@ theorem finTail_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size
   · rw [ev, e₃', O₃.wordsVal (by rw [hsC]; inv_slot_omega) (by inv_slot_omega), m₂]
   · refine ⟨fun r hr => ?_, Kt.rd.trans (k₃.rd.trans (k₂.2.2.1.trans k₁.2.2.1)),
       Kt.wr.trans (k₃.wr.trans (k₂.2.2.2.trans k₁.2.2.2))⟩
-    obtain h7 : r ∉ clob P.M.n := fun h => hr (List.mem_cons_of_mem _ h)
+    obtain h7 : r ∉ clob P.M.n := fun h => hr (mem_powClob_of_clob h)
     obtain hsub : ∀ q, q ∈ [Reg.rax, .rcx, .rdx] → q ∈ powClob P.M.n := fun q h => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl | rfl <;> simp [powClob, clob]

@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.PreparedVerified
-public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
-public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
-public import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
+public import VerifiedGarbage.Proof.Sm4.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -15,13 +12,13 @@ namespace VG.Artifacts.Sm4.Arm
 
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey
-    verified := Proof.Sm4.Arm.expandKey_framed },
+    code := Impl.Sm4.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Sm4.Arm.Fn.expandKey },
   Spec.Sm4.ecbEncryptApi.artifact Arm.target {
-    code := Impl.Sm4.Arm.ecbCall .encrypt
-    verified := Proof.Sm4.Arm.ecbCall_verified .encrypt },
+    code := Impl.Sm4.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Sm4.Arm.Fn.ecbEncrypt },
   Spec.Sm4.ecbDecryptApi.artifact Arm.target {
-    code := Impl.Sm4.Arm.ecbCall .decrypt
-    verified := Proof.Sm4.Arm.ecbCall_verified .decrypt }]
+    code := Impl.Sm4.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Sm4.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Sm4.Arm

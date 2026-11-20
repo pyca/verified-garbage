@@ -110,7 +110,7 @@ def artifact : Artifact where
   consts := consts
   code := code
   contract := contract
-  verified := verified
+  verified := .unscrubbed verified
 
 /-- The rendering: the static's symbol in a RIP-relative operand. -/
 def expected : String := "/// Returns word 1 of its table.

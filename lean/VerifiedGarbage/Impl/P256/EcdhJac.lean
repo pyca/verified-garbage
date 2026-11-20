@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Impl.AArch64Weave
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 
 @[expose] public section
 
@@ -82,3 +83,19 @@ def exchange : Prog isa :=
   .seq (wrappedWindow) <|
   .seq EcdhInverse.inverse (VG.Impl.Ecdh.AArch64.Cfg.middle c)
 end VG.Impl.P256.EcdhJac
+
+namespace VG.Impl.Ecdh.AArch64.Fn
+
+/-- ECDH over P-256 as emitted: its code, then the registers it writes
+that the calling convention does not preserve cleared, but the 32 bits of its
+result (`Impl.Residue.AArch64.scrubAll`; it uses no stack), so that it returns
+without secret residue. -/
+def exchangeP256 : Prog VG.AArch64.isa :=
+  VG.Impl.Residue.AArch64.scrubAll 0 32
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31],
+     []⟩
+    VG.Impl.P256.EcdhJac.exchange
+
+end VG.Impl.Ecdh.AArch64.Fn

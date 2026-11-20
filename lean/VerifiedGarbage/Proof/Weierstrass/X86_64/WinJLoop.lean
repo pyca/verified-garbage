@@ -725,7 +725,7 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     rcases hr with rfl | rfl | rfl
     · simp [powClob, clob]
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain kk : KeepRegs (powClob K.M.n) s₁ s₄ :=
     (k₂.mono fun r hr => c r (by simp at hr ⊢; simp [hr])).trans (((Keeps.regs k₃).mono
       fun r hr => c r (by simp at hr ⊢; simp [hr])).trans (k₄.mono fun r hr => c r (by

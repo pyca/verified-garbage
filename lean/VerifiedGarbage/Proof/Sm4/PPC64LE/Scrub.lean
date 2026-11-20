@@ -9,7 +9,9 @@ public import VerifiedGarbage.Spec.Sm4.CfbFinal
 public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.OfbFinal
 public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Spec.Sm4.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrVerified
+public import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
@@ -19,6 +21,7 @@ import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Sm4.CbcScratch
 import VerifiedGarbage.Proof.Sm4.FbScratch
 import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+import VerifiedGarbage.Proof.Sm4.CtrFinal
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
@@ -32,8 +35,11 @@ wiped. Their postconditions read the memory on return only within their
 buffers, by the target-independent lemmas RISC-V's and x86-64's proofs use
 (`Proof/Sm4/RISCV64/Scrub.lean`).
 
-`vg_sm4_ctr_final` is not here: it runs `vg_sm4_ctr`'s frame inside its own,
-and calls its code as `vg_sm4_ctr_core` (`Impl.Sm4.PPC64LE.ctrCall`).
+`vg_sm4_ctr_final` runs `vg_sm4_ctr`'s code, as `vg_sm4_ctr_core`
+(`Impl.Sm4.PPC64LE.ctrCall`), inside its own frame, so its body has a frame
+inside the one it wipes: the tail after it wipes the whole stack both frames
+use, the 3408 bytes of its contract's `stack`, and clears the volatile
+registers (`PPC64LE.Scrub.scrubOf`).
 -/
 
 @[expose] public section
@@ -79,6 +85,9 @@ theorem ofbFinalOut (stack : Nat) : PostOut (Spec.Sm4.ofbFinalContract PPC64LE.a
 
 theorem ctrOut (stack : Nat) : PostOut (Spec.Sm4.ctrContract PPC64LE.abi stack) (Spec.Sm4.ctrSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrPostOut_local _)
+
+theorem ctrFinalOut (stack : Nat) : PostOut (Spec.Sm4.ctrFinalContract PPC64LE.abi stack) (Spec.Sm4.ctrFinalSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrFinalPostOut_local _)
 
 /-! ## The registrations -/
 
@@ -186,5 +195,14 @@ def ctrReg : Registration Spec.Sm4.ctrApi PPC64LE.target :=
     3296 .r7 408 Impl.Sm4.PPC64LE.ctr
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v12, .v13, .v14, .v15]⟩ rfl (ctrOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.Sm4.ctrFinalApi`. -/
+def ctrFinalReg : Registration Spec.Sm4.ctrFinalApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r7 10 Impl.Sm4.PPC64LE.ctrFinal
+      verified := Proof.Sm4.PPC64LE.CtrFinal.ctrFinal_framed }
+    3408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v12, .v13, .v14, .v15]⟩
+    (ctrFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Sm4.PPC64LE.Scrub

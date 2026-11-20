@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.CtrFinal
+public import VerifiedGarbage.Spec.Camellia.CtrFinal
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -21,8 +23,11 @@ volatile registers after them (`PPC64LE.Scrub.scrubWipedOf`), with no stack
 wiped. Their postconditions read the memory on return only within their
 buffers (`cbcEncOut`, …).
 
-`vg_camellia_ctr_final` is not here: it runs `vg_camellia_ctr`'s frame inside
-its own.
+`vg_camellia_ctr_final` runs `vg_camellia_ctr`'s code, as
+`vg_camellia_ctr_core` (`Impl.Camellia.PPC64LE.ctrCall`), inside its own
+frame, so its body has a frame inside the one it wipes: the tail after it
+wipes the whole stack both frames use, the 3520 bytes of its contract's
+`stack`, and clears the volatile registers (`PPC64LE.Scrub.scrubOf`).
 -/
 
 @[expose] public section
@@ -264,6 +269,29 @@ theorem ctrOut (stack : Nat) :
       rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
     exact h key hk
 
+/-- CTR's of a message's last piece postcondition reads the memory on return
+only within the data and the counter block. -/
+theorem ctrFinalOut (stack : Nat) :
+    PostOut (Spec.Camellia.ctrFinalContract abi stack) (Spec.Camellia.ctrFinalSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [_, _, _, data, len], _ =>
+      simp only [Spec.Camellia.ctrFinalSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      have hd := Proof.Camellia.agree_of hb.2.2
+      have hc := Proof.Camellia.agree_of hb.2.1
+      change Curry.apply (α := Mem → Mem → BitVec (Spec.Camellia.ctrFinalSig.retBits 64) → Prop)
+        [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64] _ _ m m₁ r at h
+      change Curry.apply (α := Mem → Mem → BitVec (Spec.Camellia.ctrFinalSig.retBits 64) → Prop)
+        [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64] _ _ m m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h ⊢
+      have := Nat.mod_le len.toNat (2 ^ 64)
+      intro key hk
+      obtain ⟨h1, h2⟩ := h key hk
+      exact ⟨(bytesAt_congr' fun i hi => hd i (by
+        change i < (BitVec.setWidth 64 len : BitVec 64).toNat at hi
+        rw [BitVec.toNat_setWidth] at hi; omega_arith)).trans h1, (bytesAt_congr' hc).trans h2⟩
+
 /-- CFB128 encryption's of a partial last segment postcondition reads the
 memory on return only within the data and the IV. -/
 theorem cfbEncFinalOut (stack : Nat) :
@@ -455,5 +483,15 @@ def ctrReg : Registration Spec.Camellia.ctrApi PPC64LE.target :=
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (ctrOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.Camellia.ctrFinalApi`. -/
+def ctrFinalReg : Registration Spec.Camellia.ctrFinalApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r8 10 Impl.Camellia.PPC64LE.ctrFinal
+      verified := Proof.Camellia.PPC64LE.CtrFinal.ctrFinal_framed }
+    3520 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
+       .v19]⟩
+    (ctrFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Camellia.PPC64LE.Scrub

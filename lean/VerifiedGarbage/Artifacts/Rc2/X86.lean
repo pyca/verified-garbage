@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86.Key
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
-public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Chained
+public import VerifiedGarbage.Proof.Rc2.X86.Scrub
+public import VerifiedGarbage.Impl.Rc2.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Rc2.X86.Lit
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 
 /-! # RC2 on x86 -/
@@ -16,13 +16,13 @@ namespace VG.Artifacts.Rc2.X86
 
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.init
-    verified := Proof.Rc2.X86.Stream.init_framed },
+    code := Impl.Rc2.X86.Fn.cbcInit
+    verified := .scrubbed Proof.Rc2.X86.Scrub.cbcInit_scrubbed },
   Spec.Rc2.cbcEncryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.encrypt
-    verified := Proof.Rc2.X86.Cbc.encryptChained_framed },
+    code := Impl.Rc2.X86.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Rc2.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Rc2.cbcDecryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.decrypt
-    verified := Proof.Rc2.X86.Cbc.decryptChained_framed }]
+    code := Impl.Rc2.X86.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Rc2.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Rc2.X86

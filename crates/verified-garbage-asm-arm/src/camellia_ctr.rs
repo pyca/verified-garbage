@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Camellia.ctrContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -14,7 +16,7 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `ctr` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `ctr` and `data` may overlap the 3032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
@@ -317,7 +319,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #8
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_entry}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -600,7 +602,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #4
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_entry}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -755,7 +757,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #2
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_entry}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -855,7 +857,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #56
 mov r3, #1
-bl {vg_camellia_ecb_encrypt}
+bl {vg_camellia_ecb_encrypt_entry}
 ldr r9, [r6, #0]
 ldr r10, [r8, #56]
 eor r9, r9, r10
@@ -940,14 +942,39 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #88
+sub sp, sp, #3040
+add r12, sp, #0
+mov r2, #0
+mov r3, #95
+212:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 212b
+add sp, sp, #3040
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
+        vg_camellia_ecb_encrypt_entry = sym super::camellia::vg_camellia_ecb_encrypt_entry::vg_camellia_ecb_encrypt_entry,
     )
 }
 
 /// Camellia-CTR encryption or decryption (NIST SP 800-38A §6.5, RFC 3713 §2.3) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is Camellia encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Camellia.ctrFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -956,7 +983,7 @@ bx lr",
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `ctr` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `ctr` and `data` may overlap the 3112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `ctr` and `data` may overlap the 3120 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ctr_final(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -986,7 +1013,7 @@ lsr r12, r8, #4
 and r8, r8, #15
 add r7, r3, r12, lsl #4
 push {{r12, lr}}
-bl {vg_camellia_ctr}
+bl {vg_camellia_ctr_entry}
 ldr r12, [sp], #8
 cmp r8, #0
 beq 20f
@@ -1002,7 +1029,7 @@ mov r2, r6
 add r3, r12, #40
 mov r12, #1
 push {{r12, lr}}
-bl {vg_camellia_ctr}
+bl {vg_camellia_ctr_entry}
 ldr r12, [sp], #8
 ldr r12, [sp, #4]
 add r0, r12, #40
@@ -1047,7 +1074,38 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #72
+sub sp, sp, #3120
+add r12, sp, #0
+mov r2, #0
+mov r3, #97
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3120
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_camellia_ctr = sym super::camellia_ctr::vg_camellia_ctr,
+        vg_camellia_ctr_entry = sym super::camellia_ctr::vg_camellia_ctr_entry::vg_camellia_ctr_entry,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_ctr_entry.rs"]
+pub(crate) mod vg_camellia_ctr_entry;

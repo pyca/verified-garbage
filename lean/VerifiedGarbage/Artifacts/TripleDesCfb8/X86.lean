@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
+public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
+public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
@@ -13,10 +14,10 @@ namespace VG.Artifacts.TripleDesCfb8.X86
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfb8EncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt
-    verified := Proof.TripleDes.X86.Fb.cfb8Encrypt_framed },
+    code := Impl.TripleDes.X86.Fn.cfb8Encrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfb8Encrypt_scrubbed },
   Spec.TripleDes.cfb8DecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt
-    verified := Proof.TripleDes.X86.Fb.cfb8Decrypt_framed }]
+    code := Impl.TripleDes.X86.Fn.cfb8Decrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfb8Decrypt_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb8.X86

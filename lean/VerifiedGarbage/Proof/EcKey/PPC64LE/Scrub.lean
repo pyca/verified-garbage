@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.PPC64LE.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP256r1.PPC64LE
+public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP320r1.PPC64LE
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP384r1.PPC64LE
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Impl.EcKey.Compressed.P192.PPC64LE
@@ -15,6 +16,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.P521.PPC64LE
 public import VerifiedGarbage.Impl.EcKey.Compressed.Secp256k1.PPC64LE
 public import VerifiedGarbage.Impl.EcKey.P192.PPC64LE
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.PPC64LEComb
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.PPC64LEComb
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.PPC64LEComb
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.PPC64LEComb
 public import VerifiedGarbage.Impl.Ecdsa.P224.PPC64LEComb
@@ -23,6 +25,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.PPC64LEComb
 public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LEComb
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP256r1.Verified
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P192.Verified
@@ -32,6 +35,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP256r1.Comb
+public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP320r1.Comb
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP384r1.Comb
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP512r1.Comb
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.P192.Verified
@@ -41,6 +45,7 @@ public import VerifiedGarbage.Proof.EcKey.PPC64LE.P384.Comb
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.Comb
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Secp256k1.Comb
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 public import VerifiedGarbage.Spec.EcKey.P192
@@ -50,6 +55,7 @@ public import VerifiedGarbage.Spec.EcKey.P384
 public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.Lit
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P192.Lit
@@ -59,6 +65,7 @@ import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P384.Lit
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Lit
 import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.Secp256k1.Lit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP256r1.CombLit
+import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP320r1.CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP384r1.CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P192.Lit
@@ -283,6 +290,16 @@ def brainpoolp256r1Decompress (hL : Law Spec.BrainpoolP256r1.curve) : Registrati
     (decompressOut _ _ [])
     (by dsimp only; lit_decide)
 
+/-- `Spec.EcKey.BrainpoolP320r1.publicKeyApi`. -/
+def brainpoolp320r1PublicKey (hL : Law Spec.BrainpoolP320r1.curve) : Registration Spec.EcKey.BrainpoolP320r1.publicKeyApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.EcKey.PPC64LE.publicKeyBrainpoolP320r1Comb
+      verified := Proof.EcKey.PPC64LE.BrainpoolP320r1.combPk_verified hL }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
+      [.v0, .v1, .v2, .v3, .v4, .v18, .v19]⟩
+    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts)
+    (by dsimp only; lit_decide)
+
 /-- `Spec.EcKey.BrainpoolP384r1.publicKeyApi`. -/
 def brainpoolp384r1PublicKey (hL : Law Spec.BrainpoolP384r1.curve) : Registration Spec.EcKey.BrainpoolP384r1.publicKeyApi PPC64LE.target :=
   scrubOf {
@@ -293,6 +310,15 @@ def brainpoolp384r1PublicKey (hL : Law Spec.BrainpoolP384r1.curve) : Registratio
     (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts)
     (by dsimp only; lit_decide)
 
+/-- `Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi`. -/
+def brainpoolp320r1Compress : Registration Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP320r1
+      verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.compress_verified }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
+    (compressOut _ _ [])
+    (by dsimp only; lit_decide)
+
 /-- `Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi`. -/
 def brainpoolp384r1Compress : Registration Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi PPC64LE.target :=
   scrubOf {
@@ -300,6 +326,15 @@ def brainpoolp384r1Compress : Registration Spec.EcKey.BrainpoolP384r1.inst.compr
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (compressOut _ _ [])
+    (by dsimp only; lit_decide)
+
+/-- `Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi`. -/
+def brainpoolp320r1Decompress (hL : Law Spec.BrainpoolP320r1.curve) : Registration Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi PPC64LE.target :=
+  scrubOf {
+      code := Impl.EcKey.Compressed.PPC64LE.decompressBrainpoolP320r1
+      verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.decompress_verified hL }
+    0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
+    (decompressOut _ _ [])
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi`. -/

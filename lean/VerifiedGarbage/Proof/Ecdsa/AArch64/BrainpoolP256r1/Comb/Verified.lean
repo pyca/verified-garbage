@@ -63,7 +63,6 @@ theorem cfg_ok (hI : InvSounds) : BaseCfgOk combCfg where
   minv_n := (brainpoolp256r1_ok hI).minv_n
   red_p := (brainpoolp256r1_ok hI).red_p
   red_n := (brainpoolp256r1_ok hI).red_n
-  n2 := (brainpoolp256r1_ok hI).n2
   len8 := (brainpoolp256r1_ok hI).len8
   len_lo := (brainpoolp256r1_ok hI).len_lo
   len_hi := (brainpoolp256r1_ok hI).len_hi

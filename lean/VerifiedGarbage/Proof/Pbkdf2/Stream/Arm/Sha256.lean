@@ -29,8 +29,7 @@ open VG.Impl.Pbkdf2.Stream.Arm (Hash)
 
 /-- SHA-256's functions: a 96-byte streaming state, 20 words of working
 space and a 32-byte digest. -/
-def sha256H : Hash := ⟨64, 96, 32, 32, 20, "vg_sha256_init", Impl.Sha256.Arm.Stream.init,
-  "vg_sha256_update_scratch", Impl.Sha256.Arm.Stream.update, "vg_sha256_finalize_scratch", Impl.Sha256.Arm.Stream.finalize⟩
+def sha256H : Hash := Impl.Sha256.Arm.Stream.streamFns
 
 def sha256OK : HashOK sha256H where
   SH := Spec.Hmac.sha256S

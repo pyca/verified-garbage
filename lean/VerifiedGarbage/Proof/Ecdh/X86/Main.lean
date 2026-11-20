@@ -366,14 +366,14 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
-    (.seq (c.winMul PX PY) (.seq c.pPow
+    (.seq (c.ecdhMul PX PY) (.seq c.pPow
       (Impl.Ecdh.X86.Cfg.middle c))))) :=
   rfl
 
 /-- The stack the parts of `exchange` use. -/
 structure ESp (c : Cfg) : Prop where
   validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
-  ladder : SpOk (c.winMul PX PY) c.stk
+  ladder : SpOk (c.ecdhMul PX PY) c.stk
   pPow : SpOk c.pPow c.stk
   ops : SpOk (ecOps c) c.stk
 

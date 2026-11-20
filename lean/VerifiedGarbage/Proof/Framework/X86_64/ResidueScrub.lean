@@ -763,7 +763,7 @@ def keepOf (sec : Nat) (cs : List Nat) : List Nat :=
 /-! ## Registrations -/
 
 /-- `resOk_of_check` for a registration. -/
-theorem resOk_reg {api : Api} (r : Registration api target) (ks : List Nat) {pubs : List (Nat × Nat × Nat)}
+theorem resOk_reg {api : Api} (r : Unscrubbed api target) (ks : List Nat) {pubs : List (Nat × Nat × Nat)}
     (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs) {h : VG.Taint.Hint FT}
     (hc : (VG.Taint.check rtaint (init api.sig r.stack pubs) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
     ResOk r.code r.contract r.stack ks (chunks r.stack) := by
@@ -777,7 +777,7 @@ theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absu
 
 /-- `resOk_reg`, with no bytes of the buffers known public, from the analysis
 ending as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
-theorem resOk_reg0 {api : Api} (r : Registration api target) (ks : List Nat) {h : VG.Taint.Hint FT}
+theorem resOk_reg0 {api : Api} (r : Unscrubbed api target) (ks : List Nat) {h : VG.Taint.Hint FT}
     (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkF · r.stack ks (chunks r.stack)) = true) :
     ResOk r.code r.contract r.stack ks (chunks r.stack) :=
   resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
@@ -875,17 +875,17 @@ theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat
 analysis of its code (`Analysed`) and if `scrub`'s side conditions hold (code
 that loads MXCSR leaving in it a function of MXCSR on entry, `mxClass`, as
 Intel's MCDT prologue and epilogue do);
-otherwise `r` itself, which then has no proof (`Registration.residue`), as
+otherwise `r` itself, which then has no proof (`Verification.unscrubbed`), as
 the emitter allows only of what `ci/residue_allowlist.txt` lists. A caller
 generic over the implementations of a function (`Generic/`) takes the
 analysis of each of its instances from the implementation, `none` for one
 the analysis does not handle. -/
-def withScrub {api : Api} (r : Registration api target)
+def withScrub {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (pubs : List (Nat × Nat × Nat)) (hpub : PubOk r.contract pubs)
     (a : Option (Analysed api.sig r.stack pubs r.code)) : Registration api target :=
   match a with
-  | none => r
+  | none => r.registration
   | some a =>
     let v := levelFor r.code
     if hfit : pubsFit api.sig pubs = true then
@@ -899,7 +899,8 @@ def withScrub {api : Api} (r : Registration api target)
     if hw : r.written = [] then
       scrubRegM r v a.ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
         (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
-    else r else r else r else r else r else r else r else r
+    else r.registration else r.registration else r.registration else r.registration
+    else r.registration else r.registration else r.registration else r.registration
 
 /-- `withScrub`, for code whose two runs leave the same bytes in its stack
 but the granules `ks` (`hres`), proven of the code rather than by the
@@ -907,7 +908,7 @@ residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
 code leaves run by run): `r` followed by the clearing of those granules,
 returning without secret residue (`scrubRegM`), if `scrub`'s side
 conditions hold; otherwise `r` itself, which then has no proof. -/
-def withScrubRes {api : Api} (r : Registration api target)
+def withScrubRes {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
   let v := levelFor r.code
@@ -921,7 +922,8 @@ def withScrubRes {api : Api} (r : Registration api target)
   if hw : r.written = [] then
     scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
       hres hw (levelFor_ne _)
-  else r else r else r else r else r else r else r
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration else r.registration
 
 end VG.X86_64.RScrub
 

@@ -11,6 +11,8 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu:
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -36,7 +38,7 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu:
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -116,7 +118,7 @@ subs lr, lr, #1
 bne 21b
 add r12, sp, #0
 ldr r0, [sp, #220]
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #1552
@@ -125,20 +127,20 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
 ldr r2, [sp, #152]
 mov r3, #0
-bl {vg_sha256_finalize}
+bl {vg_sha256_finalize_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r1, [sp, #172]
@@ -147,7 +149,7 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #240
@@ -156,7 +158,7 @@ add r1, r0, #96
 ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 mov r0, #0
 str r0, [r12, #76]
@@ -192,7 +194,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -201,7 +203,7 @@ mov r1, #10
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -211,7 +213,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #74
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -259,7 +261,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -268,7 +270,7 @@ mov r1, #11
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -278,7 +280,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #75
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -415,13 +417,39 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #3600
+add r12, sp, #0
+mov r2, #0
+mov r3, #112
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3600
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
+        vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
     )
 }
 
@@ -432,6 +460,8 @@ pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -454,7 +484,7 @@ pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -614,6 +644,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2320
+add r12, sp, #0
+mov r2, #0
+mov r3, #72
+216:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 216b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #2320
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_pkcs1_encrypt_precomputed_umaal = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed_umaal::vg_rsa_pkcs1_encrypt_precomputed_umaal,
     )
@@ -622,6 +678,8 @@ bx lr",
 /// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -648,7 +706,7 @@ bx lr",
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -726,7 +784,7 @@ subs lr, lr, #1
 bne 21b
 add r12, sp, #0
 ldr r0, [sp, #220]
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #1552
@@ -735,20 +793,20 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
 ldr r2, [sp, #152]
 mov r3, #0
-bl {vg_sha256_finalize}
+bl {vg_sha256_finalize_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r1, [sp, #172]
@@ -757,7 +815,7 @@ ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #240
@@ -766,7 +824,7 @@ add r1, r0, #96
 ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 mov r0, #0
 str r0, [r12, #76]
@@ -802,7 +860,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -811,7 +869,7 @@ mov r1, #10
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -821,7 +879,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #74
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -869,7 +927,7 @@ ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
-bl {vg_hmac_sha256_init}
+bl {vg_hmac_sha256_init_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 add r1, r0, #192
@@ -878,7 +936,7 @@ mov r1, #11
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
-bl {vg_sha256_update}
+bl {vg_sha256_update_core}
 add r12, sp, #0
 ldr r0, [sp, #220]
 ldr r2, [sp, #76]
@@ -888,7 +946,7 @@ str r1, [r12, #0]
 add r1, r0, #96
 mov r2, #75
 mov r3, #0
-bl {vg_hmac_sha256_finalize}
+bl {vg_hmac_sha256_finalize_core}
 add r12, sp, #0
 ldr r1, [sp, #76]
 add r1, r1, #1
@@ -1025,19 +1083,47 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #3600
+add r12, sp, #0
+mov r2, #0
+mov r3, #112
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3600
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
-        vg_sha256_update = sym super::sha256::vg_sha256_update,
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
-        vg_hmac_sha256_init = sym super::hmac_sha256::vg_hmac_sha256_init,
-        vg_hmac_sha256_finalize = sym super::hmac_sha256::vg_hmac_sha256_finalize,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
+        vg_sha256_update_core = sym super::sha256::vg_sha256_update_core::vg_sha256_update_core,
+        vg_sha256_finalize_core = sym super::sha256::vg_sha256_finalize_core::vg_sha256_finalize_core,
+        vg_hmac_sha256_init_core = sym super::hmac_sha256::vg_hmac_sha256_init_core::vg_hmac_sha256_init_core,
+        vg_hmac_sha256_finalize_core = sym super::hmac_sha256::vg_hmac_sha256_finalize_core::vg_hmac_sha256_finalize_core,
     )
 }
 
 /// RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with the padding string drawn from the random tape `rand` (`rand_len` bytes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), and `pre`, the `pre_len` words `vg_rsa_public_precompute` wrote for `n`, takes as the padding string `PS` the first `n_len - msg_len - 3` nonzero bytes of `rand`, encrypts the encoded message `0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, for the message `M` (`msg_len` bytes), with RSAEP, writes the ciphertext (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 2 if `n` or `e` is not such a number. Writes to `tape[0]` the bytes of `rand` it consumed, up to the last byte of `PS`. If `rand` has fewer nonzero bytes, writes zeros to `out` and: if `rand_len` is the entropy budget, `n_len - msg_len + 125` bytes, returns 3 (which only a broken random number generator makes likely); otherwise consumes none of `rand`, writes to `tape[1]` the length of the next tape, more than `rand_len` and at most the budget, and returns 0: keep `rand`, append fresh random bytes up to that length, and call again. `tape[1]` is 0 but for 0. If `pre` does not hold the values for `n`, what it writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, `tape` and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the public key and the tape's zero bytes: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not on the message or the other bytes of `rand`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1060,7 +1146,7 @@ bx lr",
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2312 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1218,6 +1304,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #2320
+add r12, sp, #0
+mov r2, #0
+mov r3, #72
+216:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 216b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #2320
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_pkcs1_encrypt_precomputed = sym super::rsa::vg_rsa_pkcs1_encrypt_precomputed::vg_rsa_pkcs1_encrypt_precomputed,
     )

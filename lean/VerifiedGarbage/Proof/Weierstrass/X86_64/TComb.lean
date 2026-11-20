@@ -697,7 +697,7 @@ theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with h | h | h <;> simp [h]
 
-theorem clob_powClob {n : Nat} : ∀ r ∈ clob n, r ∈ powClob n := fun _ h => List.mem_cons_of_mem _ h
+theorem clob_powClob {n : Nat} : ∀ r ∈ clob n, r ∈ powClob n := fun _ h => mem_powClob_of_clob h
 
 /-- An iteration. -/
 theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}

@@ -7,8 +7,8 @@ public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Md5.PostOut
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Md5.Scratch
@@ -25,10 +25,10 @@ they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`Verified.stackScratch`).
 
-`updateReg` and `finalizeReg` register them scrubbed whole
-(`AArch64.ScrubAll.withScrubAll`): their postconditions read the memory on
-return only within their buffers (`Proof/Md5/PostOut.lean`), so they return with
-the registers they may write cleared and their stack zeroed.
+`update_scrubbed` and `finalize_scrubbed` are about the functions as emitted,
+with their cleanup (`Impl.Md5.AArch64.Stream.Fn`): their postconditions read
+the memory on return only within their buffers (`Proof/Md5/PostOut.lean`), so
+they return with the registers they may write cleared and their stack zeroed.
 -/
 
 @[expose] public section
@@ -81,14 +81,16 @@ theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.updateContract AArch64.
   AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Md5.updateSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Md5.updatePost_out _)
 
-/-- `update`, as it is. -/
-def updateReg₀ : Registration Spec.Md5.updateApi AArch64.target :=
-  { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
-    verified := update }
-
-/-- `update`, scrubbed whole. -/
-def updateReg : Registration Spec.Md5.updateApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll updateReg₀ updateOk
+/-- `vg_md5_update` as emitted, cleanup included
+(`Impl.Md5.AArch64.Stream.Fn.update`): it meets its contract in constant time
+and returns without secret residue. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem update_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Md5.AArch64.Stream.Fn.update
+      (Spec.Md5.updateContract AArch64.abi (16 + 112)) 0 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Md5.updateApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
+      verified := update } _ updateOk (by dsimp only; lit_decide)
 
 /-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
 theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
@@ -96,13 +98,13 @@ theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Md5.finalizeContract AArc
   AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Md5.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Md5.finalizePost_out _)
 
-/-- `finalize`, as it is. -/
-def finalizeReg₀ : Registration Spec.Md5.finalizeApi AArch64.target :=
-  { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
-    verified := finalize }
-
-/-- `finalize`, scrubbed whole. -/
-def finalizeReg : Registration Spec.Md5.finalizeApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll finalizeReg₀ finalizeOk
+/-- `vg_md5_finalize` as emitted, cleanup included
+(`Impl.Md5.AArch64.Stream.Fn.finalize`), as `update_scrubbed`. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Md5.AArch64.Stream.Fn.finalize
+      (Spec.Md5.finalizeContract AArch64.abi (16 + 112)) 0 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Md5.finalizeApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
+      verified := finalize } _ finalizeOk (by dsimp only; lit_decide)
 
 end VG.Proof.Md5.AArch64.Shared

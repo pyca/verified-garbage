@@ -26,6 +26,18 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm.Fn
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.ScrubLocal
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Gcm.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.AesGcmSiv.Arm.Fn
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Aes.ScrubLocal
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Gcm.Arm.Lit
 
 /-! ### `AesGcmSiv.Arm.FnCT`, which only this module used -/
 
@@ -980,3 +992,118 @@ theorem open_framed [VG.Proof.Gcm.Arm.GhashLaw] :
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcmSiv.Arm
+
+/-!
+## Without secret residue
+
+`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` keep their working space in
+a frame within the stack their contracts reserve and make no indirect call
+(evaluated by `lit_decide`), and their postconditions read the memory on
+return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
+`Proof/AesGcmSiv/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe
+of that stack and by instructions that set the registers a callee may
+change, but the result, and the flags to constants (`Impl.AesGcmSiv.Arm.Fn`), and `Fn` below states
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+is what its registration binds.
+
+That stack is a frame of the model (`Arm.Scrub.FrameOk`): the 3800 bytes
+their proofs are stated with are not, and they are stated with 3808
+(`Arm.Scrub.Verified.stack_le`), whose preconditions the same states as
+before satisfy.
+-/
+
+namespace VG.Proof.AesGcmSiv.Arm.Scrub
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.AesGcmSiv.Arm
+
+theorem len_le (x : BitVec 64) : (BitVec.setWidth 32 x).toNat ≤ x.toNat := by
+  rw [BitVec.toNat_setWidth]; exact Nat.mod_le _ _
+
+/-! ## Postconditions -/
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.sealContract Arm.abi stack) (Spec.GcmSiv.sealSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+        ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.sealPost 32) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+        ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.sealPost 32) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, bytesAt_of0 hb.2.2.2.1 (len_le _), bytesAt_of0 hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.openContract Arm.abi stack) (Spec.GcmSiv.openSig.retBits 32) := by
+  -- The postcondition is a `match` on a decryption: prove the locality
+  -- by intros, so that no expected type of a `fun` is reduced to it.
+  refine postOut_of_local ScrubAbi.plain ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+      ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.openPost 32) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 32, ArgWord.addr, ArgWord.addr, ArgWord.int 32,
+      ArgWord.addr, ArgWord.int 32, ArgWord.addr] (Spec.GcmSiv.openPost 32) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    rw [bytesAt_of0 (n := (BitVec.setWidth 32 len).toNat) hb.2.2.2.1 (len_le _)]
+    exact @h
+
+/-! ## The stack, rounded up to a frame of the model -/
+
+theorem frameOk_3808 : FrameOk 3808 := by decide
+
+theorem sealSat : ∃ s, (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3808).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre,
+    Proof.AesGcmSiv.sealRoundsPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [Proof.AesGcmSiv.Arm.sealFrameSat, Proof.AesGcmSiv.Arm.sealSat, Arm.stackArg, Arm.stackArgAddr,
+      Mem.readW, Mem.read]
+    using Proof.AesGcmSiv.Arm.sealFrameSat
+
+theorem openSat : ∃ s, (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre,
+    Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
+    Arm.State.addr]
+    [Proof.AesGcmSiv.Arm.openFrameSat, Proof.AesGcmSiv.Arm.sealSat, Arm.stackArg, Arm.stackArgAddr,
+      Mem.readW, Mem.read]
+    using Proof.AesGcmSiv.Arm.openFrameSat
+
+/-! ## The code: its frames, and no indirect call -/
+
+theorem seal_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal») 3808 := by
+  lit_decide
+
+theorem open_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 3792 4 «open») 3808 := by
+  lit_decide
+
+end VG.Proof.AesGcmSiv.Arm.Scrub
+
+namespace VG.Proof.AesGcmSiv.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.AesGcmSiv.Arm
+
+
+/-- `vg_aes_gcm_siv_seal`. -/
+theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«seal» (Spec.GcmSiv.sealContract abi 3808) 0 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.sealApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
+      verified := Proof.AesGcmSiv.seal_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.seal_framed
+        Scrub.sealSat : Verified Arm.target _ (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3808)) }
+    (Scrub.sealOut _) (scrubSideF_of Scrub.seal_code Scrub.frameOk_3808 _)
+
+/-- `vg_aes_gcm_siv_open`. -/
+theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«open» (Spec.GcmSiv.openContract abi 3808) 32 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.openApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
+      verified := Proof.AesGcmSiv.open_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.open_framed
+        Scrub.openSat : Verified Arm.target _ (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808)) }
+    (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_3808 _)
+
+end VG.Proof.AesGcmSiv.Arm.Fn

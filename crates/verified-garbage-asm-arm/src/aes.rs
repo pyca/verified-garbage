@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -848,6 +850,29 @@ str r2, [r12, #500]
 str r2, [r12, #504]
 str r2, [r12, #508]
 add sp, sp, #512
+sub sp, sp, #512
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #512
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -855,6 +880,14 @@ bx lr",
 #[rustfmt::skip]
 #[path = "internal/vg_aes_blocks_keys.rs"]
 pub(crate) mod vg_aes_blocks_keys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_entry.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_entry.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_entry;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]
@@ -879,3 +912,7 @@ pub(crate) mod vg_aes_encrypt_blocks_keyed;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
 pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_entry.rs"]
+pub(crate) mod vg_aes_gcm_seal_entry;

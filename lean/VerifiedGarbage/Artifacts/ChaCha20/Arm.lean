@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.ApplyCT
-public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,13 +12,13 @@ namespace VG.Artifacts.ChaCha20.Arm
 
 def artifacts : List Artifact := [
   Spec.ChaCha20.initApi.artifact Arm.target {
-    code := Impl.ChaCha20.Arm.Stream.init
-    verified := Proof.ChaCha20.Arm.Stream.init_verified },
+    code := Impl.ChaCha20.Arm.Fn.init
+    verified := .scrubbed Proof.ChaCha20.Arm.Fn.init },
   Spec.ChaCha20.setNonceApi.artifact Arm.target {
-    code := Impl.ChaCha20.Arm.Stream.setNonce
-    verified := Proof.ChaCha20.Arm.Stream.setNonce_verified },
+    code := Impl.ChaCha20.Arm.Fn.setNonce
+    verified := .scrubbed Proof.ChaCha20.Arm.Fn.setNonce },
   Spec.ChaCha20.applyApi.artifact Arm.target {
-    code := Impl.ChaCha20.Arm.Stream.apply
-    verified := Proof.ChaCha20.Arm.Stream.apply_verified }]
+    code := Impl.ChaCha20.Arm.Fn.apply
+    verified := .scrubbed Proof.ChaCha20.Arm.Fn.apply }]
 
 end VG.Artifacts.ChaCha20.Arm

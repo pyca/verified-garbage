@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
+public import VerifiedGarbage.Proof.Cast5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Cast5.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Cast5.Arm.FbFinal
 
 /-! # CAST5-OFB on ARMv7 -/
 
@@ -14,10 +12,10 @@ namespace VG.Artifacts.Cast5Ofb.Arm
 
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.ofb
-    verified := Proof.Cast5.ofb_keyed Proof.Cast5.Arm.ofb_framed },
+    code := Impl.Cast5.Arm.Fn.ofb
+    verified := .scrubbed Proof.Cast5.Arm.Fn.ofb },
   Spec.Cast5.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.ofbFinal
-    verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.Arm.ofbFinal_framed }]
+    code := Impl.Cast5.Arm.Fn.ofbFinal
+    verified := .scrubbed Proof.Cast5.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.Cast5Ofb.Arm

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Md5.Arm.Shared
+public import VerifiedGarbage.Proof.Md5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,13 +12,13 @@ namespace VG.Artifacts.Md5.Arm
 
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact Arm.target {
-    code := Impl.Md5.Arm.Stream.init
-    verified := Proof.Md5.Arm.Shared.init },
+    code := Impl.Md5.Arm.Fn.init
+    verified := .scrubbed Proof.Md5.Arm.Fn.init },
   Spec.Md5.updateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 128 2 Impl.Md5.Arm.Stream.update
-    verified := Proof.Md5.Arm.Shared.update },
+    code := Impl.Md5.Arm.Fn.update
+    verified := .scrubbed Proof.Md5.Arm.Fn.update },
   Spec.Md5.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 128 1 Impl.Md5.Arm.Stream.finalize
-    verified := Proof.Md5.Arm.Shared.finalize }]
+    code := Impl.Md5.Arm.Fn.finalize
+    verified := .scrubbed Proof.Md5.Arm.Fn.finalize }]
 
 end VG.Artifacts.Md5.Arm

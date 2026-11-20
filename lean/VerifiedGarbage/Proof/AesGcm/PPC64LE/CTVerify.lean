@@ -49,7 +49,7 @@ apart from `W`, which the state may read. -/
 def VerI (c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (tl : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r28 = BitVec.ofNat 64 R ∧ V .r22 = A ∧
     V .r23 = T ∧ V .r20 = Tp ∧ V .r19 = BitVec.ofNat 64 tl ∧ Env V sp s ∧ Covers [⟨Tp, tl⟩] (s.rd ++ s.wr) ∧
-    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 2560⟩
+    (⟨Tp, tl⟩ : Region).Disjoint ⟨w, 288⟩
 
 theorem verEntry_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]) (.block verEntry) h).isSome = true :=
@@ -141,7 +141,7 @@ theorem streamVerify_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa strea
   · refine WP.mono (ver1_wp (ver_W hs)) fun s₁ h1 => ?_
     have hT : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s₁.rd ++ s₁.wr) := by
       rw [h1.en.keeps.rd, h1.en.keeps.wr, hs.1]; exact covers_mem (List.mem_append_left _ (by simp))
-    have hTd : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨s.gpr .r10, 2560⟩ := hs.2.2.2.2.2.2.1
+    have hTd : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨s.gpr .r10, 288⟩ := hs.2.2.2.2.2.2.1
     refine ⟨s₁.gpr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [h1.r29, e3]
     · rw [h1.r30, e5]

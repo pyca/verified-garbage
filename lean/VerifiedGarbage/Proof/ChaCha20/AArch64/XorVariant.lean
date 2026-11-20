@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -41,6 +45,12 @@ open VG VG.AArch64
 structure XorImpl where
   callee : Impl.ChaCha20.AArch64.XorCallee
   features : List String
+  /-- Its code writes, of the registers the calling convention does not
+  preserve, only those `callee.clear` lists, writes no PSTATE.DIT and calls
+  nothing indirectly (`ScrubAll.calleeSide`, which the kernel evaluates where
+  the implementation is defined): what the cleanup of every function that
+  calls it needs of it. -/
+  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
   ok : ∀ s, xorAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ xorAArch64.post s s'
   ct : ConstantTime isa xorAArch64.pre xorAArch64.pub callee.code
@@ -57,6 +67,21 @@ structure XorImpl where
     (Impl.ChaCha20Poly1305.AArch64.sealMainCode callee stitched) h).isSome = true
   openTaint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x28])
     (Impl.ChaCha20Poly1305.AArch64.openMainCode callee stitched) h).isSome = true
+  /-- ChaCha20-Poly1305's `seal`, `open` and `open_to` with this stream, in
+  their frames (`Impl.ChaCha20Poly1305.AArch64.Fn.sealBody`, `openBody`,
+  `openToBody`), write only the registers their cleanups clear, their own
+  and `callee.clear`, and their frames fit the stack the cleanups zero: what
+  the cleanups need of them, which the kernel evaluates where the
+  implementation is defined, as it does `sealTaint` and `openTaint`. -/
+  sealSide : (AArch64.ScrubAll.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched)
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union callee.clear) &&
+    decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody callee stitched).aarch64Depth ≤ 1280)) = true
+  openSide : (AArch64.ScrubAll.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.openBody callee stitched)
+      (Impl.ChaCha20Poly1305.AArch64.Fn.openOwn.union callee.clear) &&
+    decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.openBody callee stitched).aarch64Depth ≤ 1312)) = true
+  openToSide : (AArch64.ScrubAll.calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.openToBody callee stitched)
+      (Impl.ChaCha20Poly1305.AArch64.Fn.openOwn.union callee.clear) &&
+    decide (16 * (Impl.ChaCha20Poly1305.AArch64.Fn.openToBody callee stitched).aarch64Depth ≤ 1328)) = true
 
 /-- A call's arguments, but the destination's register (`x4`): the state at
 `St`, the `n` bytes of the source at `S`, the destination at `T` and `buf` at

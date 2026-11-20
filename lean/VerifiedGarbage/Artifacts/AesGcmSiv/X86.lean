@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcmSiv.X86
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Frame
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -53,14 +54,14 @@ open VG.Proof.AesGcmSiv.X86
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact X86.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
-    verified := Proof.AesGcmSiv.seal_keyed (seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v) },
+    code := Impl.AesGcmSiv.X86.Fn.«seal» v.callees
+    verified := .scrubbed (Proof.AesGcmSiv.X86.Scrub.seal_scrubbed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
+    spSafe := Proof.AesGcmSiv.X86.Scrub.seal_fnSpSafe v },
   Spec.GcmSiv.openApi.artifact X86.target {
     suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
-    verified := Proof.AesGcmSiv.open_keyed (open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v) }]
+    code := Impl.AesGcmSiv.X86.Fn.«open» v.callees
+    verified := .scrubbed (Proof.AesGcmSiv.X86.Scrub.open_scrubbed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
+    spSafe := Proof.AesGcmSiv.X86.Scrub.open_fnSpSafe v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl

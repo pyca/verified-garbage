@@ -628,7 +628,7 @@ working space, its frame of 2.6 KB is wiped whole on return
 (`withScrubAll`). Scratch-free callees permit selective wiping with the
 functional frame and public setup proofs above. -/
 def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
-  let r : Registration Spec.Ccm.sealApi X86_64.target := {
+  let r : Unscrubbed Spec.Ccm.sealApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee)
     stack := 2624
@@ -643,7 +643,7 @@ def sealReg (v : UpdateImpl) : Registration Spec.Ccm.sealApi X86_64.target :=
 
 /-- `vg_aes_ccm_open` over `v`, as `sealReg`. -/
 def openReg (v : UpdateImpl) : Registration Spec.Ccm.openApi X86_64.target :=
-  let r : Registration Spec.Ccm.openApi X86_64.target := {
+  let r : Unscrubbed Spec.Ccm.openApi X86_64.target := {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee)
     stack := 2624

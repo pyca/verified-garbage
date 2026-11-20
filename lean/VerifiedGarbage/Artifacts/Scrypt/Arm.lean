@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
-public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
+public import VerifiedGarbage.Proof.Scrypt.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,7 +12,7 @@ namespace VG.Artifacts.Scrypt.Arm
 
 def artifacts : List Artifact := [
   Spec.Scrypt.scryptApi.artifact Arm.target {
-    code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Proof.Scrypt.Arm.Whole.pbkC
-    verified := Proof.Scrypt.Arm.Whole.scrypt_verified }]
+    code := Impl.Scrypt.Arm.Fn.scrypt
+    verified := .scrubbed Proof.Scrypt.Arm.Fn.scrypt }]
 
 end VG.Artifacts.Scrypt.Arm

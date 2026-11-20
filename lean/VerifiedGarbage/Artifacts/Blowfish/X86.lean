@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Blowfish.X86.Frame
-import VerifiedGarbage.Proof.Blowfish.X86.Lit
+public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.Lit
 
 /-! # Blowfish on x86 -/
 
@@ -14,13 +14,13 @@ namespace VG.Artifacts.Blowfish.X86
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 84 3 10 Impl.Blowfish.X86.expandKey
-    verified := Proof.Blowfish.X86.expandKey_framed },
+    code := Impl.Blowfish.X86.Fn.expandKey
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.expandKey_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.encrypt
-    verified := Proof.Blowfish.X86.ecb_framed true },
+    code := Impl.Blowfish.X86.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.decrypt
-    verified := Proof.Blowfish.X86.ecb_framed false }]
+    code := Impl.Blowfish.X86.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Blowfish.X86

@@ -115,8 +115,7 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
   let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧
     s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧ s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧
-    s.gpr .r6 = D + BitVec.ofNat 64 j ∧ s.gpr .r7 = BitVec.ofNat 64 nb ∧
-    s.gpr .r8 = V .r31 + BitVec.ofNat 64 512
+    s.gpr .r6 = D + BitVec.ofNat 64 j ∧ s.gpr .r7 = BitVec.ofNat 64 nb
   refine wholeWith_ct (J₁ := J₁) (J₂ := J₂) ?_ (fun s ⟨V, icb, P, m₀, h29, h30, h31, hP, hs⟩ => ?_)
     (fun s ⟨_, _, _, _, _, _, hd, _, _, _, h7⟩ => ⟨h7, by have := hd.ok.lt; omega_arith⟩) ?_
     (fun s ⟨V, h29, h30, h31, h28, he, hd, hj, hR, h6, h7⟩ => ?_) fun h0 => ?_
@@ -138,21 +137,21 @@ theorem cryptWhole_ct {R : Nat} {D : Addr} {n q j : Nat} :
     exact CT.taint _ (fun s₁ s₂ ⟨_, a29, a30, a31, a28, e₁, _⟩ ⟨_, b29, b30, b31, b28, e₂, _⟩ =>
       ⟨e₁.sp.trans e₂.sp.symm, fun r hr => pinK e₁ e₂ (a28.trans b28.symm) (a29.trans b29.symm)
         (a30.trans b30.symm) (a31.trans b31.symm) hr⟩) hc
-  · refine WP.mono (ctrArgs_ok he h28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_
+  · refine WP.mono (ctrArgs_ok he h28) fun s₂ ⟨a3, a4, a5, hg₂, hk₂⟩ => ?_
     exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-      (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, hR,
-      a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6],
-      by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7], a8⟩
-  · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hd₁, hj₁, hR, a3, a4, a5, a6, a7, a8⟩
-      ⟨V₂, b29, b30, b31, he₂, hd₂, _, _, b3, b4, b5, b6, b7, b8⟩ => ?_
+      (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, hR,
+      a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide), h6],
+      by rw [hg₂ _ (by decide) (by decide) (by decide), h7]⟩
+  · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hd₁, hj₁, hR, a3, a4, a5, a6, a7⟩
+      ⟨V₂, b29, b30, b31, he₂, hd₂, _, _, b3, b4, b5, b6, b7⟩ => ?_
     have hn₁ := hd₁.ok.lt
-    have g₁ := ctrWhole_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR (by omega_arith)
+    have g₁ := ctrWhole_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 hR (by omega_arith)
       (hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-    have g₂ := ctrWhole_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR (by omega_arith)
+    have g₂ := ctrWhole_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 hR (by omega_arith)
       (hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith))
-    rw [a29, a30, a31] at g₁
-    rw [b29, b30, b31] at g₂
-    exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+    rw [a29, a30] at g₁
+    rw [b29, b30] at g₂
+    exact ⟨_, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
 
 theorem cryptTailWith_ct {to : Bool} {R : Nat} {S E : Addr} {k : Nat} :
     CT (TailI to c st w sp R S E k) (cryptTailWith to) := by
@@ -161,7 +160,7 @@ theorem cryptTailWith_ct {to : Bool} {R : Nat} {S E : Addr} {k : Nat} :
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧
     s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧ s.gpr .r6 = V .r30 + BitVec.ofNat 64 64 ∧
-    s.gpr .r7 = BitVec.ofNat 64 1 ∧ s.gpr .r8 = V .r31 + BitVec.ofNat 64 512
+    s.gpr .r7 = BitVec.ofNat 64 1
   let J₂ : State → Prop := fun s => ∃ V s₀ cph, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     (to → s₀.gpr .r26 = E) ∧ TailKs V sp S k cph s₀ s
   refine CT.seq (J := J₂) (CT.seq (J := J₁) ?_ (fun s ⟨V, icb, Q, cph, X, h29, h30, h31, hs⟩ => ?_) ?_)
@@ -172,17 +171,17 @@ theorem cryptTailWith_ct {to : Bool} {R : Nat} {S E : Addr} {k : Nat} :
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, a29, a30, a31, h₁⟩ ⟨_, _, _, _, _, b29, b30, b31, h₂⟩ =>
       ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => pinK h₁.env h₂.env (h₁.r28.trans h₂.r28.symm)
         (a29.trans b29.symm) (a30.trans b30.symm) (a31.trans b31.symm) hr⟩) hc
-  · refine WP.mono (tailArgs_ok hs.env hs.r28) fun s₂ ⟨_, a3, a4, a5, a6, a7, a8, hg₂, hk₂⟩ => ?_
+  · refine WP.mono (tailArgs_ok hs.env hs.r28) fun s₂ ⟨_, a3, a4, a5, a6, a7, hg₂, hk₂⟩ => ?_
     exact ⟨V, h29, h30, h31, hs.env.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-      (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-      (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hs.rounds, a3, a4, a5, a6, a7, a8⟩
-  · exact CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hR, a3, a4, a5, a6, a7, a8⟩
-      ⟨V₂, b29, b30, b31, he₂, _, b3, b4, b5, b6, b7, b8⟩ => by
-      have g₁ := ctrTail_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 a8 hR
-      have g₂ := ctrTail_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 b8 hR
-      rw [a29, a30, a31] at g₁
-      rw [b29, b30, b31] at g₂
-      exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+      (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide))
+      hk₂.sp hk₂.rd hk₂.wr, hs.rounds, a3, a4, a5, a6, a7⟩
+  · exact CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, he₁, hR, a3, a4, a5, a6, a7⟩
+      ⟨V₂, b29, b30, b31, he₂, _, b3, b4, b5, b6, b7⟩ => by
+      have g₁ := ctrTail_mk (L.v a29 a30 a31) he₁ a3 a4 a5 a6 a7 hR
+      have g₂ := ctrTail_mk (L.v b29 b30 b31) he₂ b3 b4 b5 b6 b7 hR
+      rw [a29, a30] at g₁
+      rw [b29, b30] at g₂
+      exact ⟨_, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
   · cases to
     · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r30])
           (.seq (.block (xorArgs false)) (xorLoopWith false)) h).isSome = true := ⟨_, by taint_decide⟩
@@ -284,13 +283,13 @@ theorem init_ct : ConstantTime isa initPPC64LE.pre initPPC64LE.pub init := by
   let R := Spec.Aes.rounds (KL.toNat / 4)
   let I₀ : State → Prop := fun s => initPPC64LE.pre s ∧ s.gpr .r3 = K ∧ s.gpr .r4 = KL ∧ s.gpr .r5 = C ∧
     s.gpr .r6 = W ∧ s.sp = SP
-  let I₁ : State → Prop := fun s => KeyCall s K KL.toNat C (W + BitVec.ofNat 64 512) ∧
+  let I₁ : State → Prop := fun s => KeyCallF s K KL.toNat C ∧
     s.gpr .r28 = BitVec.ofNat 64 R ∧ s.gpr .r29 = C ∧ s.gpr .r31 = W ∧ s.sp = SP ∧
-    s.wr = [⟨C, 256⟩, ⟨W, 2560⟩]
+    s.wr = [⟨C, 256⟩, ⟨W, 288⟩]
   let I₂ : State → Prop := fun s => s.gpr .r28 = BitVec.ofNat 64 R ∧ s.gpr .r29 = C ∧ s.gpr .r31 = W ∧
-    s.sp = SP ∧ s.wr = [⟨C, 256⟩, ⟨W, 2560⟩]
-  let I₃ : State → Prop := fun s => CtrCall s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240)
-    (W + BitVec.ofNat 64 512) R 1 ∧ s.gpr .r31 = W ∧ s.sp = SP
+    s.sp = SP ∧ s.wr = [⟨C, 256⟩, ⟨W, 288⟩]
+  let I₃ : State → Prop := fun s => CtrCallF s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240)
+    R 1 ∧ s.gpr .r31 = W ∧ s.sp = SP
   let I₄ : State → Prop := fun s => s.gpr .r31 = W ∧ s.sp = SP
   refine ⟨I₀, ⟨h₁, hK, hL, hC, hW, hSP⟩, ⟨h₂, q3.symm, q4.symm, q5.symm, q6.symm, qsp.symm⟩, ?_⟩
   refine CT.seq (J := I₁) ?_ (fun s ⟨hs, e3, e4, e5, e6, esp⟩ => WP.mono (is1_wp hs) fun s₁ h1 => ?_) ?_
@@ -298,28 +297,28 @@ theorem init_ct : ConstantTime isa initPPC64LE.pre initPPC64LE.pub init := by
     exact CT.taintEq (I := I₀) _ (fun r => if r = .r3 then K else if r = .r4 then KL else
       if r = .r5 then C else W) SP (fun s ⟨_, e3, e4, e5, e6, esp⟩ => ⟨esp, by simp [e3, e4, e5, e6]⟩) hc
   · have kc := init_kc hs h1
-    rw [e3, e4, e5, e6] at kc
+    rw [e3, e4, e5] at kc
     obtain ⟨-, hwr, -⟩ := hs
     refine ⟨kc, by rw [h1.r28, initR, e4], by rw [h1.r29, e5], by rw [h1.r31, e6],
       by rw [h1.keeps.sp, esp], by rw [h1.keeps.wr, hwr, e5, e6]⟩
-  refine CT.seq (J := I₂) ?_ (fun s ⟨kc, e28, e29, e31, esp, ewr⟩ => WP.mono (key_call kc) fun s₂ kp =>
+  refine CT.seq (J := I₂) ?_ (fun s ⟨kc, e28, e29, e31, esp, ewr⟩ => WP.mono (key_callF kc) fun s₂ kp =>
     ⟨by rw [kp.saved _ (by decide), e28], by rw [kp.saved _ (by decide), e29],
       by rw [kp.saved _ (by decide), e31], by rw [kp.sp, esp], by rw [kp.wr, ewr]⟩) ?_
-  · exact CT.key fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, h₁.1, h₂.1, h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm⟩
+  · exact CT.key fun s₁ s₂ h₁ h₂ => ⟨_, _, _, h₁.1, h₂.1, h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm⟩
   refine CT.seq (J := I₃) ?_ (fun s ⟨e28, e29, e31, esp, ewr⟩ =>
     WP.mono (initArgs_ok e29 e31 e28 (by rw [ewr]; exact covers_mem (by simp))
-      (by rw [ewr]; exact covers_mem (by simp))) fun s₃ ⟨_, a3, a4, a5, a6, a7, a8, hg₃, hk₃⟩ => ?_) ?_
+      (by rw [ewr]; exact covers_mem (by simp))) fun s₃ ⟨_, a3, a4, a5, a6, a7, hg₃, hk₃⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ := initArgs_taint
     exact CT.taintEq (I := I₂) _ (fun r => if r = .r28 then BitVec.ofNat 64 R else if r = .r29 then C else W)
       SP (fun s ⟨e28, e29, e31, esp, _⟩ => ⟨esp, by simp [e28, e29, e31]⟩) hc
-  · have hW₃ : Covers [⟨W, 2560⟩] s₃.wr := by rw [hk₃.wr, ewr]; exact covers_mem (by simp)
+  · have hW₃ : Covers [⟨W, 288⟩] s₃.wr := by rw [hk₃.wr, ewr]; exact covers_mem (by simp)
     have hC₃ : Covers [⟨C, 256⟩] s₃.wr := by rw [hk₃.wr, ewr]; exact covers_mem (by simp)
-    exact ⟨init_cc dcs fc hR hW₃ hC₃ a3 a4 a5 a6 a7 a8,
-      by rw [hg₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), e31],
+    exact ⟨init_cc dcs fc hR hW₃ hC₃ a3 a4 a5 a6 a7,
+      by rw [hg₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), e31],
       by rw [hk₃.sp, esp]⟩
-  refine CT.seq (J := I₄) ?_ (fun s ⟨cc, e31, esp⟩ => WP.mono (ctr_call cc) fun s₄ cp =>
+  refine CT.seq (J := I₄) ?_ (fun s ⟨cc, e31, esp⟩ => WP.mono (ctr_callF cc) fun s₄ cp =>
     ⟨by rw [cp.saved _ (by decide), e31], by rw [cp.sp, esp]⟩) ?_
-  · exact CT.ctr fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, _, _, h₁.1, h₂.1, h₁.2.2.trans h₂.2.2.symm⟩
+  · exact CT.ctr fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, _, h₁.1, h₂.1, h₁.2.2.trans h₂.2.2.symm⟩
   · obtain ⟨_, hc⟩ := restore_taint
     exact CT.taintEq (I := I₄) _ (fun _ => W) SP (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
@@ -368,8 +367,7 @@ theorem tag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 1
       ⟨V, a, b, d, e, h.1⟩) ?_
   let J : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
     Env V sp s ∧ s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧ s.gpr .r5 = V .r30 ∧
-    s.gpr .r6 = V .r31 + BitVec.ofNat 64 o ∧ s.gpr .r7 = BitVec.ofNat 64 1 ∧
-    s.gpr .r8 = V .r31 + BitVec.ofNat 64 512
+    s.gpr .r6 = V .r31 + BitVec.ofNat 64 o ∧ s.gpr .r7 = BitVec.ofNat 64 1
   refine CT.seq (J := J) ?_ (fun s ⟨V, a, b, d, e, he⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r28, .r29, .r30, .r31])
         (.block (tagArgs o)) h).isSome = true := by rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
@@ -377,16 +375,16 @@ theorem tag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 1
       ⟨h₁.sp.trans h₂.sp.symm, fun r hr => pinK h₁ h₂ (e₁.trans e₂.symm) (a₁.trans a₂.symm)
         (b₁.trans b₂.symm) (d₁.trans d₂.symm) hr⟩) hc
   · refine WP.mono (tagArgs_ok (o := o) (by omega_using [ho]) (by omega_using [ho]) he)
-      fun s' ⟨_, a3, a4, a5, a6, a7, a8, hg, hk⟩ => ⟨V, a, b, d, he.keep (fun r hr => hg r (by revert r; decide)
-        (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide)) hk.sp hk.rd hk.wr, a3, by rw [a4, e], a5, a6, a7, a8⟩
-  · exact CT.ctr fun s₁ s₂ ⟨V₁, a₁, b₁, d₁, e₁, a3, a4, a5, a6, a7, a8⟩
-      ⟨V₂, a₂, b₂, d₂, e₂, b3, b4, b5, b6, b7, b8⟩ => by
-      have g₁ := ctrTag_mk (L.v a₁ b₁ d₁) ho e₁ a3 a4 a5 a6 a7 a8 hR
-      have g₂ := ctrTag_mk (L.v a₂ b₂ d₂) ho e₂ b3 b4 b5 b6 b7 b8 hR
+      fun s' ⟨_, a3, a4, a5, a6, a7, hg, hk⟩ => ⟨V, a, b, d, he.keep (fun r hr => hg r (by revert r; decide)
+        (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide))
+        hk.sp hk.rd hk.wr, a3, by rw [a4, e], a5, a6, a7⟩
+  · exact CT.ctr fun s₁ s₂ ⟨V₁, a₁, b₁, d₁, e₁, a3, a4, a5, a6, a7⟩
+      ⟨V₂, a₂, b₂, d₂, e₂, b3, b4, b5, b6, b7⟩ => by
+      have g₁ := ctrTag_mk (L.v a₁ b₁ d₁) ho e₁ a3 a4 a5 a6 a7 hR
+      have g₂ := ctrTag_mk (L.v a₂ b₂ d₂) ho e₂ b3 b4 b5 b6 b7 hR
       rw [a₁, b₁, d₁] at g₁
       rw [a₂, b₂, d₂] at g₂
-      exact ⟨_, _, _, _, _, _, g₁, g₂, e₁.sp.trans e₂.sp.symm⟩
+      exact ⟨_, _, _, _, _, g₁, g₂, e₁.sp.trans e₂.sp.symm⟩
 
 /-- The number of buffered bytes `finTag` pads: of the text if there is any,
 else of the additional data. -/

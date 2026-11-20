@@ -1,73 +1,16 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
-public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.X86
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Verified
-public import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdh.X86.Peer
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
-public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Framework.NativeTaintCore
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Mmx
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.Mont.X86.Csub
-public import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.Mont.X86.RedRow
-public import VerifiedGarbage.Proof.Mont.X86.Row
-public import VerifiedGarbage.Proof.Mont.X86.Step
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Weierstrass.Words32
-public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
-public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.X25519.X86.Arith
-public import VerifiedGarbage.Proof.X25519.X86.Fold
-import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.BrainpoolP512r1.X86.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP512r1
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Scrub
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Fn
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 -/
 
@@ -77,21 +20,17 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 namespace VG.Artifacts.EcdsaBrainpoolP512r1.X86.Rfc6979
 
 open VG.Proof.BrainpoolP512r1.X86 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT OK brainpoolp512r1 brainpoolp512r1T_verified signCode_sp)
-open VG.Proof.HmacTable.X86 (tables names vars)
-
-def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
-    (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
-  if hv : OK (vars vs1 vs256) ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names (vars vs1 vs256) then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact X86.target {
-      tables := [("hmac", tables (vars vs1 vs256))]
-      code := signCodeT (brainpoolp512r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries (vars vs1 vs256)
-      verified := brainpoolp512r1T_verified hasLaw.law (vars vs1 vs256) hv
-      spSafe := signCode_sp _ _ _ }]
-  else []
+open VG.Proof.Ecdsa.Rfc6979.X86 (OK)
+open VG.Proof.HmacTable.X86 (names tables fnsOf)
+open VG.Proof.Ecdsa.X86.BrainpoolP512r1.Scrub (vs sign_scrubbed)
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
+  if hv : OK vs ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names vs then [
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact X86.target {
+      tables := [("hmac", tables vs)]
+      code := Impl.Ecdsa.X86.Fn.signBrainpoolP512r1 (fnsOf vs)
+      verified := .scrubbed (sign_scrubbed hasLaw.law hv) }]
+  else []
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.X86.Rfc6979
 
@@ -101,9 +40,8 @@ open VG.Proof.BrainpoolP512r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact X86.target {
-    code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
-      Impl.Ecdsa.Verify.X86.verifyBrainpoolP512r1
-    verified := Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verifyHash_verified hasLaw.law }] ++
+    code := Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1
+    verified := .scrubbed (Proof.Ecdsa.X86.BrainpoolP512r1.Scrub.verify_scrubbed hasLaw.law) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.X86

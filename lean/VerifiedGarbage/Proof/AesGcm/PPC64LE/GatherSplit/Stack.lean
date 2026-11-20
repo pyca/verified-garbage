@@ -51,8 +51,8 @@ theorem stackArgs_plaintext {s e t u : State} (h : Lay s) (he : Entered s e)
   obtain ⟨hls,-⟩ := Proof.AesGcm.listed_congr_le (Nat.le_refl _) h.hag
   rw [← he.mem] at hls
   rw [hls] at hp
-  have hs : Region.Sub ⟨Pf s+96,24⟩ ⟨Bs s,2832⟩ := by
-    change Region.Sub ⟨Pf s+BitVec.ofNat 64 96,24⟩ ⟨Bs s,2832⟩
+  have hs : Region.Sub ⟨Pf s+96,24⟩ ⟨Bs s,1424⟩ := by
+    change Region.Sub ⟨Pf s+BitVec.ofNat 64 96,24⟩ ⟨Bs s,1424⟩
     rw [pf_off]
     exact stk_sub s _ _ (by decide)
   have fr : Frame [⟨Pf s+96,24⟩] t.mem (copiedState 160 u 3).mem := by

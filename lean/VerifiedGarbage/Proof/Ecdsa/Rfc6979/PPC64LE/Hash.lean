@@ -126,7 +126,7 @@ structure RfcCurve where
   and `core` takes it shifted (`Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.big`). -/
   big : Bool
   sizes : if big then w = 9 ∧ C.E.curve.len = 66 ∧ Spec.Ecdsa.nBits C.E.curve = 521
-    else (C.E.curve.len = 24 ∨ C.E.curve.len = 28 ∨ C.E.curve.len = 32 ∨ C.E.curve.len = 48 ∨
+    else (C.E.curve.len = 24 ∨ C.E.curve.len = 28 ∨ C.E.curve.len = 32 ∨ C.E.curve.len = 40 ∨ C.E.curve.len = 48 ∨
         C.E.curve.len = 64) ∧ w = (C.E.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits C.E.curve = 8 * C.E.curve.len ∧
       2 ^ (8 * C.E.curve.len) < 2 * C.E.curve.n
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
@@ -141,7 +141,7 @@ variable (R : RfcCurve)
 abbrev Q : Nat := R.C.E.curve.len
 
 theorem sizesA (h : R.big = false) :
-    (R.Q = 24 ∨ R.Q = 28 ∨ R.Q = 32 ∨ R.Q = 48 ∨ R.Q = 64) ∧ R.w = (R.Q + 7) / 8 ∧
+    (R.Q = 24 ∨ R.Q = 28 ∨ R.Q = 32 ∨ R.Q = 40 ∨ R.Q = 48 ∨ R.Q = 64) ∧ R.w = (R.Q + 7) / 8 ∧
       Spec.Ecdsa.nBits R.C.E.curve = 8 * R.Q ∧ 2 ^ (8 * R.Q) < 2 * R.C.E.curve.n := by
   have := R.sizes; rw [h] at this; simp only [Q]; exact this
 

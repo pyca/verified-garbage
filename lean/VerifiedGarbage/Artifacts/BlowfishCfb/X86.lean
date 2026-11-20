@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.X86.FbFinalVerified
-import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
-import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
+public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 
 /-! # Blowfish-CFB64 on x86 -/
 
@@ -15,16 +15,16 @@ namespace VG.Artifacts.BlowfishCfb.X86
 
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
-    verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed },
+    code := Impl.Blowfish.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
-    verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed },
+    code := Impl.Blowfish.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
-    verified := Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Blowfish.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
-    verified := Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Blowfish.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishCfb.X86

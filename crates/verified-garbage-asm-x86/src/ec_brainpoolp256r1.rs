@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -155,7 +157,7 @@ call {vg_brainpoolp256r1_mul_mod_p}
 call {vg_brainpoolp256r1_mul_mod_p}
 .base64 "WFhYWLjAAAAAuQAFAAC6oAUAAFBRUlc="
 call {vg_brainpoolp256r1_mul_mod_p}
-.base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDHYuHpAQAACHID8iJQxmLh6gEAAAhyA/IiUMVi4esBAAAIcgPyIlDEYuHsAQAACHID8iJQw2Lh7QEAAAhyA/IiUMJi4e4BAAAIcgPyIlDBYuHvAQAACHID8iJQwGLh6AFAAAhyA/IiUM9i4ekBQAAIcgPyIlDOYuHqAUAACHID8iJQzWLh6wFAAAhyA/IiUMxi4ewBQAAIcgPyIlDLYuHtAUAACHID8iJQymLh7gFAAAhyA/IiUMli4e8BQAAIcgPyIlDIYnIg+ABifqLGotyBItqDIt6CMM="
+.base64 "WFhYWIuXQAQAACtXYIuXRAQAABtXZIuXSAQAABtXaIuXTAQAABtXbIuXUAQAABtXcIuXVAQAABtXdIuXWAQAABtXeIuXXAQAABtXfBnAicOLl0AEAAALl0QEAAALl0gEAAALl0wEAAALl1AEAAALl1QEAAALl1gEAAALl1wEAAC5AAAAACnRGdIh2ouHwAUAACHQiYfABQAAi5dAAgAAC5dEAgAAC5dIAgAAC5dMAgAAC5dQAgAAC5dUAgAAC5dYAgAAC5dcAgAAuQAAAAAp0RnSi4fABQAAIdCJh8AFAACLj8AFAACLXCQEuAQAAAAhyIgDi4egBAAAIcgPyIlDHYuHpAQAACHID8iJQxmLh6gEAAAhyA/IiUMVi4esBAAAIcgPyIlDEYuHsAQAACHID8iJQw2Lh7QEAAAhyA/IiUMJi4e4BAAAIcgPyIlDBYuHvAQAACHID8iJQwGLh6AFAAAhyA/IiUM9i4ekBQAAIcgPyIlDOYuHqAUAACHID8iJQzWLh6wFAAAhyA/IiUMxi4ewBQAAIcgPyIlDLYuHtAUAACHID8iJQymLh7gFAAAhyA/IiUMli4e8BQAAIcgPyIlDIYnIg+ABifqLGotyBItqDIt6CGYP78C5AAAAAI1kJOzzD38EJIlMJBCNZCQUugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_brainpoolp256r1_sub_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_sub_mod_p::vg_brainpoolp256r1_sub_mod_p,
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,

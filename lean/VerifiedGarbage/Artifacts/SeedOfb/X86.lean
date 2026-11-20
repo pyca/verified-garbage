@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86.FbVerified
-public import VerifiedGarbage.Proof.Seed.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Seed.X86.Scrub
+public import VerifiedGarbage.Impl.Seed.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Seed.X86.FbLit
@@ -15,10 +15,10 @@ namespace VG.Artifacts.SeedOfb.X86
 
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofb
-    verified := Proof.Seed.X86.Fb.ofb_framed },
+    code := Impl.Seed.X86.Fn.ofb
+    verified := .scrubbed Proof.Seed.X86.Scrub.ofb_scrubbed },
   Spec.Seed.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofbFinal
-    verified := Proof.Seed.X86.FbFinal.ofbFinal_framed }]
+    code := Impl.Seed.X86.Fn.ofbFinal
+    verified := .scrubbed Proof.Seed.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.SeedOfb.X86

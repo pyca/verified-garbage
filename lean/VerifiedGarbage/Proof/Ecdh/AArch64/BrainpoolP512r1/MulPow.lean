@@ -75,7 +75,7 @@ theorem qMul_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C)
   have hPe₁ : P = .affine (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PX)) (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PY)) := by
     show P = .affine (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PX)) (tmv brainpoolp512r1.C brainpoolp512r1.n base s₁ (brainpoolp512r1.sl PY))
     rw [eP (i := PX) (by decide) (by decide), eP (i := PY) (by decide) (by decide)]; exact hPe
-  refine WP.mono (mulAt_ok hc (.inr (.inr rfl)) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
+  refine WP.mono (mulAt_ok hc (.inr (.inr (.inr rfl))) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
     (name := "vg_brainpoolp512r1_mul") (px := PX) (py := PY) (by decide) (by decide)
     (by decide) (by decide) (by decide) hs₁ F₁ (by rw [e₁ (by decide) (by decide)]; exact hpx)
     (by rw [e₁ (by decide) (by decide)]; exact hpy) (by rw [← hPe₁]; exact hP))

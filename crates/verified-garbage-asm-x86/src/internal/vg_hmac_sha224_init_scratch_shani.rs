@@ -12,9 +12,9 @@
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch_shani() {
     core::arch::naked_asm!(
         r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WFY="
-call {vg_sha224_init}
+call {vg_sha224_init_core}
 .base64 "WLk2NjY2iUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtci3wkDItMJBCJ2oPCIIXJ"
 je 20f
 22:
@@ -29,7 +29,7 @@ call {vg_sha256_compress_shani}
 call {vg_sha256_compress_shani}
 .base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
 .p2align 6"#,
-        vg_sha224_init = sym crate::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym crate::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }

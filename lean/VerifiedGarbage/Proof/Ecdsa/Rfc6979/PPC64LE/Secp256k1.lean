@@ -253,7 +253,7 @@ theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 
-theorem secp256k1_sizes : (Spec.Secp256k1.curve.len = 24 ∨ Spec.Secp256k1.curve.len = 28 ∨ Spec.Secp256k1.curve.len = 32 ∨ Spec.Secp256k1.curve.len = 48 ∨ Spec.Secp256k1.curve.len = 64) ∧
+theorem secp256k1_sizes : (Spec.Secp256k1.curve.len = 24 ∨ Spec.Secp256k1.curve.len = 28 ∨ Spec.Secp256k1.curve.len = 32 ∨ Spec.Secp256k1.curve.len = 40 ∨ Spec.Secp256k1.curve.len = 48 ∨ Spec.Secp256k1.curve.len = 64) ∧
     4 = (Spec.Secp256k1.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits Spec.Secp256k1.curve = 8 * Spec.Secp256k1.curve.len ∧ 2 ^ (8 * Spec.Secp256k1.curve.len) < 2 * Spec.Secp256k1.curve.n :=
   ⟨by decide, by decide, by rw [secp256k1_nBits]; decide, by decide +kernel⟩
 

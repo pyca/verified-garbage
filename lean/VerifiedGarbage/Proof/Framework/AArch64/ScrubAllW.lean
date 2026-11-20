@@ -53,7 +53,7 @@ theorem writtenWithin_of_mem {A : Abi isa} {sig : Sig} {w : List (String × Nat)
 
 /-- `withScrubAll`'s clearing of the registers for code without frames
 (`r.stack = 0`), keeping what `r` states of `written`; otherwise `r` itself. -/
-def withScrubAllW {api : Api} (r : Registration api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
+def withScrubAllW {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
     Registration api target :=
   if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
       (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) then
@@ -61,7 +61,8 @@ def withScrubAllW {api : Api} (r : Registration api target) (hok : ScrubAllOk r.
       tables := r.tables
       code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
       contract := r.contract
-      verified := Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2 (h.1 ▸ hok)
+      verified := .scrubbed <| .abi ⟨Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2 (h.1 ▸ hok),
+        noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2⟩
       consts := r.consts
       stack := r.stack
       ofApi := r.ofApi
@@ -73,8 +74,7 @@ def withScrubAllW {api : Api} (r : Registration api target) (hok : ScrubAllOk r.
         exact writtenWithin_of_mem hm (r.writtenOk s t' u hs hc)
       extra := r.extra
       vendor := r.vendor
-      notWith := r.notWith
-      residue := some ⟨noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2⟩ }
-  else r
+      notWith := r.notWith }
+  else r.registration
 
 end VG.AArch64.ScrubAll

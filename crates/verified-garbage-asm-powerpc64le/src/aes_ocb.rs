@@ -15,15 +15,15 @@
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the 320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "4fUh+CAAwTiAAEb6iABm+pAAhvqYAKb6oADG+qgA5vqwAAb7uAAm+8AARvvIAGb70ACG+9gApvvgAMb76ADm+6YCCHzwAAb4eDPffHgrvXyC8Jx4BgCcOwAC3zg="
+        r#".base64 "wf4h+CAAwTiAAEb6iABm+pAAhvqYAKb6oADG+qgA5vqwAAb7uAAm+8AARvvIAGb70ACG+9gApvvgAMb76ADm+6YCCHzwAAb4eDPffHgrvXyC8Jx4BgCcOw=="
 bl {vg_aes_expand_key_scratch}
-.base64 "AAAAOPAAHfj4AB34YAAf+GgAH/h466N/eOOEf2AAvzjwAN04AQDgOAACHzk="
+.base64 "AAAAOPAAHfj4AB34YAAf+GgAH/h466N/eOOEf2AAvzjwAN04AQDgOA=="
 bl {vg_aes_ctr32}
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OsgCiE4AAAAOOH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+CAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxJxzEiAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OtAASE4AAAAOMH+IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+OAADPjoAAz48AAM+PgADPgAAQz4CAEM+BABDPgYAQz4QAEhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEnHMSIACATg==""#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
@@ -45,15 +45,15 @@ bl {vg_aes_ctr32}
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "gfUh+AAAgTngCgzoYAAM+OgKDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6vAAADgoBH18+AAAOCgEnXzgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8QAAAOCgFf3xIAAA4KAWffEAAADgoBH98SAAAOCgEn3zgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8UAAAOCgFf3xYAAA4KAWffAAAADggAB/4KAAf+AAAADhwAB/4eAAf+H8AnzhQIJl8AQAAOAAABJgBAIQ4eMMDf3jLJX8="
+        r#".base64 "gf0h+AAAgTngAgzoYAAM+OgCDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6vAAADgoBH18+AAAOCgEnXzgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8QAAAOCgFf3xIAAA4KAWffEAAADgoBH98SAAAOCgEn3zgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8UAAAOCgFf3xYAAA4KAWffAAAADggAB/4KAAf+AAAADhwAB/4eAAf+H8AnzhQIJl8AQAAOAAABJgBAIQ4eMMDf3jLJX8="
 20:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 20b
-.base64 "DwAAODgAY37kJmN4cACfiHgbhHxwAJ+YfwCfiD8AADg4AIN8IAF/+MAAADg4AIR8fwCfmHjro39444R/AAL/OHAAvzgBAMA4"
+.base64 "DwAAODgAY37kJmN4cACfiHgbhHxwAJ+YfwCfiD8AADg4AIN8IAF/+MAAADg4AIR8fwCfmHjro39444R/cAC/OAEAwDg="
 bl {vg_aes_encrypt_blocks}
 .base64 "cAAAOCgEf3x4AAA4KASffORFZXggRoh4eEOlfHgapXwgAd/oAQAAODgAx3wAAAA5UEDnfKQPaHjgD4l4eEsIfXgaCH04OAh9eEJjfKQPiHjgD6l4eEsIfXgiCH04OAh9eEKEfKQPqHh4Kgh9ODgIfXhCpXxC+Md4AQAAODgA53wAAAA5UEDnfGQXaHigF4l4eEsIfXgaCH04OAh9eEJjfGQXiHigF6l4eEsIfXgiCH04OAh9eEKEfGQXqHh4Kgh9ODgIfXhCpXyC8Md4AQAAODgA53wAAAA5UEDnfOQmaHggJ4l4eEsIfXgaCH04OAh9eEJjfOQmiHggJ6l4eEsIfXgiCH04OAh9eEKEfOQmqHh4Kgh9ODgIfXhCpXzC6Md4AQAAODgA53wAAAA5UEDnfORFaHggRol4eEsIfXgaCH04OAh9eEJjfORFiHggRql4eEsIfXgiCH04OAh9eEKEfORFqHh4Kgh9ODgIfXhCpXwC4cd4AQAAODgA53wAAAA5UEDnfOSDaHgghIl4eEsIfXgaCH04OAh9eEJjfOSDiHgghKl4eEsIfXgiCH04OAh9eEKEfOSDqHh4Kgh9ODgIfXhCpXxC2cd4AQAAODgA53wAAAA5UEDnfMYHaHgiAIl4eEsIfXgaCH04OAh9eEJjfMYHiHgiAKl4eEsIfXgiCH04OAh9eEKEfMYHqHh4Kgh9ODgIfXhCpXwQAAA4KAV/fBgAADgoBZ98QAEAOCgFf3xIAQA4KAWffAAAADgwAB/4OAAf+AAAADgQAR/4GAEf+HiruH4C4cN6MAF/+AEAQDsAACMo"
 beq %cr0, 21f
@@ -77,7 +77,7 @@ beq %cr0, 29b
 28:
 .base64 "EAF/6GAAn+h4ImN8EAF/+BgBf+hoAJ/oeCJjfBgBf/gAAHjoEAGf6HgiY3wAAGv4CAB46BgBn+h4ImN8CABr+BAAazkQABg7AQBaO///OTsAADko"
 bne %cr0, 26b
-.base64 "eOujf3jjhH8AAv84gAG/OCgB3+g="
+.base64 "eOujf3jjhH+AAb84KAHf6A=="
 bl {vg_aes_encrypt_blocks}
 .base64 "gAF/OSgBP+s="
 210:
@@ -94,7 +94,7 @@ beq %cr0, 211f
 213:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 213b
-.base64 "gAAAOAAABJiAAX/oEAGf6HgiY3yAAX/4iAF/6BgBn+h4ImN8iAF/+Hjro39444R/AAL/OIABvzgBAMA4"
+.base64 "gAAAOAAABJiAAX/oEAGf6HgiY3yAAX/4iAF/6BgBn+h4ImN8iAF/+Hjro39444R/gAG/OAEAwDg="
 bl {vg_aes_encrypt_blocks}
 .base64 "MAB/6IABn+h4ImN8MAB/+DgAf+iIAZ/oeCJjfDgAf/g="
 b 212f
@@ -114,7 +114,7 @@ beq %cr0, 219b
 218:
 .base64 "EAB/6GAAn+h4ImN8EAB/+BgAf+hoAJ/oeCJjfBgAf/ggAH/oAACY6HgiY3wgAH/4KAB/6AgAmOh4ImN8KAB/+AAAeOgQAJ/oeCJjfAAAePgIAHjoGACf6HgiY3wIAHj4EAAYOwEAWjv//zk7AAA5KA=="
 bne %cr0, 216b
-.base64 "eOujf3jjhH8AAv84eNtlfwLh5no="
+.base64 "eOujf3jjhH9422V/AuHmeg=="
 bl {vg_aes_encrypt_blocks}
 .base64 "QAF/6EgBn+gQAH/4GACf+HjbeH8C4fl6AQBAOw=="
 220:
@@ -133,7 +133,7 @@ b 215f
 215:
 .base64 "DwAAODgA+X5QuBl/FNoYfwAAOSg="
 beq %cr0, 224f
-.base64 "EAB/6PAAneh4ImN8EAB/+BgAf+j4AJ3oeCJjfBgAf/gQAH/oGACf6HAAf/h4AJ/4eOujf3jjhH8AAv84cAC/OAEAwDg="
+.base64 "EAB/6PAAneh4ImN8EAB/+BgAf+j4AJ3oeCJjfBgAf/gQAH/oGACf6HAAf/h4AJ/4eOujf3jjhH9wAL84AQDAOA=="
 bl {vg_aes_encrypt_blocks}
 .base64 "AAAAOAABH/gIAR/4AAGfOHjDA394yyV/"
 226:
@@ -146,13 +146,13 @@ bne %cr0, 227b
 b 225f
 224:
 225:
-.base64 "IAB/6CgAn+hwAH/4eACf+HAAf+gQAJ/oeCJjfHAAf/h4AH/oGACf6HgiY3x4AH/4cAB/6EAAn+h4ImN8cAB/+HgAf+hIAJ/oeCJjfHgAf/h466N/eOOEfwAC/zhwAL84AQDAOA=="
+.base64 "IAB/6CgAn+hwAH/4eACf+HAAf+gQAJ/oeCJjfHAAf/h4AH/oGACf6HgiY3x4AH/4cAB/6EAAn+h4ImN8cAB/+HgAf+hIAJ/oeCJjfHgAf/h466N/eOOEf3AAvzgBAMA4"
 bl {vg_aes_encrypt_blocks}
 .base64 "cAB/6HgAn+gAAH/4CACf+AAAf+gwAJ/oeCJjfAAAf/gIAH/oOACf6HgiY3wIAH/4ePvjf3ijhH54m2V+"
 228:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 228b
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4AAAAOIH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+IAKITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxJxzEiAAgE4=""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuAAiE4AAAAOIH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPiAAiE4AABgOAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
@@ -173,15 +173,15 @@ bne %cr0, 228b
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "gfUh+AAAgTngCgzoYAAM+OgKDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6vAAADgoBH18+AAAOCgEnXzgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8QAAAOCgFf3xIAAA4KAWffEAAADgoBH98SAAAOCgEn3zgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8UAAAOCgFf3xYAAA4KAWffAAAADggAB/4KAAf+AAAADhwAB/4eAAf+H8AnzhQIJl8AQAAOAAABJgBAIQ4eMMDf3jLJX8="
+        r#".base64 "gf0h+AAAgTngAgzoYAAM+OgCDOhoAAz4eAAMOHAADPgAAIE5cACM6YAATPqIAGz6kACM+pgArPqgAMz6qADs+rAADPu4ACz7wABM+8gAbPvQAIz72ACs++AAzPvoAOz7pgIIfPAADPh4Y599eBt9fHgjnHwQAN87eCu4fHgz2Xx4M9J8eDv1fHhDFn14Szt9eFNXfQAAgTlgAIzqaABs6vAAADgoBH18+AAAOCgEnXzgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8QAAAOCgFf3xIAAA4KAWffEAAADgoBH98SAAAOCgEn3zgD2V4AADAOFAwpXyHAMA4ODClfKQPY3jgD4Z4eDNjfKQPhHh4KoR8UAAAOCgFf3xYAAA4KAWffAAAADggAB/4KAAf+AAAADhwAB/4eAAf+H8AnzhQIJl8AQAAOAAABJgBAIQ4eMMDf3jLJX8="
 20:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 20b
-.base64 "DwAAODgAY37kJmN4cACfiHgbhHxwAJ+YfwCfiD8AADg4AIN8IAF/+MAAADg4AIR8fwCfmHjro39444R/AAL/OHAAvzgBAMA4"
+.base64 "DwAAODgAY37kJmN4cACfiHgbhHxwAJ+YfwCfiD8AADg4AIN8IAF/+MAAADg4AIR8fwCfmHjro39444R/cAC/OAEAwDg="
 bl {vg_aes_encrypt_blocks}
 .base64 "cAAAOCgEf3x4AAA4KASffORFZXggRoh4eEOlfHgapXwgAd/oAQAAODgAx3wAAAA5UEDnfKQPaHjgD4l4eEsIfXgaCH04OAh9eEJjfKQPiHjgD6l4eEsIfXgiCH04OAh9eEKEfKQPqHh4Kgh9ODgIfXhCpXxC+Md4AQAAODgA53wAAAA5UEDnfGQXaHigF4l4eEsIfXgaCH04OAh9eEJjfGQXiHigF6l4eEsIfXgiCH04OAh9eEKEfGQXqHh4Kgh9ODgIfXhCpXyC8Md4AQAAODgA53wAAAA5UEDnfOQmaHggJ4l4eEsIfXgaCH04OAh9eEJjfOQmiHggJ6l4eEsIfXgiCH04OAh9eEKEfOQmqHh4Kgh9ODgIfXhCpXzC6Md4AQAAODgA53wAAAA5UEDnfORFaHggRol4eEsIfXgaCH04OAh9eEJjfORFiHggRql4eEsIfXgiCH04OAh9eEKEfORFqHh4Kgh9ODgIfXhCpXwC4cd4AQAAODgA53wAAAA5UEDnfOSDaHgghIl4eEsIfXgaCH04OAh9eEJjfOSDiHgghKl4eEsIfXgiCH04OAh9eEKEfOSDqHh4Kgh9ODgIfXhCpXxC2cd4AQAAODgA53wAAAA5UEDnfMYHaHgiAIl4eEsIfXgaCH04OAh9eEJjfMYHiHgiAKl4eEsIfXgiCH04OAh9eEKEfMYHqHh4Kgh9ODgIfXhCpXwQAAA4KAV/fBgAADgoBZ98QAEAOCgFf3xIAQA4KAWffAAAADgwAB/4OAAf+AAAADgQAR/4GAEf+HiruH4C4cN6MAF/+AEAQDsAACMo"
 beq %cr0, 21f
@@ -205,7 +205,7 @@ beq %cr0, 29b
 28:
 .base64 "EAF/6GAAn+h4ImN8EAF/+BgBf+hoAJ/oeCJjfBgBf/gAAHjoEAGf6HgiY3wAAGv4CAB46BgBn+h4ImN8CABr+BAAazkQABg7AQBaO///OTsAADko"
 bne %cr0, 26b
-.base64 "eOujf3jjhH8AAv84gAG/OCgB3+g="
+.base64 "eOujf3jjhH+AAb84KAHf6A=="
 bl {vg_aes_encrypt_blocks}
 .base64 "gAF/OSgBP+s="
 210:
@@ -222,7 +222,7 @@ beq %cr0, 211f
 213:
 .base64 "AAADiAAABJgBAGM4AQCEOP//pTgAACUo"
 bne %cr0, 213b
-.base64 "gAAAOAAABJiAAX/oEAGf6HgiY3yAAX/4iAF/6BgBn+h4ImN8iAF/+Hjro39444R/AAL/OIABvzgBAMA4"
+.base64 "gAAAOAAABJiAAX/oEAGf6HgiY3yAAX/4iAF/6BgBn+h4ImN8iAF/+Hjro39444R/gAG/OAEAwDg="
 bl {vg_aes_encrypt_blocks}
 .base64 "MAB/6IABn+h4ImN8MAB/+DgAf+iIAZ/oeCJjfDgAf/g="
 b 212f
@@ -242,7 +242,7 @@ beq %cr0, 219b
 218:
 .base64 "EAB/6GAAn+h4ImN8EAB/+BgAf+hoAJ/oeCJjfBgAf/gAAHjoEACf6HgiY3wAAHj4CAB46BgAn+h4ImN8CAB4+BAAGDsBAFo7//85OwAAOSg="
 bne %cr0, 216b
-.base64 "eOujf3jjhH8AAv84eNtlfwLh5no="
+.base64 "eOujf3jjhH9422V/AuHmeg=="
 bl {vg_aes_decrypt_blocks}
 .base64 "QAF/6EgBn+gQAH/4GACf+HjbeH8C4fl6AQBAOw=="
 220:
@@ -261,7 +261,7 @@ b 215f
 215:
 .base64 "DwAAODgA+X5QuBl/FNoYfwAAOSg="
 beq %cr0, 224f
-.base64 "EAB/6PAAneh4ImN8EAB/+BgAf+j4AJ3oeCJjfBgAf/gQAH/oGACf6HAAf/h4AJ/4eOujf3jjhH8AAv84cAC/OAEAwDg="
+.base64 "EAB/6PAAneh4ImN8EAB/+BgAf+j4AJ3oeCJjfBgAf/gQAH/oGACf6HAAf/h4AJ/4eOujf3jjhH9wAL84AQDAOA=="
 bl {vg_aes_encrypt_blocks}
 .base64 "cAB/OHjDBH94yyV/"
 226:
@@ -275,7 +275,7 @@ bne %cr0, 227b
 b 225f
 224:
 225:
-.base64 "IAB/6CgAn+hwAH/4eACf+HAAf+gQAJ/oeCJjfHAAf/h4AH/oGACf6HgiY3x4AH/4cAB/6EAAn+h4ImN8cAB/+HgAf+hIAJ/oeCJjfHgAf/h466N/eOOEfwAC/zhwAL84AQDAOA=="
+.base64 "IAB/6CgAn+hwAH/4eACf+HAAf+gQAJ/oeCJjfHAAf/h4AH/oGACf6HgiY3x4AH/4cAB/6EAAn+h4ImN8cAB/+HgAf+hIAJ/oeCJjfHgAf/h466N/eOOEf3AAvzgBAMA4"
 bl {vg_aes_encrypt_blocks}
 .base64 "cAB/6HgAn+gAAX/4CAGf+AABf+gwAJ/oeCJjfAABf/gIAX/oOACf6HgiY3wIAX/4AAAAOAAAH/gIAB/4eKODfnj75H94m2V+"
 228:
@@ -293,7 +293,7 @@ bne %cr0, 232b
 b 231f
 230:
 231:
-.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuACiE4AAAAOIH1IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4wAAM+MgADPjQAAz42AAM+IAKITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
+.base64 "ePvsf/AADOimAwh8gABM6ogAbOqQAIzqmACs6qAAzOqoAOzqsAAM67gALOvAAEzryABs69AAjOvYAKzr4ADM6+gA7OuAAiE4AAAAOIH9IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPiAAiE4xgdjeCIAY3gAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHEnHMSIACATg==""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )

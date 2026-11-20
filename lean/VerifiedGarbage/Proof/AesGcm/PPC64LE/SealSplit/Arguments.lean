@@ -23,15 +23,16 @@ structure Layout (V : Reg → BitVec 64) (sp S : Addr) (count : Nat) (s : State)
   fit : S.toNat+count≤2^64
   st : (⟨S,count⟩ : Region).Disjoint ⟨V .r30,80⟩
   data : (⟨S,count⟩ : Region).Disjoint ⟨V .r27,(V .r23).toNat⟩
-  work : (⟨S,count⟩ : Region).Disjoint ⟨V .r31,2560⟩
+  work : (⟨S,count⟩ : Region).Disjoint ⟨V .r31,1152⟩
   slotWrite : InRegions s.wr (sp+96) 8
   stackFit : sp.toNat+104≤2^64
   slotFit : (sp+96).toNat+8≤2^64
   slotContext : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r29,256⟩
   slotState : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r30,80⟩
   slotData : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r27,(V .r23).toNat⟩
-  slotWork : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r31,2560⟩
+  slotWork : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r31,1152⟩
   slotSource : (⟨sp+96,8⟩ : Region).Disjoint ⟨S,count⟩
+  kern : SealFused.Kern V s
 
 
 theorem args_values {V : Reg → BitVec 64} {sp S : Addr} {count : Nat} {s : State}
@@ -73,38 +74,39 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
   have hslt : (s.mem.writeW (sp+96) (V .r31+448)).readW (sp+96#64) 64=V .r31+448 :=
     Mem.readW_writeW_self64 _ _ _
   simp only [h23,hslt]
+  have K := lay.kern
   have dp := hd.take (k := ((V .r23).toNat/16)*16) (by omega_using [])
   have src := Region.sub_prefix (by omega_using [] : count/16*16≤count) (base := S)
   refine ⟨by have := lay.stackFit; omega_using [this],rfl,trivial,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,L.cw,?_,?_,?_,dp.ok.fit,?_,hv,by have := lay.bound; omega_using [this]⟩
   · exact L.cs.sub_right (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact L.cs.sub_right (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact dp.ctx
-  · exact L.cw'.sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
+  · exact K.ctx
   · exact Lay.st_st (a := 48) (n := 16) (d := 16) (k := 16) (by decide) (by decide) (by decide)
   · exact (lay.st.sub_left src).symm.sub_left (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact dp.ok.st.symm.sub_left (Lay.stSub (d := 48) (n := 16) (by decide))
-  · exact L.st_w (a := 48) (n := 16) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide,by decide⟩)
+  · exact K.st.sub_left (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact lay.slotState.symm.sub_left (Lay.stSub (d := 48) (n := 16) (by decide))
   · exact (lay.st.sub_left src).symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact dp.ok.st.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
-  · exact L.st_w (a := 16) (n := 16) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide,by decide⟩)
+  · exact K.st.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact lay.slotState.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact (lay.data.sub_left src).sub_right (Region.sub_prefix (by omega_using []))
-  · exact (lay.work.sub_left src).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
-  · exact dp.ok.w.sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
+  · exact (lay.work.sub_left src).sub_right (Offset.sub_base _ (d := 448) (n := 704) (by decide))
+  · exact K.data.sub_left (Region.sub_prefix (by omega_using []))
   · exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega_using []))
-  · exact lay.slotWork.symm.sub_left (Lay.wSub (d := 448) (n := 2112) (by decide))
+  · exact lay.slotWork.symm.sub_left (Offset.sub_base _ (d := 448) (n := 704) (by decide))
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 48) (n := 16) (by decide)
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 16) (n := 16) (by decide)
   · have := lay.fit; omega_using [this]
-  · exact SealFused.fit_offset _ L.ww (by decide) (off := 448) (n := 2112) (by decide)
+  · exact SealFused.fit_offset _ K.fit (by decide) (off := 448) (n := 704) (by decide)
 
 
 theorem args_regions {V : Reg → BitVec 64} {sp S : Addr} {count : Nat} {s : State}
     (he : Env V sp s) (lay : Layout V sp S count s) :
     reads (argsState s)=[⟨V .r29,256⟩,⟨S,count/16*16⟩,⟨sp+96,8⟩] ∧
     writes (argsState s)=[⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-      ⟨V .r27,(V .r23).toNat/16*16⟩,⟨V .r31+448,2112⟩] := by
+      ⟨V .r27,(V .r23).toNat/16*16⟩,⟨V .r31+448,704⟩] := by
   obtain ⟨h3,_,h5,h6,h7,h8,h9,h10,hw⟩ := args_values he lay
   have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega_arith
   have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
@@ -132,7 +134,7 @@ theorem args_config {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : S
     have dp := hd.take (k := (V .r23).toNat/16*16) (by omega_using [])
     exact Covers.cons (he.perm.stC (d := 48) (n := 16) (by decide))
       (Covers.cons (he.perm.stC (d := 16) (n := 16) (by decide))
-        (Covers.cons dp.wr (he.perm.wC (d := 448) (n := 2112) (by decide))))
+        (Covers.cons dp.wr lay.kern.wr))
   refine ⟨args_pre L he hd lay hR hv,?_,ww⟩
   apply Covers.append_left
   · rw [hr,hk.2.1,hk.2.2]

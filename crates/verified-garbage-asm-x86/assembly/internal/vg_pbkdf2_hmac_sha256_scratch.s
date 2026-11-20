@@ -20,7 +20,7 @@ vg_pbkdf2_hmac_sha256_scratch:
 	mov edi, ebp
 	add edi, 1136
 	push edi
-	call {vg_sha256_init}
+	call {vg_sha256_init_core}
 	pop eax
 	mov eax, 0
 	mov esi, 0

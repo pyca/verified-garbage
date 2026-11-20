@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
@@ -69,6 +70,11 @@ structure RoundImpl where
   noSp : NoSp code
   spSafe : code.allInstrs (fun i => !isa.writesSp i) = true
   stack : stackUse code ≤ 96
+  /-- Its code, and the code it calls, has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk code = true
   suffix : String
   features : List String
 

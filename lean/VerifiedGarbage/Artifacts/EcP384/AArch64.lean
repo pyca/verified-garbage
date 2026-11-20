@@ -1,37 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Impl.EcKey.P384.AArch64
 public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
-public import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.EcKey.P384
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.P384.Point
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-public import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.P384.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P384Decompress
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.P384.AArch64.Law
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.Spec.EcKey.P384
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # P-384 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -42,14 +19,14 @@ namespace VG.Artifacts.EcP384.AArch64
 open VG.Proof.P384.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Proof.EcKey.Compressed.AArch64.P384.code
-    verified := Proof.EcKey.Compressed.AArch64.P384.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
-  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Proof.EcKey.Compressed.AArch64.P384Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.P384Decompress.verified hasLaw.law hasLaw.inv } (Proof.EcKey.AArch64.Scrub.decompressOk _)),
-  Spec.EcKey.P384.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.EcKey.AArch64.publicKeyP384
-    verified := Proof.EcKey.AArch64.P384.pk_verified hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Impl.EcKey.AArch64.Fn.compressP384
+    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.P384.scrubbed hasLaw.inv) },
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Impl.EcKey.AArch64.Fn.decompressP384
+    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.P384Decompress.scrubbed hasLaw.law hasLaw.inv) },
+  Spec.EcKey.P384.publicKeyApi.artifact AArch64.target {
+    code := Impl.EcKey.AArch64.Fn.publicKeyP384
+    verified := .scrubbed (Proof.EcKey.AArch64.P384.pk_scrubbed hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law)) }]
 
 end VG.Artifacts.EcP384.AArch64

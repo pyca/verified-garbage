@@ -32,9 +32,9 @@ vg_hmac_sha1_init:
 	mov r7, r3
 	mov r11, r12
 	mov r0, r4
-	bl {vg_sha1_init}
+	bl {vg_sha1_init_core}
 	mov r0, r5
-	bl {vg_sha1_init}
+	bl {vg_sha1_init_core}
 	movw r1, #13878
 	movt r1, #13878
 	str r1, [r4, #20]
@@ -139,6 +139,29 @@ vg_hmac_sha1_init:
 	ldr r11, [r11, #192]
 	add sp, sp, #480
 21:
+	sub sp, sp, #1184
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #37
+27:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 27b
+	add sp, sp, #1184
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 20:
 	sub sp, sp, #1152
@@ -170,7 +193,7 @@ vg_hmac_sha1_init:
 	movw r12, #736
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha1_init}
+	bl {vg_sha1_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -586,4 +609,31 @@ vg_hmac_sha1_finalize:
 	ldr lr, [r11, #188]
 	ldr r11, [r11, #192]
 	add sp, sp, #480
+	sub sp, sp, #496
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #15
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #496
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

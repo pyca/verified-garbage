@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.EcKey.P256.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.P256
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -56,5 +59,15 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) :=
   Verified.of_correct (compress_correct p256 (p256_ok hI).toBaseCfgOk
     (by lit_decide) (by lit_decide) (by lit_decide)) ct (compress_implies _ sat)
+
+/-- `vg_ec_p256_compress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.compressP256`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.compressP256
+      (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P256.inst.compressPublicKeyApi)
+    { code := code, verified := verified hI } _
+    (Proof.EcKey.AArch64.Scrub.compressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.P256

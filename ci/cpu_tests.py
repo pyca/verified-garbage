@@ -125,6 +125,14 @@ GROUPS = {
             "wycheproof::ecdsa_brainpoolp256r1",
         ],
     },
+    "brainpoolp320r1": {
+        "lib": ["ec::validate::tests::brainpoolp320r1", "ec::compressed::tests::brainpoolp320r1"],
+        "tests": [
+            "wycheproof::ec_compressed::brainpoolp320r1",
+            "wycheproof::ecdh_brainpoolp320r1",
+            "wycheproof::ecdsa_brainpoolp320r1",
+        ],
+    },
     "brainpoolp384r1": {
         "lib": ["ec::validate::tests::brainpoolp384r1", "ec::compressed::tests::brainpoolp384r1"],
         "tests": [
@@ -202,6 +210,7 @@ GROUPS = {
             "wycheproof::ecdsa_secp256k1",
             "wycheproof::ecdsa_p192",
             "wycheproof::ecdsa_brainpoolp256r1",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
@@ -442,6 +451,7 @@ GROUPS = {
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_p384::ecdsa_secp384r1_sha384_p1363_test",
             "wycheproof::hmac_sha384",
@@ -456,6 +466,7 @@ GROUPS = {
             "rfc6979::p256::p256_sha384",
             "rfc6979::p384::p384_sha384",
             "rfc7027::brainpoolp384r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp320r1",
             "wycheproof::ecdsa_brainpoolp384r1",
             "wycheproof::ecdsa_p384::ecdsa_secp384r1_sha384_p1363_test",
             "wycheproof::hmac_sha384",

@@ -107,15 +107,18 @@ def baseline : CrtImpl where
   verified := Bignum.X86.CrtRt.verified
   stack := by rw [RtShape.privateCrt_stack]
   noSp := allStack_noSp RtShape.privateCrt_spSafe
-  pcName := "vg_rsa_public_precompute"
+  scrub := by lit_decide
+  pcName := "vg_rsa_public_precompute_core"
   pc := Impl.Bignum.X86.PrecomputeFn.code
   pcVerified := Bignum.X86.precompute_verified
   pcStack := by decide +kernel
   pcNoSp := NoSp.of_all (by decide +kernel)
+  pcScrub := by lit_decide
   pdName := "vg_rsa_public_precomputed_checked"
   pd := Impl.Bignum.X86.PrecomputedRt.code
   pdVerified := Bignum.X86.PrecomputedRt.verified
   pdStack := by rw [RtShape.precomputed_stack]
   pdNoSp := allStack_noSp RtShape.precomputed_spSafe
+  pdScrub := by lit_decide
 
 end VG.Proof.Rsa.X86.PrivChecked

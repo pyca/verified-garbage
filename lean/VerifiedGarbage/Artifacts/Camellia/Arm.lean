@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,13 +12,13 @@ namespace VG.Artifacts.Camellia.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 Impl.Camellia.Arm.expandKey
-    verified := Proof.Camellia.Arm.expandKey_framed },
+    code := Impl.Camellia.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Camellia.Arm.Fn.expandKey },
   Spec.Camellia.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (Impl.Camellia.Arm.ecb .encrypt)
-    verified := Proof.Camellia.Arm.ecb_framed .encrypt },
+    code := Impl.Camellia.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbEncrypt },
   Spec.Camellia.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (Impl.Camellia.Arm.ecb .decrypt)
-    verified := Proof.Camellia.Arm.ecb_framed .decrypt }]
+    code := Impl.Camellia.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Camellia.Arm

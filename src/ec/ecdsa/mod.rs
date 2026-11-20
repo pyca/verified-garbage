@@ -12,6 +12,7 @@
 ))]
 
 mod brainpoolp256r1;
+mod brainpoolp320r1;
 mod brainpoolp384r1;
 mod brainpoolp512r1;
 mod p192;
@@ -49,8 +50,8 @@ mod sealed {
 /// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
 /// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
 /// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1 and
-/// brainpoolP256r1, `Sha256`; for brainpoolP384r1, `Sha384`; for
-/// brainpoolP512r1, `Sha512`.
+/// brainpoolP256r1, `Sha256`; for brainpoolP320r1 and brainpoolP384r1,
+/// `Sha384`; for brainpoolP512r1, `Sha512`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
 /// Signing with ECDSA.

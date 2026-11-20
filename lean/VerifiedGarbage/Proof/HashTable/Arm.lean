@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
@@ -55,6 +56,7 @@ def sha512_256 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -86,6 +88,7 @@ def sha512_224 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -117,6 +120,7 @@ def sha512 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -148,6 +152,7 @@ def sha384 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -179,6 +184,7 @@ def sha256 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -210,6 +216,7 @@ def sha224 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -241,6 +248,7 @@ def sha1 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -272,6 +280,7 @@ def md5 : PssHash where
   outCk := by exact ⟨_, by taint_decide⟩
   lenCk := by exact ⟨_, by taint_decide⟩
   one := by decide
+  scrub := by lit_decide
 
 end VG.Proof.RsaPss.Arm
 
@@ -380,6 +389,20 @@ theorem mem_names {vs : List MVar} {w : MVar} (hw : w ∈ vs) :
     w.h.H.md.st.initN ∈ names vs ∧ w.h.H.md.compN ∈ names vs ∧ digName w ∈ names vs := by
   have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
   refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf]⟩
+
+/-- What the cleanup of a function that calls `fnsOf vs` through tables
+needs of them (`Arm.Scrub.CodeOk`, and each named in `T`, which names the
+functions of `tables vs`): what each of `vs` states of its own code
+(`PssHash.scrub`). -/
+theorem fnsOf_scrub {vs : List MVar} {T : List String} (hT : ∀ f ∈ names vs, f ∈ T) :
+    (∀ p ∈ (fnsOf vs).init, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) ∧
+    (∀ p ∈ (fnsOf vs).comp, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) ∧
+    (∀ p ∈ (fnsOf vs).dig, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) := by
+  refine ⟨?_, ?_, ?_⟩ <;> intro p hp <;> simp only [fnsOf, List.mem_map] at hp <;>
+    obtain ⟨w, hw, rfl⟩ := hp
+  · exact ⟨w.h.scrub.1, hT _ (mem_names hw).1⟩
+  · exact ⟨w.h.scrub.2.2.2.1, hT _ (mem_names hw).2.1⟩
+  · exact ⟨w.h.scrub.2.2.2.2, hT _ (mem_names hw).2.2⟩
 
 /-- The words of `w`'s table in the state `s`. -/
 theorem words_tableOf (s : State) (w : MVar) : FnTable.words isa s (tableOf w) =
@@ -560,6 +583,20 @@ theorem mem_names {vs : List TVar} {w : TVar} (hw : w ∈ vs) :
     w.g.H.initN ∈ names vs ∧ w.g.H.updN ∈ names vs ∧ w.g.H.finN ∈ names vs := by
   have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
   refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf, MdHashTable.Arm.tableOf, w.st]⟩
+
+/-- What the cleanup of a function that calls `fnsOf vs` through tables
+needs of them (`Arm.Scrub.CodeOk`, and each named in `T`, which names the
+functions of `tables vs`): what each of `vs` states of its own code
+(`PssHash.scrub`). -/
+theorem fnsOf_scrub {vs : List TVar} {T : List String} (hT : ∀ f ∈ names vs, f ∈ T) :
+    (∀ p ∈ (fnsOf vs).init, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) ∧
+    (∀ p ∈ (fnsOf vs).upd, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) ∧
+    (∀ p ∈ (fnsOf vs).fin, VG.Arm.Scrub.CodeOk p.2 0 ∧ p.1 ∈ T) := by
+  refine ⟨?_, ?_, ?_⟩ <;> intro p hp <;> simp only [fnsOf, List.mem_map] at hp <;>
+    obtain ⟨w, hw, rfl⟩ := hp <;> have hs := w.m.h.scrub <;> rw [← w.st] at hs
+  · exact ⟨hs.1, hT _ (mem_names hw).1⟩
+  · exact ⟨hs.2.1, hT _ (mem_names hw).2.1⟩
+  · exact ⟨hs.2.2.1, hT _ (mem_names hw).2.2⟩
 
 /-- An indirect call of `fnsOf vs`'s functions reaches `w`'s. -/
 theorem tabOK_of {vs : List TVar} (hc : Coh vs) {sy : String → BitVec 32}

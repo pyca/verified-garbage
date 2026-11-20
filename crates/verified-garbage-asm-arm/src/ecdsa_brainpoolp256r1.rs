@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 65 bytes.
@@ -3122,6 +3124,28 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 add sp, sp, #96
+sub sp, sp, #96
+add r12, sp, #0
+mov r2, #0
+mov r3, #3
+217:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 217b
+add sp, sp, #96
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_brainpoolp256r1_mul_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p::vg_brainpoolp256r1_mul_mod_p,
         vg_brainpoolp256r1_add_mod_p = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p::vg_brainpoolp256r1_add_mod_p,
@@ -3141,6 +3165,8 @@ pub const VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES: verified_garbage_cpu::
 /// ECDSA signature verification over brainpoolP256r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -6259,6 +6285,28 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 add sp, sp, #96
+sub sp, sp, #96
+add r12, sp, #0
+mov r2, #0
+mov r3, #3
+217:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 217b
+add sp, sp, #96
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_brainpoolp256r1_mul_mod_p_umaal = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_mul_mod_p_umaal::vg_brainpoolp256r1_mul_mod_p_umaal,
         vg_brainpoolp256r1_add_mod_p_umaal = sym super::ec_brainpoolp256r1::vg_brainpoolp256r1_add_mod_p_umaal::vg_brainpoolp256r1_add_mod_p_umaal,
@@ -6274,6 +6322,8 @@ bx lr",
 /// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7073,6 +7123,34 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
+sub sp, sp, #536
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+27:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 27b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #536
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ecdsa_brainpoolp256r1_sign_k = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k::vg_ecdsa_brainpoolp256r1_sign_k,
     )
@@ -7085,6 +7163,8 @@ pub const VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES: verified_garbage_cpu::Fe
 /// Deterministic ECDSA signature generation over brainpoolP256r1 with HMAC over the hash function of the table `hmac` (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the hash at `digest` (`digest_len` bytes, the hash function's output), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7886,6 +7966,34 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
+sub sp, sp, #536
+add r12, sp, #0
+mov r2, #0
+mov r3, #16
+27:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 27b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #536
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ecdsa_brainpoolp256r1_sign_k_umaal = sym super::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_k_umaal::vg_ecdsa_brainpoolp256r1_sign_k_umaal,
     )
@@ -7930,3 +8038,11 @@ pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k;
 #[rustfmt::skip]
 #[path = "internal/vg_ecdsa_brainpoolp256r1_sign_k_umaal.rs"]
 pub(crate) mod vg_ecdsa_brainpoolp256r1_sign_k_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha224_init_core.rs"]
+pub(crate) mod vg_sha224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha384_init_core.rs"]
+pub(crate) mod vg_sha384_init_core;

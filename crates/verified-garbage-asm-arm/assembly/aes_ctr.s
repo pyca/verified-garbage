@@ -83,6 +83,18 @@ vg_aes_ctr:
 	ldr r9, [r10, #2084]
 	ldr lr, [r10, #2092]
 	ldr r10, [r10, #2088]
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_aes_ctr_final:
@@ -116,7 +128,7 @@ vg_aes_ctr_final:
 	add r7, r3, r12, lsl #4
 	mov lr, r10
 	push {r12, lr}
-	bl {vg_aes_ctr}
+	bl {vg_aes_ctr_entry}
 	ldr r12, [sp], #8
 	cmp r8, #0
 	beq 20f
@@ -133,7 +145,7 @@ vg_aes_ctr_final:
 	mov r12, #1
 	mov lr, r10
 	push {r12, lr}
-	bl {vg_aes_ctr}
+	bl {vg_aes_ctr_entry}
 	ldr r12, [sp], #8
 	ldr r12, [sp, #8]
 	add r0, r12, #40
@@ -178,4 +190,33 @@ vg_aes_ctr_final:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #72
+	sub sp, sp, #88
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #2
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #88
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

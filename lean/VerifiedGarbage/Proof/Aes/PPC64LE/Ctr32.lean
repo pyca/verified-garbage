@@ -35,4 +35,20 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32PPC64LE.pre Proof.Aes.ctr32PP
   simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem ctr32F_correct (s : State) (hs : Proof.Aes.ctr32PPC64LEF.pre s) :
+    ∃ t s', Exec isa Impl.Aes.PPC64LE.ctr32 s t s' ∧ abiPreserved s s' ∧
+      Proof.Aes.ctr32PPC64LEF.post s s' := by
+  obtain ⟨t, s', he, hk, hp⟩ := Crypto.ctr32_okF s hs
+  exact ⟨t, s', he, abiPreserved_of_keep he hk (by decide) (by lit_decide)
+    (by rw [← Code.allInstrs_eq]; lit_decide), hp⟩
+
+theorem ctr32F_ct : ConstantTime isa Proof.Aes.ctr32PPC64LEF.pre Proof.Aes.ctr32PPC64LEF.pub
+    Impl.Aes.PPC64LE.ctr32 := by
+  refine VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
 end VG.Proof.Aes.PPC64LE

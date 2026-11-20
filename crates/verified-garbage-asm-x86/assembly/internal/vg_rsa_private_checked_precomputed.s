@@ -77,7 +77,7 @@ vg_rsa_private_checked_precomputed:
 	mov DWORD PTR [esp+16], eax
 	mov eax, DWORD PTR [esp+3424]
 	mov DWORD PTR [esp+20], eax
-	call {vg_rsa_public_precompute}
+	call {vg_rsa_public_precompute_core}
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+3348]
 	mov DWORD PTR [esp], eax

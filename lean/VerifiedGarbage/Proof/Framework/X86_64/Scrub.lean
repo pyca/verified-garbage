@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.X86_64.Residue
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 import VerifiedGarbage.Proof.Framework.Mem
@@ -2106,7 +2106,7 @@ addresses two runs agree on (`tables_pub_syms`). -/
 def tablesCall (c : Prog isa) (ts : List (String × List FnTable)) : Bool :=
   (UpperLock.inames c).all fun f => decide (f ∈ tableFns ts)
 
-theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCall r.code r.tables = true)
+theorem tablesCall_syms {api : Api} {r : Unscrubbed api target} (h : tablesCall r.code r.tables = true)
     {A : Abi isa} {pre : Curry (api.sig.words A.ptrBits) (Mem → Prop)} {post : api.sig.Post A.ptrBits}
     {wa : Bool} {stack : Nat} {leak : Option (Curry (api.sig.words A.ptrBits) (Mem → List Nat))}
     (hA : A = ((abi.withConsts r.consts).withTables api.sig r.tables)) :
@@ -2119,7 +2119,7 @@ theorem tablesCall_syms {api : Api} {r : Registration api target} (h : tablesCal
   exact tables_pub_syms (contract_pub hp) n this
 
 /-- `r`'s code, scrubbed as `scrubRegE` does, returns without secret residue. -/
-theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+theorem scrubCodeE_noResidue {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
     (hmx : v ≠ .evex → (mxClass r.code).isSome = true)
@@ -2143,7 +2143,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Registration api target) (v : VecL
 
 /-- `r`, scrubbed: its code followed by the clearing (`scrub`), at level `v`,
 with the granules `ks` of `r.stack` bytes of stack wiped. -/
-def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+def scrubRegE {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
     (hmx : v ≠ .evex → (mxClass r.code).isSome = true)
@@ -2158,7 +2158,11 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
   code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code
   contract := r.contract
-  verified := by
+  -- Without residue for code that calls indirectly only its tables' functions,
+  -- whose two runs use the same unknowns (`Exec.unknowns_agree`); the emitter
+  -- refuses any other.
+  unscrubbed := !(tablesCall r.code r.tables)
+  verified := .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) <| Verification.ofBool (tablesCall r.code r.tables) (by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     have hp := hpost
@@ -2168,7 +2172,7 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
     exact (Verified.scrubM (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
       (chunks_sum r.stack) hst (chunks_valid h8)
       (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
-      (gs_of _ _)).1
+      (gs_of _ _)).1) (fun hic => scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
@@ -2178,11 +2182,6 @@ def scrubRegE {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  -- Without residue for code that calls indirectly only its tables' functions,
-  -- whose two runs use the same unknowns (`Exec.unknowns_agree`); the emitter
-  -- refuses any other.
-  residue := if hic : tablesCall r.code r.tables = true then
-    some ⟨scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he hic⟩ else none
 
 /-- `Code.all p` implies `Code.all q` if `p` implies `q`. -/
 theorem all_mono {p q : Instr → Bool} (hpq : ∀ i, p i = true → q i = true) {c : Prog isa}
@@ -2209,7 +2208,7 @@ theorem mxOk_of_all {c : Prog isa} {v : VecLevel} (h : c.all (fun i => decide (i
 
 /-- `scrubRegE`, below the level `evex`, for code that may load MXCSR if it
 leaves in it a function of MXCSR on entry (`mxClass`). -/
-def scrubRegM {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+def scrubRegM {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true)
     (hmx : (mxClass r.code).isSome = true)
@@ -2220,7 +2219,7 @@ def scrubRegM {api : Api} (r : Registration api target) (v : VecLevel) (ks : Lis
   scrubRegE r v ks hd hst h8 hlv (fun _ => hmx) hrb hpost hres (evexReg_of_ne hne) hw
 
 /-- `scrubRegE`, below the level `evex`. -/
-def scrubReg {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+def scrubReg {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
@@ -2229,7 +2228,7 @@ def scrubReg {api : Api} (r : Registration api target) (v : VecLevel) (ks : List
     (hw : r.written = []) (hne : v ≠ .evex := by decide) : Registration api target :=
   scrubRegE r v ks hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost hres (evexReg_of_ne hne) hw
 
-theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLevel) (ks : List Nat)
+theorem scrubReg_noResidue {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
@@ -2243,7 +2242,7 @@ theorem scrubReg_noResidue {api : Api} (r : Registration api target) (v : VecLev
 residue analysis does not follow. At the level `evex` (code that may write
 `zmm16`–`zmm31` or MXCSR), it has 16 bytes of stack and writes a vector
 register. -/
-def scrubRegAll {api : Api} (r : Registration api target) (v : VecLevel)
+def scrubRegAll {api : Api} (r : Unscrubbed api target) (v : VecLevel)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
     (hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
@@ -2263,14 +2262,14 @@ def levelAll (code : Prog isa) : VecLevel :=
 wiped (`scrubRegAll`), at the level of its code, if `scrub`'s side conditions
 hold and the clearing needs no CPU feature that `r`'s code does not
 (`Code.requiresDedup`); otherwise `r` itself, which then has no proof
-(`Registration.residue`), as the emitter allows only of what
+(`Verification.unscrubbed`), as the emitter allows only of what
 `ci/residue_allowlist.txt` lists. For a caller generic over the
 implementations of the functions it calls, whose code the residue analysis
 does not follow. The level is that of every instruction the code may run,
 those of the functions of the tables it takes included (`Code.all`), whose
 features are not the code's own: a function that needs no AVX but may run
 an AVX2 hash function through a table is left as it is. -/
-def withScrubAll {api : Api} (r : Registration api target)
+def withScrubAll {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
     Registration api target :=
   let v := levelAll r.code
@@ -2284,7 +2283,8 @@ def withScrubAll {api : Api} (r : Registration api target)
   if hev : v = .evex → 16 ≤ r.stack ∧ noVec r.code = false then
     let r' := scrubRegAll r v hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) hrb hpost hev hw
     if (Code.requiresDedup isa.requires r'.code).all
-        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
-  else r else r else r else r else r else r else r
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r.registration
+  else r.registration else r.registration else r.registration else r.registration
+  else r.registration else r.registration else r.registration
 
 end VG.X86_64.Scrub

@@ -10,22 +10,18 @@ import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-import VerifiedGarbage.Proof.Gcm.Arm.Lit
-
 /-! # AES-GCM-SIV (RFC 8452) on ARMv7 -/
 
 @[expose] public section
 
 namespace VG.Artifacts.AesGcmSiv.Arm
 
-open VG.Proof.AesGcmSiv.Arm
-
 def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
-    verified := Proof.AesGcmSiv.seal_keyed seal_framed },
+    code := Impl.AesGcmSiv.Arm.Fn.«seal»
+    verified := .scrubbed Proof.AesGcmSiv.Arm.Fn.«seal» },
   Spec.GcmSiv.openApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
-    verified := Proof.AesGcmSiv.open_keyed open_framed }]
+    code := Impl.AesGcmSiv.Arm.Fn.«open»
+    verified := .scrubbed Proof.AesGcmSiv.Arm.Fn.«open» }]
 
 end VG.Artifacts.AesGcmSiv.Arm

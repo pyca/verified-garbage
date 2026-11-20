@@ -135,6 +135,14 @@ structure WholeIn (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (D : Addr) (s : 
   sd : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨D, (V .r23).toNat⟩
   hi : InRegions (s.rd ++ s.wr) (sp + BitVec.ofNat 64 120) 8
   hv : s.mem.readW (sp + BitVec.ofNat 64 120) 64 = D
+  /-- The helper's working space, `W + 448` (past the 288 bytes of `W` the
+  pieces use), apart from the other buffers, and writable. -/
+  kfit : (V .r31).toNat + 1152 ≤ 2 ^ 64
+  kc : (⟨V .r29, 256⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 704⟩
+  kst : (⟨V .r30, 80⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 704⟩
+  ksrc : (⟨V .r27, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 704⟩
+  kdst : (⟨D, (V .r23).toNat⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 448, 704⟩
+  kw : Covers [⟨V .r31 + BitVec.ofNat 64 448, 704⟩] s.wr
 
 /-- After `whole`, from `s₀`. -/
 structure WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (D : Addr) (s₀ s : State) : Prop where
@@ -148,7 +156,7 @@ structure WholeOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (D : Addr) (s�
     Nat.repeat inc32 (Q V) (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 48))
   hash : blockAt s.mem (V .r30 + BitVec.ofNat 64 16) = ghashFrom (ctxH s₀.mem (V .r29))
     (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 16)) (blocksAt s₀.mem (V .r27) (Q V))
-  frame : Frame [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]
+  frame : Frame [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 704⟩]
     s₀.mem s.mem
 
 /-- The registers `wholeArgs` sets. -/
@@ -204,7 +212,7 @@ theorem st48 (p : Addr) : p + BitVec.ofNat 64 16 + 32 = p + BitVec.ofNat 64 48 :
 /-- What the call reads and writes. -/
 abbrev callRd (V : Reg → BitVec 64) : List Region := [⟨V .r29, 256⟩, ⟨V .r27, Q V * 16⟩]
 abbrev callWr (V : Reg → BitVec 64) (D : Addr) : List Region :=
-  [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]
+  [⟨V .r30 + BitVec.ofNat 64 16, 48⟩, ⟨D, Q V * 16⟩, ⟨V .r31 + BitVec.ofNat 64 448, 704⟩]
 
 /-- `wholeArgs`'s registers, from `s`. -/
 structure ArgsOut (V : Reg → BitVec 64) (R : Nat) (D : Addr) (s s₁ : State) : Prop where
@@ -242,27 +250,26 @@ theorem whole_call {R : Nat} {D : Addr} {s s₁ : State} (L : Lay (V .r29) (V .r
       PPC64LE.abi, PPC64LE.argRegs]
     simp only [a.r3, a.r4, a.r5, a.r6, a.r7, a.r8, a.r9, a.r10, toNat64 hq, toNat64 hR]
     refine ⟨trivial, trivial, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, L.cw, fitOff _ L.sw (by decide) (by decide),
-      by have := hsrc.fit; omega_using [hle, this], by have := hdst.ok.fit; omega_using [hle, this], fitOff _ L.ww (by decide) (by decide),
+      by have := hsrc.fit; omega_using [hle, this], by have := hdst.ok.fit; omega_using [hle, this], fitOff _ h.kfit (by decide) (by decide),
       h.rounds, trivial⟩
     · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using
         L.ctx_st (a := 0) (n := 256) (d := 16) (k := 48) (by decide) (by decide)
     · exact hdst.ctx.sub_right (Region.sub_prefix hle)
-    · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using
-        L.ctx_w (a := 0) (n := 256) (d := 448) (k := 2112) (by decide) (by decide)
+    · exact h.kc
     · exact ((hsrc.st.sub_left (Region.sub_prefix hle)).sub_right (Lay.stSub (d := 16) (n := 48) (by decide))).symm
     · exact ((hdst.ok.st.sub_left (Region.sub_prefix hle)).sub_right (Lay.stSub (d := 16) (n := 48) (by decide))).symm
-    · exact L.st_w (a := 16) (n := 48) (d := 448) (k := 2112) (by decide) (.inr ⟨by decide, by decide⟩)
+    · exact h.kst.sub_left (Lay.stSub (d := 16) (n := 48) (by decide))
     · exact (h.sd.sub_left (Region.sub_prefix hle)).sub_right (Region.sub_prefix hle)
-    · exact (hsrc.w.sub_left (Region.sub_prefix hle)).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
-    · exact (hdst.ok.w.sub_left (Region.sub_prefix hle)).sub_right (Lay.wSub (d := 448) (n := 2112) (by decide))
+    · exact h.ksrc.sub_left (Region.sub_prefix hle)
+    · exact h.kdst.sub_left (Region.sub_prefix hle)
   · rw [k₁.rd, k₁.wr]
     exact Covers.cons he.perm.ctx (Covers.cons (covers_prefix hsrc.rd hle)
       (Covers.cons (covers_left (he.perm.stC (d := 16) (n := 48) (by decide)))
         (Covers.cons (covers_left (covers_prefix hdst.wr hle))
-          (Covers.cons (covers_left (he.perm.wC (d := 448) (n := 2112) (by decide))) Covers.nil))))
+          (Covers.cons (covers_left h.kw) Covers.nil))))
   · rw [k₁.wr]
     exact Covers.cons (he.perm.stC (d := 16) (n := 48) (by decide)) (Covers.cons (covers_prefix hdst.wr hle)
-      (Covers.cons (he.perm.wC (d := 448) (n := 2112) (by decide)) Covers.nil))
+      (Covers.cons h.kw Covers.nil))
 
 theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {R : Nat} {D : Addr}
     {s : State} (L : Lay (V .r29) (V .r30) (V .r31)) (h : WholeIn V sp R D s) :
@@ -323,13 +330,13 @@ theorem tail_in {R : Nat} {D : Addr} {s s₁ s₂ : State} (L : Lay (V .r29) (V 
   have hdst := h.dst
   have k₂ := p.keeps
   obtain dCw : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 16, 48⟩ : Region), ⟨D, Q V * 16⟩,
-      ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩], (⟨V .r29, 256⟩ : Region).Disjoint r := by
+      ⟨V .r31 + BitVec.ofNat 64 448, 704⟩], (⟨V .r29, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact hdst.ctx.sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact h.kc
   obtain he₂ : Env V sp s₂ := hw.env.keep (fun r hr => p.regs r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide)) k₂.sp k₂.rd k₂.wr
   obtain rd₂ : s₂.rd = s.rd := k₂.rd.trans hw.rd
@@ -346,7 +353,7 @@ theorem tail_in {R : Nat} {D : Addr} {s s₁ s₂ : State} (L : Lay (V .r29) (V 
 
 /-- What the data's pass and its tag write. -/
 abbrev passFrame (V : Reg → BitVec 64) (D : Addr) : List Region :=
-  [⟨D, (V .r23).toNat⟩, ⟨V .r30, 80⟩, ⟨V .r31 + BitVec.ofNat 64 96, 32⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]
+  [⟨D, (V .r23).toNat⟩, ⟨V .r30, 80⟩, ⟨V .r31 + BitVec.ofNat 64 96, 32⟩, ⟨V .r31 + BitVec.ofNat 64 448, 704⟩]
 
 /-- After the data's pass and its tag, from `s₀`: the destination holds the
 data decrypted, and `W + 112` the tag of the data, the ciphertext. -/
@@ -381,13 +388,13 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   -- the whole blocks
   refine WP.seq (WP.seq (WP.mono (whole_ok L h) fun s₁ hw => ?_))
   obtain dCw : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 16, 48⟩ : Region), ⟨D, Q V * 16⟩,
-      ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩], (⟨V .r29, 256⟩ : Region).Disjoint r := by
+      ⟨V .r31 + BitVec.ofNat 64 448, 704⟩], (⟨V .r29, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact L.cs.sub_right (Lay.stSub (by decide))
     · exact hdst.ctx.sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact L.cw'.sub_right (Lay.wSub (by decide))
+    · exact h.kc
   -- the last bytes' arguments
   refine WP.seq (WP.seq (WP.mono (partArgs_ok hw.env hw.r26) fun s₂ ⟨a24, a25, a26, g₂, k₂⟩ => ?_))
   obtain he₂ : Env V sp s₂ := hw.env.keep (fun r hr => g₂ r (by revert r; decide) (by revert r; decide)
@@ -453,13 +460,12 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
       rcases hr with rfl | rfl | rfl
       · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
       · exact (h.sd.sub_left hs).sub_right (Region.sub_prefix (by omega_using [h16]))
-      · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
+      · exact h.ksrc.sub_left hs
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl
       · rw [← hk]; exact (h.sd.sub_left hs).sub_right (Offset.sub_base _ (by omega_using [h16]))
       · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
-      · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
   let ct := bytesAt s.mem (V .r27) (V .r23).toNat
   obtain hct : ct = bytesAt s.mem (V .r27) (16 * Q V) ++
       bytesAt s.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat % 16) := by
@@ -496,8 +502,7 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using Lay.st_st (st := V .r30) (a := 0) (n := 16)
         (d := 16) (k := 48) (.inl (by decide)) (by decide) (by decide)
     · exact ((hdst.ok.st.sub_left (Region.sub_prefix hle)).sub_right (Region.sub_prefix (by decide))).symm
-    · simpa only [BitVec.add_zero, BitVec.ofNat_eq_ofNat] using L.st_w (a := 0) (n := 16) (d := 448) (k := 2112)
-        (by decide) (.inr ⟨by decide, by decide⟩)
+    · exact h.kst.sub_left (Region.sub_prefix (by decide))
   obtain hf := fg.out habv
   rw [hc₅, hj₅, ha] at hf
   -- the destination
@@ -506,10 +511,9 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   obtain hdone : bytesAt s₃.mem D (16 * Q V) = bytesAt s₁.mem D (16 * Q V) := by
     rw [bytesAt_frame o.frame (fun r hr => ?_) (by omega_using [h16]), k₂.mem]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact split_disj h16 hn
     · exact (hdst.ok.st.sub_left (Region.sub_prefix h16)).sub_right (Lay.stSub (by decide))
-    · exact (hdst.ok.w.sub_left (Region.sub_prefix h16)).sub_right (Lay.wSub (by decide))
   obtain hs₂ : bytesAt s₂.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat - 16 * Q V) =
       bytesAt s.mem (V .r27 + BitVec.ofNat 64 (16 * Q V)) ((V .r23).toNat - 16 * Q V) := by
     obtain hs : Region.Sub (⟨V .r27 + BitVec.ofNat 64 (16 * Q V), (V .r23).toNat - 16 * Q V⟩ : Region)
@@ -520,16 +524,15 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     rcases hr with rfl | rfl | rfl
     · exact (hsrc.st.sub_left hs).sub_right (Lay.stSub (by decide))
     · exact (h.sd.sub_left hs).sub_right (Region.sub_prefix (by omega_using [h16]))
-    · exact (hsrc.w.sub_left hs).sub_right (Lay.wSub (by decide))
+    · exact h.ksrc.sub_left hs
   obtain key := done_appendTo (P := 0) (hdone.trans hcw) (by rw [Nat.zero_add, o.out rfl, hs₂])
   rw [show 16 * Q V + ((V .r23).toNat - 16 * Q V) = (V .r23).toNat by omega_using [h16]] at key
   obtain hd₆ : bytesAt s₆.mem D (V .r23).toNat = bytesAt s₃.mem D (V .r23).toNat := by
     obtain dT : ∀ r ∈ tagFrame (V .r30) (V .r31) 112, (⟨D, (V .r23).toNat⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact hdst.ok.st.sub_right (Region.sub_prefix (by decide))
-      · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
       · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
       · exact hdst.ok.w.sub_right (Lay.wSub (by decide))
     rw [bytesAt_frame fg.frame dT (by omega_using []),
@@ -541,26 +544,23 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
     · exact ⟨⟨D, (V .r23).toNat⟩, by simp [T], Region.sub_prefix hle⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], fun _ h => h⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 704⟩, by simp [T], fun _ h => h⟩
   obtain F₃ : Frame T s₂.mem s₃.mem := o.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨⟨D, (V .r23).toNat⟩, by simp [T], Offset.sub_base _ (by omega_using [h16])⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   obtain F₅ : Frame T s₄.mem s₅.mem := ab.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   obtain F₆ : Frame T s₅.mem s₆.mem := fg.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Region.sub_prefix (by decide)⟩
     · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Region.sub_prefix (by decide)⟩
     · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   rw [k₂.mem] at F₃
   rw [k₄.mem] at F₅
   refine ⟨fg.env, rd₆'.trans rd₅, wr₆'.trans wr₅, ?_, hf, F₁.trans (F₃.trans (F₅.trans F₆))⟩
@@ -607,14 +607,14 @@ def splitPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let src : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let scr : Region := ⟨stackArg s 2, 2560⟩
+  let scr : Region := ⟨stackArg s 2, 1152⟩
   let dst : Region := ⟨stackArg s 3, (s.gpr .r10).toNat⟩
   s.rd = [ctx, nonce, aad, src, tag, args s 4] ∧ s.wr = [dst, scr] ∧
     ctx.Disjoint scr ∧ nonce.Disjoint scr ∧ aad.Disjoint scr ∧ src.Disjoint scr ∧ tag.Disjoint scr ∧
     scr.Disjoint (args s 4) ∧ ctx.Disjoint dst ∧ src.Disjoint dst ∧ dst.Disjoint scr ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 1152 ≤ 2 ^ 64 ∧
     (stackArg s 3).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧ s.sp.toNat + 128 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- `vg_aes_gcm_open_split`: the result in the low 32 bits of `r3`, and the
@@ -645,7 +645,7 @@ def SplitPost (s₀ s : State) : Prop :=
 abbrev SplitOut := OutWith SplitPost
 
 /-- The destination's address, at `sp + 120`, as on entry: it is apart from `W`. -/
-theorem dst_at {s₀ s : State} (h : splitPre s₀) (hf : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s.mem) :
+theorem dst_at {s₀ s : State} (h : splitPre s₀) (hf : Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s.mem) :
     s.mem.readW (s₀.sp + BitVec.ofNat 64 120) 64 = stackArg s₀ 3 := by
   obtain ⟨_, _, _, _, _, _, _, dWA, _⟩ := h
   obtain hc : (args s₀ 4).Contains (s₀.sp + BitVec.ofNat 64 120) 8 := by
@@ -659,7 +659,7 @@ theorem split_some {s₀ : State} : ∀ s, openRes s₀ = some (openPt s₀) →
   intro s hr h1 hd; unfold SplitPost; rw [hr]; exact ⟨h1, hd⟩
 
 theorem split_none {s₀ : State} : ∀ s, openRes s₀ = none → s.gpr .r3 = 0 →
-    Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s.mem → SplitPost s₀ s := by
+    Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s.mem → SplitPost s₀ s := by
   intro s hr h0 _; unfold SplitPost; rw [hr]; exact h0
 
 /-- `vg_aes_gcm_open_split`, once the tag length is allowed, from `s₄` (after
@@ -682,35 +682,35 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   obtain L := L₀.v h4.r29 h4.r30 h4.r31
   have hk₄ := h4.en.keeps
   obtain toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
-  obtain dcF : ∀ r ∈ [(⟨stackArg s₀ 2, 2560⟩ : Region)], (⟨s₀.gpr .r3, 256⟩ : Region).Disjoint r := by
+  obtain dcF : ∀ r ∈ [(⟨stackArg s₀ 2, 1152⟩ : Region)], (⟨s₀.gpr .r3, 256⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact dcW
-  obtain F₄ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₄.mem := h4.en.frame.sub inW_saved
+  obtain F₄ : Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s₄.mem := h4.en.frame.sub inW_saved
   -- `oneAad`
   obtain hN : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₀.gpr .r5) (s₀.gpr .r6).toNat := by
     rw [h4.r30, h4.r31]
     exact ⟨by rw [hk₄.rd, hk₄.wr]; exact hp.nonce,
-      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW⟩
+      (s₀.gpr .r6).isLt, fn, dnW.sub_right (Offset.sub_base _ (by decide)), dnW.sub_right (Region.sub_prefix (by decide))⟩
   obtain hAd : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₄ (s₄.gpr .r21) (s₄.gpr .r22).toNat := by
     rw [h4.r30, h4.r31, h4.r21, h4.r22]
     exact ⟨by rw [hk₄.rd, hk₄.wr]; exact hp.aad,
-      (s₀.gpr .r8).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW⟩
+      (s₀.gpr .r8).isLt, fa, daW.sub_right (Offset.sub_base _ (by decide)), daW.sub_right (Region.sub_prefix (by decide))⟩
   refine WP.seq (WP.mono (WP.with_rdwr (oneAad_ok L he₄ rfl h4.r24 (by rw [h4.r25]; exact toN)
     (by rw [h4.r18]; exact toN) hN hAd)) fun s₅ ⟨oa, rd₅, wr₅, _⟩ => ?_)
   have f₅ := oa.frame
   rw [h4.r30, h4.r31] at f₅
-  obtain F₅ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₅.mem := F₄.trans (f₅.sub inW_j0)
+  obtain F₅ : Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s₅.mem := F₄.trans (f₅.sub inW_j0)
   -- `recv`
   obtain h19' : s₄.gpr .r19 = BitVec.ofNat 64 (stackArg s₀ 1).toNat := by rw [h19]; exact toN
   obtain hTr : Covers [⟨s₄.gpr .r20, (stackArg s₀ 1).toNat⟩] (s₅.rd ++ s₅.wr) := by
     rw [rd₅, wr₅, hk₄.rd, hk₄.wr, h4.r20]
     exact hp.tag
   obtain hTd : (⟨s₄.gpr .r20, (stackArg s₀ 1).toNat⟩ : Region).Disjoint ⟨s₄.gpr .r31 + BitVec.ofNat 64 256, 16⟩ := by
-    rw [h4.r20, h4.r31]; exact dtW.sub_right (Lay.wSub (by decide))
+    rw [h4.r20, h4.r31]; exact dtW.sub_right (Offset.sub_base _ (by decide))
   refine WP.seq (WP.mono (recv_ok oa.env h19' t1 t16 hTr hTd) fun s₆ ⟨hb₆, hf₆, g₆, k₆⟩ => ?_)
   obtain he₆ := oa.env.keep (fun r hr => g₆ r (by revert r; decide) (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide)) k₆.sp k₆.rd k₆.wr
   rw [h4.r31] at hf₆ hb₆
-  obtain F₆ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₆.mem := F₅.trans (hf₆.sub (inW_at (by decide)))
+  obtain F₆ : Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s₆.mem := F₅.trans (hf₆.sub (inW_at (by decide)))
   -- what the data and the tags are
   let iv := bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat
   let a := bytesAt s₀.mem (s₀.gpr .r7) (s₀.gpr .r8).toNat
@@ -722,7 +722,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   let W := stackArg s₀ 2
   obtain hW256 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)], (⟨s₄.gpr .r29, 256⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    rw [h4.r29]; exact dcW.sub_right (Lay.wSub (by decide))
+    rw [h4.r29]; exact dcW.sub_right (Offset.sub_base _ (by decide))
   obtain hH₄ : blockAt s₄.mem (s₄.gpr .r29 + BitVec.ofNat 64 240) = H := by
     rw [h4.r29]; exact ctxH_keep F₄ dcF
   obtain hH₆ : blockAt s₆.mem (s₄.gpr .r29 + BitVec.ofNat 64 240) = H := by
@@ -768,7 +768,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
     obtain hd₆ : DataOk (s₄.gpr .r30) (s₄.gpr .r31) s₆ (s₄.gpr .r27) (s₄.gpr .r23).toNat := by
       rw [h4.r30, h4.r31, h4.r27, h4.r23]
       exact ⟨by rw [rd₆, wr₆]; exact hp.data, (s₀.gpr .r10).isLt, fd,
-        ddW.sub_right (Lay.wSub (by decide)), ddW⟩
+        ddW.sub_right (Offset.sub_base _ (by decide)), ddW.sub_right (Region.sub_prefix (by decide))⟩
     obtain h23 : s₆.gpr .r23 = BitVec.ofNat 64 (s₀.gpr .r10).toNat := by
       rw [he₆.fr .r23 (by decide), h4.r23]; exact toN
     refine WP.ite _ (eval_zero h23 (s₀.gpr .r10).isLt) (fun ht => ?_) (fun hf => ?_)
@@ -787,20 +787,24 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
       · rw [bytesAt_frame f₇ (fun r hr => ?_) (by decide)]
         · exact hr₆
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
+        rcases hr with rfl | rfl | rfl
         · exact (L₀.st_w (a := 0) (n := 48) (d := 256) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm.sub_right
             (by simpa using (Region.sub_prefix (by decide) : Region.Sub (⟨W + BitVec.ofNat 64 16, 48⟩ : Region) _))
         · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
         · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-        · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
     · -- the data, in one pass
       obtain hz : (s₀.gpr .r10).toNat ≠ 0 := by simpa using hf
       obtain wi : Pass.WholeIn s₄.gpr s₀.sp (s₀.gpr .r4).toNat Dst s₆ := by
         obtain hw : Covers [⟨Dst, (s₀.gpr .r10).toNat⟩] s₆.wr := by
           rw [wr₆, hwr]; exact covers_mem (by simp [Dst])
-        refine ⟨he₆, h28, hR, hd₆, ?_, ?_, ?_, dst_at h F₆⟩
+        refine ⟨he₆, h28, hR, hd₆, ?_, ?_, ?_, dst_at h F₆, by rw [h4.r31]; exact hp.fW,
+          by rw [h4.r29, h4.r31]; exact dcW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [h4.r30, h4.r31]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+          by rw [h4.r27, h4.r23, h4.r31]; exact ddW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [h4.r23, h4.r31]; exact dDW.sub_right (Offset.sub_base _ (by decide)),
+          by rw [wr₆, h4.r31]; exact covers_off hp.w (by decide) (by decide)⟩
         · rw [h4.r29, h4.r30, h4.r31, h4.r23]
-          exact ⟨⟨covers_left hw, (s₀.gpr .r10).isLt, fD, dDW.sub_right (Lay.wSub (by decide)), dDW⟩, hw, dcD⟩
+          exact ⟨⟨covers_left hw, (s₀.gpr .r10).isLt, fD, dDW.sub_right (Offset.sub_base _ (by decide)), dDW.sub_right (Region.sub_prefix (by decide))⟩, hw, dcD⟩
         · rw [h4.r27, h4.r23]; exact dsD
         · rw [rd₆, wr₆]
           obtain hA : Covers [args s₀ 4] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
@@ -817,11 +821,12 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
         intro r hr
         simp only [Pass.passFrame, h4.r30, h4.r31, h4.r23, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact ⟨(dDW.sub_right (Lay.wSub (by decide))).symm, (dDW.sub_right (Lay.wSub (by decide))).symm⟩
+        · exact ⟨(dDW.sub_right (Offset.sub_base _ (by decide))).symm, (dDW.sub_right (Offset.sub_base _ (by decide))).symm⟩
         · have := (L₀.st_w (a := 0) (n := 80) (d := 256) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
           exact ⟨by simpa only [BitVec.add_zero] using this, by simpa using L₀.saved_st (d := 0) (k := 80) (by decide)⟩
         · exact ⟨Lay.w_w (.inr (by decide)) (by decide) (by decide), saved_w (by decide) (.inl (by decide))⟩
-        · exact ⟨Lay.w_w (.inl (by decide)) (by decide) (by decide), saved_w (by decide) (.inr (by decide))⟩
+        · exact ⟨Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
+            Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)⟩
       refine ⟨po.env, po.rd, po.wr, ?_, ?_, ?_, sv₆.frame po.frame (fun r hr => (pf r hr).2)⟩
       · have ho := po.tag
         rw [h4.r31, hH', hc₆', hj₆, ct₆, ← Proof.Gcm.fullTag_eq] at ho
@@ -845,7 +850,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   obtain dst₈ : bytesAt s₈.mem Dst (s₀.gpr .r10).toNat = openPt s₀ := by
     rw [bytesAt_frame hf₈ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact dDW.sub_right (Lay.wSub (by decide))) (by have := (s₀.gpr .r10).isLt; omega_using [])]
+      exact dDW.sub_right (Offset.sub_base _ (by decide))) (by have := (s₀.gpr .r10).isLt; omega_using [])]
     exact dst₇
   refine ⟨(he₈.fr .r31 (by decide)).trans h4.r31, he₈.sp, fun r hr => ?_,
     k₈.rd.trans (rd₇.trans (k₆.rd.trans (rd₅.trans hk₄.rd))),
@@ -883,7 +888,7 @@ theorem split_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   -- the tag length
   obtain h19' : s₂.gpr .r19 = BitVec.ofNat 64 (stackArg s₀ 1).toNat := by rw [h19]; simp
   refine WP.seq (WP.mono (tagLenOk_ok h19' (stackArg s₀ 1).isLt) fun s₃ ⟨h25, g₃, k₃⟩ => ?_)
-  obtain F₂ : Frame [(⟨stackArg s₀ 2, 2560⟩ : Region)] s₀.mem s₂.mem := h2.en.frame.sub inW_saved
+  obtain F₂ : Frame [(⟨stackArg s₀ 2, 1152⟩ : Region)] s₀.mem s₂.mem := h2.en.frame.sub inW_saved
   obtain mid : WP isa (.ite (.zero .d .r25) (.block [.li .r3 0]) openPass) s₃ (SplitOut s₀) := by
     refine WP.ite _ (eval_zero h25 (by split <;> decide)) (fun ht => ?_) (fun hf => ?_)
     · have hbad : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = false := by
@@ -939,8 +944,8 @@ Untrusted: everything here is checked by Lean. The contract the proof of
 (`OpenTo/Verified.lean`), and its proof (`openTo_wp`). It calls
 `vg_aes_gcm_open_split` by its contract (`splitPPC64LE`, `SplitOk`).
 
-With `Pf` the base of the 2720 bytes of stack below the stack pointer
-(`sp = Pf + 2720`), the function allocates its frame of 2720 bytes there
+With `Pf` the base of the 1312 bytes of stack below the stack pointer
+(`sp = Pf + 1312`), the function allocates its frame of 1312 bytes there
 (`WP.alloc`), keeps our return address in it, and lays out the call's four
 stack arguments, the working space being the rest of the frame
 (`entered_wp`). It calls `vg_aes_gcm_open_split` (`called_wp`), which
@@ -991,7 +996,7 @@ abbrev sR : Region := ⟨Src s, L s⟩
 abbrev dR : Region := ⟨Dst s, L s⟩
 abbrev tR : Region := ⟨Tg s, TL s⟩
 abbrev argR : Region := ⟨stackArgAddr s 0, 32⟩
-abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 2720, 2720⟩
+abbrev stkR : Region := ⟨s.sp - BitVec.ofNat 64 1312, 1312⟩
 
 /-- `vg_aes_gcm_open`'s result on the ciphertext at `src`. -/
 abbrev res : Option (List Byte) :=
@@ -1001,9 +1006,9 @@ abbrev res : Option (List Byte) :=
 end
 
 /-- What the proof of `vg_aes_gcm_open_to` needs: the layout of its shared
-contract, with 2720 bytes of stack, `dst_len` its `len`. -/
+contract, with 1312 bytes of stack, `dst_len` its `len`. -/
 structure ToPre (s : State) : Prop where
-  w₁ : 2720 ≤ s.sp.toNat
+  w₁ : 1312 ≤ s.sp.toNat
   w₂ : s.sp.toNat + 32 + 96 ≤ 2 ^ 64
   rd : s.rd = [kR s, nR s, aR s, sR s, tR s, argR s]
   wr : s.wr = [dR s]
@@ -1066,21 +1071,21 @@ theorem split_sdepth : sdepth openSplit = 0 := by
 section
 variable (s : State)
 
-/-- Our frame, the 2720 bytes of stack below the stack pointer: the stack
+/-- Our frame, the 1312 bytes of stack below the stack pointer: the stack
 pointer in it. -/
-abbrev Pf : Addr := s.sp - BitVec.ofNat 64 2720
+abbrev Pf : Addr := s.sp - BitVec.ofNat 64 1312
 
 /-- The doubleword at offset `a` of the frame. -/
 abbrev fa (a : Nat) : Addr := Pf s + BitVec.ofNat 64 a
 
 /-- Our stack argument `i`. -/
-abbrev sa (i : Nat) : Addr := Pf s + BitVec.ofNat 64 (2816 + 8 * i)
+abbrev sa (i : Nat) : Addr := Pf s + BitVec.ofNat 64 (1408 + 8 * i)
 
 /-- The frame past its header, which the frame makes writable, the whole
 frame, and the working space. -/
-abbrev FR : Region := ⟨Pf s + BitVec.ofNat 64 32, 2688⟩
-abbrev FA : Region := ⟨Pf s, 2720⟩
-abbrev scR : Region := ⟨fa s 160, 2560⟩
+abbrev FR : Region := ⟨Pf s + BitVec.ofNat 64 32, 1280⟩
+abbrev FA : Region := ⟨Pf s, 1312⟩
+abbrev scR : Region := ⟨fa s 160, 1152⟩
 
 /-- The memory after the entry: the back chain at `Pf`, our return address
 at `Pf + 152`, and `tag`, `tag_len`, the working space's address and `dst`
@@ -1099,43 +1104,43 @@ end
 /-- What `ToPre` gives. -/
 structure Lay (s : State) : Prop where
   pre : ToPre s
-  hB : s.sp = Pf s + BitVec.ofNat 64 2720
-  hBn : (Pf s).toNat + 2848 ≤ 2 ^ 64
-  hargR : argR s = ⟨Pf s + BitVec.ofNat 64 2816, 32⟩
+  hB : s.sp = Pf s + BitVec.ofNat 64 1312
+  hBn : (Pf s).toNat + 1440 ≤ 2 ^ 64
+  hargR : argR s = ⟨Pf s + BitVec.ofNat 64 1408, 32⟩
 
 theorem lay {s : State} (hs : ToPre s) : Lay s := by
   have w₁ := hs.w₁
   have w₂ := hs.w₂
-  obtain hB : s.sp = Pf s + BitVec.ofNat 64 2720 := (BitVec.sub_add_cancel s.sp _).symm
-  obtain hBn : (Pf s).toNat + 2848 ≤ 2 ^ 64 := by
+  obtain hB : s.sp = Pf s + BitVec.ofNat 64 1312 := (BitVec.sub_add_cancel s.sp _).symm
+  obtain hBn : (Pf s).toNat + 1440 ≤ 2 ^ 64 := by
     obtain e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Pf s).isLt
     omega_arith
   refine ⟨hs, hB, hBn, ?_⟩
-  show (⟨s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0)), 32⟩ : Region) = ⟨Pf s + BitVec.ofNat 64 2816, 32⟩
+  show (⟨s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0)), 32⟩ : Region) = ⟨Pf s + BitVec.ofNat 64 1408, 32⟩
   rw [hB, Offset.add_ofNat_add_ofNat]
 
 /-- Bytes of the frame, in the stack below the stack pointer. -/
-theorem fr_sub (s : State) {a n : Nat} (ha : a + n ≤ 2720) :
+theorem fr_sub (s : State) {a n : Nat} (ha : a + n ≤ 1312) :
     (⟨Pf s + BitVec.ofNat 64 a, n⟩ : Region).Sub (FA s) :=
   Offset.sub_base _ ha
 
-theorem fr_in (s : State) {a : Nat} (h₁ : 32 ≤ a) (h₂ : a + 8 ≤ 2720) (wr : List Region) :
+theorem fr_in (s : State) {a : Nat} (h₁ : 32 ≤ a) (h₂ : a + 8 ≤ 1312) (wr : List Region) :
     InRegions (FR s :: wr) (Pf s + BitVec.ofNat 64 a) 8 :=
   ⟨_, List.mem_cons_self .., by
-    show (⟨Pf s + BitVec.ofNat 64 32, 2688⟩ : Region).Contains (Pf s + BitVec.ofNat 64 a) 8
+    show (⟨Pf s + BitVec.ofNat 64 32, 1280⟩ : Region).Contains (Pf s + BitVec.ofNat 64 a) 8
     rw [show a = 32 + (a - 32) by omega_arith, ← Offset.add_ofNat_add_ofNat]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- A doubleword of the frame, after a write to another. -/
-theorem rd_sep (s : State) (m : Mem) (v : BitVec 64) {a b : Nat} (h : a + 8 ≤ b ∨ b + 8 ≤ a) (ha : a + 8 ≤ 2720)
-    (hb : b + 8 ≤ 2720) :
+theorem rd_sep (s : State) (m : Mem) (v : BitVec 64) {a b : Nat} (h : a + 8 ≤ b ∨ b + 8 ≤ a) (ha : a + 8 ≤ 1312)
+    (hb : b + 8 ≤ 1312) :
     (m.writeW (Pf s + BitVec.ofNat 64 b) v).readW (Pf s + BitVec.ofNat 64 a) 64 =
       m.readW (Pf s + BitVec.ofNat 64 a) 64 :=
   Mem.readW_writeW_sep (Offset.sep (Pf s) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
-theorem fa_in (s : State) {a : Nat} (ha : a + 8 ≤ 2720) : (FA s).Contains (Pf s + BitVec.ofNat 64 a) (64 / 8) :=
+theorem fa_in (s : State) {a : Nat} (ha : a + 8 ≤ 1312) : (FA s).Contains (Pf s + BitVec.ofNat 64 a) (64 / 8) :=
   Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 theorem frame_eMem (s : State) : Frame [FA s] s.mem (eMem s) := by
@@ -1166,20 +1171,20 @@ theorem argIn : argR s ∈ s.rd := by rw [h.pre.rd]; simp
 /-- Our stack argument `i`, from its address in our frame's terms. -/
 theorem sa_eq {i : Nat} : stackArg s i = s.mem.readW (sa s i) 64 := by
   show s.mem.readW (s.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 = _
-  show _ = s.mem.readW (Pf s + BitVec.ofNat 64 (2816 + 8 * i)) 64
-  rw [h.hB, Offset.add_ofNat_add_ofNat, show 2720 + (32 + 8 * (8 + i)) = 2816 + 8 * i by omega_arith]
+  show _ = s.mem.readW (Pf s + BitVec.ofNat 64 (1408 + 8 * i)) 64
+  rw [h.hB, Offset.add_ofNat_add_ofNat, show 1312 + (32 + 8 * (8 + i)) = 1408 + 8 * i by omega_arith]
 
 theorem sa_in {i : Nat} (hi : i < 4) (u : State) (hrd : u.rd = s.rd) :
     InRegions (u.rd ++ u.wr) (sa s i) 8 :=
   ⟨_, List.mem_append_left _ (by rw [hrd]; exact h.argIn), by
     rw [h.hargR]
-    show (⟨Pf s + BitVec.ofNat 64 2816, 32⟩ : Region).Contains (Pf s + BitVec.ofNat 64 (2816 + 8 * i)) 8
+    show (⟨Pf s + BitVec.ofNat 64 1408, 32⟩ : Region).Contains (Pf s + BitVec.ofNat 64 (1408 + 8 * i)) 8
     rw [← Offset.add_ofNat_add_ofNat]
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem sa_sub {i : Nat} (hi : i < 4) : (⟨sa s i, 8⟩ : Region).Sub (argR s) := by
   rw [h.hargR]
-  show Region.Sub ⟨Pf s + BitVec.ofNat 64 (2816 + 8 * i), 8⟩ ⟨Pf s + BitVec.ofNat 64 2816, 32⟩
+  show Region.Sub ⟨Pf s + BitVec.ofNat 64 (1408 + 8 * i), 8⟩ ⟨Pf s + BitVec.ofNat 64 1408, 32⟩
   exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 /-- Our stack arguments are apart from the frame. -/
@@ -1196,7 +1201,7 @@ theorem sa_dR {i : Nat} (hi : i < 4) : (⟨sa s i, 8⟩ : Region).Disjoint (dR s
   h.pre.da.symm.sub_left (h.sa_sub hi)
 
 theorem sa_sc {i : Nat} (hi : i < 4) : (⟨sa s i, 8⟩ : Region).Disjoint (scR s) := by
-  show (⟨Pf s + BitVec.ofNat 64 (2816 + 8 * i), 8⟩ : Region).Disjoint ⟨Pf s + BitVec.ofNat 64 160, 2560⟩
+  show (⟨Pf s + BitVec.ofNat 64 (1408 + 8 * i), 8⟩ : Region).Disjoint ⟨Pf s + BitVec.ofNat 64 160, 1152⟩
   exact Offset.disjoint (Pf s) (.inr (by omega_arith)) (by omega_arith) (by have := h.hBn; omega_arith)
 
 /-- `dst_len` is `len`. -/
@@ -1215,12 +1220,12 @@ structure Entered (s e : State) : Prop where
   rd : e.rd = s.rd
   wr : e.wr = FR s :: s.wr
 
-theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 2720 s) (Entered s) := by
-  have asp : (allocated 2720 s).sp = Pf s := rfl
-  have awr : (allocated 2720 s).wr = FR s :: s.wr := rfl
-  have amem : (allocated 2720 s).mem = s.mem.write (Pf s) 8 s.sp := rfl
-  have ag (r : Reg) : (allocated 2720 s).gpr r = s.gpr r := rfl
-  obtain fin : ∀ {a : Nat}, 32 ≤ a → a + 8 ≤ 2720 → InRegions (FR s :: s.wr) (Pf s + BitVec.ofNat 64 a) 8 :=
+theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 1312 s) (Entered s) := by
+  have asp : (allocated 1312 s).sp = Pf s := rfl
+  have awr : (allocated 1312 s).wr = FR s :: s.wr := rfl
+  have amem : (allocated 1312 s).mem = s.mem.write (Pf s) 8 s.sp := rfl
+  have ag (r : Reg) : (allocated 1312 s).gpr r = s.gpr r := rfl
+  obtain fin : ∀ {a : Nat}, 32 ≤ a → a + 8 ≤ 1312 → InRegions (FR s :: s.wr) (Pf s + BitVec.ofNat 64 a) 8 :=
     fun h₁ h₂ => fr_in s h₁ h₂ _
   unfold entry
   refine Gather.wp_addSp (by decide) fun u₁ v₁ => ?_
@@ -1242,7 +1247,7 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 27
   obtain w₅ : u₅.wr = FR s :: s.wr := by rw [v₅.wr, v₄.wr, w₃]
   obtain sa' : ∀ {i : Nat}, i < 4 → ∀ m : Mem, Frame [FA s] s.mem m → m.readW (sa s i) 64 = stackArg s i :=
     fun hi m hm => by rw [Frame.readW hm (Region.contains_self _ _) (h.sa_fa hi) (by decide), h.sa_eq]
-  obtain fA : ∀ m a v, a + 8 ≤ 2720 → Frame [FA s] s.mem m → Frame [FA s] s.mem (m.writeW (fa s a) (v : BitVec 64)) :=
+  obtain fA : ∀ m a v, a + 8 ≤ 1312 → Frame [FA s] s.mem m → Frame [FA s] s.mem (m.writeW (fa s a) (v : BitVec 64)) :=
     fun m a v ha hm => hm.writeW (List.mem_singleton_self _) _ (fa_in s ha)
   obtain f₃ : Frame [FA s] s.mem u₃.mem := by
     rw [m₃]; exact fA _ _ _ (by decide) ((Frame.refl _ _).write (List.mem_singleton_self _) _
@@ -1326,7 +1331,7 @@ theorem Entered.call {s c : State} (h : Lay s) (hc : Entered s c) :
   obtain hA : (⟨fa s 96, 32⟩ : Region).Disjoint (scR s) :=
     Offset.disjoint (Pf s) (.inl (by decide)) (by decide) (by omega_arith)
   refine ⟨?_, ?_, ?_⟩
-  · have f160 : (fa s 160).toNat + 2560 ≤ 2 ^ 64 := by
+  · have f160 : (fa s 160).toNat + 1152 ≤ 2 ^ 64 := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 160) (by decide),
         Nat.mod_eq_of_lt (by omega_arith)]
       omega_arith
@@ -1346,17 +1351,17 @@ theorem Entered.call {s c : State} (h : Lay s) (hc : Entered s c) :
     · exact ⟨_, List.mem_append_left _ (by rw [hc.rd, pre.rd]; simp), 0, (BitVec.add_zero _).symm, by omega_arith⟩
     · exact ⟨_, List.mem_append_left _ (by rw [hc.rd, pre.rd]; simp), 0, (BitVec.add_zero _).symm, by omega_arith⟩
     · refine ⟨FR s, List.mem_append_right _ (by rw [hc.wr]; exact List.mem_cons_self ..), 64, ?_,
-        by show 64 + 32 ≤ 2688; omega_arith⟩
+        by show 64 + 32 ≤ 1280; omega_arith⟩
       exact (Offset.add_ofNat_add_ofNat (Pf s) 32 64).symm
     · exact ⟨_, List.mem_append_right _ (by rw [hc.wr, pre.wr]; simp), 0, (BitVec.add_zero _).symm, by omega_arith⟩
     · refine ⟨FR s, List.mem_append_right _ (by rw [hc.wr]; exact List.mem_cons_self ..), 128, ?_,
-        by show 128 + 2560 ≤ 2688; omega_arith⟩
+        by show 128 + 1152 ≤ 1280; omega_arith⟩
       exact (Offset.add_ofNat_add_ofNat (Pf s) 32 128).symm
   · refine Covers.of_sub fun r hr => ?_
     simp only [wrC, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by rw [hc.wr, pre.wr]; simp, 0, (BitVec.add_zero _).symm, by omega_arith⟩
-    · refine ⟨FR s, by rw [hc.wr]; exact List.mem_cons_self .., 128, ?_, by show 128 + 2560 ≤ 2688; omega_arith⟩
+    · refine ⟨FR s, by rw [hc.wr]; exact List.mem_cons_self .., 128, ?_, by show 128 + 1152 ≤ 1280; omega_arith⟩
       exact (Offset.add_ofNat_add_ofNat (Pf s) 32 128).symm
 
 /-- The call's result, on the call's state. -/
@@ -1610,7 +1615,7 @@ private theorem toPost_lost {s u t : State} (hb : bytesAt t.mem (Dst s) (L s) = 
 /-- The return address back in the link register, and the frame freed. -/
 theorem ret_wp {s u : State} (h : Lay s) (hu : Done s u) :
     WP isa (.block Impl.AesGcm.PPC64LE.SealGather.ret) u fun y =>
-      abiPreserved s (freed 2720 y) ∧ toPost s (freed 2720 y) := by
+      abiPreserved s (freed 1312 y) ∧ toPost s (freed 1312 y) := by
   unfold Impl.AesGcm.PPC64LE.SealGather.ret
   refine Gather.wp_addSp (by decide) fun u₁ v₁ => ?_
   refine wp_ld (a := fa s 152) (by decide) (by decide) (by rw [v₁.gpr, hu.sp, BitVec.add_zero])
@@ -1623,7 +1628,7 @@ theorem ret_wp {s u : State} (h : Lay s) (hu : Done s u) :
     show u₃.gpr r = s.gpr r
     rw [v₃.gpr, v₂.other _ (hpres r hr).1, v₁.other _ (hpres r hr).2, hu.pres r hr]
   · -- The stack pointer.
-    show u₃.sp + BitVec.ofNat 64 2720 = s.sp
+    show u₃.sp + BitVec.ofNat 64 1312 = s.sp
     rw [v₃.sp, v₂.sp, v₁.sp, hu.sp]
     exact h.hB.symm
   · -- The link register.
@@ -1648,7 +1653,7 @@ theorem openTo_wp (hv : SplitOk) {s : State} (hs : ToPre s) :
   -- The `free` loses the frame's bytes, the stack the contract reserves, apart from the output.
   have hD : bytesAt m (Dst s) (L s) = bytesAt y.mem (Dst s) (L s) :=
     List.map_congr_left fun i hi => lost_byte fl (R := dR s) hs.bd.symm (List.mem_range.mp hi)
-  exact toPost_lost (u := freed 2720 y) (hD.trans (by rw [freed_mem_eq])) (by rw [freed_gpr_eq]) hp
+  exact toPost_lost (u := freed 1312 y) (hD.trans (by rw [freed_mem_eq])) (by rw [freed_gpr_eq]) hp
 
 end VG.Proof.AesGcm.PPC64LE.OpenTo
 
@@ -1714,11 +1719,11 @@ theorem openTo_ct (hv : SplitOk) (hct : ConstantTime isa splitPPC64LE.pre splitP
   have hP : Pf s₁ = Pf s₂ := by simp only [Pf, qsp]
   unfold openTo
   refine (RelCT.alloc (P := Eq2 s₁ s₂) (R := TT) (fun a b ⟨ha, hb⟩ => by subst a b; exact qsp)
-    ((?_ : RelCT isa (Eq2 (allocated 2720 s₁) (allocated 2720 s₂)) _ TT).mono
+    ((?_ : RelCT isa (Eq2 (allocated 1312 s₁) (allocated 1312 s₂)) _ TT).mono
       (fun a b ⟨s, t, ⟨hs, ht⟩, ha, hb⟩ => by subst s t; exact ⟨ha, hb⟩) fun _ _ h => h)).mono
       (fun _ _ h => h) fun _ _ _ => trivial
   -- The entry.
-  refine rel_seq (rel_taint [] (show s₁.sp - BitVec.ofNat 64 2720 = s₂.sp - BitVec.ofNat 64 2720 by rw [qsp])
+  refine rel_seq (rel_taint [] (show s₁.sp - BitVec.ofNat 64 1312 = s₂.sp - BitVec.ofNat 64 1312 by rw [qsp])
     (by simp) (by taint_decide)) (entered_wp h₁) (entered_wp h₂) fun e₁ e₂ he₁ he₂ => ?_
   -- The call, by its callee's contract.
   have hrd : rdC s₂ = rdC s₁ := by

@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Scrub
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86 -/
 
@@ -14,17 +12,15 @@ import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
 
 namespace VG.Artifacts.CmacTripleDes.X86
 
-open VG.Proof.CmacTripleDes.X86
-
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit
-    verified := Proof.CmacTripleDes.Stream.X86.init_framed },
+    code := Impl.CmacTripleDes.Stream.X86.Fn.init
+    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.init_scrubbed },
   Spec.Cmac.tdesAbsorbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb
-    verified := Proof.CmacTripleDes.Stream.X86.absorb_framed },
+    code := Impl.CmacTripleDes.Stream.X86.Fn.absorb
+    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.absorb_scrubbed },
   Spec.Cmac.tdesFinishApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish
-    verified := Proof.CmacTripleDes.Stream.X86.finish_framed }]
+    code := Impl.CmacTripleDes.Stream.X86.Fn.finish
+    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.finish_scrubbed }]
 
 end VG.Artifacts.CmacTripleDes.X86

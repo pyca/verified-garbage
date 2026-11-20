@@ -4,8 +4,13 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PkTr
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
+public import VerifiedGarbage.Proof.MlDsa.AArch64.PkTr
+import VerifiedGarbage.Proof.Sha3.AArch64.Scrub
+import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
@@ -28,8 +33,9 @@ as x86-64's `Proof/MlDsa/X86_64/Scrub.lean` proves them): each
 implementation, generic over the Keccak-f[1600] implementation it calls,
 returns with every register it may leave secret cleared and its whole stack
 zeroed (`ScrubAll.scrubAllOf`, with the registers `clear` and the `…Side`
-theorems below; `pk_tr`, whose registers differ with the permutation, by
-`ScrubAll.withScrubAll` still).
+theorems below). `pk_tr` as emitted is `Impl.MlDsa.AArch64.Fn.pkTr`, whose
+registers are its own with those its permutation states it writes; `Fn`
+below has its theorem, which its registration binds.
 -/
 
 @[expose] public section
@@ -384,16 +390,6 @@ the registration file names them. -/
 def sets : List (Params × String × String) :=
   [(mlDsa44, "mldsa44", "ML-DSA-44"), (mlDsa65, "mldsa65", "ML-DSA-65"), (mlDsa87, "mldsa87", "ML-DSA-87")]
 
-/-- The registers the tail of preparing a verifying key clears: those its code may write. -/
-def preparePublicClear : VG.Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18], []⟩
-
-/-- The registers the tail of preparing a signing key clears: those its code may write. -/
-def prepareSecretClear : VG.Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18], []⟩
-
 /-- Of key generation. -/
 theorem keyGenSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
@@ -495,19 +491,128 @@ theorem preparedVerifyMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v �
 /-- Of preparing a verifying key. -/
 theorem preparePublicSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     scrubSide (Impl.MlDsa.AArch64.PreparedKey.preparePublic p)
-      80 ((preparePublicKeySig p).retBits abi.ptrBits) preparePublicClear [] = true := by
+      80 ((preparePublicKeySig p).retBits abi.ptrBits) Impl.MlDsa.AArch64.Fn.preparePublicClear [] = true := by
   have e : ([mlDsa44, mlDsa65, mlDsa87].all fun p =>
       scrubSide (Impl.MlDsa.AArch64.PreparedKey.preparePublic p)
-      80 ((preparePublicKeySig p).retBits abi.ptrBits) preparePublicClear []) = true := by lit_decide
+      80 ((preparePublicKeySig p).retBits abi.ptrBits) Impl.MlDsa.AArch64.Fn.preparePublicClear []) = true := by lit_decide
   exact List.all_eq_true.mp e p (mem_of hp)
 
 /-- Of preparing a signing key. -/
 theorem prepareSecretSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     scrubSide (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p)
-      80 ((prepareSecretKeySig p).retBits abi.ptrBits) prepareSecretClear [] = true := by
+      80 ((prepareSecretKeySig p).retBits abi.ptrBits) Impl.MlDsa.AArch64.Fn.prepareSecretClear [] = true := by
   have e : ([mlDsa44, mlDsa65, mlDsa87].all fun p =>
       scrubSide (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p)
-      80 ((prepareSecretKeySig p).retBits abi.ptrBits) prepareSecretClear []) = true := by lit_decide
+      80 ((prepareSecretKeySig p).retBits abi.ptrBits) Impl.MlDsa.AArch64.Fn.prepareSecretClear []) = true := by lit_decide
   exact List.all_eq_true.mp e p (mem_of hp)
 
+/-! ## `pk_tr`, with any implementation of the permutation
+
+What the cleanup needs of `pk_tr`'s code is proved of its own instructions
+once, with a permutation that does nothing in its place
+(`Proof.Sha3.AArch64.Scrub.stub`), of the sponge's functions it calls in
+`Proof.Sha3.AArch64.Scrub`, and of each implementation of the permutation
+where it is defined (`Permutation.scrub`). -/
+
+open VG.Proof.Sha3.AArch64.Scrub (stub absorbWith_side padWith_side squeezeWith_side)
+
+private theorem pkTr_all {q : Instr → Bool} (c : Impl.Sha3.AArch64.Callee) (p : Params)
+    (h0 : sideAll q (Impl.MlDsa.AArch64.PkTr.pkTrWith stub p) = true)
+    (ha : sideAll q (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hp : sideAll q (Impl.Sha3.AArch64.Stream.padWith c) = true)
+    (hs : sideAll q (Impl.Sha3.AArch64.Stream.squeezeWith c) = true) :
+    sideAll q (Impl.MlDsa.AArch64.PkTr.pkTrWith c p) = true := by
+  simp only [Impl.MlDsa.AArch64.PkTr.pkTrWith, Impl.MlDsa.AArch64.KeyGen.shake256With,
+    Impl.MlKem.AArch64.hashWith, Impl.MlKem.AArch64.absorbsWith, Impl.MlKem.AArch64.squeezesWith,
+    sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, ha, hp, hs, and_self]
+
+/-- `pk_tr`'s own instructions write only the registers `Impl/` states
+(`Impl.MlDsa.AArch64.Fn.pkTrOwn`), for any parameter set. -/
+private theorem pkTr_own (p : Params) :
+    calleeSide (Impl.MlDsa.AArch64.PkTr.pkTrWith stub p) Impl.MlDsa.AArch64.Fn.pkTrOwn = true := by
+  kernel_rfl
+
+theorem pkTr_side (v : Proof.Sha3.AArch64.Permutation) (p : Params) :
+    scrubSide (Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee p) 16 0
+      (Impl.MlDsa.AArch64.Fn.pkTrOwn.union v.callee.clear) [] = true := by
+  refine scrubSide_union (by decide) ?_ (by decide)
+    (pkTr_all v.callee p (sideAll_union_left (pkTr_own p)) (absorbWith_side v (by decide))
+      (padWith_side v (by decide)) (squeezeWith_side v (by decide))) (by decide)
+  simp only [Impl.MlDsa.AArch64.PkTr.pkTrWith, Impl.MlDsa.AArch64.KeyGen.shake256With,
+    Impl.MlKem.AArch64.hashWith, Impl.MlKem.AArch64.absorbsWith, Impl.MlKem.AArch64.squeezesWith,
+    Code.aarch64Depth, v.absorb_depth, v.pad_depth, v.squeeze_depth]
+  decide
+
 end VG.Proof.MlDsa.AArch64.Scrub
+
+/-! ## The functions
+
+Of preparing a key, and of `vg_mldsa*_pk_tr` with the implementation `v` of
+the permutation: the code that is emitted (`Impl.MlDsa.AArch64.Fn`) meets the
+function's contract in constant time and returns without secret residue. -/
+
+namespace VG.Proof.MlDsa.AArch64.Fn
+
+open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.MlDsa
+
+theorem preparePublic {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.preparePublic p) (preparePublicKeyContract p abi 80) 0 :=
+  verifiedScrubbed (api := preparePublicKeyApi p "" "")
+    { code := Impl.MlDsa.AArch64.PreparedKey.preparePublic p,
+      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified p hp }
+    _ (Scrub.preparePublicOk hp 80) (Scrub.preparePublicSide hp)
+
+theorem preparePublic44 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.preparePublic mlDsa44) (preparePublicKeyContract mlDsa44 abi 80) 0 :=
+  preparePublic (.inl rfl)
+
+theorem preparePublic65 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.preparePublic mlDsa65) (preparePublicKeyContract mlDsa65 abi 80) 0 :=
+  preparePublic (.inr (.inl rfl))
+
+theorem preparePublic87 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.preparePublic mlDsa87) (preparePublicKeyContract mlDsa87 abi 80) 0 :=
+  preparePublic (.inr (.inr rfl))
+
+theorem prepareSecret {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.prepareSecret p) (prepareSecretKeyContract p abi 80) 0 :=
+  verifiedScrubbed (api := prepareSecretKeyApi p "" "")
+    { code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret p,
+      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified p hp }
+    _ (Scrub.prepareSecretOk hp 80) (Scrub.prepareSecretSide hp)
+
+theorem prepareSecret44 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.prepareSecret mlDsa44) (prepareSecretKeyContract mlDsa44 abi 80) 0 :=
+  prepareSecret (.inl rfl)
+
+theorem prepareSecret65 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.prepareSecret mlDsa65) (prepareSecretKeyContract mlDsa65 abi 80) 0 :=
+  prepareSecret (.inr (.inl rfl))
+
+theorem prepareSecret87 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.prepareSecret mlDsa87) (prepareSecretKeyContract mlDsa87 abi 80) 0 :=
+  prepareSecret (.inr (.inr rfl))
+
+theorem pkTr44 (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa44) (pkTrContract mlDsa44 abi 16) 0 :=
+  verifiedScrubbed (api := pkTr44Api)
+    { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa44,
+      verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) }
+    _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
+
+theorem pkTr65 (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa65) (pkTrContract mlDsa65 abi 16) 0 :=
+  verifiedScrubbed (api := pkTr65Api)
+    { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa65,
+      verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) }
+    _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
+
+theorem pkTr87 (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa87) (pkTrContract mlDsa87 abi 16) 0 :=
+  verifiedScrubbed (api := pkTr87Api)
+    { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa87,
+      verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }
+    _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
+
+end VG.Proof.MlDsa.AArch64.Fn

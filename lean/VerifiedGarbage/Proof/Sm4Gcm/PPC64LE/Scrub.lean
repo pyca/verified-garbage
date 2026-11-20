@@ -94,73 +94,73 @@ def allBut : Impl.Scrub.PPC64LE.Clear :=
 /-- `Spec.Sm4.Gcm.initApi`. -/
 def initReg : Registration Spec.Sm4.Gcm.initApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r5
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r5
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r6 Impl.Sm4Gcm.PPC64LE.init)
       verified := init_framed }
-    5888 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    3616 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v12, .v13, .v14, .v15]⟩
     (initOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.sealApi`. -/
 def sealReg : Registration Spec.Sm4.Gcm.sealApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 0
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 400 0
         (Impl.StackScratch.PPC64LE.withStackScratchArgs 3376 1 Impl.Sm4Gcm.PPC64LE.«seal»)
       verified := seal_framed }
-    6048 allBut (sealOut _) (by dsimp only; lit_decide)
+    3776 allBut (sealOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.openApi`. -/
 def openReg : Registration Spec.Sm4.Gcm.openApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 400 1
         (Impl.StackScratch.PPC64LE.withStackScratchArgs 3392 2 Impl.Sm4Gcm.PPC64LE.«open»)
       verified := open_framed }
-    6064 allBut (openOut _) (by dsimp only; lit_decide)
+    3792 allBut (openOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamInitApi`. -/
 def streamInitReg : Registration Spec.Sm4.Gcm.streamInitApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 Impl.AesGcm.PPC64LE.streamInit
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r7 Impl.AesGcm.PPC64LE.streamInit
       verified := Proof.AesGcm.PPC64LE.streamInit_framed }
-    2592 allBut (streamInitOut _) (by dsimp only; lit_decide)
+    320 allBut (streamInitOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamAadApi`. -/
 def streamAadReg : Registration Spec.Sm4.Gcm.streamAadApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 Impl.AesGcm.PPC64LE.streamAad
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8 Impl.AesGcm.PPC64LE.streamAad
       verified := Proof.AesGcm.PPC64LE.streamAad_framed }
-    2592 allBut (streamAadOut _) (by dsimp only; lit_decide)
+    320 allBut (streamAadOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamEncryptApi`. -/
 def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamEncrypt)
       verified := streamEncrypt_framed }
-    5888 allBut (streamEncryptOut _) (by dsimp only; lit_decide)
+    3616 allBut (streamEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamDecryptApi`. -/
 def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamDecrypt)
       verified := streamDecrypt_framed }
-    5888 allBut (streamDecryptOut _) (by dsimp only; lit_decide)
+    3616 allBut (streamDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamFinishApi`. -/
 def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r9 Impl.Sm4Gcm.PPC64LE.streamFinish)
       verified := streamFinish_framed }
-    5888 allBut (streamFinishOut _) (by dsimp only; lit_decide)
+    3616 allBut (streamFinishOut _) (by dsimp only; lit_decide)
 
 /-- `Spec.Sm4.Gcm.streamVerifyApi`. -/
 def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9
+      code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamVerify)
       verified := streamVerify_framed }
-    5888 allBut (streamVerifyOut _) (by dsimp only; lit_decide)
+    3616 allBut (streamVerifyOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Sm4Gcm.PPC64LE.Scrub

@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Spec.Camellia.Ctr
 public import VerifiedGarbage.Spec.Camellia.CtrFinal
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Camellia.AArch64.CtrFinal
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import VerifiedGarbage.Proof.AesEcb.Wipe
 import VerifiedGarbage.Proof.AesCbc.Wipe
 
@@ -22,7 +25,6 @@ itself.
 namespace VG.Proof.Camellia.AArch64.CtrScrub
 
 open VG.AArch64 VG.AArch64.ScrubAll
-open VG.Proof.AesEcb (agree_of bytesAt_congr)
 
 theorem ctrOk : ScrubAllOk (Spec.Camellia.ctrContract abi 3344) 3344 (Spec.Camellia.ctrSig.retBits abi.ptrBits) :=
   scrubAllOk_regs (sig := Spec.Camellia.ctrSig) (by decide) (W := 3344) (by decide) (Nat.le_refl _)
@@ -34,9 +36,9 @@ theorem ctrOk : ScrubAllOk (Spec.Camellia.ctrContract abi 3344) 3344 (Spec.Camel
       intro key hk
       have h' := h key hk
       dsimp only [ArgWord.ofRaw] at h' ⊢
-      have hd := agree_of hb.2.2
+      have hd := Proof.AesEcb.agree_of hb.2.2
       rw [AesCbc.Wipe.blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
-        bytesAt_congr (agree_of hb.2.1)]
+        Proof.AesEcb.bytesAt_congr (Proof.AesEcb.agree_of hb.2.1)]
       exact h'
 
 theorem ctrFinalOk : ScrubAllOk (Spec.Camellia.ctrFinalContract abi 3424) 3424
@@ -50,9 +52,33 @@ theorem ctrFinalOk : ScrubAllOk (Spec.Camellia.ctrFinalContract abi 3424) 3424
       intro key hk
       have h' := h key hk
       dsimp only [ArgWord.ofRaw, Spec.Ctr.CryptFinal] at h' ⊢
-      have hd := agree_of hb.2.2
-      rw [bytesAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
-        bytesAt_congr (agree_of hb.2.1)]
+      have hd := Proof.AesEcb.agree_of hb.2.2
+      rw [Proof.AesEcb.bytesAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) n; omega_using [hi, this]),
+        Proof.AesEcb.bytesAt_congr (Proof.AesEcb.agree_of hb.2.1)]
       exact h'
 
 end VG.Proof.Camellia.AArch64.CtrScrub
+
+/-! ## The functions
+
+The code that is emitted (`Impl.Camellia.AArch64.Fn`) meets each function's
+contract in constant time and returns without secret residue. -/
+
+namespace VG.Proof.Camellia.AArch64.Fn
+
+open VG.AArch64 VG.AArch64.ScrubAll
+
+theorem ctr : VerifiedScrubbed target Impl.Camellia.AArch64.Fn.ctr (Spec.Camellia.ctrContract abi 3344) 0 :=
+  verifiedScrubbed (api := Spec.Camellia.ctrApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 3344 .x5 Impl.Camellia.AArch64.ctr,
+      verified := ctr_framed }
+    _ CtrScrub.ctrOk (by dsimp only; lit_decide)
+
+theorem ctrFinal :
+    VerifiedScrubbed target Impl.Camellia.AArch64.Fn.ctrFinal (Spec.Camellia.ctrFinalContract abi 3424) 0 :=
+  verifiedScrubbed (api := Spec.Camellia.ctrFinalApi)
+    { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x5 10 Impl.Camellia.AArch64.ctrFinal,
+      verified := CtrFinal.ctrFinal_framed }
+    _ CtrScrub.ctrFinalOk (by dsimp only; lit_decide)
+
+end VG.Proof.Camellia.AArch64.Fn

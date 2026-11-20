@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -16,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        r#".base64 "i0QkBItMJAiLEMHKCIHi/wD/AIkRixDByhiB4gD/AP8zEYkRi1AEwcoIgeL/AP8AiVEEi1AEwcoYgeIA/wD/M1EEiVEEi1AIwcoIgeL/AP8AiVEIi1AIwcoYgeIA/wD/M1EIiVEIi1AMwcoIgeL/AP8AiVEMi1AMwcoYgeIA/wD/M1EMiVEMi1AEwcoPgeIBAAH+iVEQi1AEwcofgeL+Af4BM1EQiVEQixDByg+B4gD+AAAzURCJURCLUAjByg+B4gEAAf6JURSLUAjByh+B4v4B/gEzURSJURSLUATByg+B4gD+AAAzURSJURSLUAzByg+B4gEAAf6JURiLUAzByh+B4v4B/gEzURiJURiLUAjByg+B4gD+AAAzURiJURiLEMHKD4HiAQAB/olRHIsQwcofgeL+Af4BM1EciVEci1AMwcoPgeIA/gAAM1EciVEci1AIwcoGgeIDAAP8iVEgi1AEwcoWgeL8AwAAM1EgiVEgi1AEwcoGgeIA/AAAM1EgiVEgi1AIwcoWgeIAAPwDM1EgiVEgi1AMwcoGgeIDAAP8iVEki1AIwcoWgeL8AwAAM1EkiVEki1AIwcoGgeIA/AAAM1EkiVEki1AMwcoWgeIAAPwDM1EkiVEkixDBygaB4gMAA/yJUSiLUAzByhaB4vwDAAAzUSiJUSiLUAzBygaB4gD8AAAzUSiJUSiLEMHKFoHiAAD8AzNRKIlRKItQBMHKBoHiAwAD/IlRLIsQwcoWgeL8AwAAM1EsiVEsixDBygaB4gD8AAAzUSyJUSyLUATByhaB4gAA/AMzUSyJUSyLUAjByh2B4gf4APiJUTCLUAjByg2B4vgHAAAzUTCJUTCLUAzByh2B4gAABwAzUTCJUTCLUAzByg2B4gAA+AczUTCJUTCLUAzByh2B4gf4APiJUTSLUAzByg2B4vgHAAAzUTSJUTSLEMHKHYHiAAAHADNRNIlRNIsQwcoNgeIAAPgHM1E0iVE0ixDByh2B4gf4APiJUTiLEMHKDYHi+AcAADNROIlROItQBMHKHYHiAAAHADNROIlROItQBMHKDYHiAAD4BzNROIlROItQBMHKHYHiB/gA+IlRPItQBMHKDYHi+AcAADNRPIlRPItQCMHKHYHiAAAHADNRPIlRPItQCMHKDYHiAAD4BzNRPIlRPItQDMHKFIHiD/AA8IlRQItQDMHKBIHi8A/wDzNRQIlRQIsQwcoUgeIAAA8AM1FAiVFAixDByhSB4g/wAPCJUUSLEMHKBIHi8A/wDzNRRIlRRItQBMHKFIHiAAAPADNRRIlRRItQBMHKFIHiD/AA8IlRSItQBMHKBIHi8A/wDzNRSIlRSItQCMHKFIHiAAAPADNRSIlRSItQCMHKFIHiD/AA8IlRTItQCMHKBIHi8A/wDzNRTIlRTItQDMHKFIHiAAAPADNRTIlRTIsQwcoLgeIfAB/giVFQixDByhuB4uAf4B8zUVCJUVCLUAzByguB4gDgAAAzUVCJUVCLUATByguB4h8AH+CJUVSLUATByhuB4uAf4B8zUVSJUVSLEMHKC4HiAOAAADNRVIlRVItQCMHKC4HiHwAf4IlRWItQCMHKG4Hi4B/gHzNRWIlRWItQBMHKC4HiAOAAADNRWIlRWItQDMHKC4HiHwAf4IlRXItQDMHKG4Hi4B/gHzNRXIlRXItQCMHKC4HiAOAAADNRXIlRXItQBMHKAoHiPwA/wIlRYIsQwcoSgeLAPwAAM1FgiVFgixDBygKB4gDAAAAzUWCJUWCLUATByhKB4gAAwD8zUWCJUWCLUAjBygKB4j8AP8CJUWSLUATByhKB4sA/AAAzUWSJUWSLUATBygKB4gDAAAAzUWSJUWSLUAjByhKB4gAAwD8zUWSJUWTD"
+        r#".base64 "i0QkBItMJAiLEMHKCIHi/wD/AIkRixDByhiB4gD/AP8zEYkRi1AEwcoIgeL/AP8AiVEEi1AEwcoYgeIA/wD/M1EEiVEEi1AIwcoIgeL/AP8AiVEIi1AIwcoYgeIA/wD/M1EIiVEIi1AMwcoIgeL/AP8AiVEMi1AMwcoYgeIA/wD/M1EMiVEMi1AEwcoPgeIBAAH+iVEQi1AEwcofgeL+Af4BM1EQiVEQixDByg+B4gD+AAAzURCJURCLUAjByg+B4gEAAf6JURSLUAjByh+B4v4B/gEzURSJURSLUATByg+B4gD+AAAzURSJURSLUAzByg+B4gEAAf6JURiLUAzByh+B4v4B/gEzURiJURiLUAjByg+B4gD+AAAzURiJURiLEMHKD4HiAQAB/olRHIsQwcofgeL+Af4BM1EciVEci1AMwcoPgeIA/gAAM1EciVEci1AIwcoGgeIDAAP8iVEgi1AEwcoWgeL8AwAAM1EgiVEgi1AEwcoGgeIA/AAAM1EgiVEgi1AIwcoWgeIAAPwDM1EgiVEgi1AMwcoGgeIDAAP8iVEki1AIwcoWgeL8AwAAM1EkiVEki1AIwcoGgeIA/AAAM1EkiVEki1AMwcoWgeIAAPwDM1EkiVEkixDBygaB4gMAA/yJUSiLUAzByhaB4vwDAAAzUSiJUSiLUAzBygaB4gD8AAAzUSiJUSiLEMHKFoHiAAD8AzNRKIlRKItQBMHKBoHiAwAD/IlRLIsQwcoWgeL8AwAAM1EsiVEsixDBygaB4gD8AAAzUSyJUSyLUATByhaB4gAA/AMzUSyJUSyLUAjByh2B4gf4APiJUTCLUAjByg2B4vgHAAAzUTCJUTCLUAzByh2B4gAABwAzUTCJUTCLUAzByg2B4gAA+AczUTCJUTCLUAzByh2B4gf4APiJUTSLUAzByg2B4vgHAAAzUTSJUTSLEMHKHYHiAAAHADNRNIlRNIsQwcoNgeIAAPgHM1E0iVE0ixDByh2B4gf4APiJUTiLEMHKDYHi+AcAADNROIlROItQBMHKHYHiAAAHADNROIlROItQBMHKDYHiAAD4BzNROIlROItQBMHKHYHiB/gA+IlRPItQBMHKDYHi+AcAADNRPIlRPItQCMHKHYHiAAAHADNRPIlRPItQCMHKDYHiAAD4BzNRPIlRPItQDMHKFIHiD/AA8IlRQItQDMHKBIHi8A/wDzNRQIlRQIsQwcoUgeIAAA8AM1FAiVFAixDByhSB4g/wAPCJUUSLEMHKBIHi8A/wDzNRRIlRRItQBMHKFIHiAAAPADNRRIlRRItQBMHKFIHiD/AA8IlRSItQBMHKBIHi8A/wDzNRSIlRSItQCMHKFIHiAAAPADNRSIlRSItQCMHKFIHiD/AA8IlRTItQCMHKBIHi8A/wDzNRTIlRTItQDMHKFIHiAAAPADNRTIlRTIsQwcoLgeIfAB/giVFQixDByhuB4uAf4B8zUVCJUVCLUAzByguB4gDgAAAzUVCJUVCLUATByguB4h8AH+CJUVSLUATByhuB4uAf4B8zUVSJUVSLEMHKC4HiAOAAADNRVIlRVItQCMHKC4HiHwAf4IlRWItQCMHKG4Hi4B/gHzNRWIlRWItQBMHKC4HiAOAAADNRWIlRWItQDMHKC4HiHwAf4IlRXItQDMHKG4Hi4B/gHzNRXIlRXItQCMHKC4HiAOAAADNRXIlRXItQBMHKAoHiPwA/wIlRYIsQwcoSgeLAPwAAM1FgiVFgixDBygKB4gDAAAAzUWCJUWCLUATByhKB4gAAwD8zUWCJUWCLUAjBygKB4j8AP8CJUWSLUATByhKB4sA/AAAzUWSJUWSLUATBygKB4gDAAAAzUWSJUWSLUAjByhKB4gAAwD8zUWSJUWS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedul
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -106,7 +110,7 @@ jne 216b
 217:
 .base64 "iciD6AEl//8AAIPAAYnKg+oBgeL//wAAg8IB9+KD6AGJwoHi//8AAIPCAcHoECnCidDB6B8BwoHi//8AAInQg+gBJf//AACDwAGJ2oPqAYHi//8AAIPCAffig+gBicKB4v//AACDwgHB6BApwonQwegfAcKB4v//AACJ0YPtAQ=="
 jne 217b
-.base64 "iE9mwekIiE9ni0QkDIsYi3gIi2gMi3AEjWQkIMM="
+.base64 "iE9mwekIiE9ni0QkDIsYi3gIi2gMi3AEjWQkIGYP78CNZCTg8w9/BCTzD39EJBCNZCQguAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }
@@ -114,6 +118,8 @@ jne 217b
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -132,7 +138,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i150i358i66AAAAAi3Z4uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyNpCSYAAAAww=="
+.base64 "i150i358i66AAAAAi3Z4uQAAAACJTCQUiUwkGIlMJByJTCQgiUwkJIlMJCiJTCQsiUwkMIlMJDSJTCQ4iUwkPIlMJECJTCREiUwkSIlMJEyJTCRQiUwkVIlMJFiJTCRciUwkYIlMJGSJTCRoiUwkbIlMJHCJTCR0iUwkeIlMJHyNpCSYAAAAZg/vwLkAAAAAjaQkaP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAAiYwkkAAAAImMJJQAAACNpCSYAAAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
     )
 }

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesOfb.X86.Verified
-public import VerifiedGarbage.Proof.AesOfb.X86.Final
+public import VerifiedGarbage.Impl.AesOfb.X86.Final
+public import VerifiedGarbage.Proof.AesOfb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -12,19 +12,17 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesOfb.X86
 
-open VG.Proof.AesOfb.X86
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Ofb.aesApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesOfb.X86.crypt v.enc
-      verified := Proof.AesOfb.keyed (crypt_verified v)
-      spSafe := crypt_spSafe v },
+      code := Impl.AesOfb.X86.Fn.crypt v.enc
+      verified := .scrubbed (Proof.AesOfb.X86.Scrub.ofb_scrubbed v)
+      spSafe := Proof.AesOfb.X86.Scrub.ofb_fnSpSafe v },
     Spec.Ofb.aesFinalApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal v.enc v.suffix)
-      verified := Proof.AesOfb.final_keyed (cryptFinal_framed v)
-      spSafe := cryptFinal_framed_spSafe v }]
+      code := Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix
+      verified := .scrubbed (Proof.AesOfb.X86.Scrub.ofbFinal_scrubbed v)
+      spSafe := Proof.AesOfb.X86.Scrub.ofbFinal_fnSpSafe v }]
 
 end VG.Artifacts.AesOfb.X86

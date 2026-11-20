@@ -29,13 +29,19 @@ vg_sha224_init:
 	movw r12, #20388
 	movt r12, #48890
 	str r12, [r0, #28]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha224_finalize:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -129,7 +135,34 @@ vg_sha224_finalize:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #176
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha224_digest:
@@ -152,7 +185,7 @@ vg_sha224_digest:
 	movw r12, #196
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha224_init}
+	bl {vg_sha224_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -275,6 +308,35 @@ vg_sha224_digest:
 	str r2, [r12, #320]
 	str r2, [r12, #324]
 	add sp, sp, #328
+	sub sp, sp, #344
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+21:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #344
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha256_init:
@@ -302,15 +364,21 @@ vg_sha256_init:
 	movw r12, #52505
 	movt r12, #23520
 	str r12, [r0, #28]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha256_update:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #12]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
-	ldr lr, [sp, #628]
+	ldr lr, [sp, #180]
 	str lr, [r12, #4]
 	add lr, sp, #16
 	str lr, [r12, #8]
@@ -436,14 +504,41 @@ vg_sha256_update:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #176
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha256_finalize:
-	sub sp, sp, #624
+	sub sp, sp, #176
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #624]
+	ldr lr, [sp, #176]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
@@ -540,7 +635,34 @@ vg_sha256_finalize:
 	ldr r10, [r3, #136]
 	ldr r11, [r3, #140]
 	ldr lr, [r3, #144]
-	add sp, sp, #624
+	add sp, sp, #176
+	sub sp, sp, #176
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #5
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #176
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sha256_digest:
@@ -563,7 +685,7 @@ vg_sha256_digest:
 	movw r12, #196
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_sha256_init}
+	bl {vg_sha256_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -686,4 +808,33 @@ vg_sha256_digest:
 	str r2, [r12, #320]
 	str r2, [r12, #324]
 	add sp, sp, #328
+	sub sp, sp, #344
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+21:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 21b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #344
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

@@ -58,7 +58,7 @@ structure SC1 (s₀ s₁ : State) : Prop where
   r19 : s₁.gpr .r19 = s₀.gpr .r8
   r28 : s₁.gpr .r28 = s₀.gpr .r10
 
-theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) :
+theorem sc1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 288⟩] s₀.wr) :
     WP isa (.block cryptEntry) s₀ (SC1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r9) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   obtain e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
@@ -79,7 +79,7 @@ include h
 
 theorem scLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
   obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
-  have fw' : (s₀.gpr .r9).toNat + 2560 ≤ 2 ^ 64 := fw
+  have fw' : (s₀.gpr .r9).toNat + 288 ≤ 2 ^ 64 := fw
   exact Lay.of fc fs (by omega_using [fw']) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
@@ -90,7 +90,7 @@ theorem scX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) (s₀.gpr .r10) :
 theorem sc_W' : Covers [⟨s₀.gpr .r9, scrBytes⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
-theorem sc_W : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr := covers_prefix (sc_W' h) (by decide)
+theorem sc_W : Covers [⟨s₀.gpr .r9, 288⟩] s₀.wr := covers_prefix (sc_W' h) (by decide)
 
 theorem sc_X : Covers [xR (s₀.gpr .r10)] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)

@@ -8,6 +8,8 @@ pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -19,12 +21,12 @@ pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 /// * `rounds` must be 10, 12 or 14.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+        r".inst 0xd11083ff,0x910003f0,0xf94213f1,0xf9000211,0xf94217f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
 .inst 0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036
 .inst 0xf9006e64,0xf9007265,0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b
@@ -1516,7 +1518,21 @@ bl {vg_aes_ctr32_aes}
 2252:
 2123:
 27:
-.inst 0x912883ff,0xd65f03c0
+.inst 0x911083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd11083ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f
+.inst 0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f
+.inst 0x3d81053f,0x911083ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -1530,6 +1546,8 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -1541,12 +1559,12 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::F
 /// * `rounds` must be 10, 12 or 14.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 1056 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
+        r".inst 0xd11083ff,0x910003f0,0xf94213f1,0xf9000211,0xf94217f1,0xf9000611,0xf9421bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
 .inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91004274
 .inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007666,0xf9007a67,0x91000057,0x91000078
@@ -3182,7 +3200,21 @@ b 2378f
 2307:
 2131:
 27:
-.inst 0x912883ff,0xd65f03c0
+.inst 0x911083ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd11083ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f
+.inst 0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f
+.inst 0x3d81053f,0x911083ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -3195,6 +3227,8 @@ b 2378f
 pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
 
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3209,13 +3243,13 @@ pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu
 /// * `dst_len` must equal `len`.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 1072 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
-.inst 0xf94527f1,0xf9000e11,0xf9452bf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
+        r".inst 0xd110c3ff,0x910003f0,0xf9421bf1,0xf9000211,0xf9421ff1,0xf9000611,0xf94223f1,0xf9000a11
+.inst 0xf94227f1,0xf9000e11,0xf9422bf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
 .inst 0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036,0xf9006e64,0xf9007265
 .inst 0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b,0xf94003ea,0xf900a26a
@@ -4965,46 +4999,27 @@ b 2498f
 2337:
 2150:
 27:
-.inst 0x9128c3ff,0xd65f03c0
+.inst 0x9110c3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd110c3ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f
+.inst 0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f
+.inst 0x3d81053f,0x3d81093f,0x9110c3ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
-.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
-.inst 0x91001ad6,0x91080263
-bl {vg_aes_expand_key_scratch_aes}
-.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
-.inst 0x9103c2a3,0xd2800024,0x91080265
-bl {vg_aes_ctr32_aes}
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -5017,6 +5032,8 @@ pub const VG_AES_GCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5026,12 +5043,12 @@ pub const VG_AES_GCM_SEAL_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 784 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12843ff,0x910003f0,0xf9450bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
+        r".inst 0xd10c43ff,0x910003f0,0xf9418bf1,0xf9000211,0x910043f1,0xf9000611,0xf94007e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
 .inst 0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036,0xf9006e64,0xf9007265
 .inst 0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b,0xf94003ea,0xf9007e6a
@@ -5579,11 +5596,72 @@ bl {vg_aes_ctr32_aes}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x912843ff,0xd65f03c0
+.inst 0x910c43ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c43ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x910c43ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 1024 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r".inst 0xd11003ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
+.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
+.inst 0x91001ad6,0x91080263
+bl {vg_aes_expand_key_scratch_aes}
+.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
+.inst 0x9103c2a3,0xd2800024,0x91080265
+bl {vg_aes_ctr32_aes}
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x911003ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd11003ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x911003ff,0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
     )
 }
 
@@ -5596,6 +5674,8 @@ pub const VG_AES_GCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5605,12 +5685,12 @@ pub const VG_AES_GCM_OPEN_AES_FEATURES: verified_garbage_cpu::Features = verifie
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 800 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+        r".inst 0xd10c83ff,0x910003f0,0xf94193f1,0xf9000211,0xf94197f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
 .inst 0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036
 .inst 0xf9006e64,0xf9007265,0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b
@@ -6233,935 +6313,23 @@ b 2131f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x912883ff,0xd65f03c0
+.inst 0x910c83ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10c83ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x910c83ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_init_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
-.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
-.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
-cbz x9, 20f
-.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
-.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash_aes}
-.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-b 21f
-20:
-.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
-21:
-.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
-.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
-.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
-.inst 0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_aad_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
-.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
-.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 20f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 22f
-.inst 0x9100012a
-b 23f
-22:
-.inst 0x9100030a
-23:
-b 21f
-20:
-.inst 0x9100012a
-21:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 27f
-.inst 0xd2800003
-b 28f
-27:
-.inst 0xd2800023
-28:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_aes}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_aes}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_encrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x25, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-b 220f
-219:
-.inst 0xd280000a
-220:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
-cbz x24, 228f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 229f
-228:
-.inst 0xd2800004
-229:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32_aes}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-.inst 0x91000397,0x91000358
-cbz x26, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 252f
-.inst 0xd2800003
-b 253f
-252:
-.inst 0xd2800023
-253:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_aes}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_aes}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-b 244f
-243:
-244:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x26, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 228f
-.inst 0xd2800003
-b 229f
-228:
-.inst 0xd2800023
-229:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_aes}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_aes}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-b 220f
-219:
-220:
-.inst 0x91000397,0x91000358
-cbz x25, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-b 244f
-243:
-.inst 0xd280000a
-244:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_aes}
-cbz x24, 252f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 253f
-252:
-.inst 0xd2800004
-253:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32_aes}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_finish_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
-.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
-cbz x27, 20f
-.inst 0xd28001e9,0x8a090379
-b 21f
-20:
-.inst 0xd28001e9,0x8a090359
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32_aes}
-.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
-.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_verify_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
-.inst 0xd2800009,0xd280002a,0x9a8a2129
-cbz x9, 20f
-.inst 0xd344ff8d
-cbz x13, 22f
-.inst 0x3dc00180,0x3d800260
-b 23f
-22:
-.inst 0x9100026b,0x9100038d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-23:
-cbz x27, 27f
-.inst 0xd28001e9,0x8a090379
-b 28f
-27:
-.inst 0xd28001e9,0x8a090359
-28:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-cbz x25, 222f
-.inst 0xd2800023
-b 223f
-222:
-.inst 0xd2800003
-223:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash_aes}
-.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32_aes}
-.inst 0xd344ff89
-cbz x9, 224f
-.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-b 225f
-224:
-.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
-cbz x13, 226f
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-b 227f
-226:
-227:
-.inst 0x9104026b,0x9101c26c,0x9100038d
-cbz x13, 229f
-231:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 231b
-b 230f
-229:
-230:
-.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-225:
-.inst 0xd2800020,0xcb0a0000
-b 21f
-20:
-.inst 0xd2800000
-21:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
-        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_seal_gather_aes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
-cbz x7, 20f
-22:
-.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
-cbz x14, 23f
-25:
-.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
-cbnz x14, 25b
-b 24f
-23:
-24:
-.inst 0xd28001ef,0x8a0f01ad
-cbz x13, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
-.inst 0xd10004e7
-cbnz x7, 22b
-b 21f
-20:
-21:
-.inst 0xf9400be6,0xf9400fe7
-bl {vg_aes_gcm_seal_aes}
-.inst 0xf94007fe,0x910043ff,0xd65f03c0
-.p2align 6",
-        vg_aes_gcm_seal_aes = sym super::gcm::vg_aes_gcm_seal_aes,
     )
 }
 
@@ -7174,6 +6342,8 @@ pub const VG_AES_GCM_OPEN_TO_AES_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -7185,13 +6355,13 @@ pub const VG_AES_GCM_OPEN_TO_AES_FEATURES: verified_garbage_cpu::Features = veri
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the 816 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
-.inst 0xf94527f1,0xf9000e11,0x9100c3f1,0xf9001211,0xf94013e9,0xf9004534,0xf9004935,0xf9004d36
+        r".inst 0xd10cc3ff,0x910003f0,0xf9419bf1,0xf9000211,0xf9419ff1,0xf9000611,0xf941a3f1,0xf9000a11
+.inst 0xf941a7f1,0xf9000e11,0x9100c3f1,0xf9001211,0xf94013e9,0xf9004534,0xf9004935,0xf9004d36
 .inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
 .inst 0x91000133,0x91004274,0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007666,0xf9007a67
 .inst 0x91000057,0x91000078,0x9100007a,0xd280001b,0xf94003ea,0xf900a26a,0xf9400fea,0xf9007e6a
@@ -7899,7 +7069,19 @@ b 2232f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x9128c3ff,0xd65f03c0
+.inst 0x910cc3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10cc3ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x3d80c93f,0x910cc3ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -7908,10 +7090,1047 @@ b 2232f
     )
 }
 
+/// The CPU features `vg_aes_gcm_stream_init_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
+.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
+.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
+cbz x9, 20f
+.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
+.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
+bl {vg_ghash_aes}
+.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91000281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+b 21f
+20:
+.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
+21:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
+.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
+.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
+.inst 0xf9404273,0x910c03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_aad_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_AAD_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
+.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
+.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 20f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 22f
+.inst 0x9100012a
+b 23f
+22:
+.inst 0x9100030a
+23:
+b 21f
+20:
+.inst 0x9100012a
+21:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 27f
+.inst 0xd2800003
+b 28f
+27:
+.inst 0xd2800023
+28:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_aes}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_aes}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_encrypt_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x25, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+b 220f
+219:
+.inst 0xd280000a
+220:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32_aes}
+cbz x24, 228f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 229f
+228:
+.inst 0xd2800004
+229:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32_aes}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+.inst 0x91000397,0x91000358
+cbz x26, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 252f
+.inst 0xd2800003
+b 253f
+252:
+.inst 0xd2800023
+253:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_aes}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_aes}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+b 244f
+243:
+244:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_decrypt_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x26, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 228f
+.inst 0xd2800003
+b 229f
+228:
+.inst 0xd2800023
+229:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_aes}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_aes}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+b 220f
+219:
+220:
+.inst 0x91000397,0x91000358
+cbz x25, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+b 244f
+243:
+.inst 0xd280000a
+244:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32_aes}
+cbz x24, 252f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 253f
+252:
+.inst 0xd2800004
+253:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32_aes}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_finish_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
+.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
+cbz x27, 20f
+.inst 0xd28001e9,0x8a090379
+b 21f
+20:
+.inst 0xd28001e9,0x8a090359
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32_aes}
+.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
+.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd10c03ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_verify_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 768 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd10c03ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
+.inst 0xd2800009,0xd280002a,0x9a8a2129
+cbz x9, 20f
+.inst 0xd344ff8d
+cbz x13, 22f
+.inst 0x3dc00180,0x3d800260
+b 23f
+22:
+.inst 0x9100026b,0x9100038d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+23:
+cbz x27, 27f
+.inst 0xd28001e9,0x8a090379
+b 28f
+27:
+.inst 0xd28001e9,0x8a090359
+28:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+cbz x25, 222f
+.inst 0xd2800023
+b 223f
+222:
+.inst 0xd2800003
+223:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash_aes}
+.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32_aes}
+.inst 0xd344ff89
+cbz x9, 224f
+.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+b 225f
+224:
+.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
+cbz x13, 226f
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+b 227f
+226:
+227:
+.inst 0x9104026b,0x9101c26c,0x9100038d
+cbz x13, 229f
+231:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 231b
+b 230f
+229:
+230:
+.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+225:
+.inst 0xd2800020,0xcb0a0000
+b 21f
+20:
+.inst 0xd2800000
+21:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10c03ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x910c03ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_aes` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
+cbz x7, 20f
+22:
+.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
+cbz x14, 23f
+25:
+.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
+cbnz x14, 25b
+b 24f
+23:
+24:
+.inst 0xd28001ef,0x8a0f01ad
+cbz x13, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+27:
+.inst 0xd10004e7
+cbnz x7, 22b
+b 21f
+20:
+21:
+.inst 0xf9400be6,0xf9400fe7
+bl {vg_aes_gcm_seal_aes}
+.inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f
+.inst 0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f
+.inst 0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f
+.inst 0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f
+.inst 0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f
+.inst 0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f
+.inst 0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f
+.inst 0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f
+.inst 0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f
+.inst 0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f
+.inst 0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f
+.inst 0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f
+.inst 0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f
+.inst 0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f
+.inst 0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_aes_gcm_seal_aes = sym super::gcm::vg_aes_gcm_seal_aes,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_seal_with_powers_aes` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7924,12 +8143,12 @@ pub const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 800 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0x910083f1,0xf9000a11
+        r".inst 0xd10c83ff,0x910003f0,0xf94193f1,0xf9000211,0xf94197f1,0xf9000611,0x910083f1,0xf9000a11
 .inst 0xf9400be9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a
 .inst 0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036
 .inst 0xf9006e64,0xf9007265,0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b
@@ -8483,7 +8702,19 @@ bl {vg_aes_ctr32_aes}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x912883ff,0xd65f03c0
+.inst 0x910c83ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10c83ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x910c83ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -8497,6 +8728,8 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -8508,12 +8741,12 @@ pub const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 800 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd12883ff,0x910003f0,0xf94513f1,0xf9000211,0xf94517f1,0xf9000611,0xf9451bf1,0xf9000a11
+        r".inst 0xd10c83ff,0x910003f0,0xf94193f1,0xf9000211,0xf94197f1,0xf9000611,0xf9419bf1,0xf9000a11
 .inst 0x910083f1,0xf9000e11,0xf9400fe9,0xf9004534,0xf9004935,0xf9004d36,0xf9005137,0xf9005538
 .inst 0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133,0x91000133,0x91004274
 .inst 0x91000015,0x91000036,0xf9006e64,0xf9007265,0xf9007666,0xf9007a67,0x91000057,0x91000078
@@ -9142,7 +9375,19 @@ b 2131f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x912883ff,0xd65f03c0
+.inst 0x910c83ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10c83ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x910c83ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -9155,6 +9400,8 @@ b 2131f
 pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9169,13 +9416,13 @@ pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES: verified_garbage_cpu::Fea
 /// * `dst_len` must equal `len`.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 816 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd128c3ff,0x910003f0,0xf9451bf1,0xf9000211,0xf9451ff1,0xf9000611,0xf94523f1,0xf9000a11
-.inst 0xf94527f1,0xf9000e11,0xf9452bf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
+        r".inst 0xd10cc3ff,0x910003f0,0xf9419bf1,0xf9000211,0xf9419ff1,0xf9000611,0xf941a3f1,0xf9000a11
+.inst 0xf941a7f1,0xf9000e11,0xf941abf1,0xf9001211,0x9100c3f1,0xf9001611,0xf94017e9,0xf9004534
 .inst 0xf9004935,0xf9004d36,0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c
 .inst 0xf900693e,0xf9004133,0x91000133,0x91004274,0x91000015,0x91000036,0xf9006e64,0xf9007265
 .inst 0xf9007666,0xf9007a67,0x91000057,0x91000078,0x9100007a,0xd280001b,0xf94003ea,0xf900a26a
@@ -9889,7 +10136,19 @@ b 2234f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273
 27:
-.inst 0x9128c3ff,0xd65f03c0
+.inst 0x910cc3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007
+.inst 0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f
+.inst 0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405
+.inst 0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415
+.inst 0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d
+.inst 0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd10cc3ff,0x6f00e41f,0x910003e9,0x3d80013f
+.inst 0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f
+.inst 0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f
+.inst 0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f
+.inst 0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f
+.inst 0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f
+.inst 0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f
+.inst 0x3d80c53f,0x3d80c93f,0x910cc3ff,0xd65f03c0
 .p2align 6",
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
@@ -9899,40 +10158,13 @@ b 2234f
     )
 }
 
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init_neon(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
-.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
-.inst 0x91001ad6,0x91080263
-bl {vg_aes_expand_key_scratch}
-.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
-.inst 0x9103c2a3,0xd2800024,0x91080265
-bl {vg_aes_ctr32_neon}
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10297,9 +10529,92 @@ bl {vg_ghash_neon}
 bl {vg_aes_ctr32_neon}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12843ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x3d82813f,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_neon(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
+.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
+.inst 0x91001ad6,0x91080263
+bl {vg_aes_expand_key_scratch}
+.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
+.inst 0x9103c2a3,0xd2800024,0x91080265
+bl {vg_aes_ctr32_neon}
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -10309,6 +10624,8 @@ bl {vg_aes_ctr32_neon}
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10697,906 +11014,36 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12883ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_neon(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
-.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
-.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
-cbz x9, 20f
-.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
-.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash_neon}
-.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-b 21f
-20:
-.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
-21:
-.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
-.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
-.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
-.inst 0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-    )
-}
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_neon(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
-.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
-.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 20f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 22f
-.inst 0x9100012a
-b 23f
-22:
-.inst 0x9100030a
-23:
-b 21f
-20:
-.inst 0x9100012a
-21:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 27f
-.inst 0xd2800003
-b 28f
-27:
-.inst 0xd2800023
-28:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_neon}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_neon}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-    )
-}
-
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x25, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-b 220f
-219:
-.inst 0xd280000a
-220:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_neon}
-cbz x24, 228f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 229f
-228:
-.inst 0xd2800004
-229:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32_neon}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-.inst 0x91000397,0x91000358
-cbz x26, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 252f
-.inst 0xd2800003
-b 253f
-252:
-.inst 0xd2800023
-253:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_neon}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_neon}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-b 244f
-243:
-244:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x26, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 228f
-.inst 0xd2800003
-b 229f
-228:
-.inst 0xd2800023
-229:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash_neon}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash_neon}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-b 220f
-219:
-220:
-.inst 0x91000397,0x91000358
-cbz x25, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-b 244f
-243:
-.inst 0xd280000a
-244:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32_neon}
-cbz x24, 252f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 253f
-252:
-.inst 0xd2800004
-253:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32_neon}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
-.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
-cbz x27, 20f
-.inst 0xd28001e9,0x8a090379
-b 21f
-20:
-.inst 0xd28001e9,0x8a090359
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32_neon}
-.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
-.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
-.inst 0xd2800009,0xd280002a,0x9a8a2129
-cbz x9, 20f
-.inst 0xd344ff8d
-cbz x13, 22f
-.inst 0x3dc00180,0x3d800260
-b 23f
-22:
-.inst 0x9100026b,0x9100038d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-23:
-cbz x27, 27f
-.inst 0xd28001e9,0x8a090379
-b 28f
-27:
-.inst 0xd28001e9,0x8a090359
-28:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-cbz x25, 222f
-.inst 0xd2800023
-b 223f
-222:
-.inst 0xd2800003
-223:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash_neon}
-.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32_neon}
-.inst 0xd344ff89
-cbz x9, 224f
-.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-b 225f
-224:
-.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
-cbz x13, 226f
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-b 227f
-226:
-227:
-.inst 0x9104026b,0x9101c26c,0x9100038d
-cbz x13, 229f
-231:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 231b
-b 230f
-229:
-230:
-.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-225:
-.inst 0xd2800020,0xcb0a0000
-b 21f
-20:
-.inst 0xd2800000
-21:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
-        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
-    )
-}
-
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_neon(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
-cbz x7, 20f
-22:
-.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
-cbz x14, 23f
-25:
-.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
-cbnz x14, 25b
-b 24f
-23:
-24:
-.inst 0xd28001ef,0x8a0f01ad
-cbz x13, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
-.inst 0xd10004e7
-cbnz x7, 22b
-b 21f
-20:
-21:
-.inst 0xf9400be6,0xf9400fe7
-bl {vg_aes_gcm_seal_neon}
-.inst 0xf94007fe,0x910043ff,0xd65f03c0
-.p2align 6",
-        vg_aes_gcm_seal_neon = sym super::gcm::vg_aes_gcm_seal_neon,
     )
 }
 
@@ -11605,6 +11052,8 @@ bl {vg_aes_gcm_seal_neon}
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -12044,7 +11493,33 @@ b 2139f
 2139:
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd128c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x3d82893f,0x9128c3ff,0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
@@ -12052,7 +11527,1100 @@ b 2139f
     )
 }
 
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_neon(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
+.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
+.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
+cbz x9, 20f
+.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
+.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
+bl {vg_ghash_neon}
+.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91000281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+b 21f
+20:
+.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
+21:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
+.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
+.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
+.inst 0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f
+.inst 0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f
+.inst 0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f
+.inst 0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f
+.inst 0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f
+.inst 0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f
+.inst 0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f
+.inst 0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f
+.inst 0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f
+.inst 0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f
+.inst 0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f
+.inst 0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f
+.inst 0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f
+.inst 0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f
+.inst 0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+    )
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_neon(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
+.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
+.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 20f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 22f
+.inst 0x9100012a
+b 23f
+22:
+.inst 0x9100030a
+23:
+b 21f
+20:
+.inst 0x9100012a
+21:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 27f
+.inst 0xd2800003
+b 28f
+27:
+.inst 0xd2800023
+28:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_neon}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_neon}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+    )
+}
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x25, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+b 220f
+219:
+.inst 0xd280000a
+220:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32_neon}
+cbz x24, 228f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 229f
+228:
+.inst 0xd2800004
+229:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32_neon}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+.inst 0x91000397,0x91000358
+cbz x26, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 252f
+.inst 0xd2800003
+b 253f
+252:
+.inst 0xd2800023
+253:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_neon}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_neon}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+b 244f
+243:
+244:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x26, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 228f
+.inst 0xd2800003
+b 229f
+228:
+.inst 0xd2800023
+229:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash_neon}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash_neon}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+b 220f
+219:
+220:
+.inst 0x91000397,0x91000358
+cbz x25, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+b 244f
+243:
+.inst 0xd280000a
+244:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32_neon}
+cbz x24, 252f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 253f
+252:
+.inst 0xd2800004
+253:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32_neon}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
+.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
+cbz x27, 20f
+.inst 0xd28001e9,0x8a090379
+b 21f
+20:
+.inst 0xd28001e9,0x8a090359
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32_neon}
+.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
+.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_neon(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
+.inst 0xd2800009,0xd280002a,0x9a8a2129
+cbz x9, 20f
+.inst 0xd344ff8d
+cbz x13, 22f
+.inst 0x3dc00180,0x3d800260
+b 23f
+22:
+.inst 0x9100026b,0x9100038d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+23:
+cbz x27, 27f
+.inst 0xd28001e9,0x8a090379
+b 28f
+27:
+.inst 0xd28001e9,0x8a090359
+28:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+cbz x25, 222f
+.inst 0xd2800023
+b 223f
+222:
+.inst 0xd2800003
+223:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash_neon}
+.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32_neon}
+.inst 0xd344ff89
+cbz x9, 224f
+.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+b 225f
+224:
+.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
+cbz x13, 226f
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+b 227f
+226:
+227:
+.inst 0x9104026b,0x9101c26c,0x9100038d
+cbz x13, 229f
+231:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 231b
+b 230f
+229:
+230:
+.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+225:
+.inst 0xd2800020,0xcb0a0000
+b 21f
+20:
+.inst 0xd2800000
+21:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_neon(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
+cbz x7, 20f
+22:
+.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
+cbz x14, 23f
+25:
+.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
+cbnz x14, 25b
+b 24f
+23:
+24:
+.inst 0xd28001ef,0x8a0f01ad
+cbz x13, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+27:
+.inst 0xd10004e7
+cbnz x7, 22b
+b 21f
+20:
+21:
+.inst 0xf9400be6,0xf9400fe7
+bl {vg_aes_gcm_seal_neon}
+.inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f
+.inst 0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f
+.inst 0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f
+.inst 0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f
+.inst 0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f
+.inst 0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f
+.inst 0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f
+.inst 0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f
+.inst 0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f
+.inst 0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f
+.inst 0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f
+.inst 0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f
+.inst 0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f
+.inst 0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f
+.inst 0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_aes_gcm_seal_neon = sym super::gcm::vg_aes_gcm_seal_neon,
+    )
+}
+
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -12419,6 +12987,32 @@ bl {vg_ghash_neon}
 bl {vg_aes_ctr32_neon}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12843ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x3d82813f,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
@@ -12427,6 +13021,8 @@ bl {vg_aes_ctr32_neon}
 }
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -12817,7 +13413,33 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12883ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
@@ -12825,6 +13447,8 @@ b 21f
 }
 
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -13266,40 +13890,37 @@ b 2139f
 2139:
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd128c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x3d82893f,0x9128c3ff,0xd65f03c0
 .p2align 6",
         vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
         vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
-    )
-}
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
-.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
-.inst 0x91001ad6,0x91080263
-bl {vg_aes_expand_key_scratch}
-.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
-.inst 0x9103c2a3,0xd2800024,0x91080265
-bl {vg_aes_ctr32}
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -13308,6 +13929,8 @@ bl {vg_aes_ctr32}
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -13672,9 +14295,92 @@ bl {vg_ghash}
 bl {vg_aes_ctr32}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12843ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x3d82813f,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e3,0xf9004474,0xf9004875,0xf9004c76,0xf9005077,0xf9005478,0xf9005879
+.inst 0xf9005c7a,0xf900607b,0xf900647c,0xf900687e,0xf9004073,0x91000073,0x91000055,0xd342fc36
+.inst 0x91001ad6,0x91080263
+bl {vg_aes_expand_key_scratch}
+.inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x910002c1,0x91018262
+.inst 0x9103c2a3,0xd2800024,0x91080265
+bl {vg_aes_ctr32}
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -13684,6 +14390,8 @@ bl {vg_aes_ctr32}
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -14072,906 +14780,36 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12883ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
-///
-/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
-.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
-.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
-cbz x9, 20f
-.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
-.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
-.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
-b 21f
-20:
-.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
-21:
-.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
-.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
-.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
-.inst 0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
-}
-
-/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
-///
-/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
-.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
-.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 20f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 22f
-.inst 0x9100012a
-b 23f
-22:
-.inst 0x9100030a
-23:
-b 21f
-20:
-.inst 0x9100012a
-21:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 27f
-.inst 0xd2800003
-b 28f
-27:
-.inst 0xd2800023
-28:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
-}
-
-/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x25, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-b 220f
-219:
-.inst 0xd280000a
-220:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32}
-cbz x24, 228f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 229f
-228:
-.inst 0xd2800004
-229:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-.inst 0x91000397,0x91000358
-cbz x26, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 252f
-.inst 0xd2800003
-b 253f
-252:
-.inst 0xd2800023
-253:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-b 244f
-243:
-244:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
-///
-/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
-///
-/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
-cbz x26, 20f
-cbz x27, 22f
-.inst 0xd2800019
-b 23f
-22:
-23:
-b 21f
-20:
-.inst 0xd2800019
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 24f
-.inst 0xd342fdae
-cbz x14, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-216:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 216b
-27:
-b 25f
-24:
-25:
-cbz x25, 217f
-.inst 0xd2800023
-b 218f
-217:
-.inst 0xd2800003
-218:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
-cbz x26, 219f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 221f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 223f
-.inst 0x9100012a
-b 224f
-223:
-.inst 0x9100030a
-224:
-b 222f
-221:
-.inst 0x9100012a
-222:
-.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
-cbz x13, 225f
-227:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 227b
-b 226f
-225:
-226:
-.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
-cbz x9, 228f
-.inst 0xd2800003
-b 229f
-228:
-.inst 0xd2800023
-229:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
-.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
-.inst 0x9100828b,0x910002ec,0x9100030d
-cbz x13, 230f
-.inst 0xd342fdae
-cbz x14, 232f
-.inst 0xd343fdae
-cbz x14, 234f
-236:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 236b
-b 235f
-234:
-235:
-.inst 0xd342fdae
-cbz x14, 237f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 238f
-237:
-238:
-cbz x13, 239f
-241:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 241b
-b 240f
-239:
-240:
-b 233f
-232:
-242:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 242b
-233:
-b 231f
-230:
-231:
-b 220f
-219:
-220:
-.inst 0x91000397,0x91000358
-cbz x25, 243f
-.inst 0xd2800209,0xcb190129,0xd344ff0a
-cbnz x10, 245f
-.inst 0xcb18012b,0xd37ffd6b
-cbz x11, 247f
-.inst 0x9100012a
-b 248f
-247:
-.inst 0x9100030a
-248:
-b 246f
-245:
-.inst 0x9100012a
-246:
-b 244f
-243:
-.inst 0xd280000a
-244:
-.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
-cbz x13, 249f
-251:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 251b
-b 250f
-249:
-250:
-.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
-.inst 0xd37cec89,0x8b0902f7,0xcb090318
-bl {vg_aes_ctr32}
-cbz x24, 252f
-.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
-b 253f
-252:
-.inst 0xd2800004
-253:
-.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
-bl {vg_aes_ctr32}
-.inst 0x9101028b,0x910002ec,0x9100030d
-cbz x13, 254f
-.inst 0xd342fdae
-cbz x14, 256f
-.inst 0xd343fdae
-cbz x14, 258f
-260:
-.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 260b
-b 259f
-258:
-259:
-.inst 0xd342fdae
-cbz x14, 261f
-.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
-b 262f
-261:
-262:
-cbz x13, 263f
-265:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 265b
-b 264f
-263:
-264:
-b 257f
-256:
-266:
-.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 266b
-257:
-b 255f
-254:
-255:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
-///
-/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
-.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
-cbz x27, 20f
-.inst 0xd28001e9,0x8a090379
-b 21f
-20:
-.inst 0xd28001e9,0x8a090359
-21:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 22f
-.inst 0xd342fdae
-cbz x14, 24f
-.inst 0xd343fdae
-cbz x14, 26f
-28:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 28b
-b 27f
-26:
-27:
-.inst 0xd342fdae
-cbz x14, 29f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 210f
-29:
-210:
-cbz x13, 211f
-213:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 213b
-b 212f
-211:
-212:
-b 25f
-24:
-214:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 214b
-25:
-b 23f
-22:
-23:
-cbz x25, 215f
-.inst 0xd2800023
-b 216f
-215:
-.inst 0xd2800003
-216:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32}
-.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
-.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
-///
-/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
-.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
-.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
-.inst 0xd2800009,0xd280002a,0x9a8a2129
-cbz x9, 20f
-.inst 0xd344ff8d
-cbz x13, 22f
-.inst 0x3dc00180,0x3d800260
-b 23f
-22:
-.inst 0x9100026b,0x9100038d
-cbz x13, 24f
-26:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 26b
-b 25f
-24:
-25:
-23:
-cbz x27, 27f
-.inst 0xd28001e9,0x8a090379
-b 28f
-27:
-.inst 0xd28001e9,0x8a090359
-28:
-.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
-cbz x13, 29f
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xd343fdae
-cbz x14, 213f
-215:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 215b
-b 214f
-213:
-214:
-.inst 0xd342fdae
-cbz x14, 216f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 217f
-216:
-217:
-cbz x13, 218f
-220:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 220b
-b 219f
-218:
-219:
-b 212f
-211:
-221:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 221b
-212:
-b 210f
-29:
-210:
-cbz x25, 222f
-.inst 0xd2800023
-b 223f
-222:
-.inst 0xd2800003
-223:
-.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
-.inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
-.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
-.inst 0xd2800024,0x91080265
-bl {vg_aes_ctr32}
-.inst 0xd344ff89
-cbz x9, 224f
-.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-b 225f
-224:
-.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
-cbz x13, 226f
-228:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 228b
-b 227f
-226:
-227:
-.inst 0x9104026b,0x9101c26c,0x9100038d
-cbz x13, 229f
-231:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 231b
-b 230f
-229:
-230:
-.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
-.inst 0xd100056c,0xab0c0129,0xba0b016a
-225:
-.inst 0xd2800020,0xcb0a0000
-b 21f
-20:
-.inst 0xd2800000
-21:
-.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
-.p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
-///
-/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
-///
-/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 256 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
-cbz x7, 20f
-22:
-.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
-cbz x14, 23f
-25:
-.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
-cbnz x14, 25b
-b 24f
-23:
-24:
-.inst 0xd28001ef,0x8a0f01ad
-cbz x13, 26f
-.inst 0xd343fdae
-cbz x14, 28f
-210:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 210b
-b 29f
-28:
-29:
-.inst 0xd342fdae
-cbz x14, 211f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 212f
-211:
-212:
-cbz x13, 213f
-215:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 215b
-b 214f
-213:
-214:
-b 27f
-26:
-27:
-.inst 0xd10004e7
-cbnz x7, 22b
-b 21f
-20:
-21:
-.inst 0xf9400be6,0xf9400fe7
-bl {vg_aes_gcm_seal}
-.inst 0xf94007fe,0x910043ff,0xd65f03c0
-.p2align 6",
-        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }
 
@@ -14980,6 +14818,8 @@ bl {vg_aes_gcm_seal}
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -15419,7 +15259,33 @@ b 2139f
 2139:
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd128c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x3d82893f,0x9128c3ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -15427,7 +15293,1100 @@ b 2139f
     )
 }
 
+/// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
+///
+/// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e4,0xf9004494,0xf9004895,0xf9004c96,0xf9005097,0xf9005498,0xf9005899
+.inst 0xf9005c9a,0xf900609b,0xf900649c,0xf900689e,0xf9004093,0x91000093,0x91000074,0x91000015
+.inst 0x91000037,0x91000058,0x9100005a,0xd280001b,0xd1003309
+cbz x9, 20f
+.inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
+.inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
+bl {vg_ghash}
+.inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91000281,0x91080264,0x91018262
+bl {vg_ghash}
+b 21f
+20:
+.inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
+21:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb9400e8c,0x5ac0098c,0x1100058c,0x5ac0098c,0xb9003289
+.inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9404674,0xf9404a75
+.inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
+.inst 0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f
+.inst 0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f
+.inst 0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f
+.inst 0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f
+.inst 0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f
+.inst 0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f
+.inst 0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f
+.inst 0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f
+.inst 0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f
+.inst 0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f
+.inst 0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f
+.inst 0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f
+.inst 0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f
+.inst 0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f
+.inst 0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
+///
+/// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e5,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7,0xf90054b8,0xf90058b9
+.inst 0xf9005cba,0xf90060bb,0xf90064bc,0xf90068be,0xf90040b3,0x910000b3,0x91000034,0x91000015
+.inst 0x91000077,0x91000098,0xd28001e9,0x8a090059,0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 20f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 22f
+.inst 0x9100012a
+b 23f
+22:
+.inst 0x9100030a
+23:
+b 21f
+20:
+.inst 0x9100012a
+21:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 27f
+.inst 0xd2800003
+b 28f
+27:
+.inst 0xd2800023
+28:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x25, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+b 220f
+219:
+.inst 0xd280000a
+220:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32}
+cbz x24, 228f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 229f
+228:
+.inst 0xd2800004
+229:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+.inst 0x91000397,0x91000358
+cbz x26, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 252f
+.inst 0xd2800003
+b 253f
+252:
+.inst 0xd2800023
+253:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+b 244f
+243:
+244:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
+///
+/// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
+///
+/// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x910000da,0x9100009b,0x910000bc,0xd28001e9,0x8a090079
+cbz x26, 20f
+cbz x27, 22f
+.inst 0xd2800019
+b 23f
+22:
+23:
+b 21f
+20:
+.inst 0xd2800019
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 24f
+.inst 0xd342fdae
+cbz x14, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+216:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 216b
+27:
+b 25f
+24:
+25:
+cbz x25, 217f
+.inst 0xd2800023
+b 218f
+217:
+.inst 0xd2800003
+218:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
+cbz x26, 219f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 221f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 223f
+.inst 0x9100012a
+b 224f
+223:
+.inst 0x9100030a
+224:
+b 222f
+221:
+.inst 0x9100012a
+222:
+.inst 0x8b19028b,0x9100816b,0x910002ec,0x9100014d
+cbz x13, 225f
+227:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+b 226f
+225:
+226:
+.inst 0x8b0a02f7,0xcb0a0318,0x8b0a0329,0xd1004129
+cbz x9, 228f
+.inst 0xd2800003
+b 229f
+228:
+.inst 0xd2800023
+229:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
+bl {vg_ghash}
+.inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
+bl {vg_ghash}
+.inst 0x9100828b,0x910002ec,0x9100030d
+cbz x13, 230f
+.inst 0xd342fdae
+cbz x14, 232f
+.inst 0xd343fdae
+cbz x14, 234f
+236:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 236b
+b 235f
+234:
+235:
+.inst 0xd342fdae
+cbz x14, 237f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 238f
+237:
+238:
+cbz x13, 239f
+241:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 241b
+b 240f
+239:
+240:
+b 233f
+232:
+242:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 242b
+233:
+b 231f
+230:
+231:
+b 220f
+219:
+220:
+.inst 0x91000397,0x91000358
+cbz x25, 243f
+.inst 0xd2800209,0xcb190129,0xd344ff0a
+cbnz x10, 245f
+.inst 0xcb18012b,0xd37ffd6b
+cbz x11, 247f
+.inst 0x9100012a
+b 248f
+247:
+.inst 0x9100030a
+248:
+b 246f
+245:
+.inst 0x9100012a
+246:
+b 244f
+243:
+.inst 0xd280000a
+244:
+.inst 0x8b19028b,0x9101016b,0x910002ec,0x9100014d
+cbz x13, 249f
+251:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 251b
+b 250f
+249:
+250:
+.inst 0x8b0a02f7,0xcb0a0318,0xd344ff04,0x910002e3,0x910002a0,0x910002c1,0x9100c282,0x91080265
+.inst 0xd37cec89,0x8b0902f7,0xcb090318
+bl {vg_aes_ctr32}
+cbz x24, 252f
+.inst 0xd2800024,0xd2800009,0xf9002289,0xf9002689
+b 253f
+252:
+.inst 0xd2800004
+253:
+.inst 0x910002a0,0x910002c1,0x9100c282,0x91080265,0x91010283
+bl {vg_aes_ctr32}
+.inst 0x9101028b,0x910002ec,0x9100030d
+cbz x13, 254f
+.inst 0xd342fdae
+cbz x14, 256f
+.inst 0xd343fdae
+cbz x14, 258f
+260:
+.inst 0xf940018e,0xf940016f,0xca0f01ce,0xf900018e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 260b
+b 259f
+258:
+259:
+.inst 0xd342fdae
+cbz x14, 261f
+.inst 0xb940018e,0xb940016f,0x4a0f01ce,0xb900018e,0x9100118c,0x9100116b,0xd10011ad
+b 262f
+261:
+262:
+cbz x13, 263f
+265:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 265b
+b 264f
+263:
+264:
+b 257f
+256:
+266:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 266b
+257:
+b 255f
+254:
+255:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+///
+/// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e6,0xf90044d4,0xf90048d5,0xf9004cd6,0xf90050d7,0xf90054d8,0xf90058d9
+.inst 0xf9005cda,0xf90060db,0xf90064dc,0xf90068de,0xf90040d3,0x910000d3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000bc
+cbz x27, 20f
+.inst 0xd28001e9,0x8a090379
+b 21f
+20:
+.inst 0xd28001e9,0x8a090359
+21:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 22f
+.inst 0xd342fdae
+cbz x14, 24f
+.inst 0xd343fdae
+cbz x14, 26f
+28:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 28b
+b 27f
+26:
+27:
+.inst 0xd342fdae
+cbz x14, 29f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 210f
+29:
+210:
+cbz x13, 211f
+213:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 213b
+b 212f
+211:
+212:
+b 25f
+24:
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+25:
+b 23f
+22:
+23:
+cbz x25, 215f
+.inst 0xd2800023
+b 216f
+215:
+.inst 0xd2800003
+216:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32}
+.inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
+.inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12803ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
+///
+/// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd12803ff,0x910003e7,0xf90044f4,0xf90048f5,0xf9004cf6,0xf90050f7,0xf90054f8,0xf90058f9
+.inst 0xf9005cfa,0xf90060fb,0xf90064fc,0xf90068fe,0xf90040f3,0x910000f3,0x91000054,0x91000015
+.inst 0x91000036,0x9100007a,0x9100009b,0x910000dc,0x910000ac,0xd100138a,0xd28001a9,0xeb09014a
+.inst 0xd2800009,0xd280002a,0x9a8a2129
+cbz x9, 20f
+.inst 0xd344ff8d
+cbz x13, 22f
+.inst 0x3dc00180,0x3d800260
+b 23f
+22:
+.inst 0x9100026b,0x9100038d
+cbz x13, 24f
+26:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+23:
+cbz x27, 27f
+.inst 0xd28001e9,0x8a090379
+b 28f
+27:
+.inst 0xd28001e9,0x8a090359
+28:
+.inst 0x9100828c,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
+cbz x13, 29f
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xd343fdae
+cbz x14, 213f
+215:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 215b
+b 214f
+213:
+214:
+.inst 0xd342fdae
+cbz x14, 216f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 217f
+216:
+217:
+cbz x13, 218f
+220:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 220b
+b 219f
+218:
+219:
+b 212f
+211:
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+212:
+b 210f
+29:
+210:
+cbz x25, 222f
+.inst 0xd2800023
+b 223f
+222:
+.inst 0xd2800003
+223:
+.inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
+.inst 0x91004281,0x91080264,0x91018262
+bl {vg_ghash}
+.inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
+.inst 0xd2800024,0x91080265
+bl {vg_aes_ctr32}
+.inst 0xd344ff89
+cbz x9, 224f
+.inst 0xf9403a69,0xf940026a,0xca0a0129,0xf9403e6a,0xf940066b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+b 225f
+224:
+.inst 0xd2800009,0xf9008269,0xf9008669,0xf9008a69,0xf9008e69,0x9104426b,0x9100026c,0x9100038d
+cbz x13, 226f
+228:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 228b
+b 227f
+226:
+227:
+.inst 0x9104026b,0x9101c26c,0x9100038d
+cbz x13, 229f
+231:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 231b
+b 230f
+229:
+230:
+.inst 0xf9408269,0xf9408a6a,0xca0a0129,0xf940866a,0xf9408e6b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a
+225:
+.inst 0xd2800020,0xcb0a0000
+b 21f
+20:
+.inst 0xd2800000
+21:
+.inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12803ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x912803ff,0xd65f03c0
+.p2align 6",
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10043ff,0x910003f0,0xf900061e,0xf94013f1,0xf9000211,0xf9400beb
+cbz x7, 20f
+22:
+.inst 0xf94000cc,0xf94004cd,0x910040c6,0xd344fdae
+cbz x14, 23f
+25:
+.inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
+cbnz x14, 25b
+b 24f
+23:
+24:
+.inst 0xd28001ef,0x8a0f01ad
+cbz x13, 26f
+.inst 0xd343fdae
+cbz x14, 28f
+210:
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 210b
+b 29f
+28:
+29:
+.inst 0xd342fdae
+cbz x14, 211f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
+b 212f
+211:
+212:
+cbz x13, 213f
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+b 214f
+213:
+214:
+b 27f
+26:
+27:
+.inst 0xd10004e7
+cbnz x7, 22b
+b 21f
+20:
+21:
+.inst 0xf9400be6,0xf9400fe7
+bl {vg_aes_gcm_seal}
+.inst 0xf94007fe,0x910043ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006
+.inst 0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e
+.inst 0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404
+.inst 0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414
+.inst 0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c
+.inst 0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd12883ff,0x6f00e41f,0x910003e9
+.inst 0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f
+.inst 0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f
+.inst 0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f
+.inst 0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f
+.inst 0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f
+.inst 0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f
+.inst 0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f
+.inst 0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f
+.inst 0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f
+.inst 0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f
+.inst 0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f
+.inst 0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f
+.inst 0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f
+.inst 0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f
+.inst 0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f
+.inst 0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f
+.inst 0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f
+.inst 0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f
+.inst 0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f
+.inst 0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f
+.inst 0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
+.p2align 6",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+    )
+}
+
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -15794,6 +16753,32 @@ bl {vg_ghash}
 bl {vg_aes_ctr32}
 .inst 0xf9400269,0xf9000389,0xf9400669,0xf9000789,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
+.inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
+.inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
+.inst 0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406
+.inst 0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416
+.inst 0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e
+.inst 0x6f00e41f,0xea01003f,0xd2800000,0xd12843ff,0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f
+.inst 0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f,0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f
+.inst 0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f,0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f
+.inst 0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f,0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f
+.inst 0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f,0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f
+.inst 0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f,0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f
+.inst 0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f,0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f
+.inst 0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f,0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f
+.inst 0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f,0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f
+.inst 0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f,0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f
+.inst 0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f,0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f
+.inst 0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f,0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f
+.inst 0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f,0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f
+.inst 0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f,0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f
+.inst 0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f,0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f
+.inst 0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f,0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f
+.inst 0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f,0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f
+.inst 0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f,0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f
+.inst 0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f,0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f
+.inst 0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f,0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f
+.inst 0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f,0x3d82793f,0x3d827d3f,0x3d82813f,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
@@ -15802,6 +16787,8 @@ bl {vg_aes_ctr32}
 }
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -16192,7 +17179,33 @@ b 21f
 .inst 0xd2800000
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd12883ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x912883ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -16200,6 +17213,8 @@ b 21f
 }
 
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -16641,7 +17656,33 @@ b 2139f
 2139:
 21:
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
-.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
+.inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004
+.inst 0xd2800005,0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c
+.inst 0xd280000d,0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402
+.inst 0x6f00e403,0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412
+.inst 0x6f00e413,0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a
+.inst 0x6f00e41b,0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0x11000000,0xd128c3ff
+.inst 0x6f00e41f,0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x3d80153f
+.inst 0x3d80193f,0x3d801d3f,0x3d80213f,0x3d80253f,0x3d80293f,0x3d802d3f,0x3d80313f,0x3d80353f
+.inst 0x3d80393f,0x3d803d3f,0x3d80413f,0x3d80453f,0x3d80493f,0x3d804d3f,0x3d80513f,0x3d80553f
+.inst 0x3d80593f,0x3d805d3f,0x3d80613f,0x3d80653f,0x3d80693f,0x3d806d3f,0x3d80713f,0x3d80753f
+.inst 0x3d80793f,0x3d807d3f,0x3d80813f,0x3d80853f,0x3d80893f,0x3d808d3f,0x3d80913f,0x3d80953f
+.inst 0x3d80993f,0x3d809d3f,0x3d80a13f,0x3d80a53f,0x3d80a93f,0x3d80ad3f,0x3d80b13f,0x3d80b53f
+.inst 0x3d80b93f,0x3d80bd3f,0x3d80c13f,0x3d80c53f,0x3d80c93f,0x3d80cd3f,0x3d80d13f,0x3d80d53f
+.inst 0x3d80d93f,0x3d80dd3f,0x3d80e13f,0x3d80e53f,0x3d80e93f,0x3d80ed3f,0x3d80f13f,0x3d80f53f
+.inst 0x3d80f93f,0x3d80fd3f,0x3d81013f,0x3d81053f,0x3d81093f,0x3d810d3f,0x3d81113f,0x3d81153f
+.inst 0x3d81193f,0x3d811d3f,0x3d81213f,0x3d81253f,0x3d81293f,0x3d812d3f,0x3d81313f,0x3d81353f
+.inst 0x3d81393f,0x3d813d3f,0x3d81413f,0x3d81453f,0x3d81493f,0x3d814d3f,0x3d81513f,0x3d81553f
+.inst 0x3d81593f,0x3d815d3f,0x3d81613f,0x3d81653f,0x3d81693f,0x3d816d3f,0x3d81713f,0x3d81753f
+.inst 0x3d81793f,0x3d817d3f,0x3d81813f,0x3d81853f,0x3d81893f,0x3d818d3f,0x3d81913f,0x3d81953f
+.inst 0x3d81993f,0x3d819d3f,0x3d81a13f,0x3d81a53f,0x3d81a93f,0x3d81ad3f,0x3d81b13f,0x3d81b53f
+.inst 0x3d81b93f,0x3d81bd3f,0x3d81c13f,0x3d81c53f,0x3d81c93f,0x3d81cd3f,0x3d81d13f,0x3d81d53f
+.inst 0x3d81d93f,0x3d81dd3f,0x3d81e13f,0x3d81e53f,0x3d81e93f,0x3d81ed3f,0x3d81f13f,0x3d81f53f
+.inst 0x3d81f93f,0x3d81fd3f,0x3d82013f,0x3d82053f,0x3d82093f,0x3d820d3f,0x3d82113f,0x3d82153f
+.inst 0x3d82193f,0x3d821d3f,0x3d82213f,0x3d82253f,0x3d82293f,0x3d822d3f,0x3d82313f,0x3d82353f
+.inst 0x3d82393f,0x3d823d3f,0x3d82413f,0x3d82453f,0x3d82493f,0x3d824d3f,0x3d82513f,0x3d82553f
+.inst 0x3d82593f,0x3d825d3f,0x3d82613f,0x3d82653f,0x3d82693f,0x3d826d3f,0x3d82713f,0x3d82753f
+.inst 0x3d82793f,0x3d827d3f,0x3d82813f,0x3d82853f,0x3d82893f,0x9128c3ff,0xd65f03c0
 .p2align 6",
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
@@ -16652,6 +17693,8 @@ b 2139f
 /// Writes to `*pw` the 8 prepared powers of the hash subkey `H` of the key context `*ctx` of `vg_aes_gcm_init` (its bytes 240 to 255, `VG.Spec.Gcm.ctxH`): at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`), as the `*_with_powers` functions require for that key context. It reads only `*ctx` and writes only `*pw`. The key context and the powers are secret: only the pointers may affect timing.
 ///
 /// Contract: `VG.Spec.Gcm.storePowersContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -16737,7 +17780,13 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers(ctx: *const [u64; 32], p
 .inst 0x8b030021,0xd280040c,0xcb030183,0xd1000484
 cbnz x4, 20b
 .inst 0xf9400053,0xf9400454,0xf9400855,0xf9400c56,0xf9401057,0xf9401458,0xf9401859,0xf9401c5a
-.inst 0xf940205b,0xf940245c,0x910143ff,0xd65f03c0
+.inst 0xf940205b,0xf940245c,0x910143ff,0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005
+.inst 0xd2800006,0xd2800007,0xd2800008,0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d
+.inst 0xd280000e,0xd280000f,0xd2800010,0xd2800011,0x6f00e400,0x6f00e401,0x6f00e402,0x6f00e403
+.inst 0x6f00e404,0x6f00e405,0x6f00e406,0x6f00e407,0x6f00e410,0x6f00e411,0x6f00e412,0x6f00e413
+.inst 0x6f00e414,0x6f00e415,0x6f00e416,0x6f00e417,0x6f00e418,0x6f00e419,0x6f00e41a,0x6f00e41b
+.inst 0x6f00e41c,0x6f00e41d,0x6f00e41e,0x6f00e41f,0xea01003f,0xd2800000,0xd10143ff,0x6f00e41f
+.inst 0x910003e9,0x3d80013f,0x3d80053f,0x3d80093f,0x3d800d3f,0x3d80113f,0x910143ff,0xd65f03c0
 .p2align 6",
     )
 }

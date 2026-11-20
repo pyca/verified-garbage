@@ -41,6 +41,8 @@ add sp, sp, #648
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
+mov r3, #20
+20:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -49,164 +51,15 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-str r2, [r12, #328]
-str r2, [r12, #332]
-str r2, [r12, #336]
-str r2, [r12, #340]
-str r2, [r12, #344]
-str r2, [r12, #348]
-str r2, [r12, #352]
-str r2, [r12, #356]
-str r2, [r12, #360]
-str r2, [r12, #364]
-str r2, [r12, #368]
-str r2, [r12, #372]
-str r2, [r12, #376]
-str r2, [r12, #380]
-str r2, [r12, #384]
-str r2, [r12, #388]
-str r2, [r12, #392]
-str r2, [r12, #396]
-str r2, [r12, #400]
-str r2, [r12, #404]
-str r2, [r12, #408]
-str r2, [r12, #412]
-str r2, [r12, #416]
-str r2, [r12, #420]
-str r2, [r12, #424]
-str r2, [r12, #428]
-str r2, [r12, #432]
-str r2, [r12, #436]
-str r2, [r12, #440]
-str r2, [r12, #444]
-str r2, [r12, #448]
-str r2, [r12, #452]
-str r2, [r12, #456]
-str r2, [r12, #460]
-str r2, [r12, #464]
-str r2, [r12, #468]
-str r2, [r12, #472]
-str r2, [r12, #476]
-str r2, [r12, #480]
-str r2, [r12, #484]
-str r2, [r12, #488]
-str r2, [r12, #492]
-str r2, [r12, #496]
-str r2, [r12, #500]
-str r2, [r12, #504]
-str r2, [r12, #508]
-str r2, [r12, #512]
-str r2, [r12, #516]
-str r2, [r12, #520]
-str r2, [r12, #524]
-str r2, [r12, #528]
-str r2, [r12, #532]
-str r2, [r12, #536]
-str r2, [r12, #540]
-str r2, [r12, #544]
-str r2, [r12, #548]
-str r2, [r12, #552]
-str r2, [r12, #556]
-str r2, [r12, #560]
-str r2, [r12, #564]
-str r2, [r12, #568]
-str r2, [r12, #572]
-str r2, [r12, #576]
-str r2, [r12, #580]
-str r2, [r12, #584]
-str r2, [r12, #588]
-str r2, [r12, #592]
-str r2, [r12, #596]
-str r2, [r12, #600]
-str r2, [r12, #604]
-str r2, [r12, #608]
-str r2, [r12, #612]
-str r2, [r12, #616]
-str r2, [r12, #620]
-str r2, [r12, #624]
-str r2, [r12, #628]
-str r2, [r12, #632]
-str r2, [r12, #636]
-str r2, [r12, #640]
-str r2, [r12, #644]
-str r2, [r12, #648]
-str r2, [r12, #652]
-str r2, [r12, #656]
-str r2, [r12, #660]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -221,6 +74,8 @@ bx lr",
 /// Finishes a SHA3-224 computation: if the state `*state` represents a message whose length is `pos` modulo 144 (`VG.Spec.Sha3.Repr` with SHA3-224's rate, as `vg_sha3_224_update` leaves it), writes the SHA3-224 digest of that message (28 bytes, `VG.Spec.Sha3.sha3_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_224`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -256,6 +111,35 @@ str lr, [r12, #4]
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #664
+sub sp, sp, #664
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #664
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -300,6 +184,8 @@ add sp, sp, #648
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
+mov r3, #20
+20:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -308,164 +194,15 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-str r2, [r12, #328]
-str r2, [r12, #332]
-str r2, [r12, #336]
-str r2, [r12, #340]
-str r2, [r12, #344]
-str r2, [r12, #348]
-str r2, [r12, #352]
-str r2, [r12, #356]
-str r2, [r12, #360]
-str r2, [r12, #364]
-str r2, [r12, #368]
-str r2, [r12, #372]
-str r2, [r12, #376]
-str r2, [r12, #380]
-str r2, [r12, #384]
-str r2, [r12, #388]
-str r2, [r12, #392]
-str r2, [r12, #396]
-str r2, [r12, #400]
-str r2, [r12, #404]
-str r2, [r12, #408]
-str r2, [r12, #412]
-str r2, [r12, #416]
-str r2, [r12, #420]
-str r2, [r12, #424]
-str r2, [r12, #428]
-str r2, [r12, #432]
-str r2, [r12, #436]
-str r2, [r12, #440]
-str r2, [r12, #444]
-str r2, [r12, #448]
-str r2, [r12, #452]
-str r2, [r12, #456]
-str r2, [r12, #460]
-str r2, [r12, #464]
-str r2, [r12, #468]
-str r2, [r12, #472]
-str r2, [r12, #476]
-str r2, [r12, #480]
-str r2, [r12, #484]
-str r2, [r12, #488]
-str r2, [r12, #492]
-str r2, [r12, #496]
-str r2, [r12, #500]
-str r2, [r12, #504]
-str r2, [r12, #508]
-str r2, [r12, #512]
-str r2, [r12, #516]
-str r2, [r12, #520]
-str r2, [r12, #524]
-str r2, [r12, #528]
-str r2, [r12, #532]
-str r2, [r12, #536]
-str r2, [r12, #540]
-str r2, [r12, #544]
-str r2, [r12, #548]
-str r2, [r12, #552]
-str r2, [r12, #556]
-str r2, [r12, #560]
-str r2, [r12, #564]
-str r2, [r12, #568]
-str r2, [r12, #572]
-str r2, [r12, #576]
-str r2, [r12, #580]
-str r2, [r12, #584]
-str r2, [r12, #588]
-str r2, [r12, #592]
-str r2, [r12, #596]
-str r2, [r12, #600]
-str r2, [r12, #604]
-str r2, [r12, #608]
-str r2, [r12, #612]
-str r2, [r12, #616]
-str r2, [r12, #620]
-str r2, [r12, #624]
-str r2, [r12, #628]
-str r2, [r12, #632]
-str r2, [r12, #636]
-str r2, [r12, #640]
-str r2, [r12, #644]
-str r2, [r12, #648]
-str r2, [r12, #652]
-str r2, [r12, #656]
-str r2, [r12, #660]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -480,6 +217,8 @@ bx lr",
 /// Finishes a SHA3-256 computation: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHA3-256's rate, as `vg_sha3_256_update` leaves it), writes the SHA3-256 digest of that message (32 bytes, `VG.Spec.Sha3.sha3_256`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_256`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -515,6 +254,35 @@ str lr, [r12, #4]
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #664
+sub sp, sp, #664
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #664
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -559,6 +327,8 @@ add sp, sp, #648
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
+mov r3, #20
+20:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -567,164 +337,15 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-str r2, [r12, #328]
-str r2, [r12, #332]
-str r2, [r12, #336]
-str r2, [r12, #340]
-str r2, [r12, #344]
-str r2, [r12, #348]
-str r2, [r12, #352]
-str r2, [r12, #356]
-str r2, [r12, #360]
-str r2, [r12, #364]
-str r2, [r12, #368]
-str r2, [r12, #372]
-str r2, [r12, #376]
-str r2, [r12, #380]
-str r2, [r12, #384]
-str r2, [r12, #388]
-str r2, [r12, #392]
-str r2, [r12, #396]
-str r2, [r12, #400]
-str r2, [r12, #404]
-str r2, [r12, #408]
-str r2, [r12, #412]
-str r2, [r12, #416]
-str r2, [r12, #420]
-str r2, [r12, #424]
-str r2, [r12, #428]
-str r2, [r12, #432]
-str r2, [r12, #436]
-str r2, [r12, #440]
-str r2, [r12, #444]
-str r2, [r12, #448]
-str r2, [r12, #452]
-str r2, [r12, #456]
-str r2, [r12, #460]
-str r2, [r12, #464]
-str r2, [r12, #468]
-str r2, [r12, #472]
-str r2, [r12, #476]
-str r2, [r12, #480]
-str r2, [r12, #484]
-str r2, [r12, #488]
-str r2, [r12, #492]
-str r2, [r12, #496]
-str r2, [r12, #500]
-str r2, [r12, #504]
-str r2, [r12, #508]
-str r2, [r12, #512]
-str r2, [r12, #516]
-str r2, [r12, #520]
-str r2, [r12, #524]
-str r2, [r12, #528]
-str r2, [r12, #532]
-str r2, [r12, #536]
-str r2, [r12, #540]
-str r2, [r12, #544]
-str r2, [r12, #548]
-str r2, [r12, #552]
-str r2, [r12, #556]
-str r2, [r12, #560]
-str r2, [r12, #564]
-str r2, [r12, #568]
-str r2, [r12, #572]
-str r2, [r12, #576]
-str r2, [r12, #580]
-str r2, [r12, #584]
-str r2, [r12, #588]
-str r2, [r12, #592]
-str r2, [r12, #596]
-str r2, [r12, #600]
-str r2, [r12, #604]
-str r2, [r12, #608]
-str r2, [r12, #612]
-str r2, [r12, #616]
-str r2, [r12, #620]
-str r2, [r12, #624]
-str r2, [r12, #628]
-str r2, [r12, #632]
-str r2, [r12, #636]
-str r2, [r12, #640]
-str r2, [r12, #644]
-str r2, [r12, #648]
-str r2, [r12, #652]
-str r2, [r12, #656]
-str r2, [r12, #660]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -739,6 +360,8 @@ bx lr",
 /// Finishes a SHA3-384 computation: if the state `*state` represents a message whose length is `pos` modulo 104 (`VG.Spec.Sha3.Repr` with SHA3-384's rate, as `vg_sha3_384_update` leaves it), writes the SHA3-384 digest of that message (48 bytes, `VG.Spec.Sha3.sha3_384`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_384`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -774,6 +397,35 @@ str lr, [r12, #4]
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #664
+sub sp, sp, #664
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #664
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -818,6 +470,8 @@ add sp, sp, #648
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
+mov r3, #20
+20:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -826,164 +480,15 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-str r2, [r12, #328]
-str r2, [r12, #332]
-str r2, [r12, #336]
-str r2, [r12, #340]
-str r2, [r12, #344]
-str r2, [r12, #348]
-str r2, [r12, #352]
-str r2, [r12, #356]
-str r2, [r12, #360]
-str r2, [r12, #364]
-str r2, [r12, #368]
-str r2, [r12, #372]
-str r2, [r12, #376]
-str r2, [r12, #380]
-str r2, [r12, #384]
-str r2, [r12, #388]
-str r2, [r12, #392]
-str r2, [r12, #396]
-str r2, [r12, #400]
-str r2, [r12, #404]
-str r2, [r12, #408]
-str r2, [r12, #412]
-str r2, [r12, #416]
-str r2, [r12, #420]
-str r2, [r12, #424]
-str r2, [r12, #428]
-str r2, [r12, #432]
-str r2, [r12, #436]
-str r2, [r12, #440]
-str r2, [r12, #444]
-str r2, [r12, #448]
-str r2, [r12, #452]
-str r2, [r12, #456]
-str r2, [r12, #460]
-str r2, [r12, #464]
-str r2, [r12, #468]
-str r2, [r12, #472]
-str r2, [r12, #476]
-str r2, [r12, #480]
-str r2, [r12, #484]
-str r2, [r12, #488]
-str r2, [r12, #492]
-str r2, [r12, #496]
-str r2, [r12, #500]
-str r2, [r12, #504]
-str r2, [r12, #508]
-str r2, [r12, #512]
-str r2, [r12, #516]
-str r2, [r12, #520]
-str r2, [r12, #524]
-str r2, [r12, #528]
-str r2, [r12, #532]
-str r2, [r12, #536]
-str r2, [r12, #540]
-str r2, [r12, #544]
-str r2, [r12, #548]
-str r2, [r12, #552]
-str r2, [r12, #556]
-str r2, [r12, #560]
-str r2, [r12, #564]
-str r2, [r12, #568]
-str r2, [r12, #572]
-str r2, [r12, #576]
-str r2, [r12, #580]
-str r2, [r12, #584]
-str r2, [r12, #588]
-str r2, [r12, #592]
-str r2, [r12, #596]
-str r2, [r12, #600]
-str r2, [r12, #604]
-str r2, [r12, #608]
-str r2, [r12, #612]
-str r2, [r12, #616]
-str r2, [r12, #620]
-str r2, [r12, #624]
-str r2, [r12, #628]
-str r2, [r12, #632]
-str r2, [r12, #636]
-str r2, [r12, #640]
-str r2, [r12, #644]
-str r2, [r12, #648]
-str r2, [r12, #652]
-str r2, [r12, #656]
-str r2, [r12, #660]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -998,6 +503,8 @@ bx lr",
 /// Finishes a SHA3-512 computation: if the state `*state` represents a message whose length is `pos` modulo 72 (`VG.Spec.Sha3.Repr` with SHA3-512's rate, as `vg_sha3_512_update` leaves it), writes the SHA3-512 digest of that message (64 bytes, `VG.Spec.Sha3.sha3_512`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha3.finalizeContract` for `VG.Spec.Sha3.hashSha3_512`. Constant time: only the pointers and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1033,6 +540,35 @@ str lr, [r12, #4]
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #664
+sub sp, sp, #664
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #664
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
@@ -1077,6 +613,8 @@ add sp, sp, #648
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
+mov r3, #20
+20:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -1085,164 +623,15 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
-str r2, [r12, #56]
-str r2, [r12, #60]
-str r2, [r12, #64]
-str r2, [r12, #68]
-str r2, [r12, #72]
-str r2, [r12, #76]
-str r2, [r12, #80]
-str r2, [r12, #84]
-str r2, [r12, #88]
-str r2, [r12, #92]
-str r2, [r12, #96]
-str r2, [r12, #100]
-str r2, [r12, #104]
-str r2, [r12, #108]
-str r2, [r12, #112]
-str r2, [r12, #116]
-str r2, [r12, #120]
-str r2, [r12, #124]
-str r2, [r12, #128]
-str r2, [r12, #132]
-str r2, [r12, #136]
-str r2, [r12, #140]
-str r2, [r12, #144]
-str r2, [r12, #148]
-str r2, [r12, #152]
-str r2, [r12, #156]
-str r2, [r12, #160]
-str r2, [r12, #164]
-str r2, [r12, #168]
-str r2, [r12, #172]
-str r2, [r12, #176]
-str r2, [r12, #180]
-str r2, [r12, #184]
-str r2, [r12, #188]
-str r2, [r12, #192]
-str r2, [r12, #196]
-str r2, [r12, #200]
-str r2, [r12, #204]
-str r2, [r12, #208]
-str r2, [r12, #212]
-str r2, [r12, #216]
-str r2, [r12, #220]
-str r2, [r12, #224]
-str r2, [r12, #228]
-str r2, [r12, #232]
-str r2, [r12, #236]
-str r2, [r12, #240]
-str r2, [r12, #244]
-str r2, [r12, #248]
-str r2, [r12, #252]
-str r2, [r12, #256]
-str r2, [r12, #260]
-str r2, [r12, #264]
-str r2, [r12, #268]
-str r2, [r12, #272]
-str r2, [r12, #276]
-str r2, [r12, #280]
-str r2, [r12, #284]
-str r2, [r12, #288]
-str r2, [r12, #292]
-str r2, [r12, #296]
-str r2, [r12, #300]
-str r2, [r12, #304]
-str r2, [r12, #308]
-str r2, [r12, #312]
-str r2, [r12, #316]
-str r2, [r12, #320]
-str r2, [r12, #324]
-str r2, [r12, #328]
-str r2, [r12, #332]
-str r2, [r12, #336]
-str r2, [r12, #340]
-str r2, [r12, #344]
-str r2, [r12, #348]
-str r2, [r12, #352]
-str r2, [r12, #356]
-str r2, [r12, #360]
-str r2, [r12, #364]
-str r2, [r12, #368]
-str r2, [r12, #372]
-str r2, [r12, #376]
-str r2, [r12, #380]
-str r2, [r12, #384]
-str r2, [r12, #388]
-str r2, [r12, #392]
-str r2, [r12, #396]
-str r2, [r12, #400]
-str r2, [r12, #404]
-str r2, [r12, #408]
-str r2, [r12, #412]
-str r2, [r12, #416]
-str r2, [r12, #420]
-str r2, [r12, #424]
-str r2, [r12, #428]
-str r2, [r12, #432]
-str r2, [r12, #436]
-str r2, [r12, #440]
-str r2, [r12, #444]
-str r2, [r12, #448]
-str r2, [r12, #452]
-str r2, [r12, #456]
-str r2, [r12, #460]
-str r2, [r12, #464]
-str r2, [r12, #468]
-str r2, [r12, #472]
-str r2, [r12, #476]
-str r2, [r12, #480]
-str r2, [r12, #484]
-str r2, [r12, #488]
-str r2, [r12, #492]
-str r2, [r12, #496]
-str r2, [r12, #500]
-str r2, [r12, #504]
-str r2, [r12, #508]
-str r2, [r12, #512]
-str r2, [r12, #516]
-str r2, [r12, #520]
-str r2, [r12, #524]
-str r2, [r12, #528]
-str r2, [r12, #532]
-str r2, [r12, #536]
-str r2, [r12, #540]
-str r2, [r12, #544]
-str r2, [r12, #548]
-str r2, [r12, #552]
-str r2, [r12, #556]
-str r2, [r12, #560]
-str r2, [r12, #564]
-str r2, [r12, #568]
-str r2, [r12, #572]
-str r2, [r12, #576]
-str r2, [r12, #580]
-str r2, [r12, #584]
-str r2, [r12, #588]
-str r2, [r12, #592]
-str r2, [r12, #596]
-str r2, [r12, #600]
-str r2, [r12, #604]
-str r2, [r12, #608]
-str r2, [r12, #612]
-str r2, [r12, #616]
-str r2, [r12, #620]
-str r2, [r12, #624]
-str r2, [r12, #628]
-str r2, [r12, #632]
-str r2, [r12, #636]
-str r2, [r12, #640]
-str r2, [r12, #644]
-str r2, [r12, #648]
-str r2, [r12, #652]
-str r2, [r12, #656]
-str r2, [r12, #660]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -1257,6 +646,8 @@ bx lr",
 /// Finishes absorbing a SHAKE128 message: if the state `*state` represents a message whose length is `pos` modulo 168 (`VG.Spec.Sha3.Repr` with SHAKE128's rate, as `vg_shake128_update` leaves it), it becomes a state that, squeezed by `vg_shake128_squeeze` from position 0, gives the output of SHAKE128 of that message (`VG.Spec.Sha3.shake128`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1277,6 +668,31 @@ mov r3, #31
 bl {vg_keccak_pad_scratch}
 ldr lr, [sp, #4]
 add sp, sp, #648
+sub sp, sp, #648
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #648
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
@@ -1285,6 +701,8 @@ bx lr",
 /// Squeezes SHAKE128 output: if the state `*state`, from position `pos`, continues the output of SHAKE128 of a message (`VG.Spec.Sha3.shake128`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake128_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake128`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1308,6 +726,32 @@ mov r1, #168
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #656
+sub sp, sp, #656
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #656
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )
@@ -1316,6 +760,8 @@ bx lr",
 /// Finishes absorbing a SHAKE256 message: if the state `*state` represents a message whose length is `pos` modulo 136 (`VG.Spec.Sha3.Repr` with SHAKE256's rate, as `vg_sha3_256_update` leaves it), it becomes a state that, squeezed by `vg_shake256_squeeze` from position 0, gives the output of SHAKE256 of that message (`VG.Spec.Sha3.shake256`) from its first byte on (`VG.Spec.Sha3.XofRepr`).
 ///
 /// Contract: `VG.Spec.Sha3.xofFinalizeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointer and `pos` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1336,6 +782,31 @@ mov r3, #31
 bl {vg_keccak_pad_scratch}
 ldr lr, [sp, #4]
 add sp, sp, #648
+sub sp, sp, #648
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #648
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
     )
@@ -1344,6 +815,8 @@ bx lr",
 /// Squeezes SHAKE256 output: if the state `*state`, from position `pos`, continues the output of SHAKE256 of a message (`VG.Spec.Sha3.shake256`) after its first `n` bytes (`VG.Spec.Sha3.XofRepr`), writes the next `outlen` bytes of that output to `out`, and leaves in `*state` a state, and returns a position, that continue it after its first `n + outlen` bytes. Start from the state `vg_shake256_finalize` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.xofSqueezeContract` for `VG.Spec.Sha3.xofShake256`. Constant time: only the pointers, `pos` and `outlen` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1367,6 +840,32 @@ mov r1, #136
 bl {vg_keccak_squeeze_scratch}
 ldr lr, [sp, #8]
 add sp, sp, #656
+sub sp, sp, #656
+add r12, sp, #0
+mov r2, #0
+mov r3, #20
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #656
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
     )

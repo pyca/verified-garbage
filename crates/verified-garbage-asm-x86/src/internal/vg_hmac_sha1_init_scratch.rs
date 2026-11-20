@@ -12,9 +12,9 @@
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch() {
     core::arch::naked_asm!(
         r#".base64 "i0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WFY="
-call {vg_sha1_init}
+call {vg_sha1_init_core}
 .base64 "WLk2NjY2iUsUiUsYiUsciUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQi3wkDItMJBCJ2oPCFIXJ"
 je 20f
 22:
@@ -29,7 +29,7 @@ call {vg_sha1_compress}
 call {vg_sha1_compress}
 .base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAww=="
 .p2align 6"#,
-        vg_sha1_init = sym crate::sha1::vg_sha1_init,
+        vg_sha1_init_core = sym crate::sha1::vg_sha1_init_core::vg_sha1_init_core,
         vg_sha1_compress = sym crate::sha1::vg_sha1_compress::vg_sha1_compress,
     )
 }

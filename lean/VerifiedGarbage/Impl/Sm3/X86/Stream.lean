@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sm3.X86
 public import VerifiedGarbage.Impl.MdStream.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Streaming SM3: x86 (32-bit) implementation
@@ -47,3 +49,29 @@ def update : Prog isa := MdStream.X86.update params "vg_sm3_compress" compress
 def finalize : Prog isa := MdStream.X86.finalize params "vg_sm3_compress" compress
 
 end VG.Impl.Sm3.X86.Stream
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup: `init`, which calls nothing and has no
+frame, then the clearing of the registers a callee may change
+(`Impl.Scrub.X86.scrub 0`); `update` and `finalize`, in a frame of their own
+(`withStackScratch`), then the zeroing of the `W` bytes of stack below `esp`
+that they and the compression function use and that clearing
+(`Impl.Scrub.X86.scrubF 0 W`), so that each returns without secret residue. -/
+
+namespace VG.Impl.Sm3.X86.Fn
+
+open VG.X86
+
+/-- `vg_sm3_init`, as emitted. -/
+def init : Prog isa := Impl.Scrub.X86.scrub 0 Stream.init
+
+/-- `vg_sm3_update`, as emitted. -/
+def update : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 208 (Impl.StackScratch.X86.withStackScratch 188 5 Stream.update)
+
+/-- `vg_sm3_finalize`, as emitted. -/
+def finalize : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 204 (Impl.StackScratch.X86.withStackScratch 184 4 Stream.finalize)
+
+end VG.Impl.Sm3.X86.Fn

@@ -41,6 +41,10 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.ScrubLocal
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 public meta import Lean.Elab.Tactic.Basic
 meta import VerifiedGarbage.Proof.AesOcb.RISCV64.Args
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -1369,3 +1373,68 @@ theorem open_framed :
     (Proof.AesOcb.openPostOut_local _) openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)
 
 end VG.Proof.AesOcb.RISCV64
+
+/-! ## AES-OCB on RISC-V, without secret residue
+
+`vg_aes_ocb_seal` and `vg_aes_ocb_open`, each followed by
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
+caller-saved registers and the whole 2592-byte frame (`withStackScratchArgs`)
+that holds their working space, the offsets and the key schedule among it:
+the residue analysis (`RISCV64.rtaint`) finds that all of it may hold
+secrets. Their postconditions read the memory on return only within the
+data and the tag, as on PPC64LE (`Proof/AesOcb/PPC64LE/Scrub.lean`). -/
+
+namespace VG.Proof.AesOcb.RISCV64.Scrub
+
+open VG.RISCV64 VG.RISCV64.Scrub VG.Proof.Aes.ScrubLocal VG.Proof.AesOcb.RISCV64
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.Ocb.sealContract RISCV64.abi stack) (Spec.Ocb.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ocb.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ocb.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [h key hk, bytesAt_of0 hb.2.2.2.1 (by simp), bytesAt_of0 hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.Ocb.openContract RISCV64.abi stack) (Spec.Ocb.openSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
+      simp only [Spec.Ocb.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.openPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
+        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
+        (Spec.Ocb.openPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.Ocb.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hk
+      rw [bytesAt_of0 hb.2.2.2.1 (by simp)]
+      exact h key hk
+
+/-- `Spec.Ocb.sealApi`. -/
+def sealReg : Registration Spec.Ocb.sealApi RISCV64.target :=
+  scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«seal»
+      verified := Proof.AesOcb.seal_keyed seal_framed }
+    (sealOut _)
+
+/-- `Spec.Ocb.openApi`. -/
+def openReg : Registration Spec.Ocb.openApi RISCV64.target :=
+  scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«open»
+      verified := Proof.AesOcb.open_keyed open_framed }
+    (openOut _)
+
+end VG.Proof.AesOcb.RISCV64.Scrub

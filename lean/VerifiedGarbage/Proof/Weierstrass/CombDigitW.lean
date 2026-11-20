@@ -98,5 +98,24 @@ theorem magH_fact : ∀ w < 9, ∀ v < 2 ^ w,
       BitVec.ofNat 32 (magH (2 ^ (w - 1)) v) := by
   decide +kernel
 
+/-- A window of four bits with its top bit flipped, plus 8, plus the bit
+below it: Booth's digit plus 16. -/
+theorem booth_fact : ∀ w < 16, ∀ c < 2,
+    (BitVec.ofNat 32 w ^^^ BitVec.ofNat 32 8) + 8#32 + BitVec.ofNat 32 c =
+      BitVec.ofNat 32 ((if w < 8 then w + 16 else w) + c) := by
+  decide +kernel
+
+/-- The number of the entry of a magnitude up to 16 in a table of eight. -/
+theorem entry_fact : ∀ m < 17, (BitVec.ofNat 32 m &&& 7#32) + 1#32 = BitVec.ofNat 32 (m % 8 + 1) := by
+  decide +kernel
+
+/-- The mask of a magnitude up to 16 being zero, by a comparison with 1 and
+a subtraction with its borrow. -/
+theorem zero_fact : ∀ m < 17,
+    BitVec.ofNat 32 m - BitVec.ofNat 32 m -
+        BitVec.setWidth 32 (BitVec.ofBool (decide ((BitVec.ofNat 32 m).toNat < (1 : BitVec 32).toNat))) =
+      if decide (m = 0) = true then BitVec.allOnes 32 else 0 := by
+  decide +kernel
+
 
 end VG.Proof.Weierstrass

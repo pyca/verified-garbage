@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Frame
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -68,3 +72,35 @@ theorem finishOk (W : Nat) (hW : 0 < W := by decide) :
       exact h key msg hr hc hl
 
 end VG.Proof.CmacTripleDes.AArch64.Scrub
+
+/-! ## The functions
+
+The code that is emitted (`Impl.CmacTripleDes.Stream.AArch64.Fn`) meets each
+function's contract in constant time and returns without secret residue. -/
+
+namespace VG.Proof.CmacTripleDes.AArch64.Fn
+
+open VG.AArch64 VG.AArch64.ScrubAll
+
+theorem init :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.init (Spec.Cmac.tdesStreamInitContract abi 640) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesStreamInitApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.streamInit,
+      verified := Proof.CmacTripleDes.Stream.AArch64.init_framed }
+    _ (Scrub.initOk 640) (by dsimp only; lit_decide)
+
+theorem absorb :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.absorb (Spec.Cmac.tdesAbsorbContract abi 688) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesAbsorbApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 688 .x4 Impl.CmacTripleDes.Stream.AArch64.absorb,
+      verified := Proof.CmacTripleDes.Stream.AArch64.absorb_framed }
+    _ (Scrub.absorbOk 688) (by dsimp only; lit_decide)
+
+theorem finish :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.finish (Spec.Cmac.tdesFinishContract abi 640) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesFinishApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.finish,
+      verified := Proof.CmacTripleDes.Stream.AArch64.finish_framed }
+    _ (Scrub.finishOk 640) (by dsimp only; lit_decide)
+
+end VG.Proof.CmacTripleDes.AArch64.Fn

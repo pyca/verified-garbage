@@ -38,6 +38,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
@@ -45,6 +46,7 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP256r1.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP256r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress
+public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Scrub
 
 /-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on x86 -/
 
@@ -56,13 +58,13 @@ open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact X86.target {
-    code := Impl.EcKey.X86.publicKeyBrainpoolP256r1
-    verified := Proof.EcKey.X86.BrainpoolP256r1.pk_verified hasLaw.law hasLaw.inv },
+    code := Impl.EcKey.X86.Fn.publicKeyBrainpoolP256r1
+    verified := .scrubbed (Proof.EcKey.X86.BrainpoolP256r1.Scrub.publicKey_scrubbed hasLaw.law hasLaw.inv) },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.BrainpoolP256r1.code
-    verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1.verified hasLaw.inv },
+    code := Impl.EcKey.X86.Fn.compressBrainpoolP256r1
+    verified := .scrubbed (Proof.EcKey.X86.BrainpoolP256r1.Scrub.compress_scrubbed hasLaw.inv) },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact X86.target {
-    code := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.verified hasLaw.law hasLaw.inv }]
+    code := Impl.EcKey.X86.Fn.decompressBrainpoolP256r1
+    verified := .scrubbed (Proof.EcKey.X86.BrainpoolP256r1.Scrub.decompress_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcBrainpoolP256r1.X86

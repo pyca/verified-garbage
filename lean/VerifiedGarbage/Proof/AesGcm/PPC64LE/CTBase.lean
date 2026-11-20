@@ -69,22 +69,22 @@ theorem skip {I : State → Prop} : CT I (.block []) := by
       exact ⟨h₁.2.symm.trans h₂.2, trivial⟩
 
 theorem gh [VG.Proof.Gcm.PPC64LE.GhashLaw] {I : State → Prop} {name : String}
-    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
-      GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) :
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ H Y D : Addr, ∃ n : Nat,
+      GhCallF s₁ H Y D n ∧ GhCallF s₂ H Y D n ∧ s₁.sp = s₂.sp) :
     CT I (.call name Impl.Gcm.PPC64LE.ghash) :=
-  gh_rel fun _ _ hh => h _ _ hh.1 hh.2
+  gh_relF fun _ _ hh => h _ _ hh.1 hh.2
 
 theorem ctr {I : State → Prop} {name : String}
-    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D S : Addr, ∃ R n : Nat,
-      CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧ s₁.sp = s₂.sp) :
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D : Addr, ∃ R n : Nat,
+      CtrCallF s₁ K C D R n ∧ CtrCallF s₂ K C D R n ∧ s₁.sp = s₂.sp) :
     CT I (.call name Impl.Aes.PPC64LE.ctr32) :=
-  ctr_rel fun _ _ hh => h _ _ hh.1 hh.2
+  ctr_relF fun _ _ hh => h _ _ hh.1 hh.2
 
 theorem key {I : State → Prop} {name : String}
-    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K : Addr, ∃ kl : Nat, ∃ C S : Addr,
-      KeyCall s₁ K kl C S ∧ KeyCall s₂ K kl C S ∧ s₁.sp = s₂.sp) :
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K : Addr, ∃ kl : Nat, ∃ C : Addr,
+      KeyCallF s₁ K kl C ∧ KeyCallF s₂ K kl C ∧ s₁.sp = s₂.sp) :
     CT I (.call name Impl.Aes.PPC64LE.expandKey) :=
-  key_rel fun _ _ hh => h _ _ hh.1 hh.2
+  key_relF fun _ _ hh => h _ _ hh.1 hh.2
 
 end CT
 

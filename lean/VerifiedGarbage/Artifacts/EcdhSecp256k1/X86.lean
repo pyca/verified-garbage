@@ -38,10 +38,12 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Secp256k1.X86.Law
+public import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Scrub
 
 /-! # ECDH over secp256k1 (SP 800-56A) on x86 -/
 
@@ -53,7 +55,7 @@ open VG.Proof.Secp256k1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact X86.target {
-    code := Impl.Ecdh.X86.exchangeSecp256k1
-    verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified hasLaw.law hasLaw.inv }]
+    code := Impl.Ecdh.X86.Fn.exchangeSecp256k1
+    verified := .scrubbed (Proof.Ecdh.X86.Secp256k1.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcdhSecp256k1.X86

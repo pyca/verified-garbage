@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86.Init
+public import VerifiedGarbage.Proof.Poly1305.X86.Scrub
+public import VerifiedGarbage.Impl.Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
-public import VerifiedGarbage.Proof.Poly1305.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
@@ -14,13 +14,13 @@ namespace VG.Artifacts.Poly1305.X86
 
 def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact X86.target {
-    code := Impl.Poly1305.X86.init
-    verified := Proof.Poly1305.X86.init_verified },
+    code := Impl.Poly1305.X86.Fn.init
+    verified := .scrubbed Proof.Poly1305.X86.Scrub.init_scrubbed },
   Spec.Poly1305.updateApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update
-    verified := Proof.Poly1305.X86.update_framed },
+    code := Impl.Poly1305.X86.Fn.update
+    verified := .scrubbed Proof.Poly1305.X86.Scrub.update_scrubbed },
   Spec.Poly1305.finalizeApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 152 4 Impl.Poly1305.X86.finalize
-    verified := Proof.Poly1305.X86.finalize_framed }]
+    code := Impl.Poly1305.X86.Fn.finalize
+    verified := .scrubbed Proof.Poly1305.X86.Scrub.finalize_scrubbed }]
 
 end VG.Artifacts.Poly1305.X86

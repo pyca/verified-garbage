@@ -47,23 +47,23 @@ open VG.Proof.Gcm (Ctr xorKs)
 
 /-- A buffer of `n` bytes at `D` that the code may read and write, apart from
 the context, the state and `W`. -/
-structure DataW (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
+structure DataW (S : Nat) (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   ok : DataOk St W s D n
   wr : Covers [⟨D, n⟩] s.wr
   ctx : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩
-  stk : (stk SP).Disjoint ⟨D, n⟩
+  stk : (stk S SP).Disjoint ⟨D, n⟩
 
-theorem DataW.of_eq {Ctx St W SP : Addr} {s s' : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataW Ctx St W SP s' D n :=
+theorem DataW.of_eq {S : Nat} {Ctx St W SP : Addr} {s s' : State} {D : Addr} {n : Nat} (h : DataW S Ctx St W SP s D n)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataW S Ctx St W SP s' D n :=
   ⟨h.ok.of_eq hrd hwr, by rw [hwr]; exact h.wr, h.ctx, h.stk⟩
 
-theorem DataW.drop {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
+theorem DataW.drop {S : Nat} {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW S Ctx St W SP s D n)
+    {k : Nat} (hk : k ≤ n) : DataW S Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
   ⟨h.ok.drop hk, covers_off h.wr (by omega_arith) h.ok.lt, h.ctx.sub_right (Offset.sub_base D (by omega_arith)),
     h.stk.sub_right (Offset.sub_base D (by omega_arith))⟩
 
-theorem DataW.take {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s D k :=
+theorem DataW.take {S : Nat} {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW S Ctx St W SP s D n)
+    {k : Nat} (hk : k ≤ n) : DataW S Ctx St W SP s D k :=
   ⟨h.ok.take hk, covers_prefix h.wr hk, h.ctx.sub_right (Region.sub_prefix hk),
     h.stk.sub_right (Region.sub_prefix hk)⟩
 
@@ -73,8 +73,8 @@ abbrev ciphOf (m : Mem) (Ctx : Addr) : Block → Block :=
 
 /-- The regions `crypt` writes: the data, the counter and keystream blocks,
 and the stack `vg_sm4_ctr32` uses. -/
-abbrev crFrame (St SP D : Addr) (n : Nat) : List Region :=
-  [⟨D, n⟩, ⟨St + BitVec.ofNat 64 48, 32⟩, stk SP]
+abbrev crFrame (S : Nat) (St SP D : Addr) (n : Nat) : List Region :=
+  [⟨D, n⟩, ⟨St + BitVec.ofNat 64 48, 32⟩, stk S SP]
 
 /-- The bytes `crypt` XORs with the rest of the current keystream block. -/
 abbrev crHead (o n : Nat) : Nat := if o = 0 then 0 else min (16 - o) n
@@ -107,17 +107,17 @@ theorem Ctr.of_aligned {m m' : Mem} {cb ks : Addr} {ciph : Block → Block} {icb
   ⟨hc.trans h.1, fun h1 => absurd h0 h1⟩
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
-structure CrIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (P : Nat) (D : Addr) (n : Nat) (s : State) :
+structure CrIn (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (P : Nat) (D : Addr) (n : Nat) (s : State) :
     Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
   x23 : s.gpr .x23 = D
   x24 : s.gpr .x24 = BitVec.ofNat 64 n
   x25 : s.gpr .x25 = BitVec.ofNat 64 (P % 16)
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
-structure CrMid (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
+structure CrMid (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -125,18 +125,18 @@ structure CrMid (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : 
   x23 : s.gpr .x23 = D + BitVec.ofNat 64 j
   x24 : s.gpr .x24 = BitVec.ofNat 64 (n - j)
   x25 : s.gpr .x25 = BitVec.ofNat 64 (P % 16)
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + j)
   done : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame St SP D n) m₀ s.mem
+  frame : Frame (crFrame S St SP D n) m₀ s.mem
 
 /-- Before the first call: `CrMid` but for `x23` and `x24`, which have moved
 past the whole blocks, and the call's arguments. -/
-structure Cr1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
+structure Cr1 (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -144,18 +144,18 @@ structure Cr1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Na
   x23 : s.gpr .x23 = D + BitVec.ofNat 64 (j + 16 * ((n - j) / 16))
   x24 : s.gpr .x24 = BitVec.ofNat 64 (n - (j + 16 * ((n - j) / 16)))
   x25 : s.gpr .x25 = BitVec.ofNat 64 (P % 16)
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + j)
   done : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame St SP D n) m₀ s.mem
-  call : CtrCall s Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) ((n - j) / 16)
+  frame : Frame (crFrame S St SP D n) m₀ s.mem
+  call : CtrCall S s Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) ((n - j) / 16)
 
 /-- After `crypt`. -/
-structure CrOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
+structure CrOut (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -164,14 +164,14 @@ structure CrOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : 
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + n)
   out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     bytesAt s.mem D n = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ D n)
-  frame : Frame (crFrame St SP D n) m₀ s.mem
+  frame : Frame (crFrame S St SP D n) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
-theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W SP s D n) :
-    ∀ r ∈ crFrame St SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
+theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW S Ctx St W SP s D n) :
+    ∀ r ∈ crFrame S St SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -192,9 +192,9 @@ theorem ctrCall_of {s : State} (he : Env Ctx St W SP s) {D' : Addr} {nb : Nat}
     (h3 : s.gpr .x3 = BitVec.ofNat 64 nb) (hwrap : D'.toNat + 16 * nb ≤ 2 ^ 64)
     (hkd : (⟨Ctx, 128⟩ : Region).Disjoint ⟨D', 16 * nb⟩)
     (hcd : (⟨St + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨D', 16 * nb⟩)
-    (hsd : (stk SP).Disjoint ⟨D', 16 * nb⟩)
+    (hsd : (stk S SP).Disjoint ⟨D', 16 * nb⟩)
     (hdw : Covers [⟨D', 16 * nb⟩] s.wr) :
-    CtrCall s Ctx (St + BitVec.ofNat 64 48) D' nb := by
+    CtrCall S s Ctx (St + BitVec.ofNat 64 48) D' nb := by
   have hsw := L.sw
   refine ⟨h0, h1, h2, h3, by rw [he.sp]; exact L.sp, by omega_arith, hwrap, by have := L.cw; omega_arith,
     by rw [BitVec.toNat_add, toNat_ofNat_of_lt (by decide)]; omega_arith,
@@ -213,8 +213,8 @@ theorem ctrArgs_eq (rest : List Instr) :
 
 /-- The rest of the keystream block, and the arguments for the whole blocks. -/
 theorem crSeg1_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP k P D n s) :
-    WP isa crSeg1 s (Cr1 Ctx St W SP k icb P D n s.mem (crHead (P % 16) n)) := by
+    (h : CrIn S Ctx St W SP k P D n s) :
+    WP isa crSeg1 s (Cr1 S Ctx St W SP k icb P D n s.mem (crHead (P % 16) n)) := by
   obtain hlt : P % 16 < 16 := Nat.mod_lt _ (by decide)
   have hn' := h.data.ok.lt
   have he := h.env
@@ -295,7 +295,7 @@ theorem crSeg1_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n 
   obtain he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => ggA r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) hsp hrd hwr
-  obtain hd₄ : DataW Ctx St W SP s₄ D n := h.data.of_eq hrd hwr
+  obtain hd₄ : DataW S Ctx St W SP s₄ D n := h.data.of_eq hrd hwr
   obtain hm₄ : s₄.mem = writeBytes s.mem D (xorBytes s.mem D (St + BitVec.ofNat 64 (64 + P % 16)) j) := by
     rw [r₄.mem, m₃]
   obtain hxl := length_xorBytes s.mem D (St + BitVec.ofNat 64 (64 + P % 16)) j
@@ -351,10 +351,10 @@ theorem crSeg1_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n 
 
 /-- The first call: the whole blocks. -/
 theorem ctrCall1_ok (v : GcmImpl) {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : Cr1 Ctx St W SP k icb P D n m₀ j s)
-    (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
+    {m₀ : Mem} {j : Nat} {s : State} (h : Cr1 S Ctx St W SP k icb P D n m₀ j s)
+    (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     WP isa (ctrCall v.callees) s fun s' =>
-      CrMid Ctx St W SP k icb P D n m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 := by
+      CrMid S Ctx St W SP k icb P D n m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 := by
   have hn' := h.data.ok.lt
   have hle := h.le
   refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
@@ -407,7 +407,7 @@ theorem ctrCall1_ok (v : GcmImpl) {k : Reg → BitVec 64} {icb : Block} {P : Nat
       · exact (h.data.take h.le).stk.symm) (by omega_arith)
     exact done_append (hjd.trans (h.done hc₀)) hj16
   · -- The bytes left.
-    obtain hdis : ∀ r ∈ [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨D + BitVec.ofNat 64 j, 16 * nb⟩, stk SP],
+    obtain hdis : ∀ r ∈ [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨D + BitVec.ofNat 64 j, 16 * nb⟩, stk S SP],
         (⟨D + BitVec.ofNat 64 (j + 16 * nb), n - (j + 16 * nb)⟩ : Region).Disjoint r := by
       obtain hrest := (h.data.drop (k := j + 16 * nb) (by omega_arith))
       intro r hr
@@ -438,7 +438,7 @@ end
 
 /-- Before the second call: a zero keystream block if there are bytes left,
 and the call's arguments. -/
-structure Cr2 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
+structure Cr2 (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -447,7 +447,7 @@ structure Cr2 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Na
   x23 : s.gpr .x23 = D + BitVec.ofNat 64 j
   x24 : s.gpr .x24 = BitVec.ofNat 64 (n - j)
   x25 : s.gpr .x25 = BitVec.ofNat 64 (P % 16)
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + j)
   ks0 : n - j ≠ 0 → blockAt s.mem (St + BitVec.ofNat 64 64) = 0
@@ -455,11 +455,11 @@ structure Cr2 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Na
     bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame St SP D n) m₀ s.mem
-  call : CtrCall s Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (if n - j = 0 then 0 else 1)
+  frame : Frame (crFrame S St SP D n) m₀ s.mem
+  call : CtrCall S s Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (if n - j = 0 then 0 else 1)
 
 /-- After the second call: a new keystream block, if there are bytes left. -/
-structure Cr3 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
+structure Cr3 (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Nat) (D : Addr)
     (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
@@ -468,7 +468,7 @@ structure Cr3 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Na
   x23 : s.gpr .x23 = D + BitVec.ofNat 64 j
   x24 : s.gpr .x24 = BitVec.ofNat 64 (n - j)
   x25 : s.gpr .x25 = BitVec.ofNat 64 (P % 16)
-  data : DataW Ctx St W SP s D n
+  data : DataW S Ctx St W SP s D n
   ctr0 : n - j = 0 → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + j)
   ctr1 : n - j ≠ 0 → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
@@ -479,16 +479,16 @@ structure Cr3 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (icb : Block) (P : Na
     bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx) icb P (bytesAt m₀ D j)
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame St SP D n) m₀ s.mem
+  frame : Frame (crFrame S St SP D n) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- The arguments for a new keystream block. -/
 theorem crSeg2_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Ctx St W SP k icb P D n m₀ j s) (hj : n - j < 16) :
-    WP isa crSeg2 s (Cr2 Ctx St W SP k icb P D n m₀ j) := by
+    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid S Ctx St W SP k icb P D n m₀ j s) (hj : n - j < 16) :
+    WP isa crSeg2 s (Cr2 S Ctx St W SP k icb P D n m₀ j) := by
   have hn' := h.data.ok.lt
   have hle := h.le
   have he := h.env
@@ -568,16 +568,16 @@ theorem crSeg2_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
 
 /-- The second call: a new keystream block, if there are bytes left. -/
 theorem ctrCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : Cr2 Ctx St W SP k icb P D n m₀ j s)
-    (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
-    WP isa (ctrCall v.callees) s (Cr3 Ctx St W SP k icb P D n m₀ j) := by
+    {m₀ : Mem} {j : Nat} {s : State} (h : Cr2 S Ctx St W SP k icb P D n m₀ j s)
+    (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (ctrCall v.callees) s (Cr3 S Ctx St W SP k icb P D n m₀ j) := by
   have hn' := h.data.ok.lt
   have hle := h.le
   refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gf := g.frame
   rw [h.env.sp] at gf
   obtain dD : ∀ r ∈ [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨St + BitVec.ofNat 64 64, 16 * (if n - j = 0 then 0 else 1)⟩,
-      stk SP], (⟨D, n⟩ : Region).Disjoint r := by
+      stk S SP], (⟨D, n⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -621,12 +621,12 @@ omit L in
 /-- After the last bytes are XORed with the new keystream block (by `crTail`,
 or by any code leaving that memory and the registers `CrOut` reads). -/
 theorem crOut_of_xor {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s s₂ : State} (h : Cr3 Ctx St W SP k icb P D n m₀ j s)
+    {m₀ : Mem} {j : Nat} {s s₂ : State} (h : Cr3 S Ctx St W SP k icb P D n m₀ j s)
     (m₂ : s₂.mem = writeBytes s.mem (D + BitVec.ofNat 64 j)
       (xorBytes s.mem (D + BitVec.ofNat 64 j) (St + BitVec.ofNat 64 64) (n - j)))
     (gg : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x25, .x26, .x27, .x28], s₂.gpr r = s.gpr r)
     (sp₂ : s₂.sp = s.sp) (rd₂ : s₂.rd = s.rd) (wr₂ : s₂.wr = s.wr) :
-    CrOut Ctx St W SP k icb P D n m₀ s₂ := by
+    CrOut S Ctx St W SP k icb P D n m₀ s₂ := by
   have hn' := h.data.ok.lt
   have hle := h.le
   have hj := h.lt16
@@ -684,8 +684,8 @@ theorem crOut_of_xor {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} 
 omit L in
 /-- The last bytes, with the new keystream block. -/
 theorem crTail_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : Cr3 Ctx St W SP k icb P D n m₀ j s) :
-    WP isa crTail s (CrOut Ctx St W SP k icb P D n m₀) := by
+    {m₀ : Mem} {j : Nat} {s : State} (h : Cr3 S Ctx St W SP k icb P D n m₀ j s) :
+    WP isa crTail s (CrOut S Ctx St W SP k icb P D n m₀) := by
   have hn' := h.data.ok.lt
   have hle := h.le
   have hj := h.lt16
@@ -716,15 +716,15 @@ theorem crTail_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/
 theorem CrIn.mid {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP k P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP k icb P D n s.mem 0 s :=
+    (h : CrIn S Ctx St W SP k P D n s) (hP : P % 16 = 0) : CrMid S Ctx St W SP k icb P D n s.mem 0 s :=
   ⟨h.env, h.kept, Nat.zero_le _, by rw [h.x23]; simp, by rw [h.x24, Nat.sub_zero], h.x25,
     h.data, fun hc => by simpa using hc, fun _ => by simp [bytesAt, Proof.Gcm.xorKs_nil], rfl,
     .inr (by omega_arith), Frame.refl _ _⟩
 
 /-- The arguments for the whole blocks, from part of the way. -/
 theorem crArgs_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid Ctx St W SP k icb P D n m₀ j s) :
-    WP isa (.block crArgs) s (Cr1 Ctx St W SP k icb P D n m₀ j) := by
+    {m₀ : Mem} {j : Nat} {s : State} (h : CrMid S Ctx St W SP k icb P D n m₀ j s) :
+    WP isa (.block crArgs) s (Cr1 S Ctx St W SP k icb P D n m₀ j) := by
   have hn' := h.data.ok.lt
   have he := h.env
   have hle := h.le
@@ -752,7 +752,7 @@ theorem crArgs_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
   obtain he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => r₄.others r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) r₄.sp r₄.rd r₄.wr
-  obtain hd₄ : DataW Ctx St W SP s₄ D n := h.data.of_eq r₄.rd r₄.wr
+  obtain hd₄ : DataW S Ctx St W SP s₄ D n := h.data.of_eq r₄.rd r₄.wr
   obtain hdj := (hd₄.drop hle).take (k := 16 * nb) h16
   refine ⟨he₄, h.kept.of_eq fun r hr => r₄.others r (by
       simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -768,9 +768,9 @@ theorem crArgs_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
 theorem cryptAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat}
-    {s : State} (h : CrIn Ctx St W SP k P D n s) (hP : P % 16 = 0) :
-    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP k icb P D n s.mem) := by
-  obtain hc : ∀ {m' : Mem}, Frame (crFrame St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
+    {s : State} (h : CrIn S Ctx St W SP k P D n s) (hP : P % 16 = 0) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (cryptAl v.callees) s (CrOut S Ctx St W SP k icb P D n s.mem) := by
+  obtain hc : ∀ {m' : Mem}, Frame (crFrame S St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data)
   exact WP.seq (WP.mono (crArgs_ok L (h.mid (icb := icb) hP)) fun s₁ h₁ =>
     WP.seq (WP.mono (ctrCall1_ok L v h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
@@ -779,9 +779,9 @@ theorem cryptAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {P : Nat} {icb : Block}
 
 /-- `crypt`. -/
 theorem crypt_ok (v : GcmImpl) {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP k P D n s) :
-    WP isa (crypt v.callees) s (CrOut Ctx St W SP k icb P D n s.mem) := by
-  obtain hc : ∀ {m' : Mem}, Frame (crFrame St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
+    (h : CrIn S Ctx St W SP k P D n s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (crypt v.callees) s (CrOut S Ctx St W SP k icb P D n s.mem) := by
+  obtain hc : ∀ {m' : Mem}, Frame (crFrame S St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data)
   exact WP.seq (WP.mono (crSeg1_ok L (icb := icb) h) fun s₁ h₁ =>
     WP.seq (WP.mono (ctrCall1_ok L v h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
@@ -821,28 +821,28 @@ open VG.Proof.Gcm (lensBlock)
 
 /-- The regions `tag o` writes: the state's `J₀` and accumulator, `T`, the
 tag, `vg_ghash`'s working space and the stack `vg_sm4_ctr32` uses. -/
-abbrev tagFrame (St W SP : Addr) (o : Nat) : List Region :=
-  [⟨St, 32⟩, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 512, 256⟩, stk SP]
+abbrev tagFrame (S : Nat) (St W SP : Addr) (o : Nat) : List Region :=
+  [⟨St, 32⟩, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 512, 256⟩, stk S SP]
 
 /-- Before the call of `tag o`: the accumulator `Y` copied to `W + o`, `J` at
 the state. -/
-structure Tag1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
+structure Tag1 (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
     Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
-  call : CtrCall s Ctx St (W + BitVec.ofNat 64 o) 1
+  call : CtrCall S s Ctx St (W + BitVec.ofNat 64 o) 1
   cp : blockAt s.mem (W + BitVec.ofNat 64 o) = Y
   hJ : blockAt s.mem St = J
   frame : Frame [⟨W + BitVec.ofNat 64 o, 16⟩] m₀ s.mem
 
 /-- After `tag o`, from `m₀`: the tag of the accumulator `Y` (after the
 lengths block) and the counter block `J`. -/
-structure TagOut (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
+structure TagOut (S : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (o : Nat) (Y J : Block) (m₀ : Mem) (s : State) :
     Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
   out : bytesAt s.mem (W + BitVec.ofNat 64 o) 16 = toBytes (Y ^^^ ciphOf m₀ Ctx J)
-  frame : Frame (tagFrame St W SP o) m₀ s.mem
+  frame : Frame (tagFrame S St W SP o) m₀ s.mem
 
 theorem bytesAt_copy2 (m : Mem) {p q : Addr} (hd : (⟨p, 8⟩ : Region).Disjoint ⟨q + BitVec.ofNat 64 8, 8⟩) :
     bytesAt ((m.writeW p (m.readW q 64)).writeW (p + BitVec.ofNat 64 8)
@@ -852,13 +852,13 @@ theorem bytesAt_copy2 (m : Mem) {p q : Addr} (hd : (⟨p, 8⟩ : Region).Disjoin
     ← Proof.Cmac.bytesAt_split]
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {S : Nat} {Ctx St W SP : Addr} (L : Lay S Ctx St W SP)
 include L
 
 /-- The accumulator copied, and the arguments of the call. -/
 theorem tagSeg_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W SP s)
     (hk : Kept k s) :
-    WP isa (.block (tagSeg o)) s (Tag1 Ctx St W SP k o (blockAt s.mem (St + BitVec.ofNat 64 16))
+    WP isa (.block (tagSeg o)) s (Tag1 S Ctx St W SP k o (blockAt s.mem (St + BitVec.ofNat 64 16))
       (blockAt s.mem St) s.mem) := by
   have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_using [ho]
   have r₁ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
@@ -916,8 +916,8 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {s 
 
 /-- The call of `tag o`: `CIPH_K(J)` XORed into the copy. -/
 theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
-    {m₀ : Mem} {s : State} (h : Tag1 Ctx St W SP k o Y J m₀ s) :
-    WP isa (ctrCall v.callees) s (TagOut Ctx St W SP k o Y J m₀) := by
+    {m₀ : Mem} {s : State} (h : Tag1 S Ctx St W SP k o Y J m₀ s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (ctrCall v.callees) s (TagOut S Ctx St W SP k o Y J m₀) := by
   refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gf := g.frame
   rw [h.env.sp] at gf
@@ -940,8 +940,8 @@ theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 �
 /-- `tag o`, for `o` of 0 or 112. -/
 theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' : Nat} (ho : o = 0 ∨ o = 112) {s : State}
     (he : Env Ctx St W SP s) (hk : Kept k s)
-    (h25 : s.gpr .x25 = BitVec.ofNat 64 o') :
-    WP isa (tag v.callees o) s (TagOut Ctx St W SP k o
+    (h25 : s.gpr .x25 = BitVec.ofNat 64 o') (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (tag v.callees o) s (TagOut S Ctx St W SP k o
       (ghashFrom (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blockAt s.mem (St + BitVec.ofNat 64 16))
         [ofBytes (lensBlock (s.gpr .x26).toNat (s.gpr .x27).toNat)]) (blockAt s.mem St) s.mem) := by
   refine WP.seq (WP.seq (WP.mono (lensSeg_ok L (yo := 16) (.inr rfl) he hk h25 (by decide)) fun s₁ h₁ =>

@@ -3,6 +3,21 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
+public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Sha1.PostOut
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.Scrub.X86
+meta import VerifiedGarbage.Proof.Sha1.PostOut
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
@@ -235,18 +250,83 @@ structure StreamFn where
     contract = api.sig.contract (X86.abi) pre post api.writeArgs stack leak
   ofApi : contract = api.contract X86.abi stack
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- Its postcondition reads the memory on return only within the buffers. -/
+  post : X86.Scrub.PostOut contract (api.sig.retBits 32)
+  /-- What `X86.Scrub.scrubFOf` needs of its code over its stack: from the
+  variant's facts of the code it wraps (`update_scrub`, …), not evaluated
+  again. -/
+  scrub : X86.Scrub.scrubFSide code [] stack = true
 
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
+/-- `f`'s code as emitted, `f.code` and then its cleanup: the zeroing of its
+stack and the clearing of the registers a callee may change but the result's
+bits (`Impl.Scrub.X86.scrubF`), meets `f`'s contract in constant time and
+returns without secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+theorem StreamFn.scrubbed (f : StreamFn) :
+    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code) f.contract
+      (f.api.sig.retBits 32) :=
+  X86.Scrub.verifiedScrubbedF (api := f.api)
+    { consts := []
+      tables := []
+      code := f.code
+      contract := f.contract
+      stack := f.stack
+      verified := f.verified
+      ofApi := f.ofApi
+      ofSig := f.ofSig
+      spSafe := f.spSafe }
+    f.post f.scrub
+
+/-- `f` as a registration of its `Api` (`Api.artifact`): its code as emitted,
+with its cleanup, and the theorem about that code (`StreamFn.scrubbed`). -/
 def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
   consts := []
   tables := []
-  code := f.code
+  code := Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code
   contract := f.contract
   stack := f.stack
-  verified := f.verified
+  verified := .scrubbed f.scrubbed
   ofApi := f.ofApi
   ofSig := f.ofSig
-  spSafe := f.spSafe
+  spSafe := X86.Scrub.scrubF_spSafe f.spSafe
+
+/-! ## What the cleanup of the streaming functions needs
+
+Their postconditions read the memory on return only within the buffers
+(`updateOut`, …). `update` and `finalize` are the code of the variant's
+streaming functions in a frame of working space: what `scrubFOf` needs of
+them (`update_scrub`, …) follows from that frame with an empty body,
+evaluated once here, and the variant's `calleeOk` and stack of the code
+(`Fill`, `Proof/Framework/X86/ScrubCall.lean`). -/
+
+theorem updateOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha1.updateContract X86.abi stack) (Spec.Sha1.updateSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha1.updatePost_out 32)
+
+theorem finalizeOut (stack : Nat) :
+    X86.Scrub.PostOut (Spec.Sha1.finalizeContract X86.abi stack) (Spec.Sha1.finalizeSig.retBits 32) :=
+  X86.Scrub.postOut_of_local X86.Scrub.ScrubAbi.plain (Proof.Sha1.finalizePost_out 32)
+
+theorem update_side :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 188 5 (.block [])) [] 188 = true := by
+  lit_decide
+
+/-- What `scrubFOf` needs of `update`'s code with the streaming `update` `c`, in its
+frame of 188 bytes, from `c`'s `calleeOk` and stack. -/
+theorem update_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 188 5 c) [] (20 + 188) = true := by
+  have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
+  exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) update_side
+
+theorem finalize_side :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 (.block [])) [] 184 = true := by
+  lit_decide
+
+/-- What `scrubFOf` needs of `finalize`'s code with the streaming `finalize` `c`, in its
+frame of 184 bytes, from `c`'s `calleeOk` and stack. -/
+theorem finalize_scrub (c : Prog isa) (hc : calleeOk c = true) (hs : stackUse c ≤ 20) :
+    X86.Scrub.scrubFSide (Impl.StackScratch.X86.withStackScratch 184 4 c) [] (20 + 184) = true := by
+  have h := X86.Scrub.calleeSide_of_le (n := 20) hs hc
+  exact X86.Scrub.scrubFSide_of_fill (n := 20) (by fill_calls) finalize_side
 
 /-- The functions the whole of PBKDF2 calls, with the compression function
 `cmpN`/`cmpC` and the streaming functions `s`. -/
@@ -270,6 +350,15 @@ structure Backend where
   features : List String
   /-- Its own functions: the streaming functions made with it. -/
   functions : List StreamFn
+  /-- The compression function and the streaming functions it makes, the
+  code the functions built on it call, have no MMX instruction and make no
+  indirect call (`calleeOk`): what the cleanup of every function that calls
+  them needs of them, with their stack (`X86.Scrub.calleeSide`), so that each
+  proves only its own code, whatever the implementation
+  (`Proof/Framework/X86/ScrubCall.lean`). -/
+  cmpScrub : calleeOk cmpC = true
+  updScrub : calleeOk stream.upd = true
+  finScrub : calleeOk stream.fin = true
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/
   initSp : (sha1M stream cmpN cmpC).hmacInit.all (fun i => !isa.writesSp i) = true

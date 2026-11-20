@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sm3.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Streaming SM3: 32-bit ARM implementation
@@ -47,3 +49,25 @@ def update : Prog isa := MdStream.Arm.update params "vg_sm3_compress" compress
 def finalize : Prog isa := MdStream.Arm.finalize params "vg_sm3_compress" compress
 
 end VG.Impl.Sm3.Arm.Stream
+
+/-! ## The functions as emitted
+
+Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+a callee may change set to constants, and for `update` and `finalize` first
+the 168 bytes of their frame zeroed. None returns a value. -/
+
+namespace VG.Impl.Sm3.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_sm3_init`. -/
+def init : Prog isa := scrub 0 Stream.init
+
+/-- `vg_sm3_update`: `Stream.update`, its scratch space in a frame of 168
+bytes, which is then zeroed. -/
+def update : Prog isa := scrubF 0 168 (Impl.StackScratch.Arm.withStackScratch 168 2 Stream.update)
+
+/-- `vg_sm3_finalize`, as `update`. -/
+def finalize : Prog isa := scrubF 0 168 (Impl.StackScratch.Arm.withStackScratch 168 1 Stream.finalize)
+
+end VG.Impl.Sm3.Arm.Fn

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Scrub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PkTr
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Prepare
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
@@ -282,24 +284,24 @@ end VG.Artifacts.MlDsa.AArch64.KeyGen
 namespace VG.Artifacts.MlDsa.AArch64.PkTr
 
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.pkTr44Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.MlDsa.pkTr44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
-    code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa44
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
-  Spec.MlDsa.pkTr65Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    code := Impl.MlDsa.AArch64.Fn.pkTr v.callee Spec.MlDsa.mlDsa44
+    verified := .scrubbed (Proof.MlDsa.AArch64.Fn.pkTr44 v) },
+  Spec.MlDsa.pkTr65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
-    code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa65
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16)),
-  Spec.MlDsa.pkTr87Api.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    code := Impl.MlDsa.AArch64.Fn.pkTr v.callee Spec.MlDsa.mlDsa65
+    verified := .scrubbed (Proof.MlDsa.AArch64.Fn.pkTr65 v) },
+  Spec.MlDsa.pkTr87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
-    code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa87
-    verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) } (Proof.MlDsa.AArch64.Scrub.pkTrOk _ 16))]
+    code := Impl.MlDsa.AArch64.Fn.pkTr v.callee Spec.MlDsa.mlDsa87
+    verified := .scrubbed (Proof.MlDsa.AArch64.Fn.pkTr87 v) }]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Keccak.AArch64.variants.flatMap artifactsFor
 
 end VG.Artifacts.MlDsa.AArch64.PkTr
 
@@ -463,30 +465,24 @@ def artifacts : List Artifact :=
   KeyGen.artifacts ++
   PkTr.artifacts ++
   [
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inl rfl) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
-      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inl rfl) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inl rfl))),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inl rfl) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
-      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inl rfl) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inl rfl))),
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inl rfl)) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
-      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inl rfl)) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inr (.inl rfl)))),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inl rfl)) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
-      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inl rfl)) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inr (.inl rfl)))),
-    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
-      verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inr rfl)) } Proof.MlDsa.AArch64.Scrub.preparePublicClear
-      (Proof.MlDsa.AArch64.Scrub.preparePublicOk (.inr (.inr rfl)) 80) (Proof.MlDsa.AArch64.Scrub.preparePublicSide (.inr (.inr rfl)))),
-    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
-      verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inr rfl)) } Proof.MlDsa.AArch64.Scrub.prepareSecretClear
-      (Proof.MlDsa.AArch64.Scrub.prepareSecretOk (.inr (.inr rfl)) 80) (Proof.MlDsa.AArch64.Scrub.prepareSecretSide (.inr (.inr rfl))))] ++
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa44
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.preparePublic44 },
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa44
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.prepareSecret44 },
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa65
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.preparePublic65 },
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa65
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.prepareSecret65 },
+    (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.preparePublic Spec.MlDsa.mlDsa87
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.preparePublic87 },
+    (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
+      code := Impl.MlDsa.AArch64.Fn.prepareSecret Spec.MlDsa.mlDsa87
+      verified := .scrubbed Proof.MlDsa.AArch64.Fn.prepareSecret87 }] ++
   Sign.artifacts ++
   SignMessage.artifacts ++
   Verify.artifacts ++

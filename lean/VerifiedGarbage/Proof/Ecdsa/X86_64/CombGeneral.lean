@@ -1,6 +1,6 @@
 module
 
--- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP384r1's and brainpoolP512r1's signatures next), and not imported by the ECDH, verification and public-key proofs
+-- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP320r1's, brainpoolP384r1's and brainpoolP512r1's signatures next), and not imported by the ECDH, verification and public-key proofs
 public import VerifiedGarbage.Impl.Ecdsa.X86_64.CombGeneral
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop

@@ -304,6 +304,27 @@ def ctr32ToAArch64 : Contract AArch64.isa where
     s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.sp = s₂.sp
 
 open VG.AArch64 in
+/-- `ctr32ToAArch64` with `n` bytes of `scratch`, as `ctr32AArch64With`. -/
+def ctr32ToAArch64With (n : Nat) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 240⟩
+    let counter : Region := ⟨s.gpr .x2, 16⟩
+    let src : Region := ⟨s.gpr .x3, 16 * (s.gpr .x4).toNat⟩
+    let dst : Region := ⟨s.gpr .x6, 16 * (s.gpr .x4).toNat⟩
+    let scratch : Region := ⟨s.gpr .x5, n⟩
+    s.rd = [sched, src] ∧ s.wr = [counter, dst, scratch] ∧
+    sched.Disjoint counter ∧ sched.Disjoint dst ∧ sched.Disjoint scratch ∧
+    counter.Disjoint src ∧ counter.Disjoint dst ∧ counter.Disjoint scratch ∧
+    src.Disjoint dst ∧ src.Disjoint scratch ∧ dst.Disjoint scratch ∧
+    (s.gpr .x3).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x6).toNat + 16 * (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
+  post := ctr32ToAArch64.post
+  pub := ctr32ToAArch64.pub
+
+theorem ctr32ToAArch64With_2048 : ctr32ToAArch64With 2048 = ctr32ToAArch64 := rfl
+
+open VG.AArch64 in
 /-- AArch64 contract for `vg_aes_expand_key(key: *const u8, key_len: usize,
 schedule: *mut [u8; 240], scratch: *mut [u64; 64])`: writes the key schedule of
 the `key_len`-byte key at `key` to `schedule`.
@@ -782,9 +803,12 @@ theorem pre_ofW {n : Nat} {s₀ : State} (h : (Proof.Aes.ctr32AArch64With n).pre
 theorem pre_of {s₀ : State} (h : Proof.Aes.ctr32AArch64.pre s₀) : Pre false s₀ :=
   pre_ofW (n := 2048) h
 
-theorem preTo_of {s₀ : State} (h : Proof.Aes.ctr32ToAArch64.pre s₀) : Pre true s₀ := by
+theorem preTo_ofW {n : Nat} {s₀ : State} (h : (Proof.Aes.ctr32ToAArch64With n).pre s₀) : Pre true s₀ n := by
   obtain ⟨h1, h2, h3, _, _, _, h7, _, h9, _, _, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h7, fun _ => h9, h12, h13, h14⟩
+
+theorem preTo_of {s₀ : State} (h : Proof.Aes.ctr32ToAArch64.pre s₀) : Pre true s₀ :=
+  preTo_ofW (n := 2048) h
 
 namespace Pre
 variable {to : Bool} {s₀ : State} {n : Nat} (hp : Pre to s₀ n)
@@ -1247,6 +1271,13 @@ theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' :=
   ctr32_correctW 2048 s hs
 
+theorem ctr32To_correctW (n : Nat) (s : State) (hs : (Proof.Aes.ctr32ToAArch64With n).pre s) :
+    ∃ t s', Exec isa ctr32To s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.ctr32ToAArch64With n).post s s' := by
+  obtain ⟨t, s', he, h₂, h₁⟩ :=
+    WP.gprs (rs := preserved) (show WP isa ctr32To s (Post true s) from correct (preTo_ofW hs))
+      (by lit_decide) (by lit_decide)
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
     ∃ t s', Exec isa ctr32To s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToAArch64.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
@@ -1270,6 +1301,15 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ctr32To_ctW (n : Nat) :
+    ConstantTime isa (Proof.Aes.ctr32ToAArch64With n).pre (Proof.Aes.ctr32ToAArch64With n).pub ctr32To := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, h7, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32To_ct :
     ConstantTime isa Proof.Aes.ctr32ToAArch64.pre Proof.Aes.ctr32ToAArch64.pub ctr32To := by

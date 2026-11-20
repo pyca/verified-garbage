@@ -757,10 +757,7 @@ theorem rsi_not_clob (n : Nat) : Reg.rsi ∉ clob n := by
   · exact absurd h (by decide)
   · exact absurd (List.mem_of_mem_take h) (by decide)
 
-theorem rsi_not_powClob (n : Nat) : Reg.rsi ∉ powClob n := by
-  intro h'
-  rcases List.mem_cons.mp h' with h' | h'
-  · exact absurd h' (by decide)
-  · exact rsi_not_clob n h'
+theorem rsi_not_powClob (n : Nat) : Reg.rsi ∉ powClob n :=
+  not_powClob (by decide) (by decide) (rsi_not_clob n)
 
 end VG.Proof.Ecdsa.X86_64

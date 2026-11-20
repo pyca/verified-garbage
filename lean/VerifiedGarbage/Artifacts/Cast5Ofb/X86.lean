@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86.ModesVerified
-import VerifiedGarbage.Proof.Cast5.X86.ModesLit
-public import VerifiedGarbage.Proof.Cast5.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Cast5.X86.Scrub
+public import VerifiedGarbage.Impl.Cast5.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 import VerifiedGarbage.Proof.Cast5.X86.FbFinalLit
 
 /-! # CAST5-OFB on x86 -/
@@ -15,10 +15,10 @@ namespace VG.Artifacts.Cast5Ofb.X86
 
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofb
-    verified := Proof.Cast5.ofb_keyed Proof.Cast5.X86.ModeFns.ofb_framed },
+    code := Impl.Cast5.X86.Fn.ofb
+    verified := .scrubbed Proof.Cast5.X86.Scrub.ofb_scrubbed },
   Spec.Cast5.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofbFinal
-    verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.X86.FbFinal.ofbFinal_framed }]
+    code := Impl.Cast5.X86.Fn.ofbFinal
+    verified := .scrubbed Proof.Cast5.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Cast5Ofb.X86

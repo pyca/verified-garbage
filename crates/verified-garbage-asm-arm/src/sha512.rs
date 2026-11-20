@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -62,6 +64,12 @@ str r12, [r0, #56]
 movw r12, #18461
 movt r12, #18357
 str r12, [r0, #60]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -69,6 +77,8 @@ bx lr",
 /// Starts a SHA-512 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512 (`VG.Spec.Sha512.H0_512`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -125,6 +135,12 @@ str r12, [r0, #56]
 movw r12, #52505
 movt r12, #23520
 str r12, [r0, #60]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -132,6 +148,8 @@ bx lr",
 /// Starts a SHA-512/224 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/224 (`VG.Spec.Sha512.H0_512_224`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_224`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -188,6 +206,12 @@ str r12, [r0, #56]
 movw r12, #59053
 movt r12, #4370
 str r12, [r0, #60]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -195,6 +219,8 @@ bx lr",
 /// Starts a SHA-512/256 computation: makes the SHA-512 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-512/256 (`VG.Spec.Sha512.H0_512_256`). Continue with `vg_sha512_update` and `vg_sha512_finalize`.
 ///
 /// Contract: `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_512_256`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha512.Repr`).
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -251,6 +277,12 @@ str r12, [r0, #56]
 movw r12, #11740
 movt r12, #3767
 str r12, [r0, #60]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -259,21 +291,23 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #12]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
-ldr lr, [sp, #1396]
+ldr lr, [sp, #292]
 str lr, [r12, #4]
 add lr, sp, #16
 str lr, [r12, #8]
@@ -399,7 +433,30 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+223:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 223b
+add sp, sp, #288
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -409,6 +466,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -416,14 +475,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -549,7 +608,30 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #288
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -559,6 +641,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -566,14 +650,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -687,7 +771,30 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #288
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -697,6 +804,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -704,14 +813,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -813,7 +922,30 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #288
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -823,6 +955,8 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -830,14 +964,14 @@ bx lr",
 /// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"sub sp, sp, #1392
+        r"sub sp, sp, #288
 add r12, sp, #0
 str lr, [r12, #8]
-ldr lr, [sp, #1392]
+ldr lr, [sp, #288]
 str lr, [r12, #0]
 add lr, sp, #12
 str lr, [r12, #4]
@@ -936,7 +1070,30 @@ ldr r9, [r3, #244]
 ldr r10, [r3, #248]
 ldr r11, [r3, #252]
 ldr lr, [r3, #256]
-add sp, sp, #1392
+add sp, sp, #288
+sub sp, sp, #288
+add r12, sp, #0
+mov r2, #0
+mov r3, #9
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #288
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress::vg_sha512_compress,
     )
@@ -945,6 +1102,8 @@ bx lr",
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -974,7 +1133,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha384_init}
+bl {vg_sha384_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1157,8 +1316,33 @@ str r2, [r12, #556]
 str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+21:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha384_init = sym super::sha512::vg_sha384_init,
+        vg_sha384_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha384_init_core::vg_sha384_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1167,6 +1351,8 @@ bx lr",
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1196,7 +1382,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_init}
+bl {vg_sha512_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1379,8 +1565,33 @@ str r2, [r12, #556]
 str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+21:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1389,6 +1600,8 @@ bx lr",
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1418,7 +1631,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_224_init}
+bl {vg_sha512_224_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1601,8 +1814,33 @@ str r2, [r12, #556]
 str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+21:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha512_224_init = sym super::sha512::vg_sha512_224_init,
+        vg_sha512_224_init_core = sym super::sha512::vg_sha512_224_init_core::vg_sha512_224_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
@@ -1611,6 +1849,8 @@ bx lr",
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha512.digestContract` for `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1640,7 +1880,7 @@ mov r5, r2
 movw r12, #308
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha512_256_init}
+bl {vg_sha512_256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -1823,20 +2063,61 @@ str r2, [r12, #556]
 str r2, [r12, #560]
 str r2, [r12, #564]
 add sp, sp, #568
+sub sp, sp, #584
+add r12, sp, #0
+mov r2, #0
+mov r3, #18
+21:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 21b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #584
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
+        vg_sha512_256_init_core = sym super::sha512::vg_sha512_256_init_core::vg_sha512_256_init_core,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
     )
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_224_init_core.rs"]
+pub(crate) mod vg_sha512_224_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_256_init_core.rs"]
+pub(crate) mod vg_sha512_256_init_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_compress.rs"]
 pub(crate) mod vg_sha512_compress;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_core.rs"]
+pub(crate) mod vg_sha512_digest_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sha512_finalize_scratch.rs"]
 pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_init_core.rs"]
+pub(crate) mod vg_sha512_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha512_state_digest.rs"]

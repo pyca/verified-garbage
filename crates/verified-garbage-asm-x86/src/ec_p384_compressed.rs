@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -38,7 +40,7 @@ call {vg_p384_add_mod_p}
 call {vg_p384_add_mod_p}
 .base64 "WFhYWLggCAAAuTAHAAC68AcAAFBRUlc="
 call {vg_p384_sub_mod_p}
-.base64 "WFhYWIuX8AcAAAuX9AcAAAuX+AcAAAuX/AcAAAuXAAgAAAuXBAgAAAuXCAgAAAuXDAgAAAuXEAgAAAuXFAgAAAuXGAgAAAuXHAgAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4+ACAAAi4fAAQAAi5egBgAAMcIhyjHQiYdgBwAAi4fEAQAAi5ekBgAAMcIhyjHQiYdkBwAAi4fIAQAAi5eoBgAAMcIhyjHQiYdoBwAAi4fMAQAAi5esBgAAMcIhyjHQiYdsBwAAi4fQAQAAi5ewBgAAMcIhyjHQiYdwBwAAi4fUAQAAi5e0BgAAMcIhyjHQiYd0BwAAi4fYAQAAi5e4BgAAMcIhyjHQiYd4BwAAi4fcAQAAi5e8BgAAMcIhyjHQiYd8BwAAi4fgAQAAi5fABgAAMcIhyjHQiYeABwAAi4fkAQAAi5fEBgAAMcIhyjHQiYeEBwAAi4foAQAAi5fIBgAAMcIhyjHQiYeIBwAAi4fsAQAAi5fMBgAAMcIhyjHQiYeMBwAAi4fwAQAAi5fQBgAAMcIhyjHQiYdQCAAAi4f0AQAAi5fUBgAAMcIhyjHQiYdUCAAAi4f4AQAAi5fYBgAAMcIhyjHQiYdYCAAAi4f8AQAAi5fcBgAAMcIhyjHQiYdcCAAAi4cAAgAAi5fgBgAAMcIhyjHQiYdgCAAAi4cEAgAAi5fkBgAAMcIhyjHQiYdkCAAAi4cIAgAAi5foBgAAMcIhyjHQiYdoCAAAi4cMAgAAi5fsBgAAMcIhyjHQiYdsCAAAi4cQAgAAi5fwBgAAMcIhyjHQiYdwCAAAi4cUAgAAi5f0BgAAMcIhyjHQiYd0CAAAi4cYAgAAi5f4BgAAMcIhyjHQiYd4CAAAi4ccAgAAi5f8BgAAMcIhyjHQiYd8CAAAi4+ACAAAi1wkBIuHAAcAAIPgAYPIAiHIiAOLh3AGAAAhyA/IiUMti4d0BgAAIcgPyIlDKYuHeAYAACHID8iJQyWLh3wGAAAhyA/IiUMhi4eABgAAIcgPyIlDHYuHhAYAACHID8iJQxmLh4gGAAAhyA/IiUMVi4eMBgAAIcgPyIlDEYuHkAYAACHID8iJQw2Lh5QGAAAhyA/IiUMJi4eYBgAAIcgPyIlDBYuHnAYAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuX8AcAAAuX9AcAAAuX+AcAAAuX/AcAAAuXAAgAAAuXBAgAAAuXCAgAAAuXDAgAAAuXEAgAAAuXFAgAAAuXGAgAAAuXHAgAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4+ACAAAi4fAAQAAi5egBgAAMcIhyjHQiYdgBwAAi4fEAQAAi5ekBgAAMcIhyjHQiYdkBwAAi4fIAQAAi5eoBgAAMcIhyjHQiYdoBwAAi4fMAQAAi5esBgAAMcIhyjHQiYdsBwAAi4fQAQAAi5ewBgAAMcIhyjHQiYdwBwAAi4fUAQAAi5e0BgAAMcIhyjHQiYd0BwAAi4fYAQAAi5e4BgAAMcIhyjHQiYd4BwAAi4fcAQAAi5e8BgAAMcIhyjHQiYd8BwAAi4fgAQAAi5fABgAAMcIhyjHQiYeABwAAi4fkAQAAi5fEBgAAMcIhyjHQiYeEBwAAi4foAQAAi5fIBgAAMcIhyjHQiYeIBwAAi4fsAQAAi5fMBgAAMcIhyjHQiYeMBwAAi4fwAQAAi5fQBgAAMcIhyjHQiYdQCAAAi4f0AQAAi5fUBgAAMcIhyjHQiYdUCAAAi4f4AQAAi5fYBgAAMcIhyjHQiYdYCAAAi4f8AQAAi5fcBgAAMcIhyjHQiYdcCAAAi4cAAgAAi5fgBgAAMcIhyjHQiYdgCAAAi4cEAgAAi5fkBgAAMcIhyjHQiYdkCAAAi4cIAgAAi5foBgAAMcIhyjHQiYdoCAAAi4cMAgAAi5fsBgAAMcIhyjHQiYdsCAAAi4cQAgAAi5fwBgAAMcIhyjHQiYdwCAAAi4cUAgAAi5f0BgAAMcIhyjHQiYd0CAAAi4cYAgAAi5f4BgAAMcIhyjHQiYd4CAAAi4ccAgAAi5f8BgAAMcIhyjHQiYd8CAAAi4+ACAAAi1wkBIuHAAcAAIPgAYPIAiHIiAOLh3AGAAAhyA/IiUMti4d0BgAAIcgPyIlDKYuHeAYAACHID8iJQyWLh3wGAAAhyA/IiUMhi4eABgAAIcgPyIlDHYuHhAYAACHID8iJQxmLh4gGAAAhyA/IiUMVi4eMBgAAIcgPyIlDEYuHkAYAACHID8iJQw2Lh5QGAAAhyA/IiUMJi4eYBgAAIcgPyIlDBYuHnAYAACHID8iJQwGJyIPgAYn6ixqLcgSLagyLeghmD+/AuQAAAACNZCTk8w9/BCSJTCQQiUwkFIlMJBiNZCQcugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
@@ -49,6 +51,8 @@ call {vg_p384_sub_mod_p}
 /// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -97,7 +101,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "WFhYWLggCAAAufAHAAC6YAcAAFBRUlc="
 call {vg_p384_sub_mod_p}
-.base64 "WFhYWIuXYAcAAAuXZAcAAAuXaAcAAAuXbAcAAAuXcAcAAAuXdAcAAAuXeAcAAAuXfAcAAAuXgAcAAAuXhAcAAAuXiAcAAAuXjAcAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4cABwAAi49ABgAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHgAgAACHQiYeACAAAi4+ACAAAi1wkBLgEAAAAIciIA4uHcAYAACHID8iJQy2Lh3QGAAAhyA/IiUMpi4d4BgAAIcgPyIlDJYuHfAYAACHID8iJQyGLh4AGAAAhyA/IiUMdi4eEBgAAIcgPyIlDGYuHiAYAACHID8iJQxWLh4wGAAAhyA/IiUMRi4eQBgAAIcgPyIlDDYuHlAYAACHID8iJQwmLh5gGAAAhyA/IiUMFi4ecBgAAIcgPyIlDAYuHAAcAACHID8iJQ12LhwQHAAAhyA/IiUNZi4cIBwAAIcgPyIlDVYuHDAcAACHID8iJQ1GLhxAHAAAhyA/IiUNNi4cUBwAAIcgPyIlDSYuHGAcAACHID8iJQ0WLhxwHAAAhyA/IiUNBi4cgBwAAIcgPyIlDPYuHJAcAACHID8iJQzmLhygHAAAhyA/IiUM1i4csBwAAIcgPyIlDMYnIg+ABifqLGotyBItqDIt6CMM="
+.base64 "WFhYWIuXYAcAAAuXZAcAAAuXaAcAAAuXbAcAAAuXcAcAAAuXdAcAAAuXeAcAAAuXfAcAAAuXgAcAAAuXhAcAAAuXiAcAAAuXjAcAALkAAAAAKdEZ0oPy/4uHgAgAACHQiYeACAAAi4cABwAAi49ABgAAMcGD4QG6AAAAACnKidGJyoPCAbgAAAAAKdCJwouHgAgAACHQiYeACAAAi4+ACAAAi1wkBLgEAAAAIciIA4uHcAYAACHID8iJQy2Lh3QGAAAhyA/IiUMpi4d4BgAAIcgPyIlDJYuHfAYAACHID8iJQyGLh4AGAAAhyA/IiUMdi4eEBgAAIcgPyIlDGYuHiAYAACHID8iJQxWLh4wGAAAhyA/IiUMRi4eQBgAAIcgPyIlDDYuHlAYAACHID8iJQwmLh5gGAAAhyA/IiUMFi4ecBgAAIcgPyIlDAYuHAAcAACHID8iJQ12LhwQHAAAhyA/IiUNZi4cIBwAAIcgPyIlDVYuHDAcAACHID8iJQ1GLhxAHAAAhyA/IiUNNi4cUBwAAIcgPyIlDSYuHGAcAACHID8iJQ0WLhxwHAAAhyA/IiUNBi4cgBwAAIcgPyIlDPYuHJAcAACHID8iJQzmLhygHAAAhyA/IiUM1i4csBwAAIcgPyIlDMYnIg+ABifqLGotyBItqDIt6CGYP78C5AAAAAI1kJOTzD38EJIlMJBCJTCQUiUwkGI1kJBy6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_p384_mul_mod_p = sym super::ec_p384::vg_p384_mul_mod_p::vg_p384_mul_mod_p,
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,

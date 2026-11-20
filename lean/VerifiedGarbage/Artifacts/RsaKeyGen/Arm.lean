@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Fn
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.KeyInit
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -249,15 +250,17 @@ namespace VG.Artifacts.RsaKeyGen.Arm
 
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
-    code := Impl.RsaKeyGen.Arm.KeyInit.init
-    verified := Proof.RsaKeyGen.Arm.KeyInit.init_verified }]
+    code := Impl.RsaKeyGen.Arm.Fn.generateInit
+    verified := .scrubbed Proof.RsaKeyGen.Arm.Fn.generateInit }]
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact Arm.target {
       suffix := v.suffix
-      code := Proof.RsaKeyGen.Arm.Generate.genCode v
-      verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }])
+      code := Impl.RsaKeyGen.Arm.Fn.generate
+        (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
+        (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code)
+      verified := .scrubbed (Proof.RsaKeyGen.Arm.Fn.generate v) }])
 
 end VG.Artifacts.RsaKeyGen.Arm

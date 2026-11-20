@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
@@ -163,6 +164,10 @@ structure Compress where
   keepsV : code.allInstrs keepsV = true
   /-- It never writes PSTATE.DIT, so its callers' runs keep it (`DitDet.of_noWrite`). -/
   noDit : code.all (fun i => !i.writesDit) = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`ScrubAll.verifiedScrubbedOf`). -/
+  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
@@ -181,6 +186,14 @@ structure Compress where
   oneShot512_256 : OneShotCT (out64 4) 32 Spec.Sha512.H0_512_256 suffix code
   oneShot512_224 : OneShotCT (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) 28 Spec.Sha512.H0_512_224
     suffix code
+  /-- The registers `code` writes, of those the calling convention does not
+  preserve: what the cleanup of a function that calls it clears for it
+  (`ScrubAll.scrubSide_union`). -/
+  clear : Impl.Residue.AArch64.Clear
+  scrub : AArch64.ScrubAll.calleeSide code clear = true
+
+/-- The implementation, as the code of a function that hashes takes it. -/
+def Compress.impl (v : Compress) : Impl.Sha512.AArch64.Stream.Compress := ⟨v.code, v.suffix, v.clear⟩
 
 /-! ## The one-shot digests' common facts -/
 

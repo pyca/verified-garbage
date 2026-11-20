@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.X86
 public import VerifiedGarbage.Impl.CallWipe.X86
 public import VerifiedGarbage.Impl.Zeroize.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # AES-CBC on x86, zeroing its scratch
@@ -14,7 +15,8 @@ around `b` that zeroes what it saves in `scratch` (`encryptZ`, `decryptZ` in
 changed; where `w = 0`, that code itself, and otherwise a call of it (the
 internal functions `vg_aes_cbc_encrypt_unwiped` and
 `vg_aes_cbc_decrypt_unwiped`, with the variant's suffix), then of
-`vg_zeroize` on the first `w` bytes of `scratch` (the sixth argument).
+`vg_zeroize`'s code (the internal `vg_zeroize_core`) on the first `w` bytes
+of `scratch` (the sixth argument).
 With AES-NI the CBC code is not around `b`: decryption's is that of
 `Impl/AesCbc/X86/Decrypt.lean`, which writes only the first 240 bytes of
 `scratch`, wrapped the same way, and encryption's is `encryptNi`, which
@@ -29,9 +31,10 @@ open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 
 /-- A call of `name`, whose code is `body`, with the six stack arguments,
-then of `vg_zeroize` on the first `n` bytes of `scratch`. -/
+then of `vg_zeroize`'s code (the internal `vg_zeroize_core`) on the first
+`n` bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) (n : Nat) : Prog isa :=
-  Impl.CallWipe.X86.callWipe 6 5 n name body "vg_zeroize" Impl.Zeroize.X86.zeroize
+  Impl.CallWipe.X86.callWipe 6 5 n name body "vg_zeroize_core" Impl.Zeroize.X86.zeroize
 
 /-- `vg_aes_cbc_encrypt` with the CBC code `body` (`encryptZ` around a blocks
 implementation, or `encryptNi`), whose variant's suffix is `suffix`,
@@ -46,3 +49,31 @@ def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
   wiped ("vg_aes_cbc_decrypt_unwiped" ++ suffix) body w
 
 end VG.Impl.AesCbc.X86.Wiped
+
+/-! ## The functions as emitted
+
+`vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` with the CBC code `body`,
+which writes the first `w` bytes of `scratch`, then their cleanup
+(`Impl.Scrub.X86.scrubF 0 W`): where `w = 0`, `body` itself with `W = 24`;
+otherwise the call of it, then of `vg_zeroize` on those bytes, with
+`W = 72`. The cleanup zeroes those `W` bytes of stack below `esp` and clears
+the registers a callee may change, so that it returns without secret
+residue. -/
+
+namespace VG.Impl.AesCbc.X86.Fn
+
+open VG.X86
+
+/-- `vg_aes_cbc_encrypt` with the CBC code `body` of the variant `suffix`,
+which writes the first `w` bytes of `scratch`, as emitted. -/
+def encrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
+  if w = 0 then Impl.Scrub.X86.scrubF 0 24 body
+  else Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.encrypt body suffix w)
+
+/-- `vg_aes_cbc_decrypt` with the CBC code `body` of the variant `suffix`,
+which writes the first `w` bytes of `scratch`, as emitted. -/
+def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
+  if w = 0 then Impl.Scrub.X86.scrubF 0 24 body
+  else Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.decrypt body suffix w)
+
+end VG.Impl.AesCbc.X86.Fn

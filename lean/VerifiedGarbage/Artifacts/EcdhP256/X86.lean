@@ -38,6 +38,7 @@ public import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.P256.Prime
 public import VerifiedGarbage.Proof.Rc2.Memory32
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Impl.Ecdh.P256.X86
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
@@ -60,6 +61,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P256.X86.Law
+public import VerifiedGarbage.Proof.Ecdh.X86.P256.Scrub
 
 /-! # ECDH over P-256 (SP 800-56A) on x86 -/
 
@@ -71,7 +73,7 @@ open VG.Proof.P256.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact X86.target {
-    code := Impl.Ecdh.X86.exchangeP256
-    verified := Proof.Ecdh.X86.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime }]
+    code := Impl.Ecdh.X86.Fn.exchangeP256
+    verified := .scrubbed (Proof.Ecdh.X86.P256.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime) }]
 
 end VG.Artifacts.EcdhP256.X86

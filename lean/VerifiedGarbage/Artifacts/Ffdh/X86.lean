@@ -1,19 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified
-public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Safety
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckPublicVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.CheckPrivateVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.ExchangeVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.DeriveVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.KeyInit
-public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
-public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
-public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.PreVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Verified
-public import VerifiedGarbage.Proof.Ffdh.X86.Shape
+public import VerifiedGarbage.Proof.Ffdh.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Ffdh.X86.Fn
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86 -/
@@ -25,42 +14,34 @@ open VG
 
 def artifacts : List Artifact := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
-    code := Impl.Ffdh.X86.VettedValidation.code
-    verified := Proof.Ffdh.X86.VettedValidation.verified
-    spSafe := Proof.Ffdh.X86.VettedValidation.spSafe },
+    code := Impl.Ffdh.X86.Fn.checkDomain
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkDomain_scrubbed },
   Spec.Ffdh.checkPublicApi.artifact X86.target {
-    code := Impl.Ffdh.X86.CheckPublic.code
-    verified := Proof.Ffdh.X86.CheckPublic.verified
-    spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe },
+    code := Impl.Ffdh.X86.Fn.checkPublic
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkPublic_scrubbed },
   Spec.Ffdh.checkPrivateApi.artifact X86.target {
-    code := Impl.Ffdh.X86.CheckPrivate.code
-    verified := Proof.Ffdh.X86.CheckPrivate.verified
-    spSafe := Proof.Ffdh.X86.Shape.checkPrivate_spSafe },
+    code := Impl.Ffdh.X86.Fn.checkPrivate
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkPrivate_scrubbed },
   Spec.Ffdh.exchangeApi.artifact X86.target {
-    code := Impl.Ffdh.X86.Exchange.code
-    verified := Proof.Ffdh.X86.Exchange.verified
-    spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe },
+    code := Impl.Ffdh.X86.Fn.exchange
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.exchange_scrubbed },
   Spec.Ffdh.derivePublicApi.artifact X86.target {
-    code := Impl.Ffdh.X86.DerivePublic.code
-    verified := Proof.Ffdh.X86.Derive.verified
-    spSafe := Proof.Ffdh.X86.Shape.derivePublic_spSafe },
+    code := Impl.Ffdh.X86.Fn.derivePublic
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.derivePublic_scrubbed },
   Spec.Ffdh.keyInitApi.artifact X86.target {
-    code := Impl.Ffdh.X86.KeyInit.code
-    verified := Proof.Ffdh.X86.KeyInit.verified },
+    code := Impl.Ffdh.X86.Fn.keyInit
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.keyInit_scrubbed },
   Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
-    code := Impl.Ffdh.X86.Cached.Precompute.code
-    verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
-    spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe },
+    code := Impl.Ffdh.X86.Fn.generationPrecompute
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.generationPrecompute_scrubbed },
   Spec.Ffdh.cachedKeySearchApi.artifact X86.target {
-    code := Impl.Ffdh.X86.Cached.Search.code
-    verified := Proof.Ffdh.X86.Cached.Search.verified
-    spSafe := Proof.Ffdh.X86.Shape.cachedSearch_spSafe },
+    code := Impl.Ffdh.X86.Fn.cachedKeySearch
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.cachedKeySearch_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact X86.target {
-    code := Impl.Ffdh.X86.ParamInit.code
-    verified := Proof.Ffdh.X86.ParamInit.verified },
+    code := Impl.Ffdh.X86.Fn.parameterInit
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.parameterInit_scrubbed },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
-    code := Impl.Ffdh.X86.ParamSearch.code
-    verified := Proof.Ffdh.X86.PSearch.verified
-    spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe }]
+    code := Impl.Ffdh.X86.Fn.sievedParameterSearch
+    verified := .scrubbed Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed }]
 
 end VG.Artifacts.Ffdh.X86

@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Residue
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -400,18 +401,9 @@ end VG.Arm
 
 namespace VG.Arm.Scrub
 
-/-- Zero what of the result `r1 ++ r0` is above its `rb` bits. -/
-def retFix (rb : Nat) : List Instr :=
-  if rb = 0 then [.mov .r0 (.imm 0), .mov .r1 (.imm 0)]
-  else if rb ≤ 32 then [.mov .r1 (.imm 0)] else []
-
-/-- Set the registers a callee may change, but the result, and the flags to
-constants. -/
-def tail (rb : Nat) : List Instr :=
-  retFix rb ++ [.mov .r2 (.imm 0), .mov .r3 (.imm 0), .mov .r12 (.imm 0), .cmp .r2 (.reg .r2)]
-
-/-- `c`, then `tail rb`. -/
-def scrub (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (tail rb))
+/-! The cleanup is code (`Impl/Residue/Arm.lean`); its names are also this
+namespace's, as they were before it moved there. -/
+export VG.Impl.Residue.Arm (retFix tail scrub wipeChunk wipeLoop wipeBody wipeBelow scrubF)
 
 /-- A result on ARM is of 0, 32 or 64 bits. -/
 theorem retBits_cases (sig : Sig) : sig.retBits 32 = 0 ∨ sig.retBits 32 = 32 ∨ sig.retBits 32 = 64 := by
@@ -622,8 +614,10 @@ theorem Verified.scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 Code with frames also writes the stack below the stack pointer: at most
 `armStack c` bytes of it (`Exec.frameSp`), which hold what its frames held.
 `scrubF rb n c` is `c`, then a frame of the `n` bytes below the stack pointer
-whose every word is zeroed (`wipeBelow`), then `tail rb`: so those bytes are
-zero when that frame is released, and every other byte outside the buffers
+whose every word is zeroed (`wipeBelow`: from 64 bytes by a loop of eight
+stores a pass, `wipeLoop`, the shorter code there, and below by a store for
+each word), then `tail rb`: so those bytes are zero when that frame is
+released, and every other byte outside the buffers
 is what it was. The frame is apart from the buffers (the contract reserves
 it), so a postcondition that reads the memory on return only within the
 buffers (`PostOut`) still holds.
@@ -788,37 +782,54 @@ theorem postOut_of_local {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 abbrev FrameOk (n : Nat) : Prop :=
   0 < n ∧ n < 4096 ∧ n % 8 = 0 ∧ encodable (BitVec.ofNat 32 n) = true
 
-/-- Zero the `n` bytes below the stack pointer, in a frame of them. -/
-def wipeBelow (n : Nat) : Prog isa := .frame (.alloc n) (.block (wipe (n / 4))) (.free n)
-
-/-- `c`, then the `n` bytes below the stack pointer zeroed, then `tail rb`. -/
-def scrubF (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
-
 /-- The trace of `wipeStores words` from a state whose `r12` is `p`. -/
 def wipeTr (p : BitVec 32) (words : Nat) : List Leak :=
   (List.range words).map fun k => .addr (State.addr (p + BitVec.ofNat 32 (4 * k)))
+
+/-- The trace of `k` passes of `wipeLoop`'s loop from a state whose `r12` is
+`p`. -/
+def loopTr (p : BitVec 32) : Nat → List Leak
+  | 0 => []
+  | 1 => wipeTr p 8 ++ [.branch false]
+  | k + 2 => wipeTr p 8 ++ .branch true :: loopTr (p + BitVec.ofNat 32 32) (k + 1)
+
+/-- The trace of `wipeBody n` from a state whose stack pointer is `p`: the
+addresses of the words it zeroes, and the branches of its loop. -/
+def wipeBodyTr (p : BitVec 32) (n : Nat) : List Leak :=
+  if 64 ≤ n then loopTr p (n / 32) ++ wipeTr (p + BitVec.ofNat 32 (32 * (n / 32))) (n % 32 / 4)
+  else wipeTr p (n / 4)
 
 theorem wipeStores_succ (w : Nat) :
     wipeStores (w + 1) = wipeStores w ++ ([.str .r2 .r12 (4 * w)] : List Instr) := by
   simp only [wipeStores, List.range_succ, List.map_append, List.map_cons, List.map_nil]
 
+/-- A write of zero leaves zero what was. -/
+theorem writeW_zero_keep {m : Mem} {a x : Addr} (hx : m x = 0) : m.writeW a (0 : BitVec 32) x = 0 := by
+  simp only [Mem.writeW, Mem.write]
+  split
+  · simp
+  · exact hx
+
 /-- The stores of `wipeStores`, of a zero in `r2`, change memory only in the
-region `R`, which holds each of them and which `u` may write, and leave the
-words they store zero. -/
+region `R`, which holds each of them and which `u` may write, leave the
+words they store zero, and leave zero what was. -/
 theorem wipeStores_zero (R : Region) (u : State) (hR : R ∈ u.wr) (h2 : u.gpr .r2 = 0) :
     ∀ words, 4 * words ≤ 4096 → (u.gpr .r12).toNat + 4 * words ≤ 2 ^ 32 →
     (∀ k < words, R.Contains (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * k))) 4) →
     ∃ m', execBlock isa (wipeStores words) u =
         some ({ u with mem := m' }, wipeTr (u.gpr .r12) words) ∧ Frame [R] u.mem m' ∧
-      ∀ x, (x - State.addr (u.gpr .r12)).toNat < 4 * words → m' x = 0
-  | 0, _, _, _ => ⟨u.mem, rfl, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
+      (∀ x, (x - State.addr (u.gpr .r12)).toNat < 4 * words → m' x = 0) ∧
+      ∀ x, u.mem x = 0 → m' x = 0
+  | 0, _, _, _ => ⟨u.mem, rfl, Frame.refl _ _, fun _ h => absurd h (by omega), fun _ h => h⟩
   | w + 1, hwb, hnw, hc => by
-    obtain ⟨m', he, hf, hz⟩ := wipeStores_zero R u hR h2 w (by omega) (by omega) fun k hk => hc k (by omega)
+    obtain ⟨m', he, hf, hz, hk⟩ :=
+      wipeStores_zero R u hR h2 w (by omega) (by omega) fun k hk => hc k (by omega)
     have hin : InRegions u.wr (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * w))) 4 :=
       ⟨R, hR, hc w (by omega)⟩
     have hoff : 4 * w < 4096 := by omega
     refine ⟨m'.writeW (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * w))) (u.gpr .r2), ?_,
-      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega)), fun x hx => ?_⟩
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega)), fun x hx => ?_,
+      fun x hx => by rw [h2]; exact writeW_zero_keep (hk x hx)⟩
     · rw [wipeStores_succ, execBlock_append, he]
       simp only [Option.bind_some, execBlock, isa, exec, hoff, ↓reduceIte, State.store32, hin,
         Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTr,
@@ -836,52 +847,198 @@ theorem wipeStores_zero (R : Region) (u : State) (hR : R ∈ u.wr) (h2 : u.gpr .
           fun h => hx'' ((Offset.lt_iff x (State.addr (u.gpr .r12)) (d := 4 * w) (n := 4) (by omega)).mpr h)
         omega
 
+/-- The passes of a loop over a frame the model accepts are an encodable
+immediate. -/
+theorem encodable_lt128 : ∀ k < 128, encodable (BitVec.ofNat 32 k) = true := by decide
+
+/-- A pass of `wipeChunk` from `u`, of a zero in `r2`, zeroes the 32 bytes at
+`r12`, in the region `R` that `u` may write, moves `r12` past them and counts
+`r3` down, setting the flags of that count. -/
+theorem wipeChunk_run (R : Region) (u : State) (hR : R ∈ u.wr) (h2 : u.gpr .r2 = 0)
+    (hnw : (u.gpr .r12).toNat + 32 ≤ 2 ^ 32)
+    (hc : ∀ k < 8, R.Contains (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * k))) 4) :
+    ∃ u₁, execBlock isa wipeChunk u = some (u₁, wipeTr (u.gpr .r12) 8) ∧
+      u₁.rd = u.rd ∧ u₁.wr = u.wr ∧ u₁.sp = u.sp ∧ u₁.unknowns = u.unknowns ∧
+      u₁.gpr .r12 = u.gpr .r12 + BitVec.ofNat 32 32 ∧ u₁.gpr .r3 = u.gpr .r3 - 1 ∧
+      u₁.z = (u.gpr .r3 - 1 == 0) ∧ (∀ r, r ≠ .r3 → r ≠ .r12 → u₁.gpr r = u.gpr r) ∧
+      Frame [R] u.mem u₁.mem ∧ (∀ x, (x - State.addr (u.gpr .r12)).toNat < 32 → u₁.mem x = 0) ∧
+      ∀ x, u.mem x = 0 → u₁.mem x = 0 := by
+  obtain ⟨m', he, hf, hz, hk⟩ := wipeStores_zero R u hR h2 8 (by decide) hnw hc
+  let s₁ := ({ u with mem := m' } : State).setReg .r12 (u.gpr .r12 + 32)
+  refine ⟨(subFlags s₁ (s₁.gpr .r3) 1).setReg .r3 (s₁.gpr .r3 - 1), ?_, rfl, rfl, rfl, rfl, ?_, ?_, ?_,
+    fun r h3 h12 => ?_, hf, hz, hk⟩
+  · rw [wipeChunk, execBlock_append, he]
+    simp only [Option.bind_some, execBlock, isa, exec, Op2.eval,
+      show encodable (32 : BitVec 32) = true by decide, show encodable (1 : BitVec 32) = true by decide,
+      ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil]
+    rfl
+  · simp [s₁, State.setReg, subFlags]
+  · simp [s₁, State.setReg, subFlags]
+  · simp [s₁, State.setReg, subFlags]
+  · simp [s₁, State.setReg, subFlags, h3, h12]
+
+/-- `j` passes of `wipeLoop`'s loop from `u`, of a zero in `r2` and `j` in
+`r3`, zero the `32 j` bytes at `r12`, in the region `R` that `u` may write,
+change no other memory and leave zero what was, and keep all but `r3`, `r12`
+and the flags. -/
+theorem wipeLoop_run (R : Region) : ∀ (j : Nat) (u : State), 0 < j → j < 2 ^ 32 → R ∈ u.wr →
+    u.gpr .r2 = 0 → u.gpr .r3 = BitVec.ofNat 32 j → (u.gpr .r12).toNat + 32 * j ≤ 2 ^ 32 →
+    (∀ k < 8 * j, R.Contains (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * k))) 4) →
+    ∃ u', Exec isa (.loop (.block wipeChunk) .ne) u (loopTr (u.gpr .r12) j) u' ∧
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.unknowns = u.unknowns ∧
+      u'.gpr .r2 = 0 ∧ u'.gpr .r12 = u.gpr .r12 + BitVec.ofNat 32 (32 * j) ∧
+      (∀ r, r ≠ .r3 → r ≠ .r12 → u'.gpr r = u.gpr r) ∧ Frame [R] u.mem u'.mem ∧
+      (∀ x, (x - State.addr (u.gpr .r12)).toNat < 32 * j → u'.mem x = 0) ∧
+      ∀ x, u.mem x = 0 → u'.mem x = 0
+  | 0, _, h, _, _, _, _, _, _ => absurd h (Nat.lt_irrefl 0)
+  | 1, u, _, _, hR, h2, h3, hnw, hc => by
+    obtain ⟨u₁, he, rd, wr, sp, un, r12, -, z, regs, hf, hz, hk⟩ :=
+      wipeChunk_run R u hR h2 (by omega) fun k hk => hc k (by omega)
+    refine ⟨u₁, Exec.loopExit (Exec.block he) ?_, rd, wr, sp, un,
+      by rw [regs .r2 (by decide) (by decide), h2], r12, regs, hf, hz, hk⟩
+    simp only [eval, z, h3]
+    decide
+  | j + 2, u, _, hj, hR, h2, h3, hnw, hc => by
+    obtain ⟨u₁, he, rd, wr, sp, un, r12, r3, z, regs, hf, hz, hk⟩ :=
+      wipeChunk_run R u hR h2 (by omega) fun k hk => hc k (by omega)
+    have hp : (u.gpr .r12 + BitVec.ofNat 32 32).toNat = (u.gpr .r12).toNat + 32 := by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    have hr3 : u₁.gpr .r3 = BitVec.ofNat 32 (j + 1) := by
+      rw [r3, h3]; apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_sub]; omega
+    obtain ⟨u', hl, rd', wr', sp', un', h2', r12', regs', hf', hz', hk'⟩ :=
+      wipeLoop_run R (j + 1) u₁ (by omega) (by omega) (wr ▸ hR)
+        (by rw [regs .r2 (by decide) (by decide), h2]) hr3 (by rw [r12, hp]; omega) fun k hk => by
+          rw [r12, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 4 * k = 4 * (k + 8) by omega]
+          exact hc (k + 8) (by omega)
+    have hne : isa.eval .ne u₁ = some true := by
+      simp only [eval, z, h3, Option.some.injEq, Bool.not_eq_eq_eq_not, Bool.not_true,
+        beq_eq_false_iff_ne, ne_eq]
+      intro h
+      have := congrArg BitVec.toNat h
+      simp [BitVec.toNat_sub] at this; omega
+    refine ⟨u', ?_, rd'.trans rd, wr'.trans wr, sp'.trans sp, un'.trans un, h2', ?_,
+      fun r h3 h12 => (regs' r h3 h12).trans (regs r h3 h12), hf.trans hf', fun x hx => ?_,
+      fun x hx => hk' x (hk x hx)⟩
+    · rw [r12] at hl
+      exact Exec.loopNext (Exec.block he) hne hl
+    · rw [r12', r12, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega
+    · by_cases h32 : (x - State.addr (u.gpr .r12)).toNat < 32
+      · exact hk' x (hz x h32)
+      · refine hz' x ?_
+        rw [r12, addr_add (by omega)]
+        exact (Offset.lt_iff x _ (d := 32) (n := 32 * (j + 1)) (by omega)).mpr ⟨by omega, by omega⟩
+
+/-- `wipeBody n` from `a`, whose writable region `R` is the `n` bytes at its
+stack pointer (the frame `wipeBelow` opens), zeroes them, changes no other
+memory, with the trace of their addresses and the loop's branches alone, and
+keeps the regions, the stack pointer, the unknowns and every register but
+`r2`, `r3` and `r12`. -/
+theorem wipeBody_run {n : Nat} (hn : FrameOk n) (a : State) (R : Region) (hR : R ∈ a.wr)
+    (hR' : R = ⟨State.addr a.sp, n⟩) (hsp : a.sp.toNat + n ≤ 2 ^ 32) :
+    ∃ v, Exec isa (wipeBody n) a (wipeBodyTr a.sp n) v ∧ v.rd = a.rd ∧ v.wr = a.wr ∧
+      v.sp = a.sp ∧ v.unknowns = a.unknowns ∧
+      (∀ r, r ≠ .r12 → r ≠ .r2 → r ≠ .r3 → v.gpr r = a.gpr r) ∧
+      Frame [R] a.mem v.mem ∧ ∀ x, (x - State.addr a.sp).toNat < n → v.mem x = 0 := by
+  obtain ⟨h0, h1, h8, -⟩ := hn
+  subst hR'
+  by_cases h64 : 64 ≤ n
+  · simp only [wipeBody, wipeBodyTr, h64, ↓reduceIte]
+    let K := n / 32
+    let u₀ := ((a.setReg .r12 (a.sp + BitVec.ofNat 32 0)).setReg .r2 0).setReg .r3 (BitVec.ofNat 32 K)
+    have h12 : u₀.gpr .r12 = a.sp := by simp [u₀, State.setReg]
+    have hset : execBlock isa [.addSp .r12 0, .mov .r2 (.imm 0), .mov .r3 (.imm (BitVec.ofNat 32 K))] a =
+        some (u₀, []) := by
+      simp only [execBlock, isa, exec, show (0 : Nat) < 256 by decide, ↓reduceIte, Op2.eval,
+        show encodable (0 : BitVec 32) = true by decide,
+        encodable_lt128 K (by omega), Option.map_some, addrs, List.map_nil, List.append_nil]
+      rfl
+    obtain ⟨u₁, hl, rd, wr, sp, un, h2, r12, regs, hf, hz, hk⟩ :=
+      wipeLoop_run ⟨State.addr a.sp, n⟩ K u₀ (by omega) (by omega)
+        (by simp [u₀, State.setReg, hR]) (by simp [u₀, State.setReg])
+        (by simp [u₀, State.setReg]) (by rw [h12]; omega) fun k hk => by
+          rw [h12, addr_add (by omega)]
+          exact Offset.contains_base _ (by omega) (by omega)
+    rw [h12] at hl r12 hz
+    obtain ⟨m', he, hf', hz', hk'⟩ := wipeStores_zero ⟨State.addr a.sp, n⟩ u₁
+      (by rw [wr]; simp [u₀, State.setReg, hR]) h2 (n % 32 / 4) (by omega)
+      (by rw [r12, BitVec.toNat_add, BitVec.toNat_ofNat]; omega) fun k hk => by
+        rw [r12, BitVec.add_assoc, BitVec.ofNat_add_ofNat, addr_add (by omega)]
+        exact Offset.contains_base _ (by omega) (by omega)
+    rw [r12] at he hz'
+    refine ⟨{ u₁ with mem := m' }, ?_, ?_, ?_, ?_, ?_, fun r h12' h2' h3' => ?_, ?_, fun x hx => ?_⟩
+    · rw [← List.nil_append (loopTr a.sp K ++ _)]
+      exact Exec.seq (Exec.block hset) (Exec.seq hl (Exec.block he))
+    · simp only [rd, u₀, State.setReg]
+    · simp only [wr, u₀, State.setReg]
+    · simp only [sp, u₀, State.setReg]
+    · simp only [un, u₀, State.setReg]
+    · simp only [regs r h3' h12', u₀, State.setReg, h12', h2', h3', ↓reduceIte]
+    · have : Frame [⟨State.addr a.sp, n⟩] a.mem u₀.mem := by simp [u₀, State.setReg]; exact Frame.refl _ _
+      exact (this.trans hf).trans hf'
+    · by_cases hK : (x - State.addr a.sp).toNat < 32 * K
+      · exact hk' x (hz x hK)
+      · refine hz' x ?_
+        rw [addr_add (by omega)]
+        exact (Offset.lt_iff x _ (d := 32 * K) (n := 4 * (n % 32 / 4)) (by omega)).mpr ⟨by omega, by omega⟩
+  · simp only [wipeBody, wipeBodyTr, h64, ↓reduceIte]
+    let v₀ := (a.setReg .r12 (a.sp + BitVec.ofNat 32 0)).setReg .r2 0
+    have h12 : v₀.gpr .r12 = a.sp := by simp [v₀, State.setReg]
+    obtain ⟨m', he, hf, hz, -⟩ := wipeStores_zero ⟨State.addr a.sp, n⟩ v₀ (by simp [v₀, State.setReg, hR])
+      (by simp [v₀, State.setReg]) (n / 4) (by omega) (by rw [h12]; omega) fun k hk => by
+        rw [h12, addr_add (by omega)]
+        exact Offset.contains_base _ (by omega) (by omega)
+    have hblk : execBlock isa (wipe (n / 4)) a = some ({ v₀ with mem := m' }, wipeTr a.sp (n / 4)) := by
+      simp only [wipe, execBlock, isa, exec, show (0 : Nat) < 256 by decide, ↓reduceIte, Op2.eval,
+        show encodable (0 : BitVec 32) = true by decide, Option.map_some]
+      rw [show ((a.setReg .r12 (a.sp + BitVec.ofNat 32 0)).setReg .r2 0) = v₀ from rfl, he, h12]
+      simp [addrs]
+    refine ⟨{ v₀ with mem := m' }, Exec.block hblk, ?_, ?_, ?_, ?_, fun r h12' h2' _ => ?_, ?_,
+      fun x hx => hz x (by rw [h12]; omega)⟩
+    · simp [v₀, State.setReg]
+    · simp [v₀, State.setReg]
+    · simp [v₀, State.setReg]
+    · simp [v₀, State.setReg]
+    · simp [v₀, State.setReg, h12', h2']
+    · simpa [v₀, State.setReg] using hf
+
 /-- `wipeBelow n` zeroes the `n` bytes below the stack pointer, in a frame
 it then releases (`v`, the state before the release), and changes no other
-byte, with a trace of their addresses alone; it keeps the regions, the stack
-pointer and every register but `r2` and `r12`. -/
+byte, with a trace of their addresses and its loop's branches alone; it
+keeps the regions, the stack pointer and every register but `r2`, `r3` and
+`r12`. -/
 theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.toNat) :
-    ∃ u v, Exec isa (wipeBelow n) w (wipeTr (w.sp - BitVec.ofNat 32 n) (n / 4)) u ∧
+    ∃ u v, Exec isa (wipeBelow n) w (wipeBodyTr (w.sp - BitVec.ofNat 32 n) n) u ∧
       u.rd = w.rd ∧ u.wr = w.wr ∧ u.sp = w.sp ∧
-      (∀ r, r ≠ .r12 → r ≠ .r2 → u.gpr r = w.gpr r) ∧
+      (∀ r, r ≠ .r12 → r ≠ .r2 → r ≠ .r3 → u.gpr r = w.gpr r) ∧
       Frame [belowA w.sp n] w.mem u.mem ∧
       isa.pop (.free n) (allocated n w) v = some u ∧ v.sp = w.sp - BitVec.ofNat 32 n ∧
       v.unknowns = w.unknowns ∧ ∀ x, (belowA w.sp n).Contains x 1 → v.mem x = 0 := by
   obtain ⟨h0, h1, h8, henc⟩ := hn
-  have h4 : 4 * (n / 4) = n := by omega
   have hsub : (w.sp - BitVec.ofNat 32 n).toNat = w.sp.toNat - n := sub_toNat' hsp
   have hlt := w.sp.isLt
   let a := allocated n w
-  let v := (a.setReg .r12 (a.sp + BitVec.ofNat 32 0)).setReg .r2 0
-  have h12 : v.gpr .r12 = w.sp - BitVec.ofNat 32 n := by
-    simp [v, a, allocated, State.setReg]
-  obtain ⟨m', he, hf, hz⟩ := wipeStores_zero (belowA w.sp n) v (by simp [v, a, allocated, State.setReg, belowA])
-    (by simp [v, State.setReg]) (n / 4) (by omega) (by rw [h12, hsub]; omega) (fun k hk => by
-      rw [h12, addr_add (by rw [hsub]; omega)]
-      exact Offset.contains_base _ (by omega) (by omega))
-  have hblk : execBlock isa (wipe (n / 4)) a = some ({ v with mem := m' }, wipeTr (w.sp - BitVec.ofNat 32 n) (n / 4)) := by
-    simp only [wipe, execBlock, isa, exec, show (0 : Nat) < 256 by decide, ↓reduceIte, Op2.eval,
-      show encodable (0 : BitVec 32) = true by decide, Option.map_some]
-    rw [show ((a.setReg .r12 (a.sp + BitVec.ofNat 32 0)).setReg .r2 0) = v from rfl, he, h12]
-    simp [addrs]
+  have hR : belowA w.sp n = ⟨State.addr a.sp, n⟩ := by
+    simp [a, allocated, belowA, addr_sub' hsp]
+  obtain ⟨v, hb, vrd, vwr, vsp, vun, vreg, vf, vz⟩ := wipeBody_run ⟨h0, h1, h8, henc⟩ a (belowA w.sp n)
+    (by rw [hR]; simp [a, allocated]) hR (by simp only [a, allocated]; rw [hsub]; omega)
   have ha : isa.push (.alloc n) w = some a := by
     simp only [isa, push, h0, h1, h8, henc, hsp, and_self, ite_true]
     rfl
-  have hfr : isa.pop (.free n) a { v with mem := m' } = some { freed n { v with mem := m' } with
-      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) } := by
-    simp only [freed, isa, pop, h0, h1, h8, henc, v, a, allocated, State.setReg,
-      List.head?_cons, and_self, ite_true]
-  refine ⟨{ freed n { v with mem := m' } with
-      mem := lose m' (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) },
-    { v with mem := m' },
-    by simpa [addrs, wipeBelow] using Exec.frame ha (Exec.block hblk) hfr,
-    rfl, rfl, ?_, fun r hr12 hr2 => ?_, ?_, hfr, rfl, rfl, fun x hx => ?_⟩
-  · simp [freed, v, a, allocated, State.setReg, BitVec.sub_add_cancel]
-  · simp [freed, v, a, allocated, State.setReg, hr12, hr2]
-  · have hf' : Frame [belowA w.sp n] w.mem m' := by simpa [v, a, allocated, State.setReg] using hf
+  have hfr : isa.pop (.free n) a v = some { v with
+      sp := v.sp + BitVec.ofNat 32 n, wr := v.wr.tail,
+      mem := lose v.mem (State.addr v.sp) n v.unknowns, unknowns := fun k => v.unknowns (k + n / 2) } := by
+    simp only [isa, pop, h0, h1, h8, henc, vsp, vwr, a, allocated, List.head?_cons, and_self, ite_true]
+  refine ⟨_, v, by simpa [addrs, wipeBelow, a, allocated] using Exec.frame ha hb hfr,
+    ?_, ?_, ?_, fun r hr12 hr2 hr3 => ?_, ?_, hfr, by rw [vsp]; rfl, by rw [vun]; rfl, fun x hx => vz x ?_⟩
+  · simp [vrd, a, allocated]
+  · simp [vwr, a, allocated]
+  · simp [vsp, a, allocated, BitVec.sub_add_cancel]
+  · simp [vreg r hr12 hr2 hr3, a, allocated]
+  · have hf' : Frame [belowA w.sp n] w.mem v.mem := by simpa [a, allocated] using vf
+    rw [hR] at hf' ⊢
+    rw [vsp]
     exact hf'.trans (lose_frame _ _ _ _)
-  · refine hz x ?_
-    rw [h12, h4]
+  · rw [hR] at hx
     simp only [Region.Contains] at hx
     omega
 
@@ -892,7 +1049,7 @@ a frame of them, all zero, leaves (`v`, the state before the release, with
 `w`'s unknowns), and every other byte as `c` left it. -/
 theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : FrameOk n) {c : Prog isa}
     (hd : armStack c ≤ n) {s w : State} {t : List Leak} (hsp : n ≤ s.sp.toNat) (he : Exec isa c s t w) :
-    ∃ u, Exec isa (scrubF rb n c) s (t ++ (wipeTr (s.sp - BitVec.ofNat 32 n) (n / 4) ++ [])) u ∧
+    ∃ u, Exec isa (scrubF rb n c) s (t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 n) n ++ [])) u ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
       u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
       u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
@@ -913,7 +1070,8 @@ theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : Fra
     fun x hx => ?_, hfs⟩
   · rw [upres r hr]
     exact vreg r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
-  · rw [hret, vreg .r1 (by decide) (by decide), vreg .r0 (by decide) (by decide)]
+      (by rintro rfl; simp [preserved] at hr)
+  · rw [hret, vreg .r1 (by decide) (by decide) (by decide), vreg .r0 (by decide) (by decide) (by decide)]
   · exact ⟨v₀, _, v, v₀sp, v₀u, vz, vpop, hm⟩
   · rw [hm]; exact vf x fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
 
@@ -938,7 +1096,7 @@ theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   -- Every run is `c`'s run, then the wipe and the tail.
   have run : ∀ {s u : State} {T : List Leak}, (sig.contract A pre post wa stack leak).pre s →
       Exec isa (Scrub.scrubF rb stack c) s T u → ∃ t w, Exec isa c s t w ∧
-        T = t ++ (wipeTr (s.sp - BitVec.ofNat 32 stack) (stack / 4) ++ []) ∧
+        T = t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 stack) stack ++ []) ∧
         u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
         u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
         u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
@@ -1103,7 +1261,7 @@ theorem writtenWithin_mem {sig : Sig} {written : List (String × Nat)} {s u u' :
 
 /-- `r`, a registration of code without frames, scrubbed: its code followed
 by `tail`, which returns without secret residue. -/
-def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = true) :
+def scrubReg {api : Api} (r : Unscrubbed api target) (hn : r.code.noFrames = true) :
     Registration api target where
   suffix := r.suffix
   consts := r.consts
@@ -1111,12 +1269,17 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
   stack := r.stack
   code := scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     rw [e] at hv ⊢
     exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).1
+      rfl).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    rw [e] at hv ⊢
+    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
+      rfl).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -1134,19 +1297,13 @@ def scrubReg {api : Api} (r : Registration api target) (hn : r.code.noFrames = t
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
 its contract reserves and which calls indirectly only the functions of its
 tables (`tablesCall`), scrubbed: its code, then those bytes zeroed, then
 `tail`, which returns without secret residue, if its postcondition reads the
 memory on return only within the buffers. -/
-def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+def scrubRegFT {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
     (htc : tablesCall r.code r.tables = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
@@ -1158,13 +1315,19 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code �
   code := scrubF (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     r.stack r.code
   contract := r.contract
-  verified := by
+  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
     have hv := r.verified
     have hp := hpost
     rw [e] at hv hp ⊢
     exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).1
+      rfl hp).1), by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp := hpost
+    rw [e] at hv hp ⊢
+    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
+      rfl hp).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
   spSafe := spSafe_any _
@@ -1174,18 +1337,11 @@ def scrubRegFT {api : Api} (r : Registration api target) (hd : armStack r.code �
   extra := r.extra
   vendor := r.vendor
   notWith := r.notWith
-  residue := some ⟨by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).2⟩
 
 /-- `r`, a registration of code whose frames use at most the `stack` bytes
 its contract reserves and which makes no indirect call, scrubbed
 (`scrubRegFT`). -/
-def scrubRegF {api : Api} (r : Registration api target) (hd : armStack r.code ≤ r.stack)
+def scrubRegF {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
     (hni : noIcall r.code = true) (hn : FrameOk r.stack)
     (hpost : PostOut r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))

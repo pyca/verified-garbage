@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
+public import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -14,16 +12,16 @@ namespace VG.Artifacts.BlowfishCfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncrypt
-    verified := Proof.Blowfish.Arm.cfbEncrypt_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.cfbEncrypt },
   Spec.Blowfish.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecrypt
-    verified := Proof.Blowfish.Arm.cfbDecrypt_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.cfbDecrypt },
   Spec.Blowfish.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncryptFinal
-    verified := Proof.Blowfish.Arm.cfbEncryptFinal_framed },
+    code := Impl.Blowfish.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.cfbEncryptFinal },
   Spec.Blowfish.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecryptFinal
-    verified := Proof.Blowfish.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Blowfish.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.BlowfishCfb.Arm

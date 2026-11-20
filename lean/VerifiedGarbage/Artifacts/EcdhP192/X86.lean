@@ -58,6 +58,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P192.X86.Law
+public import VerifiedGarbage.Proof.Ecdh.X86.P192.Scrub
 
 /-! # ECDH over P-192 (SP 800-56A) on x86 -/
 
@@ -69,7 +70,7 @@ open VG.Proof.P192.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P192.exchangeApi.artifact X86.target {
-    code := Impl.Ecdh.X86.exchangeP192
-    verified := Proof.Ecdh.X86.P192.ecdh_verified hasLaw.law }]
+    code := Impl.Ecdh.X86.Fn.exchangeP192
+    verified := .scrubbed (Proof.Ecdh.X86.P192.Scrub.exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP192.X86

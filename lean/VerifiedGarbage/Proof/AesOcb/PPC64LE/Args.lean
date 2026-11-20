@@ -20,7 +20,7 @@ section
 # AES-OCB on PPC64LE: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (256 bytes
-at `K`) and the working space (2560 bytes at `W`) (`Lay`); what a state may
+at `K`) and the working space (512 bytes at `W`) (`Lay`); what a state may
 access (`Perm`); the registers the pieces keep (AES-GCM's `frozen`), pinned
 to values `V`, among them `K` in `r29` and `W` in `r31`, and the stack
 pointer (`Env`); the buffers of the associated data, the nonce and the data
@@ -63,13 +63,13 @@ theorem eval_nonzero {s : State} {r : Reg} {n : Nat} (h : s.gpr r = BitVec.ofNat
 /-- The key context and `W`. -/
 structure Lay (K W : Addr) : Prop where
   kw : K.toNat + 256 ≤ 2 ^ 64
-  ww : W.toNat + 2560 ≤ 2 ^ 64
-  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, 2560⟩
+  ww : W.toNat + 512 ≤ 2 ^ 64
+  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, 512⟩
 
 /-- What a state may access. -/
 structure Perm (K W : Addr) (s : State) : Prop where
   k : Covers [⟨K, 256⟩] (s.rd ++ s.wr)
-  w : Covers [⟨W, 2560⟩] s.wr
+  w : Covers [⟨W, 512⟩] s.wr
 
 /-- The registers `frozen` hold their values `V`, the stack pointer is `sp`,
 and the state may access the key context and `W` (at `V r29` and `V r31`). -/
@@ -118,23 +118,23 @@ namespace Lay
 theorem kSub {K : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨K + BitVec.ofNat 64 d, n⟩ ⟨K, 256⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 512) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 512⟩ :=
   Offset.sub_base _ h
 
 variable {K W : Addr} (L : Lay K W)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 512) (hd : d + k ≤ 512) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
-theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 512) :
     (⟨K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   (L.k_w.sub_left (kSub ha)).sub_right (wSub hd)
 
 /-- `W + d`, as a number. -/
-theorem toNat_w {d : Nat} (hd : d < 2560) : (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
+theorem toNat_w {d : Nat} (hd : d < 512) : (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
@@ -148,13 +148,13 @@ include P
 theorem kR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 d) n :=
   in_off P.k h (by decide)
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 512) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 512) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 512) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
 end Perm
@@ -166,7 +166,7 @@ structure Buf (W : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   lt : n < 2 ^ 64
   wrap : D.toNat + n ≤ 2 ^ 64
-  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 512⟩
 
 namespace Buf
 
@@ -226,10 +226,10 @@ end DBuf
 
 /-! ## What the pieces write -/
 
-/-- The parts of `W` the pieces write: `[0, 128)` and `[256, 2560)`, around
+/-- The parts of `W` the pieces write: `[0, 128)` and `[256, 512)`, around
 our caller's registers. -/
 abbrev wA (W : Addr) : Region := ⟨W, 128⟩
-abbrev wB (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 2304⟩
+abbrev wB (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 256⟩
 
 /-- What the pieces may change: those parts of `W` and the data. -/
 abbrev mutR (W D : Addr) (n : Nat) : List Region := [wA W, wB W, ⟨D, n⟩]
@@ -237,7 +237,7 @@ abbrev mutR (W D : Addr) (n : Nat) : List Region := [wA W, wB W, ⟨D, n⟩]
 theorem sub_wA {W : Addr} {d k : Nat} (h : d + k ≤ 128) : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wA W) := by
   simpa using Offset.sub W (d := d) (n := k) (e := 0) (k := 128) (by omega_using []) (by omega_using [h])
 
-theorem sub_wB {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h : d + k ≤ 2560) :
+theorem sub_wB {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h : d + k ≤ 512) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wB W) := Offset.sub W (by omega_using [h₁]) (by omega_using [h])
 
 /-- A part of `W` within `[0, 128)`, as a part the pieces may write. -/
@@ -245,12 +245,12 @@ theorem in_mutA {W D : Addr} {n d k : Nat} (h : d + k ≤ 128) :
     ∃ r' ∈ mutR W D n, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := ⟨_, List.mem_cons_self .., sub_wA h⟩
 
 /-- A part of `W` from 256 on, as a part the pieces may write. -/
-theorem in_mutB {W D : Addr} {n d k : Nat} (h₁ : 256 ≤ d) (h : d + k ≤ 2560) :
+theorem in_mutB {W D : Addr} {n d k : Nat} (h₁ : 256 ≤ d) (h : d + k ≤ 512) :
     ∃ r' ∈ mutR W D n, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB h₁ h⟩
 
 /-- A part of `W`, as a part the pieces may write. -/
-theorem in_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧ d + k ≤ 2560)) :
+theorem in_mutW {W D : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (256 ≤ d ∧ d + k ≤ 512)) :
     ∃ r' ∈ mutR W D n, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with h | ⟨h₁, h₂⟩
   · exact in_mutA h
@@ -282,8 +282,8 @@ end
 Untrusted: everything here is checked by Lean. `callArgs ++ args` sets up a
 call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` with the key
 schedule of the key context, the rounds in `r28`, the `n` blocks at `D` that
-`args` sets (`Dst`: blocks of `W` below 512, `dstW`, or the data, `dstD`)
-and the working space at `W + 512` (`callBlocks_ok`); `encOne d` enciphers
+`args` sets (`Dst`: blocks of `W`, `dstW`, or the data, `dstD`; the block
+functions need no working space, `callBlocks_ok`); `encOne d` enciphers
 the block at `W + d` (`encOne_ok`). As on AArch64
 (`Proof/AesOcb/AArch64/Args.lean`).
 -/
@@ -297,24 +297,22 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ocb (blockAtMem aesWith)
 open VG.Proof.AesGcm.PPC64LE (Keeps covers_left covers_prefix)
 
-/-- `n` blocks at `D` for a call: apart from the key context and the working
-space at `W + 512`, and readable and writable. -/
+/-- `n` blocks at `D` for a call: apart from the key context, and readable
+and writable. -/
 structure Dst (K W : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   wrap : D.toNat + 16 * n ≤ 2 ^ 64
   k : (⟨K, 256⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  scr : (⟨D, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, 2048⟩
   rd : Covers [⟨D, 16 * n⟩] (s.rd ++ s.wr)
   wr : Covers [⟨D, 16 * n⟩] s.wr
 
-/-- Blocks of `W` below 512. -/
+/-- Blocks of `W`. -/
 theorem dstW {K W : Addr} {s : State} (L : Lay K W) (P : Perm K W s) {d n : Nat} (h : d + 16 * n ≤ 512) :
     Dst K W s (W + BitVec.ofNat 64 d) n where
   wrap := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp only [Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt (W + BitVec.ofNat 64 d).isLt
-    · rw [L.toNat_w (by omega_using [h])]; have := L.ww; omega_using [h, this]
+    · rw [L.toNat_w (by omega_using [h, hn])]; have := L.ww; omega_using [h, this]
   k := L.k_w.sub_right (Lay.wSub (by omega_using [h]))
-  scr := L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
   rd := covers_left (P.wC (by omega_using [h]))
   wr := P.wC (by omega_using [h])
 
@@ -322,7 +320,6 @@ theorem dstW {K W : Addr} {s : State} (L : Lay K W) (P : Perm K W s) {d n : Nat}
 theorem dstD {K W : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf K W s D (16 * n)) : Dst K W s D n where
   wrap := h.wrap
   k := h.k
-  scr := h.w.sub_right (Lay.wSub (by decide))
   rd := h.rd
   wr := h.wr
 
@@ -345,9 +342,9 @@ theorem oneBlock_ok {W : Addr} {s : State} (h31 : s.gpr .r31 = W) {d : Nat} (hd 
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hd, ne_eq, reduceCtorEq, not_false_eq_true,
     and_self, ↓reduceIte, Nat.reduceLT, Nat.reducePow]
 
-theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ s s' : State} {K D S : Addr}
-    {R n : Nat} (h : BPost f s K D S R n s') (hk : Keeps s₀ s) (hg : ∀ r ∈ preserved, s.gpr r = s₀.gpr r) :
-    BPost f s₀ K D S R n s' where
+theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ s s' : State} {K D : Addr}
+    {R n : Nat} (h : BPost f s K D R n s') (hk : Keeps s₀ s) (hg : ∀ r ∈ preserved, s.gpr r = s₀.gpr r) :
+    BPost f s₀ K D R n s' where
   rd := by rw [h.rd, hk.rd]
   wr := by rw [h.wr, hk.wr]
   sp := by rw [h.sp, hk.sp]
@@ -357,17 +354,13 @@ theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
 
 theorem callArgs_run {s : State} :
     ∃ s₁, runBlock isa callArgs s = some s₁ ∧ s₁.gpr .r3 = s.gpr .r29 ∧ s₁.gpr .r4 = s.gpr .r28 ∧
-      s₁.gpr .r7 = s.gpr .r31 + BitVec.ofNat 64 512 ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-  refine ⟨((s.write .r3 (s.gpr .r29)).write .r4 (s.gpr .r28)).write .r7 (s.gpr .r31 + BitVec.ofNat 64 512), ?_,
-    by rw [gpr_write_of_ne _ _ (by decide), gpr_write_of_ne _ _ (by decide), gpr_write_self],
+  refine ⟨(s.write .r3 (s.gpr .r29)).write .r4 (s.gpr .r28), ?_,
     by rw [gpr_write_of_ne _ _ (by decide), gpr_write_self], gpr_write_self _ _ _,
-    fun r h3 h4 h7 => by rw [gpr_write_of_ne _ _ h7, gpr_write_of_ne _ _ h4, gpr_write_of_ne _ _ h3],
+    fun r h3 h4 _ => by rw [gpr_write_of_ne _ _ h4, gpr_write_of_ne _ _ h3],
     ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-  simp only [callArgs, scrO, Impl.AesGcm.PPC64LE.mov, runBlock_cons, runStep_some, runBlock_nil, exec, ne_eq,
-    reduceCtorEq, not_false_eq_true, and_self, ↓reduceIte, Nat.reduceLT, Nat.reducePow, BitVec.or_self,
-    gpr_write_of_ne _ _ (show ¬Reg.r28 = .r3 by decide), gpr_write_of_ne _ _ (show ¬Reg.r31 = .r3 by decide),
-    gpr_write_of_ne _ _ (show ¬Reg.r31 = .r4 by decide)]
+  simp only [callArgs, Impl.AesGcm.PPC64LE.mov, runBlock_cons, runStep_some, runBlock_nil, exec,
+    BitVec.or_self, gpr_write_of_ne _ _ (show ¬Reg.r28 = .r3 by decide)]
 
 section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r31))
@@ -379,38 +372,35 @@ theorem callArgs_ok {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V .r28 
     (ha : ∀ s₁, (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₁.gpr r = s.gpr r) → Keeps s s₁ → ArgsOk args s₁ D k)
     (hD : Dst (V .r29) (V .r31) s D k) :
     WP isa (.block (callArgs ++ args)) s fun s₂ =>
-      BCall s₂ (V .r29) D (V .r31 + BitVec.ofNat 64 512) R k ∧
+      BCall s₂ (V .r29) D R k ∧
         (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
-  obtain ⟨s₁, run₁, r3₁, r4₁, r7₁, g₁, k₁⟩ := callArgs_run (s := s)
+  refine (fun (_ : Lay (V .r29) (V .r31)) => ?_) L
+  obtain ⟨s₁, run₁, r3₁, r4₁, g₁, k₁⟩ := callArgs_run (s := s)
   obtain ⟨s₂, run₂, r5₂, r6₂, g₂, k₂⟩ := ha s₁ g₁ k₁
   have k₂' : Keeps s s₂ := k₁.trans k₂
   have hD₂ := hD.of_eq (s' := s₂) k₂'.rd k₂'.wr
-  have hc : BCall s₂ (V .r29) D (V .r31 + BitVec.ofNat 64 512) R k :=
+  have hc : BCall s₂ (V .r29) D R k :=
     { r3 := by rw [g₂ _ (by decide) (by decide), r3₁, E.r29]
       r4 := by rw [g₂ _ (by decide) (by decide), r4₁, E.r28, h28]
       r5 := r5₂, r6 := r6₂
-      r7 := by rw [g₂ _ (by decide) (by decide), r7₁, E.r31]
       rounds := hR, wrap := hD.wrap
       kd := hD.k.sub_left (Region.sub_prefix (by decide))
-      ks := (L.k_w.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
-      ds := hD.scr
       reads := Covers.cons (covers_prefix (by rw [k₂'.rd, k₂'.wr]; exact E.perm.k) (by decide))
-        (Covers.cons hD₂.rd (Covers.cons (covers_left (by rw [k₂'.wr]; exact E.perm.wC (by decide)))
-          Covers.nil))
-      writes := Covers.cons hD₂.wr (Covers.cons (by rw [k₂'.wr]; exact E.perm.wC (by decide)) Covers.nil) }
+        (Covers.cons hD₂.rd Covers.nil)
+      writes := Covers.cons hD₂.wr Covers.nil }
   exact WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, hc,
     fun r h3 h4 h5 h6 h7 => by rw [g₂ r h5 h6, g₁ r h3 h4 h7], k₂'⟩⟩)
 
 /-- A call of a block function, after `callArgs` and `args`. -/
 theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {name : String} {c : Prog isa}
-    (ok : ∀ s, (Proof.Aes.blocksPPC64LE f).pre s →
-      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksPPC64LE f).post s s')
+    (ok : ∀ s, (Proof.Aes.blocksPPC64LEF f).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksPPC64LEF f).post s s')
     (nf : c.noFrames = true) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V .r28 = BitVec.ofNat 64 R)
     {s : State} (E : Env V sp s) {args : List Instr} {D : Addr} {k : Nat}
     (ha : ∀ s₁, (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r7 → s₁.gpr r = s.gpr r) → Keeps s s₁ → ArgsOk args s₁ D k)
     (hD : Dst (V .r29) (V .r31) s D k) :
     WP isa (.seq (.block (callArgs ++ args)) (.call name c)) s
-      (BPost f s (V .r29) D (V .r31 + BitVec.ofNat 64 512) R k) :=
+      (BPost f s (V .r29) D R k) :=
   WP.seq (WP.mono (callArgs_ok L hR h28 E ha hD) fun _ ⟨hc, g₂, k₂⟩ =>
     WP.mono (blk_call ok nf hc) fun _ h => h.congr k₂ fun r hr => g₂ r
       (by revert hr; revert r; decide) (by revert hr; revert r; decide) (by revert hr; revert r; decide)
@@ -420,8 +410,8 @@ theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
 theorem encOne_ok {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V .r28 = BitVec.ofNat 64 R) {s : State}
     (E : Env V sp s) {d : Nat} (hd : d + 16 ≤ 512) :
     WP isa (encOne d) s (BPost Spec.Aes.cipher s (V .r29) (V .r31 + BitVec.ofNat 64 d)
-      (V .r31 + BitVec.ofNat 64 512) R 1) :=
-  callBlocks_ok L Proof.Aes.PPC64LE.encryptBlocks_correct encryptBlocks_noFrames hR h28 E
+      R 1) :=
+  callBlocks_ok L Proof.Aes.PPC64LE.encryptBlocksF_correct encryptBlocks_noFrames hR h28 E
     (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E.r31]) (by omega_using [hd]))
     (dstW L E.perm (by omega_using [hd]))
 
@@ -429,7 +419,7 @@ end
 
 /-- After a call: the environment. -/
 theorem BPost.env {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {V : Reg → BitVec 64} {sp : Addr}
-    {s s' : State} {K D S : Addr} {R n : Nat} (h : BPost f s K D S R n s') (E : Env V sp s) : Env V sp s' :=
+    {s s' : State} {K D : Addr} {R n : Nat} (h : BPost f s K D R n s') (E : Env V sp s) : Env V sp s' :=
   E.of_saved h.saved h.sp h.rd h.wr
 
 end VG.Proof.AesOcb.PPC64LE

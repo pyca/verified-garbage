@@ -13,7 +13,7 @@ public import VerifiedGarbage.Spec.Camellia.Contract
 are the generic modes (`Impl/Modes/Arm/Seq.lean`), which return the chaining
 value in the IV (`Impl/Modes/Arm/CbcChained.lean`). Decryption, whose blocks
 can be deciphered independently, calls Camellia's ECB function,
-`vg_camellia_ecb_decrypt`, with the number of rounds (`ecbCore`), once for a
+`vg_camellia_ecb_decrypt`'s code, with the number of rounds (`ecbCore`), once for a
 group of 8, 4 or 2 blocks, then once per block for those left
 (`Impl/Modes/Arm/Wide.lean`). Encryption, whose every block needs the one
 before, has the table of subkeys built once, in its own working space
@@ -31,11 +31,15 @@ open VG.Arm VG.Impl.Modes.Arm
 its artifact has it. -/
 def ecbCode (dir : Dir) : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 2816 0 680 (ecb dir)
 
-/-- Camellia's ECB function in the direction `dir`, as the modes call it. -/
+/-- Camellia's ECB function in the direction `dir`, as the modes call it:
+its code as it is verified, under a name of its own
+(`vg_camellia_ecb_encrypt_entry`), which the emitter writes as an internal
+function, since the artifact `vg_camellia_ecb_encrypt` is that code
+scrubbed (`Proof/Camellia/Arm/Scrub.lean`). -/
 def ecbCore (dir : Dir) : Core where
   name := match dir with
-    | .encrypt => Spec.Camellia.ecbEncryptApi.name
-    | .decrypt => Spec.Camellia.ecbDecryptApi.name
+    | .encrypt => Spec.Camellia.ecbEncryptApi.name ++ "_entry"
+    | .decrypt => Spec.Camellia.ecbDecryptApi.name ++ "_entry"
   code := ecbCode dir
   bw := 4
   rounds := true

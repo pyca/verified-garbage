@@ -77,8 +77,17 @@ namespace VG.Artifacts.Ed448.Arm
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.Arm.variants.flatMap fun (v : Proof.Variants.Curve448Field.Arm.Variant) => [
-    Spec.Ed448.publicKeyApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.publicKeyReg v.um v.suffix Proof.Ed448.baseComb_ok),
-    Spec.Ed448.signCachedApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.signCachedReg v.um v.suffix Proof.Ed448.baseComb_ok),
-    Spec.Ed448.verifyApi.artifact Arm.target (Proof.Ed448.Arm.Scrub.verifyReg v.um v.suffix Proof.Ed448.recover_ok Proof.Ed448.verifyEqComb_ok)]
+    Spec.Ed448.publicKeyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed448.Arm.Fn.publicKey v.um
+      verified := .scrubbed (Proof.Ed448.Arm.Fn.publicKey v.um) },
+    Spec.Ed448.signCachedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed448.Arm.Fn.signCached v.um
+      verified := .scrubbed (Proof.Ed448.Arm.Fn.signCached v.um) },
+    Spec.Ed448.verifyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed448.Arm.Fn.verify v.um
+      verified := .scrubbed (Proof.Ed448.Arm.Fn.verify v.um) }]
 
 end VG.Artifacts.Ed448.Arm

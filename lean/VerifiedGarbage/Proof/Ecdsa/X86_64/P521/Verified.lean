@@ -238,7 +238,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   window_am3 := fun _ => by unfold AM3; decide +kernel
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
-  even h := absurd h (by decide)
+  even _ h := absurd h (by decide)
   inverse _ := ⟨by decide, rfl⟩
 
 theorem p521_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :

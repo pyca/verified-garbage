@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Rc4.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.StackScratch.X86
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Rc4.X86.Lit
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -782,8 +782,9 @@ end
 `vg_rc4_init` and `vg_rc4_apply` keep our caller's `ebx`, `esi`, `edi` and
 `ebp`, and `vg_rc4_apply` the secret `j`, in their working space: they run
 their code, proved with it as an argument (`Verified.lean`), in a frame that
-allocates it and copies their three argument slots, and zero it after the
-code (`Verified.stackScratchWiped`): 84 bytes, 64 of working space. The code
+allocates it and copies their three argument slots (`Verified.stackScratch`):
+84 bytes, 64 of working space, which their registrations zero before
+returning (`Proof/Rc4/X86/Scrub.lean`). The code
 uses no other stack. The copies are read only where the postconditions and
 `vg_rc4_apply`'s leak, the context's `i`, read the buffers
 (`Proof/Rc4/Scratch.lean`).
@@ -832,22 +833,22 @@ theorem applyFrameSat_pre : ∃ s, (Spec.Rc4.applyContract X86.abi 84).pre s := 
     [applyFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using applyFrameSat
 
 theorem init_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.init)
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.init)
       (Spec.Rc4.initContract X86.abi 84) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc4.initSig) (nm := "scratch") (e := .u64) (n := 8)
+  X86.Verified.stackScratch (sig := Spec.Rc4.initSig) (nm := "scratch") (e := .u64) (n := 8)
     (post := Spec.Rc4.initPost X86.abi.ptrBits) (wa := true) (stack := 0) (bytes := 84)
-    init_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    init_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Rc4.initPost_local _)
-    (Proof.Rc4.initPostOut_local _) initFrameSat_pre
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc4.initPostOut_local _ vs m m₁ m₂ r hl hb h) initFrameSat_pre
 
 theorem apply_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 84 3 16 Impl.Rc4.X86.apply)
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.apply)
       (Spec.Rc4.applyContract X86.abi 84) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc4.applySig) (nm := "scratch") (e := .u64) (n := 8)
+  X86.Verified.stackScratch (sig := Spec.Rc4.applySig) (nm := "scratch") (e := .u64) (n := 8)
     (post := Spec.Rc4.applyPost X86.abi.ptrBits) (wa := true) (stack := 0) (bytes := 84)
     (leak := some (Spec.Rc4.applyLeak X86.abi.ptrBits))
-    apply_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    apply_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Rc4.applyPost_local _)
-    (Proof.Rc4.applyPostOut_local _) applyFrameSat_pre (hleak := Proof.Rc4.applyLeak_local _)
+    (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc4.applyPostOut_local _ vs m m₁ m₂ r hl hb h) applyFrameSat_pre (hleak := Proof.Rc4.applyLeak_local _)
 
 end VG.Proof.Rc4.X86

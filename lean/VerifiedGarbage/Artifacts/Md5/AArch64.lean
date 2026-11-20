@@ -16,10 +16,13 @@ namespace VG.Artifacts.Md5.AArch64
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
-    verified := Proof.Md5.AArch64.Shared.init
-    residue := some ⟨Proof.Md5.AArch64.Stream.init_noResidue _ _⟩ },
-  Spec.Md5.updateApi.artifact AArch64.target Proof.Md5.AArch64.Shared.updateReg,
-  Spec.Md5.finalizeApi.artifact AArch64.target Proof.Md5.AArch64.Shared.finalizeReg] ++
+    verified := .scrubbed ⟨Proof.Md5.AArch64.Shared.init, Proof.Md5.AArch64.Stream.init_noResidue _ _⟩ },
+  Spec.Md5.updateApi.artifact AArch64.target {
+    code := Impl.Md5.AArch64.Stream.Fn.update
+    verified := .scrubbed Proof.Md5.AArch64.Shared.update_scrubbed },
+  Spec.Md5.finalizeApi.artifact AArch64.target {
+    code := Impl.Md5.AArch64.Stream.Fn.finalize
+    verified := .scrubbed Proof.Md5.AArch64.Shared.finalize_scrubbed }] ++
   (VG.Proof.Variants.MdHash.AArch64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
     v.stream.map fun f =>
       f.api.artifact AArch64.target { f.reg with suffix := v.suffix})

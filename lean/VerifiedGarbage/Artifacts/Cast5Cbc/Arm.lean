@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
+public import VerifiedGarbage.Proof.Cast5.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,10 +12,10 @@ namespace VG.Artifacts.Cast5Cbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcEncryptChained
-    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.Arm.cbcEncryptChained_framed },
+    code := Impl.Cast5.Arm.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Cast5.Arm.Fn.cbcEncryptChained },
   Spec.Cast5.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcDecryptChained
-    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.Arm.cbcDecryptChained_framed }]
+    code := Impl.Cast5.Arm.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Cast5.Arm.Fn.cbcDecryptChained }]
 
 end VG.Artifacts.Cast5Cbc.Arm

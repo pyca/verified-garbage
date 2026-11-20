@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.
@@ -57,6 +59,16 @@ bne 28b
 b 27f
 26:
 27:
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_zeroize_core.rs"]
+pub(crate) mod vg_zeroize_core;

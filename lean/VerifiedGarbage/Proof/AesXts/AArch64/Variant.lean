@@ -54,6 +54,8 @@ meta import VerifiedGarbage.Proof.AesXts.AArch64.Steps
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `AesXts.AArch64.Aes.Top`, which only this module used -/
 
@@ -1608,6 +1610,12 @@ structure XtsImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- `enc.code` and `dec.code` write, of the registers the calling
+  convention does not preserve, only those they state (`enc.clear`,
+  `dec.clear`): a caller clears them with its own before returning
+  (`ScrubAll.scrubSide_union0`). -/
+  encScrub : AArch64.ScrubAll.calleeSide enc.code enc.clear = true
+  decScrub : AArch64.ScrubAll.calleeSide dec.code dec.clear = true
 
 namespace XtsImpl
 
@@ -1615,37 +1623,61 @@ theorem crypt_noFrames {b : Impl.Aes.AArch64.Blocks} (h : b.code.noFrames = true
     (Impl.AesXts.AArch64.crypt b).noFrames = true := by
   simp [Impl.AesXts.AArch64.crypt, Impl.AesXts.AArch64.batch, Impl.AesXts.AArch64.pass, Code.noFrames, h]
 
+/-- `crypt`'s own instructions write only the registers `Impl/` states
+(`Impl.AesXts.AArch64.cryptOwn`): evaluated once, with code that does nothing
+in the place of the block function. -/
+private theorem crypt_own :
+    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64.cryptOwn = true := by
+  kernel_rfl
+
+/-- `crypt` around a block function that writes the registers `cl` writes its
+own and those. -/
+theorem crypt_scrub {b : Impl.Aes.AArch64.Blocks} {cl : Impl.Residue.AArch64.Clear}
+    (hc : AArch64.ScrubAll.calleeSide b.code cl = true) :
+    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt b) (Impl.AesXts.AArch64.cryptOwn.union cl) = true := by
+  have h0 := AArch64.ScrubAll.sideAll_union_left (b := cl) crypt_own
+  have h1 := AArch64.ScrubAll.sideAll_union_right (a := Impl.AesXts.AArch64.cryptOwn) hc
+  simp only [AArch64.ScrubAll.calleeSide, Impl.AesXts.AArch64.crypt, Impl.AesXts.AArch64.batch,
+    AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 h1 ⊢
+  simp only [h0, h1, and_self]
+
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
 def blocks (v : BlocksImpl) : XtsImpl where
-  enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc,
+    Impl.AesXts.AArch64.cryptOwn.union v.enc.clear, v.enc.scratch⟩
   encNoFrames := crypt_noFrames v.encNoFrames
   encOk := encrypt_correct v
   encCt := crypt_ct true v.encOk v.encCt v.encNoFrames fun R w m p => (aesWith_state R w m p).symm
   encKeepsV := encrypt_keepsV v
-  dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.AArch64.decrypt v.dec⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.AArch64.decrypt v.dec,
+    Impl.AesXts.AArch64.cryptOwn.union v.dec.clear, v.dec.scratch⟩
   decNoFrames := crypt_noFrames v.decNoFrames
   decOk := decrypt_correct v
   decCt := crypt_ct false v.decOk v.decCt v.decNoFrames fun R w m p => (aesInvWith_state R w m p).symm
   decKeepsV := decrypt_keepsV v
   suffix := v.suffix
   features := v.features
+  encScrub := crypt_scrub v.encScrub
+  decScrub := crypt_scrub v.decScrub
 
 /-- The one-pass functions with the AES instructions,
 `vg_aes_xts_encrypt_aes` and `vg_aes_xts_decrypt_aes`. -/
 def aes : XtsImpl where
-  enc := ⟨"vg_aes_xts_encrypt" ++ "_aes", Impl.AesXts.AArch64Aes.encrypt⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_aes", Impl.AesXts.AArch64Aes.encrypt, Impl.AesXts.AArch64Aes.clear, 0⟩
   encNoFrames := Aes.encrypt_noFrames
   encOk := Aes.encrypt_correct
   encCt := Aes.encrypt_ct true
   encKeepsV := Aes.encrypt_keepsV
-  dec := ⟨"vg_aes_xts_decrypt" ++ "_aes", Impl.AesXts.AArch64Aes.decrypt⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_aes", Impl.AesXts.AArch64Aes.decrypt, Impl.AesXts.AArch64Aes.clear, 0⟩
   decNoFrames := Aes.decrypt_noFrames
   decOk := Aes.decrypt_correct
   decCt := Aes.decrypt_ct false
   decKeepsV := Aes.decrypt_keepsV
   suffix := "_aes"
   features := ["aes"]
+  encScrub := by lit_decide
+  decScrub := by lit_decide
 
 end XtsImpl
 

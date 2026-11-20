@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.CtrVerified
-public import VerifiedGarbage.Proof.Camellia.Arm.CtrFinal
+public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -13,10 +12,10 @@ namespace VG.Artifacts.CamelliaCtr.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ctr
-    verified := Proof.Camellia.Arm.ctr_framed },
+    code := Impl.Camellia.Arm.Fn.ctr
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ctr },
   Spec.Camellia.ctrFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 Impl.Camellia.Arm.ctrFinal
-    verified := Proof.Camellia.Arm.CtrFinal.ctrFinal_framed }]
+    code := Impl.Camellia.Arm.Fn.ctrFinal
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ctrFinal }]
 
 end VG.Artifacts.CamelliaCtr.Arm

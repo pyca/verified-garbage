@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.AesGcm.X86
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Aes.X86.Variant
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
@@ -240,6 +241,11 @@ structure GhashImpl where
   ct : ConstantTime isa Proof.Gcm.ghashX86.pre Proof.Gcm.ghashX86.pub fn.code
   nosp : NoSp fn.code
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk fn.code = true
   suffix : String
   features : List String
 
@@ -253,6 +259,7 @@ def scalar : GhashImpl where
   ct := Proof.Gcm.X86.ghash_ct
   nosp := NoSp.of_all (by decide +kernel)
   spSafe := Code.all_of_spTest (by decide +kernel)
+  scrub := by lit_decide
   suffix := ""
   features := []
 

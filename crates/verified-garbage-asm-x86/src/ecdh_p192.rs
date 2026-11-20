@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -414,7 +416,7 @@ jne 27b
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWLigAAAAuXADAAC6iAMAAFBRUlc="
 call {vg_p192_mul_mod_p}
-.base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEi4eIAwAAIcgPyIlDFIuHjAMAACHID8iJQxCLh5ADAAAhyA/IiUMMi4eUAwAAIcgPyIlDCIuHmAMAACHID8iJQwSLh5wDAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLegjD"
+.base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEi4eIAwAAIcgPyIlDFIuHjAMAACHID8iJQxCLh5ADAAAhyA/IiUMMi4eUAwAAIcgPyIlDCIuHmAMAACHID8iJQwSLh5wDAAAhyA/IiQOJyIPgAYn6ixqLcgSLagyLeghmD+/AuQAAAACNZCTk8w9/BCSJTCQQiUwkFIlMJBiNZCQcugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,

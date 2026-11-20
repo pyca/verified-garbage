@@ -104,7 +104,7 @@ def artifactOf (fn : String) (w : BitVec 64) : Artifact where
   doc := "Returns 1 plus word 1 of its table."
   code := code w
   contract := contract w
-  verified := verified w
+  verified := .unscrubbed (verified w)
   spSafe := rfl
 
 def artifact : Artifact := artifactOf "vg_test_alutbl" 42

@@ -5,12 +5,12 @@ public import VerifiedGarbage.Proof.Rc2.CbcScratch
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 
-/-! # RC2-CBC in place on X86, with wiped stack working space -/
+/-! # RC2-CBC in place on X86, with its working space on the stack -/
 -- separate module: exporting CBC does not rebuild its existing streaming callers.
 
 @[expose] public section
@@ -105,13 +105,14 @@ theorem encryptChainedFrameSat : ∃ s, (Spec.Rc2.cbcEncryptChainedContract abi 
 
 theorem encryptChained_framed :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.encrypt)
+      (Impl.StackScratch.X86.withStackScratch 544 4 Impl.Rc2.X86.Cbc.encrypt)
       (Spec.Rc2.cbcEncryptChainedContract abi 560) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 64) (post := Proof.Rc2.cbcEncChainedPost abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 544) encryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 544) encryptChained_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Rc2.cbcEncChainedPost_local _) (Proof.Rc2.cbcEncChainedPostOut_local _) encryptChainedFrameSat
+    (Proof.Rc2.cbcEncChainedPost_local _) (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc2.cbcEncChainedPostOut_local _ vs m m₁ m₂ r hl hb h)
+    encryptChainedFrameSat
 
 theorem decryptChained_implies : (wideContract .decrypt).Implies
     (Proof.Rc2.cbcDecChainedScratchContract abi 64 16) where
@@ -147,12 +148,13 @@ theorem decryptChainedFrameSat : ∃ s, (Spec.Rc2.cbcDecryptChainedContract abi 
 
 theorem decryptChained_framed :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 544 4 128 Impl.Rc2.X86.Cbc.decrypt)
+      (Impl.StackScratch.X86.withStackScratch 544 4 Impl.Rc2.X86.Cbc.decrypt)
       (Spec.Rc2.cbcDecryptChainedContract abi 560) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.Rc2.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 64) (post := Proof.Rc2.cbcDecChainedPost abi.ptrBits) (wa := true) (stack := 16)
-    (bytes := 544) decryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (bytes := 544) decryptChained_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Rc2.cbcDecChainedPost_local _) (Proof.Rc2.cbcDecChainedPostOut_local _) decryptChainedFrameSat
+    (Proof.Rc2.cbcDecChainedPost_local _) (fun vs m m₁ m₂ r hl _ hb h => Proof.Rc2.cbcDecChainedPostOut_local _ vs m m₁ m₂ r hl hb h)
+    decryptChainedFrameSat
 
 end VG.Proof.Rc2.X86.Cbc

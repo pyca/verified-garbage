@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
-public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+public import VerifiedGarbage.Proof.CmacAes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -11,17 +10,15 @@ public import VerifiedGarbage.TCB.Arm.Print
 
 namespace VG.Artifacts.CmacAes.Arm
 
-open VG.Proof.CmacAes.Arm
-
 def artifacts : List Artifact := [
   Spec.Cmac.aesInitApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
-    verified := Proof.CmacAes.Stream.Arm.init_framed },
+    code := Impl.CmacAes.Arm.Fn.init
+    verified := .scrubbed Proof.CmacAes.Arm.Fn.init },
   Spec.Cmac.aesAbsorbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2320 2 Impl.CmacAes.Stream.Arm.absorb
-    verified := Proof.CmacAes.Stream.Arm.absorb_framed },
+    code := Impl.CmacAes.Arm.Fn.absorb
+    verified := .scrubbed Proof.CmacAes.Arm.Fn.absorb },
   Spec.Cmac.aesFinishApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 2320 1 Impl.CmacAes.Stream.Arm.finish
-    verified := Proof.CmacAes.Stream.Arm.finish_framed }]
+    code := Impl.CmacAes.Arm.Fn.finish
+    verified := .scrubbed Proof.CmacAes.Arm.Fn.finish }]
 
 end VG.Artifacts.CmacAes.Arm

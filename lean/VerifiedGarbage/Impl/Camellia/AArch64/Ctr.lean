@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Prepared
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Camellia-CTR, bitsliced, on AArch64
@@ -51,3 +53,21 @@ abbrev modeCore : Impl.Modes.AArch64.Core := dirCore .encrypt
 def ctr : Prog isa := modeCore.ctr ⟨.x2, .x3, .x4, .x5⟩
 
 end VG.Impl.Camellia.AArch64
+
+namespace VG.Impl.Camellia.AArch64.Fn
+
+open VG.AArch64
+
+/-- Camellia-CTR as emitted: its code with its scratch space on the stack
+(`Impl.StackScratch.AArch64.withStackScratch`), then the registers it writes
+that the calling convention does not preserve cleared and its 3344 bytes of
+stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns without
+secret residue. -/
+def ctr : Prog isa :=
+  VG.Impl.Residue.AArch64.scrubAll 3344 0
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+     [.v26, .v27, .v28, .v29, .v30],
+     []⟩
+    (VG.Impl.StackScratch.AArch64.withStackScratch 3344 .x5 VG.Impl.Camellia.AArch64.ctr)
+
+end VG.Impl.Camellia.AArch64.Fn

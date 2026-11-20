@@ -26,6 +26,8 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64.Joint
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
@@ -106,13 +108,17 @@ theorem secp256k1SignSide (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weie
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
       secp256k1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
-/-- The registers the tail of `vg_ecdsa_secp256k1_verify` clears: those its code may write. -/
-def secp256k1VerifyClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [.v28, .v29], []⟩
-
-theorem secp256k1VerifySide :
-    AArch64.ScrubAll.scrubSide
-      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify)
-      80 (Spec.Ecdsa.Secp256k1.inst.verifyHashSig.retBits AArch64.abi.ptrBits) secp256k1VerifyClear [] = true := by lit_decide
+/-- `vg_ecdsa_secp256k1_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem secp256k1Verify (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract AArch64.abi 80) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
+        Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
+      verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

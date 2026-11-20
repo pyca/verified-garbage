@@ -26,6 +26,9 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Starting RSA key generation on AArch64: correctness, constant time -/
 
@@ -535,5 +538,14 @@ theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
   · sig_implies [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs] [initSat] using initSat
+
+/-- `vg_rsa_key_init` as emitted, cleanup included
+(`Impl.RsaKeyGen.AArch64.KeyInit.Fn.init`): it meets its contract in constant
+time and returns without secret residue. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.AArch64.KeyInit.Fn.init (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi)
+    { code := init, verified := init_verified } _ Proof.Rsa.AArch64.Scrub.keyInitOk (by dsimp only; lit_decide)
 
 end VG.Proof.RsaKeyGen.AArch64.KeyInit

@@ -56,6 +56,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.EcKey.P384
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.P384
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 
 /-! ### `Ecdh.AArch64.P384.Contract`, which only this module used -/
 
@@ -688,5 +691,17 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.A
     Verified AArch64.target exchangeP384
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi) :=
   Verified.of_correct (ecdh_a64 hL hI hO) ecdh_ct implies
+
+
+/-- ECDH over P-384 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP384`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP384
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi) 32 :=
+  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi)
+    { code := exchangeP384, verified := ecdh_verified hL hI hO } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.AArch64.P384

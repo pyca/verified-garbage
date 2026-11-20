@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
@@ -193,5 +195,16 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AAr
     Verified AArch64.target publicKeyP384
       (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)) :=
   Verified.of_correct (pk_a64 hL hI hT) pk_ct implies
+
+/-- `vg_ec_p384_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.publicKeyP384`), meets its contract in constant time and
+returns without secret residue. -/
+theorem pk_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP384
+      (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
+    { code := publicKeyP384, verified := pk_verified hL hI hT } _
+    (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.AArch64.P384

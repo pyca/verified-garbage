@@ -51,7 +51,7 @@ theorem verLay : Lay (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r10) := by
   obtain ⟨-, -, dcs, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
   exact Lay.of fc fs fw dcs dcw dsw
 
-theorem ver_W : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr := by
+theorem ver_W : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 end
@@ -68,7 +68,7 @@ structure SV1 (s₀ s₁ : State) : Prop where
   r20 : s₁.gpr .r20 = s₀.gpr .r8
   r19 : s₁.gpr .r19 = s₀.gpr .r9
 
-theorem ver1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 2560⟩] s₀.wr) :
+theorem ver1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r10, 288⟩] s₀.wr) :
     WP isa (.block verEntry) s₀ (SV1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r10) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   obtain e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
@@ -110,7 +110,7 @@ theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀)
   obtain ⟨hrd, -, -, -, -, dsw, dtw, -, -, -, -, -⟩ := hh
   obtain hTr : Covers [⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩] (s₀.rd ++ s₀.wr) :=
     covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  obtain dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩ : Region).Disjoint
+  obtain dT : ∀ {d k : Nat}, d + k ≤ 288 → (⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩ : Region).Disjoint
       ⟨s₀.gpr .r10 + BitVec.ofNat 64 d, k⟩ := fun hd => dtw.sub_right (Lay.wSub hd)
   refine WP.seq (WP.mono (ver1_wp (ver_W h)) fun s₁ h1 => ?_)
   obtain he₁ := ver_env h h1
@@ -187,13 +187,12 @@ theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀)
           bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat ++ zeros (16 - (s₀.gpr .r9).toNat) := by
         rw [h1.r31, bytesAt_frame fof (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-            rcases hr with rfl | rfl | rfl | rfl
+            rcases hr with rfl | rfl | rfl
             · exact ((dsw.sub_right (Lay.wSub (d := 256) (n := 16) (by decide))).sub_left
                 (Region.sub_prefix (by decide))).symm
             · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
             · simpa using Lay.w_w (w := s₀.gpr .r10) (a := 256) (n := 16) (d := 0) (k := 16) (.inr (by decide))
-                (by decide) (by decide)
-            · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hb₄, k₃.mem,
+                (by decide) (by decide)) (by decide), hb₄, k₃.mem,
           ← h1.r20, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
             exact dT (d := 128) (k := 120) (by decide)) (by omega_using []), h1.r20]

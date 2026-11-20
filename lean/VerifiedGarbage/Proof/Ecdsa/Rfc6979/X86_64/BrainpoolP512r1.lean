@@ -84,7 +84,7 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
   inst := Spec.Ecdsa.BrainpoolP512r1.inst
   curve := rfl
   big := false
-  sizes := ⟨.inr (.inr rfl), .inl rfl, Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inr (.inl rfl)), .inl rfl, Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.X86_64.BrainpoolP512r1.brainpoolp512r1S_sh

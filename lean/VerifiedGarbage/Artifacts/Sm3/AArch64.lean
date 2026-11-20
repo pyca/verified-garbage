@@ -15,10 +15,15 @@ namespace VG.Artifacts.Sm3.AArch64
 def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.Stream.init
-    verified := Proof.Sm3.AArch64.Shared.init
-    residue := some ⟨Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩ }] ++
+    verified := .scrubbed ⟨Proof.Sm3.AArch64.Shared.init, Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩ }] ++
   (Proof.Variants.Sm3Compress.AArch64.variants.flatMap fun (v : Proof.Sm3.AArch64.Compress) => [
-    Spec.Sm3.updateApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.updateReg v),
-    Spec.Sm3.finalizeApi.artifact AArch64.target (Proof.Sm3.AArch64.Shared.finalizeReg v)])
+    Spec.Sm3.updateApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sm3.AArch64.Stream.Fn.update v.impl
+      verified := .scrubbed (Proof.Sm3.AArch64.Shared.update_scrubbed v) },
+    Spec.Sm3.finalizeApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Sm3.AArch64.Stream.Fn.finalize v.impl
+      verified := .scrubbed (Proof.Sm3.AArch64.Shared.finalize_scrubbed v) }])
 
 end VG.Artifacts.Sm3.AArch64

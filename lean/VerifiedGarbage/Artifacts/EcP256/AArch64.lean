@@ -1,58 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
-public import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.EcKey.P256
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.EcKey.P256.AArch64
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.P256.Prime
-public import VerifiedGarbage.Proof.EcKey.AArch64.Verified
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.P256.Point
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-public import VerifiedGarbage.Proof.Weierstrass.MulContract
-public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Proof.P256.AArch64.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256Decompress
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Residue
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.P256.AArch64.Law
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Spec.EcKey.P256
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -63,16 +19,14 @@ namespace VG.Artifacts.EcP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Proof.EcKey.Compressed.AArch64.P256.code
-    verified := Proof.EcKey.Compressed.AArch64.P256.verified hasLaw.inv } (Proof.EcKey.AArch64.Scrub.compressOk _)),
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Impl.EcKey.AArch64.Fn.compressP256
+    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.P256.scrubbed hasLaw.inv) },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact AArch64.target {
-    code := Proof.EcKey.Compressed.AArch64.Residue.cleared [.x14, .x15, .x16, .x17] []
-      Proof.EcKey.Compressed.AArch64.P256Decompress.code
-    verified := Proof.EcKey.Compressed.AArch64.Residue.P256.verified hasLaw.law hasLaw.inv
-    residue := some ⟨Proof.EcKey.Compressed.AArch64.Residue.P256.noResidue hasLaw.law hasLaw.inv⟩ },
-  Spec.EcKey.P256.publicKeyApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.P256.Booth.publicKey
-    verified := Proof.EcKey.AArch64.booth_pk_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) } (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _))]
+    code := Impl.EcKey.AArch64.Fn.decompressP256
+    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.Residue.P256.scrubbed hasLaw.law hasLaw.inv) },
+  Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
+    code := Impl.EcKey.AArch64.Fn.publicKeyP256
+    verified := .scrubbed (Proof.EcKey.AArch64.booth_pk_scrubbed hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) }]
 
 end VG.Artifacts.EcP256.AArch64

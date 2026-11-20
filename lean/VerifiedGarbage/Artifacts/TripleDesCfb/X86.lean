@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
-public import VerifiedGarbage.Proof.TripleDes.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
+public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.FbFinalLit
@@ -15,16 +15,16 @@ namespace VG.Artifacts.TripleDesCfb.X86
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
-    verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed },
+    code := Impl.TripleDes.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.TripleDes.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt
-    verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed },
+    code := Impl.TripleDes.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal
-    verified := Proof.TripleDes.X86.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.TripleDes.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.TripleDes.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal
-    verified := Proof.TripleDes.X86.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.TripleDes.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.TripleDes.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb.X86

@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
@@ -2496,6 +2501,20 @@ theorem allocatedVerifyHash_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder
     (by taint_decide) (Hash.hashSat_cons (by decide) sat_specG (by decide) fun r hr => by
       simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+/-- `vg_ecdsa_p256_verify` as emitted, cleanup included
+(`P256Allocated.Fn.verifyHash`): it meets its contract in constant time and
+returns without secret residue. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem allocatedVerifyHash_scrubbed (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
+    (hN : InvToM p256.C.n)
+    (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start) :
+    VerifiedScrubbed AArch64.target P256Allocated.Fn.verifyHash
+      (Spec.Ecdsa.P256.inst.verifyHashContract (AArch64.abi.withConsts P256Joint.p256v.combConsts) 80) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P256.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false P256Allocated.verify
+      verified := allocatedVerifyHash_verified hL hO hI hN hT } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Verify.AArch64
 

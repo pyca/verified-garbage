@@ -41,10 +41,10 @@ def initPPC64LE : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat⟩
     let ctx : Region := ⟨s.gpr .r5, 256⟩
-    let scr : Region := ⟨s.gpr .r6, 2560⟩
+    let scr : Region := ⟨s.gpr .r6, 288⟩
     s.rd = [key] ∧ s.wr = [ctx, scr] ∧
       key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
-      (s.gpr .r5).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 2560 ≤ 2 ^ 64 ∧
+      (s.gpr .r5).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 288 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 16 ∨ (s.gpr .r4).toNat = 24 ∨ (s.gpr .r4).toNat = 32)
   post s s' := KeyRepr s'.mem (s.gpr .r5) (bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat)
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
@@ -56,11 +56,11 @@ def streamInitPPC64LE : Contract isa where
     let ctx : Region := ⟨s.gpr .r3, 256⟩
     let nonce : Region := ⟨s.gpr .r4, (s.gpr .r5).toNat⟩
     let st : Region := ⟨s.gpr .r6, 80⟩
-    let scr : Region := ⟨s.gpr .r7, 2560⟩
+    let scr : Region := ⟨s.gpr .r7, 288⟩
     s.rd = [ctx, nonce] ∧ s.wr = [st, scr] ∧
       ctx.Disjoint st ∧ ctx.Disjoint scr ∧ nonce.Disjoint st ∧ nonce.Disjoint scr ∧ st.Disjoint scr ∧
       (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + (s.gpr .r5).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r6).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + 2560 ≤ 2 ^ 64
+      (s.gpr .r6).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r7).toNat + 288 ≤ 2 ^ 64
   post s s' := ∀ ciph, StreamRepr s'.mem (s.gpr .r6) ciph (ctxH s.mem (s.gpr .r3))
     (bytesAt s.mem (s.gpr .r4) (s.gpr .r5).toNat) [] []
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
@@ -72,11 +72,11 @@ def streamAadPPC64LE : Contract isa where
     let ctx : Region := ⟨s.gpr .r3, 256⟩
     let st : Region := ⟨s.gpr .r4, 80⟩
     let data : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 2560⟩
+    let scr : Region := ⟨s.gpr .r8, 288⟩
     s.rd = [ctx, data] ∧ s.wr = [st, scr] ∧
       ctx.Disjoint st ∧ ctx.Disjoint scr ∧ data.Disjoint st ∧ data.Disjoint scr ∧ st.Disjoint scr ∧
       (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r4).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 2560 ≤ 2 ^ 64
+      (s.gpr .r4).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 288 ≤ 2 ^ 64
   post s s' := ∀ ciph iv a, StreamRepr s.mem (s.gpr .r4) ciph (ctxH s.mem (s.gpr .r3)) iv a [] →
     s.gpr .r5 = BitVec.ofNat 64 a.length →
     StreamRepr s'.mem (s.gpr .r4) ciph (ctxH s.mem (s.gpr .r3)) iv
@@ -91,12 +91,12 @@ def streamCryptPre (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .r3, 256⟩
   let st : Region := ⟨s.gpr .r5, 80⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
-  let scr : Region := ⟨s.gpr .r10, 2560⟩
+  let scr : Region := ⟨s.gpr .r10, 288⟩
   s.rd = [ctx] ∧ s.wr = [st, data, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
     st.Disjoint data ∧ st.Disjoint scr ∧ data.Disjoint scr ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧
-    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 2560 ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 288 ≤ 2 ^ 64 ∧
     rounds (s.gpr .r4)
 
 def streamCryptPub (s₁ s₂ : State) : Prop :=
@@ -135,12 +135,12 @@ def finPre (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .r3, 256⟩
   let st : Region := ⟨s.gpr .r5, 80⟩
   let tag : Region := ⟨s.gpr .r8, 16⟩
-  let scr : Region := ⟨s.gpr .r9, 2560⟩
+  let scr : Region := ⟨s.gpr .r9, 288⟩
   s.rd = [ctx] ∧ s.wr = [st, tag, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧
     tag.Disjoint scr ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .r9).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+    (s.gpr .r9).toNat + 288 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- `vg_aes_gcm_stream_finish`. -/
 def streamFinishPPC64LE : Contract isa where
@@ -161,11 +161,11 @@ def verPre (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .r3, 256⟩
   let st : Region := ⟨s.gpr .r5, 80⟩
   let tag : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
-  let scr : Region := ⟨s.gpr .r10, 2560⟩
+  let scr : Region := ⟨s.gpr .r10, 288⟩
   s.rd = [ctx, tag] ∧ s.wr = [st, scr] ∧
     ctx.Disjoint st ∧ ctx.Disjoint scr ∧ st.Disjoint tag ∧ st.Disjoint scr ∧ tag.Disjoint scr ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 80 ≤ 2 ^ 64 ∧
-    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (s.gpr .r10).toNat + 288 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- `vg_aes_gcm_stream_verify`. -/
 def streamVerifyPPC64LE : Contract isa where
@@ -194,14 +194,14 @@ def sealPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
-  let scr : Region := ⟨stackArg s 1, 2560⟩
+  let scr : Region := ⟨stackArg s 1, 1152⟩
   s.rd = [ctx, nonce, aad, args s 2] ∧ s.wr = [data, tag, scr] ∧
     ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
     aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
     data.Disjoint scr ∧ data.Disjoint (args s 2) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 2) ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 112 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
+    (stackArg s 1).toNat + 1152 ≤ 2 ^ 64 ∧ s.sp.toNat + 112 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- The public arguments of `seal` and `open`, with `n` on the stack. -/
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
@@ -228,14 +228,14 @@ def openPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let scr : Region := ⟨stackArg s 2, 2560⟩
+  let scr : Region := ⟨stackArg s 2, 1152⟩
   s.rd = [ctx, nonce, aad, tag, args s 3] ∧ s.wr = [data, scr] ∧
     ctx.Disjoint data ∧ ctx.Disjoint scr ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
     aad.Disjoint data ∧ aad.Disjoint scr ∧ data.Disjoint tag ∧
     data.Disjoint scr ∧ data.Disjoint (args s 3) ∧ tag.Disjoint scr ∧ scr.Disjoint (args s 3) ∧
     (s.gpr .r3).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧ (stackArg s 2).toNat + 1152 ≤ 2 ^ 64 ∧
     s.sp.toNat + 120 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4)
 
 /-- What `vg_aes_gcm_open` computes, in a state. -/
@@ -298,15 +298,17 @@ theorem restore_eq :
       Spill.restoreCode .r12 saved := rfl
 
 /-- Saving the registers and the return address in `W`, at `b`. -/
-theorem save_ok {s : State} {b : Reg} (hb0 : b ≠ .r0) (hw : Covers [⟨s.gpr b, 2560⟩] s.wr) :
+theorem save_ok {s : State} {b : Reg} {n : Nat} (hb0 : b ≠ .r0) (hw : Covers [⟨s.gpr b, n⟩] s.wr)
+    (hn : 248 ≤ n := by decide) :
     WP isa (.block (save b)) s fun s' =>
       (∀ r, r ≠ .r0 → r ≠ .r31 → s'.gpr r = s.gpr r) ∧ s'.gpr .r31 = s.gpr b ∧
       Keeps' s s' ∧ SavedAt s'.mem (s.gpr b) s ∧ Frame [savedR (s.gpr b)] s.mem s'.mem := by
+  replace hw := covers_prefix hw hn
   rw [save_eq]
   refine Spill.save_ok hb0 (fun p hp => by have := saved_bound p hp; revert p; decide)
     (fun p hp => in_off hw (by have := saved_bound p hp; omega_using [this]) (by decide)) ?_
   generalize hM : Spill.saveMem s.mem (s.gpr b) s.gpr saved = M
-  have hl := in_off hw (show lrO + 8 ≤ 2560 by decide) (by decide)
+  have hl := in_off hw (show lrO + 8 ≤ 248 by decide) (by decide)
   have hb0' : (b = .r0) = False := eq_false hb0
   simp only [lrO] at hl
   crun [lrO, hb0', hl, mov, BitVec.or_self, write_8]
@@ -337,12 +339,13 @@ theorem SavedAt.frame {m m' : Mem} {w : Addr} {s₀ : State} (h : SavedAt m w s�
 /-- The end of every function: our caller's registers and return address
 restored, from `W` in `r31`. -/
 theorem restore_ok {s s₀ : State} {w : Addr} (h31 : s.gpr .r31 = w)
-    (hr : Covers [⟨w, 2560⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem w s₀) (hsp : s.sp = s₀.sp)
-    (hk : ∀ r ∈ [Reg.r2, .r14, .r15, .r16, .r17], s.gpr r = s₀.gpr r) :
+    {n : Nat} (hr : Covers [⟨w, n⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem w s₀) (hsp : s.sp = s₀.sp)
+    (hk : ∀ r ∈ [Reg.r2, .r14, .r15, .r16, .r17], s.gpr r = s₀.gpr r) (hn : 248 ≤ n := by decide) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem ∧
       s'.gpr .r3 = s.gpr .r3 ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  replace hr := covers_prefix hr hn
   rw [restore_eq]
-  have hl := in_off hr (show lrO + 8 ≤ 2560 by decide) (by decide)
+  have hl := in_off hr (show lrO + 8 ≤ 248 by decide) (by decide)
   have h₁ : WP isa (.block [mov .r12 .r31, .load .d .r0 .r12 lrO, .mtlr .r0]) s fun s₁ =>
       s₁.gpr .r12 = w ∧ s₁.lr = s₀.lr ∧ (∀ r, r ≠ .r0 → r ≠ .r12 → s₁.gpr r = s.gpr r) ∧
       s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.sp = s.sp := by
@@ -369,13 +372,16 @@ theorem restore_ok {s s₀ : State} {w : Addr} (h31 : s.gpr .r31 = w)
       rw [hg₁ r (by revert hr'; revert r; decide) (by revert hr'; revert r; decide), hk r hr']
   · rw [h.other _ (by decide), hg₁ _ (by decide) (by decide)]
 
-/-- The layout, from the disjointness of the context, the state and `W`. -/
-theorem Lay.of {c st w : Addr} (cw : c.toNat + 256 ≤ 2 ^ 64) (sw : st.toNat + 80 ≤ 2 ^ 64)
-    (ww : w.toNat + 2560 ≤ 2 ^ 64) (cs : (⟨c, 256⟩ : Region).Disjoint ⟨st, 80⟩)
-    (cW : (⟨c, 256⟩ : Region).Disjoint ⟨w, 2560⟩) (sW : (⟨st, 80⟩ : Region).Disjoint ⟨w, 2560⟩) :
+/-- The layout, from the disjointness of the context, the state and `W` (of
+at least the 288 bytes the pieces use). -/
+theorem Lay.of {c st w : Addr} {n : Nat} (cw : c.toNat + 256 ≤ 2 ^ 64) (sw : st.toNat + 80 ≤ 2 ^ 64)
+    (ww : w.toNat + n ≤ 2 ^ 64) (cs : (⟨c, 256⟩ : Region).Disjoint ⟨st, 80⟩)
+    (cW : (⟨c, 256⟩ : Region).Disjoint ⟨w, n⟩) (sW : (⟨st, 80⟩ : Region).Disjoint ⟨w, n⟩)
+    (hn : 288 ≤ n := by decide) :
     Lay c st w :=
-  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)),
-    sW.sub_right (Offset.sub_base _ (by decide))⟩
+  ⟨cw, sw, by omega_using [ww, hn], cs, cW.sub_right (Region.sub_prefix hn),
+    sW.sub_right (Region.sub_prefix (by omega_using [hn])),
+    sW.sub_right (Offset.sub_base _ (by omega_using [hn]))⟩
 
 /-- A run that satisfies `R`, and for each `i` with `P i`, `Q i`. -/
 theorem WP.forall_det {c : Prog isa} {s : State} {ι : Sort _} {P : ι → Prop} {Q : ι → State → Prop}
@@ -398,7 +404,7 @@ variable {c st w : Addr} (L : Lay c st w)
 include L
 
 omit L in
-theorem saved_w {d k : Nat} (hd : d + k ≤ 2560) (ho : d + k ≤ 128 ∨ 248 ≤ d) :
+theorem saved_w {d k : Nat} (hd : d + k ≤ 288) (ho : d + k ≤ 128 ∨ 248 ≤ d) :
     (savedR w).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
   Lay.w_w (by omega_using [ho]) (by decide) hd
 
@@ -409,18 +415,16 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) :
     ∀ r ∈ absFrame st w yo, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact L.saved_st (by omega_using [hyo])
   · exact L.saved_st (by decide)
-  · exact saved_w (by decide) (.inr (by decide))
 
 theorem saved_j0Frame : ∀ r ∈ j0Frame st w, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 80) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by decide) (.inr (by decide))
 
 end
 

@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # PBKDF2-HMAC-MD5 (RFC 8018) on ARMv7 -/
@@ -16,9 +12,7 @@ namespace VG.Artifacts.Pbkdf2Md5.Arm
 
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.pbkdf2Api.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.md5I) 3
-      Proof.Pbkdf2.Whole.Arm.md5F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.md5
-      Proof.Pbkdf2.Whole.Arm.md5_pbkFrameSat }]
+    code := Impl.Pbkdf2.Whole.Arm.Fn.md5
+    verified := .scrubbed Proof.Pbkdf2.Whole.Arm.Fn.md5 }]
 
 end VG.Artifacts.Pbkdf2Md5.Arm

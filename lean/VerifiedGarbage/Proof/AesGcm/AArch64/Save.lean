@@ -57,10 +57,11 @@ theorem save_ok256 (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Cov
   refine ⟨rfl, rfl, rfl, rfl, ?_⟩
   simp only [savedMem, saved, List.foldl, Mem.writeW, BitVec.setWidth_eq]
 
-theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 2560⟩] s.wr) :
+theorem save_ok {Wn : Nat} (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, Wn⟩] s.wr)
+    (hle : 256 ≤ Wn := by omega) :
     ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = savedMem s.mem W s.gpr :=
-  save_ok256 s b hb (covers_prefix hw (by decide))
+  save_ok256 s b hb (covers_prefix hw hle)
 
 theorem readW_writeW_other (m : Mem) (b : Addr) {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
     (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
@@ -143,7 +144,7 @@ theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) {k : Nat} (hr :
 
 /-- The end of every function: our caller's registers restored. -/
 theorem exit_ok {s s₀ : State} {W : Addr} (h19 : s.gpr .x19 = W) (hsp : s.sp = s₀.sp)
-    {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) (hk : 256 ≤ k := by decide) :
+    {k : Nat} (hr : Covers [⟨W, k⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀) (hk : 256 ≤ k := by omega) :
     WP isa (.block restore) s fun s' => GprAbi s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .x0 = s.gpr .x0 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s', run, hsv, hother, sp', hm, rd', wr'⟩ := restore_ok s h19 hr hk

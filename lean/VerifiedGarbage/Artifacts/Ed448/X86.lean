@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.X86.Scrub
+public import VerifiedGarbage.Impl.Ed448.X86.Fn
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarBaseOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -64,18 +66,15 @@ namespace VG.Artifacts.Ed448.X86
 
 open VG.X86
 
-def artifacts : List Artifact :=
-  [
-    Spec.Ed448.publicKeyApi.artifact X86.target {
-      code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
-      verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
-  [
-    Spec.Ed448.signCachedApi.artifact X86.target {
-      code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
-      verified := Proof.Ed448.X86.SignCached.signCached_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
-  [
-    Spec.Ed448.verifyApi.artifact X86.target {
-      code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
-      verified := Proof.Ed448.X86.Verify.verify_verified Proof.Ed448.X86.verifyEquation_calleeOk }]
+def artifacts : List Artifact := [
+  Spec.Ed448.publicKeyApi.artifact X86.target {
+    code := Impl.Ed448.X86.Fn.publicKey
+    verified := .scrubbed Proof.Ed448.X86.Scrub.publicKey_scrubbed },
+  Spec.Ed448.signCachedApi.artifact X86.target {
+    code := Impl.Ed448.X86.Fn.signCached
+    verified := .scrubbed Proof.Ed448.X86.Scrub.signCached_scrubbed },
+  Spec.Ed448.verifyApi.artifact X86.target {
+    code := Impl.Ed448.X86.Fn.verify
+    verified := .scrubbed Proof.Ed448.X86.Scrub.verify_scrubbed }]
 
 end VG.Artifacts.Ed448.X86

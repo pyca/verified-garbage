@@ -253,7 +253,7 @@ theorem p224_nBits : Spec.Ecdsa.nBits Spec.P224.curve = 224 := by
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 
-theorem p224_sizes : (Spec.P224.curve.len = 24 ∨ Spec.P224.curve.len = 28 ∨ Spec.P224.curve.len = 32 ∨ Spec.P224.curve.len = 48 ∨ Spec.P224.curve.len = 64) ∧
+theorem p224_sizes : (Spec.P224.curve.len = 24 ∨ Spec.P224.curve.len = 28 ∨ Spec.P224.curve.len = 32 ∨ Spec.P224.curve.len = 40 ∨ Spec.P224.curve.len = 48 ∨ Spec.P224.curve.len = 64) ∧
     4 = (Spec.P224.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits Spec.P224.curve = 8 * Spec.P224.curve.len ∧ 2 ^ (8 * Spec.P224.curve.len) < 2 * Spec.P224.curve.n :=
   ⟨by decide, by decide, by rw [p224_nBits]; decide, by decide +kernel⟩
 

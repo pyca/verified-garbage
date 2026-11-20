@@ -535,7 +535,7 @@ keeps the six registers in `xmm` registers for, as the inversions); and
 products written out (the functions call no other). -/
 def MulBaseOk (c : Cfg) : Prop :=
   (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
-    (c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true)
+    (c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧ c.mulFn.noCalls = true)
 
 theorem apart_gWA {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) (ha : i ∉ [ACC, TT]) :
@@ -797,10 +797,10 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
   · rw [Nat.shiftRight_zero] at R'
     exact R'
 
-/-- `vg_<curve>_mul`, for a curve of four or six words: what its body gives
+/-- `vg_<curve>_mul`, for a curve of four, five, six or eight words: what its body gives
 (`mulBody_ok`); the registers it copies to `xmm` registers and back are
 among those its body changes (`powClob`). -/
-theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hC : Law c.C) {base : Addr} {s : State}
+theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) (hC : Law c.C) {base : Addr} {s : State}
     (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -813,7 +813,7 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hC :
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
         (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) (ptQ c base s)) := by
   obtain hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by
-    rcases h4 with h | h | h <;> rw [h] <;> decide
+    rcases h4 with h | h | h | h <;> rw [h] <;> decide
   show WP isa (.seq (.block _) (.seq c.mulBody.inline (.block _))) s _
   refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
   obtain hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩

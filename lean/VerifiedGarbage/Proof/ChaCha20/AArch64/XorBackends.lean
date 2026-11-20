@@ -88,6 +88,10 @@ theorem openTaints : OpenTaint .scalar false ∧ OpenTaint .neon true ∧ OpenTa
 def scalar : XorImpl where
   callee := .scalar
   features := []
+  scrub := by lit_decide
+  sealSide := by lit_decide
+  openSide := by lit_decide
+  openToSide := by lit_decide
   ok := Xor.xor_correct BlockImpl.scalar
   ct := Xor.xor_ct BlockImpl.scalar
   noFrames := BlockImpl.scalar.xorNoFrames
@@ -99,6 +103,10 @@ def scalar : XorImpl where
 def neon : XorImpl where
   callee := .neon
   features := []
+  scrub := by lit_decide
+  sealSide := by lit_decide
+  openSide := by lit_decide
+  openToSide := by lit_decide
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames
@@ -111,6 +119,10 @@ vector blocks is one XAR. -/
 def sve2 : XorImpl where
   callee := .sve2
   features := ["sve2"]
+  scrub := by lit_decide
+  sealSide := by lit_decide
+  openSide := by lit_decide
+  openToSide := by lit_decide
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames

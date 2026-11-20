@@ -38,10 +38,12 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.X86
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP256r1.X86.Law
+public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP256r1.Scrub
 
 /-! # ECDH over brainpoolP256r1 (SP 800-56A) on x86 -/
 
@@ -53,7 +55,7 @@ open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP256r1.exchangeApi.artifact X86.target {
-    code := Impl.Ecdh.X86.exchangeBrainpoolP256r1
-    verified := Proof.Ecdh.X86.BrainpoolP256r1.ecdh_verified hasLaw.law hasLaw.inv }]
+    code := Impl.Ecdh.X86.Fn.exchangeBrainpoolP256r1
+    verified := .scrubbed (Proof.Ecdh.X86.BrainpoolP256r1.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcdhBrainpoolP256r1.X86

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesEcb.Arm
+public import VerifiedGarbage.Proof.Aes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,10 +12,10 @@ namespace VG.Artifacts.AesEcb.Arm
 
 def artifacts : List Artifact := [
   Spec.AesEcb.encryptApi.artifact Arm.target {
-    code := Proof.AesEcb.Arm.encrypt
-    verified := Proof.AesEcb.Arm.encrypt_verified },
+    code := Impl.Aes.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.ecbEncrypt },
   Spec.AesEcb.decryptApi.artifact Arm.target {
-    code := Proof.AesEcb.Arm.decrypt
-    verified := Proof.AesEcb.Arm.decrypt_verified }]
+    code := Impl.Aes.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.AesEcb.Arm

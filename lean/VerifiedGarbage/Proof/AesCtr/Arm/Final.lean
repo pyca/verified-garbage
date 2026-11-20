@@ -501,7 +501,7 @@ theorem ivPushed : bytesAt (pushed [.r12, .lr] s).mem (State.addr C) 16 = bytesA
 end WCall
 
 theorem w_call {s : State} {W R C D S : BitVec 32} {n : Nat} (h : WCall s W R C D S n) :
-    WP isa (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) s (WPost s W R C D S n) := by
+    WP isa (wholeFrame "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt) s (WPost s W R C D S n) := by
   have hs8 := h.hsp8
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using hs8) (by simp) ?_
   refine FrameStack.WP.callF (k := modeArm AesCtr.ctrMode) crypt_correct (rd := wRd s.sp W)
@@ -561,7 +561,7 @@ theorem w_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W R C D S : BitVec 32, ∃ n : Nat,
       WCall s₁ W R C D S n ∧ WCall s₂ W R C D S n ∧ s₁.sp = s₂.sp ∧
       AesCtr.lo32 (bytesAt s₁.mem (State.addr C) 16) = AesCtr.lo32 (bytesAt s₂.mem (State.addr C) 16)) :
-    RelCT isa P (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) fun _ _ => True := by
+    RelCT isa P (wholeFrame "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt) fun _ _ => True := by
   refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, _, _, _, _, _, _, e, _⟩ := h _ _ hp; exact e) ?_
   intro a b t₁ t₂ a' b' ⟨s₁, s₂, hp, pa, pb⟩ e₁ e₂
   obtain ⟨W, R, C, D, S, n, h₁, h₂, hsp, hlo⟩ := h _ _ hp
@@ -648,7 +648,7 @@ theorem lo32_next_of {t t' : List Byte} (ht : t.length = 16) (ht' : t'.length = 
   omega_using [h]
 
 theorem whole_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Setup s₀ s) :
-    WP isa (wholeFrame "vg_aes_ctr" Impl.AesCtr.Arm.crypt) s (Whole AesCtr.ctrMode s₀) := by
+    WP isa (wholeFrame "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt) s (Whole AesCtr.ctrMode s₀) := by
   refine WP.mono (w_call (setup_call hp h)) fun s' w => ?_
   have keep : ∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r := w.saved
   have sv := hp.svFrame
@@ -961,7 +961,7 @@ theorem tail_xor_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : TCall s₀ 
 
 theorem final_mid_wp {s₀ : State} (hp : CPre s₀) {s : State} (h : Whole AesCtr.ctrMode s₀ s)
     (hz : s.z = decide (fU s₀ = 0)) :
-    WP isa (.ite .eq (.block []) (finalTail "vg_aes_ctr" Impl.AesCtr.Arm.crypt)) s (Done s₀) := by
+    WP isa (.ite .eq (.block []) (finalTail "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt)) s (Done s₀) := by
   obtain ev : isa.eval .eq s = some (decide (fU s₀ = 0)) := by show VG.Arm.eval .eq s = _; rw [eval_eq, hz]
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [ev, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
@@ -1120,7 +1120,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
     (fun _ h => final_test_wp h) (fun _ h => final_test_wp h)
   -- The partial last block.
   have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => Whole M s₀ a ∧ Whole M s₀' b)
-      (finalTail "vg_aes_ctr" Impl.AesCtr.Arm.crypt) fun a b => Done s₀ a ∧ Done s₀' b := by
+      (finalTail "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt) fun a b => Done s₀ a ∧ Done s₀' b := by
     obtain hu' : fU s₀' ≠ 0 := pub_U hq ▸ hu
     obtain a₁ := rel_agree (F := Whole M s₀) (F' := Whole M s₀') (G := TArgs s₀) (G' := TArgs s₀')
       (argTaint [.r4, .r5, .r6, .r10] 12) (fun a b ha hb => by
@@ -1156,7 +1156,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalArm.pre s₀) (h0' : ctrFin
     show VG.Arm.eval .eq s = _; rw [eval_eq, h]
   obtain r₄ : RelCT isa (fun a b => (Whole M s₀ a ∧ a.z = decide (fU s₀ = 0)) ∧
       (Whole M s₀' b ∧ b.z = decide (fU s₀' = 0)))
-      (.ite .eq (.block []) (finalTail "vg_aes_ctr" Impl.AesCtr.Arm.crypt))
+      (.ite .eq (.block []) (finalTail "vg_aes_ctr_entry" Impl.AesCtr.Arm.crypt))
       (fun a b => Done s₀ a ∧ Done s₀' b) := by
     obtain ⟨_, hnil⟩ := nil_taint
     refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev h.2.2, pub_U hq]) ?_ ?_

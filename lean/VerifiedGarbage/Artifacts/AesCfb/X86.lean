@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb.X86.Verified
-public import VerifiedGarbage.Proof.AesCfb.X86.Final
+public import VerifiedGarbage.Impl.AesCfb.X86.Final
+public import VerifiedGarbage.Proof.AesCfb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
@@ -12,29 +12,27 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesCfb.X86
 
-open VG.Proof.AesCfb.X86
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Cfb.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.encrypt v.enc
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
-      spSafe := encrypt_spSafe v },
+      code := Impl.AesCfb.X86.Fn.encrypt v.enc
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encrypt_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Cfb.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.decrypt v.enc
-      verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
-      spSafe := decrypt_spSafe v },
+      code := Impl.AesCfb.X86.Fn.decrypt v.enc
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decrypt_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.decrypt_fnSpSafe v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
-      verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v)
-      spSafe := encryptFinal_framed_spSafe v },
+      code := Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encryptFinal_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.encryptFinal_fnSpSafe v },
     Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal v.enc v.suffix)
-      verified := Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v)
-      spSafe := decryptFinal_framed_spSafe v }]
+      code := Impl.AesCfb.X86.Fn.decryptFinal v.enc v.suffix
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decryptFinal_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.decryptFinal_fnSpSafe v }]
 
 end VG.Artifacts.AesCfb.X86

@@ -58,17 +58,17 @@ open VG.Spec.Gcm (Block blockAt blocksAt ctr32)
 open VG.Impl.AesGcm.AArch64 (Fn)
 
 /-- The stack below `SP` the callees may use. -/
-abbrev stk (SP : Addr) : Region := below SP 3264
+abbrev stk (S : Nat) (SP : Addr) : Region := below SP S
 
 /-- `vg_sm4_ctr32(schedule = x0, counter = x1, data = x2, n = x3)` with its
-3264 bytes of stack. -/
-def ctrF : Contract isa where
+`S` bytes of stack. -/
+def ctrF (S : Nat) : Contract isa where
   pre s :=
     let sched : Region := ⟨s.gpr .x0, 128⟩
     let ctr : Region := ⟨s.gpr .x1, 16⟩
     let data : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat * 16⟩
-    3264 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data] ∧ sched.Disjoint ctr ∧ sched.Disjoint data ∧
-      ctr.Disjoint data ∧ (stk s.sp).Disjoint sched ∧ (stk s.sp).Disjoint ctr ∧ (stk s.sp).Disjoint data ∧
+    S ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [ctr, data] ∧ sched.Disjoint ctr ∧ sched.Disjoint data ∧
+      ctr.Disjoint data ∧ (stk S s.sp).Disjoint sched ∧ (stk S s.sp).Disjoint ctr ∧ (stk S s.sp).Disjoint data ∧
       (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 ≤ 2 ^ 64 ∧
       (s.gpr .x2).toNat + (s.gpr .x3).toNat * 16 ≤ 2 ^ 64
   post s s' :=
@@ -90,9 +90,9 @@ def ctrSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
 /-- `ctrF`, its public data with PSTATE.DIT, which the shared contract's are. -/
-abbrev ctrFd : Contract isa := { ctrF with pub := fun a b => ctrF.pub a b ∧ a.dit = b.dit }
+abbrev ctrFd (S : Nat) : Contract isa := { ctrF S with pub := fun a b => (ctrF S).pub a b ∧ a.dit = b.dit }
 
-theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrFd where
+theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies (ctrFd 3264) where
   pre s hs := by
     sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
     exact hs
@@ -110,13 +110,13 @@ theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrFd 
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩⟩
 
 /-- `vg_sm4_expand_key(key = x0, schedule = x1)`, which uses no stack, with
-`stk` kept away from its arguments as the calls here have it. -/
-def keyF : Contract isa where
+`stk S` kept away from its arguments as the calls here have it. -/
+def keyF (S : Nat) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, 16⟩
     let sched : Region := ⟨s.gpr .x1, 128⟩
-    3264 ≤ s.sp.toNat ∧ s.rd = [key] ∧ s.wr = [sched] ∧ key.Disjoint sched ∧ (stk s.sp).Disjoint key ∧
-      (stk s.sp).Disjoint sched ∧ (s.gpr .x0).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 128 ≤ 2 ^ 64
+    S ≤ s.sp.toNat ∧ s.rd = [key] ∧ s.wr = [sched] ∧ key.Disjoint sched ∧ (stk S s.sp).Disjoint key ∧
+      (stk S s.sp).Disjoint sched ∧ (s.gpr .x0).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 128 ≤ 2 ^ 64
   post s s' := Spec.Sm4.scheduleAt s'.mem (s.gpr .x1) = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem (s.gpr .x0))
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1
 
@@ -130,9 +130,9 @@ def keySat : State where
   wr := [⟨0x2000, 128⟩]
 
 /-- `keyF`, its public data with PSTATE.DIT, which the shared contract's are. -/
-abbrev keyFd : Contract isa := { keyF with pub := fun a b => keyF.pub a b ∧ a.dit = b.dit }
+abbrev keyFd (S : Nat) : Contract isa := { keyF S with pub := fun a b => (keyF S).pub a b ∧ a.dit = b.dit }
 
-theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyFd where
+theorem keyF_implies {S : Nat} (hS : S ≤ 3264) : (Spec.Sm4.expandKeyContract AArch64.abi).Implies (keyFd S) where
   pre s hs := by
     obtain ⟨hsp, hrd, hwr, dKS, dSK, dSS, fK, fS⟩ := hs
     sig_pre [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
@@ -145,17 +145,17 @@ theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyFd wh
     obtain ⟨⟨hsp, h0, h1⟩, hd⟩ := h
     exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨keySat, by
-    refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide), by decide, by decide⟩⟩
+    have sub : Region.Sub (stk S keySat.sp) (stk 3264 keySat.sp) :=
+      Offset.sub_below keySat.sp hS (by omega)
+    refine ⟨Nat.le_trans hS (by decide), rfl, rfl, Region.disjoint_of_sep (by decide),
+      (Region.disjoint_of_sep (by decide) : (stk 3264 keySat.sp).Disjoint _).sub_left sub,
+      (Region.disjoint_of_sep (by decide) : (stk 3264 keySat.sp).Disjoint _).sub_left sub, by decide, by decide⟩⟩
 
-/-- `ctrF` from the contract with a frame of 224 bytes, which is within the
-3264 below the stack pointer. -/
-theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies ctrFd where
+/-- `ctrF` for the contract with a frame of 224 bytes. -/
+theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies (ctrFd 224) where
   pre s hs := by
-    obtain ⟨hsp, hrd, hwr, d1, d2, d3, k1, k2, k3, f1, f2, f3⟩ := hs
-    have sub : Region.Sub (below s.sp 224) (stk s.sp) := Offset.sub_below s.sp (by decide) (by decide)
     sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
-    exact ⟨by omega_using [hsp], hrd, hwr, d1, d2, d3, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub, f1, f2, f3⟩
+    exact hs
   post s s' _ h := by
     sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs] at h
     rw [BitVec.setWidth_eq] at h
@@ -164,48 +164,51 @@ theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies ctr
     sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
     obtain ⟨⟨hsp, h0, h1, h2, h3⟩, hd⟩ := h
     exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
-  sat := ctrF_implies.sat
+  sat := ⟨ctrSat, by
+    refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩⟩
 
-theorem ctr_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrCode s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
+theorem ctr_ok : ∀ s, (ctrF 3264).pre s → ∃ t s', Exec isa ctrCode s t s' ∧ abiPreserved s s' ∧ (ctrF 3264).post s s' :=
   (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).1
 
-theorem ctr_ct : ConstantTime isa ctrF.pre ctrF.pub ctrCode :=
+theorem ctr_ct : ConstantTime isa (ctrF 3264).pre (ctrF 3264).pub ctrCode :=
   ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).2.1
     (fun _ _ h => h) fun _ _ h => h
 
-theorem ctrSm4_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrCodeSm4 s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
+theorem ctrSm4_ok : ∀ s, (ctrF 224).pre s → ∃ t s', Exec isa ctrCodeSm4 s t s' ∧ abiPreserved s s' ∧ (ctrF 224).post s s' :=
   (Proof.Sm4.AArch64.Sm4e.ctr32_framed.of_implies ctrF_implies_sm4).1
 
-theorem ctrSm4_ct : ConstantTime isa ctrF.pre ctrF.pub ctrCodeSm4 :=
+theorem ctrSm4_ct : ConstantTime isa (ctrF 224).pre (ctrF 224).pub ctrCodeSm4 :=
   ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Sm4e.ctr32_framed.of_implies ctrF_implies_sm4).2.1
     (fun _ _ h => h) fun _ _ h => h
 
 theorem ctr_depth : 16 * ctrCode.aarch64Depth ≤ 3264 := by lit_decide
 
-theorem ctrSm4_depth : 16 * ctrCodeSm4.aarch64Depth ≤ 3264 := by lit_decide
+theorem ctrSm4_depth : 16 * ctrCodeSm4.aarch64Depth ≤ 224 := by lit_decide
 
 /-- The implementations keep the low halves of `v8`–`v15`. -/
 theorem ctrCode_keepsV : ctrCode.allInstrs keepsV = true := by lit_decide
 
 theorem ctrCodeSm4_keepsV : ctrCodeSm4.allInstrs keepsV = true := by lit_decide
 
-theorem key_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCode s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
-  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).1
+theorem key_ok {S : Nat} (hS : S ≤ 3264) : ∀ s, (keyF S).pre s → ∃ t s', Exec isa keyCode s t s' ∧ abiPreserved s s' ∧ (keyF S).post s s' :=
+  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies (keyF_implies hS)).1
 
-theorem key_ct : ConstantTime isa keyF.pre keyF.pub keyCode :=
-  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
+theorem key_ct {S : Nat} (hS : S ≤ 3264) : ConstantTime isa (keyF S).pre (keyF S).pub keyCode :=
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies (keyF_implies hS)).2.1
     (fun _ _ h => h) fun _ _ h => h
 
-theorem keySm4_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCodeSm4 s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
-  (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).1
+theorem keySm4_ok {S : Nat} (hS : S ≤ 3264) : ∀ s, (keyF S).pre s → ∃ t s', Exec isa keyCodeSm4 s t s' ∧ abiPreserved s s' ∧ (keyF S).post s s' :=
+  (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies (keyF_implies hS)).1
 
-theorem keySm4_ct : ConstantTime isa keyF.pre keyF.pub keyCodeSm4 :=
-  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).2.1
+theorem keySm4_ct {S : Nat} (hS : S ≤ 3264) : ConstantTime isa (keyF S).pre (keyF S).pub keyCodeSm4 :=
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies (keyF_implies hS)).2.1
     (fun _ _ h => h) fun _ _ h => h
 
 theorem key_depth : 16 * keyCode.aarch64Depth ≤ 3264 := by lit_decide
 
-theorem keySm4_depth : 16 * keyCodeSm4.aarch64Depth ≤ 3264 := by lit_decide
+theorem keySm4_depth : 16 * keyCodeSm4.aarch64Depth ≤ 224 := by lit_decide
 
 /-- `vg_sm4_expand_key`'s implementations keep the low halves of `v8`–`v15`. -/
 theorem keyCode_keepsV : keyCode.allInstrs keepsV = true := by lit_decide
@@ -215,9 +218,13 @@ theorem keyCodeSm4_keepsV : keyCodeSm4.allInstrs keepsV = true := by lit_decide
 /-- An implementation of `vg_sm4_expand_key` on AArch64. -/
 structure KeyImpl where
   fn : Fn
-  ok : ∀ s, keyF.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ keyF.post s s'
-  ct : ConstantTime isa keyF.pre keyF.pub fn.code
-  depth : 16 * fn.code.aarch64Depth ≤ 3264
+  ok : ∀ {S : Nat}, S ≤ 3264 → ∀ s, (keyF S).pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧
+    (keyF S).post s s'
+  ct : ∀ {S : Nat}, S ≤ 3264 → ConstantTime isa (keyF S).pre (keyF S).pub fn.code
+  /-- The bytes of stack below the stack pointer it uses. -/
+  stack : Nat
+  stack_le : stack ≤ 3264
+  depth : 16 * fn.code.aarch64Depth ≤ stack
   keepsV : fn.code.allInstrs keepsV = true
 
 namespace KeyImpl
@@ -229,6 +236,8 @@ def scalar : KeyImpl where
   fn := ⟨"vg_sm4_expand_key_core", keyCode⟩
   ok := key_ok
   ct := key_ct
+  stack := 3264
+  stack_le := Nat.le_refl _
   depth := key_depth
   keepsV := keyCode_keepsV
 
@@ -237,21 +246,27 @@ def sm4 : KeyImpl where
   fn := ⟨"vg_sm4_expand_key_sm4", keyCodeSm4⟩
   ok := keySm4_ok
   ct := keySm4_ct
+  stack := 224
+  stack_le := by decide
   depth := keySm4_depth
   keepsV := keyCodeSm4_keepsV
 
 end KeyImpl
 
 /-- An implementation of `vg_sm4_ctr32` on AArch64, whose frames are within
-the 3264 bytes below the stack pointer, and the implementation of
-`vg_sm4_expand_key` for the same CPUs. -/
+the `stack` bytes below the stack pointer (at most 3264), and the
+implementation of `vg_sm4_expand_key` for the same CPUs, within them too. -/
 structure CtrImpl where
   fn : Fn
-  ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ ctrF.post s s'
-  ct : ConstantTime isa ctrF.pre ctrF.pub fn.code
-  depth : 16 * fn.code.aarch64Depth ≤ 3264
+  /-- The bytes of stack below the stack pointer it and `key` use. -/
+  stack : Nat
+  stack_le : stack ≤ 3264
+  ok : ∀ s, (ctrF stack).pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (ctrF stack).post s s'
+  ct : ConstantTime isa (ctrF stack).pre (ctrF stack).pub fn.code
+  depth : 16 * fn.code.aarch64Depth ≤ stack
   keepsV : fn.code.allInstrs keepsV = true
   key : KeyImpl
+  key_stack : key.stack ≤ stack
   suffix : String
 
 namespace CtrImpl
@@ -259,21 +274,27 @@ namespace CtrImpl
 /-- `vg_sm4_ctr32`, bitsliced, in the baseline ISA. -/
 def scalar : CtrImpl where
   fn := ⟨"vg_sm4_ctr32", ctrCode⟩
+  stack := 3264
+  stack_le := Nat.le_refl _
   ok := ctr_ok
   ct := ctr_ct
   depth := ctr_depth
   keepsV := ctrCode_keepsV
   key := .scalar
+  key_stack := Nat.le_refl _
   suffix := ""
 
 /-- `vg_sm4_ctr32_sm4`, with the Armv8 SM4 instructions. -/
 def sm4 : CtrImpl where
   fn := ⟨"vg_sm4_ctr32_sm4", ctrCodeSm4⟩
+  stack := 224
+  stack_le := by decide
   ok := ctrSm4_ok
   ct := ctrSm4_ct
   depth := ctrSm4_depth
   keepsV := ctrCodeSm4_keepsV
   key := .sm4
+  key_stack := Nat.le_refl _
   suffix := "_sm4"
 
 end CtrImpl
@@ -286,12 +307,12 @@ theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = 
 /-- What a call of `vg_sm4_ctr32` needs: the key schedule at `K`, the counter
 block at `C` and `n` blocks at `D`, apart from each other and from the stack
 below the stack pointer. -/
-structure CtrCall (s : State) (K C D : Addr) (n : Nat) : Prop where
+structure CtrCall (S : Nat) (s : State) (K C D : Addr) (n : Nat) : Prop where
   x0 : s.gpr .x0 = K
   x1 : s.gpr .x1 = C
   x2 : s.gpr .x2 = D
   x3 : s.gpr .x3 = BitVec.ofNat 64 n
-  sp : 3264 ≤ s.sp.toNat
+  sp : S ≤ s.sp.toNat
   n_lt : n < 2 ^ 64
   wrap : D.toNat + 16 * n ≤ 2 ^ 64
   kw : K.toNat + 128 ≤ 2 ^ 64
@@ -299,49 +320,64 @@ structure CtrCall (s : State) (K C D : Addr) (n : Nat) : Prop where
   kc : (⟨K, 128⟩ : Region).Disjoint ⟨C, 16⟩
   kd : (⟨K, 128⟩ : Region).Disjoint ⟨D, 16 * n⟩
   cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16 * n⟩
-  sk : (stk s.sp).Disjoint ⟨K, 128⟩
-  sc : (stk s.sp).Disjoint ⟨C, 16⟩
-  sd : (stk s.sp).Disjoint ⟨D, 16 * n⟩
+  sk : (stk S s.sp).Disjoint ⟨K, 128⟩
+  sc : (stk S s.sp).Disjoint ⟨C, 16⟩
+  sd : (stk S s.sp).Disjoint ⟨D, 16 * n⟩
   reads : Covers ([⟨K, 128⟩] ++ [⟨C, 16⟩, ⟨D, 16 * n⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 16⟩, ⟨D, 16 * n⟩] s.wr
 
 /-- What a call of `vg_sm4_ctr32` leaves. -/
-structure CtrPost (s : State) (K C D : Addr) (n : Nat) (s' : State) : Prop where
+structure CtrPost (S : Nat) (s : State) (K C D : Addr) (n : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, stk s.sp] s.mem s'.mem
+  frame : Frame [⟨C, 16⟩, ⟨D, 16 * n⟩, stk S s.sp] s.mem s'.mem
   out : blocksAt s'.mem D n = ctr32 (Spec.Sm4.gcmCipher (Spec.Sm4.scheduleAt s.mem K)) (blockAt s.mem C)
     (blocksAt s.mem D n)
   ctr : blockAt s'.mem C = Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem C)
 
-theorem CtrCall.pre {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
-    ctrF.pre (s.callEntry.withRegions [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
+theorem CtrCall.pre {S : Nat} {s : State} {K C D : Addr} {n : Nat} (h : CtrCall S s K C D n) :
+    (ctrF S).pre (s.callEntry.withRegions [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
   have hn := toNat_ofNat_lt h.n_lt
   simp only [ctrF, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
     State.callEntry_sp, AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, AesGcm.AArch64.callEntry_x2,
     AesGcm.AArch64.callEntry_x3, h.x0, h.x1, h.x2, h.x3, hn, Nat.mul_comm n 16]
   exact ⟨h.sp, trivial, trivial, h.kc, h.kd, h.cd, h.sk, h.sc, h.sd, h.kw, h.cw, h.wrap⟩
 
-theorem ctr_call (c : CtrImpl) {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
-    WP isa (.call c.fn.name c.fn.code) s (CtrPost s K C D n) := by
+/-- `stk S'` is within `stk S`. -/
+theorem stk_sub {S' S : Nat} (h : S' ≤ S) (SP : Addr) : Region.Sub (stk S' SP) (stk S SP) :=
+  Offset.sub_below SP h (by omega)
+
+/-- A call with `S` bytes of stack is one with fewer. -/
+theorem CtrCall.mono {S' S : Nat} {s : State} {K C D : Addr} {n : Nat} (h : CtrCall S s K C D n)
+    (hS : S' ≤ S) : CtrCall S' s K C D n :=
+  { h with sp := Nat.le_trans hS h.sp, sk := h.sk.sub_left (stk_sub hS _), sc := h.sc.sub_left (stk_sub hS _),
+           sd := h.sd.sub_left (stk_sub hS _) }
+
+theorem ctr_call (c : CtrImpl) {S : Nat} {s : State} {K C D : Addr} {n : Nat} (h : CtrCall S s K C D n)
+    (hc : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (.call c.fn.name c.fn.code) s (CtrPost S s K C D n) := by
   have hn := toNat_ofNat_lt h.n_lt
-  refine WP.callF (k := ctrF) c.ok (rd := [⟨K, 128⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
-    (Nat.lt_of_le_of_lt c.depth (by decide))
+  have hlt : S < 2 ^ 64 := Nat.lt_of_le_of_lt h.sp s.sp.isLt
+  refine WP.callF (k := ctrF c.stack) c.ok (rd := [⟨K, 128⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) (h.mono hc).pre h.reads h.writes ?_
+    (Nat.lt_of_le_of_lt c.depth (Nat.lt_of_le_of_lt c.stack_le (by decide)))
   intro s' hrd hwr hsp hf hsaved hpost
   obtain ⟨hdata, hctr⟩ := hpost
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, AesGcm.AArch64.callEntry_x2,
     AesGcm.AArch64.callEntry_x3, h.x0, h.x1, h.x2, h.x3, hn] at hdata hctr
-  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf c.depth (by decide), hdata, hctr⟩
+  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf (Nat.le_trans c.depth hc) hlt, hdata, hctr⟩
 
-theorem ctr_rel (c : CtrImpl) {P : State → State → Prop}
+theorem ctr_rel (c : CtrImpl) {S : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D : Addr, ∃ n : Nat,
-      CtrCall s₁ K C D n ∧ CtrCall s₂ K C D n ∧ s₁.sp = s₂.sp) :
+      CtrCall S s₁ K C D n ∧ CtrCall S s₂ K C D n ∧ s₁.sp = s₂.sp)
+    (hc : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa P (.call c.fn.name c.fn.code) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨K, C, D, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  replace h₁ := h₁.mono hc
+  replace h₂ := h₂.mono hc
   refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) c.ok c.ct [⟨K, 128⟩]
     [⟨C, 16⟩, ⟨D, 16 * n⟩] (fun a b hab => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   obtain ⟨rfl, rfl⟩ := hab
@@ -356,48 +392,60 @@ theorem ctr_rel (c : CtrImpl) {P : State → State → Prop}
 /-- What a call of `vg_sm4_expand_key` needs: the 16-byte key at `K` and the
 key schedule at `C`, apart from each other and from the stack below the
 stack pointer. -/
-structure KeyCall (s : State) (K C : Addr) : Prop where
+structure KeyCall (S : Nat) (s : State) (K C : Addr) : Prop where
   x0 : s.gpr .x0 = K
   x1 : s.gpr .x1 = C
-  sp : 3264 ≤ s.sp.toNat
+  sp : S ≤ s.sp.toNat
   kw : K.toNat + 16 ≤ 2 ^ 64
   cw : C.toNat + 128 ≤ 2 ^ 64
   kc : (⟨K, 16⟩ : Region).Disjoint ⟨C, 128⟩
-  sk : (stk s.sp).Disjoint ⟨K, 16⟩
-  sc : (stk s.sp).Disjoint ⟨C, 128⟩
+  sk : (stk S s.sp).Disjoint ⟨K, 16⟩
+  sc : (stk S s.sp).Disjoint ⟨C, 128⟩
   reads : Covers ([⟨K, 16⟩] ++ [⟨C, 128⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 128⟩] s.wr
 
 /-- What a call of `vg_sm4_expand_key` leaves. -/
-structure KeyPost (s : State) (K C : Addr) (s' : State) : Prop where
+structure KeyPost (S : Nat) (s : State) (K C : Addr) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 128⟩, stk s.sp] s.mem s'.mem
+  frame : Frame [⟨C, 128⟩, stk S s.sp] s.mem s'.mem
   out : Spec.Sm4.scheduleAt s'.mem C = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem K)
 
-theorem KeyCall.pre {s : State} {K C : Addr} (h : KeyCall s K C) :
-    keyF.pre (s.callEntry.withRegions [⟨K, 16⟩] [⟨C, 128⟩]) := by
+/-- A call with `S` bytes of stack is one with fewer. -/
+theorem KeyCall.mono {S' S : Nat} {s : State} {K C : Addr} (h : KeyCall S s K C) (hS : S' ≤ S) :
+    KeyCall S' s K C :=
+  { h with sp := Nat.le_trans hS h.sp, sk := h.sk.sub_left (stk_sub hS _), sc := h.sc.sub_left (stk_sub hS _) }
+
+theorem KeyCall.pre {S : Nat} {s : State} {K C : Addr} (h : KeyCall S s K C) :
+    (keyF S).pre (s.callEntry.withRegions [⟨K, 16⟩] [⟨C, 128⟩]) := by
   simp only [keyF, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
     State.callEntry_sp, AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, h.x0, h.x1]
   exact ⟨h.sp, trivial, trivial, h.kc, h.sk, h.sc, h.kw, h.cw⟩
 
-theorem key_call (c : KeyImpl) {s : State} {K C : Addr} (h : KeyCall s K C) :
-    WP isa (.call c.fn.name c.fn.code) s (KeyPost s K C) := by
-  refine WP.callF (k := keyF) c.ok (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) h.pre h.reads h.writes ?_
-    (Nat.lt_of_le_of_lt c.depth (by decide))
+theorem key_call (c : KeyImpl) {S : Nat} {s : State} {K C : Addr} (h : KeyCall S s K C)
+    (hk : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _ |
+      exact Nat.le_trans (CtrImpl.key_stack _) ‹_›) :
+    WP isa (.call c.fn.name c.fn.code) s (KeyPost S s K C) := by
+  have hS : S < 2 ^ 64 := Nat.lt_of_le_of_lt h.sp s.sp.isLt
+  refine WP.callF (k := keyF c.stack) (c.ok c.stack_le) (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) (h.mono hk).pre
+    h.reads h.writes ?_ (Nat.lt_of_le_of_lt (Nat.le_trans c.depth c.stack_le) (by decide))
   intro s' hrd hwr hsp hf hsaved hpost
   simp only [keyF, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, h.x0, h.x1] at hpost
-  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf c.depth (by decide), hpost⟩
+  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf (Nat.le_trans c.depth hk) hS, hpost⟩
 
-theorem key_rel (c : KeyImpl) {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C : Addr, KeyCall s₁ K C ∧ KeyCall s₂ K C ∧ s₁.sp = s₂.sp) :
+theorem key_rel (c : KeyImpl) {S : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C : Addr, KeyCall S s₁ K C ∧ KeyCall S s₂ K C ∧ s₁.sp = s₂.sp)
+    (hk : c.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _ |
+      exact Nat.le_trans (CtrImpl.key_stack _) ‹_›) :
     RelCT isa P (.call c.fn.name c.fn.code) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨K, C, h₁, h₂, hsp⟩ := h s₁ s₂ hp
-  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) c.ok c.ct [⟨K, 16⟩] [⟨C, 128⟩]
+  replace h₁ := h₁.mono hk
+  replace h₂ := h₂.mono hk
+  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) (c.ok c.stack_le) (c.ct c.stack_le) [⟨K, 16⟩] [⟨C, 128⟩]
     (fun a b hab => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   obtain ⟨rfl, rfl⟩ := hab
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩

@@ -46,8 +46,8 @@ theorem tagOut_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V sp
       bytesAt s'.mem (V .r20) 16 = bytesAt s.mem (V .r31) 16 ∧ Frame [⟨V .r20, 16⟩] s.mem s'.mem ∧
         (∀ r, r ≠ .r3 → s'.gpr r = s.gpr r) ∧ Keeps' s s' := by
   have h20 := he.fr .r20 (by decide); have h31 := he.r31
-  have r₀ := he.perm.wR (show 0 + 8 ≤ 2560 by decide)
-  have r₁ := he.perm.wR (show 8 + 8 ≤ 2560 by decide)
+  have r₀ := he.perm.wR (show 0 + 8 ≤ 288 by decide)
+  have r₁ := he.perm.wR (show 8 + 8 ≤ 288 by decide)
   simp only [BitVec.add_zero] at r₀
   have w₀ := in_off hTw (show 0 + 8 ≤ 16 by decide) (by decide)
   have w₁ := in_off hTw (show 8 + 8 ≤ 16 by decide) (by decide)
@@ -76,7 +76,7 @@ theorem finLay : Lay (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r9) := by
   obtain ⟨-, -, dcs, -, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
   exact Lay.of fc fs fw dcs dcw dsw
 
-theorem fin_W : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr := by
+theorem fin_W : Covers [⟨s₀.gpr .r9, 288⟩] s₀.wr := by
   rw [h.2.1]; exact covers_mem (by simp)
 
 end
@@ -92,7 +92,7 @@ structure SF1 (s₀ s₁ : State) : Prop where
   r23 : s₁.gpr .r23 = s₀.gpr .r7
   r20 : s₁.gpr .r20 = s₀.gpr .r8
 
-theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 2560⟩] s₀.wr) :
+theorem fin1_wp {s₀ : State} (hW : Covers [⟨s₀.gpr .r9, 288⟩] s₀.wr) :
     WP isa (.block finEntry) s₀ (SF1 s₀) := by
   refine WP.block_append (WP.mono (save_ok (b := .r9) (by decide) hW) fun s₁ ⟨hg, h31, hk, hsv, hf⟩ => ?_)
   have e3 : s₁.gpr .r3 = s₀.gpr .r3 := hg _ (by decide) (by decide)
@@ -121,11 +121,10 @@ include L
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame st w o, (savedR w).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 32) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
   · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
-  · exact saved_w (by decide) (.inr (by decide))
 
 end
 

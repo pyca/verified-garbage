@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 
 Untrusted: everything here is checked by Lean. As AES-GCM's
 (`Proof/AesGcm/PPC64LE/Fn.lean`), for SM4-GCM's signatures, which have
-no number of rounds, with AES-GCM's working space of 2560 bytes and SM4's of
+no number of rounds, with AES-GCM's working space of 288 bytes and SM4's of
 3264 (`sm4`), the argument after it. The artifacts'
 contracts are the shared ones of `Spec/Sm4/Gcm/Contract.lean`, which imply
 these (`Verified.lean`). No stack is used.
@@ -25,7 +25,7 @@ open VG.Spec.Gcm (StreamRepr ctxH gctr inc32 j0 fullTag tagLenOk encryptWith ope
 open VG.Spec.Sm4.Gcm (KeyRepr ctxCiph)
 
 /-- AES-GCM's working space's bytes. -/
-abbrev scrBytes : Nat := 2560
+abbrev scrBytes : Nat := 288
 
 /-- SM4's working space's bytes. -/
 abbrev xBytes : Nat := 3264

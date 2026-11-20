@@ -86,6 +86,24 @@ vg_x25519_exchange:
 	shr ecx, 31
 	xor ecx, 1
 	mov eax, ecx
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-28]
+	movdqu XMMWORD PTR [esp], xmm0
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
+	mov DWORD PTR [esp+24], ecx
+	lea esp, [esp+28]
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6
 
@@ -10266,5 +10284,22 @@ vg_x25519_base:
 	mov esi, DWORD PTR [eax+4]
 	mov ebp, DWORD PTR [eax+12]
 	mov edi, DWORD PTR [eax+8]
+	pxor xmm0, xmm0
+	mov ecx, 0
+	lea esp, [esp-8]
+	mov DWORD PTR [esp], ecx
+	mov DWORD PTR [esp+4], ecx
+	lea esp, [esp+8]
+	mov eax, 0
+	mov edx, 0
+	xor ecx, ecx
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
 	ret
 	.p2align 6

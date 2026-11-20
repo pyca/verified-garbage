@@ -31,6 +31,11 @@ vg_mlkem1024_check_ek:
 	lsr r3, r3, #31
 	mov r0, #1
 	sub r0, r0, r3
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mlkem1024_keygen:
@@ -42,13 +47,28 @@ vg_mlkem1024_keygen:
 	mov r0, r4
 	movw r1, #49152
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #24
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #24
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mlkem1024_encaps:
@@ -65,13 +85,30 @@ vg_mlkem1024_encaps:
 	mov r0, r4
 	movw r1, #49152
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #32
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add sp, sp, #32
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mlkem1024_encaps_h:
@@ -90,13 +127,30 @@ vg_mlkem1024_encaps_h:
 	mov r0, r4
 	movw r1, #49152
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #32
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add sp, sp, #32
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_mlkem1024_decaps:
@@ -108,11 +162,26 @@ vg_mlkem1024_decaps:
 	mov r0, r4
 	movw r1, #49152
 	movt r1, #0
-	bl {vg_zeroize}
+	bl {vg_zeroize_core}
 	mov r0, r5
 	mov r1, r6
 	ldr r5, [sp, #4]
 	ldr r6, [sp, #8]
 	ldr lr, [sp, #12]
 	ldr r4, [sp], #16
+	sub sp, sp, #24
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #24
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

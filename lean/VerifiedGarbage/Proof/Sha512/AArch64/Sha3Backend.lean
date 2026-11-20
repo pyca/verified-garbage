@@ -82,12 +82,16 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   noDit := by lit_decide
+  side := by lit_decide
   suffix := ""
   features := []
   updateCT := backend_checks.1.1
   finalizeCT := backend_checks.1.2
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+    [.v16, .v17, .v18, .v19, .v20, .v21, .v22], []⟩
+  scrub := by lit_decide
   digest384 := backend_checks.2.1.1
   digest512_256 := backend_checks.2.1.2.1
   digest512_224 := backend_checks.2.1.2.2
@@ -115,6 +119,7 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   noDit := by lit_decide
+  side := by lit_decide
   suffix := "_sha512"
   features := ["sha3"]
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
@@ -123,6 +128,10 @@ def backend : Compress where
     (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  clear := ⟨[.x1, .x2, .x4],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+     .v26, .v27, .v28, .v29, .v30, .v31], []⟩
+  scrub := by lit_decide
   digest384 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide), by lit_decide⟩)
   digest512_256 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

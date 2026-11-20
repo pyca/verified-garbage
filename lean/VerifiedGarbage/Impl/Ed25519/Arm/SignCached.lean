@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
+public import VerifiedGarbage.Impl.Residue.Arm
 public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
@@ -30,7 +31,7 @@ def finalizeArgs (prefixLen : Nat) (withMessage : Bool) : List Instr :=
   setup [(.r0, .caller 5 0), (.r2, if withMessage then .caller 4 prefixLen else .const prefixLen),
     (.r3, .const 0)] [.frame 184, .caller 5 192]
 
-def init : Prog isa := callWith initArgs Spec.Sha512.init512Api.name
+def init : Prog isa := callWith initArgs (Spec.Sha512.init512Api.name ++ "_core")
   (Sha512.Arm.Stream.init Spec.Sha512.H0_512)
 def update (args : List Instr) : Prog isa :=
   callWith args "vg_sha512_update_scratch" Sha512.Arm.Stream.update
@@ -65,3 +66,14 @@ def bodyFrom (umaal : Bool) (secret : Prog isa) : Prog isa :=
 def codeExpanded (umaal : Bool) : Prog isa := wrap 6 (bodyFrom umaal PublicKey.copyExpanded)
 
 end VG.Impl.Ed25519.Arm.SignCached
+
+namespace VG.Impl.Ed25519.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_ed25519_sign_expanded`, with either product of the field (`umaal`), then the 280 bytes of
+stack its contract reserves zeroed and the registers a callee may change
+and the flags set to constants. -/
+def signExpanded (umaal : Bool) : Prog isa := scrubF 0 280 (SignCached.codeExpanded umaal)
+
+end VG.Impl.Ed25519.Arm.Fn

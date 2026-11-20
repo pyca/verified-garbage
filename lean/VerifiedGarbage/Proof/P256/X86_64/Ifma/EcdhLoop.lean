@@ -1001,7 +1001,7 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
       Unch base (jwLoopW K) a b := fun hx O => O.unch.mono fun w hw => by
     rw [List.mem_singleton.mp hw, show (32 : Nat) = 8 * K.M.n by rw [hn4]]; exact lw _ hx
   obtain kP : ∀ {a b : State}, KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12] a b →
-      KeepRegs (powClob K.M.n) a b := fun k => (k.mono (pk_regs hn4)).mono fun _ h => List.mem_cons_of_mem _ h
+      KeepRegs (powClob K.M.n) a b := fun k => (k.mono (pk_regs hn4)).mono fun _ h => mem_powClob_of_clob h
   obtain F₅ : JFrame K Cv base size s₅ s₅ := JFrame.refl hs₅ e₅.mod
   apply WP.seq
   rw [WP.block_append_iff]

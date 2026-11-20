@@ -13,7 +13,6 @@ namespace VG.Artifacts.Zeroize.RISCV64
 def artifacts : List Artifact := [
   Spec.Zeroize.zeroizeApi.artifact RISCV64.target {
     code := Impl.Zeroize.RISCV64.zeroize
-    verified := Proof.Zeroize.RISCV64.verified
-    residue := some ⟨Proof.Zeroize.RISCV64.noResidue _ _⟩ }]
+    verified := .scrubbed Proof.Zeroize.RISCV64.scrubbed }]
 
 end VG.Artifacts.Zeroize.RISCV64

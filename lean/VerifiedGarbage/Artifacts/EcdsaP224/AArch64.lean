@@ -82,11 +82,9 @@ namespace VG.Artifacts.EcdsaP224.AArch64
 open VG.Proof.P224.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
-      Impl.Ecdsa.Verify.AArch64.verifyP224
-    verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) } Proof.Ecdsa.Rfc6979.AArch64.p224VerifyClear
-    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) Proof.Ecdsa.Rfc6979.AArch64.p224VerifySide)] ++
+  Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
+    code := Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p224Verify hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.AArch64

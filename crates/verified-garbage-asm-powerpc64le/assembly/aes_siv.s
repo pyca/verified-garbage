@@ -5,14 +5,14 @@
 // gives.
 
 vg_aes_siv_init:
-	stdu %r1, -2592(%r1)
+	stdu %r1, -144(%r1)
 	addi %r6, %r1, 32
 	mflr %r0
-	std %r0, 2208(%r6)
-	std %r14, 2176(%r6)
-	std %r15, 2184(%r6)
-	std %r16, 2192(%r6)
-	std %r17, 2200(%r6)
+	std %r0, 96(%r6)
+	std %r14, 64(%r6)
+	std %r15, 72(%r6)
+	std %r16, 80(%r6)
+	std %r17, 88(%r6)
 	or %r14, %r3, %r3
 	rldicl %r15, %r4, 63, 1
 	or %r16, %r5, %r5
@@ -28,19 +28,57 @@ vg_aes_siv_init:
 	add %r3, %r14, %r15
 	or %r4, %r15, %r15
 	addi %r5, %r16, 272
-	or %r6, %r17, %r17
 	bl {vg_aes_expand_key_scratch}
-	ld %r0, 2208(%r17)
-	ld %r14, 2176(%r17)
-	ld %r15, 2184(%r17)
-	ld %r16, 2192(%r17)
-	ld %r17, 2200(%r17)
+	ld %r0, 96(%r17)
+	ld %r14, 64(%r17)
+	ld %r15, 72(%r17)
+	ld %r16, 80(%r17)
+	ld %r17, 88(%r17)
 	mtlr %r0
-	addi %r1, %r1, 2592
+	addi %r1, %r1, 144
+	li %r0, 0
+	stdu %r1, -144(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	addi %r1, %r1, 144
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v19, %v19, %v19
 	blr
 
 vg_aes_siv_encrypt:
-	stdu %r1, -2608(%r1)
+	stdu %r1, -480(%r1)
 	addi %r10, %r1, 32
 	mflr %r0
 	std %r15, 136(%r10)
@@ -295,7 +333,6 @@ vg_aes_siv_encrypt:
 	addi %r3, %r15, 272
 	or %r4, %r16, %r16
 	addi %r5, %r14, 96
-	addi %r8, %r14, 384
 	or %r6, %r19, %r19
 	bl {vg_aes_ctr32}
 	rldicl %r9, %r20, 60, 4
@@ -321,7 +358,6 @@ vg_aes_siv_encrypt:
 	addi %r3, %r15, 272
 	or %r4, %r16, %r16
 	addi %r5, %r14, 96
-	addi %r8, %r14, 384
 	addi %r6, %r14, 80
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -381,11 +417,94 @@ vg_aes_siv_encrypt:
 	ld %r24, 208(%r14)
 	ld %r25, 216(%r14)
 	ld %r14, 128(%r14)
-	addi %r1, %r1, 2608
+	addi %r1, %r1, 480
+	li %r0, 0
+	stdu %r1, -480(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	std %r0, 240(%r12)
+	std %r0, 248(%r12)
+	std %r0, 256(%r12)
+	std %r0, 264(%r12)
+	std %r0, 272(%r12)
+	std %r0, 280(%r12)
+	std %r0, 288(%r12)
+	std %r0, 296(%r12)
+	std %r0, 304(%r12)
+	std %r0, 312(%r12)
+	std %r0, 320(%r12)
+	std %r0, 328(%r12)
+	std %r0, 336(%r12)
+	std %r0, 344(%r12)
+	std %r0, 352(%r12)
+	std %r0, 360(%r12)
+	std %r0, 368(%r12)
+	std %r0, 376(%r12)
+	std %r0, 384(%r12)
+	std %r0, 392(%r12)
+	std %r0, 400(%r12)
+	std %r0, 408(%r12)
+	std %r0, 416(%r12)
+	std %r0, 424(%r12)
+	std %r0, 432(%r12)
+	std %r0, 440(%r12)
+	addi %r1, %r1, 480
+	li %r3, 0
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v19, %v19, %v19
 	blr
 
 vg_aes_siv_decrypt:
-	stdu %r1, -2608(%r1)
+	stdu %r1, -480(%r1)
 	addi %r10, %r1, 32
 	mflr %r0
 	std %r15, 136(%r10)
@@ -513,7 +632,6 @@ vg_aes_siv_decrypt:
 	addi %r3, %r15, 272
 	or %r4, %r16, %r16
 	addi %r5, %r14, 96
-	addi %r8, %r14, 384
 	or %r6, %r19, %r19
 	bl {vg_aes_ctr32}
 	rldicl %r9, %r20, 60, 4
@@ -539,7 +657,6 @@ vg_aes_siv_decrypt:
 	addi %r3, %r15, 272
 	or %r4, %r16, %r16
 	addi %r5, %r14, 96
-	addi %r8, %r14, 384
 	addi %r6, %r14, 80
 	li %r7, 1
 	bl {vg_aes_ctr32}
@@ -759,5 +876,89 @@ vg_aes_siv_decrypt:
 	ld %r24, 208(%r14)
 	ld %r25, 216(%r14)
 	ld %r14, 128(%r14)
-	addi %r1, %r1, 2608
+	addi %r1, %r1, 480
+	li %r0, 0
+	stdu %r1, -480(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	std %r0, 176(%r12)
+	std %r0, 184(%r12)
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	std %r0, 240(%r12)
+	std %r0, 248(%r12)
+	std %r0, 256(%r12)
+	std %r0, 264(%r12)
+	std %r0, 272(%r12)
+	std %r0, 280(%r12)
+	std %r0, 288(%r12)
+	std %r0, 296(%r12)
+	std %r0, 304(%r12)
+	std %r0, 312(%r12)
+	std %r0, 320(%r12)
+	std %r0, 328(%r12)
+	std %r0, 336(%r12)
+	std %r0, 344(%r12)
+	std %r0, 352(%r12)
+	std %r0, 360(%r12)
+	std %r0, 368(%r12)
+	std %r0, 376(%r12)
+	std %r0, 384(%r12)
+	std %r0, 392(%r12)
+	std %r0, 400(%r12)
+	std %r0, 408(%r12)
+	std %r0, 416(%r12)
+	std %r0, 424(%r12)
+	std %r0, 432(%r12)
+	std %r0, 440(%r12)
+	addi %r1, %r1, 480
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v19, %v19, %v19
 	blr

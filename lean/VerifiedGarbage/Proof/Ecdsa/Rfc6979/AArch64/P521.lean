@@ -25,6 +25,8 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
@@ -101,14 +103,19 @@ theorem p521SignSide (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AA
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
       p521SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
-/-- The registers the tail of `vg_ecdsa_p521_verify` clears: those its code may write. -/
-def p521VerifyClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16,
-   .v17, .v18, .v19, .v20, .v21, .v22, .v24, .v25, .v26, .v28, .v29], []⟩
-
-theorem p521VerifySide :
-    AArch64.ScrubAll.scrubSide
-      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.AArch64.verifyP521)
-      80 (Spec.Ecdsa.P521.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p521VerifyClear [] = true := by lit_decide
+/-- `vg_ecdsa_p521_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem p521Verify (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.PrimeOrder Spec.P521.curve)
+    (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521
+      (Spec.Ecdsa.P521.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 80) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+        Impl.Ecdsa.Verify.AArch64.verifyP521
+      verified := Proof.Ecdsa.Verify.AArch64.P521.verifyHash_verified hL hO hI hT } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

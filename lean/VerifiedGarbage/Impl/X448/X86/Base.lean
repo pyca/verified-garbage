@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+public import VerifiedGarbage.Impl.X448.X86
+public import VerifiedGarbage.Impl.Xdh.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # X448 of the base point on x86 (32-bit): a fixed-base multiplication on edwards448
@@ -48,3 +51,23 @@ def x448Base : Prog isa :=
   .seq baseEntry <| .seq Impl.Ed448.X86.combLoop <| .seq (ops uOps) <| .seq invert finish
 
 end VG.Impl.X448.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that its frames and calls use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.X448.X86.Fn
+
+open VG.X86
+
+/-- `vg_x448_exchange`, as emitted. -/
+def exchange : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 40 (Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56)
+
+/-- `vg_x448_base`, as emitted. -/
+def base : Prog isa := Impl.Scrub.X86.scrubF 0 20 Impl.X448.X86.x448Base
+
+end VG.Impl.X448.X86.Fn

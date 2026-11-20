@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -153,7 +155,7 @@ call {vg_p192_mul_mod_p}
 call {vg_p192_mul_mod_p}
 .base64 "WFhYWLigAAAAudADAAC6SAQAAFBRUlc="
 call {vg_p192_mul_mod_p}
-.base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEuAQAAAAhyIgDi4eIAwAAIcgPyIlDFYuHjAMAACHID8iJQxGLh5ADAAAhyA/IiUMNi4eUAwAAIcgPyIlDCYuHmAMAACHID8iJQwWLh5wDAAAhyA/IiUMBi4dIBAAAIcgPyIlDLYuHTAQAACHID8iJQymLh1AEAAAhyA/IiUMli4dUBAAAIcgPyIlDIYuHWAQAACHID8iJQx2Lh1wEAAAhyA/IiUMZiciD4AGJ+osai3IEi2oMi3oIww=="
+.base64 "WFhYWIuXQAMAACtXWIuXRAMAABtXXIuXSAMAABtXYIuXTAMAABtXZIuXUAMAABtXaIuXVAMAABtXbBnAicOLl0ADAAALl0QDAAALl0gDAAALl0wDAAALl1ADAAALl1QDAAC5AAAAACnRGdIh2ouHYAQAACHQiYdgBAAAi5fAAQAAC5fEAQAAC5fIAQAAC5fMAQAAC5fQAQAAC5fUAQAAuQAAAAAp0RnSi4dgBAAAIdCJh2AEAACLj2AEAACLXCQEuAQAAAAhyIgDi4eIAwAAIcgPyIlDFYuHjAMAACHID8iJQxGLh5ADAAAhyA/IiUMNi4eUAwAAIcgPyIlDCYuHmAMAACHID8iJQwWLh5wDAAAhyA/IiUMBi4dIBAAAIcgPyIlDLYuHTAQAACHID8iJQymLh1AEAAAhyA/IiUMli4dUBAAAIcgPyIlDIYuHWAQAACHID8iJQx2Lh1wEAAAhyA/IiUMZiciD4AGJ+osai3IEi2oMi3oIZg/vwLkAAAAAjWQk7PMPfwQkiUwkEI1kJBS6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
         vg_p192_mul_mod_p = sym super::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,

@@ -95,57 +95,57 @@ abbrev j0Frame (St W : Addr) : List Region :=
 
 /-- Before `j0`: the `n`-byte nonce at `Np`, its length also in `x26` and 0 in
 `x27`. -/
-structure J0In (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (s : State) :
+structure J0In (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x23 : s.gpr .x23 = Np
   x24 : s.gpr .x24 = BitVec.ofNat 64 n
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
   x27 : s.gpr .x27 = 0
-  data : DataOk St W s Np n
+  data : DataOk Wn St W s Np n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
 
 /-- Before the first call of `j0hash`: a zero accumulator, and the call on the
 whole blocks of the nonce. -/
-structure J1 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (m₀ : Mem)
+structure J1 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (m₀ : Mem)
     (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x23 : s.gpr .x23 = Np + BitVec.ofNat 64 (16 * (n / 16))
   x25 : s.gpr .x25 = BitVec.ofNat 64 (n % 16)
-  data : DataOk St W s Np n
+  data : DataOk Wn St W s Np n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   y0 : blockAt s.mem (St + BitVec.ofNat 64 0) = 0
   call : GhCall s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 0) Np (W + BitVec.ofNat 64 512) (n / 16)
   frame : Frame [⟨St, 16⟩] m₀ s.mem
 
 /-- After the first call: the whole blocks absorbed. -/
-structure J2 (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (m₀ : Mem)
+structure J2 (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (Np : Addr) (n : Nat) (m₀ : Mem)
     (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   x23 : s.gpr .x23 = Np + BitVec.ofNat 64 (16 * (n / 16))
   x25 : s.gpr .x25 = BitVec.ofNat 64 (n % 16)
-  data : DataOk St W s Np n
+  data : DataOk Wn St W s Np n
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   y : blockAt s.mem (St + BitVec.ofNat 64 0) = ghash H (blocks (bytesAt m₀ Np (16 * (n / 16))))
   iv : bytesAt s.mem Np n = bytesAt m₀ Np n
   frame : Frame (j0Frame St W) m₀ s.mem
 
 /-- `J₀` written, from `m₀`. -/
-structure J0Mid (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) :
+structure J0Mid (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   j0 : blockAt s.mem St = Spec.Gcm.j0 H iv
   frame : Frame (j0Frame St W) m₀ s.mem
 
 /-- After `j0`: `J₀`, the accumulator zeroed and the first counter block. -/
-structure J0Out (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) :
+structure J0Out (Wn : Nat) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : List Byte) (m₀ : Mem) (s : State) :
     Prop where
-  env : Env Ctx St W SP s
+  env : Env Wn Ctx St W SP s
   kept : Kept k s
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   j0 : blockAt s.mem St = Spec.Gcm.j0 H iv
@@ -154,7 +154,7 @@ structure J0Out (Ctx St W SP : Addr) (k : Reg → BitVec 64) (H : Block) (iv : L
   frame : Frame (j0Frame St W) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W SP : Addr} (L : Lay Wn Ctx St W)
 include L
 
 omit L in
@@ -174,8 +174,8 @@ theorem t_j0Frame {m m' : Mem} (h : Frame (tFrame St W 0) m m') : Frame (j0Frame
     · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `J₀` of a 12-byte nonce. -/
-theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP k H Np 12 s) :
-    WP isa (.block j012) s (J0Mid Ctx St W SP k H (bytesAt s.mem Np 12) s.mem) := by
+theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h : J0In Wn Ctx St W SP k H Np 12 s) :
+    WP isa (.block j012) s (J0Mid Wn Ctx St W SP k H (bytesAt s.mem Np 12) s.mem) := by
   have he := h.env
   have hd := h.data
   have r₀ := in_off hd.rd (show 0 + 4 ≤ 12 by decide) (by decide)
@@ -211,8 +211,8 @@ theorem j012_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {s : State} (h :
 
 /-- The first counter block, and the accumulator zeroed. -/
 theorem initState_ok {k : Reg → BitVec 64} {H : Block} {iv : List Byte} {m₀ : Mem} {s : State}
-    (h : J0Mid Ctx St W SP k H iv m₀ s) :
-    WP isa (.block initState) s (J0Out Ctx St W SP k H iv m₀) := by
+    (h : J0Mid Wn Ctx St W SP k H iv m₀ s) :
+    WP isa (.block initState) s (J0Out Wn Ctx St W SP k H iv m₀) := by
   have he := h.env
   have r₀ := he.perm.stR (show 0 + 4 ≤ 80 by decide)
   have r₁ := he.perm.stR (show 4 + 4 ≤ 80 by decide)
@@ -272,8 +272,8 @@ theorem initState_ok {k : Reg → BitVec 64} {H : Block} {iv : List Byte} {m₀ 
 /-- The accumulator zeroed and the arguments for the whole blocks of the
 nonce. -/
 theorem j0Seg_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : State}
-    (h : J0In Ctx St W SP k H Np n s) :
-    WP isa (.block j0Seg) s (J1 Ctx St W SP k H Np n s.mem) := by
+    (h : J0In Wn Ctx St W SP k H Np n s) :
+    WP isa (.block j0Seg) s (J1 Wn Ctx St W SP k H Np n s.mem) := by
   have he := h.env
   have hd := h.data
   have hlt := hd.lt
@@ -299,7 +299,7 @@ theorem j0Seg_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : 
       rw [show BitVec.setWidth 64 (15#16) <<< (16 * 0) = BitVec.ofNat 64 15 by decide, and15,
         toNat_ofNat_of_lt hlt]
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => og r (by
+  have he₁ : Env Wn Ctx St W SP s₁ := he.keep (fun r hr => og r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   have fz : Frame [⟨St, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
@@ -311,12 +311,12 @@ theorem j0Seg_ok {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : 
   · rw [add_ofNat_zero, blockAt, hm₁, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
   · exact ghCall_of L (yo := 0) (.inl rfl) he₁ x0₁ x1₁ x2₁ x3₁ x4₁ (by have := hdw.lt; omega_using [hlt])
       (by simpa using (hdw.st.sub_right (Lay.stSub (d := 0) (n := 16) (by decide))).symm)
-      (hdw.w.sub_right (Lay.wSub (by decide))) (by rw [rd₁, wr₁]; exact hdw.rd)
+      (hdw.w.sub_right (Lay.wSub (by have := L.hWn; omega))) (by rw [rd₁, wr₁]; exact hdw.rd)
 
 /-- The whole blocks of the nonce absorbed. -/
 theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {m₀ : Mem} {s : State}
-    (h : J1 Ctx St W SP k H Np n m₀ s) :
-    WP isa (ghCall v.callees) s (J2 Ctx St W SP k H Np n m₀) := by
+    (h : J1 Wn Ctx St W SP k H Np n m₀ s) :
+    WP isa (ghCall v.callees) s (J2 Wn Ctx St W SP k H Np n m₀) := by
   have hd := h.data
   refine WP.mono (gh_call v.gh h.call) fun s' g => ?_
   have dD : ∀ r ∈ [(⟨St, 16⟩ : Region)], (⟨Np, n⟩ : Region).Disjoint r := by
@@ -327,7 +327,7 @@ theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hd.st.sub_right (Lay.stSub (by decide))
-    · exact hd.w.sub_right (Lay.wSub (by decide))
+    · exact hd.w.sub_right (Lay.wSub (by have := L.hWn; omega))
   have hiv : bytesAt s.mem Np n = bytesAt m₀ Np n := bytesAt_frame h.frame dD (by have := hd.lt; omega_using [this])
   refine ⟨g.env h.env, h.kept.of_saved g.saved, by rw [g.saved _ (by decide) (by decide), h.x23],
     by rw [g.saved _ (by decide) (by decide), h.x25], hd.of_eq g.rd g.wr, by rw [hH_gh L (.inl rfl) g, h.hH], ?_,
@@ -346,8 +346,8 @@ theorem j0Call1_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr}
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
 the lengths block. -/
 theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : State}
-    (h : J0In Ctx St W SP k H Np n s) (hn : n ≠ 12) :
-    WP isa (j0hash v.callees) s (J0Mid Ctx St W SP k H (bytesAt s.mem Np n) s.mem) := by
+    (h : J0In Wn Ctx St W SP k H Np n s) (hn : n ≠ 12) :
+    WP isa (j0hash v.callees) s (J0Mid Wn Ctx St W SP k H (bytesAt s.mem Np n) s.mem) := by
   have hd := h.data
   have hlt := hd.lt
   have k26 : k .x26 = BitVec.ofNat 64 n := by rw [← h.kept .x26 (by decide), h.x26]
@@ -359,7 +359,7 @@ theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} 
   refine WP.seq (WP.mono (padSeg_ok L (yo := 0) (.inl rfl) (P := Np + BitVec.ofNat 64 (16 * (n / 16)))
     h₂.env h₂.kept h₂.x25 (Nat.mod_lt _ (by decide))
     (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, h₂.x23], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
-    hdr.rd (hdr.w.sub_right (Lay.wSub (by decide)))) fun s₃ h₃ =>
+    hdr.rd (hdr.w.sub_right (Lay.wSub (by have := L.hWn; omega)))) fun s₃ h₃ =>
     WP.seq (WP.mono (padCall_ok L (.inl rfl) v h₃) fun s₄ h₄ => ?_))
   refine WP.seq (WP.mono (lensSeg_ok L (yo := 0) (.inl rfl) (ra := .x27) (rb := .x26) h₄.env h₄.kept h₄.x25
     (by decide)) fun s₅ h₅ => WP.mono (lensCall_ok L (.inl rfl) v h₅) fun s₆ h₆ => ?_)
@@ -379,14 +379,14 @@ theorem j0hash_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} 
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
 theorem j0_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {Np : Addr} {n : Nat} {s : State}
-    (h : J0In Ctx St W SP k H Np n s) :
-    WP isa (j0 v.callees) s (J0Out Ctx St W SP k H (bytesAt s.mem Np n) s.mem) := by
+    (h : J0In Wn Ctx St W SP k H Np n s) :
+    WP isa (j0 v.callees) s (J0Out Wn Ctx St W SP k H (bytesAt s.mem Np n) s.mem) := by
   have hlt := h.data.lt
   obtain ⟨s₁, run₁, x9₁, r₁⟩ : ∃ s₁, runBlock isa [.subImm .x .x9 .x24 12] s = some s₁ ∧
       s₁.gpr .x9 = BitVec.ofNat 64 n - BitVec.ofNat 64 12 ∧ Regs [.x9] s s₁ := by
     refine ⟨_, by arun [], ?_⟩
     exact ⟨by simp [gpr_write, h.x24], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
-  have h₁ : J0In Ctx St W SP k H Np n s₁ :=
+  have h₁ : J0In Wn Ctx St W SP k H Np n s₁ :=
     ⟨h.env.of_regs r₁, h.kept.of_others r₁.others, by rw [r₁.others _ (by decide)]; exact h.x23,
       by rw [r₁.others _ (by decide)]; exact h.x24, by rw [r₁.others _ (by decide)]; exact h.x26,
       by rw [r₁.others _ (by decide)]; exact h.x27, h.data.of_eq r₁.rd r₁.wr, by rw [r₁.mem]; exact h.hH⟩

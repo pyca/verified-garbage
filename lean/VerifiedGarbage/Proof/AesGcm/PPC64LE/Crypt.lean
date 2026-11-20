@@ -76,8 +76,8 @@ abbrev ciphOf (m : Mem) (C : Addr) (R : Nat) : Block → Block :=
   aesWith R (bytesAt m C (16 * (R + 1)))
 
 /-- The regions `crypt` writes. -/
-abbrev crFrame (st w D : Addr) (n : Nat) : List Region :=
-  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩, ⟨w + BitVec.ofNat 64 512, 2048⟩]
+abbrev crFrame (st _w D : Addr) (n : Nat) : List Region :=
+  [⟨D, n⟩, ⟨st + BitVec.ofNat 64 48, 32⟩]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go, `R`
 rounds in `r28`. -/
@@ -127,10 +127,9 @@ theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW c st w s D n) :
     ∀ r ∈ crFrame st w D n, (⟨c, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact hd.ctx
   · exact L.cs.sub_right (Lay.stSub (by decide))
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
 
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')

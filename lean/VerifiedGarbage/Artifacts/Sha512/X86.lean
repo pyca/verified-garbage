@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.X86.Shared
+public import VerifiedGarbage.Proof.Sha512.X86.Scrub
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Impl.Sha512.X86.Digest
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 
@@ -14,50 +15,43 @@ namespace VG.Artifacts.Sha512.X86
 
 def artifacts : List Artifact := [
   Spec.Sha512.init384Api.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_384
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_384 },
+    code := Impl.Sha512.X86.Fn.init Spec.Sha512.H0_384
+    verified := .scrubbed Proof.Sha512.X86.Scrub.init384_scrubbed },
   Spec.Sha512.init512Api.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512 },
+    code := Impl.Sha512.X86.Fn.init Spec.Sha512.H0_512
+    verified := .scrubbed Proof.Sha512.X86.Scrub.init512_scrubbed },
   Spec.Sha512.init512_224Api.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_224 },
+    code := Impl.Sha512.X86.Fn.init Spec.Sha512.H0_512_224
+    verified := .scrubbed Proof.Sha512.X86.Scrub.init512_224_scrubbed },
   Spec.Sha512.init512_256Api.artifact X86.target {
-    code := Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.X86.Shared.init Spec.Sha512.H0_512_256 },
+    code := Impl.Sha512.X86.Fn.init Spec.Sha512.H0_512_256
+    verified := .scrubbed Proof.Sha512.X86.Scrub.init512_256_scrubbed },
   Spec.Sha512.updateApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 1404 5 Impl.Sha512.X86.Stream.update
-    verified := Proof.Sha512.X86.Shared.update },
+    code := Impl.Sha512.X86.Fn.update
+    verified := .scrubbed Proof.Sha512.X86.Scrub.update_scrubbed },
   Spec.Sha512.finalizeApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 1400 4 Impl.Sha512.X86.Stream.finalize
-    verified := Proof.Sha512.X86.Shared.finalize },
+    code := Impl.Sha512.X86.Fn.finalize
+    verified := .scrubbed Proof.Sha512.X86.Scrub.finalize_scrubbed },
   Spec.Sha512.finalize384Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 1400 4
-      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params384)
-    verified := Proof.Sha512.X86.Shared.finalize384 },
+    code := Impl.Sha512.X86.Fn.finalizeDigest Impl.Sha512.X86.Stream.params384
+    verified := .scrubbed Proof.Sha512.X86.Scrub.finalize384_scrubbed },
   Spec.Sha512.finalize512_256Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 1400 4
-      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_256)
-    verified := Proof.Sha512.X86.Shared.finalize512_256 },
+    code := Impl.Sha512.X86.Fn.finalizeDigest Impl.Sha512.X86.Stream.params512_256
+    verified := .scrubbed Proof.Sha512.X86.Scrub.finalize512_256_scrubbed },
   Spec.Sha512.finalize512_224Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch 1400 4
-      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_224)
-    verified := Proof.Sha512.X86.Shared.finalize512_224 },
+    code := Impl.Sha512.X86.Fn.finalizeDigest Impl.Sha512.X86.Stream.params512_224
+    verified := .scrubbed Proof.Sha512.X86.Scrub.finalize512_224_scrubbed },
   Spec.Sha512.digest384Api.artifact X86.target {
-    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha384H
-    verified := Proof.MdStream.X86.Digest.sha384_digest
-    spSafe := Proof.MdStream.X86.Digest.sha384_digestSp },
+    code := Impl.Sha512.X86.Fn.digest 48 "vg_sha384_init_core" Spec.Sha512.H0_384
+    verified := .scrubbed Proof.Sha512.X86.Scrub.digest384_scrubbed },
   Spec.Sha512.digest512Api.artifact X86.target {
-    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512H'
-    verified := Proof.MdStream.X86.Digest.sha512_digest
-    spSafe := Proof.MdStream.X86.Digest.sha512_digestSp },
+    code := Impl.Sha512.X86.Fn.digest 64 "vg_sha512_init_core" Spec.Sha512.H0_512
+    verified := .scrubbed Proof.Sha512.X86.Scrub.digest512_scrubbed },
   Spec.Sha512.digest512_224Api.artifact X86.target {
-    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512_224H
-    verified := Proof.MdStream.X86.Digest.sha512_224_digest
-    spSafe := Proof.MdStream.X86.Digest.sha512_224_digestSp },
+    code := Impl.Sha512.X86.Fn.digest 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
+    verified := .scrubbed Proof.Sha512.X86.Scrub.digest512_224_scrubbed },
   Spec.Sha512.digest512_256Api.artifact X86.target {
-    code := Impl.MdStream.X86.Digest.digest Proof.Pbkdf2.Stream.X86.sha512_256H
-    verified := Proof.MdStream.X86.Digest.sha512_256_digest
-    spSafe := Proof.MdStream.X86.Digest.sha512_256_digestSp }]
+    code := Impl.Sha512.X86.Fn.digest 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
+    verified := .scrubbed Proof.Sha512.X86.Scrub.digest512_256_scrubbed }]
 
 end VG.Artifacts.Sha512.X86

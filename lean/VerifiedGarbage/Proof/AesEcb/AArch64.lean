@@ -130,8 +130,8 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi tar
   if h : v.free = true then [{
     suffix := v.suffix
     code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.enc.code
-    verified := Clears.Verified.withClears (encrypt_free v h) v.ecbClearOk
-    residue := v.encRes.map fun r => ⟨r.down _⟩ }]
+    verified := .ofOption (Clears.Verified.withClears (encrypt_free v h) v.ecbClearOk)
+      (v.encRes.map fun r => ⟨r.down _⟩) }]
   else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := encrypt v
@@ -145,8 +145,8 @@ def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi tar
   if h : v.free = true then [{
     suffix := v.suffix
     code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.dec.code
-    verified := Clears.Verified.withClears (decrypt_free v h) v.ecbClearOk
-    residue := v.decRes.map fun r => ⟨r.down _⟩ }]
+    verified := .ofOption (Clears.Verified.withClears (decrypt_free v h) v.ecbClearOk)
+      (v.decRes.map fun r => ⟨r.down _⟩) }]
   else [ScrubAll.withScrubAll {
     suffix := v.suffix
     code := decrypt v

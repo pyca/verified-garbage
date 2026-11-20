@@ -497,7 +497,7 @@ abbrev callStack : Nat := 28
 
 /-- The stack of the preparations: their frame (16 bytes) and that of the calls,
 44 bytes, to the next frame size of the model (which a function that returns
-without secret residue wipes: `Arm.Scrub.scrubRegF`). -/
+without secret residue wipes: `Impl.Residue.Arm.scrubF`). -/
 abbrev prepStack : Nat := 48
 
 /-- The precondition of `preparePublicKeyContract` and `prepareSecretKeyContract`,

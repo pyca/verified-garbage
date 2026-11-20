@@ -45,15 +45,15 @@ structure Args (c : Cx) (s : State) : Prop where
 
 /-- What the pieces write: the parts of `W` below the slots and above them,
 and the data. -/
-abbrev mutR (c : Cx) : List Region := [⟨c.W, 128⟩, ⟨c.W + BitVec.ofNat 64 240, 2336⟩, ⟨c.D, c.n⟩]
+abbrev mutR (c : Cx) : List Region := [⟨c.W, 128⟩, ⟨c.W + BitVec.ofNat 64 240, 208⟩, ⟨c.D, c.n⟩]
 
 theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 128) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨⟨c.W, 128⟩, by simp, Offset.sub_base _ h⟩
 
-theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 2576) :
+theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 448) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
+  ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 

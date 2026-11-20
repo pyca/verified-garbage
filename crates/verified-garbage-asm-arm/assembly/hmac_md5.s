@@ -32,9 +32,9 @@ vg_hmac_md5_init:
 	mov r7, r3
 	mov r11, r12
 	mov r0, r4
-	bl {vg_md5_init}
+	bl {vg_md5_init_core}
 	mov r0, r5
-	bl {vg_md5_init}
+	bl {vg_md5_init_core}
 	movw r1, #13878
 	movt r1, #13878
 	str r1, [r4, #16]
@@ -139,6 +139,29 @@ vg_hmac_md5_init:
 	ldr r11, [r11, #144]
 	add sp, sp, #416
 21:
+	sub sp, sp, #1088
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #34
+27:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 27b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 20:
 	sub sp, sp, #1056
@@ -170,7 +193,7 @@ vg_hmac_md5_init:
 	movw r12, #660
 	add r4, r11, r12
 	mov r0, r4
-	bl {vg_md5_init}
+	bl {vg_md5_init_core}
 	mov r0, r4
 	mov r1, r8
 	mov r7, r9
@@ -554,4 +577,31 @@ vg_hmac_md5_finalize:
 	ldr lr, [r11, #140]
 	ldr r11, [r11, #144]
 	add sp, sp, #416
+	sub sp, sp, #432
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #13
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #432
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

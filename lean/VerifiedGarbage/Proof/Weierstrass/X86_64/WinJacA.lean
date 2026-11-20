@@ -717,7 +717,7 @@ theorem normA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   obtain c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [invClob, powClob, clob]
   obtain c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
-    List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+    List.mem_cons_of_mem _ (mem_powClob_of_clob h)
   obtain U : Unch base (jwW K ++ IW) s.mem w.mem :=
     (I.unch.trans (Uu.trans (Uv.trans Uw))).mono fun x hx => by
       simp only [List.mem_append] at hx ⊢; rcases hx with hx | hx | hx | hx <;> simp [hx]

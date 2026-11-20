@@ -253,7 +253,7 @@ theorem brainpoolp512r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 51
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 
-theorem brainpoolp512r1_sizes : (Spec.BrainpoolP512r1.curve.len = 24 ∨ Spec.BrainpoolP512r1.curve.len = 28 ∨ Spec.BrainpoolP512r1.curve.len = 32 ∨ Spec.BrainpoolP512r1.curve.len = 48 ∨ Spec.BrainpoolP512r1.curve.len = 64) ∧
+theorem brainpoolp512r1_sizes : (Spec.BrainpoolP512r1.curve.len = 24 ∨ Spec.BrainpoolP512r1.curve.len = 28 ∨ Spec.BrainpoolP512r1.curve.len = 32 ∨ Spec.BrainpoolP512r1.curve.len = 40 ∨ Spec.BrainpoolP512r1.curve.len = 48 ∨ Spec.BrainpoolP512r1.curve.len = 64) ∧
     8 = (Spec.BrainpoolP512r1.curve.len + 7) / 8 ∧ Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 8 * Spec.BrainpoolP512r1.curve.len ∧ 2 ^ (8 * Spec.BrainpoolP512r1.curve.len) < 2 * Spec.BrainpoolP512r1.curve.n :=
   ⟨by decide, by decide, by rw [brainpoolp512r1_nBits]; decide, by decide +kernel⟩
 

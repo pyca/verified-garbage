@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.Arm
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
+public import VerifiedGarbage.Impl.Dsa.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
@@ -211,28 +212,10 @@ open VG.Impl.Rsa.Arm.Keys (ptr)
 
 variable {umaal : Bool}
 
-/-- The probable-prime test over the round `v`, which tests q and p. -/
-def primeName (v : RoundImpl) : String :=
-  "vg_dsa_probable_prime" ++ v.suffix
-
-/-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`. -/
-def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
-  pLen := pLen
-  qLen := qLen
-  e := (8 * pLen - 8 * qLen) / 32 + 1
-  G := G
-  qName := primeName v
-  qCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
-  pName := primeName v
-  pCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
-  powName := Impl.Dsa.Arm.Pow.name umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
-  powCode := Impl.Dsa.Arm.Pow.body umaal (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
-  powMod := modS (pLen / 8)
-  powBase := baseS (pLen / 8)
-  powExp := expS (pLen / 8)
-  powRes := resS (pLen / 8)
-  checkName := VG.Impl.Dsa.Arm.Generate.checkName umaal
-  checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters umaal
+/-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`
+(`Impl.Dsa.Arm.Fn.geo`). -/
+def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo :=
+  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
     PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=

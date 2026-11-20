@@ -380,6 +380,8 @@ vg_dsa_sign_random_prevalidated_umaal:
 	sub sp, sp, #144
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #4
+244:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -388,34 +390,13 @@ vg_dsa_sign_random_prevalidated_umaal:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 244b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
 	add sp, sp, #144
 	mov r1, #0
 	mov r2, #0
@@ -14660,6 +14641,8 @@ vg_dsa_generate_key_umaal:
 	sub sp, sp, #144
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #4
+239:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -14668,34 +14651,13 @@ vg_dsa_generate_key_umaal:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 239b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
 	add sp, sp, #144
 	mov r1, #0
 	mov r2, #0
@@ -39211,6 +39173,8 @@ vg_dsa_sign_random_prevalidated:
 	sub sp, sp, #144
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #4
+244:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -39219,34 +39183,13 @@ vg_dsa_sign_random_prevalidated:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 244b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
 	add sp, sp, #144
 	mov r1, #0
 	mov r2, #0
@@ -53491,6 +53434,8 @@ vg_dsa_generate_key:
 	sub sp, sp, #144
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #4
+239:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -53499,34 +53444,13 @@ vg_dsa_generate_key:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
-	str r2, [r12, #96]
-	str r2, [r12, #100]
-	str r2, [r12, #104]
-	str r2, [r12, #108]
-	str r2, [r12, #112]
-	str r2, [r12, #116]
-	str r2, [r12, #120]
-	str r2, [r12, #124]
-	str r2, [r12, #128]
-	str r2, [r12, #132]
-	str r2, [r12, #136]
-	str r2, [r12, #140]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 239b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
 	add sp, sp, #144
 	mov r1, #0
 	mov r2, #0
@@ -93603,6 +93527,32 @@ vg_dsa_parameter_search_umaal:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #32]
 	add sp, sp, #128
+	sub sp, sp, #304
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+2352:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2352b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #304
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_dsa_parameter_search:
@@ -99177,4 +99127,30 @@ vg_dsa_parameter_search:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #32]
 	add sp, sp, #128
+	sub sp, sp, #304
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #9
+2352:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2352b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #304
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

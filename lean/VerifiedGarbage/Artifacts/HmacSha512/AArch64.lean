@@ -2,23 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.Cold
-public import VerifiedGarbage.Proof.Framework.EntryBranch
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Hmac.AnyKey
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
@@ -30,7 +13,13 @@ namespace VG.Artifacts.HmacSha512.AArch64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.AArch64.sha512Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
-    v.I.initAnyKeyApi.artifact AArch64.target v.hmacInitReg,
-    v.I.finalizeApi.artifact AArch64.target v.hmacFinReg]
+    v.I.initAnyKeyApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Pbkdf2.Md.AArch64.Fn.hmacInit v.H
+      verified := .scrubbed v.hmacInit_scrubbed },
+    v.I.finalizeApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Pbkdf2.Md.AArch64.Fn.hmacFin v.H
+      verified := .scrubbed v.hmacFin_scrubbed }]
 
 end VG.Artifacts.HmacSha512.AArch64

@@ -56,7 +56,7 @@ section
 section
 
 /-!
-# AES-GCM on RISC-V: `crypt` is constant time
+# AES-GCM on RISC-V: `cryptB` is constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTCrypt.lean`): the invariants fix the context, the
@@ -71,10 +71,6 @@ place, also the source's address and the distance to the destination in
 namespace VG.Proof.AesGcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
-
-/-- Before `cryptWith o`. -/
-def CrI (o : Bool) (c st w sp : Addr) (R : Nat) (S D : Addr) (n q : Nat) (s : State) : Prop :=
-  ∃ V icb P, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ P % 16 = q ∧ CrIn o V sp R icb P S D n s
 
 /-- Environments that agree on `s0` to `s3` agree in those registers. -/
 theorem pinK {V₁ V₂ : Reg → BitVec 64} {sp : Addr} {s₁ s₂ : State} (e₁ : Env V₁ sp s₁) (e₂ : Env V₂ sp s₂)
@@ -351,11 +347,6 @@ theorem cryptB_ct {bs o : Bool} {b : Addr} {R : Nat} {S D : Addr} {n q : Nat} :
         ⟨V, icb, P, m₀, h29, h30, h31, hP, by subst hj; exact hm,
           fun hbs => ⟨(hb hbs).1, (hb hbs).2.of_eq rd wr⟩⟩) (cryptTailB_ct L)
 
-theorem crypt_ct {o : Bool} {R : Nat} {S D : Addr} {n q : Nat} :
-    CT (CrI o c st w sp R S D n q) (cryptWith o) :=
-  (cryptB_ct L (bs := false) (b := 0)).mono fun _ ⟨V, icb, P, h29, h30, h31, hP, hs⟩ =>
-    ⟨V, icb, P, h29, h30, h31, hP, hs, Bool.noConfusion⟩
-
 end
 
 end VG.Proof.AesGcm.RISCV64
@@ -365,7 +356,7 @@ end
 end
 
 /-!
-# AES-GCM on RISC-V: `tag`, `finTag` and `vg_aes_gcm_stream_finish` are constant time
+# AES-GCM on RISC-V: `tagB` and `finTagB` are constant time
 
 Untrusted: everything here is checked by Lean. As on ARMv7
 (`Proof/AesGcm/Arm/CTOpen.lean`): the invariants fix the context, the state,
@@ -382,21 +373,14 @@ open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- An environment with `R` rounds in `s3`. -/
-def EnvR (c st w sp : Addr) (R : Nat) (s : State) : Prop :=
-  ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ Env V sp s
-
-/-- Before `finTag`: also `aad_len` (`A`) and `text_len` (`T`) in `s10` and `s11`. -/
-def FTI (c st w sp : Addr) (R : Nat) (A T : BitVec 64) (s : State) : Prop :=
-  ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧
-    V .s11 = T ∧ Env V sp s
-
-/-- `EnvR`, and with the round keys bitsliced (`bs`), the buffer at `kb` in `s7`. -/
+/-- An environment with `R` rounds in `s3`, and with the round keys bitsliced
+(`bs`), the buffer at `kb` in `s7`. -/
 def EnvRB (bs : Bool) (kb c st w sp : Addr) (R : Nat) (S D : Addr) (n : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ Env V sp s ∧
     BkB bs kb V sp R s.mem S D n s
 
-/-- `FTI`, and with the round keys bitsliced (`bs`), the buffer at `kb` in `s7`. -/
+/-- Before `finTagB`: `EnvRB`, and `aad_len` (`A`) and `text_len` (`T`) in `s10`
+and `s11`. -/
 def FTIB (bs : Bool) (kb c st w sp : Addr) (R : Nat) (A T : BitVec 64) (S D : Addr) (n : Nat) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧
     V .s11 = T ∧ Env V sp s ∧ BkB bs kb V sp R s.mem S D n s
@@ -446,11 +430,6 @@ theorem tagB_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} {o R : N
         rw [a₁, b₁, d₁, c₁] at g₁
         rw [a₂, b₂, d₂, c₂] at g₂
         exact ⟨_, _, _, _, _, _, _, g₁, g₂, e₁.sp.trans e₂.sp.symm⟩
-
-theorem tag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    CT (EnvR c st w sp R) (tag o) :=
-  (tagB_ct L (bs := false) (kb := 0) (S := 0) (D := 0) (n := 0) ho hR).mono fun _ ⟨V, a, b, d, e, he⟩ =>
-    ⟨V, a, b, d, e, he, Bool.noConfusion⟩
 
 /-- The number of buffered bytes `finTag` pads: of the text if there is any,
 else of the additional data. -/
@@ -523,11 +502,6 @@ theorem finTagB_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} {o R 
     exact WP.mono h₅ fun s₅ ⟨hg, hk⟩ => ⟨V, a, b, d, e, he.keep (fun r hr => hg r (by revert r; decide)
       (by revert r; decide)) hk.sp hk.rd hk.wr, fun hbs => ⟨(hb hbs).1, ((hb hbs).2.of_eq hk.rd hk.wr).memEq hk.mem⟩⟩
 
-theorem finTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) {A T : BitVec 64} :
-    CT (FTI c st w sp R A T) (finTag o) :=
-  (finTagB_ct L (bs := false) (kb := 0) (S := 0) (D := 0) (n := 0) ho hR).mono
-    fun _ ⟨V, a, b, d, e, f, g, he⟩ => ⟨V, a, b, d, e, f, g, he, Bool.noConfusion⟩
-
 end
 
 /-- In `finish`, after the entry: also the tag's address `Tp` in `s9`, which
@@ -536,65 +510,8 @@ def FinI (c st w sp : Addr) (R : Nat) (A T Tp : BitVec 64) (s : State) : Prop :=
   ∃ V : Reg → BitVec 64, V .s2 = c ∧ V .s1 = st ∧ V .s0 = w ∧ V .s3 = BitVec.ofNat 64 R ∧ V .s10 = A ∧
     V .s11 = T ∧ V .s9 = Tp ∧ Env V sp s ∧ Covers [⟨Tp, 16⟩] s.wr
 
-theorem finEntry_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint
-    (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6]) (.block finEntry) h).isSome = true :=
-  ⟨_, by taint_decide⟩
-
 theorem tagOut_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s9, .s0]) (.block tagOut)
     h).isSome = true := ⟨_, by taint_decide⟩
-
-theorem streamFinish_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa streamFinishRISCV64.pre streamFinishRISCV64.pub streamFinish := by
-  refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  obtain ⟨q3, q4, q5, q6, q7, q8, q9, qsp⟩ := hq
-  have h₁' : finPre σ₁ := h₁
-  have L := finLay h₁'
-  have hR := fin_R h₁'
-  have dtw : (⟨σ₁.gpr .a5, 16⟩ : Region).Disjoint ⟨σ₁.gpr .a6, 16⟩ := by
-    obtain ⟨-, -, -, -, -, -, -, dtw, -⟩ := h₁'
-    exact dtw.sub_right (Region.sub_prefix (by decide))
-  let I₀ : State → Prop := fun s => finPre s ∧ s.gpr .a0 = σ₁.gpr .a0 ∧ s.gpr .a1 = σ₁.gpr .a1 ∧
-    s.gpr .a2 = σ₁.gpr .a2 ∧ s.gpr .a3 = σ₁.gpr .a3 ∧ s.gpr .a4 = σ₁.gpr .a4 ∧ s.gpr .a5 = σ₁.gpr .a5 ∧
-    s.gpr .a6 = σ₁.gpr .a6 ∧ s.sp = σ₁.sp
-  refine ⟨I₀, ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, ⟨h₂, q3.symm, q4.symm, q5.symm, q6.symm, q7.symm,
-    q8.symm, q9.symm, qsp.symm⟩, ?_⟩
-  let FI := FinI (σ₁.gpr .a0) (σ₁.gpr .a2) (σ₁.gpr .a6) σ₁.sp (σ₁.gpr .a1).toNat (σ₁.gpr .a3) (σ₁.gpr .a4)
-    (σ₁.gpr .a5)
-  refine CT.seq (J := FI) ?_ (fun s ⟨hs, e3, e4, e5, e6, e7, e8, e9, esp⟩ => ?_) ?_
-  · obtain ⟨_, hc⟩ := finEntry_taint
-    exact CT.taintEq (I := I₀) _ σ₁.gpr σ₁.sp (fun s ⟨_, e3, e4, e5, e6, e7, e8, e9, esp⟩ =>
-      ⟨esp, by simp [e3, e4, e5, e6, e7, e8, e9]⟩) hc
-  · refine WP.mono (fin1_wp (fin_W hs) (fin_al hs)) fun s₁ h1 => ?_
-    have hT : Covers [⟨s.gpr .a5, 16⟩] s₁.wr := by
-      rw [h1.en.keeps.wr, hs.2.1]; exact covers_mem (by simp)
-    refine ⟨s₁.gpr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [h1.s2, e3]
-    · rw [h1.s1, e5]
-    · rw [h1.s0, e9]
-    · rw [h1.s3, e4, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    · rw [h1.s10, e6]
-    · rw [h1.s11, e7]
-    · rw [h1.s9, e8]
-    · rw [← esp]; exact fin_env hs h1
-    · rw [← e8]; exact hT
-  refine CT.seq (J := FI)
-    ((finTag_ct L (o := 0) (.inl rfl) hR).mono fun s ⟨V, a, b, d, e, f, g, _, he, _⟩ => ⟨V, a, b, d, e, f, g, he⟩)
-    (fun s ⟨V, a, b, d, e, f, g, i, he, hT⟩ => WP.mono (WP.with_rdwr (finTag_ok (L.v a b d) (o := 0) (.inl rfl)
-      (a := List.replicate ((σ₁.gpr .a3).toNat % 16) 0) (ct := List.replicate (σ₁.gpr .a4).toNat 0) he e hR rfl
-      (by simp [f]) (by simp [g]))) fun s' ⟨fo, _, wr, _⟩ =>
-        ⟨V, a, b, d, e, f, g, i, fo.env, by rw [wr]; exact hT⟩) ?_
-  refine CT.seq (J := fun s => s.gpr .s0 = σ₁.gpr .a6 ∧ s.sp = σ₁.sp) ?_
-    (fun s ⟨V, a, b, d, e, f, g, i, he, hT⟩ => WP.mono (tagOut_ok he (by rw [i]; exact hT)
-      (by rw [i, d]; exact dtw)) fun s' ⟨_, _, hg, hk⟩ =>
-        ⟨by rw [hg _ (by decide), he.s0, d], by rw [hk.sp, he.sp]⟩) ?_
-  · obtain ⟨_, hc⟩ := tagOut_taint
-    refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, d₁, _, _, _, i₁, h₁, _⟩ ⟨_, _, _, d₂, _, _, _, i₂, h₂, _⟩ =>
-      ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
-    · rw [h₁.s0, h₂.s0, d₁, d₂]
-  obtain ⟨_, hc⟩ := restore_taint
-  exact CT.taintEq _ (fun _ => σ₁.gpr .a6) σ₁.sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
 
 end VG.Proof.AesGcm.RISCV64
 
@@ -786,12 +703,6 @@ def OneIK (c W sp : Addr) (R : Nat) (K Ad A D Ln : BitVec 64) (s : State) : Prop
     DataOk (W + BitVec.ofNat 64 16) W s D Ln.toNat ∧ s.mem.readW (W + BitVec.ofNat 64 aadO) 64 = Ad ∧
     s.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D
 
-omit L in
-theorem OneI.toK {s : State} (h : OneI c W sp R Np n Ad A D Ln s) :
-    OneIK c W sp R (BitVec.ofNat 64 n) Ad A D Ln s :=
-  let ⟨V, a, b, d, e, f, i, k, he, _, hA, hD, sa, sd⟩ := h
-  ⟨V, a, b, d, e, f, i, k, he, hA, hD, sa, sd⟩
-
 section
 variable {K : BitVec 64}
 
@@ -964,16 +875,6 @@ theorem oneTagB_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {bs : Bool} {kb : Addr} {S' D
 
 end
 
-theorem oneCrypt_ct {o : Bool} {Dst : BitVec 64} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    CT (fun s => OneI c W sp R Np n Ad A D Ln s ∧ OD o c W D Dst Ln s ∧ (o = true → s.gpr .s9 = Dst - D))
-      (oneCryptWith o) :=
-  (oneCryptB_ct L (bs := false) (kb := 0) hR).mono fun _ ⟨h, d, h9⟩ => ⟨h.toK, d, h9, Bool.noConfusion⟩
-
-theorem oneTag_ct [VG.Proof.Gcm.RISCV64.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) (hR : R = 10 ∨ R = 12 ∨ R = 14) :
-    CT (OneI c W sp R Np n Ad A D Ln) (oneTag o) :=
-  (oneTagB_ct L (bs := false) (kb := 0) (S' := 0) (D' := 0) (n' := 0) ho hR).mono
-    fun _ h => ⟨h.toK, Bool.noConfusion⟩
-
 end
 
 end VG.Proof.AesGcm.RISCV64
@@ -983,7 +884,7 @@ end
 end
 
 /-!
-# AES-GCM on RISC-V: `vg_aes_gcm_seal` is constant time
+# AES-GCM on RISC-V: the pieces of `vg_aes_gcm_seal_bitsliced`'s constant time
 
 Untrusted: everything here is checked by Lean. The entry loads `W` from the
 stack argument at `sp + 8`, a public address, and then saves our caller's
@@ -1001,43 +902,6 @@ open VG VG.RISCV64 VG.Impl.AesGcm.RISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt zeros padLen)
 open VG.Proof.Gcm (Absorbed)
-
-/-- The entry of `seal`, from its precondition. -/
-theorem sealEntry_wp {s₀ : State} (h : sealPre s₀) :
-    WP isa (.block (oneEntry 8)) s₀ fun s₁ =>
-      OneI (s₀.gpr .a0) (stackArg s₀ 1) s₀.sp (s₀.gpr .a1).toNat (s₀.gpr .a2) (s₀.gpr .a3).toNat (s₀.gpr .a4)
-        (s₀.gpr .a5) (s₀.gpr .a6) (s₀.gpr .a7) s₁ ∧
-      s₁.gpr .s4 = s₀.gpr .a2 ∧ s₁.gpr .s5 = BitVec.ofNat 64 (s₀.gpr .a3).toNat ∧
-      s₁.gpr .s9 = stackArg s₀ 0 ∧ Covers [⟨stackArg s₀ 0, 16⟩] s₁.wr ∧
-      OD false (s₀.gpr .a0) (stackArg s₀ 1) (s₀.gpr .a6) (s₀.gpr .a6) (s₀.gpr .a7) s₁ := by
-  obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, fW, fsp, hR, hstk,
-    ca, wa⟩ := h
-  have hk₀ : StkOk (s₀.gpr .a0) (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₀.sp :=
-    one_stk hstk (by simp) (by simp)
-  have hC : Covers [⟨s₀.gpr .a0, 256⟩] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW : Covers [⟨stackArg s₀ 1, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
-  have hA : Covers [args s₀ 2] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hTd : (⟨s₀.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (oneR (stackArg s₀ 1)) :=
-    ((dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).sub_right
-      (Region.sub_prefix (show 8 ≤ 8 * 2 by decide))).symm
-  refine WP.mono (one1_wp (off := 8) (W := stackArg s₀ 1) (T := stackArg s₀ 0) (.inl rfl) hW wa hstk.1
-    (args_in hA (by decide) (i := 1) (by decide)) rfl (args_in hA (by decide) (i := 0) (by decide)) rfl hTd)
-    fun s₁ h1 => ?_
-  have hk₁ := h1.keeps
-  have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
-  have hDw : Covers [⟨s₀.gpr .a6, (s₀.gpr .a7).toNat⟩] s₁.wr := by
-    rw [hk₁.wr, hwr]; exact covers_mem (by simp)
-  have hDok : DataOk (stackArg s₀ 1 + BitVec.ofNat 64 16) (stackArg s₀ 1) s₁ (s₀.gpr .a6) (s₀.gpr .a7).toNat :=
-    ⟨covers_left hDw, (s₀.gpr .a7).isLt, fd, ddW.sub_right (Lay.wSub (by decide)), ddW,
-      by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
-  refine ⟨⟨s₁.gpr, h1.s2, h1.s1, h1.s0, by rw [h1.s3]; exact toN, by rw [h1.s7]; exact toN,
-    h1.s10, h1.s11, one_env h1 hC hW hk₀, ?_, ?_, hDok, h1.aad, h1.dat⟩, h1.s4, by rw [h1.s5]; exact toN, h1.s9, ?_,
-    ⟨⟨hDok, hDw, dcd⟩, rfl⟩⟩
-  · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (s₀.gpr .a3).isLt, fn, dnW.sub_right (Lay.wSub (by decide)), dnW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
-  · exact ⟨by rw [hk₁.rd, hk₁.wr]; exact covers_mem (List.mem_append_left _ (by rw [hrd]; simp)),
-      (s₀.gpr .a5).isLt, fa, daW.sub_right (Lay.wSub (by decide)), daW, by rw [hk₁.sp]; exact hstk.buf (by simp)⟩
-  · rw [hk₁.wr, hwr]; exact covers_mem (by simp)
 
 /-- The head of the entry: `W`, the stack argument at `sp + off`, into `t1`. -/
 theorem oneAg_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off % 8 = 0 ∧ off < 2048) (hsa : s₀.sp.toNat % 16 = 0)
@@ -1073,9 +937,6 @@ theorem oneEntryAt_eq (off tagO : Nat) :
 
 theorem oneEntry_eq (off : Nat) : oneEntry off = ([.addSp .t1 0, .load .d .t1 .t1 off] : List Instr) ++ oneRest :=
   oneEntryAt_eq off 0
-
-theorem oneHead_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
-    (.block [.addSp .t1 0, .load .d .t1 .t1 8]) h).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The head of `seal_bitsliced`'s entry, which loads `W` from `sp + 16`. -/
 theorem oneHead16_taint : ∃ h, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [])
@@ -1128,99 +989,6 @@ variable (L : Lay c (W + BitVec.ofNat 64 16) W) (hR : R = 10 ∨ R = 12 ∨ R = 
   (hTW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 16⟩)
 include L hR hTW
 
-/-- `seal` after its entry. -/
-theorem sealBody_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : CT (fun s => OneT c W sp R Np n Ad A D Ln T s ∧ s.gpr .s4 = Np ∧
-    s.gpr .s5 = BitVec.ofNat 64 n)
-    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore))))) := by
-  -- `oneAad`
-  refine CT.seq (J := fun s => OneT c W sp R Np n Ad A D Ln T s ∧ OneAbs c W A s)
-    ((oneAad_ct L).mono fun s ⟨⟨hO, _⟩, h24, h25⟩ => ⟨hO, h24, h25⟩)
-    (fun s ⟨hT, h24, h25⟩ => ?_) ?_
-  · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
-    refine WP.mono (WP.with_rdwr (oneAad_ok (L.v a b d) (A := Ad) he rfl h24 h25 f (by rw [b, d]; exact hN)
-      (by rw [b, d, i]; exact hA) (by rw [d]; exact sa))) fun s' ⟨oa, rd, wr, sp'⟩ =>
-        ⟨hT.frame (fun r hr => (he.fr r hr).symm) oa.env rd wr sp' oa.frame
-          (fun hd' => by rw [← d]; exact slot_j0 (L.v a b d) he.stk' hd'),
-        blockAt s.mem (V .s2 + BitVec.ofNat 64 240), bytesAt s.mem Ad (V .s10).toNat,
-        by rw [← a]; exact oa.hH, by rw [i, length_bytesAt], by rw [← b]; exact oa.abs⟩
-  -- `oneCrypt`
-  refine CT.seq (J := fun s => OneT c W sp R Np n Ad A D Ln T s ∧ OneAbs c W A s)
-    ((oneCrypt_ct L hR (o := false) (Dst := D)).mono fun s ⟨hT, _⟩ => ⟨hT.1, hT.2.2.2, Bool.noConfusion⟩)
-    (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
-  · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
-    have L' := L.v a b d
-    have hd : DataW (V .s2) (V .s1) (V .s0) s D (V .s11).toNat := by rw [a, b, d, k]; exact hT.2.2.2.1
-    refine WP.mono (WP.with_rdwr (oneCrypt_ok L' he e hR hd (by rw [d]; exact sd) rfl)) fun s' ⟨oc, rd, wr, sp'⟩ =>
-      ⟨hT.frame (fun r hr => (he.fr r hr).symm) oc.env rd wr sp' oc.frame
-        (fun hd' => by rw [← d]; exact slot_crFrame L' hd hd'), H, x, ?_, hl, ?_⟩
-    · rw [← a, blockAt_frame oc.frame (fun r hr => (ctx_crFrame L' hd r hr).sub_left (Lay.ctxSub (by decide)))]
-      rw [← a] at hH; exact hH
-    · have hx := Nat.mod_lt (x ++ zeros (padLen x.length)).length (show 16 > 0 by decide)
-      rw [← b] at hab ⊢
-      exact hab.congr (blockAt_frame oc.frame (stp_crFrame L' hd (by decide)))
-        (bytesAt_frame oc.frame (stp_crFrame L' hd (by omega_using [])) (by omega_using []))
-  -- `oneTag 0`
-  refine CT.seq (J := fun s => ∃ V : Reg → BitVec 64, V .s0 = W ∧ V .s9 = T ∧ Env V sp s ∧
-    Covers [⟨T, 16⟩] s.wr) ((oneTag_ct L (.inl rfl) hR).mono fun s ⟨hT, _⟩ => hT.1)
-    (fun s ⟨hT, H, x, hH, hl, hab⟩ => ?_) ?_
-  · obtain ⟨V, a, b, d, e, f, i, k, he, hN, hA, hD, sa, sd⟩ := hT.1
-    refine WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) (o := 0) (.inl rfl) (H := H) (a := x) (D := D) he e hR
-      (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hab) (by rw [b, d, k]; exact hD)
-      (by rw [d]; exact sd)))
-      fun s' ⟨ot, _, wr, _⟩ => ⟨V, d, (he.fr _ (by decide)).symm.trans hT.2.1, ot.env, by rw [wr]; exact hT.2.2.1⟩
-  -- the tag copied out
-  refine CT.seq (J := fun s => s.gpr .s0 = W ∧ s.sp = sp) ?_
-    (fun s ⟨V, d, i, he, hT⟩ => WP.mono (tagOut_ok he (by rw [i]; exact hT) (by rw [i, d]; exact hTW))
-      fun s' ⟨_, _, hg, hk⟩ => ⟨by rw [hg _ (by decide), he.s0, d], by rw [hk.sp, he.sp]⟩) ?_
-  · obtain ⟨_, hc⟩ := tagOut_taint
-    refine CT.taint _ (fun s₁ s₂ ⟨_, d₁, i₁, h₁, _⟩ ⟨_, d₂, i₂, h₂, _⟩ =>
-      ⟨h₁.sp.trans h₂.sp.symm, fun r hr => ?_⟩) hc
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · rw [h₁.fr _ (by decide), h₂.fr _ (by decide), i₁, i₂]
-    · rw [h₁.s0, h₂.s0, d₁, d₂]
-  obtain ⟨_, hc⟩ := restore_taint
-  exact CT.taintEq _ (fun _ => W) sp (fun s ⟨e31, esp⟩ => ⟨esp, by simp [e31]⟩) hc
-
 end
-
-theorem seal_ct [VG.Proof.Gcm.RISCV64.GhashLaw] : ConstantTime isa sealRISCV64.pre sealRISCV64.pub «seal» := by
-  refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp, qa⟩ := hq
-  have h₁' : sealPre σ₁ := h₁
-  obtain ⟨_, _, _, dcW, _, _, _, _, _, _, _, dtW, _, fc, _, _, _, fW, _, hR, _, ca, wa⟩ := h₁'
-  let I₀ : State → Prop := fun s => sealPre s ∧ s.gpr .a0 = σ₁.gpr .a0 ∧ s.gpr .a1 = σ₁.gpr .a1 ∧
-    s.gpr .a2 = σ₁.gpr .a2 ∧ s.gpr .a3 = σ₁.gpr .a3 ∧ s.gpr .a4 = σ₁.gpr .a4 ∧ s.gpr .a5 = σ₁.gpr .a5 ∧
-    s.gpr .a6 = σ₁.gpr .a6 ∧ s.gpr .a7 = σ₁.gpr .a7 ∧ s.sp = σ₁.sp ∧ stackArg s 0 = stackArg σ₁ 0 ∧
-    stackArg s 1 = stackArg σ₁ 1
-  refine ⟨I₀, ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, ⟨h₂, q3.symm, q4.symm, q5.symm,
-    q6.symm, q7.symm, q8.symm, q9.symm, q10.symm, qsp.symm, (qa 0 (by decide)).symm, (qa 1 (by decide)).symm⟩, ?_⟩
-  refine CT.seq (J := fun s => OneT (σ₁.gpr .a0) (stackArg σ₁ 1) σ₁.sp (σ₁.gpr .a1).toNat (σ₁.gpr .a2)
-    (σ₁.gpr .a3).toNat (σ₁.gpr .a4) (σ₁.gpr .a5) (σ₁.gpr .a6) (σ₁.gpr .a7) (stackArg σ₁ 0) s ∧
-    s.gpr .s4 = σ₁.gpr .a2 ∧ s.gpr .s5 = BitVec.ofNat 64 (σ₁.gpr .a3).toNat) ?_
-    (fun s ⟨hs, e3, e4, e5, e6, e7, e8, e9, e10, esp, ea0, ea1⟩ => ?_)
-    (sealBody_ct (oneLay fc fW dcW ca wa) hR (dtW.sub_right (Region.sub_prefix (by decide))))
-  · -- the entry: its head loads `W` from a public address, the rest saves through it
-    let v : Reg → BitVec 64 := fun r => if r = .t1 then stackArg σ₁ 1 else σ₁.gpr r
-    rw [oneEntry_eq]
-    refine RelCT.block_append (CT.seq (J := fun s => s.sp = σ₁.sp ∧
-      ∀ r ∈ [Reg.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .t1], s.gpr r = v r) ?_ ?_ ?_)
-    · obtain ⟨_, hc⟩ := oneHead_taint
-      exact CT.taintEq _ σ₁.gpr σ₁.sp (fun s ⟨_, _, _, _, _, _, _, _, _, esp, _⟩ => ⟨esp, by simp⟩) hc
-    · intro s ⟨hs, e3, e4, e5, e6, e7, e8, e9, e10, esp, _, ea1⟩
-      have hA : Covers [args s 2] (s.rd ++ s.wr) := covers_mem (List.mem_append_left _ (by rw [hs.1]; simp))
-      have hsa : s.sp.toNat % 16 = 0 := by
-        obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hk, -⟩ := hs
-        exact hk.1
-      refine WP.mono (oneA_ok (W := stackArg s 1) (.inl rfl) hsa (args_in hA (by decide) (i := 1) (by decide)) rfl)
-        fun sA ⟨a12, gA, kA⟩ => ⟨kA.sp.trans esp, fun r hr => ?_⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp [v, a12, ea1, e3, e4, e5, e6, e7, e8, e9, e10, gA]
-    · obtain ⟨_, hc⟩ := oneRest_taint
-      exact CT.taintEq _ v σ₁.sp (fun s h => h) hc
-  · have := sealEntry_wp hs
-    rw [ea0, ea1, e3, e4, e5, e6, e7, e8, e9, e10, esp] at this
-    exact WP.mono this fun s' ⟨hO, h24, h25, h20, hT, hOD⟩ => ⟨⟨hO, h20, hT, hOD⟩, h24, h25⟩
 
 end VG.Proof.AesGcm.RISCV64

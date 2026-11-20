@@ -754,9 +754,7 @@ theorem rdi_not_invClob' (n : Nat) : Reg.rdi ∉ invClob n := by
   intro h
   rcases List.mem_cons.mp h with h | h
   · exact absurd h (by decide)
-  rcases List.mem_cons.mp h with h | h
-  · exact absurd h (by decide)
-  · exact rdi_not_clob n h
+  · exact not_powClob (by decide) (by decide) (rdi_not_clob n) h
 
 /-- What the inversion `inv` does: `E.x = R.z^(p-2)`, writing `IW`: `E.x`, the
 temporary area, and areas apart from the modulus and the window's slots. -/
@@ -838,7 +836,7 @@ theorem normTbl_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   obtain c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [invClob, powClob, clob]
   obtain c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
-    List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+    List.mem_cons_of_mem _ (mem_powClob_of_clob h)
   obtain U : Unch base (winW K ++ IW) s.mem w.mem :=
     (I₇.unch.trans (Uu.trans (Uv.trans Uw))).mono fun x hx => by
       simp only [List.mem_append] at hx ⊢; rcases hx with hx | hx | hx | hx <;> simp [hx]

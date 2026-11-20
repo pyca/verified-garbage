@@ -18,8 +18,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Inline
 # AES-GCM on AArch64: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (256 bytes at
-`Ctx`), the streaming state (80 bytes at `St`) and the working space (2560
-bytes at `W`) (`Lay`): the state is disjoint from the parts of `W` other than
+`Ctx`), the streaming state (80 bytes at `St`) and the working space (`Wn`
+bytes at `W`: 512 the code uses, then its callees') (`Lay`): the state is disjoint from the parts of `W` other than
 `[16, 96)` (where `seal` and `open` keep it), and the context from both.
 `Perm` says the state may read the context and write the state and `W`;
 `Env` adds the registers that hold the three addresses throughout, and the
@@ -92,46 +92,50 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
   exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 /-- The regions: the context, the state and the parts of `W`. -/
-structure Lay (Ctx St W : Addr) : Prop where
+structure Lay (Wn : Nat) (Ctx St W : Addr) : Prop where
+  /-- `W` holds the 512 bytes the code uses itself, then at least `vg_ghash`'s
+  256 bytes of working space. -/
+  hWn : 768 ≤ Wn ∧ Wn ≤ 2560
   cw : Ctx.toNat + 256 ≤ 2 ^ 64
   sw : St.toNat + 80 ≤ 2 ^ 64
-  ww : W.toNat + 2560 ≤ 2 ^ 64
+  ww : W.toNat + Wn ≤ 2 ^ 64
   cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩
-  cw' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩
+  cw' : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, Wn⟩
   sa : (⟨St, 80⟩ : Region).Disjoint ⟨W, 16⟩
-  sb : (⟨St, 80⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 2464⟩
+  sb : (⟨St, 80⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, Wn - 96⟩
 
 /-- What a state may access. -/
-structure Perm (Ctx St W : Addr) (s : State) : Prop where
+structure Perm (Wn : Nat) (Ctx St W : Addr) (s : State) : Prop where
   ctx : Covers [⟨Ctx, 256⟩] (s.rd ++ s.wr)
   st : Covers [⟨St, 80⟩] s.wr
-  w : Covers [⟨W, 2560⟩] s.wr
+  w : Covers [⟨W, Wn⟩] s.wr
+  hWn : 768 ≤ Wn ∧ Wn ≤ 2560
 
 /-- The registers holding the context, the state and `W`, the stack
 pointer, and what the state may access. -/
-structure Env (Ctx St W SP : Addr) (s : State) : Prop where
+structure Env (Wn : Nat) (Ctx St W SP : Addr) (s : State) : Prop where
   x19 : s.gpr .x19 = W
   x20 : s.gpr .x20 = St
   x21 : s.gpr .x21 = Ctx
   sp : s.sp = SP
-  perm : Perm Ctx St W s
+  perm : Perm Wn Ctx St W s
 
-theorem Perm.of_eq {Ctx St W : Addr} {s s' : State} (h : Perm Ctx St W s) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Perm Ctx St W s' := by
-  obtain ⟨a, b, c⟩ := h; exact ⟨by rw [hrd, hwr]; exact a, by rw [hwr]; exact b, by rw [hwr]; exact c⟩
+theorem Perm.of_eq {Wn : Nat} {Ctx St W : Addr} {s s' : State} (h : Perm Wn Ctx St W s) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : Perm Wn Ctx St W s' := by
+  obtain ⟨a, b, c, d⟩ := h; exact ⟨by rw [hrd, hwr]; exact a, by rw [hwr]; exact b, by rw [hwr]; exact c, d⟩
 
 /-- An environment, after code that keeps `x19`–`x21`, the stack pointer and
 the permissions. -/
-theorem Env.keep {Ctx St W SP : Addr} {s s' : State} (h : Env Ctx St W SP s)
+theorem Env.keep {Wn : Nat} {Ctx St W SP : Addr} {s s' : State} (h : Env Wn Ctx St W SP s)
     (hg : ∀ r ∈ [Reg.x19, .x20, .x21], s'.gpr r = s.gpr r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Env Ctx St W SP s' :=
+    (hwr : s'.wr = s.wr) : Env Wn Ctx St W SP s' :=
   ⟨by rw [hg _ (by simp), h.x19], by rw [hg _ (by simp), h.x20], by rw [hg _ (by simp), h.x21],
     by rw [hsp, h.sp], h.perm.of_eq hrd hwr⟩
 
 /-- An environment, after a call. -/
-theorem Env.of_saved {Ctx St W SP : Addr} {s s' : State} (h : Env Ctx St W SP s)
+theorem Env.of_saved {Wn : Nat} {Ctx St W SP : Addr} {s s' : State} (h : Env Wn Ctx St W SP s)
     (hg : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : Env Ctx St W SP s' :=
+    (hwr : s'.wr = s.wr) : Env Wn Ctx St W SP s' :=
   h.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg _ (by decide) (by decide)) hsp hrd hwr
@@ -146,33 +150,42 @@ theorem ctxSub {Ctx : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨Ctx 
 theorem stSub {St : Addr} {d n : Nat} (h : d + n ≤ 80) : Region.Sub ⟨St + BitVec.ofNat 64 d, n⟩ ⟨St, 80⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {Wn d n : Nat} (h : d + n ≤ Wn) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, Wn⟩ :=
   Offset.sub_base _ h
 
-theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
+theorem bSub {W : Addr} {Wn d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ Wn) :
+    Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, Wn - 96⟩ :=
   Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
 
-variable {Ctx St W : Addr} (L : Lay Ctx St W)
+variable {Wn : Nat} {Ctx St W : Addr} (L : Lay Wn Ctx St W)
 include L
 
 /-- Parts of the state and of `W` outside `[16, 96)` are disjoint. -/
-theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 2560)) :
+theorem st_wn {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ Wn)) :
     (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ := by
   rcases hd with hd | ⟨h₁, h₂⟩
   · exact (L.sa.sub_left (stSub ha)).sub_right (aSub hd)
   · exact (L.sb.sub_left (stSub ha)).sub_right (bSub h₁ h₂)
 
+/-- `st_wn`, within the 512 bytes the code uses itself. -/
+theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 512)) :
+    (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  L.st_wn ha (by have := L.hWn; omega)
+
 theorem ctx_st {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 80) :
     (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 d, k⟩ :=
   (L.cs.sub_left (ctxSub ha)).sub_right (stSub hd)
 
-theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem ctx_wn {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ Wn) :
     (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   (L.cw'.sub_left (ctxSub ha)).sub_right (wSub hd)
+
+theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 512) :
+    (⟨Ctx + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  L.ctx_wn ha (by have := L.hWn; omega)
 
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
@@ -180,15 +193,20 @@ theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 
   Offset.disjoint _ h (by have := L.sw; omega_using [ha]) (by have := L.sw; omega_using [hd])
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_wn {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ Wn) (hd : d + k ≤ Wn) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
+  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+
+/-- `w_wn`, within the 512 bytes the code uses itself. -/
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 512) (hd : d + k ≤ 512) :
+    (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  L.w_wn h (by have := L.hWn; omega) (by have := L.hWn; omega)
 
 end Lay
 
 namespace Perm
 
-variable {Ctx St W : Addr} {s : State} (P : Perm Ctx St W s)
+variable {Wn : Nat} {Ctx St W : Addr} {s : State} (P : Perm Wn Ctx St W s)
 include P
 
 theorem ctxR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (Ctx + BitVec.ofNat 64 d) n :=
@@ -200,10 +218,16 @@ theorem stW {d n : Nat} (h : d + n ≤ 80) : InRegions s.wr (St + BitVec.ofNat 6
 theorem stR {d n : Nat} (h : d + n ≤ 80) : InRegions (s.rd ++ s.wr) (St + BitVec.ofNat 64 d) n :=
   in_left (P.stW h)
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
-  in_off P.w h (by decide)
+theorem wWn {d n : Nat} (h : d + n ≤ Wn) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  in_off P.w h (by have := P.hWn; omega)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+theorem wRn {d n : Nat} (h : d + n ≤ Wn) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+  in_left (P.wWn h)
+
+theorem wW {d n : Nat} (h : d + n ≤ 512) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+  P.wWn (by have := P.hWn; omega)
+
+theorem wR {d n : Nat} (h : d + n ≤ 512) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
 theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨Ctx + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
@@ -212,8 +236,18 @@ theorem ctxC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨Ctx + BitVec.ofNat 64 
 theorem stC {d n : Nat} (h : d + n ≤ 80) : Covers [⟨St + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.st h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
-  covers_off P.w h (by decide)
+theorem wCn {d n : Nat} (h : d + n ≤ Wn) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  covers_off P.w h (by have := P.hWn; omega)
+
+theorem wCRn {d n : Nat} (h : d + n ≤ Wn) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+  covers_left (P.wCn h)
+
+theorem wC {d n : Nat} (h : d + n ≤ 512) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+  P.wCn (by have := P.hWn; omega)
+
+/-- The first 512 bytes of `W`, which hold everything but the callees'
+working space. -/
+theorem w512 : Covers [⟨W, 512⟩] s.wr := covers_prefix P.w (by have := P.hWn; omega)
 
 end Perm
 
@@ -329,8 +363,8 @@ structure Regs (rs : List Reg) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem Env.of_regs {Ctx St W SP : Addr} {s s' : State} {rs : List Reg} (h : Env Ctx St W SP s) (hr : Regs rs s s')
-    (hd : ∀ r ∈ [Reg.x19, .x20, .x21], r ∉ rs := by decide) : Env Ctx St W SP s' :=
+theorem Env.of_regs {Wn : Nat} {Ctx St W SP : Addr} {s s' : State} {rs : List Reg} (h : Env Wn Ctx St W SP s) (hr : Regs rs s s')
+    (hd : ∀ r ∈ [Reg.x19, .x20, .x21], r ∉ rs := by decide) : Env Wn Ctx St W SP s' :=
   h.keep (fun r h' => hr.others r (hd r h')) hr.sp hr.rd hr.wr
 
 theorem Regs.trans {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Regs rs s₁ s₂) (h₂ : Regs rs' s₂ s₃)

@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.X86.Print
 
 /-! # PBKDF2-HMAC-SHA-512 (RFC 8018) on x86 -/
@@ -15,13 +13,9 @@ public import VerifiedGarbage.TCB.X86.Print
 
 namespace VG.Artifacts.Pbkdf2Sha512.X86
 
-open VG.Proof.Pbkdf2.Stream.X86
-
 def artifacts : List Artifact := [
   Spec.Hmac.sha512I.pbkdf2Api.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512I) 7
-      Proof.Pbkdf2.Whole.X86.sha512F.pbkdf2
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.sha512
-      Proof.Pbkdf2.Whole.X86.sha512_pbkFrameSat }]
+    code := Impl.Pbkdf2.Whole.X86.Fn.sha512 Proof.Pbkdf2.Whole.X86.sha512F
+    verified := .scrubbed Proof.Pbkdf2.Whole.X86.Scrub.sha512_scrubbed }]
 
 end VG.Artifacts.Pbkdf2Sha512.X86

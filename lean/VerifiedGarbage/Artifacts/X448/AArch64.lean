@@ -24,8 +24,10 @@ namespace VG.Artifacts.X448.AArch64
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact AArch64.target {
     code := Proof.X448.AArch64.ExchangeResidue.exchangeCode
-    verified := Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified
-    residue := some ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩ },
-  Spec.X448.x448BaseApi.artifact AArch64.target Proof.X448.AArch64.BaseScrub.baseReg]
+    verified := .scrubbed ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified,
+      Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩ },
+  Spec.X448.x448BaseApi.artifact AArch64.target {
+    code := Impl.X448.AArch64.Base.Fn.x448Base
+    verified := .scrubbed Proof.X448.AArch64.BaseScrub.x448Base }]
 
 end VG.Artifacts.X448.AArch64

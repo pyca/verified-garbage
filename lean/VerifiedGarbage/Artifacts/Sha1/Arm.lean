@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sha1.Arm.Shared
+public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.MdStream.Arm.DigestInstances
 public import VerifiedGarbage.TCB.Arm.Print
 
 /-! # SHA-1 (FIPS 180-4) on ARMv7 -/
@@ -13,16 +12,16 @@ namespace VG.Artifacts.Sha1.Arm
 
 def artifacts : List Artifact := [
   Spec.Sha1.initApi.artifact Arm.target {
-    code := Impl.Sha1.Arm.Stream.init
-    verified := Proof.Sha1.Arm.Shared.init },
+    code := Impl.Sha1.Arm.Fn.init
+    verified := .scrubbed Proof.Sha1.Arm.Fn.init },
   Spec.Sha1.updateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 176 2 Impl.Sha1.Arm.Stream.update
-    verified := Proof.Sha1.Arm.Shared.update },
+    code := Impl.Sha1.Arm.Fn.update
+    verified := .scrubbed Proof.Sha1.Arm.Fn.update },
   Spec.Sha1.finalizeApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha1.Arm.Stream.finalize
-    verified := Proof.Sha1.Arm.Shared.finalize },
+    code := Impl.Sha1.Arm.Fn.finalize
+    verified := .scrubbed Proof.Sha1.Arm.Fn.finalize },
   Spec.Sha1.digestApi.artifact Arm.target {
-    code := Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha1H
-    verified := Proof.MdStream.Arm.Digest.sha1_digest }]
+    code := Impl.Sha1.Arm.Fn.digest
+    verified := .scrubbed Proof.Sha1.Arm.Fn.digest }]
 
 end VG.Artifacts.Sha1.Arm

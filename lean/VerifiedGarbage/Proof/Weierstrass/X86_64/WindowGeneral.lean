@@ -335,7 +335,7 @@ theorem buildStepA_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
   obtain keep : KeepRegs (powClob K.M.n) s s₅ := by
     obtain c1 : ∀ r ∈ [Reg.rax], r ∈ powClob K.M.n := by intro r hr; simp at hr; subst hr; simp [powClob, clob]
     exact (((Keeps.regs k₁).mono fun r hr => by simp at hr; simp [hr, powClob]).trans
-      ((⟨fun r hr => k₂.gpr r fun h => hr (List.mem_cons_of_mem _ h), k₂.rd, k₂.wr⟩ :
+      ((⟨fun r hr => k₂.gpr r fun h => hr (mem_powClob_of_clob h), k₂.rd, k₂.wr⟩ :
         KeepRegs (powClob K.M.n) s₁ s₂).trans ((k₃.mono c1).trans ((k₄.mono c1).trans
           ((Keeps.regs k₅).mono fun r hr => by simp at hr)))))
   refine ⟨⟨⟨hs₄.of_keeps k₅ (by decide), hI.inv.keep.trans keep,
@@ -663,7 +663,7 @@ theorem quadA_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     rcases hr with rfl | rfl | rfl
     · simp [powClob, clob]
     · simp [powClob, clob]
-    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+    · exact mem_powClob_of_clob (r8_mem_clob _)
   obtain S₂ := S₁.next hL (S₁.scr.of_keepRegs k₂ (by decide)) (k₂.mono c₂)
     (U₂.mono fun w hw => by
       rw [List.mem_singleton.mp hw]

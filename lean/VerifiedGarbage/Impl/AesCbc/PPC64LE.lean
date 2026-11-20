@@ -92,6 +92,23 @@ def whole (body : Prog isa) : Prog isa :=
   .seq (.block (save ++ setup))
     (.seq (.ite (.zero .d .r18) (.block []) (.loop body (.nonzero .d .r18))) (.block restore))
 
+/-- `saved`, `save`, `restore` and `whole` with the registers saved at
+`o` of the scratch buffer and the return address at `o + 48`, for code
+whose callees need no working space (AES-CMAC's `update`): `saved`, `save`,
+`restore` and `whole` are these at 2064. -/
+def savedAt (o : Nat) : List (Reg × Nat) :=
+  [(.r14, o), (.r15, o + 8), (.r16, o + 16), (.r17, o + 24), (.r18, o + 32), (.r19, o + 40)]
+
+def saveAt (o : Nat) : List Instr :=
+  .mflr .r0 :: .store .d .r0 .r8 (o + 48) :: (savedAt o).map fun (r, d) => .store .d r .r8 d
+
+def restoreAt (o : Nat) : List Instr :=
+  .load .d .r0 .r19 (o + 48) :: (savedAt o).map (fun (r, d) => .load .d r .r19 d) ++ [.mtlr .r0]
+
+def wholeAt (o : Nat) (body : Prog isa) : Prog isa :=
+  .seq (.block (saveAt o ++ setup))
+    (.seq (.ite (.zero .d .r18) (.block []) (.loop body (.nonzero .d .r18))) (.block (restoreAt o)))
+
 /-- A call of `vg_aes_encrypt_blocks`. -/
 def encCall : Prog isa := .call "vg_aes_encrypt_blocks" Impl.Aes.PPC64LE.encryptBlocks
 

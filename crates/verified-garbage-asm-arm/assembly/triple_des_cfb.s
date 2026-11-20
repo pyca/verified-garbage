@@ -36,7 +36,7 @@ vg_triple_des_cfb64_encrypt:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt}
+	bl {vg_triple_des_ecb_encrypt_entry}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -85,6 +85,29 @@ vg_triple_des_cfb64_encrypt:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #1088
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #34
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_triple_des_cfb64_decrypt:
@@ -7035,6 +7058,33 @@ vg_triple_des_cfb64_decrypt:
 	str r2, [r12, #1016]
 	str r2, [r12, #1020]
 	add sp, sp, #1040
+	sub sp, sp, #1040
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #32
+210:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 210b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #1040
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_triple_des_cfb64_encrypt_final:
@@ -7069,7 +7119,7 @@ vg_triple_des_cfb64_encrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt}
+	bl {vg_triple_des_ecb_encrypt_entry}
 	lsr r9, r7, #3
 	cmp r9, #0
 	beq 23f
@@ -7134,6 +7184,29 @@ vg_triple_des_cfb64_encrypt_final:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #1088
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #34
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_triple_des_cfb64_decrypt_final:
@@ -7168,7 +7241,7 @@ vg_triple_des_cfb64_decrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt}
+	bl {vg_triple_des_ecb_encrypt_entry}
 	lsr r9, r7, #3
 	cmp r9, #0
 	beq 23f
@@ -7237,4 +7310,27 @@ vg_triple_des_cfb64_decrypt_final:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #1088
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #34
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #1088
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

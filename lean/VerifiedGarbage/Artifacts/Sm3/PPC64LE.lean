@@ -15,8 +15,7 @@ namespace VG.Artifacts.Sm3.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact PPC64LE.target {
     code := Impl.Sm3.PPC64LE.Stream.init
-    verified := Proof.Sm3.PPC64LE.Shared.init
-    residue := some ⟨Proof.Sm3.PPC64LE.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Sm3.PPC64LE.Shared.init, Proof.Sm3.PPC64LE.Stream.init_noResidue _ _⟩ },
   Spec.Sm3.updateApi.artifact PPC64LE.target Proof.Sm3.PPC64LE.updateReg,
   Spec.Sm3.finalizeApi.artifact PPC64LE.target Proof.Sm3.PPC64LE.finalizeReg]
 

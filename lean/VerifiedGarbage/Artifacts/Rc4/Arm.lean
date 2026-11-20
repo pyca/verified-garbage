@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Frame
+public import VerifiedGarbage.Proof.Rc4.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,10 +12,10 @@ namespace VG.Artifacts.Rc4.Arm
 
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init
-    verified := Proof.Rc4.Arm.init_framed },
+    code := Impl.Rc4.Arm.Fn.init
+    verified := .scrubbed Proof.Rc4.Arm.Fn.init },
   Spec.Rc4.applyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply
-    verified := Proof.Rc4.Arm.apply_framed }]
+    code := Impl.Rc4.Arm.Fn.apply
+    verified := .scrubbed Proof.Rc4.Arm.Fn.apply }]
 
 end VG.Artifacts.Rc4.Arm

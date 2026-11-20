@@ -16,9 +16,9 @@ namespace VG.Artifacts.Sm4Ofb.X86
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
-    verified := Proof.Sm4.X86.Fb.ofb_framed },
+    verified := .unscrubbed Proof.Sm4.X86.Fb.ofb_framed },
   Spec.Sm4.ofbFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofbFinal
-    verified := Proof.Sm4.X86.FbFinal.ofbFinal_framed }]
+    verified := .unscrubbed Proof.Sm4.X86.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.Sm4Ofb.X86

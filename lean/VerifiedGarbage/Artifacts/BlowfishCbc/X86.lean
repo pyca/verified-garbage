@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.CbcVerified
-import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 
 /-! # Blowfish-CBC on x86 -/
 
@@ -13,10 +14,10 @@ namespace VG.Artifacts.BlowfishCbc.X86
 
 def artifacts : List Artifact := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncryptChained
-    verified := Proof.Blowfish.X86.Cbc.cbcEncryptChained_framed },
+    code := Impl.Blowfish.X86.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Blowfish.cbcDecryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecryptChained
-    verified := Proof.Blowfish.X86.Cbc.cbcDecryptChained_framed }]
+    code := Impl.Blowfish.X86.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.X86

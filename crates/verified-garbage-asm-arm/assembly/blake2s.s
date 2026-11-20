@@ -61,6 +61,12 @@ vg_blake2s_init:
 	b 21f
 20:
 21:
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_blake2s_update:
@@ -217,6 +223,29 @@ vg_blake2s_update:
 	ldr r11, [r3, #540]
 	ldr lr, [r3, #544]
 	add sp, sp, #592
+	sub sp, sp, #608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #19
+222:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 222b
+	add sp, sp, #608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_blake2s_finalize:
@@ -303,4 +332,27 @@ vg_blake2s_finalize:
 	ldr r11, [r3, #540]
 	ldr lr, [r3, #544]
 	add sp, sp, #592
+	sub sp, sp, #608
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #19
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	add sp, sp, #608
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

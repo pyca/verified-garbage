@@ -206,10 +206,9 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov dataO dataArgs absorb flush)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel cryptHead_ok ctrArgs_ok ctrWhole_mk cryptWhole_ok tailArgs_ok ctrTail_mk
-  tailKs_ok tailXor_ok cryptTail_ok cryptFill_ok crypt_ok tagFrame TagOut TagMid tagLens_ok tagArgs_ok
-  ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT oneTag_ok
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel cryptHead_ok ctrWhole_mk ctrTail_mk tailXor_ok cryptFill_ok tagFrame TagOut TagMid
+  tagLens_ok tagArgs_ok ctrTag_mk tagCall_ok slot_crFrame OC otFrame abs_otSub t_otSub tag_otSub OT
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashInput zeros padLen j0 inc32 gctr ghash ghashFrom blocks toBytes ofBytes)
 open VG.Proof.Gcm (Absorbed Ctr lensBlock padded)
@@ -414,10 +413,10 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov tagOut dataO oneAad)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT
-  oneTag_ok SO1 one1_wp one_env saved_otFrame seal_wp sealPre sealRISCV64
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok tagArgs_ok
+  ctrTag_mk tagCall_ok slot_crFrame OC otFrame abs_otSub t_otSub tag_otSub OT SO1 one1_wp one_env
+  saved_otFrame sealPre sealRISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashInput zeros padLen j0 inc32 gctr ctxH encryptWith)
 open VG.Spec.Sm4.Gcm (ctxCiph)
@@ -637,11 +636,10 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov tagLenOk recv cmp)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok tFrame_sub t_tagFrame FinOut finTag_ok saved_tagFrame fin_out
-  verLay ver_R ver_al ver_stk ver_W SV1 ver1_wp ver_env VerPost ver_run streamVerify_wp verPre
-  streamVerifyRISCV64
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok tagArgs_ok
+  ctrTag_mk tagCall_ok tFrame_sub t_tagFrame FinOut saved_tagFrame fin_out verLay ver_R ver_al ver_stk ver_W
+  SV1 ver1_wp ver_env VerPost verPre streamVerifyRISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ghashInput fullTag zeros)
 open VG.Spec.Sm4.Gcm (ctxCiph)
@@ -1053,11 +1051,9 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov oneAad dataArgs aadO dataO)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT
-  oneTag_ok
-  
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok tagArgs_ok ctrTag_mk tagCall_ok slot_crFrame OC
+  otFrame abs_otSub t_otSub tag_otSub OT
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt zeros padLen)
 open VG.Proof.Gcm (Absorbed)
@@ -1320,10 +1316,10 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov oneAad tagOut restore save aadO dataO)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT
-  oneTag_ok stp_crFrame saved_crFrame ciph_keep SO1 one1_wp one_env saved_otFrame sealPre sealRISCV64
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok tagArgs_ok ctrTag_mk tagCall_ok slot_crFrame OC
+  otFrame abs_otSub t_otSub tag_otSub OT stp_crFrame saved_crFrame ciph_keep SO1 one1_wp one_env saved_otFrame
+  sealPre sealRISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt zeros padLen)
 open VG.Proof.Gcm (Absorbed)
@@ -1535,10 +1531,10 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov oneAad recv cmp tagLenOk restore dataO)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT
-  oneTag_ok SO1 one1_wp one_env saved_otFrame openPre openRes openRISCV64
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel stp_crFrame saved_crFrame ciph_keep tagFrame TagOut TagMid tagLens_ok tagArgs_ok
+  ctrTag_mk tagCall_ok slot_crFrame OC otFrame abs_otSub t_otSub tag_otSub OT SO1 one1_wp one_env
+  saved_otFrame openPre openRes openRISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ctxH fullTag zeros padLen j0 inc32 gctr decryptWith openResult)
 open VG.Spec.Sm4.Gcm (ctxCiph)
@@ -2085,11 +2081,10 @@ namespace VG.Proof.Sm4Gcm.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Sm4Gcm.RISCV64
 open VG.Impl.AesGcm.RISCV64 (mov oneAad tagLenOk recv cmp restore aadO dataO)
-open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame
-  CtrCall CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok
-  tagArgs_ok ctrTag_mk tagCall_ok tag_ok slot_crFrame OC oneCrypt_ok otFrame abs_otSub t_otSub tag_otSub OT
-  oneTag_ok stp_crFrame saved_crFrame ciph_keep SO1 one1_wp one_env saved_otFrame sealPre sealRISCV64
-  openPre openRes openRISCV64
+open VG.Proof.AesGcm.RISCV64 hiding CrIn CrMid CrOut crFrame ciphOf TailKs ctx_crFrame ciph_frame CtrCall
+  CtrPost ctr_call ctr_rel tagFrame TagOut TagMid tagLens_ok tagArgs_ok ctrTag_mk tagCall_ok slot_crFrame OC
+  otFrame abs_otSub t_otSub tag_otSub OT stp_crFrame saved_crFrame ciph_keep SO1 one1_wp one_env saved_otFrame
+  sealPre sealRISCV64 openPre openRes openRISCV64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt zeros padLen)
 open VG.Proof.Gcm (Absorbed)

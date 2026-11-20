@@ -56,12 +56,12 @@ def direct : List Artifact := [
     (Proof.Ffdh.AArch64.Scrub.derivePublicOk _) Proof.Ffdh.AArch64.Scrub.derivePublicSide),
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
-    verified := Proof.Ffdh.AArch64.Generation.init_verified
-    residue := some ⟨Proof.Ffdh.AArch64.Generation.init_noResidue _ _⟩ },
+    verified := .scrubbed ⟨Proof.Ffdh.AArch64.Generation.init_verified,
+      Proof.Ffdh.AArch64.Generation.init_noResidue _ _⟩ },
   Spec.Ffdh.keyInitApi.artifact target {
     code := Impl.Ffdh.AArch64.KeyGeneration.init
-    verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified
-    residue := some ⟨Proof.Ffdh.AArch64.KeyGeneration.init_noResidue _ _⟩ }]
+    verified := .scrubbed ⟨Proof.Ffdh.AArch64.KeyGeneration.init_verified,
+      Proof.Ffdh.AArch64.KeyGeneration.init_noResidue _ _⟩ }]
 
 def artifacts : List Artifact :=
   direct ++

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
+public import VerifiedGarbage.Proof.Camellia.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,10 +12,10 @@ namespace VG.Artifacts.CamelliaCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained
-    verified := Proof.Camellia.Arm.cbcEncryptChained_framed },
+    code := Impl.Camellia.Arm.Fn.cbcEncrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cbcEncrypt },
   Spec.Camellia.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcDecryptChained
-    verified := Proof.Camellia.Arm.cbcDecryptChained_framed }]
+    code := Impl.Camellia.Arm.Fn.cbcDecrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cbcDecrypt }]
 
 end VG.Artifacts.CamelliaCbc.Arm

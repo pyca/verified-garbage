@@ -47,6 +47,9 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
+public import VerifiedGarbage.Spec.Ecdh.P256
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 
 /-! ### `P256.EcdhJac.Adapter`, which only this module used -/
 
@@ -318,5 +321,18 @@ theorem verified (hL : Weierstrass.Law Spec.P256.curve)
       (modOkA_inv (p256_ok hI) hm (.inl rfl) rfl rfl) hx
       (p256_ok hI).inv_p)
     (window_ok hL (p256_ok hI).am3 hO))
+
+
+/-- ECDH over P-256 as it is emitted, its cleanup included
+(`Impl.Ecdh.AArch64.Fn.exchangeP256`), meets its contract in constant time and
+returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P256.curve)
+    (hI : Weierstrass.AArch64.InvSounds) (hO : Weierstrass.PrimeOrder Spec.P256.curve)
+    (hT : Weierstrass.InvToM Spec.P256.curve.p) :
+    VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP256
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) 32 :=
+  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P256.exchangeApi)
+    { code := Impl.P256.EcdhJac.exchange, verified := verified hL hI hO hT } _
+    (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.P256.EcdhJac

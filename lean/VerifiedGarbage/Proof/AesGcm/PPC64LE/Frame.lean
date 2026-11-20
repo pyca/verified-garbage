@@ -88,7 +88,7 @@ open VG.Spec.Gcm (Block blockAt ghashFrom StreamRepr)
 open VG.Proof.Gcm (Absorbed Ctr)
 
 /-- The entry: `absorb`'s arguments. -/
-theorem aadEntry_ok {s : State} (hW : Covers [⟨s.gpr .r8, 2560⟩] s.wr) :
+theorem aadEntry_ok {s : State} (hW : Covers [⟨s.gpr .r8, 288⟩] s.wr) :
     WP isa (.block streamAadPre) s fun s' => Entered s (s.gpr .r8) s' ∧
       s'.gpr .r31 = s.gpr .r8 ∧ s'.gpr .r30 = s.gpr .r4 ∧ s'.gpr .r29 = s.gpr .r3 ∧
       s'.gpr .r24 = s.gpr .r6 ∧ s'.gpr .r25 = s.gpr .r7 ∧
@@ -123,7 +123,7 @@ theorem aad_entry {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
   generalize hW : s.gpr .r8 = W at *
   have hlt : n < 2 ^ 64 := hn ▸ (s.gpr .r7).isLt
   have hn' : s.gpr .r7 = BitVec.ofNat 64 n := by rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have hWc : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hWc : Covers [⟨W, 288⟩] s.wr := by rw [hwr]; exact covers_mem (by simp)
   refine WP.mono (aadEntry_ok (by rw [hW]; exact hWc)) fun s₁ ⟨en, h31, h30, h29, h24, h25, h26⟩ => ?_
   rw [hW] at en h31
   rw [hSt] at h30
@@ -134,7 +134,7 @@ theorem aad_entry {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
     (⟨covers_mem (by rw [hrd, hwr]; simp), covers_mem (by rw [hwr]; simp), hWc⟩ : Perm Ctx St W s).of_eq
       en.keeps.rd en.keeps.wr
   have he : Env s₁.gpr s.sp s₁ := ⟨fun _ _ => rfl, en.keeps.sp, by rw [h29, h30, h31]; exact perm⟩
-  have sW : Region.Sub (savedR W) ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
+  have sW : Region.Sub (savedR W) ⟨W, 288⟩ := Offset.sub_base _ (by decide)
   have hdat : bytesAt s₁.mem D n = bytesAt s.mem D n :=
     bytesAt_frame en.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ddw.sub_right sW) (by omega_using [hn])
@@ -216,11 +216,10 @@ theorem streamAad_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (hs : streamAad
     have st_off : ∀ e k, e + k ≤ 80 → (d + 16 ≤ e ∨ e + k ≤ d) →
         (⟨s.gpr .r4 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨s.gpr .r4 + BitVec.ofNat 64 e, k⟩ :=
       fun e k he h => Offset.disjoint _ h (by omega_using [hd]) (by omega_using [he])
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Offset.sub_base _ (by decide))
     · exact st_off 16 16 (by decide) (by omega_using [hd'])
     · exact st_off 32 16 (by decide) (by omega_using [hd'])
-    · exact (dsw.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right (Offset.sub_base _ (by decide))
   refine WP.mono (aad_run hs hx) fun s' ⟨_, habs, hf⟩ => ?_
   refine Proof.Gcm.streamRepr_iff.mpr ⟨?_, ?_, ?_⟩
   · rw [← hj]
@@ -567,7 +566,7 @@ def initSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x2000, 256⟩, ⟨0x4000, 288⟩]
 
 def streamInitSat : State where
   gpr r := match r with
@@ -576,7 +575,7 @@ def streamInitSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x4000, 288⟩]
 
 def streamAadSat : State where
   gpr r := match r with
@@ -585,7 +584,7 @@ def streamAadSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x4000, 288⟩]
 
 def streamCryptSat : State where
   gpr r := match r with
@@ -594,7 +593,7 @@ def streamCryptSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 288⟩]
 
 def finSat : State where
   gpr r := match r with
@@ -603,7 +602,7 @@ def finSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, 288⟩]
 
 def verSat : State where
   gpr r := match r with
@@ -612,53 +611,53 @@ def verSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x4000, 288⟩]
 
 /-! ## The shared contracts -/
 
 theorem init_verified :
-    Verified PPC64LE.target init (Proof.AesGcm.initScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target init (Proof.AesGcm.initScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct init_correct init_ct (by
     sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre,
       Spec.Gcm.initPost, initPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [initSat] using initSat)
 
 theorem streamInit_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamInit (Proof.AesGcm.streamInitScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamInit (Proof.AesGcm.streamInitScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamInit_correct streamInit_ct (by
     sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig,
       Spec.Gcm.streamInitPost, streamInitPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [streamInitSat] using streamInitSat)
 
 theorem streamAad_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamAad (Proof.AesGcm.streamAadScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamAad (Proof.AesGcm.streamAadScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamAad_correct streamAad_ct (by
     sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig,
       Spec.Gcm.streamAadPost, streamAadPPC64LE, PPC64LE.abi, PPC64LE.argRegs]
       [streamAadSat] using streamAadSat)
 
 theorem streamEncrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
       Spec.Gcm.streamTextPre, Proof.AesGcm.streamEncryptRoundsPost, streamEncryptPPC64LE, streamCryptPre,
       streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig,
       Spec.Gcm.streamTextPre, Proof.AesGcm.streamDecryptRoundsPost, streamDecryptPPC64LE, streamCryptPre,
       streamCryptPub, rounds, PPC64LE.abi, PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamFinish (Proof.AesGcm.streamFinishScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamFinish (Proof.AesGcm.streamFinishScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
       Spec.Gcm.streamFinishPre, Proof.AesGcm.streamFinishRoundsPost, streamFinishPPC64LE, finPre, rounds, PPC64LE.abi,
       PPC64LE.argRegs] [finSat] using finSat)
 
 theorem streamVerify_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target streamVerify (Proof.AesGcm.streamVerifyScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target streamVerify (Proof.AesGcm.streamVerifyScratchContract PPC64LE.abi 0 36) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
       Spec.Gcm.streamVerifyPre, Proof.AesGcm.streamVerifyRoundsPost, streamVerifyPPC64LE, verPre, rounds, PPC64LE.abi,
@@ -672,11 +671,11 @@ def sealSat : State where
   sp := 0x9000
   mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9069 then 0x60 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 1152⟩]
 
 theorem sealFused_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target Impl.AesGcm.PPC64LE.SealFused.seal
-      (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
+      (Proof.AesGcm.sealScratchContract PPC64LE.abi (n := 144)) :=
   Verified.of_correct sealFused_correct sealFused_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
@@ -691,7 +690,7 @@ def openSat : State where
   sp := 0x9000
   mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9071 then 0x60 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x6000, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x6000, 1152⟩]
 
 /-- The leak `open` may have: whether it succeeds. -/
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
@@ -701,7 +700,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 of `r3`; and `open`'s public data include its leak, whether it succeeds (for
 `rounds` of 10, 12 or 14). -/
 theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target «open» (Proof.AesGcm.openScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target «open» (Proof.AesGcm.openScratchContract PPC64LE.abi (n := 144)) :=
   Verified.of_correct open_correct open_ct
     { pre := by
         sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
@@ -748,7 +747,7 @@ end
 # AES-GCM on PPC64LE, with its working space on the stack
 
 Each function runs its code, proved with the working space as an argument
-(`Verified.lean`), in a frame of 2592 bytes that allocates it
+(`Verified.lean`), in a frame of 320 bytes that allocates it
 (`Verified.stackScratch`): its arguments all arrive in registers, the
 working space in the next one.
 -/
@@ -770,16 +769,16 @@ def initFrameSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 256⟩]
 
-theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract PPC64LE.abi 2592).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Gcm.initContract PPC64LE.abi 320).pre s := by
   implies_sat [Spec.Gcm.initContract, Spec.Gcm.initSig, Spec.Gcm.initPre, Spec.Gcm.initPost,
     PPC64LE.abi, PPC64LE.argRegs] [initFrameSat] using initFrameSat
 
 theorem init_framed :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6 init)
-      (Spec.Gcm.initContract PPC64LE.abi 2592) :=
-  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 init)
+      (Spec.Gcm.initContract PPC64LE.abi 320) :=
+  PPC64LE.Verified.stackScratch (sig := Spec.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 36)
     (pre := Spec.Gcm.initPre PPC64LE.abi.ptrBits) (post := Spec.Gcm.initPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2592) init_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 320) init_verified (by decide) (by decide)
     (Proof.AesGcm.initPre_local _) (Proof.AesGcm.initPost_local _)
     (Proof.AesGcm.initPostOut_local _) initFrameSat_pre
 
@@ -794,16 +793,16 @@ def streamInitFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 80⟩]
 
-theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract PPC64LE.abi 2592).pre s := by
+theorem streamInitFrameSat_pre : ∃ s, (Spec.Gcm.streamInitContract PPC64LE.abi 320).pre s := by
   implies_sat [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Spec.Gcm.streamInitPost,
     PPC64LE.abi, PPC64LE.argRegs] [streamInitFrameSat] using streamInitFrameSat
 
 theorem streamInit_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 streamInit)
-      (Spec.Gcm.streamInitContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r7 streamInit)
+      (Spec.Gcm.streamInitContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamInitSig) (nm := "scratch") (e := .u64)
-    (n := 320) (post := Spec.Gcm.streamInitPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamInit_verified (by decide) (by decide)
+    (n := 36) (post := Spec.Gcm.streamInitPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 320) streamInit_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamInitPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamInitPostOut_local _ vs m m₁ m₂ r hl)
     streamInitFrameSat_pre
@@ -819,16 +818,16 @@ def streamAadFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 80⟩]
 
-theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract PPC64LE.abi 2592).pre s := by
+theorem streamAadFrameSat_pre : ∃ s, (Spec.Gcm.streamAadContract PPC64LE.abi 320).pre s := by
   implies_sat [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Spec.Gcm.streamAadPost,
     PPC64LE.abi, PPC64LE.argRegs] [streamAadFrameSat] using streamAadFrameSat
 
 theorem streamAad_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 streamAad)
-      (Spec.Gcm.streamAadContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r8 streamAad)
+      (Spec.Gcm.streamAadContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
-    (n := 320) (post := Spec.Gcm.streamAadPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamAad_verified (by decide) (by decide)
+    (n := 36) (post := Spec.Gcm.streamAadPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 320) streamAad_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.AesGcm.streamAadPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamAadPostOut_local _ vs m m₁ m₂ r hl)
     streamAadFrameSat_pre
@@ -837,33 +836,33 @@ theorem streamAad_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
 `vg_aes_gcm_stream_decrypt`, without the working space. -/
 def streamCryptFrameSat : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
 
-theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract PPC64LE.abi 2592).pre s := by
+theorem streamEncryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamEncryptRoundsContract PPC64LE.abi 320).pre s := by
   implies_sat [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
     Proof.AesGcm.streamEncryptRoundsPost, PPC64LE.abi, PPC64LE.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
 theorem streamEncrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamEncrypt)
-      (Proof.AesGcm.streamEncryptRoundsContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 streamEncrypt)
+      (Proof.AesGcm.streamEncryptRoundsContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
+    (n := 36) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamEncryptRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamEncrypt_verified (by decide) (by decide)
+    (bytes := 320) streamEncrypt_verified (by decide) (by decide)
     (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamEncryptPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
 
-theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract PPC64LE.abi 2592).pre s := by
+theorem streamDecryptFrameSat_pre : ∃ s, (Proof.AesGcm.streamDecryptRoundsContract PPC64LE.abi 320).pre s := by
   implies_sat [Proof.AesGcm.streamDecryptRoundsContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
     Proof.AesGcm.streamDecryptRoundsPost, PPC64LE.abi, PPC64LE.argRegs] [streamCryptFrameSat, streamCryptSat]
     using streamCryptFrameSat
 
 theorem streamDecrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamDecrypt)
-      (Proof.AesGcm.streamDecryptRoundsContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 streamDecrypt)
+      (Proof.AesGcm.streamDecryptRoundsContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
+    (n := 36) (pre := Spec.Gcm.streamTextPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamDecryptRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamDecrypt_verified (by decide) (by decide)
+    (bytes := 320) streamDecrypt_verified (by decide) (by decide)
     (Proof.AesGcm.streamTextPre_local _) (Proof.AesGcm.streamDecryptPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
 
@@ -871,17 +870,17 @@ theorem streamDecrypt_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
 the working space. -/
 def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract PPC64LE.abi 2592).pre s := by
+theorem finFrameSat_pre : ∃ s, (Proof.AesGcm.streamFinishRoundsContract PPC64LE.abi 320).pre s := by
   implies_sat [Proof.AesGcm.streamFinishRoundsContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
     Proof.AesGcm.streamFinishRoundsPost, PPC64LE.abi, PPC64LE.argRegs] [finFrameSat, finSat] using finFrameSat
 
 theorem streamFinish_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 streamFinish)
-      (Proof.AesGcm.streamFinishRoundsContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r9 streamFinish)
+      (Proof.AesGcm.streamFinishRoundsContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamFinishSig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamFinishPre PPC64LE.abi.ptrBits)
+    (n := 36) (pre := Spec.Gcm.streamFinishPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamFinishRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamFinish_verified (by decide) (by decide)
+    (bytes := 320) streamFinish_verified (by decide) (by decide)
     (Proof.AesGcm.streamFinishPre_local _) (Proof.AesGcm.streamFinishPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre
 
@@ -889,17 +888,17 @@ theorem streamFinish_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
 the working space. -/
 def verFrameSat : State := { verSat with wr := [⟨0x3000, 80⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract PPC64LE.abi 2592).pre s := by
+theorem verFrameSat_pre : ∃ s, (Proof.AesGcm.streamVerifyRoundsContract PPC64LE.abi 320).pre s := by
   implies_sat [Proof.AesGcm.streamVerifyRoundsContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
     Proof.AesGcm.streamVerifyRoundsPost, PPC64LE.abi, PPC64LE.argRegs] [verFrameSat, verSat] using verFrameSat
 
 theorem streamVerify_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 streamVerify)
-      (Proof.AesGcm.streamVerifyRoundsContract PPC64LE.abi 2592) :=
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 streamVerify)
+      (Proof.AesGcm.streamVerifyRoundsContract PPC64LE.abi 320) :=
   PPC64LE.Verified.stackScratch (sig := Spec.Gcm.streamVerifySig) (nm := "work") (e := .u64)
-    (n := 320) (pre := Spec.Gcm.streamVerifyPre PPC64LE.abi.ptrBits)
+    (n := 36) (pre := Spec.Gcm.streamVerifyPre PPC64LE.abi.ptrBits)
     (post := Proof.AesGcm.streamVerifyRoundsPost PPC64LE.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 2592) streamVerify_verified (by decide) (by decide)
+    (bytes := 320) streamVerify_verified (by decide) (by decide)
     (Proof.AesGcm.streamVerifyPre_local _) (Proof.AesGcm.streamVerifyPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre
 
@@ -913,7 +912,7 @@ def sealFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 8⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩]
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre s := by
   implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
@@ -921,11 +920,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2
 /-- `seal`, whose `tag` arrives on the stack: the frame copies it, then the
 working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal)
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal)
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 144)
     (pre := Spec.Gcm.sealPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.sealRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2672) (m := 1) sealFused_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 1264) (m := 1) sealFused_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
@@ -939,18 +938,18 @@ def openFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 16⟩]
   wr := [⟨0x4000, 0⟩]
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract PPC64LE.abi 2688).pre s := by
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract PPC64LE.abi 1280).pre s := by
   implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak,
     PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 /-- `open`, whose `tag` and `tag_len` arrive on the stack, as `seal`'s `tag` does. -/
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
-      (Proof.AesGcm.openRoundsContract PPC64LE.abi 2688) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 2 «open»)
+      (Proof.AesGcm.openRoundsContract PPC64LE.abi 1280) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 144)
     (pre := Spec.Gcm.openPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.openRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2688) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
+    (wa := true) (stack := 0) (bytes := 1280) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesGcm.openPre_local _) (Proof.AesGcm.openPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := Proof.AesGcm.openLeak_local _)

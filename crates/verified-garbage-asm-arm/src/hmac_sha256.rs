@@ -7,13 +7,15 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the 1656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the 1664 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
@@ -44,9 +46,9 @@ mov r6, r2
 mov r7, r3
 mov r11, r12
 mov r0, r4
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 mov r0, r5
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 movw r1, #13878
 movt r1, #13878
 str r1, [r4, #32]
@@ -151,6 +153,29 @@ ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 add sp, sp, #864
 21:
+sub sp, sp, #1664
+add r12, sp, #0
+mov r2, #0
+mov r3, #52
+27:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 27b
+add sp, sp, #1664
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr
 20:
 sub sp, sp, #1632
@@ -182,7 +207,7 @@ beq 25f
 movw r12, #1156
 add r4, r11, r12
 mov r0, r4
-bl {vg_sha256_init}
+bl {vg_sha256_init_core}
 mov r0, r4
 mov r1, r8
 mov r7, r9
@@ -628,7 +653,7 @@ str r2, [r12, #1592]
 str r2, [r12, #1596]
 add sp, sp, #1632
 b 21b",
-        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_init_core = sym super::sha256::vg_sha256_init_core::vg_sha256_init_core,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
@@ -639,6 +664,8 @@ b 21b",
 /// Finishes an HMAC-SHA-256 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-256 of the text under `K₀` (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -751,6 +778,33 @@ ldr r10, [r11, #184]
 ldr lr, [r11, #188]
 ldr r11, [r11, #192]
 add sp, sp, #864
+sub sp, sp, #880
+add r12, sp, #0
+mov r2, #0
+mov r3, #27
+20:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 20b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #880
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
@@ -758,8 +812,16 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_finalize_core.rs"]
+pub(crate) mod vg_hmac_sha256_finalize_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_core.rs"]
+pub(crate) mod vg_hmac_sha256_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_init_scratch.rs"]
