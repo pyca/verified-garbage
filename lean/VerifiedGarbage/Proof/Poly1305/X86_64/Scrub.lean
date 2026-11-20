@@ -112,19 +112,6 @@ def updatePlain (v : BlocksImpl) : Unscrubbed Spec.Poly1305.updateApi X86_64.tar
   verified := update_framed v
   spSafe := X86_64.withStackScratch_spSafe_of (update_spSafe v)
 
-open VG.X86_64.RScrub in
-/-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`:
-without secret residue where `v` gives its analysis (`BlocksImpl.update`, by
-`rtaintMx`, which takes its calls of `vg_mcdt_enter` as an operation), at
-the level of the registers its code writes. Where `v` loads MXCSR (in
-`vg_mcdt_enter`, on the path of many blocks only), two runs along the same
-path leave the same MXCSR (`Mx.mx`), so the clearing writes none
-(`RScrub.withScrubResM`). -/
-def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
-  match v.update with
-  | some a => withScrubResM (updatePlain v) (updateOut _) a.ks (resOk_regOps (updatePlain v) rfl (pubOk_nil _) a)
-  | none => (updatePlain v).registration
-
 /-! ## The functions as emitted -/
 
 theorem init_codeSp : (Impl.Poly1305.X86_64.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
@@ -159,4 +146,23 @@ theorem finalize_scrubbed :
 
 theorem finalize_spSafe : Impl.Poly1305.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe finalize_codeSp
+
+/-- `Spec.Poly1305.updateApi`'s function as emitted over the implementation
+`v` of `vg_poly1305_blocks` (`Impl.Poly1305.X86_64.Fn.update`) meets its
+contract in constant time and returns without secret residue: from the
+analysis of `v.upd` (`rtaintMx`, which takes its calls of `vg_mcdt_enter`
+as an operation). Where `v` loads MXCSR (in `vg_mcdt_enter`, on the path of
+many blocks only), two runs along the same path leave the same MXCSR, so
+the cleanup writes none. -/
+theorem update_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code)
+      (Spec.Poly1305.updateApi.contract X86_64.abi 160) 0 :=
+  have ⟨_, hS, hc⟩ := v.upd.ok
+  verifiedScrubbedKs (updatePlain v) v.upd.level _ (updateOut _)
+    (RScrub.resOk_regOpsA (updatePlain v) rfl (RScrub.pubOk_nil _) hS hc (show (Impl.Scrub.X86_64.chunksA 160).sum = 160 by decide)) v.upd.side rfl rfl
+
+theorem updateFn_spSafe (v : BlocksImpl) :
+    (Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of (update_spSafe v))
 end VG.Proof.Poly1305.X86_64

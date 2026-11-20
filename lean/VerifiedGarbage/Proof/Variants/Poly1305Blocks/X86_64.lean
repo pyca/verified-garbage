@@ -47,7 +47,7 @@ def avx2 : BlocksImpl where
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx2"
   features := Impl.Poly1305.X86_64.Blocks.features .avx2
-  update := some avx2Update
+  upd := avx2Update
 
 end BlocksImpl
 
@@ -93,7 +93,7 @@ def avx512 : BlocksImpl where
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx512"
   features := Impl.Poly1305.X86_64.Blocks.features .avx512
-  update := some avx512Update
+  upd := avx512Update
 
 end BlocksImpl
 
@@ -139,7 +139,7 @@ def ifma : BlocksImpl where
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := Impl.Poly1305.X86_64.Blocks.features .ifma
-  update := some ifmaUpdate
+  upd := ifmaUpdate
 
 end BlocksImpl
 
