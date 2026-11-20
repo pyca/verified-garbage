@@ -1,7 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Impl.AesXts.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesOcb.X86_64.Fn
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -71,7 +72,11 @@ open VG.Proof.AesOcb.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.map (fun (v : Proof.Aes.X86_64.BlocksImpl) =>
-    Spec.Ocb.initApi.artifact X86_64.target (Proof.AesOcb.X86_64.Scrub.ocbInitReg v)) ++
+    Spec.Ocb.initApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesOcb.X86_64.Fn.init v.level v.free.isSome (Proof.AesOcb.X86_64.callees v)
+      verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.ocbInit_scrubbed v)
+      spSafe := Proof.AesOcb.X86_64.Scrub.ocbInit_spSafeFn v }) ++
   VG.Proof.Variants.AesOcb.X86_64.variants.flatMap fun (o : Proof.AesOcb.X86_64.OcbImpl) => [
     Spec.Ocb.sealApi.artifact X86_64.target o.sealReg,
     Spec.Ocb.openApi.artifact X86_64.target o.openReg]
