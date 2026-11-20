@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 namespace VG
 
 materialize_code Impl.Poly1305.X86.init
+materialize_code Impl.Poly1305.X86.lanes
+materialize_code Impl.Poly1305.X86.pairsBody
 materialize_code Impl.Poly1305.X86.blocks
 materialize_code Impl.Poly1305.X86.update
 materialize_code Impl.Poly1305.X86.finalize
