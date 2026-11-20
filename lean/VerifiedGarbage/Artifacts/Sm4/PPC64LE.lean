@@ -15,8 +15,14 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 namespace VG.Artifacts.Sm4.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm4.expandKeyApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.expandKeyReg,
-  Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.ecbEncryptReg,
-  Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.ecbDecryptReg]
+  Spec.Sm4.expandKeyApi.artifact PPC64LE.target {
+    code := Impl.Sm4.PPC64LE.Fn.expandKey
+    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.expandKey_scrubbed },
+  Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target {
+    code := Impl.Sm4.PPC64LE.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+  Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
+    code := Impl.Sm4.PPC64LE.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Sm4.PPC64LE
