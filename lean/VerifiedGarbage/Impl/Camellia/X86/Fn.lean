@@ -12,7 +12,8 @@ public import VerifiedGarbage.Impl.Scrub.X86
 /-! # Camellia on x86 (32-bit): the functions as emitted
 
 Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
-`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls, or whose frame
+it wipes itself with nothing called in it: key expansion): the `W` bytes
 of stack below `esp` that its contract reserves zeroed, and the registers
 a callee may change cleared but the `rb` bits of the result, so that it
 returns without secret residue. -/
@@ -25,7 +26,7 @@ open VG.X86
 
 /-- `Spec.Camellia.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2708 (Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 Impl.Camellia.X86.expandKey)
+  Impl.Scrub.X86.scrub 0 (Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 Impl.Camellia.X86.expandKey)
 
 /-- `Spec.Camellia.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
