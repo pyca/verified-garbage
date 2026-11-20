@@ -69,6 +69,8 @@ namespace VG.Artifacts.EcdhP192.X86
 open VG.Proof.P192.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P192.exchangeApi.artifact X86.target (Proof.Ecdh.X86.P192.Scrub.exchangeReg hasLaw.law)]
+  Spec.Ecdh.P192.exchangeApi.artifact X86.target {
+    code := Impl.Ecdh.X86.Fn.exchangeP192
+    verified := .scrubbed (Proof.Ecdh.X86.P192.Scrub.exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP192.X86
