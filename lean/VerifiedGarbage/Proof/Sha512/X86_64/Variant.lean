@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
@@ -1201,6 +1202,11 @@ structure Compress where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 0 = true
   /-- What the names of its callers' instances that do not run `pair` end
   with: `suffix`, unless the implementation is another one with a `pair`,
   whose instances those are. -/
@@ -1224,6 +1230,8 @@ def scalar : Compress where
   spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := ""
   features := []
+  level := .sse
+  side := by change X86_64.Scrub.calleeSide Impl.Sha512.X86_64.Rolled.compress _ _ = true; lit_decide
 
 /-- `vg_sha512_compress_avx2`, which needs AVX, AVX2, BMI1 and BMI2. -/
 def avx2 : Compress where
@@ -1234,6 +1242,8 @@ def avx2 : Compress where
   spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
+  level := .avx
+  side := by change X86_64.Scrub.calleeSide Impl.Sha512.X86_64.Avx2Rolled.compress _ _ = true; lit_decide
 
 /-- `vg_sha512_compress_shani`, which needs the SHA512 extension, AVX and AVX2. -/
 def shani : Compress where
@@ -1244,6 +1254,8 @@ def shani : Compress where
   spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide)
   suffix := "_shani"
   features := ["avx", "avx2", "sha512"]
+  level := .avx
+  side := by change X86_64.Scrub.calleeSide Impl.Sha512.X86_64.ShaNi.compress _ _ = true; lit_decide
 
 /-- `vg_sha512_compress2_avx512`, which needs AVX512F and AVX512VL. -/
 theorem compress2_ok : MdStream.X86_64.PairOk (P := Stream.params) md Impl.Sha512.X86_64.Avx512.compress2 :=

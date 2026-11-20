@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract
@@ -101,3 +102,13 @@ def code (fld : Arith) (win : Prog isa) (fs : String) (f : Callee) (suffix : Str
     (body fld win fs f suffix) (.pop .r11 21)
 
 end VG.Impl.Ed25519.X86_64.VerifyMessage
+
+namespace VG.Impl.Ed25519.X86_64.VerifyMessage.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed25519_verify`, with the SHA-512 compression `f` and the field arithmetic `fld`, its vector registers cleared at the level `lv`, as emitted: its code, then its cleanup. -/
+def verify (lv : VG.Impl.Scrub.X86_64.VecLevel) (fld : Arith) (win : Prog isa) (fs : String) (f : Impl.Sha512.X86_64.Stream.Callee) (suffix : String) : Prog isa := scrubAll lv 32 184 (_root_.VG.Impl.Ed25519.X86_64.VerifyMessage.code fld win fs f suffix)
+
+end VG.Impl.Ed25519.X86_64.VerifyMessage.Fn

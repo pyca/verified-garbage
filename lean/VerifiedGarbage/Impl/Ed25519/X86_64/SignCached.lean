@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract
@@ -141,3 +142,13 @@ def codeExpanded (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : 
     (bodyFrom copyExpanded bs fs f suffix) (.pop .rax 31)
 
 end VG.Impl.Ed25519.X86_64.SignCached
+
+namespace VG.Impl.Ed25519.X86_64.SignCached.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed25519_sign_expanded`, with the SHA-512 compression `f` and the base-point multiplication `bs`, its vector registers cleared at the level `lv`, as emitted: its code, then its cleanup. -/
+def signExpanded (lv : VG.Impl.Scrub.X86_64.VecLevel) (bs : Prog isa) (fs : String) (f : Impl.Sha512.X86_64.Stream.Callee) (suffix : String) : Prog isa := scrubAll lv 0 264 (_root_.VG.Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs f suffix)
+
+end VG.Impl.Ed25519.X86_64.SignCached.Fn
