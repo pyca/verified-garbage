@@ -2,26 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.AesCcm.Mac
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
-public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishLong
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Open
-public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Key
-public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
@@ -36,9 +16,18 @@ open VG.Proof.AesSiv.AArch64
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
-    Spec.Siv.initApi.artifact AArch64.target (initReg v)]) ++
+    Spec.Siv.initApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesSiv.AArch64.Fn.init v.expand v.callee v.suffix
+      verified := .scrubbed (init_scrubbed v) }]) ++
   (VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
-    Spec.Siv.encryptApi.artifact AArch64.target (encryptReg v),
-    Spec.Siv.decryptApi.artifact AArch64.target (decryptReg v)])
+    Spec.Siv.encryptApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesSiv.AArch64.Fn.encrypt v.callee v.ctr.callee v.ctr.suffix
+      verified := .scrubbed (encrypt_scrubbed v) },
+    Spec.Siv.decryptApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesSiv.AArch64.Fn.decrypt v.callee v.ctr.callee v.ctr.suffix
+      verified := .scrubbed (decrypt_scrubbed v) }])
 
 end VG.Artifacts.AesSiv.AArch64
