@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 
 /-!
@@ -36,3 +37,13 @@ def validate (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdh.X86_64.Cfg.check c) (.block (finish c))
 
 end VG.Impl.EcKey.Validate.X86_64
+
+namespace VG.Impl.EcKey.Validate.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ec_<curve>_validate_public_key` as emitted, with the configuration `c`: its code, then its cleanup. -/
+def validate (c : VG.Impl.Ecdsa.X86_64.Cfg) : Prog isa := scrubAll .sse 32 8 (_root_.VG.Impl.EcKey.Validate.X86_64.validate c)
+
+end VG.Impl.EcKey.Validate.X86_64.Fn

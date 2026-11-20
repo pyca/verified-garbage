@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha512.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
@@ -105,7 +106,7 @@ theorem finalize512_256_scrubbed :
 /-- `vg_sha384_digest`. -/
 def digest384Reg : Registration Spec.Sha512.digest384Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha384.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha384Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha384.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -116,7 +117,7 @@ def digest384Reg : Registration Spec.Sha512.digest384Api PPC64LE.target :=
 /-- `vg_sha512_digest`. -/
 def digest512Reg : Registration Spec.Sha512.digest512Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -127,7 +128,7 @@ def digest512Reg : Registration Spec.Sha512.digest512Api PPC64LE.target :=
 /-- `vg_sha512_224_digest`. -/
 def digest512_224Reg : Registration Spec.Sha512.digest512_224Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512_224.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_224Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512_224.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -138,7 +139,7 @@ def digest512_224Reg : Registration Spec.Sha512.digest512_224Api PPC64LE.target 
 /-- `vg_sha512_256_digest`. -/
 def digest512_256Reg : Registration Spec.Sha512.digest512_256Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512_256.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_256Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512_256.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,

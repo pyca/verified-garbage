@@ -23,6 +23,16 @@ implementation chooses and bind proofs made under `Proof/`:
   * no `stack :=`: the stack the code's calls and frames use is one too,
     which `Registration`'s default (`stack_of`) finds in that contract, so
     that code that uses more or less stack touches no file reviewed by hand.
+
+A 64-bit RISC-V registration file (`Artifacts/*/RISCV64.lean`), whose
+target's framework states its cleanup only as a theorem about named code,
+binds that code and that theorem and nothing else: each
+`.artifact RISCV64.target` is given a record, `{ … }`, whose `code :=` is a
+definition of `Impl/` (`Impl.…`, applied to what it takes) and whose
+`verified :=` is `.scrubbed` of a theorem of `Proof/` (`.scrubbed Proof.…`),
+with no other fields than the choices `RISCV_FIELDS` names; and the file has
+no tactic block at all, no anonymous constructor (`⟨…⟩`), no `.unscrubbed`
+and nothing of `RISCV64.Scrub`, the framework's namespace.
 """
 
 import pathlib
@@ -44,6 +54,19 @@ STACK = re.compile(r"(?<![\w.'])stack\s*:=")
 MODULE_DOC = re.compile(r"/-!.*?-/", re.S)
 TITLE = re.compile(r"/-! # [^\n]+ -/")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
+
+# A 64-bit RISC-V registration file, and the fields its records may give
+# but `code` and `verified`: what the implementation chooses, no proof.
+RISCV = re.compile(r"Artifacts/[^/]+/RISCV64\.lean")
+RISCV_FIELDS = {"suffix", "tables", "extra", "vendor", "notWith"}
+ARTIFACT = re.compile(r"(?<![\w'])artifact(?![\w'])")
+ARTIFACT_RECORD = re.compile(r"\s+RISCV64\.target\s*\{")
+FIELD = re.compile(r"(?<![\w.'])([\w']+)\s*:=")
+ANON = re.compile(r"⟨")
+UNSCRUBBED = re.compile(r"(?<![\w'])unscrubbed(?![\w'])")
+FRAMEWORK = re.compile(r"(?<![\w.'])(?:VG\.)?RISCV64\.Scrub(?![\w'])")
+CODE_OK = re.compile(r"\(?\s*Impl\.")
+VERIFIED_OK = re.compile(r"\.scrubbed\s+\(?\s*Proof\.")
 
 
 def code_only(text: str) -> str:
@@ -114,6 +137,79 @@ def rest_of_block(code: str, by: int, start: int) -> str:
     return code[start:i].strip()
 
 
+def record_fields(code: str, start: int) -> tuple[list[tuple[int, str, str]], int]:
+    """The fields of the record whose `{` is at `start`, as (offset, name,
+    value), and the offset of its `}`."""
+    fields, marks, depth, i, n = [], [], 0, start + 1, len(code)
+    while i < n:
+        c = code[i]
+        if c in OPEN:
+            depth += 1
+        elif c in CLOSE:
+            if depth == 0:
+                break
+            depth -= 1
+        elif depth == 0:
+            m = FIELD.match(code, i)
+            if m:
+                marks.append((i, m.group(1), m.end()))
+                i = m.end()
+                continue
+        i += 1
+    for k, (at, name, vstart) in enumerate(marks):
+        vend = marks[k + 1][0] if k + 1 < len(marks) else i
+        fields.append((at, name, code[vstart:vend].strip().rstrip(",").strip()))
+    return fields, i
+
+
+def riscv_problems(rel: str, code: str, line) -> list[str]:
+    """What is wrong in the 64-bit RISC-V registration file `rel`, whose
+    text without comments is `code`: anything but binding named code and a
+    theorem about it."""
+    out = []
+    skill = "(.agents/skills/adding-a-primitive/SKILL.md)"
+    for m in BY.finditer(code):
+        if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
+            out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a RISC-V registration "
+                       f"file; it binds only `code := Impl.…` and `verified := .scrubbed Proof.…` "
+                       f"{skill}")
+    for pat, what in [(ANON, "an anonymous constructor (`⟨…⟩`)"),
+                      (UNSCRUBBED, "`.unscrubbed`"),
+                      (FRAMEWORK, "the scrub framework (`RISCV64.Scrub`)")]:
+        for m in pat.finditer(code):
+            out.append(f"lean/{rel}:{line(m.start())}: {what} in a RISC-V registration file; "
+                       f"it binds only `code := Impl.…` and `verified := .scrubbed Proof.…`, "
+                       f"whose proof is made under `Proof/` {skill}")
+    for m in ARTIFACT.finditer(code):
+        r = ARTIFACT_RECORD.match(code, m.end())
+        if not r:
+            out.append(f"lean/{rel}:{line(m.start())}: a RISC-V registration not given as a record; "
+                       f"write `.artifact RISCV64.target {{ code := Impl.… "
+                       f"verified := .scrubbed Proof.… }}` {skill}")
+            continue
+        fields, end = record_fields(code, r.end() - 1)
+        names = [f[1] for f in fields]
+        for at, name, value in fields:
+            if name == "code":
+                if not CODE_OK.match(value):
+                    out.append(f"lean/{rel}:{line(at)}: a RISC-V registration's `code` that is not "
+                               f"a definition of `Impl/`; bind `code := Impl.…` {skill}")
+            elif name == "verified":
+                if not VERIFIED_OK.match(value):
+                    out.append(f"lean/{rel}:{line(at)}: a RISC-V registration's `verified` that is "
+                               f"not a theorem of `Proof/`; bind `verified := .scrubbed Proof.…` "
+                               f"{skill}")
+            elif name not in RISCV_FIELDS:
+                out.append(f"lean/{rel}:{line(at)}: `{name}` in a RISC-V registration; it binds "
+                           f"only `code`, `verified` and what the implementation chooses "
+                           f"({', '.join(sorted(RISCV_FIELDS))}) {skill}")
+        for name in ("code", "verified"):
+            if names.count(name) != 1:
+                out.append(f"lean/{rel}:{line(m.start())}: a RISC-V registration without exactly "
+                           f"one `{name} :=` {skill}")
+    return out
+
+
 def problems(lean: pathlib.Path) -> list[str]:
     """What is wrong under `lean` (the directory with `VerifiedGarbage/`), one
     line each."""
@@ -147,6 +243,8 @@ def problems(lean: pathlib.Path) -> list[str]:
                 out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a file reviewed by hand; "
                            "make the side condition an `autoParam` of the lemma, or prove the "
                            "instance under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")
+            if RISCV.fullmatch(rel.removeprefix("VerifiedGarbage/")):
+                out += riscv_problems(rel, code, line)
     return out
 
 

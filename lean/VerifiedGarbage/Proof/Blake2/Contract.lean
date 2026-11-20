@@ -112,4 +112,55 @@ def finalizeSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
     (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
     (stack := stack)
 
+/-! ## With `w` words of working space
+
+The `…ScratchSig`s above with `w` words of `scratch`, for an implementation
+whose compression function and spills use less than the widest target's (the
+streaming functions keep their working space in a frame of their own, whose
+size is then the scratch they use: ARMv7's, `Proof/Blake2/Arm/Blake2b.lean`). -/
+
+/-- `updateBScratchSig` with `w` words of working space. -/
+def updateBScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 w)]
+
+/-- `updateBScratchContract`, with `w` words of working space. -/
+def updateBScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (updateBScratchSigW w).contract A
+    (post := fun state count data len _scratch => updateBPost A.ptrBits state count data len)
+    (stack := stack)
+
+/-- `finalizeBScratchSig` with `w` words of working space. -/
+def finalizeBScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 64), ("scratch", .array true .u64 w)]
+
+/-- `finalizeBScratchContract`, with `w` words of working space. -/
+def finalizeBScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalizeBScratchSigW w).contract A
+    (post := fun state count out _scratch => finalizeBPost A.ptrBits state count out)
+    (stack := stack)
+
+/-- `updateSScratchSig` with `w` words of working space. -/
+def updateSScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 w)]
+
+/-- `updateSScratchContract`, with `w` words of working space. -/
+def updateSScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (updateSScratchSigW w).contract A
+    (post := fun state count data len _scratch => updateSPost A.ptrBits state count data len)
+    (stack := stack)
+
+/-- `finalizeSScratchSig` with `w` words of working space. -/
+def finalizeSScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 32), ("scratch", .array true .u64 w)]
+
+/-- `finalizeSScratchContract`, with `w` words of working space. -/
+def finalizeSScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalizeSScratchSigW w).contract A
+    (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
+    (stack := stack)
+
 end VG.Proof.Blake2

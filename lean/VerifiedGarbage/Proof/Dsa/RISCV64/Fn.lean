@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PSearch.Instances
 public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
 public import VerifiedGarbage.Proof.Dsa.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubCall
 
 /-!
 # DSA on RISC-V, as emitted
@@ -25,12 +26,14 @@ the cleanup needs of each function's code (`Scrub.scrubSide`) is evaluated
 here, by the kernel.
 
 The parameter search, `vg_dsa_parameter_search`, is generic over the
-Miller-Rabin round (`Proof.Variants.MillerRabin.RISCV64`): what its cleanup
-needs of its code (`Scrub.scrubSide`: the depth of its frames, and that it
-calls nothing indirectly) does not yet follow from what each round proves of
-its own code, so its registrations are still built here with
-`RISCV64.Scrub.scrubOf` (`PSearch.parameterSearchSide`), for its
-registration file to bind.
+Miller-Rabin round (`Proof.Variants.MillerRabin.RISCV64`): as emitted
+(`Impl.Dsa.RISCV64.Fn.parameterSearch`), for every round, it meets its
+contract and returns without secret residue (`parameterSearch`). What its
+cleanup needs of its code (`Scrub.scrubSide`) is evaluated once, with a stub
+of 96 bytes of stack in the place of the round (`parameterSearch_stub_side`);
+the code with a round is that code filled (`Scrub.Fill`), from what each round
+proves of its own code where it is defined (`RoundImpl.stack`,
+`RoundImpl.icalls`).
 -/
 
 @[expose] public section
@@ -86,15 +89,63 @@ theorem parameterInit :
     { code := Impl.Dsa.RISCV64.ParameterSearch.init, verified := init_verified }
     (parameterInitOut []) (by lit_decide)
 
-/-- `vg_dsa_parameter_search` over each Miller-Rabin round, scrubbed. -/
-def parameterSearchRegs : List (Registration Spec.Dsa.parameterSearchApi RISCV64.target) :=
-  Proof.Variants.MillerRabin.RISCV64.variants.attach.map
-    fun (v : { v : RoundImpl // v ∈ Proof.Variants.MillerRabin.RISCV64.variants }) =>
-      scrubOf {
-        suffix := v.1.suffix
-        code := Impl.Dsa.RISCV64.ParameterSearch.code (PSearch.gen1 v.1) (PSearch.gen2 v.1) (PSearch.gen3 v.1)
-        verified := PSearch.params_verified v.1 }
-        (parameterSearchOut 512 PSearch.kT) 512 (Spec.Dsa.parameterSearchSig.retBits 64)
-        (PSearch.parameterSearchSide v.1 v.2)
+/-- What the cleanup needs of the parameter search, with a stub of 96 bytes
+of stack in the place of the round. -/
+theorem parameterSearch_stub_side :
+    scrubSide (Impl.Dsa.RISCV64.Fn.parameterSearchBody "" (holeStub 96)) 512 32 [] = true := by
+  lit_decide
+
+open Impl.Dsa.RISCV64.ParameterSearch (Geo) in
+/-- A width's hashes of `X`, which do not call the tests. -/
+theorem pHashes_fill (g : Geo) (qn pn : String) (qc pc : Prog isa) :
+    ∀ m, Fill 0 [] (g.pHashes m) ({ g with qName := qn, qCode := qc, pName := pn, pCode := pc }.pHashes m)
+  | 0 => .refl _
+  | m + 1 => .seq (pHashes_fill g qn pn qc pc m) (by fill_calls)
+
+open Impl.Dsa.RISCV64.ParameterSearch (Geo) in
+/-- A width of the search, with its probable-prime tests filled: whatever
+the width, so that the code it shares (its hash function's) is one term. -/
+theorem generate_fill (g : Geo) {qn pn : String} {qc pc : Prog isa} (hq : Fill 0 [] g.qCode qc)
+    (hp : Fill 0 [] g.pCode pc) :
+    Fill 0 [] g.generate { g with qName := qn, qCode := qc, pName := pn, pCode := pc }.generate := by
+  fill_calls
+  all_goals exact pHashes_fill g qn pn qc pc _
+
+/-- A probable-prime test with the round `round` is its code with the stub,
+filled. -/
+theorem prime_fill {round : Prog isa} (bits : Nat) (suffix : String) (h : calleeSide round 96 = true) :
+    Fill 0 [] (Impl.Dsa.RISCV64.ProbablePrime.code bits "vg_miller_rabin_round" (holeStub 96))
+      (Impl.Dsa.RISCV64.ProbablePrime.code bits ("vg_miller_rabin_round" ++ suffix) round) := by
+  fill_calls
+
+/-- The parameter search with the round `round` is its code with the stub,
+filled. -/
+theorem parameterSearch_fill {round : Prog isa} (suffix : String) (h : calleeSide round 96 = true) :
+    Fill 0 [] (Impl.Dsa.RISCV64.Fn.parameterSearchBody "" (holeStub 96))
+      (Impl.Dsa.RISCV64.Fn.parameterSearchBody suffix round) := by
+  have h1 := generate_fill (Impl.Dsa.RISCV64.Fn.geo 128 20 Impl.Dsa.RISCV64.ParameterSearch.sha1 "" (holeStub 96))
+    (qn := s!"vg_dsa_probable_prime_{8 * 20}" ++ suffix) (pn := s!"vg_dsa_probable_prime_{8 * 128}" ++ suffix)
+    (prime_fill _ suffix h) (prime_fill _ suffix h)
+  have h2 := generate_fill (Impl.Dsa.RISCV64.Fn.geo 256 32 Impl.Dsa.RISCV64.ParameterSearch.sha256 "" (holeStub 96))
+    (qn := s!"vg_dsa_probable_prime_{8 * 32}" ++ suffix) (pn := s!"vg_dsa_probable_prime_{8 * 256}" ++ suffix)
+    (prime_fill _ suffix h) (prime_fill _ suffix h)
+  have h3 := generate_fill (Impl.Dsa.RISCV64.Fn.geo 384 32 Impl.Dsa.RISCV64.ParameterSearch.sha256 "" (holeStub 96))
+    (qn := s!"vg_dsa_probable_prime_{8 * 32}" ++ suffix) (pn := s!"vg_dsa_probable_prime_{8 * 384}" ++ suffix)
+    (prime_fill _ suffix h) (prime_fill _ suffix h)
+  exact .seq (.refl _) (.seq (.seq (.refl _) (.seq (.refl _) (.ite _ h1 (.seq (.refl _) (.ite _ h2 h3)))))
+    (.refl _))
+
+/-- `vg_dsa_parameter_search` as emitted, with the Miller-Rabin round `v`: it
+meets its contract in constant time and returns without secret residue. -/
+theorem parameterSearch (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (abi.withConsts PSearch.kT) 512) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.parameterSearchApi)
+    { suffix := v.suffix
+      code := Impl.Dsa.RISCV64.Fn.parameterSearchBody v.suffix v.code
+      verified := PSearch.params_verified v }
+    (parameterSearchOut 512 PSearch.kT)
+    (scrubSide_of_fill (parameterSearch_fill v.suffix (calleeSide_of (depth_le_of_sdepth v.stack) v.icalls))
+      parameterSearch_stub_side (fun _ h => h) (fun _ h => absurd h List.not_mem_nil))
 
 end VG.Proof.Dsa.RISCV64.Fn

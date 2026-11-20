@@ -1,7 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Rc2.X86_64.Fn
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -57,68 +58,36 @@ theorem cbcDecryptChainedOut :
     PostOut (Spec.Rc2.cbcDecryptChainedContract X86_64.abi 528) (Spec.Rc2.cbcChainedSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Rc2.cbcDecChainedPostOut_local (pb := 64))
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_rc2_cbc_init`'s code. -/
-abbrev cbcInitCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackArgScratchWiped 592 0 72 Impl.Rc2.X86_64.Stream.init
+/-- `vg_rc2_cbc_init` as emitted (`Impl.Rc2.X86_64.Fn.cbcInit`) meets its
+contract in constant time and returns without secret residue. -/
+theorem cbcInit_scrubbed :
+    VerifiedScrubbed target Impl.Rc2.X86_64.Fn.cbcInit (Spec.Rc2.cbcInitApi.contract X86_64.abi 600) 32 :=
+  verifiedScrubbedSel (api := Spec.Rc2.cbcInitApi)
+    { code := Impl.StackScratch.X86_64.withStackArgScratchWiped 592 0 72 Impl.Rc2.X86_64.Stream.init
+      stack := 600
+      verified := Proof.Rc2.X86_64.Stream.init_framed } .sse [(0, 2)] cbcInitOut (RScrub.pubOk_nil _)
+    (by taint_decide)
 
-def cbcInitKs : List Nat := keep_for% Spec.Rc2.cbcInitApi.sig 600 cbcInitCode []
+/-- `vg_rc2_cbc_encrypt_chained` as emitted (`Impl.Rc2.X86_64.Fn.cbcEncryptChained`). -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed target Impl.Rc2.X86_64.Fn.cbcEncryptChained
+      (Spec.Rc2.cbcEncryptChainedContract X86_64.abi 528) 0 :=
+  verifiedScrubbedSel (api := Spec.Rc2.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .r8 64 Impl.Rc2.X86_64.Cbc.encrypt
+      stack := 528
+      verified := Proof.Rc2.X86_64.Cbc.encryptChained_framed } .sse [(8, 1)] cbcEncryptChainedOut
+    (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem cbcInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Rc2.cbcInitApi.sig 600 []) cbcInitCode
-      h).any (RScrub.resOkB · 600 cbcInitKs (Impl.Scrub.X86_64.chunks 600)) = true :=
-  RScrub.Analysed.ok_of cbcInitKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_rc2_cbc_init`. -/
-def cbcInitReg : Registration Spec.Rc2.cbcInitApi X86_64.target :=
-  scrubOf {
-    code := cbcInitCode
-    stack := 600
-    verified := Proof.Rc2.X86_64.Stream.init_framed } .sse true [.rcx, .rdx, .r8, .r9, .r10, .r11] cbcInitOut [] (pubOk_nil _) ⟨cbcInitKs, cbcInitOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-/-- `vg_rc2_cbc_encrypt_chained`'s code. -/
-abbrev cbcEncryptChainedCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratchWiped 520 .r8 64 Impl.Rc2.X86_64.Cbc.encrypt
-
-/-- `vg_rc2_cbc_decrypt_chained`'s code. -/
-abbrev cbcDecryptChainedCode : Prog isa :=
-  Impl.StackScratch.X86_64.withStackScratchWiped 520 .r8 64 Impl.Rc2.X86_64.Cbc.decrypt
-
-def cbcEncryptChainedKs : List Nat := keep_for% Spec.Rc2.cbcEncryptChainedApi.sig 528 cbcEncryptChainedCode []
-
-theorem cbcEncryptChainedOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Rc2.cbcEncryptChainedApi.sig 528 []) cbcEncryptChainedCode
-      h).any (RScrub.resOkB · 528 cbcEncryptChainedKs (Impl.Scrub.X86_64.chunks 528)) = true :=
-  RScrub.Analysed.ok_of cbcEncryptChainedKs (by taint_decide)
-
-def cbcDecryptChainedKs : List Nat := keep_for% Spec.Rc2.cbcDecryptChainedApi.sig 528 cbcDecryptChainedCode []
-
-theorem cbcDecryptChainedOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Rc2.cbcDecryptChainedApi.sig 528 []) cbcDecryptChainedCode
-      h).any (RScrub.resOkB · 528 cbcDecryptChainedKs (Impl.Scrub.X86_64.chunks 528)) = true :=
-  RScrub.Analysed.ok_of cbcDecryptChainedKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_rc2_cbc_encrypt_chained`. -/
-def cbcEncryptChainedReg : Registration Spec.Rc2.cbcEncryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcEncryptChainedCode
-    stack := 528
-    verified := Proof.Rc2.X86_64.Cbc.encryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] cbcEncryptChainedOut [] (pubOk_nil _)
-    ⟨cbcEncryptChainedKs, cbcEncryptChainedOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_rc2_cbc_decrypt_chained`. -/
-def cbcDecryptChainedReg : Registration Spec.Rc2.cbcDecryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcDecryptChainedCode
-    stack := 528
-    verified := Proof.Rc2.X86_64.Cbc.decryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] cbcDecryptChainedOut [] (pubOk_nil _)
-    ⟨cbcDecryptChainedKs, cbcDecryptChainedOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `vg_rc2_cbc_decrypt_chained` as emitted (`Impl.Rc2.X86_64.Fn.cbcDecryptChained`). -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed target Impl.Rc2.X86_64.Fn.cbcDecryptChained
+      (Spec.Rc2.cbcDecryptChainedContract X86_64.abi 528) 0 :=
+  verifiedScrubbedSel (api := Spec.Rc2.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 520 .r8 64 Impl.Rc2.X86_64.Cbc.decrypt
+      stack := 528
+      verified := Proof.Rc2.X86_64.Cbc.decryptChained_framed } .sse [(8, 1)] cbcDecryptChainedOut
+    (RScrub.pubOk_nil _) (by taint_decide)
 
 end VG.Proof.Rc2.X86_64.Scrub

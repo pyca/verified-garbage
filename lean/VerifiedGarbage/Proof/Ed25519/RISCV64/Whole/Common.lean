@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.Impl.Sha512.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.X25519.RISCV64.Instr
@@ -29,18 +30,10 @@ namespace VG.Proof.Ed25519.RISCV64.Whole
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64.Whole VG.Proof.X25519.RISCV64
 open VG.Proof.Hmac.Stream.RISCV64 (HashOK)
 
-/-- SHA-512's streaming functions, as HMAC's proofs know them (`Proof.Hmac.Stream.RISCV64.Sha512.hash`). -/
-def shaHash : Impl.Hmac.Stream.RISCV64.Hash where
-  b := 7
-  N := 64
-  D := 64
-  F := 208
-  initN := Spec.Sha512.init512Api.name ++ "_core"
-  initC := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512
-  updN := Spec.Sha512.updateApi.name ++ "_core"
-  updC := Impl.Sha512.RISCV64.Stream.update
-  finN := Spec.Sha512.finalizeApi.name ++ "_core"
-  finC := Impl.Sha512.RISCV64.Stream.finalize
+/-- SHA-512's streaming functions, as emitted code calls them
+(`Impl.Sha512.RISCV64.Fn.hash512`, which HMAC's proofs know as
+`Proof.Hmac.Stream.RISCV64.Sha512.hash`). -/
+abbrev shaHash : Impl.Hmac.Stream.RISCV64.Hash := Impl.Sha512.RISCV64.Fn.hash512
 
 /-- What the proofs need of SHA-512's streaming functions: HMAC's facts about them
 (`Proof.Hmac.Stream.RISCV64.Sha512.ok`), whose states are SHA-512's and whose digest is SHA-512's.

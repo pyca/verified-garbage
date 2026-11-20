@@ -427,7 +427,7 @@ end InitV
 
 /-- The state's region, the scratch region, and the work vector's part of it. -/
 abbrev stR (st : BitVec 32) : Region := ⟨State.addr st, 64⟩
-abbrev scrR (scr : BitVec 32) : Region := ⟨State.addr scr, 512⟩
+abbrev scrR (scr : BitVec 32) : Region := ⟨State.addr scr, 200⟩
 abbrev workR (scr : BitVec 32) : Region := ⟨State.addr scr, 128⟩
 
 /-- What a block needs of its state `s`, with `state = st` (in `r0`) and
@@ -436,10 +436,10 @@ structure Ctx (st scr : BitVec 32) (s : State) : Prop where
   r0 : s.gpr .r0 = st
   r3 : s.gpr .r3 = scr
   fitS : st.toNat + 64 ≤ 2 ^ 32
-  fitV : scr.toNat + 512 ≤ 2 ^ 32
+  fitV : scr.toNat + 200 ≤ 2 ^ 32
   disj : (stR st).Disjoint (scrR scr)
   wS : Reg64 s.wr st 64
-  wV : Reg64 s.wr scr 512
+  wV : Reg64 s.wr scr 200
 
 theorem Ctx.of_eq {st scr : BitVec 32} {s s' : State} (c : Ctx st scr s) (h0 : s'.gpr .r0 = s.gpr .r0)
     (h3 : s'.gpr .r3 = s.gpr .r3) (hwr : s'.wr = s.wr) : Ctx st scr s' :=
@@ -449,12 +449,12 @@ theorem Ctx.disjW {st scr : BitVec 32} {s : State} (c : Ctx st scr s) : (stR st)
   c.disj.sub_right (Region.sub_prefix (by omega_arith))
 
 /-- A word of `scratch` above the work vector is unchanged by writes to it. -/
-theorem rd64_frame_hi {m m' : Mem} {scr : BitVec 32} (fit : scr.toNat + 512 ≤ 2 ^ 32)
-    (hf : Frame [workR scr] m m') {o : Nat} (h1 : 128 ≤ o) (h2 : o + 8 ≤ 512) :
+theorem rd64_frame_hi {m m' : Mem} {scr : BitVec 32} (fit : scr.toNat + 200 ≤ 2 ^ 32)
+    (hf : Frame [workR scr] m m') {o : Nat} (h1 : 128 ≤ o) (h2 : o + 8 ≤ 200) :
     rd64 m' scr o = rd64 m scr o := by
   obtain hd : ∀ r ∈ [workR scr], Region.Disjoint ⟨State.addr scr + BitVec.ofNat 64 128, 384⟩ r := by
     simp only [List.mem_singleton, forall_eq]; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-  obtain c : ∀ d, 128 ≤ d → d + 4 ≤ 512 →
+  obtain c : ∀ d, 128 ≤ d → d + 4 ≤ 200 →
       Region.Contains ⟨State.addr scr + BitVec.ofNat 64 128, 384⟩ (A scr d) (32 / 8) := fun d h h' => by
     rw [A_eq (by omega_arith)]; exact Offset.contains _ h (by omega_arith) (by omega_arith)
   simp only [rd64]
@@ -502,7 +502,7 @@ theorem ldH_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
       exact frame_write64 (N := 128) (o := 8 * n) h₁.frame (by simp) (by have := c.fitV; omega_arith)
         (by omega_arith) _
 
-theorem tweak_ok (k : Nat) : 128 ≤ tweak k ∧ tweak k + 8 ≤ 512 := by
+theorem tweak_ok (k : Nat) : 128 ≤ tweak k ∧ tweak k + 8 ≤ 200 := by
   unfold tweak ctrLo ctrHi flagOff zeroOff; (repeat' split) <;> omega_arith
 
 theorem iv_getD {k : Nat} (hk : k < 8) :

@@ -29,13 +29,13 @@ def initB : Prog isa :=
 
 /-- `vg_blake2b_update`, as emitted. -/
 def updateB : Prog isa :=
-  scrub 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.b))
+  scrub 0 240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.b))
 
 /-- `vg_blake2b_finalize`, as emitted. -/
 def finalizeB : Prog isa :=
-  scrub 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b))
+  scrub 0 240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b))
 
 /-- `vg_blake2s_init`, as emitted. -/
 def initS : Prog isa :=
@@ -44,12 +44,12 @@ def initS : Prog isa :=
 
 /-- `vg_blake2s_update`, as emitted. -/
 def updateS : Prog isa :=
-  scrub 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.s))
+  scrub 0 240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.s))
 
 /-- `vg_blake2s_finalize`, as emitted. -/
 def finalizeS : Prog isa :=
-  scrub 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.s))
+  scrub 0 240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.s))
 
 end VG.Impl.Blake2.PPC64LE.Fn

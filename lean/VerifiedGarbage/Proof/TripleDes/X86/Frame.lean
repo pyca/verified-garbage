@@ -1773,17 +1773,6 @@ theorem ecbFrameSat_pre (d : Spec.TripleDes.Direction) :
     X86.argSlots, X86.argVal, X86.argBytes]
     [ecbFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using ecbFrameSat
 
-theorem expandKey_framed :
-    Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey)
-      (Spec.TripleDes.expandKeyContract X86.abi 532) :=
-  X86.Verified.stackScratchWiped (sig := Spec.TripleDes.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 64) (pre := Spec.TripleDes.expandKeyPre X86.abi.ptrBits)
-    (post := Spec.TripleDes.expandKeyPost X86.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 532) Key.verified (by decide) (by lit_decide) (by lit_decide) (by decide)
-    (Proof.TripleDes.expandKeyPre_local _) (Proof.TripleDes.expandKeyPost_local _)
-    (Proof.TripleDes.expandKeyPostOut_local _) expandKeyFrameSat_pre
-
 theorem ecb_framed (d : Spec.TripleDes.Direction) :
     Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 (Impl.TripleDes.X86.Ecb.ecb d))

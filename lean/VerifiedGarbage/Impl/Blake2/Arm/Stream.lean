@@ -34,11 +34,13 @@ n = r2, t, last, scratch)`, whose `t` (64 bits), `last` and `scratch` are
 stack arguments. Each call is in a frame that pushes them (`push {r3, r11,
 r12, lr}`: `t` in `r3:r11`, `last` in `r12` and `scratch` in `lr`), which
 the pop removes, loading `r3`; so the functions use 16 bytes of stack. The
-callee gets `scratch[0, 512)`, and preserves `r4`–`r11`, so our variables
+callee gets `scratch[0, 200)`, what BLAKE2b's uses (BLAKE2s's uses 140 of
+it), and preserves `r4`–`r11`, so our variables
 live there: `r4` = `state`, `r5` = `scratch`, `r6` = `data` (advancing),
 `r7` = the bytes of `data` left, `r8` = the bytes in the buffer, `r9:r10` =
 the byte count; `r11` is a temporary. Our caller's `r4`–`r11` and our return
-address (`lr`, which every call replaces) are saved in `scratch[512, 548)`.
+address (`lr`, which every call replaces) are saved in `scratch[200, 236)`:
+the functions use 240 bytes of `scratch`.
 
 `update` calls the compression function twice, unconditionally: first on the
 buffer (with `n` = 1 if it is full and more data follows, 0 otherwise), then
@@ -75,8 +77,8 @@ end
 
 /-- The callee-saved registers we use (and `lr`), and where they are saved in `scratch`. -/
 def saved : List (Reg × Nat) :=
-  [(.r4, 512), (.r5, 516), (.r6, 520), (.r7, 524), (.r8, 528), (.r9, 532), (.r10, 536), (.r11, 540),
-    (.lr, 544)]
+  [(.r4, 200), (.r5, 204), (.r6, 208), (.r7, 212), (.r8, 216), (.r9, 220), (.r10, 224), (.r11, 228),
+    (.lr, 232)]
 
 /-- Save them, with `scratch` in `b`. -/
 def save (b : Reg) : List Instr := saved.map fun (r, d) => .str r b d
@@ -241,9 +243,10 @@ end VG.Impl.Blake2.Arm.Stream
 
 Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
 a callee may change set to constants, and for `update` and `finalize`, which
-keep their working space in a frame of 592 bytes under the 16 bytes of the
-compression function's stack arguments, first the 608 bytes of stack their
-contracts reserve zeroed. None returns a value. -/
+keep their working space in a frame of 256 bytes (the 240 bytes of scratch
+they use, after the copies of their stack arguments) under the 16 bytes of
+the compression function's stack arguments, first the 272 bytes of stack
+their contracts reserve zeroed. None returns a value. -/
 
 namespace VG.Impl.Blake2.Arm.Fn
 
@@ -254,12 +257,12 @@ def initB : Prog isa := scrub 0 (Stream.init Spec.Blake2.b)
 
 /-- `vg_blake2b_update`. -/
 def updateB : Prog isa :=
-  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 2
+  scrubF 0 272 (Impl.StackScratch.Arm.withStackScratch 256 2
     (Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress))
 
 /-- `vg_blake2b_finalize`. -/
 def finalizeB : Prog isa :=
-  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 1
+  scrubF 0 272 (Impl.StackScratch.Arm.withStackScratch 256 1
     (Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress))
 
 /-- `vg_blake2s_init`. -/
@@ -267,12 +270,12 @@ def initS : Prog isa := scrub 0 (Stream.init Spec.Blake2.s)
 
 /-- `vg_blake2s_update`. -/
 def updateS : Prog isa :=
-  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 2
+  scrubF 0 272 (Impl.StackScratch.Arm.withStackScratch 256 2
     (Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
 
 /-- `vg_blake2s_finalize`. -/
 def finalizeS : Prog isa :=
-  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 1
+  scrubF 0 272 (Impl.StackScratch.Arm.withStackScratch 256 1
     (Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
 
 end VG.Impl.Blake2.Arm.Fn

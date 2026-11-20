@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.X86_64.Fn
 public import VerifiedGarbage.Proof.Camellia.X86_64.CtrVerified
 public import VerifiedGarbage.Proof.Camellia.X86_64.CtrFinal
 public import VerifiedGarbage.Proof.Camellia.X86_64.Scrub
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 namespace VG.Artifacts.CamelliaCtr.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Camellia.ctrApi.artifact X86_64.target Proof.Camellia.X86_64.Scrub.ctrReg,
-  Spec.Camellia.ctrFinalApi.artifact X86_64.target Proof.Camellia.X86_64.Scrub.ctrFinalReg]
+  Spec.Camellia.ctrApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.ctr, verified := .scrubbed Proof.Camellia.X86_64.Scrub.ctr_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.ctr_spSafe },
+  Spec.Camellia.ctrFinalApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.ctrFinal, verified := .scrubbed Proof.Camellia.X86_64.Scrub.ctrFinal_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.ctrFinal_spSafe }]
 
 end VG.Artifacts.CamelliaCtr.X86_64

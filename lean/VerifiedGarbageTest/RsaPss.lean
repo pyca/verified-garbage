@@ -190,7 +190,7 @@ def checkGen (v : Vector) (key : CrtKey) : Except String Unit := do
   let H' := withTable H (t ++ Test.tableOf H.hash (seeds H ((withTable H t).hash m') (emLen - H.len - 1)))
   let some em := encodeK H' H' v.n mHash salt | throw "encoding failed"
   unless some em == Rsa.publicOp v.n v.e v.sig do throw "encodeK is not S^e mod n"
-  unless Rsa.i2osp (Rsa.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
+  unless Rsa.i2osp (Nat.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
     throw "S is not EM^d mod n"
   unless verify H' H' v.n v.e mHash v.sig (some salt.length) do throw "verify"
   unless sign H' H' v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==

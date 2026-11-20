@@ -17,9 +17,9 @@ registration is defined.
 theorems about the code with its cleanup, `scrub rb c` and `scrubF rb W c`,
 which `Impl/` defines as the function: the proof a registration binds
 (`verified := .scrubbed …`), the form every registration takes once its
-family is converted. `scrubOf` and `scrubFOf` build the registration of the
-same in `Proof/`, for the families not yet converted: never use them in new
-code.
+family is converted, as every x86 family is. `scrubOf` and `scrubFOf`
+remain only because those theorems are proved from them: never use them in
+new code.
 
 Which form to use:
 

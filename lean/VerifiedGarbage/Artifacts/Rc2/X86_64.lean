@@ -16,8 +16,14 @@ import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 namespace VG.Artifacts.Rc2.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Rc2.cbcInitApi.artifact X86_64.target Proof.Rc2.X86_64.Scrub.cbcInitReg,
-  Spec.Rc2.cbcEncryptChainedApi.artifact X86_64.target Proof.Rc2.X86_64.Scrub.cbcEncryptChainedReg,
-  Spec.Rc2.cbcDecryptChainedApi.artifact X86_64.target Proof.Rc2.X86_64.Scrub.cbcDecryptChainedReg]
+  Spec.Rc2.cbcInitApi.artifact X86_64.target {
+    code := Impl.Rc2.X86_64.Fn.cbcInit
+    verified := .scrubbed Proof.Rc2.X86_64.Scrub.cbcInit_scrubbed },
+  Spec.Rc2.cbcEncryptChainedApi.artifact X86_64.target {
+    code := Impl.Rc2.X86_64.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Rc2.X86_64.Scrub.cbcEncryptChained_scrubbed },
+  Spec.Rc2.cbcDecryptChainedApi.artifact X86_64.target {
+    code := Impl.Rc2.X86_64.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Rc2.X86_64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Rc2.X86_64

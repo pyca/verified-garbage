@@ -19,13 +19,29 @@ inductive OcbImpl where
 
 /-- `vg_aes_ocb_seal` over `o`. -/
 def OcbImpl.sealReg : OcbImpl → Registration Spec.Ocb.sealApi X86_64.target
-  | .onePass => AesNi.sealReg
-  | .blocks v => Scrub.sealReg v
+  | .onePass => {
+      suffix := "_aesni"
+      code := Impl.AesOcb.X86_64.Fn.sealOnePass .sse
+      verified := .scrubbed AesNi.seal_scrubbed
+      spSafe := AesNi.seal_spSafeFn }
+  | .blocks v => {
+      suffix := v.suffix
+      code := Impl.AesOcb.X86_64.Fn.«seal» v.level (callees v)
+      verified := .scrubbed (Scrub.seal_scrubbed v)
+      spSafe := Scrub.seal_spSafeFn v }
 
 /-- `vg_aes_ocb_open` over `o`. -/
 def OcbImpl.openReg : OcbImpl → Registration Spec.Ocb.openApi X86_64.target
-  | .onePass => AesNi.openReg
-  | .blocks v => Scrub.openReg v
+  | .onePass => {
+      suffix := "_aesni"
+      code := Impl.AesOcb.X86_64.Fn.openOnePass .sse
+      verified := .scrubbed AesNi.open_scrubbed
+      spSafe := AesNi.open_spSafeFn }
+  | .blocks v => {
+      suffix := v.suffix
+      code := Impl.AesOcb.X86_64.Fn.«open» v.level (callees v)
+      verified := .scrubbed (Scrub.open_scrubbed v)
+      spSafe := Scrub.open_spSafeFn v }
 
 end VG.Proof.AesOcb.X86_64
 

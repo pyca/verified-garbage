@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
@@ -163,5 +166,29 @@ theorem p384T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve)
   cases adx
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p384_stub (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p384Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p384.tries := by
+  cases adx <;> (dsimp only [SignStub, cfgS, cfgT, p384Of, cond, p384, p384x]; exact ⟨by lit_decide, by lit_decide⟩)
+
+/-- `vg_ecdsa_p384_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p384T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P384_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p384Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.X86_64.p384.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p384SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p384Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
+      verified := p384T_verified adx hL hT hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p384.combConsts _ _) rfl rfl hu (p384_stub adx hL hT hI)
+
+theorem p384T_spSafe (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p384Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

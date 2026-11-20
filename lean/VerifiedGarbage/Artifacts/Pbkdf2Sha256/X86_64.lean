@@ -36,7 +36,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Pbkdf2Sha256.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.sha256Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
-    v.I.pbkdf2Api.artifact X86_64.target v.pbkdf2Reg]
+  VG.Proof.Variants.MdHash.X86_64.sha256Pbkdf2s.map fun (p : Proof.Pbkdf2.Md.X86_64.Pbkdf2Impl) =>
+    p.v.I.pbkdf2Api.artifact X86_64.target p.reg
 
 end VG.Artifacts.Pbkdf2Sha256.X86_64

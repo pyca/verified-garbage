@@ -27,7 +27,7 @@ byte count, `count`, from which the number of buffered bytes follows.
 The streaming state, the data, the key and `out` are argument buffers, whose
 alignment the contracts do not state, so they are accessed a byte at a time
 (the words of the initial hash value a byte at a time, `stLE`). The scratch
-space is rounded up to a multiple of 8 (it has room to spare): its first 512
+space is rounded up to a multiple of 8 (it has room to spare): its first 280
 bytes are the compression function's (`compress`, `Impl/Blake2/RISCV64.lean`,
 which rounds its own scratch pointer up again, to the same address), and the
 next 48 hold the return address, which each call replaces, and our caller's
@@ -65,14 +65,16 @@ def B : Nat := 16 * ws w
 
 end
 
-/-- The bytes of `update`'s and `finalize`'s frames: the scratch space of
-the `_scratch` functions (`[u64; 72]`). -/
-def frameBytes : Nat := 576
+/-- The bytes of `update`'s and `finalize`'s frames: the scratch space they
+use, the compression function's 280 bytes and our 48 from a pointer rounded
+up by at most 7, as a multiple of 16. (The `_scratch` functions, which
+Argon2 calls, are given `[u64; 72]`.) -/
+def frameBytes : Nat := 336
 
 /-- The registers we save, and where in the (rounded) scratch space; `s8`,
 the base of the restores, last. -/
 def saved : List (Reg × Nat) :=
-  [(.ra, 512), (.s7, 520), (.s9, 528), (.s10, 536), (.s11, 544), (.s8, 552)]
+  [(.ra, 280), (.s7, 288), (.s9, 296), (.s10, 304), (.s11, 312), (.s8, 320)]
 
 /-- Round the scratch pointer in `sc` up into `t0`, and save the registers
 there. -/

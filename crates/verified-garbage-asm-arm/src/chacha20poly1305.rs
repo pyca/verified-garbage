@@ -389,8 +389,6 @@ add sp, sp, #656
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
-mov r3, #20
-26:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -398,16 +396,7 @@ str r2, [r12, #12]
 str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 26b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #660]
 add sp, sp, #664
 mov r0, #0
 mov r1, #0
@@ -848,8 +837,6 @@ add sp, sp, #656
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
-mov r3, #20
-211:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -857,16 +844,7 @@ str r2, [r12, #12]
 str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 211b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #660]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -1313,8 +1291,6 @@ add sp, sp, #664
 sub sp, sp, #672
 add r12, sp, #0
 mov r2, #0
-mov r3, #21
-211:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -1323,9 +1299,8 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 211b
+str r2, [r12, #32]
+str r2, [r12, #668]
 add sp, sp, #672
 mov r1, #0
 mov r2, #0
@@ -1434,25 +1409,14 @@ add sp, sp, #32
 sub sp, sp, #696
 add r12, sp, #0
 mov r2, #0
-mov r3, #21
-29:
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 29b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #664]
+str r2, [r12, #668]
+str r2, [r12, #672]
+str r2, [r12, #676]
+str r2, [r12, #680]
+str r2, [r12, #684]
+str r2, [r12, #688]
+str r2, [r12, #692]
 add sp, sp, #696
 mov r0, #0
 mov r1, #0
@@ -1845,8 +1809,6 @@ add sp, sp, #656
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
-mov r3, #20
-26:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -1854,16 +1816,7 @@ str r2, [r12, #12]
 str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 26b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #660]
 add sp, sp, #664
 mov r0, #0
 mov r1, #0
@@ -2298,8 +2251,6 @@ add sp, sp, #656
 sub sp, sp, #664
 add r12, sp, #0
 mov r2, #0
-mov r3, #20
-211:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -2307,16 +2258,7 @@ str r2, [r12, #12]
 str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 211b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #660]
 add sp, sp, #664
 mov r1, #0
 mov r2, #0
@@ -2757,8 +2699,6 @@ add sp, sp, #664
 sub sp, sp, #672
 add r12, sp, #0
 mov r2, #0
-mov r3, #21
-211:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -2767,9 +2707,8 @@ str r2, [r12, #16]
 str r2, [r12, #20]
 str r2, [r12, #24]
 str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 211b
+str r2, [r12, #32]
+str r2, [r12, #668]
 add sp, sp, #672
 mov r1, #0
 mov r2, #0
@@ -2872,25 +2811,14 @@ add sp, sp, #32
 sub sp, sp, #696
 add r12, sp, #0
 mov r2, #0
-mov r3, #21
-29:
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 29b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
+str r2, [r12, #664]
+str r2, [r12, #668]
+str r2, [r12, #672]
+str r2, [r12, #676]
+str r2, [r12, #680]
+str r2, [r12, #684]
+str r2, [r12, #688]
+str r2, [r12, #692]
 add sp, sp, #696
 mov r0, #0
 mov r1, #0

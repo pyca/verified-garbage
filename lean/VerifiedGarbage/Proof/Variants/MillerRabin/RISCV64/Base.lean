@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Backend
 public import VerifiedGarbage.Proof.MillerRabin.RISCV64.Verified
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # The verified baseline prepared round on RISC-V -/
 
@@ -13,6 +14,7 @@ def variant : RoundImpl where
   code := Impl.MillerRabin.RISCV64.round
   verified := round_verified
   stack := by decide +kernel
+  icalls := by lit_decide
   suffix := ""
   features := []
 

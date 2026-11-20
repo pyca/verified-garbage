@@ -32,10 +32,11 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 time, by the taint analysis, which starts with `esp` public and knows which
 argument words are the base addresses of the schedule and the scratch
 buffer: the pointers, the key's length, `kp` and the count of pairs the code
-keeps in a slot of the scratch buffer are public. `expandKey_framed` runs it
-with its working space on the stack, zeroed on return: 2708 bytes, the 2688
-of the scratch buffer, the copies of the three argument slots, the buffer's
-address and the return address of the call of the code.
+keeps in a slot of the scratch buffer are public. `vg_camellia_expand_key`
+runs it with its working space on the stack, zeroed on return: 2708 bytes,
+the 2688 of the scratch buffer, the copies of the three argument slots, the
+buffer's address and the return address of the call of the code
+(`expandKeyFrameSat_pre`, and `Proof/Camellia/X86/Scrub.lean`).
 -/
 
 @[expose] public section
@@ -151,17 +152,5 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Camellia.expandKeyContract X86.abi 
   implies_sat [Spec.Camellia.expandKeyContract, Spec.Camellia.expandKeySig, Spec.Camellia.expandKeyPre,
     Spec.Camellia.expandKeyPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [expandKeyFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using expandKeyFrameSat
-
-/-- The key schedule, with its working space on the stack. -/
-theorem expandKey_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 expandKey)
-      (Spec.Camellia.expandKeyContract X86.abi 2708) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 336) (pre := Spec.Camellia.expandKeyPre X86.abi.ptrBits)
-    (post := Spec.Camellia.expandKeyPost X86.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 2708) (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
-    (by decide) (by lit_decide) (by lit_decide) (by decide)
-    (Proof.Camellia.expandKeyPre_local _) (Proof.Camellia.expandKeyPost_local _)
-    (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Camellia.X86

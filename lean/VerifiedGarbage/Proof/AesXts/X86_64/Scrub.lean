@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.AesXts.X86_64Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Spec.Xts.Contract
 public import VerifiedGarbage.Spec.Xts.OutOfPlace
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -1322,40 +1324,74 @@ theorem decryptUnitToOut (stack : Nat) :
 
 open VG.X86_64.RScrub VG.Proof.AesXts.X86_64
 
-/-- `vg_aes_xts_encrypt_unit` over `v`. -/
-def encryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesXts.X86_64Unit.encrypt v.xts
-    stack := 16
-    verified := Unit.encrypt_verified v
-    spSafe := Unit.encrypt_spSafe v } (encryptUnitOut _) [] (pubOk_nil _) v.encUnitRes
+/-- `Spec.Xts.aesEncryptUnitApi`'s function as emitted over `v` (`Impl.AesXts.X86_64Unit.Fn.encrypt`) meets its contract
+in constant time and returns without secret residue: its code is its code
+over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem encryptUnit_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed target (Impl.AesXts.X86_64Unit.Fn.encrypt v.level v.xts) (Spec.Xts.aesEncryptUnitApi.contract X86_64.abi 16) 0 := by
+  have := v.encSide
+  have := v.decSide
+  exact verifiedScrubbedAllFill (api := Spec.Xts.aesEncryptUnitApi) (ks := 0) (n := fun _ => 8)
+    (a := Impl.AesXts.X86_64Unit.encrypt ⟨⟨"", .block []⟩, ⟨"", .block []⟩⟩)
+    { suffix := v.suffix, code := Impl.AesXts.X86_64Unit.encrypt v.xts, stack := 16, verified := Unit.encrypt_verified v, spSafe := Unit.encrypt_spSafe v }
+    v.level (encryptUnitOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_xts_decrypt_unit` over `v`. -/
-def decryptUnitReg (v : XtsImpl) : Registration Spec.Xts.aesDecryptUnitApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesXts.X86_64Unit.decrypt v.xts
-    stack := 16
-    verified := Unit.decrypt_verified v
-    spSafe := Unit.decrypt_spSafe v } (decryptUnitOut _) [] (pubOk_nil _) v.decUnitRes
+/-- `Spec.Xts.aesDecryptUnitApi`'s function as emitted over `v` (`Impl.AesXts.X86_64Unit.Fn.decrypt`) meets its contract
+in constant time and returns without secret residue: its code is its code
+over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem decryptUnit_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed target (Impl.AesXts.X86_64Unit.Fn.decrypt v.level v.xts) (Spec.Xts.aesDecryptUnitApi.contract X86_64.abi 16) 0 := by
+  have := v.encSide
+  have := v.decSide
+  exact verifiedScrubbedAllFill (api := Spec.Xts.aesDecryptUnitApi) (ks := 0) (n := fun _ => 8)
+    (a := Impl.AesXts.X86_64Unit.decrypt ⟨⟨"", .block []⟩, ⟨"", .block []⟩⟩)
+    { suffix := v.suffix, code := Impl.AesXts.X86_64Unit.decrypt v.xts, stack := 16, verified := Unit.decrypt_verified v, spSafe := Unit.decrypt_spSafe v }
+    v.level (decryptUnitOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_xts_encrypt_unit_to` over `v`. -/
-def encryptUnitToReg (v : XtsImpl) : Registration Spec.Xts.aesEncryptUnitToApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesXts.X86_64UnitTo.encrypt v.xts (UnitTo.UnitImpl.of v).xt
-    stack := 24
-    verified := UnitTo.encrypt_verified (.of v)
-    spSafe := UnitTo.encrypt_spSafe (.of v) } (encryptUnitToOut _) [] (pubOk_nil _) v.encUnitToRes
+/-- `Spec.Xts.aesEncryptUnitToApi`'s function as emitted over `v` (`Impl.AesXts.X86_64UnitTo.Fn.encrypt`), as the
+data-unit functions'. -/
+theorem encryptUnitTo_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed target (Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩)
+      (Spec.Xts.aesEncryptUnitToApi.contract X86_64.abi 24) 0 := by
+  have := v.encSide
+  have := v.decSide
+  have := v.toEncSide
+  have := v.toDecSide
+  exact verifiedScrubbedAllFill (api := Spec.Xts.aesEncryptUnitToApi) (ks := 0) (n := fun s => if s = "to" then 16 else 8)
+    (a := Impl.AesXts.X86_64UnitTo.encrypt ⟨⟨"", .block []⟩, ⟨"", .block []⟩⟩ ⟨⟨"to", .block []⟩, ⟨"to", .block []⟩⟩)
+    { suffix := v.suffix, code := Impl.AesXts.X86_64UnitTo.encrypt v.xts ⟨v.to.enc, v.to.dec⟩, stack := 24, verified := UnitTo.encrypt_verified (.of v),
+      spSafe := UnitTo.encrypt_spSafe (.of v) }
+    v.level (encryptUnitToOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_xts_decrypt_unit_to` over `v`. -/
-def decryptUnitToReg (v : XtsImpl) : Registration Spec.Xts.aesDecryptUnitToApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesXts.X86_64UnitTo.decrypt v.xts (UnitTo.UnitImpl.of v).xt
-    stack := 24
-    verified := UnitTo.decrypt_verified (.of v)
-    spSafe := UnitTo.decrypt_spSafe (.of v) } (decryptUnitToOut _) [] (pubOk_nil _) v.decUnitToRes
+/-- `Spec.Xts.aesDecryptUnitToApi`'s function as emitted over `v` (`Impl.AesXts.X86_64UnitTo.Fn.decrypt`), as the
+data-unit functions'. -/
+theorem decryptUnitTo_scrubbed (v : XtsImpl) :
+    VerifiedScrubbed target (Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩)
+      (Spec.Xts.aesDecryptUnitToApi.contract X86_64.abi 24) 0 := by
+  have := v.encSide
+  have := v.decSide
+  have := v.toEncSide
+  have := v.toDecSide
+  exact verifiedScrubbedAllFill (api := Spec.Xts.aesDecryptUnitToApi) (ks := 0) (n := fun s => if s = "to" then 16 else 8)
+    (a := Impl.AesXts.X86_64UnitTo.decrypt ⟨⟨"", .block []⟩, ⟨"", .block []⟩⟩ ⟨⟨"to", .block []⟩, ⟨"to", .block []⟩⟩)
+    { suffix := v.suffix, code := Impl.AesXts.X86_64UnitTo.decrypt v.xts ⟨v.to.enc, v.to.dec⟩, stack := 24, verified := UnitTo.decrypt_verified (.of v),
+      spSafe := UnitTo.decrypt_spSafe (.of v) }
+    v.level (decryptUnitToOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem encryptUnit_spSafeFn (v : XtsImpl) :
+    (Impl.AesXts.X86_64Unit.Fn.encrypt v.level v.xts).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Unit.encrypt_spSafe v)
+
+theorem decryptUnit_spSafeFn (v : XtsImpl) :
+    (Impl.AesXts.X86_64Unit.Fn.decrypt v.level v.xts).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Unit.decrypt_spSafe v)
+
+theorem encryptUnitTo_spSafeFn (v : XtsImpl) :
+    (Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (UnitTo.encrypt_spSafe (.of v))
+
+theorem decryptUnitTo_spSafeFn (v : XtsImpl) :
+    (Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (UnitTo.decrypt_spSafe (.of v))
 
 end VG.Proof.AesXts.X86_64.Scrub

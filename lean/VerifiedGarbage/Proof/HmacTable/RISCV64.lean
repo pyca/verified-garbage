@@ -5,7 +5,9 @@ public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Init
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubCall
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Tables of the interface `Hmac` on RISC-V
@@ -50,6 +52,12 @@ structure HVar where
   hfCt : ConstantTime isa (finG t.l.ok.SH (t.H.fbytes + t.H.F)).pre
     (finG t.l.ok.SH (t.H.fbytes + t.H.F)).pub t.H.finalize
   hmac : Spec.HmacTable.hmacOf t.l.G = some t.l.ok.SH.H
+  /-- What the cleanup of a function that calls them through a table needs of
+  HMAC's `init`, the streaming `update` and HMAC's `finalize`: each uses at
+  most 512 bytes of stack and calls nothing indirectly
+  (`RISCV64.Scrub.calleeSide`), proved where the hash function is defined. -/
+  scrub : (RISCV64.Scrub.calleeSide t.H.init 512 && RISCV64.Scrub.calleeSide t.H.updC 512 &&
+    RISCV64.Scrub.calleeSide t.H.finalize 512) = true
 
 namespace HVar
 
@@ -63,35 +71,35 @@ end HVar
 open VG.Proof.Hmac.Stream.RISCV64 in
 def md5W : HVar :=
   ⟨Proof.HashTable.RISCV64.md5V, (Spec.Hmac.md5I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.md5I.finalizeApi.name ++ "_core"),
-    Md5.init_ct, Md5.fin_ct, rfl⟩
+    Md5.init_ct, Md5.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha1W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha1V, (Spec.Hmac.sha1I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.sha1I.finalizeApi.name ++ "_core"),
-    Sha1.init_ct, Sha1.fin_ct, rfl⟩
+    Sha1.init_ct, Sha1.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha224W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha224V, (Spec.Hmac.sha224I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.sha224I.finalizeApi.name ++ "_core"),
-    Sha224.init_ct, Sha224.fin_ct, rfl⟩
+    Sha224.init_ct, Sha224.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha256W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha256V, (Spec.Hmac.sha256I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.sha256I.finalizeApi.name ++ "_core"),
-    Sha256.init_ct, Sha256.fin_ct, rfl⟩
+    Sha256.init_ct, Sha256.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha384W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha384V, (Spec.Hmac.sha384I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.sha384I.finalizeApi.name ++ "_core"),
-    Sha384.init_ct, Sha384.fin_ct, rfl⟩
+    Sha384.init_ct, Sha384.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha512V, (Spec.Hmac.sha512I.initAnyKeyApi.name ++ "_core"), (Spec.Hmac.sha512I.finalizeApi.name ++ "_core"),
-    Sha512.init_ct, Sha512.fin_ct, rfl⟩
+    Sha512.init_ct, Sha512.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512_224W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha512_224V, (Spec.Hmac.sha512_224I.initAnyKeyApi.name ++ "_core"),
-    (Spec.Hmac.sha512_224I.finalizeApi.name ++ "_core"), Sha512_224.init_ct, Sha512_224.fin_ct, rfl⟩
+    (Spec.Hmac.sha512_224I.finalizeApi.name ++ "_core"), Sha512_224.init_ct, Sha512_224.fin_ct, rfl, by lit_decide⟩
 open VG.Proof.Hmac.Stream.RISCV64 in
 def sha512_256W : HVar :=
   ⟨Proof.HashTable.RISCV64.sha512_256V, (Spec.Hmac.sha512_256I.initAnyKeyApi.name ++ "_core"),
-    (Spec.Hmac.sha512_256I.finalizeApi.name ++ "_core"), Sha512_256.init_ct, Sha512_256.fin_ct, rfl⟩
+    (Spec.Hmac.sha512_256I.finalizeApi.name ++ "_core"), Sha512_256.init_ct, Sha512_256.fin_ct, rfl, by lit_decide⟩
 
 /-- The table of `w`'s HMAC, `VG_HMAC_<HASH>`. -/
 def tableOf (w : HVar) : FnTable where

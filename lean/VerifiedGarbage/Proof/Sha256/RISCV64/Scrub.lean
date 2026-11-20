@@ -219,7 +219,7 @@ time and returns without secret residue. -/
 theorem digest_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.digest (Spec.Sha256.digestContract RISCV64.abi 32 Spec.Sha256.hash 288) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha256.digest256Api) (W := 288)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha256Family.hash256,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha256.RISCV64.Fn.hash256,
       verified := Proof.Hmac.Stream.RISCV64.Sha256.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -229,7 +229,7 @@ time and returns without secret residue. -/
 theorem digest224_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.digest224 (Spec.Sha256.digestContract RISCV64.abi 28 Spec.Sha256.sha224 288) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha256.digest224Api) (W := 288)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha256Family.hash224,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha256.RISCV64.Fn.hash224,
       verified := Proof.Hmac.Stream.RISCV64.Sha224.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

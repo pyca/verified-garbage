@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -14,6 +15,7 @@ meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 meta import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Update
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -30,7 +32,8 @@ section
 The ARMv7 contracts of the streaming functions (`initArm`, `updateArm`,
 `finalizeArm`) imply the shared ones (`Spec/Blake2/Contract.lean`) on
 `Arm.abi`, for BLAKE2b and BLAKE2s, with states satisfying their
-preconditions.
+preconditions: with the 240 bytes of `scratch` the code uses, those of
+`Proof/Blake2/Contract.lean` with 30 words (`…_impliesW`).
 -/
 
 namespace VG.Proof.Blake2.Arm.Stream
@@ -54,8 +57,8 @@ def initSat (w : Nat) : State where
   wr := [⟨0x1000, bufOff w + blockBytes w⟩]
 
 /-- `update`, with no data, for `w`-bit words: `state` at `0x1000`, `data` at
-`0x2000`, `scratch` at `0x3000`, the stack arguments at `0x5000`. -/
-def updateSat (w : Nat) : State where
+`0x2000`, `sc` bytes of `scratch` at `0x3000`, the stack arguments at `0x5000`. -/
+def updateSat (w : Nat) (sc : Nat := 576) : State where
   gpr r := match r with
     | .r0 => 0x1000 | _ => 0
   sp := 0x5000
@@ -65,11 +68,11 @@ def updateSat (w : Nat) : State where
   v := false
   mem a := bif Nat.beq a.toNat 0x5001 then 0x20 else bif Nat.beq a.toNat 0x5009 then 0x30 else 0
   rd := [⟨0x2000, 0⟩, ⟨0x5000, 12⟩]
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, sc⟩]
 
 /-- `finalize`, for `w`-bit words: `state` at `0x1000`, `out` at `0x2000`,
-`scratch` at `0x3000`, the stack arguments at `0x5000`. -/
-def finalizeSat (w : Nat) : State where
+`sc` bytes of `scratch` at `0x3000`, the stack arguments at `0x5000`. -/
+def finalizeSat (w : Nat) (sc : Nat := 576) : State where
   gpr r := match r with
     | .r0 => 0x1000 | _ => 0
   sp := 0x5000
@@ -79,7 +82,7 @@ def finalizeSat (w : Nat) : State where
   v := false
   mem a := bif Nat.beq a.toNat 0x5001 then 0x20 else bif Nat.beq a.toNat 0x5005 then 0x30 else 0
   rd := [⟨0x5000, 8⟩]
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, sc⟩]
 
 /-! ## BLAKE2b -/
 
@@ -88,17 +91,33 @@ theorem initB_implies : (initArm b).Implies (Spec.Blake2.initBContract Arm.abi) 
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [initSat] using initSat 64
 
+/-- With 576 bytes of `scratch`, for Argon2's calls (`Proof/Argon2/Arm/HPrime/Finish.lean`). -/
 theorem updateB_implies : (updateArm b).Implies (Proof.Blake2.updateBScratchContract Arm.abi 16) := by
   sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig, Proof.Blake2.updateArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 64
 
+theorem updateB_impliesW : (updateArm b 240).Implies (Proof.Blake2.updateBScratchContractW 30 Arm.abi 16) := by
+  sig_implies [Proof.Blake2.updateBScratchContractW, Proof.Blake2.updateBScratchSigW, Proof.Blake2.updateArm,
+    Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    Arm.Loc.val, Arm.State.addr]
+    [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 64 240
+
+/-- With 576 bytes of `scratch`, for Argon2's calls (`Proof/Argon2/Arm/HPrime/Finish.lean`). -/
 theorem finalizeB_implies : (finalizeArm b).Implies (Proof.Blake2.finalizeBScratchContract Arm.abi 16) := by
-  sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig, Proof.Blake2.finalizeArm,
+  sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
+      Proof.Blake2.finalizeArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 64
+
+theorem finalizeB_impliesW : (finalizeArm b 240).Implies (Proof.Blake2.finalizeBScratchContractW 30 Arm.abi 16) := by
+  sig_implies [Proof.Blake2.finalizeBScratchContractW, Proof.Blake2.finalizeBScratchSigW,
+      Proof.Blake2.finalizeArm,
+    Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    Arm.Loc.val, Arm.State.addr]
+    [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 64 240
 
 /-! ## BLAKE2s -/
 
@@ -107,17 +126,18 @@ theorem initS_implies : (initArm s).Implies (Spec.Blake2.initSContract Arm.abi) 
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [initSat] using initSat 32
 
-theorem updateS_implies : (updateArm s).Implies (Proof.Blake2.updateSScratchContract Arm.abi 16) := by
-  sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig, Proof.Blake2.updateArm,
+theorem updateS_impliesW : (updateArm s 240).Implies (Proof.Blake2.updateSScratchContractW 30 Arm.abi 16) := by
+  sig_implies [Proof.Blake2.updateSScratchContractW, Proof.Blake2.updateSScratchSigW, Proof.Blake2.updateArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
-    [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 32
+    [updateSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using updateSat 32 240
 
-theorem finalizeS_implies : (finalizeArm s).Implies (Proof.Blake2.finalizeSScratchContract Arm.abi 16) := by
-  sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig, Proof.Blake2.finalizeArm,
+theorem finalizeS_impliesW : (finalizeArm s 240).Implies (Proof.Blake2.finalizeSScratchContractW 30 Arm.abi 16) := by
+  sig_implies [Proof.Blake2.finalizeSScratchContractW, Proof.Blake2.finalizeSScratchSigW,
+      Proof.Blake2.finalizeArm,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, Arm.Stream.below, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
-    [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 32
+    [finalizeSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finalizeSat 32 240
 
 end VG.Proof.Blake2.Arm.Stream
 
@@ -205,7 +225,8 @@ theorem push_eq {rs : List Reg} {s a : State} (hrs : regList rs = true) (h : isa
 runs whose arguments are the same, and whose stack pointers are. -/
 theorem call_rel {w : Nat} {P : Params w} {name : String} {code : Prog isa} (hf : CalleeOk P code)
     {Rel : State → State → Prop} {sp st scr blk : BitVec 32} {n : Nat} {t : BitVec 64} {last : BitVec 32}
-    (h : ∀ s s', Rel s s' → CallArgs (w := w) s st scr blk n t last ∧ CallArgs (w := w) s' st scr blk n t last ∧
+    (h : ∀ s s',
+        Rel s s' → CallArgs (w := w) s st scr blk n t last ∧ CallArgs (w := w) s' st scr blk n t last ∧
       s.sp = sp ∧ s'.sp = sp) :
     RelCT isa Rel (call name code) fun _ _ => True := by
   refine RelCT.frame (fun s s' hp => by obtain ⟨-, -, e, e'⟩ := h s s' hp; rw [e, e']) ?_
@@ -253,7 +274,7 @@ theorem checks {w : Nat} {P : Params w} (hP : Ok P) :
   rcases hP.w with rfl | rfl <;> exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 section CT
-variable {w : Nat} {P : Params w} {s₀ s₀' : State} (hpub : (updateArm P).pub s₀ s₀')
+variable {w : Nat} {P : Params w} {s₀ s₀' : State} (hpub : (updateArm P 240).pub s₀ s₀')
 include hpub
 
 theorem st_eq : st s₀' = st s₀ := hpub.2.1.symm
@@ -348,7 +369,7 @@ end CT
 
 theorem update_ct {w : Nat} {P : Params w} (hP : Ok P) {name : String} {code : Prog isa}
     (hf : CalleeOk P code) :
-    ConstantTime isa (updateArm P).pre (updateArm P).pub (update (w := w) name code) :=
+    ConstantTime isa (updateArm P 240).pre (updateArm P 240).pub (update (w := w) name code) :=
   fun _ _ _ _ _ _ h₁ h₂ hpub e₁ e₂ =>
     (update_rel hpub hP hf (pre_of h₁) (pre_of h₂) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
@@ -365,12 +386,13 @@ open VG.Proof.Blake2 (finalizeArm countArm)
 /-- The pieces of `finalize` around its call pass the taint analysis. -/
 theorem checks {w : Nat} {P : Params w} (hP : Ok P) :
     (∃ hc, (VG.Taint.check taint (argTaint [.r0, .r2, .r3] 8) (finalizePro (w := w)) hc).isSome = true) ∧
-    (∃ hc, (VG.Taint.check taint (VG.Arm.Taint.ofRegs [.r4, .r5, .r6]) (.block (finalizeEnd (w := w))) hc).isSome =
+    (∃ hc, (VG.Taint.check taint (VG.Arm.Taint.ofRegs [.r4, .r5,
+        .r6]) (.block (finalizeEnd (w := w))) hc).isSome =
       true) := by
   rcases hP.w with rfl | rfl <;> exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 section CT
-variable {w : Nat} {P : Params w} {s₀ s₀' : State} (hpub : (finalizeArm P).pub s₀ s₀')
+variable {w : Nat} {P : Params w} {s₀ s₀' : State} (hpub : (finalizeArm P 240).pub s₀ s₀')
 include hpub
 
 theorem finalize_rel (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
@@ -430,7 +452,7 @@ end CT
 
 theorem finalize_ct {w : Nat} {P : Params w} (hP : Ok P) {name : String} {code : Prog isa}
     (hf : CalleeOk P code) :
-    ConstantTime isa (finalizeArm P).pre (finalizeArm P).pub (finalize (w := w) name code) :=
+    ConstantTime isa (finalizeArm P 240).pre (finalizeArm P 240).pub (finalize (w := w) name code) :=
   fun _ _ _ _ _ _ h₁ h₂ hpub e₁ e₂ =>
     (finalize_rel hpub hP hf (pre_of h₁) (pre_of h₂) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
@@ -447,7 +469,7 @@ contracts (`initArm`, `updateArm`, `finalizeArm`) imply, for any parameter set
 verified against `compressArm P` (`CalleeOk`). `init`'s code holds the initial
 hash value as immediates, so its taint check is made for each parameter set:
 `init_check_s` and `init_check_b`. The implications of the shared contracts
-are in `Implies.lean` (`updateS_implies`, …).
+are above (`updateS_impliesW`, …).
 -/
 
 namespace VG.Proof.Blake2.Arm.Stream
@@ -461,15 +483,75 @@ theorem okB : Ok Spec.Blake2.b := ⟨by decide, .inl rfl⟩
 
 variable {w : Nat} {P : Params w}
 
-theorem update_verified (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
-    {k : Contract isa} (hk : (updateArm P).Implies k) :
+/-- `update` uses 240 bytes of `scratch`: the compression function's 200
+and the caller's registers. -/
+theorem update_verifiedN (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
+    {k : Contract isa} (hk : (updateArm P 240).Implies k) :
     Verified Arm.target (update (w := w) name code) k :=
   Verified.of_correct (fun _ hs => Update.correct hP hf (Update.pre_of hs)) (Update.update_ct hP hf) hk
 
-theorem finalize_verified (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
-    {k : Contract isa} (hk : (finalizeArm P).Implies k) :
+theorem finalize_verifiedN (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
+    {k : Contract isa} (hk : (finalizeArm P 240).Implies k) :
     Verified Arm.target (finalize (w := w) name code) k :=
   Verified.of_correct (fun _ hs => Finalize.correct hP hf (Finalize.pre_of hs)) (Finalize.finalize_ct hP hf) hk
+
+/-! ## With more scratch
+
+`updateArm P` and `finalizeArm P` give `scratch` 576 bytes, the room the
+shared `…ScratchContract`s give, for callers that pass theirs (Argon2's):
+the code runs as it does with the first 240 of them (`Verified.widen`). -/
+
+theorem sub240 (a : Addr) : Region.Sub ⟨a, 240⟩ ⟨a, 576⟩ := Region.sub_prefix (by decide)
+theorem le240 {x : Nat} (h : x + 576 ≤ 2 ^ 32) : x + 240 ≤ 2 ^ 32 := by omega
+theorem pfx {a : Addr} {m n : Nat} (h : m ≤ n) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ := ⟨rfl, h⟩
+
+theorem update_verified (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
+    {k : Contract isa} (hk : (updateArm P).Implies k) :
+    Verified Arm.target (update (w := w) name code) k := by
+  obtain hpre : ∀ s, (updateArm P).pre s → (updateArm P 240).pre (s.withRegions s.rd
+      [⟨State.addr (s.gpr .r0), bufOff w + blockBytes w⟩, ⟨State.addr (stackArg s 2), 240⟩]) := by
+    intro s h
+    obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅⟩ := h
+    simp only [updateArm, Proof.Blake2.countArm, Arm.Stream.below, VG.Arm.stackArg_withRegions,
+        VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_rd,
+        State.withRegions_wr]
+    exact ⟨h₁, trivial, h₃.sub_right (sub240 _), h₄, h₅.sub_right (sub240 _), h₆, h₇.sub_right (sub240 _),
+      h₈, h₉, h₁₀.sub_right (sub240 _), h₁₁, h₁₂, le240 h₁₃, h₁₄, h₁₅⟩
+  obtain ⟨s, hs⟩ := hk.sat_left
+  refine (Verified.widen (update_verifiedN hP hf (Contract.Implies.refl ⟨_, hpre s hs⟩)) _ hpre
+    (fun _ h => by
+      obtain ⟨_, h₂, _⟩ := h
+      rw [h₂]; exact .cons (pfx (Nat.le_refl _)) (.cons (pfx (by decide)) .nil))
+    (fun _ _ _ h => by simp only [updateArm, Proof.Blake2.countArm, Arm.Stream.below,
+        VG.Arm.stackArg_withRegions, State.withRegions_gpr, State.withRegions_mem] at h ⊢; exact h)
+    (fun _ _ _ _ h => by simp only [updateArm, Proof.Blake2.countArm, Arm.Stream.below,
+        VG.Arm.stackArg_withRegions, State.withRegions_gpr, State.withRegions_sp]; exact h) ⟨s,
+        hs⟩).of_implies hk
+
+theorem finalize_verified (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code)
+    {k : Contract isa} (hk : (finalizeArm P).Implies k) :
+    Verified Arm.target (finalize (w := w) name code) k := by
+  obtain hpre : ∀ s, (finalizeArm P).pre s → (finalizeArm P 240).pre (s.withRegions s.rd
+      [⟨State.addr (s.gpr .r0), bufOff w + blockBytes w⟩, ⟨State.addr (stackArg s 0), bufOff w⟩,
+        ⟨State.addr (stackArg s 1), 240⟩]) := by
+    intro s h
+    obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆⟩ := h
+    simp only [finalizeArm, Proof.Blake2.countArm, Arm.Stream.below, VG.Arm.stackArg_withRegions,
+        VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_rd,
+        State.withRegions_wr]
+    exact ⟨h₁, trivial, h₃, h₄.sub_right (sub240 _), h₅.sub_right (sub240 _), h₆, h₇,
+      h₈.sub_right (sub240 _), h₉, h₁₀, h₁₁.sub_right (sub240 _), h₁₂, h₁₃, le240 h₁₄, h₁₅, h₁₆⟩
+  obtain ⟨s, hs⟩ := hk.sat_left
+  refine (Verified.widen (finalize_verifiedN hP hf (Contract.Implies.refl ⟨_, hpre s hs⟩)) _ hpre
+    (fun _ h => by
+      obtain ⟨_, h₂, _⟩ := h
+      rw [h₂]
+      exact .cons (pfx (Nat.le_refl _)) (.cons (pfx (Nat.le_refl _)) (.cons (pfx (by decide)) .nil)))
+    (fun _ _ _ h => by simp only [finalizeArm, Proof.Blake2.countArm, Arm.Stream.below,
+        VG.Arm.stackArg_withRegions, State.withRegions_gpr, State.withRegions_mem] at h ⊢; exact h)
+    (fun _ _ _ _ h => by simp only [finalizeArm, Proof.Blake2.countArm, Arm.Stream.below,
+        VG.Arm.stackArg_withRegions, State.withRegions_gpr, State.withRegions_sp]; exact h) ⟨s,
+        hs⟩).of_implies hk
 
 /-- `init`'s taint check, from its arguments. -/
 def InitCheck (P : Params w) : Prop :=

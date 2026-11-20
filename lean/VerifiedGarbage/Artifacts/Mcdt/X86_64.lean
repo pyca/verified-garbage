@@ -11,6 +11,9 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.Mcdt.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Mcdt.enterApi.artifact X86_64.target Proof.Mcdt.X86_64.enterReg]
+  Spec.Mcdt.enterApi.artifact X86_64.target {
+    code := Impl.Mcdt.X86_64.enterCall
+    verified := .scrubbed Proof.Mcdt.X86_64.enter_scrubbed
+    spSafe := Proof.Mcdt.X86_64.enter_spSafe }]
 
 end VG.Artifacts.Mcdt.X86_64

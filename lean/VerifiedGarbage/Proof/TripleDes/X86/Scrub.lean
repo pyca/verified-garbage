@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.X86.Frame
@@ -25,9 +26,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion, ECB and the CBC, CFB64, CFB8 and OFB functions run with their
 working space in a frame on the stack (`withStackScratchWiped`), and the
-modes call the block function or the batched ECB code directly. As emitted
-(`Impl.TripleDes.X86.Fn`), each then zeroes the stack its contract reserves
-below `esp` (532 bytes for key expansion, 1060 for ECB, 984 for the
+modes call the block function or the batched ECB code directly. Key
+expansion calls nothing in its frame, which it wipes itself: as emitted
+(`Impl.TripleDes.X86.Fn.expandKey`) it then clears the registers alone
+(`X86.Scrub.verifiedScrubbedWiped`). As emitted, each of the others then
+zeroes the stack its contract reserves below `esp` (1060 for ECB, 984 for the
 modes one block at a time and 1248 for the batched CBC and CFB64
 decryption) and clears the registers a callee may change, and returns
 without secret residue (`X86.Scrub.verifiedScrubbedF`). What the cleanup
@@ -45,9 +48,6 @@ namespace VG.Proof.TripleDes.X86.Scrub
 open VG.X86 VG.X86.Scrub
 
 /-! ## The postconditions -/
-
-theorem expandKeyOut : PostOut (Spec.TripleDes.expandKeyContract X86.abi 532) (Spec.TripleDes.expandKeySig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Spec.TripleDes.Direction) :
     PostOut (Spec.TripleDes.ecbContract X86.abi d 1060) (Spec.TripleDes.ecbSig.retBits 32) :=
@@ -93,10 +93,11 @@ theorem ofbFinalOut : PostOut (Spec.TripleDes.ofbFinalContract X86.abi 984) (Spe
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.expandKey (Spec.TripleDes.expandKeyContract X86.abi 532) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.expandKeyApi)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey
-      verified := Proof.TripleDes.X86.expandKey_framed }
-    expandKeyOut
+  verifiedScrubbedWiped (sig := Spec.TripleDes.expandKeySig) (nm := "scratch") (e := .u64) (n := 64)
+    (pre := Spec.TripleDes.expandKeyPre X86.abi.ptrBits) (post := Spec.TripleDes.expandKeyPost X86.abi.ptrBits)
+    (bytes := 532) (words := 128) Proof.TripleDes.X86.Key.verified (by decide) (by decide) (by lit_decide)
+    (Proof.TripleDes.expandKeyPre_local _) (Proof.TripleDes.expandKeyPost_local _)
+    (Proof.TripleDes.expandKeyPostOut_local _) Proof.TripleDes.X86.expandKeyFrameSat_pre rfl
 
 /-- `Spec.TripleDes.ecbEncryptApi` as emitted (`Impl.TripleDes.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/

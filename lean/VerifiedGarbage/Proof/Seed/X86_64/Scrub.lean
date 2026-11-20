@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Seed.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Seed.Contract
@@ -104,221 +106,233 @@ theorem ofbFinalOut : PostOut (Spec.Seed.ofbFinalContract X86_64.abi 1552) (Spec
 abbrev expandKeyCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1064 .rdx 132 Impl.Seed.X86_64.expandKey
 
-def expandKeyKs : List Nat := keep_for% Spec.Seed.expandKeyApi.sig 1064 expandKeyCode []
-
-theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.expandKeyApi.sig 1064 []) expandKeyCode
-      h).any (RScrub.resOkB · 1064 expandKeyKs (Impl.Scrub.X86_64.chunks 1064)) = true :=
-  RScrub.Analysed.ok_of expandKeyKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_expand_key`. -/
-def expandKeyReg : Registration Spec.Seed.expandKeyApi X86_64.target :=
-  scrubOf {
-    code := expandKeyCode
-    stack := 1064
-    verified := Proof.Seed.X86_64.expandKey_framed } .sse false [.rcx, .rdx, .rsi, .r9, .r10, .r11] expandKeyOut [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_seed_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1096 .rcx 136 (Impl.Seed.X86_64.ecbCall .encrypt)
-
-def ecbEncryptKs : List Nat := keep_for% Spec.Seed.ecbEncryptApi.sig 1104 ecbEncryptCode []
-
-theorem ecbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.ecbEncryptApi.sig 1104 []) ecbEncryptCode
-      h).any (RScrub.resOkB · 1104 ecbEncryptKs (Impl.Scrub.X86_64.chunks 1104)) = true :=
-  RScrub.Analysed.ok_of ecbEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_ecb_encrypt`. -/
-def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi X86_64.target :=
-  scrubOf {
-    code := ecbEncryptCode
-    stack := 1104
-    verified := Proof.Seed.X86_64.ecbCall_framed .encrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ecbEncryptOut [] (pubOk_nil _) ⟨ecbEncryptKs, ecbEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1096 .rcx 136 (Impl.Seed.X86_64.ecbCall .decrypt)
 
-def ecbDecryptKs : List Nat := keep_for% Spec.Seed.ecbDecryptApi.sig 1104 ecbDecryptCode []
-
-theorem ecbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.ecbDecryptApi.sig 1104 []) ecbDecryptCode
-      h).any (RScrub.resOkB · 1104 ecbDecryptKs (Impl.Scrub.X86_64.chunks 1104)) = true :=
-  RScrub.Analysed.ok_of ecbDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_ecb_decrypt`. -/
-def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi X86_64.target :=
-  scrubOf {
-    code := ecbDecryptCode
-    stack := 1104
-    verified := Proof.Seed.X86_64.ecbCall_framed .decrypt } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ecbDecryptOut [] (pubOk_nil _) ⟨ecbDecryptKs, ecbDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_seed_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cbcEncryptChained
-
-def cbcEncryptKs : List Nat := keep_for% Spec.Seed.cbcEncryptChainedApi.sig 1552 cbcEncryptCode []
-
-theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cbcEncryptChainedApi.sig 1552 []) cbcEncryptCode
-      h).any (RScrub.resOkB · 1552 cbcEncryptKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cbcEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cbc_encrypt_chained`. -/
-def cbcEncryptReg : Registration Spec.Seed.cbcEncryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcEncryptCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cbcEncryptOut [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cbcDecryptChained
 
-def cbcDecryptKs : List Nat := keep_for% Spec.Seed.cbcDecryptChainedApi.sig 1552 cbcDecryptCode []
-
-theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cbcDecryptChainedApi.sig 1552 []) cbcDecryptCode
-      h).any (RScrub.resOkB · 1552 cbcDecryptKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cbcDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cbc_decrypt_chained`. -/
-def cbcDecryptReg : Registration Spec.Seed.cbcDecryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcDecryptCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cbcDecryptChained_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cbcDecryptOut [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_seed_cfb128_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbEncrypt
-
-def cfbEncryptKs : List Nat := keep_for% Spec.Seed.cfbEncryptApi.sig 1552 cfbEncryptCode []
-
-theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cfbEncryptApi.sig 1552 []) cfbEncryptCode
-      h).any (RScrub.resOkB · 1552 cfbEncryptKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cfbEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cfb128_encrypt`. -/
-def cfbEncryptReg : Registration Spec.Seed.cfbEncryptApi X86_64.target :=
-  scrubOf {
-    code := cfbEncryptCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptOut [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbEncryptFinal
 
-def cfbEncryptFinalKs : List Nat := keep_for% Spec.Seed.cfbEncryptFinalApi.sig 1552 cfbEncryptFinalCode []
-
-theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cfbEncryptFinalApi.sig 1552 []) cfbEncryptFinalCode
-      h).any (RScrub.resOkB · 1552 cfbEncryptFinalKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cfbEncryptFinalKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cfb128_encrypt_final`. -/
-def cfbEncryptFinalReg : Registration Spec.Seed.cfbEncryptFinalApi X86_64.target :=
-  scrubOf {
-    code := cfbEncryptFinalCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbEncryptFinalOut [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_seed_cfb128_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbDecrypt
-
-def cfbDecryptKs : List Nat := keep_for% Spec.Seed.cfbDecryptApi.sig 1552 cfbDecryptCode []
-
-theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cfbDecryptApi.sig 1552 []) cfbDecryptCode
-      h).any (RScrub.resOkB · 1552 cfbDecryptKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cfbDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cfb128_decrypt`. -/
-def cfbDecryptReg : Registration Spec.Seed.cfbDecryptApi X86_64.target :=
-  scrubOf {
-    code := cfbDecryptCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cfbDecrypt_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbDecryptOut [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_cfb128_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbDecryptFinal
 
-def cfbDecryptFinalKs : List Nat := keep_for% Spec.Seed.cfbDecryptFinalApi.sig 1552 cfbDecryptFinalCode []
-
-theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.cfbDecryptFinalApi.sig 1552 []) cfbDecryptFinalCode
-      h).any (RScrub.resOkB · 1552 cfbDecryptFinalKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of cfbDecryptFinalKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_cfb128_decrypt_final`. -/
-def cfbDecryptFinalReg : Registration Spec.Seed.cfbDecryptFinalApi X86_64.target :=
-  scrubOf {
-    code := cfbDecryptFinalCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] cfbDecryptFinalOut [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_seed_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.ofb
-
-def ofbKs : List Nat := keep_for% Spec.Seed.ofbApi.sig 1552 ofbCode []
-
-theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.ofbApi.sig 1552 []) ofbCode
-      h).any (RScrub.resOkB · 1552 ofbKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of ofbKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_seed_ofb`. -/
-def ofbReg : Registration Spec.Seed.ofbApi X86_64.target :=
-  scrubOf {
-    code := ofbCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbOut [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_seed_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.ofbFinal
 
-def ofbFinalKs : List Nat := keep_for% Spec.Seed.ofbFinalApi.sig 1552 ofbFinalCode []
+/-! ## The functions as emitted -/
 
-theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Seed.ofbFinalApi.sig 1552 []) ofbFinalCode
-      h).any (RScrub.resOkB · 1552 ofbFinalKs (Impl.Scrub.X86_64.chunks 1552)) = true :=
-  RScrub.Analysed.ok_of ofbFinalKs (by taint_decide)
+theorem expandKey_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1064 .rdx 132 Impl.Seed.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_seed_ofb_final`. -/
-def ofbFinalReg : Registration Spec.Seed.ofbFinalApi X86_64.target :=
-  scrubOf {
-    code := ofbFinalCode
-    stack := 1552
-    verified := Proof.Seed.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] ofbFinalOut [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Seed.expandKeyApi`'s function as emitted (`Impl.Seed.X86_64.Fn.expandKey`) meets its contract in
+constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.expandKey (Spec.Seed.expandKeyApi.contract X86_64.abi 1064) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.expandKeyApi)
+    { code := expandKeyCode
+      stack := 1064
+      verified := Proof.Seed.X86_64.expandKey_framed
+      spSafe := expandKey_codeSp }
+    .sse [(0, 1)] expandKeyOut (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem expandKey_spSafe : Impl.Seed.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe expandKey_codeSp
+
+theorem ecbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1096 .rcx 136 (Impl.Seed.X86_64.ecbCall .encrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.ecbEncryptApi`'s function as emitted (`Impl.Seed.X86_64.Fn.ecbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.ecbEncrypt (Spec.Seed.ecbEncryptApi.contract X86_64.abi 1104) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ecbEncryptApi)
+    { code := ecbEncryptCode
+      stack := 1104
+      verified := Proof.Seed.X86_64.ecbCall_framed .encrypt
+      spSafe := ecbEncrypt_codeSp }
+    .sse [(8, 1)] ecbEncryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ecbEncrypt_spSafe : Impl.Seed.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbEncrypt_codeSp
+
+theorem ecbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1096 .rcx 136 (Impl.Seed.X86_64.ecbCall .decrypt)).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.ecbDecryptApi`'s function as emitted (`Impl.Seed.X86_64.Fn.ecbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.ecbDecrypt (Spec.Seed.ecbDecryptApi.contract X86_64.abi 1104) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ecbDecryptApi)
+    { code := ecbDecryptCode
+      stack := 1104
+      verified := Proof.Seed.X86_64.ecbCall_framed .decrypt
+      spSafe := ecbDecrypt_codeSp }
+    .sse [(8, 1)] ecbDecryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ecbDecrypt_spSafe : Impl.Seed.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbDecrypt_codeSp
+
+theorem cbcEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cbcEncryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cbcEncryptChainedApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cbcEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cbcEncrypt (Spec.Seed.cbcEncryptChainedApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cbcEncryptChainedApi)
+    { code := cbcEncryptCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cbcEncryptChained_framed
+      spSafe := cbcEncrypt_codeSp }
+    .sse [(8, 1)] cbcEncryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cbcEncrypt_spSafe : Impl.Seed.X86_64.Fn.cbcEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcEncrypt_codeSp
+
+theorem cbcDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cbcDecryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cbcDecryptChainedApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cbcDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cbcDecrypt (Spec.Seed.cbcDecryptChainedApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cbcDecryptChainedApi)
+    { code := cbcDecryptCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cbcDecryptChained_framed
+      spSafe := cbcDecrypt_codeSp }
+    .sse [(8, 1)] cbcDecryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cbcDecrypt_spSafe : Impl.Seed.X86_64.Fn.cbcDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcDecrypt_codeSp
+
+theorem cfbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbEncrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cfbEncryptApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cfbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cfbEncrypt (Spec.Seed.cfbEncryptApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptApi)
+    { code := cfbEncryptCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cfbEncrypt_framed
+      spSafe := cfbEncrypt_codeSp }
+    .sse [(8, 1)] cfbEncryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbEncrypt_spSafe : Impl.Seed.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncrypt_codeSp
+
+theorem cfbEncryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbEncryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cfbEncryptFinalApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cfbEncryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cfbEncryptFinal (Spec.Seed.cfbEncryptFinalApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptFinalApi)
+    { code := cfbEncryptFinalCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cfbEncryptFinal_framed
+      spSafe := cfbEncryptFinal_codeSp }
+    .sse [(8, 1)] cfbEncryptFinalOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbEncryptFinal_spSafe : Impl.Seed.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncryptFinal_codeSp
+
+theorem cfbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbDecrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cfbDecryptApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cfbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cfbDecrypt (Spec.Seed.cfbDecryptApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptApi)
+    { code := cfbDecryptCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cfbDecrypt_framed
+      spSafe := cfbDecrypt_codeSp }
+    .sse [(8, 1)] cfbDecryptOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbDecrypt_spSafe : Impl.Seed.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecrypt_codeSp
+
+theorem cfbDecryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.cfbDecryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.cfbDecryptFinalApi`'s function as emitted (`Impl.Seed.X86_64.Fn.cfbDecryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.cfbDecryptFinal (Spec.Seed.cfbDecryptFinalApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptFinalApi)
+    { code := cfbDecryptFinalCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.cfbDecryptFinal_framed
+      spSafe := cfbDecryptFinal_codeSp }
+    .sse [(8, 1)] cfbDecryptFinalOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbDecryptFinal_spSafe : Impl.Seed.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecryptFinal_codeSp
+
+theorem ofb_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.ofb).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.ofbApi`'s function as emitted (`Impl.Seed.X86_64.Fn.ofb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.ofb (Spec.Seed.ofbApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ofbApi)
+    { code := ofbCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.ofb_framed
+      spSafe := ofb_codeSp }
+    .sse [(8, 1)] ofbOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ofb_spSafe : Impl.Seed.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofb_codeSp
+
+theorem ofbFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 Impl.Seed.X86_64.ofbFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Seed.ofbFinalApi`'s function as emitted (`Impl.Seed.X86_64.Fn.ofbFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed target Impl.Seed.X86_64.Fn.ofbFinal (Spec.Seed.ofbFinalApi.contract X86_64.abi 1552) 0 :=
+  verifiedScrubbedSel (api := Spec.Seed.ofbFinalApi)
+    { code := ofbFinalCode
+      stack := 1552
+      verified := Proof.Seed.X86_64.ofbFinal_framed
+      spSafe := ofbFinal_codeSp }
+    .sse [(8, 1)] ofbFinalOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ofbFinal_spSafe : Impl.Seed.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofbFinal_codeSp
 end VG.Proof.Seed.X86_64.Scrub
 

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.AesEcb.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.AesEcb.Wipe
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
@@ -40,7 +43,7 @@ Their postconditions read the memory on return only within the data and
 
 namespace VG.Proof.AesEcb.X86_64
 
-open VG VG.X86_64 VG.Proof.Aes.X86_64 VG.Proof.Zeroize.X86_64
+open VG VG.X86_64 VG.Proof.Aes.X86_64 VG.Proof.Zeroize.X86_64 VG.X86_64.Scrub
 
 theorem enc_verified (v : BlocksImpl) :
     Verified target v.enc.code (Proof.Aes.encryptBlocksRoundsContract abi) :=
@@ -154,54 +157,93 @@ theorem decryptOut (stack : Nat) :
     · rw [← hb.2.2 z hz]
       exact h2 z hz
 
-/-- The implementations of `vg_aes_ecb_encrypt` over `v` that are emitted with
-`z` (see the module's documentation). -/
+/-- `vg_aes_ecb_encrypt` as `v`'s encryption alone, where it writes no
+scratch space, as emitted (`Impl.AesEcb.X86_64.Fn.plain`). -/
+theorem encryptPlain_scrubbed (v : BlocksImpl) (h : v.encWritten = 0) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.enc) (Spec.AesEcb.encryptApi.contract abi 0) 0 :=
+  verifiedScrubbedAllSide (api := Spec.AesEcb.encryptApi)
+    { code := v.enc.code, verified := encrypt_free v h, spSafe := v.encSpSafe }
+    v.level (encryptOut _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.encSide) (Nat.le_refl _)
+
+/-- `vg_aes_ecb_decrypt` as `v`'s decryption alone, as emitted. -/
+theorem decryptPlain_scrubbed (v : BlocksImpl) (h : v.decWritten = 0) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.plain v.level v.dec) (Spec.AesEcb.decryptApi.contract abi 0) 0 :=
+  verifiedScrubbedAllSide (api := Spec.AesEcb.decryptApi)
+    { code := v.dec.code, verified := decrypt_free v h, spSafe := v.decSpSafe }
+    v.level (decryptOut _) (calleeSide_mono (Nat.le_refl _) (Nat.zero_le _) v.decSide) (Nat.le_refl _)
+
+/-- `vg_aes_ecb_encrypt` as `v`'s encryption, then the zeroing with `z` of
+the scratch space it writes, as emitted (`Impl.AesEcb.X86_64.Fn.wiped`): its code is its code
+over a stub, with `v`'s and `z`'s where it calls them (`Fill`). -/
+theorem encryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code)
+      (Spec.AesEcb.encryptApi.contract abi 24) 0 :=
+  have := calleeSide_mono (level_join_left v.level z.level) (Nat.le_refl _) v.encSide
+  have := calleeSide_mono (level_join_right v.level z.level) (Nat.le_refl _) z.side
+  verifiedScrubbedAllFill (api := Spec.AesEcb.encryptApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.CallWipe.X86_64.callWipe .r8 v.encWritten "" (.block []) "" (.block []))
+    { code := wiped z v.encWritten v.enc, stack := 24, verified := encrypt_verified v z,
+      spSafe := encrypt_spSafe v z }
+    _ (encryptOut _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.writtenOk.1 with h | h <;> rw [h] <;> lit_decide)
+
+/-- `vg_aes_ecb_decrypt` as `v`'s decryption, then the zeroing with `z`. -/
+theorem decryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code)
+      (Spec.AesEcb.decryptApi.contract abi 24) 0 :=
+  have := calleeSide_mono (level_join_left v.level z.level) (Nat.le_refl _) v.decSide
+  have := calleeSide_mono (level_join_right v.level z.level) (Nat.le_refl _) z.side
+  verifiedScrubbedAllFill (api := Spec.AesEcb.decryptApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.CallWipe.X86_64.callWipe .r8 v.decWritten "" (.block []) "" (.block []))
+    { code := wiped z v.decWritten v.dec, stack := 24, verified := decrypt_verified v z,
+      spSafe := decrypt_spSafe v z }
+    _ (decryptOut _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.writtenOk.2 with h | h <;> rw [h] <;> lit_decide)
+
+/-- The implementations of `vg_aes_ecb_encrypt` over `v` that are emitted
+with `z` (see the module's documentation). -/
 def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
   if h : v.encWritten = 0 then
-    if z.suffix = "" then [RScrub.withScrubOrAll {
+    if z.suffix = "" then [{
       suffix := v.suffix
-      code := v.enc.code
-      verified := encrypt_free v h
-      spSafe := v.encSpSafe } (encryptOut _) [] (RScrub.pubOk_nil _) v.ecbEncRes]
+      code := Impl.AesEcb.X86_64.Fn.plain v.level v.enc
+      verified := .scrubbed (encryptPlain_scrubbed v h)
+      spSafe := scrubKs_spSafe v.encSpSafe }]
     else []
   else if v.features.contains "avx" then
-    if z.features = ["avx"] then [Scrub.withScrubAll {
+    if z.features = ["avx"] then [{
       suffix := v.suffix
-      code := wiped z v.encWritten v.enc
-      stack := 24
-      verified := encrypt_verified v z
-      spSafe := encrypt_spSafe v z } (encryptOut _)]
+      code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
+      verified := .scrubbed (encryptWiped_scrubbed v z)
+      spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
     else []
-  else [Scrub.withScrubAll {
+  else [{
     suffix := v.suffix ++ z.suffix
-    code := wiped z v.encWritten v.enc
-    stack := 24
-    verified := encrypt_verified v z
-    spSafe := encrypt_spSafe v z } (encryptOut _)]
+    code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
+    verified := .scrubbed (encryptWiped_scrubbed v z)
+    spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
 
 /-- The implementations of `vg_aes_ecb_decrypt` over `v` that are emitted with
 `z` (see the module's documentation). -/
 def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
   if h : v.decWritten = 0 then
-    if z.suffix = "" then [Scrub.withScrubAll {
+    if z.suffix = "" then [{
       suffix := v.suffix
-      code := v.dec.code
-      verified := decrypt_free v h
-      spSafe := v.decSpSafe } (decryptOut _)]
+      code := Impl.AesEcb.X86_64.Fn.plain v.level v.dec
+      verified := .scrubbed (decryptPlain_scrubbed v h)
+      spSafe := scrubKs_spSafe v.decSpSafe }]
     else []
   else if v.features.contains "avx" then
-    if z.features = ["avx"] then [Scrub.withScrubAll {
+    if z.features = ["avx"] then [{
       suffix := v.suffix
-      code := wiped z v.decWritten v.dec
-      stack := 24
-      verified := decrypt_verified v z
-      spSafe := decrypt_spSafe v z } (decryptOut _)]
+      code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
+      verified := .scrubbed (decryptWiped_scrubbed v z)
+      spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
     else []
-  else [Scrub.withScrubAll {
+  else [{
     suffix := v.suffix ++ z.suffix
-    code := wiped z v.decWritten v.dec
-    stack := 24
-    verified := decrypt_verified v z
-    spSafe := decrypt_spSafe v z } (decryptOut _)]
+    code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
+    verified := .scrubbed (decryptWiped_scrubbed v z)
+    spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
 
 end VG.Proof.AesEcb.X86_64

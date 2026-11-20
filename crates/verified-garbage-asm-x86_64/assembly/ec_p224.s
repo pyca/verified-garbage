@@ -1547,6 +1547,5 @@ vg_ec_p224_public_key:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

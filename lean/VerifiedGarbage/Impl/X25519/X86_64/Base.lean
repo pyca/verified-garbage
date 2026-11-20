@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
@@ -42,3 +44,19 @@ def x25519BaseIfma : Prog isa :=
   scalarBaseWith (engineOf VG.Impl.X25519.X86_64.adx (Zmm.combMultiply VG.Impl.X25519.X86_64.adx))
 
 end VG.Impl.X25519.X86_64.Base
+
+namespace VG.Impl.X25519.X86_64.Base.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_x25519_base` as emitted: its code, then its cleanup. -/
+def x25519Base : Prog isa := scrubAll .sse 0 8 (_root_.VG.Impl.X25519.X86_64.Base.x25519Base VG.Impl.X25519.X86_64.baseline)
+
+/-- `vg_x25519_base_adx` as emitted: its code, then its cleanup. -/
+def x25519BaseAdx : Prog isa := scrubAll .avx 0 8 _root_.VG.Impl.X25519.X86_64.Base.x25519BaseAdx
+
+/-- `vg_x25519_base_ifma` as emitted: its code, then its cleanup. -/
+def x25519BaseIfma : Prog isa := scrubAll .avx 0 8 _root_.VG.Impl.X25519.X86_64.Base.x25519BaseIfma
+
+end VG.Impl.X25519.X86_64.Base.Fn

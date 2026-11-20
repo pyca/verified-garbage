@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 import VerifiedGarbage.Proof.Md5.PPC64LE.Compress
@@ -20,7 +22,8 @@ public import VerifiedGarbage.Proof.Hmac.Scratch
 # HMAC-MD5 on PPC64LE
 
 MD5's streaming functions (`Impl/Md5/PPC64LE/Stream.lean`), as HMAC's code
-over any streaming hash function calls them (`hash`), and what the proofs
+over any streaming hash function calls them (`md5Hash`,
+in `Impl/Hmac/Stream/PPC64LE/Fn.lean`), and what the proofs
 need of them (`ok`); the constant time of HMAC's code for them, which the
 kernel checks; and the functions against the shared contracts of
 `Spec.Hmac.md5I`.
@@ -31,25 +34,10 @@ kernel checks; and the functions against the shared contracts of
 namespace VG.Proof.Hmac.Stream.PPC64LE.Md5
 
 open VG.PPC64LE
-open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-
-/-- MD5's streaming functions. -/
-def hash : Hash where
-  B := 64
-  N := 16
-  D := 16
-  FD := 16
-  W := 112
-  initN := Spec.Md5.initApi.name
-  initC := Impl.Md5.PPC64LE.Stream.init
-  updN := "vg_md5_update_scratch"
-  updC := Impl.Md5.PPC64LE.Stream.update
-  finN := "vg_md5_finalize_scratch"
-  finC := Impl.Md5.PPC64LE.Stream.finalize
-  hmacInitN := "vg_hmac_md5_init_scratch"
+open VG.Impl.Hmac.Stream.PPC64LE (Hash md5Hash hmacFrame longFrame initCode)
 
 /-- What the proofs need of them. -/
-def ok : HashOK hash where
+def ok : HashOK md5Hash where
   SH := Spec.Hmac.md5S
   hS := rfl
   hD := rfl
@@ -75,53 +63,53 @@ def ok : HashOK hash where
   finPf := by decide +kernel
   reloc m m' p q x hx h hr := Proof.Hmac.Stream.md5_reloc m m' p q x hx h hr
   congr _ _ _ _ h hr := Proof.Hmac.md5_local (fun i hi => h i hi) hr
-  fhLen x := by simp [hash, Spec.Hmac.md5S, Spec.Hmac.md5, Spec.Md5.hash, Spec.Md5.wordBytes,
+  fhLen x := by simp [md5Hash, Spec.Hmac.md5S, Spec.Hmac.md5, Spec.Md5.hash, Spec.Md5.wordBytes,
     List.length_flatMap, List.map_const']
   hashTake x := by
     refine (List.take_of_length_le (Nat.le_of_eq ?_)).symm
-    simp [hash, Spec.Hmac.md5S, Spec.Hmac.md5, Spec.Md5.hash, Spec.Md5.wordBytes, List.length_flatMap,
+    simp [md5Hash, Spec.Hmac.md5S, Spec.Hmac.md5, Spec.Md5.hash, Spec.Md5.wordBytes, List.length_flatMap,
       List.map_const']
 
 /-! ## Constant time -/
 
-theorem init_ct : ConstantTime isa (initG ok.SH (hash.W + 48) 96).pre (initG ok.SH (hash.W + 48) 96).pub
-    hash.init :=
+theorem init_ct : ConstantTime isa (initG ok.SH (md5Hash.W + 48) 96).pre (initG ok.SH (md5Hash.W + 48) 96).pub
+    md5Hash.init :=
   VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Md5.PPC64LE.compressSum])
 
-theorem fin_ct : ConstantTime isa (finG ok.SH (hash.W + 48 + hash.FD) 96).pre
-    (finG ok.SH (hash.W + 48 + hash.FD) 96).pub hash.finalize :=
+theorem fin_ct : ConstantTime isa (finG ok.SH (md5Hash.W + 48 + md5Hash.FD) 96).pre
+    (finG ok.SH (md5Hash.W + 48 + md5Hash.FD) 96).pub md5Hash.finalize :=
   VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Md5.PPC64LE.compressSum])
 
-theorem long_ct : ConstantTime isa (longG ok.SH hash.lbytes 144).pre (longG ok.SH hash.lbytes 144).pub
-    hash.initLong :=
+theorem long_ct : ConstantTime isa (longG ok.SH md5Hash.lbytes 144).pre (longG ok.SH md5Hash.lbytes 144).pub
+    md5Hash.initLong :=
   VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Md5.PPC64LE.compressSum])
 
 /-! ## The shared contracts -/
 
-theorem initScratch : Verified PPC64LE.target hash.init (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I PPC64LE.abi 96) :=
+theorem initScratch : Verified PPC64LE.target md5Hash.init (Proof.Hmac.Instance.initScratchContract Spec.Hmac.md5I PPC64LE.abi 96) :=
   Shared.initScratch ok rfl (by decide) init_ct (by
     inst_sat [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig,
       Spec.Hmac.initPre, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, PPC64LE.abi, PPC64LE.argRegs]
       using initSat 80 384)
 
 theorem finalizeScratch :
-    Verified PPC64LE.target hash.finalize (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I PPC64LE.abi 96) :=
+    Verified PPC64LE.target md5Hash.finalize (Proof.Hmac.Instance.finalizeScratchContract Spec.Hmac.md5I PPC64LE.abi 96) :=
   Shared.finalizeScratch ok rfl (by decide) fin_ct (by
     inst_sat [Proof.Hmac.Instance.finalizeScratchContract, Proof.Hmac.finalizeScratchContract,
       Proof.Hmac.finalizeScratchSig, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, PPC64LE.abi,
       PPC64LE.argRegs]
       using finSat 80 16 384)
 
-theorem longScratch : Verified PPC64LE.target hash.initLong (Shared.longScratchContract ok.SH (hash.lbytes / 8)) :=
+theorem longScratch : Verified PPC64LE.target md5Hash.initLong (Shared.longScratchContract ok.SH (md5Hash.lbytes / 8)) :=
   Shared.longScratch ok (by decide) long_ct (by
     inst_sat [Shared.longScratchContract, Shared.longPre, Proof.Hmac.initScratchSig, Spec.Hmac.md5S, Spec.Hmac.md5,
       PPC64LE.abi, PPC64LE.argRegs]
       using longSat 80 304)
 
-theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.md5I 6)
+theorem initAny : Verified PPC64LE.target (initCode md5Hash Spec.Hmac.md5I 6)
     (Spec.Hmac.md5I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) :=
   Shared.initAny (b := 6) (.inl rfl) rfl (by decide)
     (Shared.initFrame initScratch (by decide) Proof.Hmac.md5_local (by decide) (by
@@ -138,7 +126,7 @@ theorem initAny : Verified PPC64LE.target (initCode hash Spec.Hmac.md5I 6)
         using initSat 80 0)
 
 theorem finalize : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 hash.finalize)
+    (Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 md5Hash.finalize)
     (Spec.Hmac.md5I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) :=
   Shared.finalizeFrame finalizeScratch (by decide) Proof.Hmac.md5_local (by decide) (by
     inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,

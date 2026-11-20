@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # SHA-1's streaming and one-shot functions on x86-64, without secret residue
 
-What `StreamFn.scrub` needs of `updFn`, `finFn` and `digFn` beyond their
+What the cleanup (`StreamFnS`) needs of `updFn`, `finFn` and `digFn` beyond their
 code: their postconditions read the memory on return only within the
 buffers (`X86_64.Scrub.PostOut`). Each variant
 (`Proof/Variants/MdHash/X86_64/Sha1*.lean`) scrubs them with the granules

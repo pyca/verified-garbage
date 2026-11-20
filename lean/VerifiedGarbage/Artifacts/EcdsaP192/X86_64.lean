@@ -83,18 +83,18 @@ open VG.Proof.P192.X86_64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p192 p192T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hu : ∀ w ∈ vs, Proof.Ecdsa.Rfc6979.X86_64.HmacUp w) : List Artifact :=
   if hv : OK vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
-      verified := p192T_verified hasLaw.law hasLaw.inv vs hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p192.combConsts _ _))]
+    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86_64.target
+      { tables := [("hmac", tables vs)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p192T_scrubbed hasLaw.law hasLaw.inv vs hv hu)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p192T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.Ecdsa.Rfc6979.X86_64.variants_up
 
 end VG.Artifacts.EcdsaP192.X86_64.Rfc6979
 
@@ -104,7 +104,10 @@ open VG.Proof.P192.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target
-    (Proof.Ecdsa.Verify.X86_64.P192.scrubReg hasLaw.law hasLaw.inv)] ++
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+        Impl.Ecdsa.Verify.X86_64.verifyP192
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P192.verifyHash_scrubbed hasLaw.law hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.X86_64

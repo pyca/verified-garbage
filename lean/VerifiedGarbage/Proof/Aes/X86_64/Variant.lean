@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
@@ -63,6 +64,11 @@ structure Ctr32ToImpl where
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack. -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 0 = true := by lit_decide
 
 /-- What an implementation of `vg_aes_ctr32` that never touches its scratch
 buffer gives: its contract without one (`AesNi.ctr32X86_64F`), so that its
@@ -126,6 +132,15 @@ structure Ctr32Impl where
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
   expandNoStack : expand.code.x86_64Depth = 0 := by lit_decide
+  /-- The level of the vector instructions of `callee` and `expand`. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls them needs of their code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 0 = true := by lit_decide
+  expandSide : X86_64.Scrub.calleeSide expand.code level.level 0 = true := by lit_decide
+  /-- Where its working space starts in the scratch buffer (`Ctr32.scrOff`):
+  the stubs of its callers' code take each of these. -/
+  scrOk : callee.scrOff = 0 ∨ callee.scrOff = 512 := by decide
   /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features:
   AES-GCM's `open_to` decrypts with it in one pass. -/
   ctrTo : Ctr32ToImpl
@@ -146,6 +161,14 @@ structure Ctr32Impl where
     (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (Impl.CmacAes.Stream.X86_64.finishF callee suffix))) :=
     none
 
+/-- How much working space it needs, which picks the code and frame of its
+callers (`Impl.Aes.X86_64.Space`). -/
+def Ctr32Impl.space (v : Ctr32Impl) : Impl.Aes.X86_64.Space :=
+  match v.free, v.small with
+  | some _, _ => .free
+  | none, some _ => .small
+  | none, none => .full
+
 namespace Ctr32Impl
 
 theorem scalar_nosp : NoSp Impl.Aes.X86_64.Ctr32.scalar.code := by
@@ -165,6 +188,7 @@ theorem scalarTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.scalarTo.code := by
 
 /-- `vg_aes_ctr32_to`, the bitsliced implementation out of place. -/
 def scalarTo : Ctr32ToImpl where
+  level := .sse
   callee := .scalarTo
   depth := by lit_decide
   ok := ctr32To_correct
@@ -175,6 +199,7 @@ def scalarTo : Ctr32ToImpl where
 
 /-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
 def scalar : Ctr32Impl where
+  level := .sse
   callee := .scalar
   depth := by lit_decide
   ok := ctr32_correct
@@ -230,6 +255,7 @@ theorem aesniTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.aesniTo.code := by
 
 /-- `vg_aes_ctr32_to_aesni`. -/
 def aesniTo : Ctr32ToImpl where
+  level := .sse
   callee := .aesniTo
   depth := by lit_decide
   ok := AesNi.ctr32To_correct
@@ -240,6 +266,7 @@ def aesniTo : Ctr32ToImpl where
 
 /-- The AES-NI implementation, `vg_aes_ctr32_aesni`. -/
 def aesni : Ctr32Impl where
+  level := .sse
   callee := .aesni
   depth := by lit_decide
   ok := AesNi.ctr32_correct
@@ -277,6 +304,7 @@ theorem vaesTo_nosp : NoSp Impl.Aes.X86_64.Ctr32.vaesTo.code := by
 
 /-- `vg_aes_ctr32_to_vaes`. -/
 def vaesTo : Ctr32ToImpl where
+  level := .avx
   callee := .vaesTo
   depth := by lit_decide
   ok := Vaes.ctr32To_correct
@@ -288,6 +316,7 @@ def vaesTo : Ctr32ToImpl where
 /-- The VAES implementation, `vg_aes_ctr32_vaes`. It goes with
 `vg_aes_expand_key_aesni`, which needs no more CPU features. -/
 def vaes : Ctr32Impl where
+  level := .avx
   callee := .vaes
   depth := by lit_decide
   ok := Vaes.ctr32_correct

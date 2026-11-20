@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha256.RISCV64.Compress
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Compress
 public import VerifiedGarbage.Impl.Sha256.RISCV64.Stream
+public import VerifiedGarbage.Impl.Sha256.RISCV64.Fn
+meta import VerifiedGarbage.Impl.Sha256.RISCV64.Fn
 meta import VerifiedGarbage.Impl.Sha256.RISCV64.Stream
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Contract
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Contract
@@ -953,31 +955,13 @@ namespace VG.Proof.Hmac.Stream.RISCV64.Sha256Family
 open VG.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 
-/-- SHA-256's streaming functions. -/
-def hash256 : Hash where
-  b := 6
-  N := 32
-  D := 32
-  F := 144
-  initN := Spec.Sha256.initApi.name ++ "_core"
-  initC := Impl.Sha256.RISCV64.Stream.init
-  updN := Spec.Sha256.updateApi.name ++ "_core"
-  updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalizeApi.name ++ "_core"
-  finC := Impl.Sha256.RISCV64.Stream.finalize
+/-- SHA-256's streaming functions, as emitted code calls them
+(`Impl.Sha256.RISCV64.Fn.hash256`). -/
+abbrev hash256 : Hash := Impl.Sha256.RISCV64.Fn.hash256
 
-/-- SHA-224's: its own `init` and `finalize`, and SHA-256's `update`. -/
-def hash224 : Hash where
-  b := 6
-  N := 32
-  D := 28
-  F := 144
-  initN := Spec.Sha256.init224Api.name ++ "_core"
-  initC := Impl.Sha256.RISCV64.Stream.init224
-  updN := Spec.Sha256.updateApi.name ++ "_core"
-  updC := Impl.Sha256.RISCV64.Stream.update
-  finN := Spec.Sha256.finalize224Api.name ++ "_core"
-  finC := Impl.Sha256.RISCV64.Stream.finalize224
+/-- SHA-224's: its own `init` and `finalize`, and SHA-256's `update`
+(`Impl.Sha256.RISCV64.Fn.hash224`). -/
+abbrev hash224 : Hash := Impl.Sha256.RISCV64.Fn.hash224
 
 theorem initSd : sdepth Impl.Sha256.RISCV64.Stream.init ≤ 144 := by decide +kernel
 theorem init224Sd : sdepth Impl.Sha256.RISCV64.Stream.init224 ≤ 144 := by decide +kernel

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.X448.X86_64.Exchange
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -72,33 +76,57 @@ theorem exchangeOut (stack : Nat) :
       exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
     rw [this]; exact h
 
-def baseScalarKs : List Nat := keep_for% Spec.X448.x448BaseApi.sig 8 Impl.X448.X86_64.x448Base []
 
-theorem baseScalarOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.X448.x448BaseApi.sig 8 []) Impl.X448.X86_64.x448Base
-      h).any (RScrub.resOkB · 8 baseScalarKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of baseScalarKs (by taint_decide)
+/-! ## The functions as emitted -/
 
-def baseAdxKs : List Nat := keep_for% Spec.X448.x448BaseApi.sig 8 Impl.X448.X86_64.x448BaseAdx []
+theorem exchange_codeSp (v : Impl.Ed448.X86_64.FieldVariant) :
+    (Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (code v) 56).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  cases v <;> sp_safe
 
-theorem baseAdxOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.X448.x448BaseApi.sig 8 []) Impl.X448.X86_64.x448BaseAdx
-      h).any (RScrub.resOkB · 8 baseAdxKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of baseAdxKs (by taint_decide)
+/-- `vg_x448_exchange` as emitted (`Impl.X448.X86_64.Fn.x448`), its cleanup included, meets its contract
+in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (v : Impl.Ed448.X86_64.FieldVariant) :
+    VerifiedScrubbed X86_64.target (Impl.X448.X86_64.Fn.x448 v)
+      (Spec.X448.exchangeApi.contract X86_64.abi 24) 32 := by
+  cases v
+  · exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.X448.exchangeApi)
+      { code := _
+        stack := 24
+        verified := Exchange.exchange_variant .scalar
+        spSafe := exchange_codeSp .scalar } .sse (exchangeOut _)
+  · exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.X448.exchangeApi)
+      { code := _
+        stack := 24
+        verified := Exchange.exchange_variant .adx
+        spSafe := exchange_codeSp .adx } .sse (exchangeOut _)
 
-/-- The residue analysis of `vg_x448_base` with the field backend `v`. -/
-def baseAnalysed : (v : Impl.Ed448.X86_64.FieldVariant) →
-    RScrub.Analysed Spec.X448.x448BaseApi.sig 8 [] (codeBase v)
-  | .scalar => ⟨baseScalarKs, baseScalarOk⟩
-  | .adx => ⟨baseAdxKs, baseAdxOk⟩
+theorem exchange_spSafe (v : Impl.Ed448.X86_64.FieldVariant) :
+    (Impl.X448.X86_64.Fn.x448 v).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (exchange_codeSp v)
 
-open VG.X86_64.RScrub in
-/-- `vg_x448_base` with the field backend `v`. -/
-def baseReg (v : Impl.Ed448.X86_64.FieldVariant) : Registration Spec.X448.x448BaseApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := codeBase v
-    stack := 8
-    verified := codeBase_verified v } baseOut [] (pubOk_nil _) (some (baseAnalysed v))
+theorem base_codeSp (v : Impl.Ed448.X86_64.FieldVariant) :
+    (codeBase v).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  cases v <;> sp_safe
+
+/-- `vg_x448_base` as emitted (`Impl.X448.X86_64.Fn.x448Base`), its cleanup included, meets its contract
+in constant time and returns without secret residue. -/
+theorem base_scrubbed (v : Impl.Ed448.X86_64.FieldVariant) :
+    VerifiedScrubbed X86_64.target (Impl.X448.X86_64.Fn.x448Base v)
+      (Spec.X448.x448BaseApi.contract X86_64.abi 8) 0 := by
+  cases v
+  · exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.X448.x448BaseApi)
+      { code := _
+        stack := 8
+        verified := codeBase_verified .scalar
+        spSafe := base_codeSp .scalar } .sse (baseOut)
+  · exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.X448.x448BaseApi)
+      { code := _
+        stack := 8
+        verified := codeBase_verified .adx
+        spSafe := base_codeSp .adx } .sse (baseOut)
+
+theorem base_spSafe (v : Impl.Ed448.X86_64.FieldVariant) :
+    (Impl.X448.X86_64.Fn.x448Base v).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (base_codeSp v)
 
 end VG.Proof.X448.X86_64

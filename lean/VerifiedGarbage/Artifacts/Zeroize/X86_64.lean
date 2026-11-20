@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Zeroize.X86_64.Fn
 public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 public import VerifiedGarbage.Proof.Zeroize.X86_64Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -21,6 +22,6 @@ namespace VG.Artifacts.Zeroize.X86_64
 open VG.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Zeroize.zeroizeApi.artifact target Proof.Zeroize.X86_64.zeroizeReg,
-  Spec.Zeroize.zeroizeApi.artifact target Proof.Zeroize.X86_64.zeroizeAvxReg]
+  Spec.Zeroize.zeroizeApi.artifact target { code := Impl.Zeroize.X86_64.Fn.zeroize, verified := .scrubbed Proof.Zeroize.X86_64.zeroize_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroize_spSafe },
+  Spec.Zeroize.zeroizeApi.artifact target { suffix := "_avx", code := Impl.Zeroize.X86_64.Fn.zeroizeAvx, verified := .scrubbed Proof.Zeroize.X86_64.zeroizeAvx_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroizeAvx_spSafe }]
 end VG.Artifacts.Zeroize.X86_64

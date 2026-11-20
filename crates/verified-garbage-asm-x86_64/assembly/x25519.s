@@ -110,10 +110,12 @@ vg_x25519_exchange_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+24]
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -122,7 +124,6 @@ vg_x25519_exchange_ifma:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -216,10 +217,12 @@ vg_x25519_exchange_adx:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+24]
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -228,7 +231,6 @@ vg_x25519_exchange_adx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -322,10 +324,12 @@ vg_x25519_exchange:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-24]
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+24]
+	lea rsp, [rsp-16]
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+16]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -334,7 +338,6 @@ vg_x25519_exchange:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -3554,7 +3557,6 @@ vg_x25519_base_ifma:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4377,11 +4379,11 @@ vg_x25519_base_adx:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
+	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5512,10 +5514,10 @@ vg_x25519_base:
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
+	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

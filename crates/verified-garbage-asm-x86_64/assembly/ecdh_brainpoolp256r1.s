@@ -1005,7 +1005,9 @@ vg_ecdh_brainpoolp256r1:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -1015,6 +1017,5 @@ vg_ecdh_brainpoolp256r1:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

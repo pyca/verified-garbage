@@ -6,8 +6,9 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 /-!
 # The cleanup of a function generic over what it calls (x86, 32-bit)
 
-`X86.Scrub.scrubFOf` needs of a function's code, callees included, one
-Boolean, `scrubFSide`, which the kernel evaluates. A function generic over
+What the cleanup needs of a function's code, callees included
+(`X86.Scrub.verifiedScrubbedF`), is one Boolean, `scrubFSide`, which the
+kernel evaluates. A function generic over
 an implementation it calls (a variant, `Proof/Variants/<Iface>/X86.lean`)
 has code that is not a closed term: it is the function's own code with the
 implementation's code where it calls it, and each implementation is
@@ -34,8 +35,9 @@ the kernel evaluates once, of the stub's code, and `m + n ≤ W`:
       scrubFSide_of_fill (init_fill _ _ _ (calleeSide_of_eq v.expandStack v.expandScrub)
         (calleeSide_of_eq v.stack v.scrub)) init_side
 
-and the registration of each variant gives `init_scrub v` as `scrubFOf`'s
-`hs`, with its stack as `W`: nothing in it evaluates code.
+and the theorem about each variant's function gives `init_scrub v` as
+`verifiedScrubbedF`'s `hs`, with its stack as `W`: nothing in it evaluates
+code.
 -/
 
 @[expose] public section

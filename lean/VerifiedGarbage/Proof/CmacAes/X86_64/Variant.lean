@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 public import VerifiedGarbage.Spec.Cmac.Contract
@@ -623,6 +626,19 @@ structure UpdateImpl where
   /-- Its contract without the first 512 bytes of its scratch buffer, if it
   never touches them. -/
   small : Option (UpdateSmall callee) := none
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`). -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 8 = true
+
+/-- How much working space it needs, which picks the code and frame of its
+callers (`Impl.Aes.X86_64.Space`). -/
+def UpdateImpl.space (v : UpdateImpl) : Impl.Aes.X86_64.Space :=
+  match v.free, v.small with
+  | some _, _ => .free
+  | none, some _ => .small
+  | none, none => .full
 
 theorem update_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.update v.callee) := by
   have h : (Impl.CmacAes.X86_64.update v.callee).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
@@ -642,6 +658,14 @@ theorem update_depth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).dep
 theorem update_xdepth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).x86_64Depth = 8 := by
   simp [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.x86_64Depth, ctrCall_xdepth, v.noStack]
 
+/-- `vg_cmac_aes_update` over `v` meets what the cleanup of its callers needs:
+from its code over a stub, and `v`'s (`X86_64.Scrub.calleeSide_of_fill`). -/
+theorem update_side (v : Ctr32Impl) :
+    X86_64.Scrub.calleeSide (Impl.CmacAes.X86_64.update v.callee) v.level.level 8 = true :=
+  X86_64.Scrub.calleeSide_of_fill (n := fun _ => 0)
+    (a := Impl.CmacAes.X86_64.update ⟨"", .block [], v.callee.scrOff⟩) (by have := v.side; fill_calls) (Nat.zero_le _)
+    (by rcases v.scrOk with h | h <;> rw [h] <;> lit_decide)
+
 /-- The chaining by calls of `v` on one block at a time,
 `vg_cmac_aes_update` with `v`'s suffix. -/
 def UpdateImpl.ctr32 (v : Ctr32Impl) : UpdateImpl where
@@ -657,6 +681,8 @@ def UpdateImpl.ctr32 (v : Ctr32Impl) : UpdateImpl where
   features := v.features
   ctr := v
   small := v.small.map fun f => ⟨updateS_correct v f, updateS_ct v f⟩
+  level := v.level
+  side := update_side v
 
 theorem aesniCbc_nosp : NoSp Impl.CmacAes.X86_64.AesNi.update := by
   have : ((instrs Impl.CmacAes.X86_64.AesNi.update).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -681,6 +707,8 @@ def UpdateImpl.aesniCbc : UpdateImpl where
   suffix := "_aesni"
   features := ["aes"]
   ctr := .aesni
+  level := .sse
+  side := by lit_decide
   free := some ⟨fun s hs => AesNi.correct s (aesniCbc_pre hs),
     fun _ _ _ _ _ _ h₁ h₂ hq => AesNi.ct _ _ _ _ _ _ (aesniCbc_pre h₁) (aesniCbc_pre h₂) hq⟩
 

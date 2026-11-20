@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
@@ -542,6 +545,26 @@ def Ctr32Small.wrapC (v : VecLevel) {c : Impl.Aes.X86_64.Ctr32} (f : Ctr32Small 
   ct := wrap_ct v f.ct
   off := f.off
 
+theorem calleeSide_seqBlock {c : Prog isa} {b : List Instr} {k n : Nat}
+    (h : X86_64.Scrub.calleeSide c k n = true)
+    (hb : (Code.block b : Prog isa).allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) = true) :
+    X86_64.Scrub.calleeSide (.seq c (.block b)) k n = true := by
+  simp only [X86_64.Scrub.calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · simp only [Code.x86_64Depth]; exact Nat.max_le.mpr ⟨h.1.1, Nat.zero_le _⟩
+  · show c.allInstrs _ && (Code.block b : Prog isa).allInstrs _ = true
+    rw [h.1.2, hb]; rfl
+  · simpa [UpperLock.inames] using h.2
+
+theorem ctr32Wrap_side (v : VecLevel) (c : Ctr32Impl) :
+    X86_64.Scrub.calleeSide (ctr32Wrap v c.callee).code (c.level.join v).level 0 = true :=
+  calleeSide_seqBlock (X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left c.level v) (Nat.le_refl 0) c.side)
+    (X86_64.Scrub.side_mono (X86_64.Scrub.level_join_right c.level v) (by cases v <;> decide))
+
+theorem ctr32Wrap_expandSide (v : VecLevel) (c : Ctr32Impl) :
+    X86_64.Scrub.calleeSide c.expand.code (c.level.join v).level 0 = true :=
+  X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left c.level v) (Nat.le_refl 0) c.expandSide
+
 /-- `c`, its `vg_aes_ctr32` clearing the registers before it returns. -/
 def Ctr32Impl.wrapC (v : VecLevel) (c : Ctr32Impl) : Ctr32Impl :=
   { c with
@@ -553,6 +576,9 @@ def Ctr32Impl.wrapC (v : VecLevel) (c : Ctr32Impl) : Ctr32Impl :=
     mxcsr := wrap_allInstrs v (clrAfter_mx v) c.mxcsr
     spSafe := wrap_all v (clrAfter_sp v) c.spSafe
     noStack := by simp only [ctr32Wrap, Code.x86_64Depth, c.noStack]; rfl
+    level := c.level.join v
+    side := ctr32Wrap_side v c
+    expandSide := ctr32Wrap_expandSide v c
     free := c.free.map (·.wrapC v)
     small := c.small.map (·.wrapC v)
     scr := fun h => c.scr (by cases hs : c.small <;> simp_all)
@@ -581,6 +607,10 @@ def Ctr32Small.wipe {c : Impl.Aes.X86_64.Ctr32} (h9 : ∀ i ∈ instrs c.code, T
     (fun s hs => by rw [hs.2.1]; simp) (fun _ _ h => h.2.2.2.2.2.1) f.ct
   off := f.off
 
+theorem ctr32Wipe_side (c : Ctr32Impl) :
+    X86_64.Scrub.calleeSide (ctr32Wipe 1480 c.callee).code c.level.level 0 = true :=
+  calleeSide_seqBlock c.side (X86_64.Scrub.side_mono (Nat.zero_le _) (by decide))
+
 /-- `c`'s `vg_aes_ctr32`, as `vg_aes_ctr32_w`, zeroing the 1480 bytes of its
 working space it may write before it returns, for an implementation that
 never writes `r9` (`h9`) and uses no more (`f`). -/
@@ -607,6 +637,7 @@ def Ctr32Impl.wipe (c : Ctr32Impl) (h9 : ∀ i ∈ instrs c.callee.code, Taint.c
     mxcsr := by simp only [ctr32Wipe, Code.allInstrs, c.mxcsr, Bool.true_and]; exact wipeX_mx .r9 0 1480
     spSafe := by simp only [ctr32Wipe, Code.all, c.spSafe, Bool.true_and]; exact wipeX_sp .r9 0 1480
     noStack := by simp only [ctr32Wipe, Code.x86_64Depth, c.noStack]; rfl
+    side := ctr32Wipe_side c
     free := none
     small := some (f.wipe h9)
     scr := nofun

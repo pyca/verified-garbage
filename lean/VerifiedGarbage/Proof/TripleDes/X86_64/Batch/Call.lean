@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
@@ -61,6 +62,11 @@ structure EcbImpl where
   spSafe : ∀ d, SpSafe (code d)
   depth : ∀ d, (code d).x86_64Depth ≤ 1040
   noMxcsr : ∀ d, (code d).allInstrs (fun i => !loadsMxcsr i) = true
+  /-- The level of its vector instructions, the one its callers clear at. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a caller needs of its code (`Scrub.Fill`), proved
+  here, of each direction, so that no caller evaluates it. -/
+  side : ∀ d, X86_64.Scrub.calleeSide (code d) level.level 1040 = true
 
 /-- The name the modes call the function of the direction `d` by: its code
 as registered before the clearing of what it leaves
@@ -121,6 +127,8 @@ def sse : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.sse_sp d))
   depth d := framed_depth (EcbCall.sse_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact sse_mx _)
+  level := .sse
+  side d := by cases d <;> lit_decide
 
 /-- The AVX2 implementation, `vg_triple_des_ecb_encrypt_avx2` and `_decrypt_avx2`. -/
 def avx2 : EcbImpl where
@@ -132,6 +140,8 @@ def avx2 : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.avx2_sp d))
   depth d := framed_depth (EcbCall.avx2_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact avx2_mx _)
+  level := .avx
+  side d := by cases d <;> lit_decide
 
 /-- The AVX-512 implementation, `vg_triple_des_ecb_encrypt_avx512` and `_decrypt_avx512`. -/
 def avx512 : EcbImpl where
@@ -143,6 +153,8 @@ def avx512 : EcbImpl where
   spSafe d := SpSafe.of_all (ecb_spSafe (EcbCall.avx512_sp d))
   depth d := framed_depth (EcbCall.avx512_depth d)
   noMxcsr d := framed_mx (by cases d <;> exact avx512_mx _)
+  level := .avx
+  side d := by cases d <;> lit_decide
 
 /-- The stack below the stack pointer that a call uses: its return address
 and the callee's 1040 bytes. -/

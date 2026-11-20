@@ -43,20 +43,20 @@ theorem initB_scrubbed :
 /-- `vg_blake2b_update` as emitted (`Impl.Blake2.RISCV64.Fn.updateB`) meets its contract in
 constant time and returns without secret residue. -/
 theorem updateB_scrubbed :
-    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.updateB (Spec.Blake2.updateBContract RISCV64.abi 576) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.updateBApi) (W := 576)
+    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.updateB (Spec.Blake2.updateBContract RISCV64.abi 336) 0 :=
+  verifiedScrubbed (api := Spec.Blake2.updateBApi) (W := 336)
     { code := Impl.Blake2.RISCV64.Stream.update Spec.Blake2.b, verified := Proof.Blake2.RISCV64.Stream.updateB_verified }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.updateBPost_out 64))
-    (show scrubSide (Impl.Blake2.RISCV64.Stream.update Spec.Blake2.b) 576 0 [] = true by lit_decide)
+    (show scrubSide (Impl.Blake2.RISCV64.Stream.update Spec.Blake2.b) 336 0 [] = true by lit_decide)
 
 /-- `vg_blake2b_finalize` as emitted (`Impl.Blake2.RISCV64.Fn.finalizeB`) meets its contract in
 constant time and returns without secret residue. -/
 theorem finalizeB_scrubbed :
-    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.finalizeB (Spec.Blake2.finalizeBContract RISCV64.abi 576) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.finalizeBApi) (W := 576)
+    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.finalizeB (Spec.Blake2.finalizeBContract RISCV64.abi 336) 0 :=
+  verifiedScrubbed (api := Spec.Blake2.finalizeBApi) (W := 336)
     { code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b, verified := Proof.Blake2.RISCV64.Stream.finalizeB_verified }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.finalizeBPost_out 64))
-    (show scrubSide (Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b) 576 0 [] = true by lit_decide)
+    (show scrubSide (Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b) 336 0 [] = true by lit_decide)
 
 /-- `vg_blake2s_init` as emitted (`Impl.Blake2.RISCV64.Fn.initS`) meets its contract in
 constant time and returns without secret residue. -/
@@ -70,19 +70,19 @@ theorem initS_scrubbed :
 /-- `vg_blake2s_update` as emitted (`Impl.Blake2.RISCV64.Fn.updateS`) meets its contract in
 constant time and returns without secret residue. -/
 theorem updateS_scrubbed :
-    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.updateS (Spec.Blake2.updateSContract RISCV64.abi 576) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.updateSApi) (W := 576)
+    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.updateS (Spec.Blake2.updateSContract RISCV64.abi 336) 0 :=
+  verifiedScrubbed (api := Spec.Blake2.updateSApi) (W := 336)
     { code := Impl.Blake2.RISCV64.Stream.update Spec.Blake2.s, verified := Proof.Blake2.RISCV64.Stream.updateS_verified }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.updateSPost_out 64))
-    (show scrubSide (Impl.Blake2.RISCV64.Stream.update Spec.Blake2.s) 576 0 [] = true by lit_decide)
+    (show scrubSide (Impl.Blake2.RISCV64.Stream.update Spec.Blake2.s) 336 0 [] = true by lit_decide)
 
 /-- `vg_blake2s_finalize` as emitted (`Impl.Blake2.RISCV64.Fn.finalizeS`) meets its contract in
 constant time and returns without secret residue. -/
 theorem finalizeS_scrubbed :
-    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.finalizeS (Spec.Blake2.finalizeSContract RISCV64.abi 576) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.finalizeSApi) (W := 576)
+    VerifiedScrubbed target Impl.Blake2.RISCV64.Fn.finalizeS (Spec.Blake2.finalizeSContract RISCV64.abi 336) 0 :=
+  verifiedScrubbed (api := Spec.Blake2.finalizeSApi) (W := 336)
     { code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.s, verified := Proof.Blake2.RISCV64.Stream.finalizeS_verified }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.finalizeSPost_out 64))
-    (show scrubSide (Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.s) 576 0 [] = true by lit_decide)
+    (show scrubSide (Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.s) 336 0 [] = true by lit_decide)
 
 end VG.Proof.Blake2.RISCV64

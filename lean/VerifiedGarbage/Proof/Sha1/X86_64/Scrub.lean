@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Sha1.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha1.Contract
@@ -39,18 +41,21 @@ open VG.Spec.Sha1 VG.X86_64 VG.X86_64.Scrub
 theorem initOut : PostOut (initContract X86_64.abi) (initSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.initPost_out 64)
 
-def initKs : List Nat := keep_for% Spec.Sha1.initApi.sig 0 Impl.Sha1.X86_64.Stream.init []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha1.initApi.sig 0 []) Impl.Sha1.X86_64.Stream.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Sha1.X86_64.Stream.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha1_init`. -/
-def initReg : Registration Spec.Sha1.initApi X86_64.target :=
-  scrubOf { code := Impl.Sha1.X86_64.Stream.init, verified := Shared.init } .sse false [.r11] initOut []
-    (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha1.initApi`'s function as emitted (`Impl.Sha1.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Sha1.X86_64.Fn.init (Spec.Sha1.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha1.initApi)
+    { code := Impl.Sha1.X86_64.Stream.init
+      verified := Shared.init
+      spSafe := init_codeSp }
+    .sse [] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem init_spSafe : Impl.Sha1.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 end VG.Proof.Sha1.X86_64

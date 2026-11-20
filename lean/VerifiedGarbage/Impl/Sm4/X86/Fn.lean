@@ -13,8 +13,10 @@ public import VerifiedGarbage.Impl.Scrub.X86
 /-! # SM4 on x86 (32-bit): the functions as emitted
 
 Each function runs with its working space in a frame on the stack, wiped
-before it returns (`withStackScratchWiped`), and is followed by its cleanup
-(`Impl.Scrub.X86.scrubF 0 W`): the `W` bytes of stack below `esp` that its
+before it returns (`withStackScratchWiped`), and is followed by its cleanup.
+Key expansion calls nothing in its frame, so its cleanup clears the
+registers a callee may change alone (`Impl.Scrub.X86.scrub 0`). The others'
+(`Impl.Scrub.X86.scrubF 0 W`) also zero the `W` bytes of stack below `esp` that their
 contract reserves zeroed (its frame, and the calls of
 `vg_sm4_prepare_keys`, `vg_sm4_crypt_prepared` and, for
 `vg_sm4_ctr_final`, `vg_sm4_ctr_core` in it), and the registers a callee may
@@ -29,7 +31,7 @@ open VG.X86
 
 /-- `Spec.Sm4.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1448 (Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey)
+  Impl.Scrub.X86.scrub 0 (Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey)
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=

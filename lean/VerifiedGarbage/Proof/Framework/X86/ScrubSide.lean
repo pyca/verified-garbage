@@ -5,8 +5,8 @@ public import VerifiedGarbage.TCB.X86.Isa
 /-!
 # What a function's cleanup needs of the code it calls, as Booleans (x86, 32-bit)
 
-The cleanup of a function on x86 (`X86.Scrub.scrubFOf`,
-`Proof/Framework/X86/ScrubProved.lean`) needs of its code, callees included,
+The cleanup of a function on x86 (`Impl.Scrub.X86.scrubF`, whose theorem
+is `X86.Scrub.verifiedScrubbedF`, `Proof/Framework/X86/ScrubFn.lean`) needs of its code, callees included,
 that it has no MMX instruction (`Instr.isMmx`), makes no indirect call
 (`noIcall`), and uses at most the stack it zeroes (`stackUse`). Its tail
 clears every register a callee may change whatever the code, so nothing is

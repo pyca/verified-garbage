@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
@@ -286,5 +289,25 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P521.curve)
       (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
   Verified.of_inline_ct pk_inlineOk (pk_x86 hL hT hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
+
+
+theorem publicKey_codeSp : (publicKeyP521).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_p521_public_key` as emitted (`Impl.EcKey.X86_64.Fn.publicKeyP521`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P521.curve)
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyP521
+      (Spec.EcKey.P521.publicKeyApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.publicKeyApi)
+    { code := publicKeyP521
+      stack := 8
+      verified := pk_verified hL hT hI
+      spSafe := publicKey_codeSp } .sse (EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts)
+
+theorem publicKey_spSafe : Impl.EcKey.X86_64.Fn.publicKeyP521.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKey_codeSp
 
 end VG.Proof.EcKey.X86_64.P521

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Fn
 public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -15,7 +16,7 @@ public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 namespace VG.Artifacts.TripleDesCbc.X86_64
 
 def direct : List Artifact := [
-  Spec.TripleDes.cbcEncryptChainedApi.artifact X86_64.target Proof.TripleDes.X86_64.Scrub.cbcEncryptReg]
+  Spec.TripleDes.cbcEncryptChainedApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cbcEncrypt, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cbcEncrypt_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cbcEncrypt_spSafe }]
 
 end VG.Artifacts.TripleDesCbc.X86_64
 
@@ -26,6 +27,10 @@ open VG.Proof.TripleDes.X86_64.Batch (EcbImpl)
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.TripleDesEcb.X86_64.variants.flatMap fun (v : EcbImpl) => [
-    Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target (Proof.TripleDes.X86_64.Batch.Scrub.cbcDecryptReg v)])
+    Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.TripleDes.X86_64.Fn.cbcDecrypt v.level (v.name .decrypt) (v.code .decrypt)
+      verified := .scrubbed (Proof.TripleDes.X86_64.Batch.Scrub.cbcDecrypt_scrubbed v)
+      spSafe := Proof.TripleDes.X86_64.Batch.Scrub.cbcDecrypt_spSafe v }])
 
 end VG.Artifacts.TripleDesCbc.X86_64

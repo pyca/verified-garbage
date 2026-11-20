@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
@@ -75,5 +78,29 @@ theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve)
       (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Ecdsa.X86_64.secp256k1.combConsts vs) := by
   have hsat := sat_nil (T := Spec.Ecdsa.Rfc6979.Curves.secp256k1) h (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h hsat
+
+
+/-! ## The function as emitted -/
+
+theorem secp256k1_stub (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) : SignStub (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries := by
+  dsimp only [SignStub, cfgS, cfgT, secp256k1]; exact ⟨by lit_decide, by lit_decide⟩
+
+/-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem secp256k1T_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs)
+    (hu : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Ecdsa.X86_64.secp256k1.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
+      verified := secp256k1T_verified hL hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.secp256k1.combConsts _ _) rfl rfl hu (secp256k1_stub hL hI)
+
+theorem secp256k1T_spSafe (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

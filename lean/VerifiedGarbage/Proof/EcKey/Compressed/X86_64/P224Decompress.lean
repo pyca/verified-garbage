@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -1056,24 +1057,21 @@ theorem verified (hL : Law Spec.P224.curve) (hI : InvSounds) (adx : Bool) :
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_p224_decompress_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat :=
-  keep_for% Spec.EcKey.P224.inst.decompressPublicKeyApi.sig 8 (code false) []
+theorem codeSp : (code false).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.P224.inst.decompressPublicKeyApi.sig 8 [])
-      (code false) h).any (X86_64.RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ec_p224_decompress_public_key` as emitted (`Impl.EcKey.Compressed.X86_64.Fn.decompress`), its cleanup included, meets its
+contract in constant time and returns without secret residue. -/
+theorem scrubbed (hL : Law Spec.P224.curve) (hI : InvSounds) :
+    VerifiedScrubbed target (Impl.EcKey.Compressed.X86_64.Fn.decompress (Inverse.cfg false))
+      (Spec.EcKey.P224.inst.decompressPublicKeyApi.contract abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P224.inst.decompressPublicKeyApi)
+    { code := code false
+      verified := verified hL hI false
+      stack := 8
+      spSafe := codeSp } .sse (EcKey.X86_64.Scrub.decompressOut _ _)
 
-/-- `vg_ec_p224_decompress_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Law Spec.P224.curve) (hI : InvSounds) :
-    Registration Spec.EcKey.P224.inst.decompressPublicKeyApi target :=
-  X86_64.RScrub.withScrub {
-    code := code false
-    verified := verified hL hI false
-    stack := 8 }
-    (EcKey.X86_64.Scrub.decompressOut _ _) [] (X86_64.RScrub.pubOk_nil _) (some ⟨scrubKs, scrubOk⟩)
+theorem spSafe : (Impl.EcKey.Compressed.X86_64.Fn.decompress (Inverse.cfg false)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe codeSp
 
 end VG.Proof.EcKey.Compressed.X86_64.P224Decompress

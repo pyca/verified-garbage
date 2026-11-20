@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.RISCV64.Stream
+public import VerifiedGarbage.Impl.Sha512.RISCV64.Fn
+meta import VerifiedGarbage.Impl.Sha512.RISCV64.Fn
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Impl.Sha512.RISCV64.Stream
@@ -1193,18 +1195,9 @@ open Spec.Sha512 (HashValue)
 
 /-- The streaming functions of the hash function with initial hash value
 `iv` (whose `init` is `initN`) and a digest of `D` bytes, written by
-`finC` (named `finN`). -/
-def hash (iv : HashValue) (D : Nat) (initN finN : String) (finC : Prog isa) : Hash where
-  b := 7
-  N := 64
-  D := D
-  F := 208
-  initN := initN
-  initC := Impl.Sha512.RISCV64.Stream.initWith iv
-  updN := Spec.Sha512.updateApi.name ++ "_core"
-  updC := Impl.Sha512.RISCV64.Stream.update
-  finN := finN
-  finC := finC
+`finC` (named `finN`): `Impl.Sha512.RISCV64.Fn.hash`. -/
+abbrev hash (iv : HashValue) (D : Nat) (initN finN : String) (finC : Prog isa) : Hash :=
+  Impl.Sha512.RISCV64.Fn.hash iv D initN finN finC
 
 theorem updSd : sdepth Impl.Sha512.RISCV64.Stream.update ≤ 208 := by decide +kernel
 

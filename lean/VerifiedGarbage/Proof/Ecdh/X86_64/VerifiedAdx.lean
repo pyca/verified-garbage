@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -98,27 +99,22 @@ theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_p256_adx` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKsAdx : List Nat := keep_for% Spec.Ecdh.P256.exchangeApi.sig 8 exchangeP256Adx []
+theorem exchangeAdx_codeSp : exchangeP256Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOkAdx : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P256.exchangeApi.sig 8 []) exchangeP256Adx h).any
-      (RScrub.resOkB · 8 scrubKsAdx (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
-
-/-- `vg_ecdh_p256_adx`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubRegAdx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+/-- `vg_ecdh_p256_adx` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP256Adx`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchangeAdx_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
-    Registration Spec.Ecdh.P256.exchangeApi X86_64.target :=
-  RScrub.scrubOf {
-    suffix := "_adx"
-    code := exchangeP256Adx
-    stack := 8
-    verified := ecdh_verified_adx hL hI hO hK } .avx true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    ⟨scrubKsAdx, scrubOkAdx⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP256Adx (Spec.Ecdh.P256.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
+    { code := exchangeP256Adx
+      stack := 8
+      verified := ecdh_verified_adx hL hI hO hK
+      spSafe := exchangeAdx_codeSp } .avx (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
+
+theorem exchangeAdx_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP256Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchangeAdx_codeSp
 
 end VG.Proof.Ecdh.X86_64

@@ -136,7 +136,7 @@ time and returns without secret residue. -/
 theorem digest_scrubbed :
     VerifiedScrubbed target Impl.Sha1.RISCV64.Fn.digest (Spec.Sha1.digestContract RISCV64.abi 288) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha1.digestApi) (W := 288)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha1.hash,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha1.RISCV64.Fn.hash,
       verified := Proof.Hmac.Stream.RISCV64.Sha1.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

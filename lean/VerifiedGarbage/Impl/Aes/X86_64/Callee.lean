@@ -70,4 +70,14 @@ def Blocks.decAesni : Blocks := ⟨"vg_aes_decrypt_blocks_aesni", AesNi.decryptB
 def Blocks.encVaes : Blocks := ⟨"vg_aes_encrypt_blocks_vaes", VaesBlocks.encryptBlocks⟩
 def Blocks.decVaes : Blocks := ⟨"vg_aes_decrypt_blocks_vaes", VaesBlocks.decryptBlocks⟩
 
+/-- How much working space an implementation of the AES functions needs,
+which picks the code of the functions that call it and their frames: none
+(`free`), 1480 bytes from 512 bytes into a scratch buffer (`small`), or all
+2048 (`full`). -/
+inductive Space
+  | free
+  | small
+  | full
+  deriving DecidableEq, Repr
+
 end VG.Impl.Aes.X86_64

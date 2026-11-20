@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.AesOcb.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -534,26 +536,30 @@ theorem open_framed :
 
 /-! ## Registrations -/
 
-open VG.X86_64.RScrub in
-/-- `vg_aes_ocb_seal_aesni`: its frame, wiped whole on return, in 16-byte
-stores that are all aligned (the chunks `[8, 688]`). -/
-def sealReg : Registration Spec.Ocb.sealApi X86_64.target :=
-  withScrubAllC {
-    suffix := "_aesni"
-    code := Impl.StackScratch.X86_64.withStackArgScratch 688 4 Impl.AesOcb.X86_64AesNi.seal
-    verified := Proof.AesOcb.seal_keyed seal_framed
-    spSafe := VG.X86_64.withStackArgScratch_spSafe seal_spSafe }
-    (Proof.AesOcb.X86_64.Scrub.sealOut _) [8, 688]
+/-- `vg_aes_ocb_seal_aesni`, as emitted (`Impl.AesOcb.X86_64.Fn.sealOnePass`), its frame wiped
+whole on return, meets its contract in constant time and returns without
+secret residue. -/
+theorem seal_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.AesOcb.X86_64.Fn.sealOnePass .sse) (Spec.Ocb.sealApi.contract X86_64.abi 696) 0 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ocb.sealApi)
+    { code := Impl.StackScratch.X86_64.withStackArgScratch 688 4 Impl.AesOcb.X86_64AesNi.seal
+      verified := Proof.AesOcb.seal_keyed seal_framed
+      spSafe := VG.X86_64.withStackArgScratch_spSafe seal_spSafe }
+    .sse (Proof.AesOcb.X86_64.Scrub.sealOut _)
 
-open VG.X86_64.RScrub in
-/-- `vg_aes_ocb_open_aesni`: its frame, wiped whole on return, in 16-byte
-stores that are all aligned (the chunks `[8, 896]`). -/
-def openReg : Registration Spec.Ocb.openApi X86_64.target :=
-  withScrubAllC {
-    suffix := "_aesni"
-    code := Impl.StackScratch.X86_64.withStackArgScratch 896 4 Impl.AesOcb.X86_64AesNi.open
-    verified := Proof.AesOcb.open_keyed open_framed
-    spSafe := VG.X86_64.withStackArgScratch_spSafe open_spSafe }
-    (Proof.AesOcb.X86_64.Scrub.openOut _) [8, 896]
+/-- `vg_aes_ocb_open_aesni`, as emitted (`Impl.AesOcb.X86_64.Fn.openOnePass`). -/
+theorem open_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.AesOcb.X86_64.Fn.openOnePass .sse) (Spec.Ocb.openApi.contract X86_64.abi 904) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ocb.openApi)
+    { code := Impl.StackScratch.X86_64.withStackArgScratch 896 4 Impl.AesOcb.X86_64AesNi.open
+      verified := Proof.AesOcb.open_keyed open_framed
+      spSafe := VG.X86_64.withStackArgScratch_spSafe open_spSafe }
+    .sse (Proof.AesOcb.X86_64.Scrub.openOut _)
+
+theorem seal_spSafeFn : (Impl.AesOcb.X86_64.Fn.sealOnePass .sse).all (fun i => !X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe seal_spSafe)
+
+theorem open_spSafeFn : (Impl.AesOcb.X86_64.Fn.openOnePass .sse).all (fun i => !X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe open_spSafe)
 
 end VG.Proof.AesOcb.X86_64.AesNi
