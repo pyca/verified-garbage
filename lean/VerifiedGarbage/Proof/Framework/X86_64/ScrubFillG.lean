@@ -324,9 +324,9 @@ macro "fill_gen" : tactic => `(tactic| repeat' (first
   | with_reducible assumption
   | with_reducible exact FillG.refl _
   | exact FillG.block _
-  | exact FillG.hole _ (by assumption)
+  | exact FillG.hole _ (by with_reducible assumption)
   | exact FillG.hole _ (by solve_by_elim (maxDepth := 3))
-  | exact FillG.hole _ (FillG.calleeSide_call _ (by assumption))
+  | exact FillG.hole _ (FillG.calleeSide_call _ (by with_reducible assumption))
   | refine FillG.seq ?_ ?_
   | refine FillG.ite _ ?_ ?_
   | refine FillG.loop _ ?_

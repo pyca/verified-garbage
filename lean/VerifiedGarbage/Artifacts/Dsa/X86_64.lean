@@ -1,25 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
-public import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
-public import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
-public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyVerified
-import Mathlib.Tactic.Finiteness.Attr
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
+public import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillVerified
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # DSA (FIPS 186-4) on x86-64 -/
 
@@ -71,11 +59,13 @@ def artifacts : List Artifact :=
       spSafe := Proof.Dsa.X86_64.BackendScrub.deriveKey_spSafe v }]) ++
   (Generation.RefillBackend.hashPairs.flatMap fun (p : Generation.RefillBackend.Hashes) =>
     VG.Proof.Variants.MillerRabin.X86_64.variants.map fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
-    Spec.Dsa.parameterSearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
+    Spec.Dsa.parameterSearchApi.artifact X86_64.target {
       suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
-      code := Generation.RefillBackend.searchCode p.sha1 p.sha256 v
-      verified := Generation.RefillBackend.search_verified p.sha1 p.sha256 v p.h1 p.h256
-      spSafe := Generation.RefillBackend.searchCode_spSafe p.sha1 p.sha256 v }
-      (Proof.Dsa.X86_64.Scrub.parameterSearchOut _)))
+      code := Impl.Dsa.X86_64.Fn.parameterSearch (Proof.Dsa.X86_64.Generation.SearchScrub.level p v)
+        (Generation.RefillBackend.name "sha1" p.sha1 v 128) (Generation.RefillBackend.name "sha256" p.sha256 v 256)
+        (Generation.RefillBackend.name "sha256" p.sha256 v 384) (Generation.RefillBackend.body p.sha1 v 128)
+        (Generation.RefillBackend.body p.sha256 v 256) (Generation.RefillBackend.body p.sha256 v 384)
+      verified := .scrubbed (Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v)
+      spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })
 
 end VG.Artifacts.Dsa.X86_64

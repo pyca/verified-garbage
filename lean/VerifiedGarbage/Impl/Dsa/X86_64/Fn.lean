@@ -54,4 +54,9 @@ def generateKey (v : VecLevel) (check derive : String) (sq : Prog isa) (mul : Na
 def deriveKey (v : VecLevel) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   scrubAll v 32 8 (Generate.deriveKey sq mul)
 
+/-- `Spec.Dsa.parameterSearchApi`'s function as emitted, calling its search
+for each width (`c₁₂₈`, `c₂₅₆`, `c₃₈₄`) by its name. -/
+def parameterSearch (v : VecLevel) (n₁₂₈ n₂₅₆ n₃₈₄ : String) (c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa) : Prog isa :=
+  scrubAll v 32 632 (ParameterSearch.widths n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
+
 end VG.Impl.Dsa.X86_64.Fn
