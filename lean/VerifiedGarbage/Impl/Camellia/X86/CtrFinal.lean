@@ -44,7 +44,7 @@ open VG.Impl.Modes.X86 (tailByte)
 /-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
 internal function of its own, `vg_camellia_ctr_core`, rather than as
 `vg_camellia_ctr`, which also clears the registers and the stack it leaves
-(`Proof.Camellia.X86.Scrub.ctrReg`). -/
+(`Impl.Camellia.X86.Fn.ctr`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ctr
 
 /-- `save` (our stack argument 5) to `eax`, and the registers saved there. -/
