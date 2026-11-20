@@ -18,8 +18,8 @@ The postconditions of `vg_dsa_validate_public_key`,
 the memory on return, and those of the other functions read it only within
 their outputs (`bytesAt_of`, `wordsAt_of`; `RISCV64.Scrub.PostOut`), as
 AArch64's `Proof/Dsa/AArch64/Scrub.lean` proves them: each implementation,
-followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`),
-returns with the caller-saved registers cleared and the stack its frames used
+followed by `Impl.Scrub.RISCV64.scrubTail` (`Impl.Dsa.RISCV64.Fn`,
+`Proof/Dsa/RISCV64/Fn.lean`), returns with the caller-saved registers cleared and the stack its frames used
 zeroed. Each lemma takes the tables of constants `cs` the code reads, which
 may be none.
 -/
