@@ -1,6 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
+public import VerifiedGarbage.Impl.Dsa.AArch64.Fn
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Dsa.Contract
@@ -63,5 +65,19 @@ structure Backend where
   deriveCheckedNoDit : (Generate.deriveChecked mul).all (fun i => !i.touchesDit) = true
   deriveCheckedDepth : 16 * (Generate.deriveChecked mul).aarch64Depth ≤ stack
   stackBound : stack < 2 ^ 32
+  /-- What the cleanup of each function that is emitted needs of its code with
+  `mul` (`ScrubAll.scrubSide`, for the registers `Fn.clear` and the stack the
+  function uses): proved where the backend is defined, by evaluating its
+  code. -/
+  validateScrub : ScrubAll.scrubSide (Prevalidated.validate mul) stack 32 Fn.clear [] = true
+  prevalidatedScrub : ScrubAll.scrubSide (Prevalidated.verify mul) stack 32 Fn.clear [] = true
+  validatePrivateScrub : ScrubAll.scrubSide (PrevalidatedSign.validate mul) stack 32 Fn.clear [] = true
+  deriveScrub : ScrubAll.scrubSide (Generate.deriveKey mul) stack 32 Fn.clear [] = true
+  randomSignScrub : ScrubAll.scrubSide
+    (RandomSign.code ("vg_dsa_sign_prevalidated" ++ suffix) (PrevalidatedSign.sign mul)) (stack + 256) 32
+    Fn.clear [] = true
+  generateKeyScrub : ScrubAll.scrubSide
+    (GenerateKey.code ("vg_dsa_check_parameters" ++ suffix) ("vg_dsa_derive_key_checked" ++ suffix)
+      (Generate.checkParameters mul) (Generate.deriveChecked mul)) (stack + 256) 32 Fn.clear [] = true
 
 end VG.Proof.Dsa.AArch64

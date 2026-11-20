@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Cast5.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Impl.Cast5.AArch64.TblKey
+import VerifiedGarbage.Proof.Cast5.AArch64.TblKey
+import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 import VerifiedGarbage.Proof.Cast5.ModeScratch
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -42,5 +45,15 @@ theorem expandKeyOk :
       show Spec.Cast5.scheduleAt m₂ sch = _
       rw [Proof.Cast5.scheduleAt_congr (agree_of hb.2.1 (by decide))]
       exact h
+
+/-- `vg_cast5_expand_key` as emitted, cleanup included
+(`Impl.Cast5.AArch64.Tbl.Fn.expandKey`): it meets its contract in constant
+time and returns without secret residue. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem expandKey :
+    VerifiedScrubbed target Impl.Cast5.AArch64.Tbl.Fn.expandKey (Spec.Cast5.expandKeyContract abi) 0 :=
+  verifiedScrubbed (api := Spec.Cast5.expandKeyApi)
+    { code := Impl.Cast5.AArch64.Tbl.expandKey, verified := Proof.Cast5.AArch64.Tbl.expandKey_verified } _
+    expandKeyOk (by dsimp only; lit_decide)
 
 end VG.Proof.Cast5.AArch64.Scrub

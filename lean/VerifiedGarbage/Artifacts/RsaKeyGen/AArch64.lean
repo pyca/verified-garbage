@@ -194,9 +194,9 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 namespace VG.Artifacts.RsaKeyGen.AArch64
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-    code := Impl.RsaKeyGen.AArch64.KeyInit.init
-    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_verified } (Proof.Rsa.AArch64.Scrub.keyInitOk))]
+  Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
+    code := Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
+    verified := .scrubbed Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++

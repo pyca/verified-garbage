@@ -237,7 +237,7 @@ theorem open_one {t₀ s : State} (h : openPre t₀) (h1 : SO1 (stackArg t₀ 2)
       s.gpr .r24 = t₀.gpr .r5 ∧ s.gpr .r25 = BitVec.ofNat 64 (t₀.gpr .r6).toNat := by
   obtain ⟨hrd, hwr, dcd, dcW, dnd, dnW, dad, daW, ddt, ddW, ddA, dtW, dWA, fc, fn, fa, fd, ft, fW, fsp, hR⟩ := h
   have hC : Covers [⟨t₀.gpr .r3, 256⟩] (t₀.rd ++ t₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
-  have hW : Covers [⟨stackArg t₀ 2, 2560⟩] t₀.wr := by rw [hwr]; exact covers_mem (by simp)
+  have hW : Covers [⟨stackArg t₀ 2, 1152⟩] t₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hk₁ := h1.en.keeps
   have toN : ∀ {x : BitVec 64}, x = BitVec.ofNat 64 x.toNat := fun {x} => by simp
   have hDw : Covers [⟨t₀.gpr .r9, (t₀.gpr .r10).toNat⟩] s.wr := by

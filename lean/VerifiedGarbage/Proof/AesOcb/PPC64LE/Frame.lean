@@ -77,8 +77,8 @@ theorem pad_bytes' {m : Mem} {P : Addr} (hz : bytesAt m P 16 = zeros 16) (xs : L
   Proof.AesGcm.PPC64LE.pad_bytes hz xs hx
 
 /-- A copy of `tl` bytes from `S` to `W + d`, which holds 16 zero bytes. -/
-theorem padCopy_ok {W : Addr} {s : State} (hw : Covers [⟨W, 2560⟩] s.wr) {S : Addr} {d tl : Nat}
-    (hd : d + 16 ≤ 2560) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (hSr : Covers [⟨S, tl⟩] (s.rd ++ s.wr))
+theorem padCopy_ok {W : Addr} {s : State} (hw : Covers [⟨W, 512⟩] s.wr) {S : Addr} {d tl : Nat}
+    (hd : d + 16 ≤ 512) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (hSr : Covers [⟨S, tl⟩] (s.rd ++ s.wr))
     (hSd : (⟨S, tl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 16⟩)
     (hz : bytesAt s.mem (W + BitVec.ofNat 64 d) 16 = zeros 16) (hr3 : s.gpr .r3 = S)
     (hr4 : s.gpr .r4 = W + BitVec.ofNat 64 d) (hr5 : s.gpr .r5 = BitVec.ofNat 64 tl) :
@@ -99,7 +99,7 @@ theorem padCopy_ok {W : Addr} {s : State} (hw : Covers [⟨W, 2560⟩] s.wr) {S 
 /-- `recv`: the received tag (`tl` bytes at `T`, in `r20`), padded with zeros at `W`. -/
 theorem recv_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s) {tl : Nat}
     (h19 : V .r19 = BitVec.ofNat 64 tl) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (hTr : Covers [⟨V .r20, tl⟩] (s.rd ++ s.wr))
-    (hTd : (⟨V .r20, tl⟩ : Region).Disjoint ⟨V .r31, 2560⟩) :
+    (hTd : (⟨V .r20, tl⟩ : Region).Disjoint ⟨V .r31, 512⟩) :
     WP isa recv s fun s' => bytesAt s'.mem (V .r31 + BitVec.ofNat 64 tagO) 16 =
         bytesAt s.mem (V .r20) tl ++ zeros (16 - tl) ∧
       Frame [⟨V .r31 + BitVec.ofNat 64 tagO, 16⟩] s.mem s'.mem ∧
@@ -147,10 +147,10 @@ theorem cmpTail_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp
         bytesAt s.mem (V .r31 + BitVec.ofNat 64 vO) 16 then 1 else 0) ∧
       (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   have h31 := E.r31
-  obtain r₀ := E.perm.wR (show 0 + 8 ≤ 2560 by decide)
-  obtain r₁ := E.perm.wR (show 336 + 8 ≤ 2560 by decide)
-  obtain r₂ := E.perm.wR (show 8 + 8 ≤ 2560 by decide)
-  obtain r₃ := E.perm.wR (show 344 + 8 ≤ 2560 by decide)
+  obtain r₀ := E.perm.wR (show 0 + 8 ≤ 512 by decide)
+  obtain r₁ := E.perm.wR (show 336 + 8 ≤ 512 by decide)
+  obtain r₂ := E.perm.wR (show 8 + 8 ≤ 512 by decide)
+  obtain r₃ := E.perm.wR (show 344 + 8 ≤ 512 by decide)
   obtain hrun : WP isa (.block cmpTail) s fun s' =>
       s'.gpr .r3 = BitVec.ofNat 64 1 - (((s.mem.readW (V .r31 + BitVec.ofNat 64 0) 64 ^^^
           s.mem.readW (V .r31 + BitVec.ofNat 64 336) 64) |||
@@ -414,7 +414,7 @@ theorem open_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
     rw [body_keep Ar.lay Ar.data.w Bf (d := sumO) (by decide), P₃.sum]
   -- The tag, at `W + t2O`.
   refine WP.mono (tag_ok L B.env Ar.rounds h28 (.inr rfl)) fun s₅ T₅ => ?_
-  obtain Tf : Frame [⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 t2O, 16⟩, ⟨W + BitVec.ofNat 64 512, 2048⟩]
+  obtain Tf : Frame [⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 t2O, 16⟩]
       s₄.mem s₅.mem := by have := T₅.frame; rwa [hW₁] at this
   obtain F₅ : Frame (mutR W D n) s₄.mem s₅.mem := tagR_mut (.inr ⟨by decide, by decide⟩) Tf
   obtain sv₅ := saved_mut Ar.lay Ar.data.w (saved_mut Ar.lay Ar.data.w P₃.saved F₄) F₅
@@ -422,7 +422,7 @@ theorem open_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
   obtain rd₅ : s₅.rd = s₀.rd := by rw [T₅.rd, B.rd, P₃.rd]
   obtain wr₅ : s₅.wr = s₀.wr := by rw [T₅.wr, B.wr, P₃.wr]
   -- The received tag, to `W`.
-  obtain hTd : (⟨s₁.gpr .r20, tl⟩ : Region).Disjoint ⟨s₁.gpr .r31, 2560⟩ := by rw [P₁.r20, hW₁]; exact Ar.tag.w
+  obtain hTd : (⟨s₁.gpr .r20, tl⟩ : Region).Disjoint ⟨s₁.gpr .r31, 512⟩ := by rw [P₁.r20, hW₁]; exact Ar.tag.w
   refine WP.seq (WP.mono (recv_ok E₅ (P₁.r19.trans htl) Ar.t1 Ar.t16
     (by rw [P₁.r20, rd₅, wr₅]; exact Ar.tag.rd) hTd) fun s₆ ⟨b₆, f₆, g₆, sp₆, lr₆, rd₆, wr₆⟩ => ?_)
   obtain E₆ := E₅.others g₆ sp₆ rd₆ wr₆
@@ -463,7 +463,7 @@ theorem open_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
   have hck := B.ck
   rw [hW₁, hD₁, hK₁, c₃, i₃, l₃, d₃] at hck
   have hTn := Ar.tag.lt
-  obtain Ff : Frame [⟨W, 2560⟩, ⟨D, n⟩] s₀.mem s₅.mem :=
+  obtain Ff : Frame [⟨W, 512⟩, ⟨D, n⟩] s₀.mem s₅.mem :=
     (P₃.frame.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩).trans ((F₄.trans F₅).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -569,18 +569,18 @@ def sealSat : State where
   sp := 0x8000
   mem a := bif Nat.beq a.toNat 0x8068 then 4 else bif Nat.beq a.toNat 0x8061 then 0x50 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8060, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩, ⟨0, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩, ⟨0, 512⟩]
 
 /-- A state satisfying the precondition of `vg_aes_ocb_open`: as `sealSat`,
 with the tag read only. -/
 def openSat : State := { sealSat with
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8060, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0, 2560⟩] }
+  wr := [⟨0x4000, 0⟩, ⟨0, 512⟩] }
 
 /-! ## The shared contracts -/
 
 theorem seal_verified :
-    Verified PPC64LE.target «seal» (Proof.AesOcb.sealScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target «seal» (Proof.AesOcb.sealScratchContract PPC64LE.abi (n := 64)) :=
   Verified.of_correct seal_correct seal_ct (by
     sig_implies [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
       Proof.AesOcb.sealRoundsPost, sealPPC64LE, sealPreA, oneFacts, aCtx, aNonce, aAad, aData, aTag, aWork, onePub, args,
@@ -590,7 +590,7 @@ theorem seal_verified :
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified :
-    Verified PPC64LE.target «open» (Proof.AesOcb.openScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target «open» (Proof.AesOcb.openScratchContract PPC64LE.abi (n := 64)) :=
   Verified.of_correct open_correct open_ct
     { pre := by sig_implies_pre [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
         Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak, openPPC64LE, openLeak, openPreA, oneFacts, aCtx, aNonce, aAad, aData,
@@ -638,7 +638,7 @@ end
 `seal` and `open` run their code, proved with the working space as their
 last argument (`Verified.lean`), in a frame that allocates it
 (`Verified.stackScratchArgs`): `tag` and `tag_len` arrive on the stack, so
-the frame of 2688 bytes copies them, then the working space's address, above
+the frame of 640 bytes copies them, then the working space's address, above
 its stack pointer. The copies are read only where the pre- and
 postconditions read the buffers, and `open`'s leak, whether it succeeds,
 reads only its buffers (`Proof/AesOcb/Scratch.lean`). As AES-GCM's `open`
@@ -657,17 +657,17 @@ def sealFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x8060, 16⟩],
                  wr := [⟨0x4000, 0⟩, ⟨0x5000, 4⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract PPC64LE.abi 2688).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Proof.AesOcb.sealRoundsContract PPC64LE.abi 640).pre s := by
   implies_sat [Proof.AesOcb.sealRoundsContract, Spec.Ocb.sealSig, Spec.Ocb.sealPre, Proof.AesOcb.sealRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
 
 theorem seal_framed :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «seal»)
-      (Proof.AesOcb.sealRoundsContract PPC64LE.abi 2688) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 «seal»)
+      (Proof.AesOcb.sealRoundsContract PPC64LE.abi 640) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Ocb.sealSig) (nm := "work") (e := .u64) (n := 64)
     (pre := Spec.Ocb.sealPre PPC64LE.abi.ptrBits) (post := Proof.AesOcb.sealRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2688) (m := 2) seal_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 640) (m := 2) seal_verified (by decide) (by decide)
     (Proof.AesOcb.sealPre_local _) (Proof.AesOcb.sealPost_local _)
     (Proof.AesOcb.sealPostOut_local _) sealFrameSat_pre
 
@@ -677,17 +677,17 @@ def openFrameSat : State :=
   { sealSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x3000, 0⟩, ⟨0x5000, 4⟩, ⟨0x8060, 16⟩],
                  wr := [⟨0x4000, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract PPC64LE.abi 2688).pre s := by
+theorem openFrameSat_pre : ∃ s, (Proof.AesOcb.openRoundsContract PPC64LE.abi 640).pre s := by
   implies_sat [Proof.AesOcb.openRoundsContract, Spec.Ocb.openSig, Spec.Ocb.openPre, Proof.AesOcb.openRoundsPost, Spec.Ocb.openLeak,
     PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
-      (Proof.AesOcb.openRoundsContract PPC64LE.abi 2688) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 «open»)
+      (Proof.AesOcb.openRoundsContract PPC64LE.abi 640) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Ocb.openSig) (nm := "work") (e := .u64) (n := 64)
     (pre := Spec.Ocb.openPre PPC64LE.abi.ptrBits) (post := Proof.AesOcb.openRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2688) (m := 2) (leak := some (Spec.Ocb.openLeak PPC64LE.abi.ptrBits))
+    (wa := true) (stack := 0) (bytes := 640) (m := 2) (leak := some (Spec.Ocb.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesOcb.openPre_local _) (Proof.AesOcb.openPost_local _)
     (Proof.AesOcb.openPostOut_local _)
     openFrameSat_pre (hleak := Proof.AesOcb.openLeak_local _)

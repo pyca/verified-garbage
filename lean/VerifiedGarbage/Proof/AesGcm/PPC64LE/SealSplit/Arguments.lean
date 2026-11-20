@@ -23,14 +23,14 @@ structure Layout (V : Reg → BitVec 64) (sp S : Addr) (count : Nat) (s : State)
   fit : S.toNat+count≤2^64
   st : (⟨S,count⟩ : Region).Disjoint ⟨V .r30,80⟩
   data : (⟨S,count⟩ : Region).Disjoint ⟨V .r27,(V .r23).toNat⟩
-  work : (⟨S,count⟩ : Region).Disjoint ⟨V .r31,2560⟩
+  work : (⟨S,count⟩ : Region).Disjoint ⟨V .r31,1152⟩
   slotWrite : InRegions s.wr (sp+96) 8
   stackFit : sp.toNat+104≤2^64
   slotFit : (sp+96).toNat+8≤2^64
   slotContext : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r29,256⟩
   slotState : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r30,80⟩
   slotData : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r27,(V .r23).toNat⟩
-  slotWork : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r31,2560⟩
+  slotWork : (⟨sp+96,8⟩ : Region).Disjoint ⟨V .r31,1152⟩
   slotSource : (⟨sp+96,8⟩ : Region).Disjoint ⟨S,count⟩
   kern : SealFused.Kern V s
 
@@ -92,21 +92,21 @@ theorem args_pre {V : Reg → BitVec 64} {sp S : Addr} {count R : Nat} {s : Stat
   · exact K.st.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact lay.slotState.symm.sub_left (Lay.stSub (d := 16) (n := 16) (by decide))
   · exact (lay.data.sub_left src).sub_right (Region.sub_prefix (by omega_using []))
-  · exact (lay.work.sub_left src).sub_right (Offset.sub_base _ (d := 448) (n := 2112) (by decide))
+  · exact (lay.work.sub_left src).sub_right (Offset.sub_base _ (d := 448) (n := 704) (by decide))
   · exact K.data.sub_left (Region.sub_prefix (by omega_using []))
   · exact lay.slotData.symm.sub_left (Region.sub_prefix (by omega_using []))
-  · exact lay.slotWork.symm.sub_left (Offset.sub_base _ (d := 448) (n := 2112) (by decide))
+  · exact lay.slotWork.symm.sub_left (Offset.sub_base _ (d := 448) (n := 704) (by decide))
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 48) (n := 16) (by decide)
   · exact SealFused.fit_offset _ L.sw (by decide) (off := 16) (n := 16) (by decide)
   · have := lay.fit; omega_using [this]
-  · exact SealFused.fit_offset _ K.fit (by decide) (off := 448) (n := 2112) (by decide)
+  · exact SealFused.fit_offset _ K.fit (by decide) (off := 448) (n := 704) (by decide)
 
 
 theorem args_regions {V : Reg → BitVec 64} {sp S : Addr} {count : Nat} {s : State}
     (he : Env V sp s) (lay : Layout V sp S count s) :
     reads (argsState s)=[⟨V .r29,256⟩,⟨S,count/16*16⟩,⟨sp+96,8⟩] ∧
     writes (argsState s)=[⟨V .r30+48,16⟩,⟨V .r30+16,16⟩,
-      ⟨V .r27,(V .r23).toNat/16*16⟩,⟨V .r31+448,2112⟩] := by
+      ⟨V .r27,(V .r23).toNat/16*16⟩,⟨V .r31+448,704⟩] := by
   obtain ⟨h3,_,h5,h6,h7,h8,h9,h10,hw⟩ := args_values he lay
   have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega_arith
   have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []

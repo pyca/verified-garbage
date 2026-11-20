@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Verified
-public import VerifiedGarbage.Proof.Sm4.RISCV64.Ctr32Verified
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
+public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -17,35 +15,17 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.Sm4Gcm.RISCV64
 
-open VG.Proof.Sm4Gcm.RISCV64
+open VG.Proof.Sm4Gcm.RISCV64.Scrub
 
 def artifacts : List Artifact := [
-  Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
-    verified := .unscrubbed init_framed },
-  Spec.Sm4.Gcm.sealApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
-    verified := .unscrubbed seal_framed },
-  Spec.Sm4.Gcm.openApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
-    verified := .unscrubbed open_framed },
-  Spec.Sm4.Gcm.streamInitApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
-    verified := .unscrubbed Proof.AesGcm.RISCV64.streamInit_framed },
-  Spec.Sm4.Gcm.streamAadApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
-    verified := .unscrubbed Proof.AesGcm.RISCV64.streamAad_framed },
-  Spec.Sm4.Gcm.streamEncryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
-    verified := .unscrubbed streamEncrypt_framed },
-  Spec.Sm4.Gcm.streamDecryptApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
-    verified := .unscrubbed streamDecrypt_framed },
-  Spec.Sm4.Gcm.streamFinishApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
-    verified := .unscrubbed streamFinish_framed },
-  Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target {
-    code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
-    verified := .unscrubbed streamVerify_framed }]
+  Spec.Sm4.Gcm.initApi.artifact RISCV64.target initReg,
+  Spec.Sm4.Gcm.sealApi.artifact RISCV64.target sealReg,
+  Spec.Sm4.Gcm.openApi.artifact RISCV64.target openReg,
+  Spec.Sm4.Gcm.streamInitApi.artifact RISCV64.target streamInitReg,
+  Spec.Sm4.Gcm.streamAadApi.artifact RISCV64.target streamAadReg,
+  Spec.Sm4.Gcm.streamEncryptApi.artifact RISCV64.target streamEncryptReg,
+  Spec.Sm4.Gcm.streamDecryptApi.artifact RISCV64.target streamDecryptReg,
+  Spec.Sm4.Gcm.streamFinishApi.artifact RISCV64.target streamFinishReg,
+  Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target streamVerifyReg]
 
 end VG.Artifacts.Sm4Gcm.RISCV64

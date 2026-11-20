@@ -169,11 +169,9 @@ namespace VG.Artifacts.EcdsaP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-    code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-      Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) } Proof.Ecdsa.Rfc6979.AArch64.p256VerifyClear
-    (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) Proof.Ecdsa.Rfc6979.AArch64.p256VerifySide)] ++
+  Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
+    code := Impl.Ecdsa.Verify.AArch64.P256Allocated.Fn.verifyHash
+    verified := .scrubbed (Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_scrubbed hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law)) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.AArch64

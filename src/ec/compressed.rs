@@ -103,7 +103,9 @@ codec!(
     vg_ec_brainpoolp256r1_decompress_public_key_auto
 );
 #[cfg(any(
+    target_arch = "x86",
     target_arch = "x86_64",
+    target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "powerpc64",
     target_arch = "riscv64"
@@ -133,7 +135,9 @@ codec!(
 #[cfg(test)]
 mod tests {
     #[cfg(any(
+        target_arch = "x86",
         target_arch = "x86_64",
+        target_arch = "aarch64",
         target_arch = "arm",
         target_arch = "powerpc64",
         target_arch = "riscv64"
@@ -201,7 +205,9 @@ mod tests {
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);
     #[cfg(any(
+        target_arch = "x86",
         target_arch = "x86_64",
+        target_arch = "aarch64",
         target_arch = "arm",
         target_arch = "powerpc64",
         target_arch = "riscv64"

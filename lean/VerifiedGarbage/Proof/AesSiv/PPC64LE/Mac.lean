@@ -50,7 +50,7 @@ open VG VG.PPC64LE VG.Impl.CmacAes.PPC64LE
 open VG.Proof.CmacAes.PPC64LE (FPre finalizePPC64LE finPre_wp fin_bound slots_scr finMem_frame mn wr_in
   ciphAt cipher_bytes preserved_ne)
 open VG.Proof.CmacAes.Stream.PPC64LE (FArgs finalize_noFrames)
-open VG.Proof.AesCbc.PPC64LE (blk_call callEntry_gpr' toNat_rounds)
+open VG.Proof.AesCbc.PPC64LE (blk_callF callEntry_gpr' toNat_rounds)
 open VG.Spec.Aes (bytesAt)
 
 /-- `vg_cmac_aes_finalize`, whatever the subkeys: the state becomes
@@ -74,30 +74,27 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have sw := hp.scr_wrap
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (blk_call (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
+  refine WP.seq (WP.mono (blk_callF (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocksF_correct
     Proof.AesCbc.PPC64LE.encryptBlocks_noFrames h₁.pre) fun s₂ c => ?_)
-  have slotD : ∀ p ∈ finSaved, ∀ r ∈ [⟨S + BitVec.ofNat 64 2048, 16⟩, ⟨St, 16⟩, ⟨S, 2048⟩],
+  have slotD : ∀ p ∈ finSaved, ∀ r ∈ [⟨S + BitVec.ofNat 64 0, 16⟩, ⟨St, 16⟩],
       Region.Disjoint ⟨S + BitVec.ofNat 64 p.2, 8⟩ r := by
     intro p hp' r hr
     have hb := fin_bound p hp'
-    have hsub : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 2176⟩ := Offset.sub_base _ (by omega_using [hb])
+    have hsub : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 64⟩ := Offset.sub_base _ (by omega_using [hb])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl
     · exact Offset.disjoint S (by omega_using [hb]) (by omega_using [hb]) (by omega_using [])
     · exact hp.st_scr.symm.sub_left hsub
-    · exact Offset.disjoint_base _ (by omega_using [hb]) (by omega_using [hb])
   have hsv : Spill.Saved S (s₀.write .r0 s₀.lr).gpr finSaved s₂.mem :=
     ((Spill.saveMem_saved (by decide) s₀.mem S _).frame h₁.frame fun p hp' r hr =>
       slotD p hp' r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
         rcases hr with rfl | rfl
         · exact .inl rfl
-        · exact .inr (.inl rfl))).frame
+        · exact .inr rfl)).frame
       c.frame fun p hp' r hr => slotD p hp' r (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-        rcases hr with rfl | rfl
-        · exact .inr (.inl rfl)
-        · exact .inr (.inr rfl))
+        simp only [List.mem_singleton] at hr; subst hr
+        simp)
   have r14₂ : s₂.gpr .r14 = S := by rw [c.saved _ (by decide), h₁.r14]
   have rdwr₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [c.rd, c.wr, h₁.rd, h₁.wr]
   rw [show finSaved.map (fun (r, d) => Instr.load .d r .r14 d) = Spill.restoreCode .r14 finSaved from rfl]
@@ -112,7 +109,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
     · left; subst h14; decide
     · right; rw [c.saved r hr, h₁.keep r hr h14, h0]
   · show s₃.gpr .r0 = _
-    rw [r₃.gpr (.r0, 2064) (by decide)]; simp [State.write]
+    rw [r₃.gpr (.r0, 16) (by decide)]; simp [State.write]
   · show bytesAt s₃.mem (s₀.gpr .r5) 16 = _
     rw [hW, hR, hSt, hP, hL]
     have sch : bytesAt s₁.mem W (16 * (R + 1)) = bytesAt s₀.mem W (16 * (R + 1)) := by
@@ -137,7 +134,7 @@ structure FRPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop w
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨St, 16⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨St, 16⟩, ⟨S, 64⟩] s.mem s'.mem
   out : bytesAt s'.mem St 16 = ciphAt s.mem K R (Spec.Cmac.xor (bytesAt s.mem St 16) (mn s.mem K P L))
 
 theorem fin_call_raw {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
@@ -183,7 +180,7 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
 open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_subi wp_li wp_lsr wp_lsl wp_add wp_sub wp_std)
 open VG.Proof.AesCcm.PPC64LE (wp_mv)
 open VG.Proof.CmacAes.Stream.PPC64LE (UArgs UPost upd_call FArgs)
-open VG.Proof.AesCtr.PPC64LE (CtrCall)
+open VG.Proof.AesCtr.PPC64LE (CtrCallF)
 open VG.Impl.AesCbc.PPC64LE (mov)
 open VG.Spec.Aes (bytesAt)
 
@@ -226,7 +223,7 @@ the working space of the functions called. -/
 structure Src (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
   rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
   wrap : P.toNat + len ≤ 2 ^ 64
-  qs : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 384, 2176⟩
+  qs : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 384, 64⟩
 
 theorem Buf.src {c : Cx} {s : State} {P : Addr} {len : Nat} (h : Buf c s P len) : Src c s P len :=
   ⟨h.rd, h.wrap, h.wd (by decide)⟩
@@ -295,7 +292,7 @@ theorem fargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y +
 
 /-! ## Zeroing a block of `W` -/
 
-theorem zero16_wp {c : Cx} {s : State} (E : Env c s) {d : Nat} (hd : d + 16 ≤ 2576) (hd8 : d % 4 = 0)
+theorem zero16_wp {c : Cx} {s : State} (E : Env c s) {d : Nat} (hd : d + 16 ≤ 448) (hd8 : d % 4 = 0)
     {is : List Instr} {Q : State → Prop}
     (k : ∀ s', PK s s' → (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) →
       s'.mem = Proof.Cmac.zero2 s.mem (c.W + BitVec.ofNat 64 d) → WP isa (.block is) s' Q) :
@@ -316,7 +313,7 @@ theorem zero16_wp {c : Cx} {s : State} (E : Env c s) {d : Nat} (hd : d + 16 ≤ 
 
 /-- What the CMAC of a string writes: the state at `W + st` and the working
 space of the functions called. -/
-abbrev macR (c : Cx) (st : Nat) : List Region := [⟨c.W + BitVec.ofNat 64 st, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 2176⟩]
+abbrev macR (c : Cx) (st : Nat) : List Region := [⟨c.W + BitVec.ofNat 64 st, 16⟩, ⟨c.W + BitVec.ofNat 64 384, 64⟩]
 
 /-- What `cmacOf` keeps: what every piece does, and the registers holding
 the loop's descriptors and the string. -/

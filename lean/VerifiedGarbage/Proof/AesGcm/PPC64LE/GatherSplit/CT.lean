@@ -18,11 +18,11 @@ open VG.Proof.Gather.PPC64LE (Eq2 TT rel_seq rel_taint rel_ite ct_of)
 
 
 theorem body_rel (hv : Gather.SealOk)
-    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
-    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
-      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
+    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pre
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode)
     {s₁ s₂ e₁ e₂ : State} (h₁ : Layout s₁) (h₂ : Layout s₂) (hq : gatherPub s₁ s₂)
     (he₁ : Gather.Entered s₁ e₁) (he₂ : Gather.Entered s₂ e₂)
     (hn₁ : e₁.gpr .r10=s₁.gpr .r10) (hn₂ : e₂.gpr .r10=s₂.gpr .r10) :
@@ -45,11 +45,11 @@ theorem body_rel (hv : Gather.SealOk)
 
 
 theorem sealGather_ct (hv : Gather.SealOk)
-    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
+    (hct : ConstantTime isa (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pub Impl.AesGcm.PPC64LE.SealGather.sealCode)
     (hs : SplitOk)
-    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pre
-      (Proof.Gcm.sealSplitContract PPC64LE.abi 2800).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode) :
+    (hsct : ConstantTime isa (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pre
+      (Proof.Gcm.sealSplitContract PPC64LE.abi 1392).pub Impl.AesGcm.PPC64LE.GatherSplit.sealCode) :
     ConstantTime isa (fun s => Layout s) gatherPub Impl.AesGcm.PPC64LE.GatherSplit.sealGather := by
   refine ct_of fun s₁ s₂ h₁ h₂ hq => ?_
   have pub := hq

@@ -130,8 +130,8 @@ end
 working space in a frame of their own (`Verified.stackScratch`,
 `Verified.stackArgScratch`), around code proved with the working space as a
 last argument: `initScratchContract`, `sealScratchContract` and
-`openScratchContract` are the shared contracts with a 2560-byte buffer
-appended, whatever it holds; `initWorkContract`, `sealWorkContract` and
+`openScratchContract` are the shared contracts with a buffer appended
+(2560 bytes, or `8 n`), whatever it holds; `initWorkContract`, `sealWorkContract` and
 `openWorkContract`, with a buffer of `words` 8-byte words, for an
 implementation that needs another size.
 
@@ -175,33 +175,33 @@ def initScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :
     (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_ocb_seal` with `work: *mut [u64; 320]`. -/
-def sealScratchSig : Sig where
+/-- `vg_aes_ocb_seal` with `work: *mut [u64; n]` (320 words but on PPC64LE). -/
+def sealScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice true .u8 "tag_len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
 
 /-- `sealContract`, whatever `work` is. -/
-def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealScratchSig.contract A
+def sealScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (sealScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_ocb_open` with `work: *mut [u64; 320]`. -/
-def openScratchSig : Sig where
+/-- `vg_aes_ocb_open` with `work: *mut [u64; n]` (320 words but on PPC64LE). -/
+def openScratchSig (n : Nat := 320) : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
     ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `openContract`, whatever `work` is. -/
-def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openScratchSig.contract A
+def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (openScratchSig n).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>

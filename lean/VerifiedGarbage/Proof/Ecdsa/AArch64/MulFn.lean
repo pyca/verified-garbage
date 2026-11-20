@@ -67,7 +67,7 @@ theorem ladWM_eq (c : Cfg) : ladW c.mulLadder = slW c [RX, RY, RZ, T0, T1, T2, T
 /-- `R = [k]Q` for the `k` in `K`'s slot and the point `Q` on the curve in
 `R`'s first two slots, with the table of `k`'s bits, from `p`, zero, one,
 `a R` and `3 b R` in their slots. -/
-theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.n = 8) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -94,7 +94,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL
   rw [Cfg.mulBody]
   -- The table of `k`'s bits.
   refine WP.seq (WP.mono (bits_ok hs h0 (by omega_arith) (sz (i := K) (by decide)) hsz
-    (by rcases h4 with h4 | h4 | h4 <;> rw [sl_eq c K (by decide), h4] <;> decide) (by omega_arith)
+    (by rcases h4 with h4 | h4 | h4 | h4 <;> rw [sl_eq c K (by decide), h4] <;> decide) (by omega_arith)
     (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0; omega_arith)))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
   obtain hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -221,7 +221,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL
 
 /-- `vg_<curve>_mul`: what its body gives (`mulBody_ok`), with `invKept` back
 from the words past the table of bits; it changes only `invClob`'s registers. -/
-theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -249,8 +249,9 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT :
       fun {i} hi => by
     by_cases hT : i = TMP
     · subst hT
-      rcases h4 with h4 | h4 | h4
+      rcases h4 with h4 | h4 | h4 | h4
       · rw [sl_eq4 c (by omega_arith), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega_arith
+      · rw [sl_aff c (by omega_arith), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega_arith
       · rw [sl_tmp c (.inl h4), Cfg.mulSave, bitsAt_eq, h4]; right; simp only [Mont.moAt]; omega_arith
       · rw [sl_tmp c (.inr (.inl h4)), Cfg.mulSave, bitsAt_eq, h4]; right; simp only [Mont.moAt]; omega_arith
     · left
@@ -436,7 +437,7 @@ theorem fixedOk_mulWF (hT : MulTmp c) : FixedOk c (mulWF c) := by
 /-- `R = [k]P`, for the `k` in `K`'s slot and the affine point `P` on the curve
 at `px` and `py`, by a call of `vg_<curve>_mul`: `P` copied to `R`'s first two
 slots and `3 b R` to `BM`'s slot, then `b R` back; the constants are kept. -/
-theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
+theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
     (hC : Law c.C) (hv : c.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true)
     (hnf : c.mulFn.noFrames = true) {name : String} {px py : Nat}
     (hpx45 : px < 45) (hpy45 : py < 45) (hpxl : px ∉ [RX, RY, BM, TMP]) (hpyl : py ∉ [RX, RY, BM, TMP])
@@ -497,7 +498,7 @@ theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT :
       (toM c.C.p (2 ^ (64 * c.n)) (wordsVal m' base (c.sl RZ) c.n))
       (mul (sv c base s K) (.affine (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py))))
   obtain hpres : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ c.invKept := by
-    unfold Cfg.invKept Cfg.invRegs; rcases h4 with h4 | h4 | h4 <;> rw [h4] <;> decide
+    unfold Cfg.invKept Cfg.invRegs; rcases h4 with h4 | h4 | h4 | h4 <;> rw [h4] <;> decide
   refine WP.seq (WP.mono (fnCall_ok (name := name) (W := mulWF c) (R := Rr) hs₃ (fun t ht hm => ?_) hpres hv hnf)
     fun s₄ ⟨K₄, U₄, R₄⟩ => ?_)
   · have et : ∀ i, sv c base t i = sv c base s₃ i := fun i => by

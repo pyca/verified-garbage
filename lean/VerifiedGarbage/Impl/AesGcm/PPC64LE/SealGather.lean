@@ -34,7 +34,7 @@ open VG.Impl.AesGcm.PPC64LE (mov)
 
 /-- `vg_aes_gcm_seal`, in its frame, which `vg_aes_gcm_seal_gather` calls as the internal
 `vg_aes_gcm_seal_core`: the exported function is followed by the scrub tail. -/
-def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
+def sealCode : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal
 
 /-- The arguments the gathering overwrites, and our return address, into the
 frame (`r12` its address); `tag` into the call's stack argument; `src`,

@@ -90,6 +90,11 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.ScrubLocal
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 meta import VerifiedGarbage.Proof.AesCcm.RISCV64.Rel
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
@@ -2381,3 +2386,68 @@ theorem open_framed [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.RISCV64
+
+/-! ## AES-GCM-SIV on RISC-V, without secret residue
+
+`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
+caller-saved registers and all 5904 bytes of stack their frames and callees
+use, the derived keys among them: the residue analysis (`RISCV64.rtaint`)
+finds that all but the deepest 400 may hold secrets. Their postconditions
+read the memory on return only within the data and the tag, as on PPC64LE
+(`Proof/AesGcmSiv/PPC64LE/Scrub.lean`). The registrations take the law of
+GHASH and the equation of POLYVAL's input with GHASH's, as `seal_framed`
+does, from the registration file. -/
+
+namespace VG.Proof.AesGcmSiv.RISCV64.Scrub
+
+open VG.RISCV64 VG.RISCV64.Scrub VG.Proof.Aes.ScrubLocal VG.Proof.AesGcmSiv.RISCV64
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.sealContract RISCV64.abi stack) (Spec.GcmSiv.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, bytesAt_of0 hb.2.2.2.1 (by simp), bytesAt_of0 hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.openContract RISCV64.abi stack) (Spec.GcmSiv.openSig.retBits 64) := by
+  -- The postcondition is a `match` on a decryption: prove the locality
+  -- by intros, so that no expected type of a `fun` is reduced to it.
+  refine postOut_of_local ScrubAbi.plain ?_
+  intro vs m m₁ m₂ r hlen hb h
+  match vs, hlen with
+  | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
+    simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
+    dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    rw [bytesAt_of0 (n := (BitVec.setWidth 64 len).toNat) hb.2.2.2.1 (by simp)]
+    exact @h
+
+/-- `Spec.GcmSiv.sealApi`. -/
+def sealReg [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi RISCV64.target :=
+  scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
+      verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
+    (sealOut _)
+
+/-- `Spec.GcmSiv.openApi`. -/
+def openReg [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.openApi RISCV64.target :=
+  scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
+      verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
+    (openOut _)
+
+end VG.Proof.AesGcmSiv.RISCV64.Scrub
