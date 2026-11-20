@@ -1,27 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Scrub
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
-public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.Proof.HashTable.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-public import VerifiedGarbage.Proof.Mgf1.Bytes
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
