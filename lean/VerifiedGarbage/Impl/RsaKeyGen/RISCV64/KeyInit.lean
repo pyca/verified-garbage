@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontMul
 public import VerifiedGarbage.Impl.Words.RISCV64
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-! # Starting RSA key generation on RISC-V
 
@@ -69,3 +70,13 @@ def words : List Instr := [
 def init : Prog isa := .seq scan (.block (expValid ++ sizeValid ++ status ++ words ++ [.addi .a0 .t2 0]))
 
 end VG.Impl.RsaKeyGen.RISCV64.KeyInit
+
+namespace VG.Impl.RsaKeyGen.RISCV64.KeyInit.Fn
+
+/-- `vg_rsa_generate_init` as emitted: `init`, then its cleanup
+(`Impl.Scrub.RISCV64.scrub`), the caller-saved registers cleared but the 32
+bits of its result (it uses no stack), so that it returns without secret
+residue. -/
+def init : Prog RISCV64.isa := Impl.Scrub.RISCV64.scrub 32 0 KeyInit.init
+
+end VG.Impl.RsaKeyGen.RISCV64.KeyInit.Fn
