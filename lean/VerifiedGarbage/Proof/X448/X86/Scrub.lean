@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.X448.X86.Base
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.X86.Exchange
 public import VerifiedGarbage.Proof.X448.X86.Base
@@ -12,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Spec.X448.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.X448.X86.Base
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.X448.X86.Exchange
 meta import VerifiedGarbage.Proof.X448.X86.Base
@@ -27,10 +29,11 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # X448 on x86, without secret residue
 
 `vg_x448_exchange` and `vg_x448_base` have frames and call other
-functions: each is followed by the zeroing of the stack its contract
-reserves below `esp` (40 and 20 bytes), which its frames and calls use, then
-by `Impl.Scrub.X86.tail` (`X86.Scrub.scrubFOf`), which clears the registers
-a callee may change but the result's bits, the flags and `xmm0`–`xmm7`.
+functions. Each as emitted (`Impl.X448.X86.Fn`) is followed by the zeroing of
+the stack its contract reserves below `esp`, which its frames and calls use,
+then by `Impl.Scrub.X86.tail`, which clears the registers a callee may change
+but the result's bits, the flags and `xmm0`–`xmm7`, and returns without
+secret residue (`X86.Scrub.verifiedScrubbedF`).
 Their postconditions read the memory on return only within `out`
 (`X86.Scrub.PostOut`, by `postOut_of_local`). What the scrub needs of the
 code (its stack use within those bytes, no indirect call, no MMX
@@ -86,19 +89,21 @@ theorem exchangeOut (stack : Nat) :
     show Spec.X448.bytesAt m₂ o 56 = _ ∧ _
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
 /-- `vg_x448_exchange`. -/
-def exchangeReg : Registration Spec.X448.exchangeApi target :=
-  scrubFOf {
-      code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
+theorem exchange_scrubbed :
+    VerifiedScrubbed target Impl.X448.X86.Fn.exchange (Spec.X448.exchangeContract X86.abi 40) 32 :=
+  verifiedScrubbedF (api := Spec.X448.exchangeApi)
+    { code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
       verified := Proof.X448.X86.Exchange.exchange_verified }
     (exchangeOut _)
 
 /-- `vg_x448_base`. -/
-def baseReg : Registration Spec.X448.x448BaseApi target :=
-  scrubFOf {
-      code := Impl.X448.X86.x448Base
+theorem base_scrubbed :
+    VerifiedScrubbed target Impl.X448.X86.Fn.base (Spec.X448.x448BaseContract X86.abi 20) 0 :=
+  verifiedScrubbedF (api := Spec.X448.x448BaseApi)
+    { code := Impl.X448.X86.x448Base
       verified := Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok }
     (baseOut [] _)
 
