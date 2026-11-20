@@ -238,13 +238,6 @@ theorem openToOk (stack : Nat) :
     rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]
     exact h key hk
 
-/-- The registers the cleanup of SM4-GCM's functions clears
-(`Artifacts/Sm4Gcm/AArch64.lean`). -/
-def clear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-    .v26, .v27, .v28, .v29, .v30, .v31], []⟩
-
 /-- `vg_aes_gcm_store_powers`: its postcondition reads the memory on return
 only within the powers. -/
 theorem storePowersOk (stack : Nat) (hW : 0 < stack) :
