@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ed25519.WholeLocal
@@ -1926,10 +1927,11 @@ end
 `vg_ed25519_key_pair`, `vg_ed25519_sign_expanded` and `vg_ed25519_verify`,
 with either multiplication of the field (`umaal`), have frames. The
 postconditions of the first two read the memory on return only within their
-outputs, and that of the third not at all (`Arm.Scrub.PostOut`), so each is
-registered followed by a wipe of the stack its contract reserves
-(`Arm.Scrub.scrubRegF`), and by instructions that set the registers a callee
-may change, but the result, and the flags to constants.
+outputs, and that of the third not at all (`Arm.Scrub.PostOut`). Each is
+emitted with its cleanup (`Impl.Ed25519.Arm.Fn`): a wipe of the stack its
+contract reserves, then instructions that set the registers a callee may
+change, but the result, and the flags to constants. `Fn` has the theorem of
+each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
 -/
 
 @[expose] public section
@@ -1979,46 +1981,136 @@ def keyPairCode (umaal : Bool) : Prog isa :=
   Impl.Ed25519.Arm.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core") Proof.Ed25519.Arm.KeyPair.dgCode
     ("vg_ed25519_public_key_expanded" ++ suffix umaal) (PublicKey.codeExpanded umaal)
 
-theorem keyPair_noIcall (umaal : Bool) : noIcall (keyPairCode umaal) = true := by
-  cases umaal <;> lit_decide
+/-! ## What the cleanup needs of the code
 
-theorem keyPair_armStack (umaal : Bool) : armStack (keyPairCode umaal) ≤ 600 := by
-  have h := Proof.Ed25519.Arm.KeyPair.pk_stack (umaal := umaal)
-  simp only [keyPairCode, Impl.Ed25519.Arm.KeyPair.keyPair, armStack, Proof.Ed25519.Arm.KeyPair.dg_stack,
-    List.length_cons, List.length_nil]
-  omega_using [h]
+The code's shape is the same with either product of the field but where the
+product is chosen (`Proof.Ed25519.Arm.Shape`), so each function proves it
+once for both, from those lemmas and the SHA-512 functions' (`ShaScrub`). -/
 
-theorem signExpanded_noIcall (umaal : Bool) : noIcall (SignCached.codeExpanded umaal) = true := by
-  cases umaal <;> lit_decide
+theorem publicKey_codeOk (umaal : Bool) : CodeOk (PublicKey.codeExpanded umaal) 280 := by
+  simp only [
+    CodeOk, Impl.Ed25519.Arm.PublicKey.codeExpanded, Impl.Ed25519.Arm.PublicKey.bodyFrom,
+    Impl.Ed25519.Arm.PublicKey.copyExpanded, Impl.Ed25519.Arm.Whole.wrap, Impl.Ed25519.Arm.scalarBase,
+    Impl.Ed25519.Arm.scalarBaseEngine, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combPrepare,
+    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg,
+    Impl.Ed25519.Arm.pointEncode, Impl.Ed25519.Arm.pointAffine, Impl.Ed25519.Arm.invert,
+    Impl.Ed25519.Arm.power250, Impl.Ed25519.Arm.pow250Fn, Impl.Ed25519.Arm.asFn,
+    Impl.Ed25519.Arm.chain250, Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.sqnLoop,
+    Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Impl.Ed25519.Arm.Whole.callWith,
+    Impl.Ed25519.Arm.FieldOp.code, Impl.Ed25519.Arm.fieldCode, armStack, noIcall,
+    (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.1, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.1,
+    (Proof.Ed25519.Arm.Shape.mulFn _).2.1, (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.2,
+    (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.2, (Proof.Ed25519.Arm.Shape.mulFn _).2.2, Bool.and_self,
+    Nat.max_self, List.length_cons, List.length_nil]
+  decide
 
-theorem signExpanded_armStack (umaal : Bool) : armStack (SignCached.codeExpanded umaal) ≤ 280 := by
-  cases umaal <;> lit_decide
+theorem keyPair_codeOk (umaal : Bool) : CodeOk (keyPairCode umaal) 600 := by
+  have hd : CodeOk Proof.Ed25519.Arm.KeyPair.dgCode 584 :=
+    CodeOk.mono Proof.MdStream.Arm.ShaScrub.sha512_digest (by decide)
+  exact (CodeOk.push (rs := [.lr]) (j := .pop .lr 4) (CodeOk.push (rs := [.r0, .r1, .r3]) (j := .pop .r3 12)
+    (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) (CodeOk.seq (CodeOk.call hd)
+      (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _))
+        (CodeOk.call ((publicKey_codeOk umaal).mono (by decide)))))))).mono (by decide)
 
-theorem verify_noIcall (umaal : Bool) : noIcall (VerifyMessage.code umaal) = true := by
-  cases umaal <;> lit_decide
+theorem signExpanded_codeOk (umaal : Bool) : CodeOk (SignCached.codeExpanded umaal) 280 := by
+  have hi : CodeOk (Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_512) 0 := CodeOk.block _
+  obtain ⟨i1, i2⟩ := hi
+  obtain ⟨u1, u2⟩ := Proof.MdStream.Arm.ShaScrub.sha512_update
+  obtain ⟨f1, f2⟩ := Proof.MdStream.Arm.ShaScrub.sha512_finalize
+  rw [Nat.le_zero] at i1 u1 f1
+  simp only [
+    CodeOk, i1, i2, u1, u2, f1, f2, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.combStep,
+    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply,
+    Impl.Ed25519.Arm.mulCall, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.pointAffine,
+    Impl.Ed25519.Arm.pointEncode, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.sqn,
+    Impl.Ed25519.Arm.chain250, Impl.Ed25519.Arm.pow250Fn, Impl.Ed25519.Arm.power250,
+    Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.invert,
+    Impl.Ed25519.Arm.PublicKey.copyExpanded, Impl.Ed25519.Arm.scalarMulD, Impl.Ed25519.Arm.scalarFold,
+    Impl.Ed25519.Arm.scalarReduceEngine, Impl.Ed25519.Arm.scalarWideMul, Impl.Ed25519.Arm.scalarReduce,
+    Impl.Ed25519.Arm.scalarBaseEngine, Impl.Ed25519.Arm.scalarBase,
+    Impl.Ed25519.Arm.scalarMulAddEngine, Impl.Ed25519.Arm.scalarMulAdd,
+    Impl.Ed25519.Arm.SignCached.init, Impl.Ed25519.Arm.SignCached.update,
+    Impl.Ed25519.Arm.SignCached.finalize, Impl.Ed25519.Arm.SignCached.hashNonce,
+    Impl.Ed25519.Arm.SignCached.reduce, Impl.Ed25519.Arm.SignCached.hashChallenge,
+    Impl.Ed25519.Arm.SignCached.nonceCode, Impl.Ed25519.Arm.SignCached.challengeCode,
+    Impl.Ed25519.Arm.SignCached.bodyFrom, Impl.Ed25519.Arm.SignCached.codeExpanded,
+    Impl.Ed25519.Arm.Whole.wrap, Impl.Ed25519.Arm.Whole.callWith, Impl.Ed25519.Arm.FieldOp.code,
+    Impl.Ed25519.Arm.fieldCode, armStack, noIcall, (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.1,
+    (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.1, (Proof.Ed25519.Arm.Shape.mulFn _).2.1,
+    (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.2, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.2,
+    (Proof.Ed25519.Arm.Shape.mulFn _).2.2, Bool.and_self, Nat.max_self, List.length_cons,
+    List.length_nil]
+  decide
 
-theorem verify_armStack (umaal : Bool) : armStack (VerifyMessage.code umaal) ≤ 280 := by
-  cases umaal <;> lit_decide
-
-def keyPairReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.keyPairApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := keyPairCode umaal
-      verified := Proof.Ed25519.Arm.KeyPair.verified }
-    (keyPair_armStack umaal) (keyPair_noIcall umaal) frameOk_600 (keyPairOut combConsts 600) rfl
-
-def signExpandedReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.signExpandedApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := SignCached.codeExpanded umaal
-      verified := Proof.Ed25519.Arm.SignCached.signExpanded_verified }
-    (signExpanded_armStack umaal) (signExpanded_noIcall umaal) frameOk_280 (signExpandedOut combConsts 280) rfl
-
-def verifyReg (umaal : Bool) (suffix : String) : Registration Spec.Ed25519.verifyApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := VerifyMessage.code umaal
-      verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }
-    (verify_armStack umaal) (verify_noIcall umaal) frameOk_280 (verifyOut combConsts 280) rfl
+theorem verify_codeOk (umaal : Bool) : CodeOk (VerifyMessage.code umaal) 280 := by
+  have hi : CodeOk (Impl.Sha512.Arm.Stream.init Spec.Sha512.H0_512) 0 := CodeOk.block _
+  obtain ⟨i1, i2⟩ := hi
+  obtain ⟨u1, u2⟩ := Proof.MdStream.Arm.ShaScrub.sha512_update
+  obtain ⟨f1, f2⟩ := Proof.MdStream.Arm.ShaScrub.sha512_finalize
+  rw [Nat.le_zero] at i1 u1 f1
+  simp only [
+    CodeOk, i1, i2, u1, u2, f1, f2, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.combStep,
+    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply,
+    Impl.Ed25519.Arm.pointAdd, Impl.Ed25519.Arm.pointDouble, Impl.Ed25519.Arm.fieldZero,
+    Impl.Ed25519.Arm.fieldEqual, Impl.Ed25519.Arm.constPoint, Impl.Ed25519.Arm.copyPointToQ,
+    Impl.Ed25519.Arm.mulCall, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.Point16.addFn,
+    Impl.Ed25519.Arm.Point16.doubleFn, Impl.Ed25519.Arm.Point16.addCall,
+    Impl.Ed25519.Arm.Point16.doubleCall, Impl.Ed25519.Arm.canonicalY, Impl.Ed25519.Arm.pointDecodeLoad,
+    Impl.Ed25519.Arm.pointDecode, Impl.Ed25519.Arm.pointEqual, Impl.Ed25519.Arm.mulP,
+    Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.chain250, Impl.Ed25519.Arm.pow250Fn,
+    Impl.Ed25519.Arm.power250, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.sqnLoop,
+    Impl.Ed25519.Arm.rootPower, Impl.Ed25519.Arm.recoverCandidate, Impl.Ed25519.Arm.recoverSuccess,
+    Impl.Ed25519.Arm.recoverInvalid, Impl.Ed25519.Arm.recoverAdjustSign, Impl.Ed25519.Arm.recoverSign,
+    Impl.Ed25519.Arm.recoverPoint, Impl.Ed25519.Arm.scalarMulD, Impl.Ed25519.Arm.scalarFold,
+    Impl.Ed25519.Arm.scalarReduceEngine, Impl.Ed25519.Arm.scalarReduce, Impl.Ed25519.Arm.verifyLhs,
+    Impl.Ed25519.Arm.verifyCombine, Impl.Ed25519.Arm.recBit, Impl.Ed25519.Arm.recByte,
+    Impl.Ed25519.Arm.recode, Impl.Ed25519.Arm.oddTableInit, Impl.Ed25519.Arm.oddTableStep,
+    Impl.Ed25519.Arm.oddTable, Impl.Ed25519.Arm.slideHead, Impl.Ed25519.Arm.addEntry,
+    Impl.Ed25519.Arm.slideTail, Impl.Ed25519.Arm.slideStep, Impl.Ed25519.Arm.topStep,
+    Impl.Ed25519.Arm.topDigit, Impl.Ed25519.Arm.slideStart, Impl.Ed25519.Arm.slideRest,
+    Impl.Ed25519.Arm.publicMul, Impl.Ed25519.Arm.verifyRhs, Impl.Ed25519.Arm.verifyEquationPoints,
+    Impl.Ed25519.Arm.decodeBody, Impl.Ed25519.Arm.decodeBoth, Impl.Ed25519.Arm.verifyDecode,
+    Impl.Ed25519.Arm.verifyBody, Impl.Ed25519.Arm.verifyEquation, Impl.Ed25519.Arm.VerifyMessage.init,
+    Impl.Ed25519.Arm.VerifyMessage.update, Impl.Ed25519.Arm.VerifyMessage.finalize,
+    Impl.Ed25519.Arm.VerifyMessage.hash, Impl.Ed25519.Arm.VerifyMessage.body,
+    Impl.Ed25519.Arm.VerifyMessage.code, Impl.Ed25519.Arm.Whole.wrap, Impl.Ed25519.Arm.Whole.callWith,
+    Impl.Ed25519.Arm.repeatThen, Impl.Ed25519.Arm.FieldOp.code, Impl.Ed25519.Arm.fieldCode, armStack,
+    noIcall, (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.1, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.1,
+    (Proof.Ed25519.Arm.Shape.mulFn _).2.1, (Proof.Ed25519.Arm.Shape.fieldCode _ _).2.2,
+    (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).2.2, (Proof.Ed25519.Arm.Shape.mulFn _).2.2, Bool.and_self,
+    Nat.max_self, List.length_cons, List.length_nil]
+  decide
 
 end VG.Proof.Ed25519.Arm.Scrub
+
+namespace VG.Proof.Ed25519.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_ed25519_key_pair`, with either product of the field. -/
+theorem keyPair (umaal : Bool) :
+    VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.keyPair umaal)
+      (Spec.Ed25519.keyPairContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 600) 0 :=
+  verifiedScrubbedF (api := Spec.Ed25519.keyPairApi)
+    { code := Scrub.keyPairCode umaal, verified := Proof.Ed25519.Arm.KeyPair.verified }
+    (Scrub.keyPairOut Impl.Ed25519.Arm.combConsts 600) (scrubSideF_of (Scrub.keyPair_codeOk umaal) Scrub.frameOk_600 _)
+
+/-- `vg_ed25519_sign_expanded`, with either product of the field. -/
+theorem signExpanded (umaal : Bool) :
+    VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.signExpanded umaal)
+      (Spec.Ed25519.signExpandedContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 280) 0 :=
+  verifiedScrubbedF (api := Spec.Ed25519.signExpandedApi)
+    { code := Impl.Ed25519.Arm.SignCached.codeExpanded umaal
+      verified := Proof.Ed25519.Arm.SignCached.signExpanded_verified }
+    (Scrub.signExpandedOut Impl.Ed25519.Arm.combConsts 280) (scrubSideF_of (Scrub.signExpanded_codeOk umaal) Scrub.frameOk_280 _)
+
+/-- `vg_ed25519_verify`, with either product of the field. -/
+theorem verify (umaal : Bool) :
+    VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.verify umaal)
+      (Spec.Ed25519.verifyContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 280) 32 :=
+  verifiedScrubbedF (api := Spec.Ed25519.verifyApi)
+    { code := Impl.Ed25519.Arm.VerifyMessage.code umaal
+      verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }
+    (Scrub.verifyOut Impl.Ed25519.Arm.combConsts 280) (scrubSideF_of (Scrub.verify_codeOk umaal) Scrub.frameOk_280 _)
+
+end VG.Proof.Ed25519.Arm.Fn

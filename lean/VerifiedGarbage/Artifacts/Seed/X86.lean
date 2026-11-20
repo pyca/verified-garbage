@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86.KeyVerified
-public import VerifiedGarbage.Proof.Seed.X86.Verified
-public import VerifiedGarbage.Proof.Seed.X86.EcbCall
+public import VerifiedGarbage.Proof.Seed.X86.Scrub
+public import VerifiedGarbage.Impl.Seed.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Seed.X86.Lit
@@ -15,13 +14,13 @@ namespace VG.Artifacts.Seed.X86
 
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 840 2 206 Impl.Seed.X86.expandKey
-    verified := .unscrubbed Proof.Seed.X86.expandKey_framed },
+    code := Impl.Seed.X86.Fn.expandKey
+    verified := .scrubbed Proof.Seed.X86.Scrub.expandKey_scrubbed },
   Spec.Seed.ecbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .encrypt)
-    verified := .unscrubbed (Proof.Seed.X86.ecbCall_framed .encrypt) },
+    code := Impl.Seed.X86.Fn.ecb .encrypt
+    verified := .scrubbed Proof.Seed.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.Seed.ecbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .decrypt)
-    verified := .unscrubbed (Proof.Seed.X86.ecbCall_framed .decrypt) }]
+    code := Impl.Seed.X86.Fn.ecb .decrypt
+    verified := .scrubbed Proof.Seed.X86.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Seed.X86

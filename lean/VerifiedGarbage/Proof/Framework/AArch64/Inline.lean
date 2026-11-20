@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -34,33 +35,6 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 @[simp] theorem State.withRegions_self (s : State) : s.withRegions s.rd s.wr = s := rfl
 @[simp] theorem State.withRegions_withRegions (s : State) (rd wr rd' wr') :
     (s.withRegions rd wr).withRegions rd' wr' = s.withRegions rd' wr' := rfl
-
-/-- The register an instruction writes, if it writes exactly one (a frame's
-pop writes its register); none for `ldp`, which writes two (`dsts`). -/
-def dstOf : Instr → Option Reg
-  | .adds _ d .. | .adcs _ d .. | .subs _ d .. | .sbcs _ d .. | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adrSym d _ => some d
-  | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
-  | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .movz _ d ..
-  | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
-  | .ldrTbl _ d .. => some d
-  | .cselc _ d .. | .csneg _ d .. => some d
-  | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
-  | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ | .barrier _ => none
-
-/-- The general-purpose registers instruction `i` writes. -/
-def dsts (i : Instr) : List Reg :=
-  match i with
-  | .ldp t1 t2 _ _ => [t1, t2]
-  | _ => (dstOf i).toList
-
-/-- Whether instruction `i` writes the general-purpose register `r`, one of
-`dsts i`. The lemmas about the registers code keeps are stated with it (or
-`dsts`), not with `dstOf`, which names only an instruction's single
-destination. -/
-def clobbers (i : Instr) (r : Reg) : Bool :=
-  match i with
-  | .ldp t1 t2 _ _ => r == t1 || r == t2
-  | _ => dstOf i == some r
 
 theorem clobbers_iff {i : Instr} {r : Reg} : clobbers i r = true ↔ r ∈ dsts i := by
   unfold clobbers dsts
@@ -359,10 +333,6 @@ theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
   cases c <;> rfl
 
 end
-
-/-- The registers a call changes: the link register, and the
-intra-procedure-call scratch registers, which a linker veneer may change. -/
-def linkRegs : List Reg := [.x16, .x17, .x30]
 
 /-- Calls change only `linkRegs`. -/
 theorem call_eq {s s' : State} (h : isa.call s = some s') :

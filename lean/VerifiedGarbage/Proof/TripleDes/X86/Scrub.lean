@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.TripleDes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.X86.Frame
 public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
@@ -24,11 +25,12 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion, ECB and the CBC, CFB64, CFB8 and OFB functions run with their
 working space in a frame on the stack (`withStackScratchWiped`), and the
-modes call the block function or the batched ECB code directly. Each is
-scrubbed with `X86.Scrub.scrubFOf`, which zeroes the stack its contract
-reserves below `esp` (532 bytes for key expansion, 1060 for ECB, 984 for the
+modes call the block function or the batched ECB code directly. As emitted
+(`Impl.TripleDes.X86.Fn`), each then zeroes the stack its contract reserves
+below `esp` (532 bytes for key expansion, 1060 for ECB, 984 for the
 modes one block at a time and 1248 for the batched CBC and CFB64
-decryption) and clears the registers a callee may change. What the scrub
+decryption) and clears the registers a callee may change, and returns
+without secret residue (`X86.Scrub.verifiedScrubbedF`). What the cleanup
 needs of the code is one Boolean (`X86.Scrub.scrubFSide`), proved by
 evaluating the code once (`lit_decide`). Their postconditions read the
 memory on return only within their buffers, by the lemmas of
@@ -85,96 +87,122 @@ theorem ofbOut : PostOut (Spec.TripleDes.ofbContract X86.abi 984) (Spec.TripleDe
 theorem ofbFinalOut : PostOut (Spec.TripleDes.ofbFinalContract X86.abi 984) (Spec.TripleDes.ofbFinalSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_triple_des_expand_key`. -/
-def expandKeyReg : Registration Spec.TripleDes.expandKeyApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey
+/-- `Spec.TripleDes.expandKeyApi` as emitted (`Impl.TripleDes.X86.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.expandKey (Spec.TripleDes.expandKeyContract X86.abi 532) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.expandKeyApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey
       verified := Proof.TripleDes.X86.expandKey_framed }
     expandKeyOut
 
-/-- `vg_triple_des_ecb_encrypt`. -/
-def ecbEncryptReg : Registration Spec.TripleDes.ecbEncryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt
+/-- `Spec.TripleDes.ecbEncryptApi` as emitted (`Impl.TripleDes.X86.Fn.ecbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ecbEncrypt (Spec.TripleDes.ecbContract X86.abi Spec.TripleDes.Direction.encrypt 1060) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ecbEncryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt
       verified := Proof.TripleDes.X86.ecb_framed .encrypt }
     (ecbOut .encrypt)
 
-/-- `vg_triple_des_ecb_decrypt`. -/
-def ecbDecryptReg : Registration Spec.TripleDes.ecbDecryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt
+/-- `Spec.TripleDes.ecbDecryptApi` as emitted (`Impl.TripleDes.X86.Fn.ecbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ecbDecrypt (Spec.TripleDes.ecbContract X86.abi Spec.TripleDes.Direction.decrypt 1060) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ecbDecryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt
       verified := Proof.TripleDes.X86.ecb_framed .decrypt }
     (ecbOut .decrypt)
 
-/-- `vg_triple_des_cbc_encrypt_chained`. -/
-def cbcEncryptChainedReg : Registration Spec.TripleDes.cbcEncryptChainedApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
+/-- `Spec.TripleDes.cbcEncryptChainedApi` as emitted (`Impl.TripleDes.X86.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cbcEncryptChained (Spec.TripleDes.cbcEncryptChainedContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
       verified := Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed }
     cbcEncryptOut
 
-/-- `vg_triple_des_cbc_decrypt_chained`. -/
-def cbcDecryptChainedReg : Registration Spec.TripleDes.cbcDecryptChainedApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained
+/-- `Spec.TripleDes.cbcDecryptChainedApi` as emitted (`Impl.TripleDes.X86.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cbcDecryptChained (Spec.TripleDes.cbcDecryptChainedContract X86.abi 1248) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained
       verified := Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }
     cbcDecryptOut
 
-/-- `vg_triple_des_cfb64_encrypt`. -/
-def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
+/-- `Spec.TripleDes.cfbEncryptApi` as emitted (`Impl.TripleDes.X86.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbEncrypt (Spec.TripleDes.cfbEncryptContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
       verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed }
     cfbEncryptOut
 
-/-- `vg_triple_des_cfb64_decrypt`. -/
-def cfbDecryptReg : Registration Spec.TripleDes.cfbDecryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt
+/-- `Spec.TripleDes.cfbDecryptApi` as emitted (`Impl.TripleDes.X86.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbDecrypt (Spec.TripleDes.cfbDecryptContract X86.abi 1248) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt
       verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed }
     cfbDecryptOut
 
-/-- `vg_triple_des_cfb64_encrypt_final`. -/
-def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal
+/-- `Spec.TripleDes.cfbEncryptFinalApi` as emitted (`Impl.TripleDes.X86.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbEncryptFinal (Spec.TripleDes.cfbEncryptFinalContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal
       verified := Proof.TripleDes.X86.FbFinal.cfbEncryptFinal_framed }
     cfbEncryptFinalOut
 
-/-- `vg_triple_des_cfb64_decrypt_final`. -/
-def cfbDecryptFinalReg : Registration Spec.TripleDes.cfbDecryptFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal
+/-- `Spec.TripleDes.cfbDecryptFinalApi` as emitted (`Impl.TripleDes.X86.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbDecryptFinal (Spec.TripleDes.cfbDecryptFinalContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal
       verified := Proof.TripleDes.X86.FbFinal.cfbDecryptFinal_framed }
     cfbDecryptFinalOut
 
-/-- `vg_triple_des_cfb8_encrypt`. -/
-def cfb8EncryptReg : Registration Spec.TripleDes.cfb8EncryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt
+/-- `Spec.TripleDes.cfb8EncryptApi` as emitted (`Impl.TripleDes.X86.Fn.cfb8Encrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfb8Encrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfb8Encrypt (Spec.TripleDes.cfb8EncryptContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfb8EncryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt
       verified := Proof.TripleDes.X86.Fb.cfb8Encrypt_framed }
     cfb8EncryptOut
 
-/-- `vg_triple_des_cfb8_decrypt`. -/
-def cfb8DecryptReg : Registration Spec.TripleDes.cfb8DecryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt
+/-- `Spec.TripleDes.cfb8DecryptApi` as emitted (`Impl.TripleDes.X86.Fn.cfb8Decrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfb8Decrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfb8Decrypt (Spec.TripleDes.cfb8DecryptContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfb8DecryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt
       verified := Proof.TripleDes.X86.Fb.cfb8Decrypt_framed }
     cfb8DecryptOut
 
-/-- `vg_triple_des_ofb`. -/
-def ofbReg : Registration Spec.TripleDes.ofbApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofb
+/-- `Spec.TripleDes.ofbApi` as emitted (`Impl.TripleDes.X86.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ofb (Spec.TripleDes.ofbContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ofbApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofb
       verified := Proof.TripleDes.X86.Fb.ofb_framed }
     ofbOut
 
-/-- `vg_triple_des_ofb_final`. -/
-def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofbFinal
+/-- `Spec.TripleDes.ofbFinalApi` as emitted (`Impl.TripleDes.X86.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ofbFinal (Spec.TripleDes.ofbFinalContract X86.abi 984) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ofbFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofbFinal
       verified := Proof.TripleDes.X86.FbFinal.ofbFinal_framed }
     ofbFinalOut
 

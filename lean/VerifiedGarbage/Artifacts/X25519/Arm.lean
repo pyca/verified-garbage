@@ -23,6 +23,9 @@ def artifacts : List Artifact := [
     code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32
     verified := .unscrubbed Proof.X25519.Arm.Exchange.exchange_umaal }] ++
   VG.Proof.Variants.Ed25519Field.Arm.variants.map fun (v : Proof.Variants.Ed25519Field.Arm.Variant) =>
-    Spec.X25519.x25519BaseApi.artifact Arm.target (Proof.X25519.Arm.Base.x25519BaseReg v.umaal v.suffix)
+    Spec.X25519.x25519BaseApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.X25519.Arm.Fn.x25519Base v.umaal
+      verified := .scrubbed (Proof.X25519.Arm.Fn.x25519Base v.umaal) }
 
 end VG.Artifacts.X25519.Arm

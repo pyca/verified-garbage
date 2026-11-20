@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -801,6 +803,29 @@ str r2, [r12, #68]
 str r2, [r12, #72]
 str r2, [r12, #76]
 add sp, sp, #96
+sub sp, sp, #96
+add r12, sp, #0
+mov r2, #0
+mov r3, #3
+224:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 224b
+add sp, sp, #96
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         VG_BLOWFISH_INIT = sym super::consts::VG_BLOWFISH_INIT,
     )
@@ -809,6 +834,8 @@ bx lr",
 /// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1185,6 +1212,29 @@ str r2, [r12, #68]
 str r2, [r12, #72]
 str r2, [r12, #76]
 add sp, sp, #256
+sub sp, sp, #256
+add r12, sp, #0
+mov r2, #0
+mov r3, #8
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #256
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -1192,6 +1242,8 @@ bx lr",
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1568,6 +1620,37 @@ str r2, [r12, #68]
 str r2, [r12, #72]
 str r2, [r12, #76]
 add sp, sp, #256
+sub sp, sp, #256
+add r12, sp, #0
+mov r2, #0
+mov r3, #8
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+add sp, sp, #256
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_ecb_decrypt_entry.rs"]
+pub(crate) mod vg_blowfish_ecb_decrypt_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_ecb_encrypt_entry.rs"]
+pub(crate) mod vg_blowfish_ecb_encrypt_entry;

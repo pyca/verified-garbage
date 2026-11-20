@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
+public import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,13 +12,13 @@ namespace VG.Artifacts.Blowfish.Arm
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey
-    verified := .unscrubbed Proof.Blowfish.Arm.expandKey_framed },
+    code := Impl.Blowfish.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.expandKey },
   Spec.Blowfish.ecbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 Impl.Blowfish.Arm.encrypt
-    verified := .unscrubbed (Proof.Blowfish.Arm.ecb_framed true) },
+    code := Impl.Blowfish.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.ecbEncrypt },
   Spec.Blowfish.ecbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 Impl.Blowfish.Arm.decrypt
-    verified := .unscrubbed (Proof.Blowfish.Arm.ecb_framed false) }]
+    code := Impl.Blowfish.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Blowfish.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Blowfish.Arm

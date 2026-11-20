@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+public import VerifiedGarbage.Impl.Residue.Arm
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
@@ -43,3 +44,14 @@ def body (umaal : Bool) : Prog isa :=
 def code (umaal : Bool) : Prog isa := wrap 5 (body umaal)
 
 end VG.Impl.Ed25519.Arm.VerifyMessage
+
+namespace VG.Impl.Ed25519.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_ed25519_verify`, with either product of the field (`umaal`), then the 280 bytes of
+stack its contract reserves zeroed and the registers a callee may change, but the result,
+and the flags set to constants. -/
+def verify (umaal : Bool) : Prog isa := scrubF 32 280 (VerifyMessage.code umaal)
+
+end VG.Impl.Ed25519.Arm.Fn

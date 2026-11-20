@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.Fn
 public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcVerified
 public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrecomputed
 public meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndVerified
@@ -32,13 +33,13 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
-      code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v
-      verified := .unscrubbed (Proof.RsaPkcs1Enc.Arm.Dec.decryptPrecomputed_verified v) },
+      code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (Proof.Rsa.Arm.privNameP v)
+        (Proof.Rsa.Arm.privCodeP v)
+      verified := .scrubbed (Proof.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed v) },
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact Arm.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Enc.Arm.Random.code ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
+      code := Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
-      verified := .unscrubbed (Proof.RsaPkcs1Enc.Arm.Rnd.code_verified ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
-        (Proof.Rsa.Arm.pdOfCrt v)) }]
+      verified := .scrubbed (Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v) }]
 
 end VG.Artifacts.RsaPkcs1Enc.Arm

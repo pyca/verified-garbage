@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-! Eight four-byte stores (32 bytes) at a time, then four-byte stores, then
 a byte tail. -/
@@ -33,3 +34,13 @@ def zeroize : Prog isa :=
     (.seq (.block [.mov .r3 (.shifted .r1 .lsr 2), .dp .and .r3 .r3 (.imm 7)])
     (.seq (loop true) (.seq (.block [.dp .and .r1 .r1 (.imm 3), .mov .r3 (.reg .r1)]) (loop false)))))
 end VG.Impl.Zeroize.Arm
+
+namespace VG.Impl.Zeroize.Arm.Fn
+open VG.Arm
+
+/-- `vg_zeroize` as emitted: `zeroize`, which has no frames, then its cleanup
+(`Impl/Residue/Arm.lean`): the registers a callee may change set to
+constants. It returns no value. -/
+def zeroize : Prog isa := VG.Impl.Residue.Arm.scrub 0 VG.Impl.Zeroize.Arm.zeroize
+
+end VG.Impl.Zeroize.Arm.Fn

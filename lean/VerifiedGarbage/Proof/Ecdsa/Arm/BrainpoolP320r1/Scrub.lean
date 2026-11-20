@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.ArmFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.Comb
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP320r1Comb
@@ -12,6 +14,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP320r1.CombLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.ArmFn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.Comb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP320r1Comb
@@ -28,8 +32,9 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 `vg_ecdsa_brainpoolp320r1_verify` keeps the hash's working values in a frame
 of 96 bytes and makes no indirect call, and its postcondition does not read
-the memory on return (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): it is registered
-followed by a wipe of that stack (`Arm.Scrub.scrubRegF`).
+the memory on return (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): it is emitted
+followed by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its
+theorem (`Arm.Scrub.verifiedScrubbedF`).
 `vg_ecdsa_brainpoolp320r1_sign` calls indirectly only the HMAC functions of
 its table, from frames within the stack its contract reserves, and its
 postcondition reads the memory on return only at `out`
@@ -76,27 +81,6 @@ theorem verifyU_armStack : armStack (verifyCode true) ≤ 96 := by
 theorem frameOk_96 : FrameOk 96 := by decide
 
 theorem frameOk_stackT : FrameOk stackT := by decide
-
-/-- `vg_ecdsa_brainpoolp320r1_verify`, given the group law. -/
-def verifyReg (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdsa.BrainpoolP320r1.verifyHashApi target :=
-  Arm.Scrub.scrubRegF {
-      code := verifyCode false
-      verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHash_verified hC }
-    verify_armStack verify_noIcall frameOk_96
-    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
-      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96) rfl
-
-/-- `vg_ecdsa_brainpoolp320r1_verify_umaal`, given the group law. -/
-def verifyUReg (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdsa.BrainpoolP320r1.verifyHashApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := "_umaal"
-      code := verifyCode true
-      verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHashU_verified hC }
-    verifyU_armStack verifyU_noIcall frameOk_96
-    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
-      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96) rfl
 
 /-- The configuration of signing's code, the comb's core calling
 `vg_brainpoolp320r1_mul` with `umaal` if `u`: the code is that of
@@ -170,3 +154,35 @@ def signUReg (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
       (brainpoolp320r1CombCurveU hC).coreConsts vars) rfl
 
 end VG.Proof.Ecdsa.Arm.BrainpoolP320r1.Scrub
+
+namespace VG.Proof.Ecdsa.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_ecdsa_brainpoolp320r1_verify`, given the group law. -/
+theorem verifyBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
+        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+    { code := BrainpoolP320r1.Scrub.verifyCode false
+      verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHash_verified hC }
+    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
+      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96)
+    (scrubSideF_of ⟨BrainpoolP320r1.Scrub.verify_armStack, BrainpoolP320r1.Scrub.verify_noIcall⟩
+      BrainpoolP320r1.Scrub.frameOk_96 _)
+
+/-- `vg_ecdsa_brainpoolp320r1_verify_umaal`, given the group law. -/
+theorem verifyBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1U
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
+        (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+    { code := BrainpoolP320r1.Scrub.verifyCode true
+      verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHashU_verified hC }
+    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
+      Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96)
+    (scrubSideF_of ⟨BrainpoolP320r1.Scrub.verifyU_armStack, BrainpoolP320r1.Scrub.verifyU_noIcall⟩
+      BrainpoolP320r1.Scrub.frameOk_96 _)
+
+end VG.Proof.Ecdsa.Arm.Fn

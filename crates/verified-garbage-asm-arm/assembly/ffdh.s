@@ -15446,6 +15446,28 @@ vg_ffdh_check_domain_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+2505:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2505b
+	add sp, sp, #128
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_check_private_umaal:
@@ -24263,6 +24285,28 @@ vg_ffdh_check_private_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+2438:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2438b
+	add sp, sp, #128
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_check_domain:
@@ -35226,6 +35270,28 @@ vg_ffdh_check_domain:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+2505:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2505b
+	add sp, sp, #128
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_check_private:
@@ -44744,6 +44810,28 @@ vg_ffdh_check_private:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
+	sub sp, sp, #128
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #4
+2438:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 2438b
+	add sp, sp, #128
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_check_public_umaal:
@@ -49642,6 +49730,11 @@ vg_ffdh_key_generation_init:
 	str r3, [r0, #28]
 	mov r0, #0
 21:
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_parameter_generation_init:
@@ -49737,6 +49830,11 @@ vg_ffdh_parameter_generation_init:
 	str r3, [r0, #28]
 	mov r0, #0
 21:
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_ffdh_generate_parameters_umaal:

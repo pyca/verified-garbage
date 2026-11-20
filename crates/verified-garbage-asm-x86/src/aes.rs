@@ -142,3 +142,19 @@ pub(crate) mod vg_aes_expand_key_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
 pub(crate) mod vg_aes_expand_key_scratch_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_pclmul_core;

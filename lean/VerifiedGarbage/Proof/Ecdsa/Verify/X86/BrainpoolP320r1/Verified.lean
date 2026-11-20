@@ -39,8 +39,9 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
@@ -372,12 +373,14 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.brainpoolP320r1_len (by decide) (verify_verified hL)
     verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
 
-/-- `vg_ecdsa_brainpoolp320r1_verify`, scrubbed (`X86.Scrub.scrubFOf`), returning
-without secret residue. -/
-def verifyReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdsa.BrainpoolP320r1.verifyHashApi X86.target :=
-  X86.Scrub.scrubFOf {
-      code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
+/-- `vg_ecdsa_brainpoolp320r1_verify` as emitted (`Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1`) meets
+its contract in constant time and returns without secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed X86.target Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (X86.abi.withConsts brainpoolp320r1Comb.combConsts)
+        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
+  X86.Scrub.verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+    { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
         verifyBrainpoolP320r1
       verified := verifyHash_verified hL }
     (Proof.EcKey.X86.Scrub.verifyHashOut (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)

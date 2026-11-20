@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Md5.Arm
 
 def artifacts : List Artifact := [
-  Spec.Md5.initApi.artifact Arm.target Proof.Md5.Arm.Scrub.initReg,
-  Spec.Md5.updateApi.artifact Arm.target Proof.Md5.Arm.Scrub.updateReg,
-  Spec.Md5.finalizeApi.artifact Arm.target Proof.Md5.Arm.Scrub.finalizeReg]
+  Spec.Md5.initApi.artifact Arm.target {
+    code := Impl.Md5.Arm.Fn.init
+    verified := .scrubbed Proof.Md5.Arm.Fn.init },
+  Spec.Md5.updateApi.artifact Arm.target {
+    code := Impl.Md5.Arm.Fn.update
+    verified := .scrubbed Proof.Md5.Arm.Fn.update },
+  Spec.Md5.finalizeApi.artifact Arm.target {
+    code := Impl.Md5.Arm.Fn.finalize
+    verified := .scrubbed Proof.Md5.Arm.Fn.finalize }]
 
 end VG.Artifacts.Md5.Arm

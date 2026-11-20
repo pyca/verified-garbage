@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sha3.PostOut
 public import VerifiedGarbage.Proof.Sha3.Instances
 public import VerifiedGarbage.Spec.Sha3.Instances
@@ -15,9 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Sha3.Arm.Instances
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
-meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Proof.Sha3.Instances
 meta import VerifiedGarbage.Spec.Sha3.Instances
@@ -28,25 +26,26 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# SHA-3's absorb on ARMv7
+# SHA-3 and SHAKE on ARMv7, as emitted
 
 `vg_<f>_update` (`Spec.Sha3.updateApi`) is `update` with its working space
 `scratch` in a frame of 648 bytes on the stack, passed as its stack argument
 (`Impl.Sha3.Arm.Instances.absorb`, `withStackScratch`): proven from
 `update`'s proof (`Arm.Verified.stackScratch`, the contract with `scratch`
-being `updateScratchContract` by `rfl`), and returning without secret residue
-(`Arm.Scrub.scrubRegF`, which zeroes the 664 bytes of stack below the stack
-pointer that it and `update` use, and clears the registers a callee may
-change), so that nothing is left in the caller's memory.
+being `updateScratchContract` by `rfl`). Its cleanup (`Impl.Sha3.Arm.Fn`)
+zeroes the 664 bytes of stack below the stack pointer that it and `update`
+use, and clears the registers a callee may change, so that nothing is left
+in the caller's memory.
 
 The other functions keep their working space in a frame of their own too:
 SHA-3's `finalize` 664 bytes, SHAKE's `finalize` 648 and `squeeze` 656
 (`Impl.Sha3.Arm.Instances`), around calls of the sponge's `pad` and
 `squeeze`, which use no stack (`Instances.pad_stack`, `squeeze_stack`) and
-make no indirect call (by `lit_decide` on their literals). Each is
-registered with `scrubRegF` too, its postcondition reading the memory on
-return only within its buffers (`Proof/Sha3/PostOut.lean`,
-`Proof.Sha3.Instances.xofSqueezePostOut_local`).
+make no indirect call (by `lit_decide` on their literals). Their cleanup
+zeroes that stack too, their postconditions reading the memory on return
+only within their buffers (`Proof/Sha3/PostOut.lean`,
+`Proof.Sha3.Instances.xofSqueezePostOut_local`). `Fn` below has the theorem
+of each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
 -/
 
 @[expose] public section
@@ -100,12 +99,6 @@ theorem absorb_sha3_224_armStack :
 theorem absorb_sha3_224_noIcall :
     noIcall (Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_224.rate) = true := by lit_decide
 
-/-- `vg_sha3_224_update`. -/
-def absorbSha3_224Reg : Registration Spec.Sha3.updateSha3_224Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_224.rate
-      verified := absorb_sha3_224 }
-    absorb_sha3_224_armStack absorb_sha3_224_noIcall frameOk664 (absorbOut _ _) rfl
 
 theorem absorbSat_sha3_256 : ∃ s, (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_256.rate 664).pre s := by
   implies_sat [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
@@ -128,12 +121,6 @@ theorem absorb_sha3_256_armStack :
 theorem absorb_sha3_256_noIcall :
     noIcall (Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_256.rate) = true := by lit_decide
 
-/-- `vg_sha3_256_update`. -/
-def absorbSha3_256Reg : Registration Spec.Sha3.updateSha3_256Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_256.rate
-      verified := absorb_sha3_256 }
-    absorb_sha3_256_armStack absorb_sha3_256_noIcall frameOk664 (absorbOut _ _) rfl
 
 theorem absorbSat_sha3_384 : ∃ s, (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_384.rate 664).pre s := by
   implies_sat [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
@@ -156,12 +143,6 @@ theorem absorb_sha3_384_armStack :
 theorem absorb_sha3_384_noIcall :
     noIcall (Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_384.rate) = true := by lit_decide
 
-/-- `vg_sha3_384_update`. -/
-def absorbSha3_384Reg : Registration Spec.Sha3.updateSha3_384Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_384.rate
-      verified := absorb_sha3_384 }
-    absorb_sha3_384_armStack absorb_sha3_384_noIcall frameOk664 (absorbOut _ _) rfl
 
 theorem absorbSat_sha3_512 : ∃ s, (Spec.Sha3.updateContract Arm.abi Spec.Sha3.hashSha3_512.rate 664).pre s := by
   implies_sat [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
@@ -184,12 +165,6 @@ theorem absorb_sha3_512_armStack :
 theorem absorb_sha3_512_noIcall :
     noIcall (Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_512.rate) = true := by lit_decide
 
-/-- `vg_sha3_512_update`. -/
-def absorbSha3_512Reg : Registration Spec.Sha3.updateSha3_512Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_512.rate
-      verified := absorb_sha3_512 }
-    absorb_sha3_512_armStack absorb_sha3_512_noIcall frameOk664 (absorbOut _ _) rfl
 
 theorem absorbSat_shake128 : ∃ s, (Spec.Sha3.updateContract Arm.abi Spec.Sha3.xofShake128.rate 664).pre s := by
   implies_sat [Spec.Sha3.updateContract, Spec.Sha3.updateSig, Spec.Sha3.updatePre, Spec.Sha3.updatePost,
@@ -212,12 +187,6 @@ theorem absorb_shake128_armStack :
 theorem absorb_shake128_noIcall :
     noIcall (Impl.Sha3.Arm.Instances.absorb Spec.Sha3.xofShake128.rate) = true := by lit_decide
 
-/-- `vg_shake128_update`. -/
-def absorbShake128Reg : Registration Spec.Sha3.updateShake128Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.xofShake128.rate
-      verified := absorb_shake128 }
-    absorb_shake128_armStack absorb_shake128_noIcall frameOk664 (absorbOut _ _) rfl
 
 /-! ## `finalize` and `squeeze` -/
 
@@ -264,60 +233,113 @@ theorem xofSqueezeOut (X : Spec.Sha3.Xof) :
     PostOut (Spec.Sha3.xofSqueezeContract abi X 656) (Spec.Sha3.xofSqueezeSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.Sha3.Instances.xofSqueezePostOut_local _ X)
 
+end VG.Proof.Sha3.Arm.Absorb
+
+namespace VG.Proof.Sha3.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Proof.Sha3.Arm.Absorb
+
+/-- `vg_sha3_224_update`. -/
+theorem update_sha3_224 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_224.rate)
+    (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_224.rate 664) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_224Api)
+    { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_224.rate, verified := absorb_sha3_224 }
+    (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_224_armStack, absorb_sha3_224_noIcall⟩ frameOk664 _)
+
+/-- `vg_sha3_256_update`. -/
+theorem update_sha3_256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_256.rate)
+    (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_256.rate 664) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_256Api)
+    { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_256.rate, verified := absorb_sha3_256 }
+    (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_256_armStack, absorb_sha3_256_noIcall⟩ frameOk664 _)
+
+/-- `vg_sha3_384_update`. -/
+theorem update_sha3_384 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_384.rate)
+    (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_384.rate 664) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_384Api)
+    { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_384.rate, verified := absorb_sha3_384 }
+    (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_384_armStack, absorb_sha3_384_noIcall⟩ frameOk664 _)
+
+/-- `vg_sha3_512_update`. -/
+theorem update_sha3_512 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_512.rate)
+    (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_512.rate 664) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateSha3_512Api)
+    { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_512.rate, verified := absorb_sha3_512 }
+    (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_512_armStack, absorb_sha3_512_noIcall⟩ frameOk664 _)
+
+/-- `vg_shake128_update`. -/
+theorem update_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.xofShake128.rate)
+    (Spec.Sha3.updateContract abi Spec.Sha3.xofShake128.rate 664) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.updateShake128Api)
+    { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.xofShake128.rate, verified := absorb_shake128 }
+    (absorbOut _ _) (scrubSideF_of ⟨absorb_shake128_armStack, absorb_shake128_noIcall⟩ frameOk664 _)
+
 /-- `vg_sha3_224_finalize`. -/
-def finalizeSha3_224Reg : Registration Spec.Sha3.finalizeSha3_224Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
+theorem finalize_sha3_224 : VerifiedScrubbed target
+    (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len)
+    (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_224 664) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_224Api)
+    { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_224 }
-    (finalize_scrubArm _ _).1 (finalize_scrubArm _ _).2 frameOk664 (finalizeOut _ (by decide)) rfl
+    (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
 
 /-- `vg_sha3_256_finalize`. -/
-def finalizeSha3_256Reg : Registration Spec.Sha3.finalizeSha3_256Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
+theorem finalize_sha3_256 : VerifiedScrubbed target
+    (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
+    (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_256 664) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_256Api)
+    { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_256 }
-    (finalize_scrubArm _ _).1 (finalize_scrubArm _ _).2 frameOk664 (finalizeOut _ (by decide)) rfl
+    (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
 
 /-- `vg_sha3_384_finalize`. -/
-def finalizeSha3_384Reg : Registration Spec.Sha3.finalizeSha3_384Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
+theorem finalize_sha3_384 : VerifiedScrubbed target
+    (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len)
+    (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_384 664) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_384Api)
+    { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_384 }
-    (finalize_scrubArm _ _).1 (finalize_scrubArm _ _).2 frameOk664 (finalizeOut _ (by decide)) rfl
+    (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
 
 /-- `vg_sha3_512_finalize`. -/
-def finalizeSha3_512Reg : Registration Spec.Sha3.finalizeSha3_512Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
+theorem finalize_sha3_512 : VerifiedScrubbed target
+    (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len)
+    (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_512 664) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_512Api)
+    { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_512 }
-    (finalize_scrubArm _ _).1 (finalize_scrubArm _ _).2 frameOk664 (finalizeOut _ (by decide)) rfl
+    (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
 
 /-- `vg_shake128_finalize`. -/
-def finalizeShake128Reg : Registration Spec.Sha3.finalizeShake128Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake128.rate
+theorem finalize_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinalize Spec.Sha3.xofShake128.rate)
+    (Spec.Sha3.xofFinalizeContract abi Spec.Sha3.xofShake128 648) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeShake128Api)
+    { code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.Arm.Instances.finalize_shake128 }
-    (xofFinalize_scrubArm _).1 (xofFinalize_scrubArm _).2 frameOk648 (xofFinalizeOut _) rfl
+    (xofFinalizeOut _) (scrubSideF_of (xofFinalize_scrubArm _) frameOk648 _)
 
 /-- `vg_shake128_squeeze`. -/
-def squeezeShake128Reg : Registration Spec.Sha3.squeezeShake128Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
+theorem squeeze_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofSqueeze Spec.Sha3.xofShake128.rate)
+    (Spec.Sha3.xofSqueezeContract abi Spec.Sha3.xofShake128 656) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.squeezeShake128Api)
+    { code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.Arm.Instances.squeeze_shake128 }
-    (xofSqueeze_scrubArm _).1 (xofSqueeze_scrubArm _).2 frameOk656 (xofSqueezeOut _) rfl
+    (xofSqueezeOut _) (scrubSideF_of (xofSqueeze_scrubArm _) frameOk656 _)
 
 /-- `vg_shake256_finalize`. -/
-def finalizeShake256Reg : Registration Spec.Sha3.finalizeShake256Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake256.rate
+theorem finalize_shake256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinalize Spec.Sha3.xofShake256.rate)
+    (Spec.Sha3.xofFinalizeContract abi Spec.Sha3.xofShake256 648) 0 :=
+  verifiedScrubbedF (api := Spec.Sha3.finalizeShake256Api)
+    { code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.Arm.Instances.finalize_shake256 }
-    (xofFinalize_scrubArm _).1 (xofFinalize_scrubArm _).2 frameOk648 (xofFinalizeOut _) rfl
+    (xofFinalizeOut _) (scrubSideF_of (xofFinalize_scrubArm _) frameOk648 _)
 
 /-- `vg_shake256_squeeze`. -/
-def squeezeShake256Reg : Registration Spec.Sha3.squeezeShake256Api target :=
-  scrubRegF {
-      code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
+theorem squeeze_shake256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofSqueeze Spec.Sha3.xofShake256.rate)
+    (Spec.Sha3.xofSqueezeContract abi Spec.Sha3.xofShake256 656) 32 :=
+  verifiedScrubbedF (api := Spec.Sha3.squeezeShake256Api)
+    { code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.Arm.Instances.squeeze_shake256 }
-    (xofSqueeze_scrubArm _).1 (xofSqueeze_scrubArm _).2 frameOk656 (xofSqueezeOut _) rfl
+    (xofSqueezeOut _) (scrubSideF_of (xofSqueeze_scrubArm _) frameOk656 _)
 
-end VG.Proof.Sha3.Arm.Absorb
+end VG.Proof.Sha3.Arm.Fn

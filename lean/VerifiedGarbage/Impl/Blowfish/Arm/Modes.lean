@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.Blowfish.Contract
 
 `cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt` are the
 generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`) over
-Blowfish's ECB functions, `vg_blowfish_ecb_encrypt` and
+Blowfish's ECB functions, the code of `vg_blowfish_ecb_encrypt` and
 `vg_blowfish_ecb_decrypt`, which they call once per block (`ecbCore`).
 -/
 
@@ -21,13 +21,16 @@ namespace VG.Impl.Blowfish.Arm
 open VG.Arm VG.Impl.Modes.Arm
 
 /-- The code of `vg_blowfish_ecb_encrypt` (`up`) or `vg_blowfish_ecb_decrypt`,
-as its artifact has it. -/
+as it is verified, before its cleanup. -/
 def ecbCode (up : Bool) : Prog isa := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 (ecb up)
 
 /-- Blowfish's ECB function, encryption (`up`) or decryption, as the modes
-call it. -/
+call it: its code as it is verified, under a name of its own
+(`vg_blowfish_ecb_encrypt_entry`), which the emitter writes as an internal
+function, since the artifact `vg_blowfish_ecb_encrypt` is that code scrubbed
+(`Impl.Blowfish.Arm.Fn`). -/
 def ecbCore (up : Bool) : Core where
-  name := if up then Spec.Blowfish.ecbEncryptApi.name else Spec.Blowfish.ecbDecryptApi.name
+  name := (if up then Spec.Blowfish.ecbEncryptApi.name else Spec.Blowfish.ecbDecryptApi.name) ++ "_entry"
   code := ecbCode up
   bw := 2
 
