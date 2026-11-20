@@ -16,7 +16,11 @@ def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Stream.init
     verified := .scrubbed ⟨Proof.Md5.PPC64LE.Shared.init, Proof.Md5.PPC64LE.Stream.init_noResidue _ _⟩ },
-  Spec.Md5.updateApi.artifact PPC64LE.target Proof.Md5.PPC64LE.updateReg,
-  Spec.Md5.finalizeApi.artifact PPC64LE.target Proof.Md5.PPC64LE.finalizeReg]
+  Spec.Md5.updateApi.artifact PPC64LE.target {
+    code := Impl.Md5.PPC64LE.Fn.update
+    verified := .scrubbed Proof.Md5.PPC64LE.update_scrubbed },
+  Spec.Md5.finalizeApi.artifact PPC64LE.target {
+    code := Impl.Md5.PPC64LE.Fn.finalize
+    verified := .scrubbed Proof.Md5.PPC64LE.finalize_scrubbed }]
 
 end VG.Artifacts.Md5.PPC64LE
