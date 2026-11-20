@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP320r1.Scrub -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP320r1.ArmFn
+public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP320r1.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP320r1.Arm.Law
@@ -13,14 +14,28 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 namespace VG.Artifacts.EcBrainpoolP320r1.Arm
 
 open VG.Proof.BrainpoolP320r1.Arm (hasLaw)
-open VG.Proof.EcKey.Arm.BrainpoolP320r1.Scrub
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact Arm.target (publicKeyReg hasLaw.law),
-  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact Arm.target (publicKeyUReg hasLaw.law),
-  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact Arm.target compressReg,
-  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact Arm.target (decompressReg hasLaw.law),
-  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact Arm.target compressUReg,
-  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact Arm.target (decompressUReg hasLaw.law)]
+  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP320r1
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyBrainpoolP320r1 hasLaw.law) },
+  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP320r1U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyBrainpoolP320r1U hasLaw.law) },
+  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.compressBrainpoolP320r1
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressBrainpoolP320r1 },
+  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.decompressBrainpoolP320r1
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressBrainpoolP320r1 hasLaw.law) },
+  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.compressBrainpoolP320r1U
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressBrainpoolP320r1U },
+  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.decompressBrainpoolP320r1U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressBrainpoolP320r1U hasLaw.law) }]
 
 end VG.Artifacts.EcBrainpoolP320r1.Arm
