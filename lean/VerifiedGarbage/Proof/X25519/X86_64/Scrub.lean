@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
@@ -79,7 +78,7 @@ theorem exchangeIfma_codeSp : (Impl.Xdh.X86_64.exchange "vg_x25519_ifma" Impl.X2
 
 /-- `vg_x25519_exchange_ifma` as emitted (`Impl.Xdh.X86_64.Fn.exchangeEvex`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem exchangeIfma_scrubbed :
+theorem exchangeIfma_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.Xdh.X86_64.Fn.exchangeEvex "vg_x25519_ifma" Impl.X25519.X86_64.x25519Ifma 32)
       (Spec.X25519.exchangeApi.contract X86_64.abi 24) 32 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
@@ -96,7 +95,7 @@ theorem exchangeAdx_codeSp : (Impl.Xdh.X86_64.exchange "vg_x25519_adx" Impl.X255
 
 /-- `vg_x25519_exchange_adx` as emitted (`Impl.Xdh.X86_64.Fn.exchange`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem exchangeAdx_scrubbed :
+theorem exchangeAdx_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.Xdh.X86_64.Fn.exchange "vg_x25519_adx" Impl.X25519.X86_64.x25519Adx 32)
       (Spec.X25519.exchangeApi.contract X86_64.abi 24) 32 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
@@ -113,7 +112,7 @@ theorem exchange_codeSp : (Impl.Xdh.X86_64.exchange "vg_x25519" Impl.X25519.X86_
 
 /-- `vg_x25519_exchange` as emitted (`Impl.Xdh.X86_64.Fn.exchange`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem exchange_scrubbed :
+theorem exchange_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.Xdh.X86_64.Fn.exchange "vg_x25519" Impl.X25519.X86_64.x25519 32)
       (Spec.X25519.exchangeApi.contract X86_64.abi 24) 32 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
@@ -130,7 +129,7 @@ theorem baseIfma_codeSp : (Impl.X25519.X86_64.Base.x25519BaseIfma).all (fun i =>
 
 /-- `vg_x25519_base_ifma` as emitted (`Impl.X25519.X86_64.Base.Fn.x25519BaseIfma`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem baseIfma_scrubbed :
+theorem baseIfma_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.X25519.X86_64.Base.Fn.x25519BaseIfma)
       (Spec.X25519.x25519BaseApi.contract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8) 0 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi)
@@ -147,7 +146,7 @@ theorem baseAdx_codeSp : (Impl.X25519.X86_64.Base.x25519BaseAdx).all (fun i => !
 
 /-- `vg_x25519_base_adx` as emitted (`Impl.X25519.X86_64.Base.Fn.x25519BaseAdx`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem baseAdx_scrubbed :
+theorem baseAdx_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.X25519.X86_64.Base.Fn.x25519BaseAdx)
       (Spec.X25519.x25519BaseApi.contract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8) 0 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi)
@@ -164,7 +163,7 @@ theorem base_codeSp : (Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.bas
 
 /-- `vg_x25519_base` as emitted (`Impl.X25519.X86_64.Base.Fn.x25519Base`), its cleanup included, meets its contract
 in constant time and returns without secret residue. -/
-theorem base_scrubbed :
+theorem base_scrubbed [VG.Proof.X25519.X86_64.DivstepInv] :
     VerifiedScrubbed X86_64.target (Impl.X25519.X86_64.Base.Fn.x25519Base)
       (Spec.X25519.x25519BaseApi.contract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8) 0 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi)
