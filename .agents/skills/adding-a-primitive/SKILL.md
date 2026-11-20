@@ -195,13 +195,20 @@ instructions in an ISA model) go in their own PR before either.
    return only within the buffers (`RISCV64.Scrub.PostOut`, by
    `postOut_of_local`) (`Proof/Framework/RISCV64/ScrubProved.lean`; `Fn` in
    `Impl/Sha3/RISCV64/Instances.lean`, `Proof/Sha3/RISCV64/Scrub.lean`,
-   `Artifacts/Sha3/RISCV64.lean`). For code generic over a variant,
-   `RISCV64.Scrub.verifiedScrubbedOf` takes `scrubSide`'s facts one by one,
-   so that the depth of the code's frames and its indirect calls follow from
-   what each variant proves of its own code where it is defined, never from
-   evaluating every variant's code for every caller. `RISCV64.Scrub.scrubOf`
-   and `scrubSelOf` build the registration of the same in `Proof/`, for the
-   families not yet converted: never use them in new code.
+   `Artifacts/Sha3/RISCV64.lean`). For code generic over a variant, each
+   variant states, as a field proven where it is defined, the depth of its
+   code's frames and that it calls nothing indirectly (`HVar.scrub`, by
+   `lit_decide`; `RoundImpl.stack` and `RoundImpl.icalls`); the function's
+   code with a stub in the variant's place (`holeStub k`, or nothing where
+   it calls through a table) is evaluated once (`scrubSide … = true`,
+   `lit_decide`), `fill_calls` proves `Fill` from it to the code with any
+   variant, and `RISCV64.Scrub.scrubSide_of_fill` joins them
+   (`Proof/Framework/RISCV64/ScrubCall.lean`;
+   `Proof/RsaKeyGen/RISCV64/Fn.lean`, and `sign_fill` in
+   `Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean` for calls through tables):
+   never a proof over the list of variants. `RISCV64.Scrub.scrubOf` and
+   `scrubSelOf` build the registration of the same in `Proof/`: no
+   registration uses them, and new code never does.
    On PPC64LE the cleanup is `Impl.Scrub.PPC64LE.scrub rb d cl c`, which
    zeroes the `d` bytes of stack the code's frames use and clears the
    volatile registers `cl` states (a `Clear`: `r0`, the bits of `r3` above
