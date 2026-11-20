@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.State
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -30,10 +31,12 @@ absorbs pairs of blocks in the two 64-bit lanes of `xmm0`, …, `xmm4`:
 
 * the lanes as numbers, the arithmetic of their limbs (`ds`, `cv`) and the
   accumulator as two lanes (`pair_init`, `pair_step`);
-* the blocks of SSE instructions (`addMsg_ok`, `mulV_ok`, `carryV_ok`,
-  `tables_ok`, …) and the loop (`lanes_ok`), whose bounds hold whatever the
-  state holds: the lanes never overflow, and are the accumulator where the
-  state is one the contract describes;
+* the blocks of SSE instructions (`addMsg_ok`, `tables_ok`, …), the sums of
+  products and the carries, which are lists of operations on the lanes that
+  an interpreter evaluates (`ops_ok`, `sumsOps_ok`, `carryOps_ok`), and the
+  loop (`lanes_ok`), whose bounds hold whatever the state holds: the lanes
+  never overflow, and are the accumulator where the state is one the
+  contract describes;
 * the code before and after the lanes (`head_ok`, `packH_ok`), the frames
   (`mframe_ok`), and what `pairs` does in a state with 524 bytes of stack
   (`pairs_ok`);
@@ -44,7 +47,7 @@ absorbs pairs of blocks in the two 64-bit lanes of `xmm0`, …, `xmm4`:
 A lane of a register is a natural number (`lane`); the instructions' effects
 on it, without wrapping where the bounds say so.
 -/
--- separate module: 3,400 lines about `pairs` (14 s), which a change to the proofs of `update`
+-- separate module: 3,600 lines about `pairs` (25 s), which a change to the proofs of `update`
 -- (`Frame.lean`) does not re-check
 
 @[expose] public section
@@ -228,7 +231,7 @@ theorem ds_lt {a b : Nat → Nat} {A B : Nat} (ha : ∀ k < 5, a k < A) (hb : �
   generalize 5 * B * A = Z at *
   omega_using [h0, h1, h2, h3, h4]
 
-/-! The carries, in the order of `carryV`: `d0 → d1`, `d3 → d4`, `d1 → d2`,
+/-! The carries, in the order of `carryOps`: `d0 → d1`, `d3 → d4`, `d1 → d2`,
 `d4 → d0` (times 5), `d2 → d3`, `d0 → d1`, `d3 → d4`. -/
 
 section
@@ -561,12 +564,11 @@ theorem storeSlot_ok (x : XReg) {o : Nat} {B : BitVec 32} (d : Nat) (s : State)
   exact ⟨trivial, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
 
 /-- The tables in the frame: the limbs `tb t l k` of the multiplier of lane
-`l` in table `t` and their multiples by 5, the mask and the bit `2²⁴`. -/
+`l` in table `t` and their multiples by 5, and the bit `2²⁴`. -/
 structure Tab (m : Mem) (B : BitVec 32) (tb : Nat → Nat → Nat → Nat) : Prop where
   rs : ∀ t < 2, ∀ k < 5, ∀ l < 2, lane (m.readW (addr B (rSlot t k)) 128) l = tb t l k
   ss : ∀ t < 2, ∀ k < 5, ∀ l < 2,
     lane (m.readW (addr B (sSlot t k)) 128) l = tb t l k + tb t l k * 2 ^ 2
-  mask : ∀ l < 2, lane (m.readW (addr B maskSlot) 128) l = 2 ^ 26 - 1
   hibit : ∀ l < 2, lane (m.readW (addr B hibitSlot) 128) l = 2 ^ 24
 
 /-- The tables are in the slots before slot 22. -/
@@ -574,7 +576,6 @@ theorem Tab.congr {m m' : Mem} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat
     (he : ∀ j < 22, m'.readW (addr B (slot j)) 128 = m.readW (addr B (slot j)) 128) : Tab m' B tb :=
   ⟨fun t ht k hk l hl => by rw [rSlot, he _ (by omega_using [ht, hk])]; exact h.rs t ht k hk l hl,
     fun t ht k hk l hl => by rw [sSlot, he _ (by omega_using [ht, hk])]; exact h.ss t ht k hk l hl,
-    fun l hl => by rw [maskSlot, he _ (by decide)]; exact h.mask l hl,
     fun l hl => by rw [hibitSlot, he _ (by decide)]; exact h.hibit l hl⟩
 
 /-- A store to a slot from 22 on keeps the tables. -/
@@ -586,18 +587,12 @@ theorem Tab.store {m : Mem} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat} (
 /-- The multiplier of limb `i` in the sum `k`. -/
 theorem Tab.mul {m : Mem} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat} (h : Tab m B tb) {t k i l : Nat}
     (ht : t < 2) (hk : k < 5) (_hi : i < 5) (hl : l < 2) :
-    lane (m.readW (addr B (mslot t k i)) 128) l = cf (tb t l) k i := by
-  simp only [Impl.Poly1305.X86.mslot, cf]
+    lane (m.readW (addr B (slot (mIdx t k i))) 128) l = cf (tb t l) k i := by
+  simp only [mIdx, cf]
   by_cases hik : i ≤ k
   · rw [ite_eq_left hik, ite_eq_left hik]; exact h.rs t ht _ (by omega_using [hk]) l hl
   · rw [ite_eq_right hik, ite_eq_right hik]
     exact h.ss t ht _ (by omega_using [hik, hk]) l hl
-
-theorem mslot_le (t k i : Nat) (ht : t < 2) (hk : k < 5) (hi : i < 5) : mslot t k i + 16 ≤ 416 := by
-  simp only [mslot, rSlot, sSlot, slot]
-  by_cases hik : i ≤ k
-  · rw [ite_eq_left hik]; omega_using [ht, hk, hi, hik]
-  · rw [ite_eq_right hik]; omega_using [ht, hk, hi, hik]
 
 /-! ### The message -/
 
@@ -723,112 +718,6 @@ theorem Xk.lane {xs : List XReg} {s s' : State} (h : Xk xs s s') {x : XReg} (hx 
     Sse2.ln s' x l = Sse2.ln s x l := by
   rw [Sse2.ln, h.xmm x hx]
 
-/-- The first product of a sum: a slot times the first limb. -/
-theorem mfirst_ok {o : Nat} {B : BitVec 32} (d : Nat) (s : State) (hsp : s.gpr .esp + BitVec.ofNat 32 o = B)
-    (hin : InRegions (s.rd ++ s.wr) (addr B d) 16) (hmc : 0 < s.mcdt) :
-    WP isa (.block [.movdquLoad .xmm5 (fs o d), .pmuludq .xmm5 .xmm0]) s fun s' =>
-      (∀ l < 2, ln s' .xmm5 l = lane (s.mem.readW (addr B d) 128) l % 2 ^ 32 * (ln s .xmm0 l % 2 ^ 32)) ∧
-      s'.mem = s.mem ∧ Xk [.xmm5] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load128, ea_fs hsp, hin, ↓reduceIte,
-    Option.map_some, mcdt_setXmm, hmc, Option.some.injEq, exists_eq_left']
-  refine ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
-  · simp only [ln, xmm_setXmm_self, xmm_setXmm, reduceCtorEq, ↓reduceIte, lane_pmuludq _ _ hl]
-  · simp only [List.mem_singleton] at hr
-    simp only [xmm_setXmm, hr, ↓reduceIte]
-
-/-- A further product: a slot times the limb in `x`, added. -/
-theorem mterm_ok {o : Nat} {B : BitVec 32} (d : Nat) (x : XReg) (hx6 : x ≠ .xmm6) (s : State)
-    (hsp : s.gpr .esp + BitVec.ofNat 32 o = B) (hin : InRegions (s.rd ++ s.wr) (addr B d) 16)
-    (hmc : 0 < s.mcdt) :
-    WP isa (.block [.movdquLoad .xmm6 (fs o d), .pmuludq .xmm6 x, .xop (.bin .paddq .xmm5 .xmm6)]) s fun s' =>
-      (∀ l < 2, ln s' .xmm5 l =
-        (ln s .xmm5 l + lane (s.mem.readW (addr B d) 128) l % 2 ^ 32 * (ln s x l % 2 ^ 32)) % 2 ^ 64) ∧
-      s'.mem = s.mem ∧ Xk [.xmm5, .xmm6] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128, ea_fs hsp, hin, ↓reduceIte,
-    Option.map_some, mcdt_setXmm, hmc, Option.some.injEq, exists_eq_left']
-  refine ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
-  · simp only [ln, xmm_setXmm_self, xmm_setXmm, reduceCtorEq, ↓reduceIte, hx6, lane_paddq _ _ hl,
-      lane_pmuludq _ _ hl]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [xmm_setXmm, hr.1, hr.2, ↓reduceIte]
-
-theorem cf_lt {b : Nat → Nat} {N : Nat} (hb : ∀ i < 5, b i < N) {k i : Nat} (hk : k < 5) (hi : i < 5) :
-    cf b k i < 5 * N := by
-  simp only [cf]
-  by_cases hik : i ≤ k
-  · rw [ite_eq_left hik]
-    have := hb (k - i) (by omega_using [hk]); omega_using [this]
-  · rw [ite_eq_right hik]
-    have := hb (k + 5 - i) (by omega_using [hk, hi, hik]); omega_using [this]
-
-/-- `dsumV`: the sum `k` of products of the lanes with table `t`, into `xmm5`. -/
-theorem dsumV_ok {o : Nat} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat} (t k : Nat) (ht : t < 2) (hk : k < 5)
-    (s : State) (hsp : s.gpr .esp + BitVec.ofNat 32 o = B) (hB : Fit B)
-    (hfr : Proof.Aes.X86.reg32 B 512 ∈ s.wr) (hmc : 0 < s.mcdt) (hT : Tab s.mem B tb)
-    (ha : ∀ l < 2, ∀ i < 5, ln s (lreg i) l < 2 ^ 28) (hb : ∀ l < 2, ∀ i < 5, tb t l i < 2 ^ 27) :
-    WP isa (.block (dsumV o t k)) s fun s' =>
-      (∀ l < 2, ln s' .xmm5 l = ds (fun i => ln s (lreg i) l) (tb t l) k) ∧ s'.mem = s.mem ∧
-      Xk [.xmm5, .xmm6] s s' := by
-  have e : dsumV o t k = ([.movdquLoad .xmm5 (fs o (mslot t k 0)), .pmuludq .xmm5 .xmm0] : List Instr) ++
-      (([.movdquLoad .xmm6 (fs o (mslot t k 1)), .pmuludq .xmm6 (lreg 1), .xop (.bin .paddq .xmm5 .xmm6)] : List Instr) ++
-      (([.movdquLoad .xmm6 (fs o (mslot t k 2)), .pmuludq .xmm6 (lreg 2), .xop (.bin .paddq .xmm5 .xmm6)] : List Instr) ++
-      (([.movdquLoad .xmm6 (fs o (mslot t k 3)), .pmuludq .xmm6 (lreg 3), .xop (.bin .paddq .xmm5 .xmm6)] : List Instr) ++
-      ([.movdquLoad .xmm6 (fs o (mslot t k 4)), .pmuludq .xmm6 (lreg 4), .xop (.bin .paddq .xmm5 .xmm6)] : List Instr)))) := by
-    simp only [dsumV, List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-      List.cons_append, List.nil_append]
-  have hin : ∀ (u : State) (i : Nat), i < 5 → u.rd = s.rd → u.wr = s.wr →
-      InRegions (u.rd ++ u.wr) (addr B (mslot t k i)) 16 := fun u i hi h₁ h₂ => by
-    rw [h₁, h₂]
-    exact Proof.Aes.X86.in_rd (fr_in hB hfr (by have := mslot_le t k i ht hk hi; omega_using [this]) (by decide))
-  -- The multipliers and the products' bounds, per lane.
-  have hc : ∀ l < 2, ∀ i < 5, lane (s.mem.readW (addr B (mslot t k i)) 128) l = cf (tb t l) k i :=
-    fun l hl i hi => hT.mul ht hk hi hl
-  have hcl : ∀ l < 2, ∀ i < 5, cf (tb t l) k i < 2 ^ 30 := fun l hl i hi =>
-    Nat.lt_of_lt_of_le (cf_lt (hb l hl) hk hi) (by decide)
-  have hp : ∀ l < 2, ∀ i < 5, cf (tb t l) k i * ln s (lreg i) l < 2 ^ 58 := fun l hl i hi =>
-    Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' (hcl l hl i hi) (ha l hl i hi)) (by decide)
-  have hm : ∀ l < 2, ∀ i < 5, cf (tb t l) k i % 2 ^ 32 * (ln s (lreg i) l % 2 ^ 32) =
-      cf (tb t l) k i * ln s (lreg i) l := fun l hl i hi => by
-    rw [Nat.mod_eq_of_lt (Nat.lt_trans (hcl l hl i hi) (by decide)),
-      Nat.mod_eq_of_lt (Nat.lt_trans (ha l hl i hi) (by decide))]
-  rw [e]
-  refine WP.block_append (WP.mono (mfirst_ok _ s hsp (hin s 0 (by decide) rfl rfl) hmc) fun s₁ ⟨a₁, m₁, k₁⟩ => ?_)
-  have step : ∀ (i : Nat) (hi : i < 5) (hi0 : 0 < i) (u : State) (acc : Nat → Nat), u.mem = s.mem → Xk [.xmm5, .xmm6] s u →
-      (∀ l < 2, ln u .xmm5 l = acc l) → (∀ l < 2, acc l < 2 ^ 58 * i) →
-      WP isa (.block [.movdquLoad .xmm6 (fs o (mslot t k i)), .pmuludq .xmm6 (lreg i),
-        .xop (.bin .paddq .xmm5 .xmm6)]) u fun u' => u'.mem = s.mem ∧ Xk [.xmm5, .xmm6] s u' ∧
-        (∀ l < 2, ln u' .xmm5 l = acc l + cf (tb t l) k i * ln s (lreg i) l) := fun i hi hi0 u acc hm' hk' hacc hlt => by
-    obtain ⟨n5, n6, -⟩ := lreg_ne i
-    refine WP.mono (mterm_ok _ (lreg i) n6 u (by rw [hk'.gpr]; exact hsp) (hin u i hi hk'.rd hk'.wr)
-      (by rw [hk'.mcdt]; exact hmc)) fun u' ⟨a', m', k''⟩ => ⟨m'.trans hm', ?_, fun l hl => ?_⟩
-    · exact (hk'.trans k'').mono fun r hr => by
-        rcases List.mem_append.mp hr with h | h <;> exact h
-    · rw [a' l hl, hacc l hl, hm', hc l hl i hi,
-        hk'.lane (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨n5, n6⟩), hm l hl i hi]
-      have h1 := hlt l hl
-      have h2 := hp l hl i hi
-      exact Nat.mod_eq_of_lt (by omega_using [h1, h2, hi])
-  have a₁' : ∀ l < 2, ln s₁ .xmm5 l = cf (tb t l) k 0 * ln s (lreg 0) l := fun l hl => by
-    rw [a₁ l hl, hc l hl 0 (by decide)]; exact hm l hl 0 (by decide)
-  have k₁' : Xk [.xmm5, .xmm6] s s₁ := k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; decide
-  refine WP.block_append (WP.mono (step 1 (by decide) (by decide) s₁ _ m₁ k₁' a₁'
-    (fun l hl => by have := hp l hl 0 (by decide); omega_using [this])) fun s₂ ⟨m₂, k₂, a₂⟩ => ?_)
-  refine WP.block_append (WP.mono (step 2 (by decide) (by decide) s₂ _ m₂ k₂ a₂
-    (fun l hl => by have := hp l hl 0 (by decide); have := hp l hl 1 (by decide); omega_arith)) fun s₃ ⟨m₃, k₃, a₃⟩ => ?_)
-  refine WP.block_append (WP.mono (step 3 (by decide) (by decide) s₃ _ m₃ k₃ a₃
-    (fun l hl => by
-      have := hp l hl 0 (by decide); have := hp l hl 1 (by decide); have := hp l hl 2 (by decide)
-      omega_arith)) fun s₄ ⟨m₄, k₄, a₄⟩ => ?_)
-  refine WP.mono (step 4 (by decide) (by decide) s₄ _ m₄ k₄ a₄
-    (fun l hl => by
-      have := hp l hl 0 (by decide); have := hp l hl 1 (by decide); have := hp l hl 2 (by decide)
-      have := hp l hl 3 (by decide)
-      omega_arith)) fun s₅ ⟨m₅, k₅, a₅⟩ => ⟨fun l hl => ?_, m₅, k₅⟩
-  rw [a₅ l hl]
-  rfl
-
 /-- All the SSE registers. -/
 abbrev xall : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]
 
@@ -842,165 +731,10 @@ theorem mv_ok (x y : XReg) (s : State) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left']
   exact ⟨xmm_setXmm_self _ _ _, rfl, setXmm_xk _ _ _⟩
 
-/-- The slots where three of the sums are kept. -/
-abbrev dR (B : BitVec 32) : Region := ⟨addr B 416, 48⟩
-
-theorem dR_contains {B : BitVec 32} (hB : Fit B) {d : Nat} (h₁ : 416 ≤ d) (h₂ : d + 16 ≤ 464) :
-    (dR B).Contains (addr B d) (128 / 8) :=
-  Proof.Aes.X86.part_contains (N := 512) (a := 416) (k := 48) hB (by decide) h₁ (by omega_using [h₂]) (by decide)
-
-/-- `mulV`: the lanes multiplied by table `t`. -/
-theorem mulV_ok {o : Nat} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat} (t : Nat) (ht : t < 2)
-    (s : State) (hsp : s.gpr .esp + BitVec.ofNat 32 o = B) (hB : Fit B)
-    (hfr : Proof.Aes.X86.reg32 B 512 ∈ s.wr) (hmc : 0 < s.mcdt) (hT : Tab s.mem B tb)
-    (ha : ∀ l < 2, ∀ i < 5, ln s (lreg i) l < 2 ^ 28) (hb : ∀ l < 2, ∀ i < 5, tb t l i < 2 ^ 27) :
-    WP isa (.block (mulV o t)) s fun s' =>
-      (∀ l < 2, ∀ k < 5, ln s' (lreg k) l = ds (fun i => ln s (lreg i) l) (tb t l) k) ∧
-      (∀ l < 2, ln s' .xmm5 l = 2 ^ 26 - 1) ∧ Tab s'.mem B tb ∧ Frame [dR B] s.mem s'.mem ∧ Xk xall s s' := by
-  -- A sum, from a state whose limbs are those of `s`.
-  have hd : ∀ (k : Nat), k < 5 → ∀ u : State, Xk [.xmm5, .xmm6, .xmm7] s u → Tab u.mem B tb →
-      WP isa (.block (dsumV o t k)) u fun u' =>
-        (∀ l < 2, ln u' .xmm5 l = ds (fun i => ln s (lreg i) l) (tb t l) k) ∧ u'.mem = u.mem ∧
-        u'.xmm .xmm7 = u.xmm .xmm7 ∧ Xk [.xmm5, .xmm6, .xmm7] s u' := fun k hk u ku hTu => by
-    have hl : ∀ (i l : Nat), ln u (lreg i) l = ln s (lreg i) l := fun i l => by
-      obtain ⟨n5, n6, n7⟩ := lreg_ne i
-      exact ku.lane (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨n5, n6, n7⟩) l
-    refine WP.mono (dsumV_ok t k ht hk u (by rw [ku.gpr]; exact hsp) hB (by rw [ku.wr]; exact hfr)
-      (by rw [ku.mcdt]; exact hmc) hTu (fun l hl' i hi => by rw [hl]; exact ha l hl' i hi) hb)
-      fun u' ⟨a', m', k'⟩ => ⟨fun l hl' => ?_, m', k'.xmm _ (by decide), (ku.trans k').mono fun r hr => ?_⟩
-    · rw [a' l hl']; simp only [hl]
-    · rcases List.mem_append.mp hr with h | h
-      · exact h
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-        rcases h with rfl | rfl <;> decide
-  -- Keeping a sum in the frame.
-  have hst : ∀ (d : Nat), 416 ≤ d → d + 16 ≤ 464 → ∀ u : State, Xk [.xmm5, .xmm6, .xmm7] s u →
-      WP isa (.block [.movdquStore (fs o d) .xmm5]) u fun u' =>
-        u'.mem = u.mem.writeW (addr B d) (u.xmm .xmm5) ∧ u'.xmm = u.xmm ∧ Xk [.xmm5, .xmm6, .xmm7] s u' :=
-    fun d h₁ h₂ u ku => by
-      refine WP.mono (storeSlot_ok .xmm5 d u (by rw [ku.gpr]; exact hsp)
-        (by rw [ku.wr]; exact fr_in hB hfr (by omega_using [h₂]) (by decide))) fun u' ⟨m', k'⟩ =>
-        ⟨m', funext fun r => k'.xmm r (List.not_mem_nil), (ku.trans k').mono fun r hr => by simpa using hr⟩
-  have kd : ∀ (m : Mem) (v : BitVec 128) (d : Nat), 416 ≤ d → d + 16 ≤ 464 → Tab m B tb →
-      Tab (m.writeW (addr B d) v) B tb := fun m v d h₁ h₂ hTm => hTm.store hB h₁ (by omega_using [h₂]) v
-  simp only [mulV, List.append_assoc]
-  refine WP.block_append (WP.mono (hd 1 (by decide) s (Xk.refl _ _) hT) fun u₁ ⟨a₁, m₁, _, k₁⟩ => ?_)
-  refine WP.block_append (WP.mono (hst (dSlot 1) (by decide) (by decide) u₁ k₁) fun u₂ ⟨m₂, x₂, k₂⟩ => ?_)
-  rw [m₁] at m₂
-  refine WP.block_append (WP.mono (hd 2 (by decide) u₂ k₂ (by rw [m₂]; exact kd _ _ _ (by decide) (by decide) hT))
-    fun u₃ ⟨a₃, m₃, _, k₃⟩ => ?_)
-  refine WP.block_append (WP.mono (hst (dSlot 2) (by decide) (by decide) u₃ k₃) fun u₄ ⟨m₄, x₄, k₄⟩ => ?_)
-  rw [m₃, m₂] at m₄
-  have T₄ : Tab u₄.mem B tb := by
-    rw [m₄]; exact kd _ _ _ (by decide) (by decide) (kd _ _ _ (by decide) (by decide) hT)
-  refine WP.block_append (WP.mono (hd 3 (by decide) u₄ k₄ T₄) fun u₅ ⟨a₅, m₅, _, k₅⟩ => ?_)
-  refine WP.block_append (WP.mono (hst (dSlot 3) (by decide) (by decide) u₅ k₅) fun u₆ ⟨m₆, x₆, k₆⟩ => ?_)
-  rw [m₅, m₄] at m₆
-  have T₆ : Tab u₆.mem B tb := by
-    rw [m₆]
-    exact kd _ _ _ (by decide) (by decide) (kd _ _ _ (by decide) (by decide) (kd _ _ _ (by decide) (by decide) hT))
-  refine WP.block_append (WP.mono (hd 0 (by decide) u₆ k₆ T₆) fun u₇ ⟨a₇, m₇, _, k₇⟩ => ?_)
-  refine WP.block_append (WP.mono (mv_ok .xmm7 .xmm5 u₇) fun u₈ ⟨v₈, m₈, k₈⟩ => ?_)
-  have k₈' : Xk [.xmm5, .xmm6, .xmm7] s u₈ := (k₇.trans k₈).mono fun r hr => by
-    rcases List.mem_append.mp hr with h | h
-    · exact h
-    · rw [List.mem_singleton.mp h]; decide
-  have T₈ : Tab u₈.mem B tb := by rw [m₈, m₇]; exact T₆
-  refine WP.block_append (WP.mono (hd 4 (by decide) u₈ k₈' T₈) fun u₉ ⟨a₉, m₉, x₉, k₉⟩ => ?_)
-  have hm₉ : u₉.mem = u₆.mem := by rw [m₉, m₈, m₇]
-  -- The sums, where they were kept.
-  have r1 : u₉.mem.readW (addr B (dSlot 1)) 128 = u₁.xmm .xmm5 := by
-    rw [hm₉, m₆, slot_other hB _ _ (by decide) (by decide) (by decide),
-      slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
-  have r2 : u₉.mem.readW (addr B (dSlot 2)) 128 = u₃.xmm .xmm5 := by
-    rw [hm₉, m₆, slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
-  have r3 : u₉.mem.readW (addr B (dSlot 3)) 128 = u₅.xmm .xmm5 := by
-    rw [hm₉, m₆, slot_same]
-  have hin : ∀ (u : State) (d : Nat), d + 16 ≤ 512 → u.rd = s.rd → u.wr = s.wr →
-      InRegions (u.rd ++ u.wr) (addr B d) 16 := fun u d hd' h₁ h₂ => by
-    rw [h₁, h₂]; exact Proof.Aes.X86.in_rd (fr_in hB hfr hd' (by decide))
-  show WP isa (.block (([.xop (.bin .movdqa .xmm4 .xmm5)] : List Instr) ++
-    (([.xop (.bin .movdqa .xmm0 .xmm7)] : List Instr) ++ (([.movdquLoad .xmm1 (fs o (dSlot 1))] : List Instr) ++
-    (([.movdquLoad .xmm2 (fs o (dSlot 2))] : List Instr) ++ (([.movdquLoad .xmm3 (fs o (dSlot 3))] : List Instr) ++
-    [.movdquLoad .xmm5 (fs o maskSlot)])))))) u₉ _
-  refine WP.block_append (WP.mono (mv_ok .xmm4 .xmm5 u₉) fun w₁ ⟨v₁, n₁, j₁⟩ => ?_)
-  refine WP.block_append (WP.mono (mv_ok .xmm0 .xmm7 w₁) fun w₂ ⟨v₂, n₂, j₂⟩ => ?_)
-  have g₂ : Xk xall s w₂ := (k₉.all.trans (j₁.trans j₂)).all
-  have hsp₂ : w₂.gpr .esp + BitVec.ofNat 32 o = B := by rw [g₂.gpr]; exact hsp
-  refine WP.block_append (WP.mono (loadSlot_ok .xmm1 (dSlot 1) w₂ hsp₂ (hin w₂ _ (by decide) g₂.rd g₂.wr))
-    fun w₃ ⟨v₃, n₃, j₃⟩ => ?_)
-  have g₃ : Xk xall s w₃ := (g₂.trans j₃).all
-  refine WP.block_append (WP.mono (loadSlot_ok .xmm2 (dSlot 2) w₃ (by rw [g₃.gpr]; exact hsp)
-    (hin w₃ _ (by decide) g₃.rd g₃.wr)) fun w₄ ⟨v₄, n₄, j₄⟩ => ?_)
-  have g₄ : Xk xall s w₄ := (g₃.trans j₄).all
-  refine WP.block_append (WP.mono (loadSlot_ok .xmm3 (dSlot 3) w₄ (by rw [g₄.gpr]; exact hsp)
-    (hin w₄ _ (by decide) g₄.rd g₄.wr)) fun w₅ ⟨v₅, n₅, j₅⟩ => ?_)
-  have g₅ : Xk xall s w₅ := (g₄.trans j₅).all
-  refine WP.mono (loadSlot_ok .xmm5 maskSlot w₅ (by rw [g₅.gpr]; exact hsp)
-    (hin w₅ _ (by decide) g₅.rd g₅.wr)) fun w₆ ⟨v₆, n₆, j₆⟩ => ?_
-  have hmem : w₆.mem = u₉.mem := by rw [n₆, n₅, n₄, n₃, n₂, n₁]
-  have T : Tab w₆.mem B tb := by rw [hmem, hm₉]; exact T₆
-  -- The registers at the end.
-  have e0 : w₆.xmm .xmm0 = u₇.xmm .xmm5 := by
-    rw [j₆.xmm _ (by decide), j₅.xmm _ (by decide), j₄.xmm _ (by decide), j₃.xmm _ (by decide), v₂,
-      j₁.xmm _ (by decide), x₉, v₈]
-  have e1 : w₆.xmm .xmm1 = u₁.xmm .xmm5 := by
-    rw [j₆.xmm _ (by decide), j₅.xmm _ (by decide), j₄.xmm _ (by decide), v₃, n₂, n₁, r1]
-  have e2 : w₆.xmm .xmm2 = u₃.xmm .xmm5 := by
-    rw [j₆.xmm _ (by decide), j₅.xmm _ (by decide), v₄, n₃, n₂, n₁, r2]
-  have e3 : w₆.xmm .xmm3 = u₅.xmm .xmm5 := by
-    rw [j₆.xmm _ (by decide), v₅, n₄, n₃, n₂, n₁, r3]
-  have e4 : w₆.xmm .xmm4 = u₉.xmm .xmm5 := by
-    rw [j₆.xmm _ (by decide), j₅.xmm _ (by decide), j₄.xmm _ (by decide), j₃.xmm _ (by decide),
-      j₂.xmm _ (by decide), v₁]
-  refine ⟨fun l hl k hk => ?_, fun l hl => ?_, T, ?_, (g₅.trans j₆).all⟩
-  · rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
-    · exact (congrArg (lane · l) e0).trans (a₇ l hl)
-    · exact (congrArg (lane · l) e1).trans (a₁ l hl)
-    · exact (congrArg (lane · l) e2).trans (a₃ l hl)
-    · exact (congrArg (lane · l) e3).trans (a₅ l hl)
-    · exact (congrArg (lane · l) e4).trans (a₉ l hl)
-  · rw [ln, v₆, n₅, n₄, n₃, n₂, n₁]
-    exact (by rw [hm₉]; exact T₆ : Tab u₉.mem B tb).mask l hl
-  · rw [hmem, hm₉, m₆]
-    exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (dR_contains hB (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (dR_contains hB (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (dR_contains hB (by decide) (by decide))
-
-/-! ### The carries -/
+/-! ### Shifts -/
 
 /-- The limbs of lane `l` are `f`. -/
 def Ls (s : State) (l : Nat) (f : Nat → Nat) : Prop := ∀ k < 5, ln s (lreg k) l = f k
-
-/-- A carry from limb `i` into limb `j`. -/
-def cup (f : Nat → Nat) (i j : Nat) : Nat → Nat :=
-  fun k => if k = i then f i % 2 ^ 26 else if k = j then f j + f i / 2 ^ 26 else f k
-
-/-- The carry from the fifth limb into the first, times 5. -/
-def cup5 (f : Nat → Nat) : Nat → Nat :=
-  fun k => if k = 4 then f 4 % 2 ^ 26 else if k = 0 then f 0 + (f 4 / 2 ^ 26 + f 4 / 2 ^ 26 * 2 ^ 2) else f k
-
-theorem cup_lt {f : Nat → Nat} {N : Nat} (hf : ∀ k < 5, f k < N) (hN : N ≤ 2 ^ 63) (i j : Nat) (hi : i < 5)
-    {k : Nat} (hk : k < 5) : cup f i j k < N + 2 ^ 37 := by
-  have h1 := hf i hi
-  have h2 := hf k hk
-  simp only [cup]
-  split
-  · omega_using [h1, hN]
-  · split
-    · rename_i _ h; subst h; omega_using [h1, h2, hN]
-    · omega_using [h2]
-
-theorem cup5_lt {f : Nat → Nat} {N : Nat} (hf : ∀ k < 5, f k < N) (hN : N ≤ 2 ^ 63) {k : Nat} (hk : k < 5) :
-    cup5 f k < N + 2 ^ 40 := by
-  have h1 := hf 4 (by decide)
-  have h2 := hf k hk
-  simp only [cup5]
-  split
-  · omega_using [h1, hN]
-  · split
-    · rename_i _ h; subst h; omega_using [h1, h2, hN]
-    · omega_using [h2]
 
 theorem psrlq_ok (x : XReg) (n : BitVec 8) (hn : n.toNat ≤ 63) (s : State) :
     WP isa (.block [.xop (.shift .psrlq x n)]) s fun s' =>
@@ -1008,72 +742,6 @@ theorem psrlq_ok (x : XReg) (n : BitVec 8) (hn : n.toNat ≤ 63) (s : State) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left']
   exact ⟨fun l hl => by rw [ln, xmm_setXmm_self, lane_psrlq _ _ hn hl], rfl, setXmm_xk _ _ _⟩
-
-theorem pand_ok (x : XReg) (s : State) (hm : ∀ l < 2, ln s .xmm5 l = 2 ^ 26 - 1) :
-    WP isa (.block [.xop (.bin .pand x .xmm5)]) s fun s' =>
-      (∀ l < 2, ln s' x l = ln s x l % 2 ^ 26) ∧ s'.mem = s.mem ∧ Xk [x] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left']
-  refine ⟨fun l hl => ?_, rfl, setXmm_xk _ _ _⟩
-  rw [ln, xmm_setXmm_self, lane_pand, show lane (s.xmm .xmm5) l = 2 ^ 26 - 1 from hm l hl, and_mask]
-
-/-- `cstep i j` for `i < 4`. -/
-theorem cstep_ok (i j : Nat) (hi : i < 4) (hj : j < 5) (hij : i ≠ j) (s : State)
-    (hm : ∀ l < 2, ln s .xmm5 l = 2 ^ 26 - 1) (f : Nat → Nat → Nat) (hf : ∀ l < 2, Ls s l (f l))
-    (hb : ∀ l < 2, ∀ k < 5, f l k < 2 ^ 63) :
-    WP isa (.block (cstep i j)) s fun s' =>
-      (∀ l < 2, Ls s' l (cup (f l) i j)) ∧ s'.mem = s.mem ∧ Xk lregs s s' := by
-  have hi5 : i < 5 := by omega_using [hi]
-  obtain ⟨i5, i6, i7⟩ := lreg_ne i
-  obtain ⟨j5, j6, j7⟩ := lreg_ne j
-  have hne : lreg i ≠ lreg j := fun e => hij (lreg_inj hi5 hj e)
-  have e : cstep i j = ([.xop (.bin .movdqa .xmm6 (lreg i))] : List Instr) ++
-      (([.xop (.shift .psrlq .xmm6 26)] : List Instr) ++ (([.xop (.bin .pand (lreg i) .xmm5)] : List Instr) ++
-      [.xop (.bin .paddq (lreg j) .xmm6)])) := by
-    simp only [cstep, show ¬ i = 4 by omega_using [hi], ↓reduceIte, List.append_nil, List.cons_append,
-      List.nil_append]
-  rw [e]
-  refine WP.block_append (WP.mono (mv_ok .xmm6 (lreg i) s) fun s₁ ⟨v₁, m₁, k₁⟩ => ?_)
-  refine WP.block_append (WP.mono (psrlq_ok .xmm6 26 (by decide) s₁) fun s₂ ⟨a₂, m₂, k₂⟩ => ?_)
-  have h6 : ∀ l < 2, ln s₂ .xmm6 l = f l i / 2 ^ 26 := fun l hl => by
-    rw [a₂ l hl, ln, v₁]; exact congrArg (· / 2 ^ 26) (hf l hl i hi5)
-  have k₁₂ : Xk [.xmm6] s s₂ := (k₁.trans k₂).mono fun r hr => by
-    rcases List.mem_append.mp hr with h | h <;> exact h
-  refine WP.block_append (WP.mono (pand_ok (lreg i) s₂ fun l hl => by
-    rw [k₁₂.lane (by decide)]; exact hm l hl) fun s₃ ⟨a₃, m₃, k₃⟩ => ?_)
-  have hx : ∀ l < 2, ln s₃ (lreg i) l = f l i % 2 ^ 26 := fun l hl => by
-    rw [a₃ l hl, k₁₂.lane (by simpa only [List.mem_singleton] using i6)]
-    exact congrArg (· % 2 ^ 26) (hf l hl i hi5)
-  have hy : ∀ l < 2, ln s₃ (lreg j) l = f l j := fun l hl => by
-    rw [k₃.lane (by simpa only [List.mem_singleton] using Ne.symm hne),
-      k₁₂.lane (by simpa only [List.mem_singleton] using j6)]
-    exact hf l hl j hj
-  have h6' : ∀ l < 2, ln s₃ .xmm6 l = f l i / 2 ^ 26 := fun l hl => by
-    rw [k₃.lane (by simpa only [List.mem_singleton] using Ne.symm i6)]; exact h6 l hl
-  refine WP.mono (paddq_ok (lreg j) .xmm6 s₃ fun l hl => by
-    rw [hy l hl, h6' l hl]; have := hb l hl i hi5; have := hb l hl j hj; omega_arith) fun s₄ ⟨a₄, m₄, k₄⟩ => ?_
-  have kk : Xk [.xmm6, lreg i, lreg j] s s₄ := ((k₁₂.trans k₃).trans k₄).mono fun r hr => by
-    simpa only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] using hr
-  refine ⟨fun l hl k hk => ?_, by rw [m₄, m₃, m₂, m₁], kk.mono fun r hr => ?_⟩
-  · simp only [cup]
-    by_cases hki : k = i
-    · subst hki
-      rw [ite_eq_left rfl, k₄.lane (by simpa only [List.mem_singleton] using hne)]; exact hx l hl
-    · rw [ite_eq_right hki]
-      by_cases hkj : k = j
-      · subst hkj
-        rw [ite_eq_left rfl, a₄ l hl, hy l hl, h6' l hl]
-      · rw [ite_eq_right hkj]
-        obtain ⟨-, n6, -⟩ := lreg_ne k
-        have n1 : lreg k ≠ lreg i := fun e => hki (lreg_inj hk hi5 e)
-        have n2 : lreg k ≠ lreg j := fun e => hkj (lreg_inj hk hj e)
-        rw [kk.lane (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨n6, n1, n2⟩)]
-        exact hf l hl k hk
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · decide
-    · exact lreg_mem
-    · exact lreg_mem
 
 theorem psllq_ok (x : XReg) (n : BitVec 8) (hn : n.toNat ≤ 63) (s : State)
     (h : ∀ l < 2, ln s x l * 2 ^ n.toNat < 2 ^ 64) :
@@ -1083,118 +751,6 @@ theorem psllq_ok (x : XReg) (n : BitVec 8) (hn : n.toNat ≤ 63) (s : State)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left']
   exact ⟨fun l hl => by rw [ln, xmm_setXmm_self, lane_psllq _ _ hn hl, Nat.mod_eq_of_lt (h l hl)], rfl,
     setXmm_xk _ _ _⟩
-
-/-- `cstep 4 0`: the carry out of the fifth limb, times 5, into the first. -/
-theorem cstep5_ok (s : State) (hm : ∀ l < 2, ln s .xmm5 l = 2 ^ 26 - 1) (f : Nat → Nat → Nat)
-    (hf : ∀ l < 2, Ls s l (f l)) (hb : ∀ l < 2, ∀ k < 5, f l k < 2 ^ 63) :
-    WP isa (.block (cstep 4 0)) s fun s' =>
-      (∀ l < 2, Ls s' l (cup5 (f l))) ∧ s'.mem = s.mem ∧ Xk lregs s s' := by
-  have e : cstep 4 0 = ([.xop (.bin .movdqa .xmm6 .xmm4)] : List Instr) ++
-      (([.xop (.shift .psrlq .xmm6 26)] : List Instr) ++ (([.xop (.bin .pand .xmm4 .xmm5)] : List Instr) ++
-      (([.xop (.bin .movdqa .xmm7 .xmm6)] : List Instr) ++ (([.xop (.shift .psllq .xmm7 2)] : List Instr) ++
-      (([.xop (.bin .paddq .xmm6 .xmm7)] : List Instr) ++ [.xop (.bin .paddq .xmm0 .xmm6)]))))) := rfl
-  rw [e]
-  have f4 : ∀ l < 2, ln s .xmm4 l = f l 4 := fun l hl => hf l hl 4 (by decide)
-  have f0 : ∀ l < 2, ln s .xmm0 l = f l 0 := fun l hl => hf l hl 0 (by decide)
-  refine WP.block_append (WP.mono (mv_ok .xmm6 .xmm4 s) fun s₁ ⟨v₁, m₁, k₁⟩ => ?_)
-  refine WP.block_append (WP.mono (psrlq_ok .xmm6 26 (by decide) s₁) fun s₂ ⟨a₂, m₂, k₂⟩ => ?_)
-  have k₁₂ : Xk [.xmm6] s s₂ := (k₁.trans k₂).mono fun r hr => by
-    rcases List.mem_append.mp hr with h | h <;> exact h
-  have h6 : ∀ l < 2, ln s₂ .xmm6 l = f l 4 / 2 ^ 26 := fun l hl => by
-    rw [a₂ l hl, ln, v₁]; exact congrArg (· / 2 ^ 26) (f4 l hl)
-  refine WP.block_append (WP.mono (pand_ok .xmm4 s₂ fun l hl => by
-    rw [k₁₂.lane (by decide)]; exact hm l hl) fun s₃ ⟨a₃, m₃, k₃⟩ => ?_)
-  refine WP.block_append (WP.mono (mv_ok .xmm7 .xmm6 s₃) fun s₄ ⟨v₄, m₄, k₄⟩ => ?_)
-  have h6₄ : ∀ l < 2, ln s₄ .xmm6 l = f l 4 / 2 ^ 26 := fun l hl => by
-    rw [k₄.lane (by decide), k₃.lane (by decide)]; exact h6 l hl
-  have h7₄ : ∀ l < 2, ln s₄ .xmm7 l = f l 4 / 2 ^ 26 := fun l hl => by
-    rw [ln, v₄]; exact (k₃.lane (by decide) l).trans (h6 l hl)
-  refine WP.block_append (WP.mono (psllq_ok .xmm7 2 (by decide) s₄ fun l hl => by
-    rw [h7₄ l hl]; have := hb l hl 4 (by decide); show _ * 2 ^ 2 < _; omega_arith) fun s₅ ⟨a₅, m₅, k₅⟩ => ?_)
-  have h7₅ : ∀ l < 2, ln s₅ .xmm7 l = f l 4 / 2 ^ 26 * 2 ^ 2 := fun l hl => by
-    rw [a₅ l hl, h7₄ l hl]; rfl
-  have h6₅ : ∀ l < 2, ln s₅ .xmm6 l = f l 4 / 2 ^ 26 := fun l hl => by
-    rw [k₅.lane (by decide)]; exact h6₄ l hl
-  refine WP.block_append (WP.mono (paddq_ok .xmm6 .xmm7 s₅ fun l hl => by
-    rw [h6₅ l hl, h7₅ l hl]; have := hb l hl 4 (by decide); omega_arith) fun s₆ ⟨a₆, m₆, k₆⟩ => ?_)
-  have h6₆ : ∀ l < 2, ln s₆ .xmm6 l = f l 4 / 2 ^ 26 + f l 4 / 2 ^ 26 * 2 ^ 2 := fun l hl => by
-    rw [a₆ l hl, h6₅ l hl, h7₅ l hl]
-  have h0₆ : ∀ l < 2, ln s₆ .xmm0 l = f l 0 := fun l hl => by
-    rw [k₆.lane (by decide), k₅.lane (by decide), k₄.lane (by decide), k₃.lane (by decide), k₁₂.lane (by decide)]
-    exact f0 l hl
-  refine WP.mono (paddq_ok .xmm0 .xmm6 s₆ fun l hl => by
-    rw [h0₆ l hl, h6₆ l hl]; have := hb l hl 4 (by decide); have := hb l hl 0 (by decide); omega_arith)
-    fun s₇ ⟨a₇, m₇, k₇⟩ => ?_
-  have kk : Xk [.xmm6, .xmm4, .xmm7, .xmm0] s s₇ :=
-    ((((k₁₂.trans k₃).trans k₄).trans k₅).trans (k₆.trans k₇)).mono fun r hr => by
-      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with (((h | h) | h) | h) | (h | h) <;> simp [h]
-  refine ⟨fun l hl k hk => ?_, by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁], kk.mono fun r hr => ?_⟩
-  · simp only [cup5]
-    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
-    · show ln s₇ .xmm0 l = _
-      rw [a₇ l hl, h0₆ l hl, h6₆ l hl]; rfl
-    · exact (kk.lane (show lreg 1 ∉ _ by decide) l).trans (hf l hl 1 (by decide))
-    · exact (kk.lane (show lreg 2 ∉ _ by decide) l).trans (hf l hl 2 (by decide))
-    · exact (kk.lane (show lreg 3 ∉ _ by decide) l).trans (hf l hl 3 (by decide))
-    · show ln s₇ .xmm4 l = _
-      rw [k₇.lane (by decide), k₆.lane (by decide), k₅.lane (by decide), k₄.lane (by decide), a₃ l hl,
-        k₁₂.lane (by decide), f4 l hl]
-      rfl
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> decide
-
-/-- `carryV`: the limbs after the carries. -/
-theorem carryV_ok (s : State) (hm : ∀ l < 2, ln s .xmm5 l = 2 ^ 26 - 1)
-    (hd : ∀ l < 2, ∀ k < 5, ln s (lreg k) l < 2 ^ 62) :
-    WP isa (.block carryV) s fun s' =>
-      (∀ l < 2, ∀ k < 5, ln s' (lreg k) l = cv (fun i => ln s (lreg i) l) k) ∧ s'.mem = s.mem ∧
-      Xk lregs s s' := by
-  have m5 : ∀ {u : State}, Xk lregs s u → ∀ l < 2, ln u .xmm5 l = 2 ^ 26 - 1 := fun ku l hl => by
-    rw [ku.lane (by decide)]; exact hm l hl
-  have tr : ∀ {u u' : State}, Xk lregs s u → Xk lregs u u' → Xk lregs s u' := fun h h' =>
-    (h.trans h').mono fun r hr => by rcases List.mem_append.mp hr with h | h <;> exact h
-  let f0 : Nat → Nat → Nat := fun l i => ln s (lreg i) l
-  have b0 : ∀ l < 2, ∀ k < 5, f0 l k < 2 ^ 62 := hd
-  simp only [carryV, List.append_assoc]
-  refine WP.block_append (WP.mono (cstep_ok 0 1 (by decide) (by decide) (by decide) s hm f0
-    (fun _ _ _ _ => rfl) fun l hl k hk => Nat.lt_trans (b0 l hl k hk) (by decide)) fun s₁ ⟨a₁, m₁, k₁⟩ => ?_)
-  have b1 : ∀ l < 2, ∀ k < 5, cup (f0 l) 0 1 k < 2 ^ 62 + 2 ^ 37 := fun l hl k hk =>
-    cup_lt (b0 l hl) (by decide) 0 1 (by decide) hk
-  refine WP.block_append (WP.mono (cstep_ok 3 4 (by decide) (by decide) (by decide) s₁ (m5 k₁) _ a₁
-    fun l hl k hk => Nat.lt_trans (b1 l hl k hk) (by decide)) fun s₂ ⟨a₂, m₂, k₂⟩ => ?_)
-  have b2 : ∀ l < 2, ∀ k < 5, cup (cup (f0 l) 0 1) 3 4 k < 2 ^ 62 + 2 ^ 37 + 2 ^ 37 := fun l hl k hk =>
-    cup_lt (b1 l hl) (by decide) 3 4 (by decide) hk
-  have k₂' := tr k₁ k₂
-  refine WP.block_append (WP.mono (cstep_ok 1 2 (by decide) (by decide) (by decide) s₂ (m5 k₂') _ a₂
-    fun l hl k hk => Nat.lt_trans (b2 l hl k hk) (by decide)) fun s₃ ⟨a₃, m₃, k₃⟩ => ?_)
-  have b3 : ∀ l < 2, ∀ k < 5, cup (cup (cup (f0 l) 0 1) 3 4) 1 2 k < 2 ^ 62 + 2 ^ 37 + 2 ^ 37 + 2 ^ 37 :=
-    fun l hl k hk => cup_lt (b2 l hl) (by decide) 1 2 (by decide) hk
-  have k₃' := tr k₂' k₃
-  refine WP.block_append (WP.mono (cstep5_ok s₃ (m5 k₃') _ a₃
-    fun l hl k hk => Nat.lt_trans (b3 l hl k hk) (by decide)) fun s₄ ⟨a₄, m₄, k₄⟩ => ?_)
-  have b4 : ∀ l < 2, ∀ k < 5, cup5 (cup (cup (cup (f0 l) 0 1) 3 4) 1 2) k <
-      2 ^ 62 + 2 ^ 37 + 2 ^ 37 + 2 ^ 37 + 2 ^ 40 := fun l hl k hk => cup5_lt (b3 l hl) (by decide) hk
-  have k₄' := tr k₃' k₄
-  refine WP.block_append (WP.mono (cstep_ok 2 3 (by decide) (by decide) (by decide) s₄ (m5 k₄') _ a₄
-    fun l hl k hk => Nat.lt_trans (b4 l hl k hk) (by decide)) fun s₅ ⟨a₅, m₅, k₅⟩ => ?_)
-  have b5 : ∀ l < 2, ∀ k < 5, cup (cup5 (cup (cup (cup (f0 l) 0 1) 3 4) 1 2)) 2 3 k <
-      2 ^ 62 + 2 ^ 37 + 2 ^ 37 + 2 ^ 37 + 2 ^ 40 + 2 ^ 37 := fun l hl k hk =>
-    cup_lt (b4 l hl) (by decide) 2 3 (by decide) hk
-  have k₅' := tr k₄' k₅
-  refine WP.block_append (WP.mono (cstep_ok 0 1 (by decide) (by decide) (by decide) s₅ (m5 k₅') _ a₅
-    fun l hl k hk => Nat.lt_trans (b5 l hl k hk) (by decide)) fun s₆ ⟨a₆, m₆, k₆⟩ => ?_)
-  have b6 : ∀ l < 2, ∀ k < 5, cup (cup (cup5 (cup (cup (cup (f0 l) 0 1) 3 4) 1 2)) 2 3) 0 1 k <
-      2 ^ 62 + 2 ^ 37 + 2 ^ 37 + 2 ^ 37 + 2 ^ 40 + 2 ^ 37 + 2 ^ 37 := fun l hl k hk =>
-    cup_lt (b5 l hl) (by decide) 0 1 (by decide) hk
-  have k₆' := tr k₅' k₆
-  refine WP.mono (cstep_ok 3 4 (by decide) (by decide) (by decide) s₆ (m5 k₆') _ a₆
-    fun l hl k hk => Nat.lt_trans (b6 l hl k hk) (by decide)) fun s₇ ⟨a₇, m₇, k₇⟩ => ?_
-  refine ⟨fun l hl k hk => ?_, by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁], tr k₆' k₇⟩
-  rw [a₇ l hl k hk]
-  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [cup, cup5, cv, z0, z3, x2, x4, x1, f0, Nat.reduceEqDiff, ↓reduceIte, Nat.zero_ne_one,
-      Nat.one_ne_zero]
 
 /-! ### The lanes' sum, and its limbs into the frame -/
 
@@ -1597,38 +1153,30 @@ theorem consts_ok {o : Nat} {B : BitVec 32} (s : State) (hsp : s.gpr .esp + BitV
     (hB : Fit B) (hfr : Proof.Aes.X86.reg32 B 512 ∈ s.wr) :
     WP isa (.block (consts o)) s fun s' =>
       (∀ l < 2, ln s' .xmm5 l = 2 ^ 26 - 1) ∧
-      (∀ l < 2, lane (s'.mem.readW (addr B maskSlot) 128) l = 2 ^ 26 - 1) ∧
       (∀ l < 2, lane (s'.mem.readW (addr B hibitSlot) 128) l = 2 ^ 24) ∧
       Frame [tR B] s.mem s'.mem ∧ Xe [.xmm5, .xmm6] s s' := by
   show WP isa (.block (([.mov .eax (.imm 0x3ffffff), .xop (.movd .xmm5 .eax),
-      .xop (.bin .punpcklqdq .xmm5 .xmm5)] : List Instr) ++ (([.movdquStore (fs o maskSlot) .xmm5] : List Instr) ++
+      .xop (.bin .punpcklqdq .xmm5 .xmm5)] : List Instr) ++
     (([.mov .eax (.imm 0x1000000), .xop (.movd .xmm6 .eax), .xop (.bin .punpcklqdq .xmm6 .xmm6)] : List Instr) ++
-    [.movdquStore (fs o hibitSlot) .xmm6])))) s _
+    [.movdquStore (fs o hibitSlot) .xmm6]))) s _
   refine WP.block_append (WP.mono (cst_ok .xmm5 0x3ffffff s) fun s₁ ⟨a₁, m₁, k₁⟩ => ?_)
-  have hs₁ := k₁.sp hsp
-  have hw₁ : InRegions s₁.wr (addr B maskSlot) 16 := by
-    rw [k₁.wr]; exact fr_in hB hfr (show maskSlot + 16 ≤ 512 by decide) (by decide)
-  refine WP.block_append (WP.mono (storeSlot_ok .xmm5 maskSlot s₁ hs₁ hw₁) fun s₂ ⟨m₂, k₂⟩ => ?_)
-  refine WP.block_append (WP.mono (cst_ok .xmm6 0x1000000 s₂) fun s₃ ⟨a₃, m₃, k₃⟩ => ?_)
-  have k₁₃ : Xe [.xmm5, .xmm6] s s₃ := ((k₁.trans k₂.xe).trans k₃).mono fun r hr => by
+  refine WP.block_append (WP.mono (cst_ok .xmm6 0x1000000 s₁) fun s₃ ⟨a₃, m₃, k₃⟩ => ?_)
+  have k₁₃ : Xe [.xmm5, .xmm6] s s₃ := (k₁.trans k₃).mono fun r hr => by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> decide
   have hs₃ := k₁₃.sp hsp
   have hw₃ : InRegions s₃.wr (addr B hibitSlot) 16 := by
     rw [k₁₃.wr]; exact fr_in hB hfr (show hibitSlot + 16 ≤ 512 by decide) (by decide)
   refine WP.mono (storeSlot_ok .xmm6 hibitSlot s₃ hs₃ hw₃) fun s₄ ⟨m₄, k₄⟩ => ?_
-  have hmem : s₄.mem = (s.mem.writeW (addr B maskSlot) (s₁.xmm .xmm5)).writeW (addr B hibitSlot) (s₃.xmm .xmm6) := by
-    rw [m₄, m₃, m₂, m₁]
-  refine ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, ?_, (k₁₃.trans k₄.xe).mono fun r hr => by
+  have hmem : s₄.mem = s.mem.writeW (addr B hibitSlot) (s₃.xmm .xmm6) := by
+    rw [m₄, m₃, m₁]
+  refine ⟨fun l hl => ?_, fun l hl => ?_, ?_, (k₁₃.trans k₄.xe).mono fun r hr => by
     simpa only [List.append_nil] using hr⟩
-  · rw [k₄.lane List.not_mem_nil, k₃.lane (by decide), k₂.lane List.not_mem_nil, a₁ l hl]; rfl
-  · rw [hmem, slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
-    exact (a₁ l hl).trans rfl
+  · rw [k₄.lane List.not_mem_nil, k₃.lane (by decide), a₁ l hl]; rfl
   · rw [hmem, slot_same]
     exact (a₃ l hl).trans rfl
   · rw [hmem]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (tR_contains hB (by decide) (by decide))).writeW
-      (List.mem_singleton_self _) _ (tR_contains hB (by decide) (by decide))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (tR_contains hB (by decide) (by decide))
 
 theorem tbl_apply (b c : Nat → Nat) (t l k : Nat) : tbl b c t l k = if t = 1 ∧ l = 1 then c k else b k := by
   simp only [tbl]; split <;> rfl
@@ -1638,7 +1186,6 @@ structure TInv (B : BitVec 32) (b c : Nat → Nat) (s : State) (j : Nat) (u : St
   rs : ∀ k < j, ∀ t < 2, ∀ l < 2, lane (u.mem.readW (addr B (rSlot t k)) 128) l = tbl b c t l k
   ss : ∀ k < j, ∀ t < 2, ∀ l < 2,
     lane (u.mem.readW (addr B (sSlot t k)) 128) l = tbl b c t l k + tbl b c t l k * 2 ^ 2
-  mask : ∀ l < 2, lane (u.mem.readW (addr B maskSlot) 128) l = 2 ^ 26 - 1
   hibit : ∀ l < 2, lane (u.mem.readW (addr B hibitSlot) 128) l = 2 ^ 24
   frame : Frame [tR B] s.mem u.mem
   keep : Xk [.xmm0, .xmm1, .xmm6, .xmm7] s u
@@ -1650,7 +1197,6 @@ theorem tables_ok {o : Nat} {B st : BitVec 32} (b c : Nat → Nat) (s : State)
     (hin : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (addr st d) 8)
     (hdj : (sR st).Disjoint (tR B))
     (hm : ∀ l < 2, ln s .xmm5 l = 2 ^ 26 - 1)
-    (hmk : ∀ l < 2, lane (s.mem.readW (addr B maskSlot) 128) l = 2 ^ 26 - 1)
     (hhb : ∀ l < 2, lane (s.mem.readW (addr B hibitSlot) 128) l = 2 ^ 24)
     (hq : ∀ k < 5, (s.mem.readW (addr st (qbyte k)) 64).toNat / 2 ^ qshift k % 2 ^ 26 = b k)
     (hr : ∀ k < 5, (s.mem.readW (addr st (rOff 0 + lbyte k)) 64).toNat / 2 ^ lshift k % 2 ^ 26 = c k) :
@@ -1672,7 +1218,7 @@ theorem tables_ok {o : Nat} {B st : BitVec 32} (b c : Nat → Nat) (s : State)
       (by rw [rdst _ (by omega_using [hqb])]; exact hq j hj)
       (by rw [rdst _ (by simp only [rOff]; omega_using [hlb])]; exact hr j hj))
       fun u' ⟨r', s', o', f', k'⟩ => ?_
-    refine ⟨fun k hk t ht l hl => ?_, fun k hk t ht l hl => ?_, fun l hl => ?_, fun l hl => ?_,
+    refine ⟨fun k hk t ht l hl => ?_, fun k hk t ht l hl => ?_, fun l hl => ?_,
       hu.frame.trans f', (hu.keep.trans k').mono fun r hr => by
         rcases List.mem_append.mp hr with h | h <;> exact h⟩
     · rw [tbl_apply]
@@ -1689,9 +1235,6 @@ theorem tables_ok {o : Nat} {B st : BitVec 32} (b c : Nat → Nat) (s : State)
           (by omega_using [ht, hk, hj, hkj]) (by omega_using [ht, hk, hj, hkj]) (by omega_using [ht, hk, hj, hkj]),
           ← tbl_apply]
         exact hu.ss k (by omega_using [hk, hkj]) t ht l hl
-    · rw [maskSlot, o' 20 (by decide) (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj])
-        (by omega_using [hj])]
-      exact hu.mask l hl
     · rw [hibitSlot, o' 21 (by decide) (by omega_using [hj]) (by omega_using [hj]) (by omega_using [hj])
         (by omega_using [hj])]
       exact hu.hibit l hl
@@ -1699,13 +1242,13 @@ theorem tables_ok {o : Nat} {B st : BitVec 32} (b c : Nat → Nat) (s : State)
     simp only [tables, List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   rw [e]
   have i0 : TInv B b c s 0 s := ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
-    hmk, hhb, Frame.refl _ _, Xk.refl _ _⟩
+    hhb, Frame.refl _ _, Xk.refl _ _⟩
   refine WP.block_append (WP.mono (step 0 (by decide) s i0) fun s₁ i₁ => ?_)
   refine WP.block_append (WP.mono (step 1 (by decide) s₁ i₁) fun s₂ i₂ => ?_)
   refine WP.block_append (WP.mono (step 2 (by decide) s₂ i₂) fun s₃ i₃ => ?_)
   refine WP.block_append (WP.mono (step 3 (by decide) s₃ i₃) fun s₄ i₄ => ?_)
   refine WP.mono (step 4 (by decide) s₄ i₄) fun s₅ i₅ => ?_
-  exact ⟨⟨fun t ht k hk l hl => i₅.rs k hk t ht l hl, fun t ht k hk l hl => i₅.ss k hk t ht l hl, i₅.mask,
+  exact ⟨⟨fun t ht k hk l hl => i₅.rs k hk t ht l hl, fun t ht k hk l hl => i₅.ss k hk t ht l hl,
     i₅.hibit⟩, i₅.frame, i₅.keep⟩
 
 /-! ### The accumulator into the lanes -/
@@ -1919,6 +1462,302 @@ theorem gSub_ok (d : Reg) (v : BitVec 32) (s : State) :
   exact ⟨gpr_setReg_self _ _ _, rfl,
     fun r hr => gpr_setReg_of_ne _ _ (by simpa only [List.mem_singleton] using hr), rfl, rfl, rfl, rfl, rfl⟩
 
+/-! ### A turn's operations
+
+The operations of a turn of the loop (`LOp`) as functions on the lanes of the
+registers (`LOp.val`), where no lane overflows: `LOp.bnd` runs the same
+operations on bounds of the lanes, which are numbers, so the kernel computes
+it for a whole turn. -/
+
+/-- The lanes of the registers. -/
+abbrev lv (s : State) : XReg → Nat → Nat := fun x l => ln s x l
+
+/-- The lanes of the frame's slots, and the quadwords of the data. -/
+abbrev slv (m : Mem) (B : BitVec 32) : Nat → Nat → Nat := fun j l => lane (m.readW (addr B (slot j)) 128) l
+abbrev qv (m : Mem) (dp : BitVec 32) : Nat → Nat := fun d => (m.readW (addr dp d) 64).toNat
+
+/-- The lanes with those of `x` replaced. -/
+def upd (v : XReg → Nat → Nat) (x : XReg) (f : Nat → Nat) : XReg → Nat → Nat := fun y => if y = x then f else v y
+
+/-- The bounds with that of `x` replaced. -/
+def bupd (b : XReg → Nat) (x : XReg) (n : Nat) : XReg → Nat := fun y => if y = x then n else b y
+
+/-- An operation on the lanes `v`, with the slots' lanes `sl` and the data's
+quadwords `q`. -/
+def _root_.VG.Impl.Poly1305.X86.LOp.val (sl : Nat → Nat → Nat) (q : Nat → Nat) (v : XReg → Nat → Nat) :
+    LOp → XReg → Nat → Nat
+  | .slot x j => upd v x (sl j)
+  | .data x d => upd v x (fun l => if l = 0 then q d else 0)
+  | .mul x y => upd v x (fun l => v x l * v y l)
+  | .add x y => upd v x (fun l => v x l + v y l)
+  | .unpck x y => upd v x (fun l => if l = 0 then v x 0 else v y 0)
+  | .mov x y => upd v x (v y)
+  | .shr x n => upd v x (fun l => v x l / 2 ^ n)
+  | .shl x n => upd v x (fun l => v x l * 2 ^ n)
+  | .bits x n => upd v x (fun l => v x l / 2 ^ n % 2 ^ 26)
+  | .low26 x => upd v x (fun l => v x l % 2 ^ 26)
+
+/-- An operation on bounds `b` of the lanes (`sb` bounds the slots'), where
+the operation is what `LOp.val` says: the slot is in the frame and the bytes
+in the `nd` bytes at `esi`, the multiplicands are below `2³²`, and no sum
+or shift overflows. -/
+def _root_.VG.Impl.Poly1305.X86.LOp.bnd (sb : Nat → Nat) (nd : Nat) (b : XReg → Nat) : LOp → Option (XReg → Nat)
+  | .slot x j => if j < 28 then some (bupd b x (sb j)) else none
+  | .data x d => if d + 8 ≤ nd then some (bupd b x (2 ^ 64 - 1)) else none
+  | .mul x y => if b x < 2 ^ 32 ∧ b y < 2 ^ 32 then some (bupd b x (b x * b y)) else none
+  | .add x y => if b x + b y < 2 ^ 64 then some (bupd b x (b x + b y)) else none
+  | .unpck x y => some (bupd b x (max (b x) (b y)))
+  | .mov x y => some (bupd b x (b y))
+  | .shr x n => if n ≤ 63 then some (bupd b x (b x / 2 ^ n)) else none
+  | .shl x n => if n ≤ 63 ∧ b x * 2 ^ n < 2 ^ 64 then some (bupd b x (b x * 2 ^ n)) else none
+  | .bits x n => if n = 0 ∨ n = 4 ∨ n = 14 ∨ n = 26 then some (bupd b x (2 ^ 26 - 1)) else none
+  | .low26 x => some (bupd b x (2 ^ 26 - 1))
+
+def valRun (sl : Nat → Nat → Nat) (q : Nat → Nat) : List LOp → (XReg → Nat → Nat) → XReg → Nat → Nat
+  | [], v => v
+  | op :: ops, v => valRun sl q ops (op.val sl q v)
+
+def bndRun (sb : Nat → Nat) (nd : Nat) : List LOp → (XReg → Nat) → Option (XReg → Nat)
+  | [], b => some b
+  | op :: ops, b => (op.bnd sb nd b).bind (bndRun sb nd ops)
+
+theorem valRun_append (sl : Nat → Nat → Nat) (q : Nat → Nat) : ∀ (a c : List LOp) (v : XReg → Nat → Nat),
+    valRun sl q (a ++ c) v = valRun sl q c (valRun sl q a v)
+  | [], _, _ => rfl
+  | op :: a, c, v => valRun_append sl q a c (op.val sl q v)
+
+theorem upd_congr {v v' : XReg → Nat → Nat} {f f' : Nat → Nat} (x : XReg) (hf : ∀ l < 2, f l = f' l)
+    (h : ∀ y, ∀ l < 2, v y l = v' y l) : ∀ y, ∀ l < 2, upd v x f y l = upd v' x f' y l := fun y l hl => by
+  unfold upd
+  by_cases hy : y = x
+  · rw [ite_eq_left hy, ite_eq_left hy]; exact hf l hl
+  · rw [ite_eq_right hy, ite_eq_right hy]; exact h y l hl
+
+/-- The operations read the two lanes of the registers only. -/
+theorem opVal_congr (sl : Nat → Nat → Nat) (q : Nat → Nat) {v v' : XReg → Nat → Nat}
+    (h : ∀ y, ∀ l < 2, v y l = v' y l) (op : LOp) : ∀ y, ∀ l < 2, op.val sl q v y l = op.val sl q v' y l := by
+  cases op with
+  | slot x j => exact upd_congr x (fun _ _ => rfl) h
+  | data x d => exact upd_congr x (fun _ _ => rfl) h
+  | mul x y => exact upd_congr x (fun l hl => by rw [h x l hl, h y l hl]) h
+  | add x y => exact upd_congr x (fun l hl => by rw [h x l hl, h y l hl]) h
+  | unpck x y => exact upd_congr x (fun l _ => by rw [h x 0 (by decide), h y 0 (by decide)]) h
+  | mov x y => exact upd_congr x (fun l hl => h y l hl) h
+  | shr x n => exact upd_congr x (fun l hl => by rw [h x l hl]) h
+  | shl x n => exact upd_congr x (fun l hl => by rw [h x l hl]) h
+  | bits x n => exact upd_congr x (fun l hl => by rw [h x l hl]) h
+  | low26 x => exact upd_congr x (fun l hl => by rw [h x l hl]) h
+
+theorem valRun_congr (sl : Nat → Nat → Nat) (q : Nat → Nat) : ∀ (ops : List LOp) {v v' : XReg → Nat → Nat},
+    (∀ y, ∀ l < 2, v y l = v' y l) → ∀ y, ∀ l < 2, valRun sl q ops v y l = valRun sl q ops v' y l
+  | [], _, _, h => h
+  | op :: ops, _, _, h => valRun_congr sl q ops (opVal_congr sl q h op)
+
+/-- What the operations need of a state: the frame at `B = esp + o`, inside an
+MCDT frame, and `nd` bytes at `dp = esi`. -/
+structure LEnv (o nd : Nat) (B dp : BitVec 32) (s : State) : Prop where
+  sp : s.gpr .esp + BitVec.ofNat 32 o = B
+  fit : Fit B
+  fr : Proof.Aes.X86.reg32 B 512 ∈ s.wr
+  mcdt : 0 < s.mcdt
+  esi : s.gpr .esi = dp
+  din : ∀ d, d + 8 ≤ nd → InRegions (s.rd ++ s.wr) (addr dp d) 8
+
+theorem LEnv.keep {o nd : Nat} {B dp : BitVec 32} {s s' : State} {xs : List XReg} (h : LEnv o nd B dp s)
+    (k : Xk xs s s') : LEnv o nd B dp s' :=
+  ⟨by rw [k.gpr]; exact h.sp, h.fit, by rw [k.wr]; exact h.fr, by rw [k.mcdt]; exact h.mcdt,
+    by rw [k.gpr]; exact h.esi, by rw [k.rd, k.wr]; exact h.din⟩
+
+/-- A register replaced: the lanes, and their bounds. -/
+theorem reg_val {s s' : State} {d : XReg} (hk : Xk [d] s s') (f : Nat → Nat) (n : Nat) {b : XReg → Nat}
+    (hw : ∀ l < 2, ln s' d l = f l) (hn : ∀ l < 2, f l ≤ n) (hb : ∀ x, ∀ l < 2, ln s x l ≤ b x) :
+    (∀ x, ∀ l < 2, ln s' x l = upd (lv s) d f x l) ∧ (∀ x, ∀ l < 2, ln s' x l ≤ bupd b d n x) := by
+  refine ⟨fun x l hl => ?_, fun x l hl => ?_⟩
+  · unfold upd
+    by_cases hx : x = d
+    · rw [ite_eq_left hx, hx]; exact hw l hl
+    · rw [ite_eq_right hx]; exact hk.lane (by simpa only [List.mem_singleton] using hx) l
+  · unfold bupd
+    by_cases hx : x = d
+    · rw [ite_eq_left hx, hx, hw l hl]; exact hn l hl
+    · rw [ite_eq_right hx, hk.lane (by simpa only [List.mem_singleton] using hx)]; exact hb x l hl
+
+theorem movq_ok (x : XReg) (b : Reg) (d : Nat) (s : State) (hin : InRegions (s.rd ++ s.wr) (addr (s.gpr b) d) 8) :
+    WP isa (.block [.movqLoad x (at_ b d)]) s fun s' =>
+      ln s' x 0 = (s.mem.readW (addr (s.gpr b) d) 64).toNat ∧ ln s' x 1 = 0 ∧ s'.mem = s.mem ∧ Xk [x] s s' := by
+  have e0 : s.ea (at_ b d) = addr (s.gpr b) d := rfl
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load64, e0, hin, ↓reduceIte, Option.map_some,
+    Option.some.injEq, exists_eq_left']
+  exact ⟨by rw [ln, xmm_setXmm_self, (lane_movq _).1], by rw [ln, xmm_setXmm_self, (lane_movq _).2], rfl,
+    setXmm_xk _ _ _⟩
+
+theorem pmul_ok (x y : XReg) (s : State) (hmc : 0 < s.mcdt) :
+    WP isa (.block [.pmuludq x y]) s fun s' =>
+      (∀ l < 2, ln s' x l = ln s x l % 2 ^ 32 * (ln s y l % 2 ^ 32)) ∧ s'.mem = s.mem ∧ Xk [x] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hmc, ↓reduceIte, Option.some.injEq, exists_eq_left']
+  exact ⟨fun l hl => by rw [ln, xmm_setXmm_self, lane_pmuludq _ _ hl], rfl, setXmm_xk _ _ _⟩
+
+/-- Two shifts keep the 26 bits of each lane from bit `n` on. -/
+theorem bits_ok (x : XReg) (n : Nat) (hn : n = 0 ∨ n = 4 ∨ n = 14 ∨ n = 26) (s : State) :
+    WP isa (.block [.xop (.shift .psllq x (BitVec.ofNat 8 (38 - n))), .xop (.shift .psrlq x 38)]) s fun s' =>
+      (∀ l < 2, ln s' x l = ln s x l / 2 ^ n % 2 ^ 26) ∧ s'.mem = s.mem ∧ Xk [x] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left']
+  refine ⟨fun l hl => ?_, rfl, ((setXmm_xk _ _ _).trans (setXmm_xk _ _ _)).mono fun r hr => by
+    rcases List.mem_append.mp hr with h | h <;> exact h⟩
+  have hlt := lane_lt (s.xmm x) l
+  rw [ln, xmm_setXmm_self, xmm_setXmm_self, lane_psrlq _ _ (by decide) hl]
+  rcases hn with rfl | rfl | rfl | rfl
+  · rw [lane_psllq _ _ (by decide) hl]
+    show lane (s.xmm x) l * 2 ^ 38 % 2 ^ 64 / 2 ^ 38 = lane (s.xmm x) l / 2 ^ 0 % 2 ^ 26
+    omega_using [hlt]
+  · rw [lane_psllq _ _ (by decide) hl]
+    show lane (s.xmm x) l * 2 ^ 34 % 2 ^ 64 / 2 ^ 38 = lane (s.xmm x) l / 2 ^ 4 % 2 ^ 26
+    omega_using [hlt]
+  · rw [lane_psllq _ _ (by decide) hl]
+    show lane (s.xmm x) l * 2 ^ 24 % 2 ^ 64 / 2 ^ 38 = lane (s.xmm x) l / 2 ^ 14 % 2 ^ 26
+    omega_using [hlt]
+  · rw [lane_psllq _ _ (by decide) hl]
+    show lane (s.xmm x) l * 2 ^ 12 % 2 ^ 64 / 2 ^ 38 = lane (s.xmm x) l / 2 ^ 26 % 2 ^ 26
+    omega_using [hlt]
+
+/-- An operation's instructions do what `LOp.val` says, where `LOp.bnd`
+accepts the lanes' bounds. -/
+theorem op_ok {o nd : Nat} {B dp : BitVec 32} (op : LOp) (s : State) (he : LEnv o nd B dp s) (sb : Nat → Nat)
+    (b b' : XReg → Nat) (hsb : ∀ j < 28, ∀ l < 2, slv s.mem B j l ≤ sb j) (hb : ∀ x, ∀ l < 2, ln s x l ≤ b x)
+    (hr : op.bnd sb nd b = some b') :
+    WP isa (.block (op.instrs o)) s fun s' =>
+      (∀ x, ∀ l < 2, ln s' x l = op.val (slv s.mem B) (qv s.mem dp) (lv s) x l) ∧
+      (∀ x, ∀ l < 2, ln s' x l ≤ b' x) ∧ s'.mem = s.mem ∧ Xk xall s s' := by
+  have fin : ∀ {s' : State} {d : XReg} (f : Nat → Nat) (n : Nat), Xk [d] s s' → s'.mem = s.mem →
+      (∀ l < 2, ln s' d l = f l) → (∀ l < 2, f l ≤ n) →
+      (∀ x, ∀ l < 2, ln s' x l = upd (lv s) d f x l) ∧ (∀ x, ∀ l < 2, ln s' x l ≤ bupd b d n x) ∧
+        s'.mem = s.mem ∧ Xk xall s s' := fun f n hk hm hw hn =>
+    ⟨(reg_val hk f n hw hn hb).1, (reg_val hk f n hw hn hb).2, hm, hk.all⟩
+  have sh : ∀ n : Nat, n ≤ 63 → (BitVec.ofNat 8 n).toNat = n := fun n hn => by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hn])
+  cases op with
+  | slot x j =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hj
+      cases hr
+      refine WP.mono (loadSlot_ok x (slot j) s he.sp (Proof.Aes.X86.in_rd (fr_in he.fit he.fr
+        (by simp only [slot]; omega_using [hj]) (by decide)))) fun s' ⟨v, m, k⟩ => ?_
+      exact fin (slv s.mem B j) (sb j) k m (fun l _ => by rw [ln, v]) (fun l hl => hsb j hj l hl)
+    · cases hr
+  | data x d =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hd
+      cases hr
+      refine WP.mono (movq_ok x .esi d s (by rw [he.esi]; exact he.din d hd)) fun s' ⟨v0, v1, m, k⟩ => ?_
+      refine fin (fun l => if l = 0 then qv s.mem dp d else 0) _ k m (fun l hl => ?_) (fun l _ => ?_)
+      · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
+        · rw [v0, he.esi]; rfl
+        · rw [v1]; rfl
+      · have := (s.mem.readW (addr dp d) 64).isLt
+        split
+        · show (s.mem.readW (addr dp d) 64).toNat ≤ 2 ^ 64 - 1; omega_using [this]
+        · exact Nat.zero_le _
+    · cases hr
+  | mul x y =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hxy
+      cases hr
+      refine WP.mono (pmul_ok x y s he.mcdt) fun s' ⟨v, m, k⟩ => ?_
+      refine fin (fun l => ln s x l * ln s y l) _ k m (fun l hl => ?_) (fun l hl => ?_)
+      · rw [v l hl, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (hb x l hl) hxy.1),
+          Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (hb y l hl) hxy.2)]
+      · exact Nat.mul_le_mul (hb x l hl) (hb y l hl)
+    · cases hr
+  | add x y =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hxy
+      cases hr
+      refine WP.mono (paddq_ok x y s fun l hl => by
+        have h₁ := hb x l hl; have h₂ := hb y l hl; omega_using [h₁, h₂, hxy]) fun s' ⟨v, m, k⟩ => ?_
+      exact fin (fun l => ln s x l + ln s y l) _ k m v (fun l hl => Nat.add_le_add (hb x l hl) (hb y l hl))
+    · cases hr
+  | unpck x y =>
+    simp only [LOp.bnd] at hr
+    cases hr
+    refine WP.mono (punpck_ok x y s) fun s' ⟨v0, v1, m, k⟩ => ?_
+    refine fin (fun l => if l = 0 then ln s x 0 else ln s y 0) _ k m (fun l hl => ?_) (fun l _ => ?_)
+    · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
+      · rw [v0]; rfl
+      · rw [v1]; rfl
+    · split
+      · exact Nat.le_trans (hb x 0 (by decide)) (Nat.le_max_left _ _)
+      · exact Nat.le_trans (hb y 0 (by decide)) (Nat.le_max_right _ _)
+  | mov x y =>
+    simp only [LOp.bnd] at hr
+    cases hr
+    refine WP.mono (mv_ok x y s) fun s' ⟨v, m, k⟩ => ?_
+    exact fin (lv s y) _ k m (fun l _ => by rw [ln, v]) (fun l hl => hb y l hl)
+  | shr x n =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hn
+      cases hr
+      refine WP.mono (psrlq_ok x (BitVec.ofNat 8 n) (by rw [sh n hn]; exact hn) s) fun s' ⟨v, m, k⟩ => ?_
+      exact fin (fun l => ln s x l / 2 ^ n) _ k m (fun l hl => by rw [v l hl, sh n hn])
+        (fun l hl => Nat.div_le_div_right (hb x l hl))
+    · cases hr
+  | shl x n =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hn
+      cases hr
+      have hlt : ∀ l < 2, ln s x l * 2 ^ n < 2 ^ 64 := fun l hl =>
+        Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ (hb x l hl)) hn.2
+      refine WP.mono (psllq_ok x (BitVec.ofNat 8 n) (by rw [sh n hn.1]; exact hn.1) s
+        (fun l hl => by rw [sh n hn.1]; exact hlt l hl)) fun s' ⟨v, m, k⟩ => ?_
+      exact fin (fun l => ln s x l * 2 ^ n) _ k m (fun l hl => by rw [v l hl, sh n hn.1])
+        (fun l hl => Nat.mul_le_mul_right _ (hb x l hl))
+    · cases hr
+  | bits x n =>
+    simp only [LOp.bnd] at hr
+    split at hr
+    · rename_i hn
+      cases hr
+      refine WP.mono (bits_ok x n hn s) fun s' ⟨v, m, k⟩ => ?_
+      exact fin (fun l => ln s x l / 2 ^ n % 2 ^ 26) _ k m v
+        (fun l _ => Nat.le_of_lt_succ (Nat.mod_lt _ (by decide)))
+    · cases hr
+  | low26 x =>
+    simp only [LOp.bnd] at hr
+    cases hr
+    refine WP.mono (bits_ok x 0 (.inl rfl) s) fun s' ⟨v, m, k⟩ => ?_
+    exact fin (fun l => ln s x l % 2 ^ 26) _ k m (fun l hl => by rw [v l hl, Nat.pow_zero, Nat.div_one])
+      (fun l _ => Nat.le_of_lt_succ (Nat.mod_lt _ (by decide)))
+
+/-- The operations' instructions do what `valRun` says, where `bndRun`
+accepts the lanes' bounds. -/
+theorem ops_ok {o nd : Nat} {B dp : BitVec 32} (sb : Nat → Nat) : ∀ (ops : List LOp) (s : State),
+    LEnv o nd B dp s →
+    ∀ (b b' : XReg → Nat), (∀ j < 28, ∀ l < 2, slv s.mem B j l ≤ sb j) → (∀ x, ∀ l < 2, ln s x l ≤ b x) →
+    bndRun sb nd ops b = some b' →
+    WP isa (.block (ops.flatMap (LOp.instrs o))) s fun s' =>
+      (∀ x, ∀ l < 2, ln s' x l = valRun (slv s.mem B) (qv s.mem dp) ops (lv s) x l) ∧
+      (∀ x, ∀ l < 2, ln s' x l ≤ b' x) ∧ s'.mem = s.mem ∧ Xk xall s s'
+  | [], s, _, b, b', _, hb, hr => by
+    cases hr
+    exact WP.block_nil ⟨fun _ _ _ => rfl, hb, rfl, Xk.refl _ _⟩
+  | op :: ops, s, he, b, b', hsb, hb, hr => by
+    obtain ⟨b₁, h₁, h₂⟩ := Option.bind_eq_some_iff.mp hr
+    rw [List.flatMap_cons]
+    refine WP.block_append (WP.mono (op_ok op s he sb b b₁ hsb hb h₁) fun s₁ ⟨v₁, c₁, m₁, k₁⟩ => ?_)
+    refine WP.mono (ops_ok sb ops s₁ (he.keep k₁) b₁ b' (by rw [m₁]; exact hsb) c₁ h₂)
+      fun s₂ ⟨v₂, c₂, m₂, k₂⟩ => ?_
+    refine ⟨fun x l hl => ?_, c₂, m₂.trans m₁, (k₁.trans k₂).all⟩
+    rw [v₂ x l hl, m₁]
+    exact valRun_congr _ _ ops (fun y l' hl' => v₁ y l' hl') x l hl
+
 /-! ## The lanes' loop
 
 `lanes`, in a state `s` with the frame at `B = esp + 12` (`LPre`). -/
@@ -1940,18 +1779,6 @@ theorem lim_blk_lt {N : Nat} (hN : N < 2 ^ 128) {k : Nat} (hk : k < 5) : lim (N 
   rcases (by omega_using [hk] : k < 4 ∨ k = 4) with h | rfl
   · exact lim_lt _ h
   · exact Nat.lt_trans (lim4_lt (B := 2 ^ 25) (by omega_using [hN])) (by decide)
-
-/-- A lane after a pair: multiplied, carried, and a block added. -/
-theorem lane_step (a b : Nat → Nat) (N : Nat) :
-    val (fun k => cv (ds a b) k + lim (N + 2 ^ 128) k) % P = (val a * val b + (N + 2 ^ 128)) % P := by
-  rw [val_add, val_lim]
-  exact add_mod_congr ((cv_mod _).trans (ds_mod a b)) rfl
-
-theorem lane_step_lt {a b : Nat → Nat} {N : Nat} (ha : ∀ k < 5, a k < 2 ^ 28) (hb : ∀ k < 5, b k < 2 ^ 26)
-    (hN : N < 2 ^ 128) {k : Nat} (hk : k < 5) : cv (ds a b) k + lim (N + 2 ^ 128) k < 2 ^ 28 := by
-  have h₁ := cv_lt (d := ds a b) (fun i hi => Nat.lt_trans (ds_lt ha hb hi) (by decide)) hk
-  have h₂ := lim_blk_lt hN hk
-  omega_using [h₁, h₂]
 
 theorem leNum_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region} {a : Addr} {n : Nat}
     (ha : R.Contains a n) (hd : ∀ r' ∈ rs, R.Disjoint r') (hn : n < 2 ^ 64) :
@@ -2056,7 +1883,62 @@ theorem pairs_succ (m : Mem) (a : Addr) (j : Nat) :
   rw [show 32 * (j + 1) = 32 * j + (16 + 16) by omega_arith, Poly1305.bytesAt_add, Poly1305.bytesAt_add,
     add_ofNat_add, List.append_assoc]
 
-/-- The lanes at the head of the loop, after `j` pairs. -/
+/-- The slots of the lanes. -/
+abbrev hR (B : BitVec 32) : Region := ⟨addr B 416, 80⟩
+
+theorem hR_contains {B : BitVec 32} (hB : Fit B) {d : Nat} (h₁ : 416 ≤ d) (h₂ : d + 16 ≤ 496) :
+    (hR B).Contains (addr B d) (128 / 8) :=
+  Proof.Aes.X86.part_contains (N := 512) (a := 416) (k := 80) hB (by decide) h₁ (by omega_using [h₂]) (by decide)
+
+/-- `storeH`: the lanes into their slots. -/
+theorem storeH_ok {o : Nat} {B : BitVec 32} {tb : Nat → Nat → Nat → Nat} (s : State)
+    (hsp : s.gpr .esp + BitVec.ofNat 32 o = B) (hB : Fit B) (hfr : Proof.Aes.X86.reg32 B 512 ∈ s.wr)
+    (hT : Tab s.mem B tb) :
+    WP isa (.block (storeH o)) s fun s' =>
+      (∀ k < 5, s'.mem.readW (addr B (slot (hIdx k))) 128 = s.xmm (lreg k)) ∧ Tab s'.mem B tb ∧
+      Frame [hR B] s.mem s'.mem ∧ Xk [] s s' := by
+  have e : storeH o = ([.movdquStore (fs o (slot (hIdx 0))) (lreg 0)] : List Instr) ++
+      (([.movdquStore (fs o (slot (hIdx 1))) (lreg 1)] : List Instr) ++
+      (([.movdquStore (fs o (slot (hIdx 2))) (lreg 2)] : List Instr) ++
+      (([.movdquStore (fs o (slot (hIdx 3))) (lreg 3)] : List Instr) ++
+      [.movdquStore (fs o (slot (hIdx 4))) (lreg 4)]))) := rfl
+  rw [e]
+  have st : ∀ (k : Nat), k < 5 → ∀ u : State, Xk [] s u →
+      WP isa (.block [.movdquStore (fs o (slot (hIdx k))) (lreg k)]) u fun u' =>
+        u'.mem = u.mem.writeW (addr B (slot (hIdx k))) (s.xmm (lreg k)) ∧ Xk [] s u' := fun k hk u ku => by
+    refine WP.mono (storeSlot_ok (B := B) (lreg k) (slot (hIdx k)) u (by rw [ku.gpr]; exact hsp)
+      (by rw [ku.wr]; exact fr_in hB hfr (by simp only [slot, hIdx]; omega_using [hk]) (by decide)))
+      fun u' ⟨m', k'⟩ => ⟨by rw [m', ku.xmm _ List.not_mem_nil], (ku.trans k').mono fun r hr => by simp at hr⟩
+  refine WP.block_append (WP.mono (st 0 (by decide) s (Xk.refl _ _)) fun s₁ ⟨m₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (st 1 (by decide) s₁ k₁) fun s₂ ⟨m₂, k₂⟩ => ?_)
+  refine WP.block_append (WP.mono (st 2 (by decide) s₂ k₂) fun s₃ ⟨m₃, k₃⟩ => ?_)
+  refine WP.block_append (WP.mono (st 3 (by decide) s₃ k₃) fun s₄ ⟨m₄, k₄⟩ => ?_)
+  refine WP.mono (st 4 (by decide) s₄ k₄) fun s₅ ⟨m₅, k₅⟩ => ?_
+  rw [m₄, m₃, m₂, m₁] at m₅
+  refine ⟨fun k hk => ?_, ?_, ?_, k₅⟩
+  · rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
+    · rw [m₅, slot_other hB _ _ (by decide) (by decide) (by decide),
+        slot_other hB _ _ (by decide) (by decide) (by decide), slot_other hB _ _ (by decide) (by decide) (by decide),
+        slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
+    · rw [m₅, slot_other hB _ _ (by decide) (by decide) (by decide),
+        slot_other hB _ _ (by decide) (by decide) (by decide), slot_other hB _ _ (by decide) (by decide) (by decide),
+        slot_same]
+    · rw [m₅, slot_other hB _ _ (by decide) (by decide) (by decide),
+        slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
+    · rw [m₅, slot_other hB _ _ (by decide) (by decide) (by decide), slot_same]
+    · rw [m₅, slot_same]
+  · rw [m₅]
+    exact ((((hT.store hB (by decide) (by decide) _).store hB (by decide) (by decide) _).store hB (by decide)
+      (by decide) _).store hB (by decide) (by decide) _).store hB (by decide) (by decide) _
+  · rw [m₅]
+    exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (hR_contains hB (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _ (hR_contains hB (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _ (hR_contains hB (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _ (hR_contains hB (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _ (hR_contains hB (by decide) (by decide))
+
+/-- The lanes at the head of the loop, after `j` pairs: they are also in
+their slots. -/
 structure LInv (B dp : BitVec 32) (p : Nat) (b c : Nat → Nat) (C : Prop) (R X : Nat) (s : State) (j : Nat)
     (u : State) : Prop where
   gpr : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esi → u.gpr r = s.gpr r
@@ -2067,15 +1949,16 @@ structure LInv (B dp : BitVec 32) (p : Nat) (b c : Nat → Nat) (C : Prop) (R X 
   mcdt : u.mcdt = s.mcdt
   frame : Frame [fR B] s.mem u.mem
   tab : Tab u.mem B (tbl b c)
-  mask : ∀ l < 2, ln u .xmm5 l = 2 ^ 26 - 1
+  slots : ∀ k < 5, u.mem.readW (addr B (slot (hIdx k))) 128 = u.xmm (lreg k)
   lt : ∀ l < 2, ∀ k < 5, ln u (lreg k) l < 2 ^ 28
   acc : C → (val (fun k => ln u (lreg k) 0) * val b + val (fun k => ln u (lreg k) 1) * val c) % P =
     absorbAll R X (bytesAt s.mem (dp.setWidth 64) (32 * j)) % P
 
 theorem lanesInit_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st dp p s) {C : Prop} {R X : Nat}
     (hC : C → val (rdb s.mem st) % P = R * R % P ∧ val (rdc s.mem st) = R ∧ rdh s.mem B % P = X % P) :
-    WP isa (.block (consts 12 ++ (tables 12 ++ (initH 12 ++ (addMsg 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++
-      (([.mov .ecx (.mem (fs 12 cntOff))] : List Instr) ++ ([.alu .sub .ecx (.imm 1)] : List Instr)))))))) s
+    WP isa (.block (consts 12 ++ (tables 12 ++ (initH 12 ++ (addMsg 12 ++ (storeH 12 ++
+      (([.alu .add .esi (.imm 32)] : List Instr) ++
+      (([.mov .ecx (.mem (fs 12 cntOff))] : List Instr) ++ ([.alu .sub .ecx (.imm 1)] : List Instr))))))))) s
       (LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s 1) := by
   have hB := hp.fit
   have hlow : ∀ {m : Mem}, Frame [tR B] s.mem m →
@@ -2089,12 +1972,12 @@ theorem lanesInit_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st
       exact Proof.Aes.X86.part_contains hB (by decide) (Nat.le_refl 0) (by decide) (by decide)
     · exact hf.readW (r := ⟨addr B 0, 64⟩)
         (Proof.Aes.X86.part_contains hB (by decide) (Nat.zero_le d) (by omega_using [hd]) (by decide)) hdj (by decide)
-  refine WP.block_append (WP.mono (consts_ok s hp.sp hB hp.fr) fun s₁ ⟨m5, mk, hb, f₁, k₁⟩ => ?_)
+  refine WP.block_append (WP.mono (consts_ok s hp.sp hB hp.fr) fun s₁ ⟨m5, hb, f₁, k₁⟩ => ?_)
   have hsp₁ := k₁.sp hp.sp
   have hedi₁ : s₁.gpr .edi = st := by rw [k₁.gpr _ (by decide)]; exact hp.edi
   refine WP.block_append (WP.mono (tables_ok (rdb s.mem st) (rdc s.mem st) s₁ hsp₁ hB (by rw [k₁.wr]; exact hp.fr)
     hedi₁ hp.sfit (by rw [k₁.rd, k₁.wr]; exact hp.sin)
-    (hp.sdj.sub_right (sub_fR hB (by decide))) m5 mk hb
+    (hp.sdj.sub_right (sub_fR hB (by decide))) m5 hb
     (fun k _ => by rw [hp.sword (frame_fR hB (by decide) f₁) (by have := (qshift_le k).2; omega_using [this])])
     (fun k _ => by
       rw [hp.sword (frame_fR hB (by decide) f₁) (by have := lbyte_le k; simp only [rOff]; omega_using [this])]))
@@ -2130,32 +2013,44 @@ theorem lanesInit_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st
       rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
       · exact Nat.lt_trans (hlo k hk) (by decide)
       · rw [hi₃ k hk]; decide)) fun s₄ ⟨a₄, m₄, k₄⟩ => ?_)
-  refine WP.block_append (WP.mono (gAdd_ok .esi 32 s₄) fun s₅ ⟨e₅, g₅⟩ => ?_)
-  have hmem₅ : s₅.mem = s₂.mem := by rw [g₅.mem, m₄, hmem₃]
   have hsp₄ : s₄.gpr .esp + BitVec.ofNat 32 12 = B := by rw [k₄.gpr, k₃.gpr _ (by decide)]; exact hsp₂
-  have hsp₅ : s₅.gpr .esp + BitVec.ofNat 32 12 = B := g₅.sp (by decide) hsp₄
+  refine WP.block_append (WP.mono (storeH_ok (tb := tbl (rdb s.mem st) (rdc s.mem st)) s₄ hsp₄ hB
+    (by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr]; exact hp.fr) (by rw [m₄, hmem₃]; exact T₂))
+    fun t₄ ⟨sl₄, T₄, fh₄, kh₄⟩ => ?_)
+  refine WP.block_append (WP.mono (gAdd_ok .esi 32 t₄) fun s₅ ⟨e₅, g₅⟩ => ?_)
+  have hsp₅ : s₅.gpr .esp + BitVec.ofNat 32 12 = B := g₅.sp (by decide) (by rw [kh₄.gpr]; exact hsp₄)
   have hin₅ : InRegions (s₅.rd ++ s₅.wr) (addr B cntOff) 4 := by
-    rw [g₅.rd, g₅.wr, k₄.rd, k₄.wr, k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]
+    rw [g₅.rd, g₅.wr, kh₄.rd, kh₄.wr, k₄.rd, k₄.wr, k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]
     exact Proof.Aes.X86.in_rd (fr_in hB hp.fr (show cntOff + 4 ≤ 512 by decide) (by decide))
   refine WP.block_append (WP.mono (gLoad_ok .ecx cntOff s₅ hsp₅ hin₅) fun s₆ ⟨e₆, g₆⟩ => ?_)
   refine WP.mono (gSub_ok .ecx 1 s₆) fun s₇ ⟨e₇, _, g₇⟩ => ?_
-  have hmem₇ : s₇.mem = s₂.mem := by rw [g₇.mem, g₆.mem, hmem₅]
-  have hln : ∀ x l, ln s₇ x l = ln s₄ x l := fun x l => by rw [g₇.lane, g₆.lane, g₅.lane]
+  have hmem₇ : s₇.mem = t₄.mem := by rw [g₇.mem, g₆.mem, g₅.mem]
+  have hx₇ : s₇.xmm = s₄.xmm := by rw [g₇.xmm, g₆.xmm, g₅.xmm]; exact funext fun r => kh₄.xmm r List.not_mem_nil
+  have hln : ∀ x l, ln s₇ x l = ln s₄ x l := fun x l => by rw [ln, hx₇]
   have hN : ∀ l, pblk s.mem dp 0 l < 2 ^ 128 := fun l => leNum_bytes_lt _ _ 16
-  refine ⟨fun r h₁ h₂ h₃ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun l hl => ?_, fun l hl k hk => ?_, fun hc => ?_⟩
+  -- The count is below the slots of the lanes.
+  have hcnt : t₄.mem.readW (addr B cntOff) 32 = s₂.mem.readW (addr B cntOff) 32 := by
+    rw [← hmem₃, ← m₄]
+    exact fh₄.readW (r := ⟨addr B 0, 64⟩)
+      (Proof.Aes.X86.part_contains hB (by decide) (Nat.zero_le _) (by decide) (by decide))
+      (fun r hr => by
+        rw [List.mem_singleton.mp hr]
+        exact Proof.Aes.X86.part_disj hB (by decide) (by decide) (.inl (by decide))) (by decide)
+  refine ⟨fun r h₁ h₂ h₃ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_, fun l hl k hk => ?_, fun hc => ?_⟩
   · rw [g₇.gpr _ (by simpa only [List.mem_singleton] using h₂), g₆.gpr _ (by simpa only [List.mem_singleton] using h₂),
-      g₅.gpr _ (by simpa only [List.mem_singleton] using h₃), k₄.gpr, k₃.gpr _ h₁, k₂.gpr, k₁.gpr _ h₁]
-  · rw [g₇.gpr _ (by decide), g₆.gpr _ (by decide), e₅, k₄.gpr, k₃.gpr _ (by decide), k₂.gpr, k₁.gpr _ (by decide),
-      hp.esi]
+      g₅.gpr _ (by simpa only [List.mem_singleton] using h₃), kh₄.gpr, k₄.gpr, k₃.gpr _ h₁, k₂.gpr, k₁.gpr _ h₁]
+  · rw [g₇.gpr _ (by decide), g₆.gpr _ (by decide), e₅, kh₄.gpr, k₄.gpr, k₃.gpr _ (by decide), k₂.gpr,
+      k₁.gpr _ (by decide), hp.esi]
     rfl
-  · rw [e₇, e₆, g₅.mem, m₄, hmem₃, (hlow f₁₂).2 _ (show cntOff + 4 ≤ 64 by decide), hp.cnt]
+  · rw [e₇, e₆, g₅.mem, hcnt, (hlow f₁₂).2 _ (show cntOff + 4 ≤ 64 by decide), hp.cnt]
     exact VG.X86.Wp.ofNat_pred (by have := hp.two; omega_using [this])
-  · rw [g₇.rd, g₆.rd, g₅.rd, k₄.rd, k₃.rd, k₂.rd, k₁.rd]
-  · rw [g₇.wr, g₆.wr, g₅.wr, k₄.wr, k₃.wr, k₂.wr, k₁.wr]
-  · rw [g₇.mcdt, g₆.mcdt, g₅.mcdt, k₄.mcdt, k₃.mcdt, k₂.mcdt, k₁.mcdt]
-  · rw [hmem₇]; exact frame_fR hB (by decide) f₁₂
-  · rw [hmem₇]; exact T₂
-  · rw [hln, k₄.lane (by decide)]; exact hm₃ l hl
+  · rw [g₇.rd, g₆.rd, g₅.rd, kh₄.rd, k₄.rd, k₃.rd, k₂.rd, k₁.rd]
+  · rw [g₇.wr, g₆.wr, g₅.wr, kh₄.wr, k₄.wr, k₃.wr, k₂.wr, k₁.wr]
+  · rw [g₇.mcdt, g₆.mcdt, g₅.mcdt, kh₄.mcdt, k₄.mcdt, k₃.mcdt, k₂.mcdt, k₁.mcdt]
+  · rw [hmem₇]
+    exact (frame_fR hB (by decide) f₁₂).trans (by rw [← hmem₃, ← m₄]; exact frame_fR hB (by decide) fh₄)
+  · rw [hmem₇]; exact T₄
+  · rw [hmem₇, hx₇]; exact sl₄ k hk
   · rw [hln, a₄ l hl k hk]
     have h₂ := lim_blk_lt (hN l) hk
     rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
@@ -2192,78 +2087,380 @@ theorem cv_congr {d d' : Nat → Nat} (h : ∀ k < 5, d k = d' k) (k : Nat) : cv
     simp only [cv, z0, z3, x2, x4, x1, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide),
       h 4 (by decide)]
 
-/-- A turn of the loop: the lanes times `r²`, carried, plus a pair of blocks. -/
+/-! ### The sums and the carries -/
+
+/-- Bounds of the slots' lanes for the sums with table `t`: the multipliers
+and their multiples by 5, the bit `2²⁴`, and the lanes. -/
+def sbT (t j : Nat) : Nat :=
+  if 10 * t ≤ j ∧ j < 10 * t + 10 then 5 * 2 ^ 27 else if j = 21 then 2 ^ 24
+  else if 22 ≤ j ∧ j < 27 then 2 ^ 28 else 2 ^ 64 - 1
+
+/-- Bounds of the registers before the sums, and before the carries. -/
+def b0 : XReg → Nat
+  | .xmm0 | .xmm1 | .xmm2 | .xmm3 | .xmm4 => 2 ^ 28
+  | _ => 2 ^ 64 - 1
+
+def b62 : XReg → Nat
+  | .xmm0 | .xmm1 | .xmm2 | .xmm3 | .xmm4 => 2 ^ 62
+  | _ => 2 ^ 64 - 1
+
+/-- No lane overflows in the sums of a turn (with the two blocks' limbs),
+in those of the last multiplication, or in the carries. -/
+theorem sums_bnd0 : (bndRun (sbT 0) 32 (sumsOps 0 true) b0).isSome = true := by kernel_rfl
+
+theorem sums_bnd1 : (bndRun (sbT 1) 0 (sumsOps 1 false) b0).isSome = true := by kernel_rfl
+
+theorem carry_bnd (nd : Nat) : (bndRun (fun _ => 2 ^ 64 - 1) nd carryOps b62).isSome = true := by kernel_rfl
+
+section
+variable (sl : Nat → Nat → Nat) (q : Nat → Nat) (v : XReg → Nat → Nat) (t l : Nat)
+
+/-- The sums as the operations compute them: `d0` from the registers, the
+others from the slots, with the blocks' limbs. -/
+theorem sums_val0 : valRun sl q (sumsOps t true) v .xmm0 l =
+    v .xmm0 l * sl (mIdx t 0 0) l + v .xmm1 l * sl (mIdx t 0 1) l + v .xmm2 l * sl (mIdx t 0 2) l +
+      v .xmm3 l * sl (mIdx t 0 3) l + v .xmm4 l * sl (mIdx t 0 4) l +
+      (if l = 0 then q (lbyte 0) else q (lbyte 0 + 16)) / 2 ^ lshift 0 % 2 ^ 26 := by kernel_rfl
+
+theorem sums_val1 : valRun sl q (sumsOps t true) v .xmm1 l =
+    sl (mIdx t 1 0) l * sl (hIdx 0) l + (if l = 0 then q (lbyte 1) else q (lbyte 1 + 16)) / 2 ^ lshift 1 % 2 ^ 26 +
+      sl (mIdx t 1 1) l * sl (hIdx 1) l + sl (mIdx t 1 2) l * sl (hIdx 2) l + sl (mIdx t 1 3) l * sl (hIdx 3) l +
+      sl (mIdx t 1 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_val2 : valRun sl q (sumsOps t true) v .xmm2 l =
+    sl (mIdx t 2 0) l * sl (hIdx 0) l + (if l = 0 then q (lbyte 2) else q (lbyte 2 + 16)) / 2 ^ lshift 2 % 2 ^ 26 +
+      sl (mIdx t 2 1) l * sl (hIdx 1) l + sl (mIdx t 2 2) l * sl (hIdx 2) l + sl (mIdx t 2 3) l * sl (hIdx 3) l +
+      sl (mIdx t 2 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_val3 : valRun sl q (sumsOps t true) v .xmm3 l =
+    sl (mIdx t 3 0) l * sl (hIdx 0) l + (if l = 0 then q (lbyte 3) else q (lbyte 3 + 16)) / 2 ^ lshift 3 % 2 ^ 26 +
+      sl (mIdx t 3 1) l * sl (hIdx 1) l + sl (mIdx t 3 2) l * sl (hIdx 2) l + sl (mIdx t 3 3) l * sl (hIdx 3) l +
+      sl (mIdx t 3 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_val4 : valRun sl q (sumsOps t true) v .xmm4 l =
+    sl (mIdx t 4 0) l * sl (hIdx 0) l + (if l = 0 then q (lbyte 4) else q (lbyte 4 + 16)) / 2 ^ 40 + sl 21 l +
+      sl (mIdx t 4 1) l * sl (hIdx 1) l + sl (mIdx t 4 2) l * sl (hIdx 2) l + sl (mIdx t 4 3) l * sl (hIdx 3) l +
+      sl (mIdx t 4 4) l * sl (hIdx 4) l := by kernel_rfl
+
+/-- The same without the blocks. -/
+theorem sums_nv0 : valRun sl q (sumsOps t false) v .xmm0 l =
+    v .xmm0 l * sl (mIdx t 0 0) l + v .xmm1 l * sl (mIdx t 0 1) l + v .xmm2 l * sl (mIdx t 0 2) l +
+      v .xmm3 l * sl (mIdx t 0 3) l + v .xmm4 l * sl (mIdx t 0 4) l := by kernel_rfl
+
+theorem sums_nv1 : valRun sl q (sumsOps t false) v .xmm1 l =
+    sl (mIdx t 1 0) l * sl (hIdx 0) l + sl (mIdx t 1 1) l * sl (hIdx 1) l + sl (mIdx t 1 2) l * sl (hIdx 2) l +
+      sl (mIdx t 1 3) l * sl (hIdx 3) l + sl (mIdx t 1 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_nv2 : valRun sl q (sumsOps t false) v .xmm2 l =
+    sl (mIdx t 2 0) l * sl (hIdx 0) l + sl (mIdx t 2 1) l * sl (hIdx 1) l + sl (mIdx t 2 2) l * sl (hIdx 2) l +
+      sl (mIdx t 2 3) l * sl (hIdx 3) l + sl (mIdx t 2 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_nv3 : valRun sl q (sumsOps t false) v .xmm3 l =
+    sl (mIdx t 3 0) l * sl (hIdx 0) l + sl (mIdx t 3 1) l * sl (hIdx 1) l + sl (mIdx t 3 2) l * sl (hIdx 2) l +
+      sl (mIdx t 3 3) l * sl (hIdx 3) l + sl (mIdx t 3 4) l * sl (hIdx 4) l := by kernel_rfl
+
+theorem sums_nv4 : valRun sl q (sumsOps t false) v .xmm4 l =
+    sl (mIdx t 4 0) l * sl (hIdx 0) l + sl (mIdx t 4 1) l * sl (hIdx 1) l + sl (mIdx t 4 2) l * sl (hIdx 2) l +
+      sl (mIdx t 4 3) l * sl (hIdx 3) l + sl (mIdx t 4 4) l * sl (hIdx 4) l := by kernel_rfl
+
+/-- The carries are those of `cv`. -/
+theorem carry_val {k : Nat} (hk : k < 5) : valRun sl q carryOps v (lreg k) l = cv (fun i => v (lreg i) l) k := by
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl
+
+end
+
+/-- A limb of the two blocks, as a turn extracts it. -/
+theorem limb_q {m : Mem} {dp : BitVec 32} (hfit : dp.toNat + 32 ≤ 2 ^ 32) {k : Nat} (hk : k < 5) {l : Nat}
+    (hl : l < 2) :
+    (if l = 0 then qv m dp (lbyte k) else qv m dp (lbyte k + 16)) / 2 ^ lshift k % 2 ^ 26 = lim (blkN m dp l) k := by
+  have hb := lbyte_le k
+  unfold qv
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
+  · rw [ite_eq_left rfl, ← limbv_read _ _ hk, Nat.mul_zero, BitVec.add_zero, addr_eq (by omega_using [hfit, hb])]
+    rfl
+  · rw [ite_eq_right (by decide), ← limbv_read _ _ hk, Nat.mul_one, Nat.add_comm (lbyte k) 16,
+      addr_add (by omega_using [hfit, hb]), addr_eq (by omega_using [hfit])]
+    rfl
+
+/-- The fifth limb needs no mask. -/
+theorem limb_q4 {m : Mem} {dp : BitVec 32} (hfit : dp.toNat + 32 ≤ 2 ^ 32) {l : Nat} (hl : l < 2) :
+    (if l = 0 then qv m dp (lbyte 4) else qv m dp (lbyte 4 + 16)) / 2 ^ 40 = lim (blkN m dp l) 4 := by
+  rw [← limb_q hfit (show 4 < 5 by decide) hl]
+  have h : (if l = 0 then qv m dp (lbyte 4) else qv m dp (lbyte 4 + 16)) < 2 ^ 64 := by
+    split
+    · exact (m.readW _ 64).isLt
+    · exact (m.readW _ 64).isLt
+  show _ / 2 ^ 40 = _ / 2 ^ 40 % 2 ^ 26
+  omega_using [h]
+
+/-- The sums: the products of the lanes `a` with table `t`, plus the limbs
+of the two blocks with their `2¹²⁸` if `msg`. -/
+theorem sums_eq {m : Mem} {B dp : BitVec 32} {tb : Nat → Nat → Nat → Nat} {t : Nat} (ht : t < 2) (msg : Bool)
+    (hfit : msg = true → dp.toNat + 32 ≤ 2 ^ 32) (hT : Tab m B tb) (a : Nat → Nat) {l : Nat} (hl : l < 2)
+    (v : XReg → Nat → Nat) (hv : ∀ i < 5, v (lreg i) l = a i) (hs : ∀ i < 5, slv m B (hIdx i) l = a i)
+    {k : Nat} (hk : k < 5) :
+    valRun (slv m B) (qv m dp) (sumsOps t msg) v (lreg k) l =
+      ds a (tb t l) k + (if msg = true then lim (blkN m dp l + 2 ^ 128) k else 0) := by
+  have hc : ∀ k < 5, ∀ i < 5, slv m B (mIdx t k i) l = cf (tb t l) k i := fun k hk i hi => hT.mul ht hk hi hl
+  have h21 : slv m B 21 l = 2 ^ 24 := hT.hibit l hl
+  have v0 : v .xmm0 l = a 0 := hv 0 (by decide)
+  have v1 : v .xmm1 l = a 1 := hv 1 (by decide)
+  have v2 : v .xmm2 l = a 2 := hv 2 (by decide)
+  have v3 : v .xmm3 l = a 3 := hv 3 (by decide)
+  have v4 : v .xmm4 l = a 4 := hv 4 (by decide)
+  have s0 := hs 0 (by decide)
+  have s1 := hs 1 (by decide)
+  have s2 := hs 2 (by decide)
+  have s3 := hs 3 (by decide)
+  have s4 := hs 4 (by decide)
+  cases msg
+  · rw [ite_eq_right (by decide), Nat.add_zero]
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
+    · refine (sums_nv0 (slv m B) (qv m dp) v t l).trans ?_
+      rw [v0, v1, v2, v3, v4, hc 0 (by decide) 0 (by decide), hc 0 (by decide) 1 (by decide),
+        hc 0 (by decide) 2 (by decide), hc 0 (by decide) 3 (by decide), hc 0 (by decide) 4 (by decide),
+        Nat.mul_comm (a 0), Nat.mul_comm (a 1), Nat.mul_comm (a 2), Nat.mul_comm (a 3), Nat.mul_comm (a 4)]
+      rfl
+    · refine (sums_nv1 (slv m B) (qv m dp) v t l).trans ?_
+      rw [s0, s1, s2, s3, s4, hc 1 (by decide) 0 (by decide), hc 1 (by decide) 1 (by decide),
+        hc 1 (by decide) 2 (by decide), hc 1 (by decide) 3 (by decide), hc 1 (by decide) 4 (by decide)]
+      rfl
+    · refine (sums_nv2 (slv m B) (qv m dp) v t l).trans ?_
+      rw [s0, s1, s2, s3, s4, hc 2 (by decide) 0 (by decide), hc 2 (by decide) 1 (by decide),
+        hc 2 (by decide) 2 (by decide), hc 2 (by decide) 3 (by decide), hc 2 (by decide) 4 (by decide)]
+      rfl
+    · refine (sums_nv3 (slv m B) (qv m dp) v t l).trans ?_
+      rw [s0, s1, s2, s3, s4, hc 3 (by decide) 0 (by decide), hc 3 (by decide) 1 (by decide),
+        hc 3 (by decide) 2 (by decide), hc 3 (by decide) 3 (by decide), hc 3 (by decide) 4 (by decide)]
+      rfl
+    · refine (sums_nv4 (slv m B) (qv m dp) v t l).trans ?_
+      rw [s0, s1, s2, s3, s4, hc 4 (by decide) 0 (by decide), hc 4 (by decide) 1 (by decide),
+        hc 4 (by decide) 2 (by decide), hc 4 (by decide) 3 (by decide), hc 4 (by decide) 4 (by decide)]
+      rfl
+  · have hfit := hfit rfl
+    rw [ite_eq_left rfl, lim_pad]
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
+    · refine (sums_val0 (slv m B) (qv m dp) v t l).trans ?_
+      rw [limb_q (m := m) hfit (show 0 < 5 by decide) hl, v0, v1, v2, v3, v4,
+        hc 0 (by decide) 0 (by decide), hc 0 (by decide) 1 (by decide), hc 0 (by decide) 2 (by decide),
+        hc 0 (by decide) 3 (by decide), hc 0 (by decide) 4 (by decide), Nat.mul_comm (a 0), Nat.mul_comm (a 1),
+        Nat.mul_comm (a 2), Nat.mul_comm (a 3), Nat.mul_comm (a 4), ite_eq_left (show 0 < 4 by decide)]
+      simp only [ds]
+      omega_arith
+    · refine (sums_val1 (slv m B) (qv m dp) v t l).trans ?_
+      rw [limb_q (m := m) hfit (show 1 < 5 by decide) hl, s0, s1, s2, s3, s4,
+        hc 1 (by decide) 0 (by decide), hc 1 (by decide) 1 (by decide), hc 1 (by decide) 2 (by decide),
+        hc 1 (by decide) 3 (by decide), hc 1 (by decide) 4 (by decide), ite_eq_left (show 1 < 4 by decide)]
+      simp only [ds]
+      omega_arith
+    · refine (sums_val2 (slv m B) (qv m dp) v t l).trans ?_
+      rw [limb_q (m := m) hfit (show 2 < 5 by decide) hl, s0, s1, s2, s3, s4,
+        hc 2 (by decide) 0 (by decide), hc 2 (by decide) 1 (by decide), hc 2 (by decide) 2 (by decide),
+        hc 2 (by decide) 3 (by decide), hc 2 (by decide) 4 (by decide), ite_eq_left (show 2 < 4 by decide)]
+      simp only [ds]
+      omega_arith
+    · refine (sums_val3 (slv m B) (qv m dp) v t l).trans ?_
+      rw [limb_q (m := m) hfit (show 3 < 5 by decide) hl, s0, s1, s2, s3, s4,
+        hc 3 (by decide) 0 (by decide), hc 3 (by decide) 1 (by decide), hc 3 (by decide) 2 (by decide),
+        hc 3 (by decide) 3 (by decide), hc 3 (by decide) 4 (by decide), ite_eq_left (show 3 < 4 by decide)]
+      simp only [ds]
+      omega_arith
+    · refine (sums_val4 (slv m B) (qv m dp) v t l).trans ?_
+      rw [limb_q4 (m := m) hfit hl, h21, s0, s1, s2, s3, s4,
+        hc 4 (by decide) 0 (by decide), hc 4 (by decide) 1 (by decide), hc 4 (by decide) 2 (by decide),
+        hc 4 (by decide) 3 (by decide), hc 4 (by decide) 4 (by decide), ite_eq_right (show ¬ 4 < 4 by decide)]
+      simp only [ds]
+      omega_arith
+
+/-- The operations of the sums: the lanes times table `t`, plus the two
+blocks at `esi` if `msg`. The lanes are in their registers and in their
+slots. -/
+theorem sumsOps_ok {o nd : Nat} {B dp : BitVec 32} {tb : Nat → Nat → Nat → Nat} (t : Nat) (ht : t < 2) (msg : Bool)
+    (hbnd : (bndRun (sbT t) nd (sumsOps t msg) b0).isSome = true) (s : State) (he : LEnv o nd B dp s)
+    (hfit : msg = true → dp.toNat + 32 ≤ 2 ^ 32) (hT : Tab s.mem B tb)
+    (hs : ∀ k < 5, s.mem.readW (addr B (slot (hIdx k))) 128 = s.xmm (lreg k))
+    (ha : ∀ l < 2, ∀ i < 5, ln s (lreg i) l < 2 ^ 28) (hb : ∀ l < 2, ∀ i < 5, tb t l i < 2 ^ 27) :
+    WP isa (.block ((sumsOps t msg).flatMap (LOp.instrs o))) s fun s' =>
+      (∀ l < 2, ∀ k < 5, ln s' (lreg k) l = ds (fun i => ln s (lreg i) l) (tb t l) k +
+        (if msg = true then lim (blkN s.mem dp l + 2 ^ 128) k else 0)) ∧
+      s'.mem = s.mem ∧ Xk xall s s' := by
+  obtain ⟨b', hr⟩ := Option.isSome_iff_exists.mp hbnd
+  have hsl : ∀ j < 28, ∀ l < 2, slv s.mem B j l ≤ sbT t j := fun j hj l hl => by
+    unfold sbT
+    split
+    · rename_i h
+      obtain ⟨r, rfl⟩ : ∃ r, j = 10 * t + r := ⟨j - 10 * t, by omega_using [h]⟩
+      rcases (by omega_using [h] : r < 5 ∨ 5 ≤ r) with h5 | h5
+      · have e : slv s.mem B (10 * t + r) l = tb t l r := hT.rs t ht r h5 l hl
+        have hlt := hb l hl r h5
+        rw [e]
+        omega_using [hlt]
+      · obtain ⟨k, rfl⟩ : ∃ k, r = 5 + k := ⟨r - 5, by omega_using [h5]⟩
+        have e : slv s.mem B (10 * t + 5 + k) l = tb t l k + tb t l k * 2 ^ 2 :=
+          hT.ss t ht k (by omega_using [h]) l hl
+        have hlt := hb l hl k (by omega_using [h])
+        rw [← Nat.add_assoc, e]
+        omega_using [hlt]
+    · split
+      · rename_i _ h
+        subst h
+        exact Nat.le_of_eq (hT.hibit l hl)
+      · split
+        · rename_i _ _ h
+          obtain ⟨k, rfl⟩ : ∃ k, j = 22 + k := ⟨j - 22, by omega_using [h]⟩
+          show lane (s.mem.readW (addr B (slot (hIdx k))) 128) l ≤ _
+          rw [hs k (by omega_using [h])]
+          exact Nat.le_of_lt (ha l hl k (by omega_using [h]))
+        · have := lane_lt (s.mem.readW (addr B (slot j)) 128) l
+          show lane (s.mem.readW (addr B (slot j)) 128) l ≤ _
+          omega_using [this]
+  have hb0 : ∀ x, ∀ l < 2, ln s x l ≤ b0 x := fun x l hl => by
+    have hlt := lane_lt (s.xmm x) l
+    cases x
+    · exact Nat.le_of_lt (ha l hl 0 (by decide))
+    · exact Nat.le_of_lt (ha l hl 1 (by decide))
+    · exact Nat.le_of_lt (ha l hl 2 (by decide))
+    · exact Nat.le_of_lt (ha l hl 3 (by decide))
+    · exact Nat.le_of_lt (ha l hl 4 (by decide))
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+  refine WP.mono (ops_ok (sbT t) _ s he b0 b' hsl hb0 hr) fun s' ⟨v, _, m, k⟩ => ⟨fun l hl k' hk' => ?_, m, k⟩
+  rw [v _ l hl]
+  exact sums_eq ht msg hfit hT (fun i => ln s (lreg i) l) hl _ (fun _ _ => rfl)
+    (fun i hi => by show lane (s.mem.readW (addr B (slot (hIdx i))) 128) l = _; rw [hs i hi]) hk'
+
+/-- The operations of the carries, on lanes below `2⁶²`. -/
+theorem carryOps_ok {o nd : Nat} {B dp : BitVec 32} (s : State) (he : LEnv o nd B dp s)
+    (hd : ∀ l < 2, ∀ k < 5, ln s (lreg k) l < 2 ^ 62) :
+    WP isa (.block (carryOps.flatMap (LOp.instrs o))) s fun s' =>
+      (∀ l < 2, ∀ k < 5, ln s' (lreg k) l = cv (fun i => ln s (lreg i) l) k) ∧ s'.mem = s.mem ∧ Xk xall s s' := by
+  obtain ⟨b', hr⟩ := Option.isSome_iff_exists.mp (carry_bnd nd)
+  have hsl : ∀ j < 28, ∀ l < 2, slv s.mem B j l ≤ 2 ^ 64 - 1 := fun j _ l _ => by
+    have := lane_lt (s.mem.readW (addr B (slot j)) 128) l
+    show lane (s.mem.readW (addr B (slot j)) 128) l ≤ _
+    omega_using [this]
+  have hb0 : ∀ x, ∀ l < 2, ln s x l ≤ b62 x := fun x l hl => by
+    have hlt := lane_lt (s.xmm x) l
+    cases x
+    · exact Nat.le_of_lt (hd l hl 0 (by decide))
+    · exact Nat.le_of_lt (hd l hl 1 (by decide))
+    · exact Nat.le_of_lt (hd l hl 2 (by decide))
+    · exact Nat.le_of_lt (hd l hl 3 (by decide))
+    · exact Nat.le_of_lt (hd l hl 4 (by decide))
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+    · show lane _ l ≤ 2 ^ 64 - 1; omega_using [hlt]
+  refine WP.mono (ops_ok (fun _ => 2 ^ 64 - 1) _ s he b62 b' hsl hb0 hr) fun s' ⟨v, _, m, k⟩ =>
+    ⟨fun l hl k' hk' => ?_, m, k⟩
+  rw [v _ l hl]
+  exact carry_val _ _ _ _ hk'
+
+/-- A lane after a turn: multiplied, a block added, carried. -/
+theorem turn_step (a b : Nat → Nat) (N : Nat) :
+    val (fun k => cv (fun i => ds a b i + lim (N + 2 ^ 128) i) k) % P = (val a * val b + (N + 2 ^ 128)) % P := by
+  show val (cv (fun i => ds a b i + lim (N + 2 ^ 128) i)) % P = _
+  rw [cv_mod, val_add, val_lim]
+  exact add_mod_congr (ds_mod a b) rfl
+
+/-- The instructions of a turn, and the loop's count. -/
+abbrev turnB : List Instr :=
+  (sumsOps 0 true).flatMap (LOp.instrs 12) ++ (carryOps.flatMap (LOp.instrs 12) ++ (storeH 12 ++
+    (([.alu .add .esi (.imm 32)] : List Instr) ++ ([.alu .sub .ecx (.imm 1)] : List Instr))))
+
+/-- A turn of the loop: the lanes times `r²` plus a pair of blocks, carried. -/
 theorem lanesBody_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st dp p s) {b c : Nat → Nat}
     (hb : ∀ k < 5, b k < 2 ^ 26) {C : Prop} {R X : Nat} (hC : C → val b % P = R * R % P ∧ val c = R)
     {j : Nat} (hj : j < p) {u : State} (h : LInv B dp p b c C R X s j u) :
-    WP isa (.block (mulV 12 0 ++ (carryV ++ (addMsg 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++
-      ([.alu .sub .ecx (.imm 1)] : List Instr)))))) u fun u' =>
+    WP isa (.block turnB) u fun u' =>
       LInv B dp p b c C R X s (j + 1) u' ∧ u'.zf = some (BitVec.ofNat 32 (p - j) - 1 == 0) := by
   have hB := hp.fit
+  have hd := hp.dfit
   have hsp : u.gpr .esp + BitVec.ofNat 32 12 = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide)]; exact hp.sp
   have hfr : fR B ∈ u.wr := by rw [h.wr]; exact hp.fr
-  refine WP.block_append (WP.mono (mulV_ok 0 (by decide) u hsp hB hfr (by rw [h.mcdt]; exact hp.mcdt) h.tab h.lt
+  have hdj : (dp + BitVec.ofNat 32 (32 * j)).toNat = dp.toNat + 32 * j := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 32 * j) (by omega_using [hd, hj]),
+      Nat.mod_eq_of_lt (by omega_using [hd, hj])]
+  have he : LEnv 12 32 B (dp + BitVec.ofNat 32 (32 * j)) u :=
+    ⟨hsp, hB, hfr, by rw [h.mcdt]; exact hp.mcdt, h.esi, fun d hd' => by
+      rw [h.rd, h.wr, Proof.Aes.X86.addr_add]; exact hp.din _ (by omega_using [hd', hj])⟩
+  refine WP.block_append (WP.mono (sumsOps_ok 0 (by decide) true sums_bnd0 u he
+    (fun _ => by rw [hdj]; omega_using [hd, hj]) h.tab h.slots h.lt
     (fun l _ i hi => by rw [tbl_zero]; exact Nat.lt_trans (hb i hi) (by decide)))
-    fun u₁ ⟨a₁, m5₁, T₁, f₁, k₁⟩ => ?_)
-  have a₁' : ∀ l < 2, ∀ k < 5, ln u₁ (lreg k) l = ds (fun i => ln u (lreg i) l) b k := fun l hl k hk => by
-    rw [a₁ l hl k hk, tbl_zero]
-  have hds : ∀ l < 2, ∀ k < 5, ds (fun i => ln u (lreg i) l) b k < 2 ^ 62 := fun l hl k hk =>
-    Nat.lt_trans (ds_lt (h.lt l hl) hb hk) (by decide)
-  refine WP.block_append (WP.mono (carryV_ok u₁ m5₁ fun l hl k hk => by rw [a₁' l hl k hk]; exact hds l hl k hk)
-    fun u₂ ⟨a₂, m₂, k₂⟩ => ?_)
-  have a₂' : ∀ l < 2, ∀ k < 5, ln u₂ (lreg k) l = cv (ds (fun i => ln u (lreg i) l) b) k := fun l hl k hk => by
-    rw [a₂ l hl k hk]; exact cv_congr (fun i hi => a₁' l hl i hi) k
-  have hcv : ∀ l < 2, ∀ k < 5, cv (ds (fun i => ln u (lreg i) l) b) k < 2 ^ 26 + 2 ^ 14 := fun l hl k hk =>
-    cv_lt (d := ds (fun i => ln u (lreg i) l) b) (hds l hl) hk
-  have hm₂ : ∀ l < 2, ln u₂ .xmm5 l = 2 ^ 26 - 1 := fun l hl => by rw [k₂.lane (by decide)]; exact m5₁ l hl
-  have hf₂ : Frame [fR B] s.mem u₂.mem := by
-    rw [m₂]; exact h.frame.trans (frame_fR hB (by decide) f₁)
-  refine WP.block_append (WP.mono (addPair_ok hp hj u₂
-    (by rw [k₂.gpr, k₁.gpr]; exact h.gpr _ (by decide) (by decide) (by decide))
-    (by rw [k₂.gpr, k₁.gpr]; exact h.esi) (by rw [k₂.rd, k₁.rd, h.rd]) (by rw [k₂.wr, k₁.wr, h.wr]) hf₂
-    (by rw [m₂]; exact T₁) hm₂
-    (fun l hl k hk => by rw [a₂' l hl k hk]; exact Nat.lt_trans (hcv l hl k hk) (by decide)))
-    fun u₃ ⟨a₃, m₃, k₃⟩ => ?_)
-  refine WP.block_append (WP.mono (gAdd_ok .esi 32 u₃) fun u₄ ⟨e₄, g₄⟩ => ?_)
-  refine WP.mono (gSub_ok .ecx 1 u₄) fun u₅ ⟨e₅, z₅, g₅⟩ => ?_
-  have hmem : u₅.mem = u₁.mem := by rw [g₅.mem, g₄.mem, m₃, m₂]
-  have hln : ∀ l < 2, ∀ k < 5, ln u₅ (lreg k) l =
-      cv (ds (fun i => ln u (lreg i) l) b) k + lim (pblk s.mem dp j l + 2 ^ 128) k := fun l hl k hk => by
-    rw [g₅.lane, g₄.lane, a₃ l hl k hk, a₂' l hl k hk]
+    fun u₀ ⟨a₀, m₀, k₀⟩ => ?_)
+  -- The two blocks are those of the pair `j`.
+  have eblk : ∀ l < 2, blkN u.mem (dp + BitVec.ofNat 32 (32 * j)) l = pblk s.mem dp j l := fun l hl => by
+    rw [← hp.blk h.frame hj hl]
+    have e : (dp + BitVec.ofNat 32 (32 * j)).setWidth 64 + BitVec.ofNat 64 (16 * l) =
+        dp.setWidth 64 + BitVec.ofNat 64 (32 * j + 16 * l) := by
+      rw [← addr_eq (by rw [hdj]; omega_using [hd, hj, hl]), Proof.Aes.X86.addr_add,
+        addr_eq (by omega_using [hd, hj, hl])]
+    show leNum (bytesAt u.mem ((dp + BitVec.ofNat 32 (32 * j)).setWidth 64 + BitVec.ofNat 64 (16 * l)) 16) = _
+    rw [e]
   have hN : ∀ l, pblk s.mem dp j l < 2 ^ 128 := fun l => leNum_bytes_lt _ _ 16
-  refine ⟨⟨fun r h₁ h₂ h₃ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun l hl => ?_, fun l hl k hk => ?_, fun hc => ?_⟩, ?_⟩
+  have hln₀ : ∀ l < 2, ∀ k < 5, ln u₀ (lreg k) l =
+      ds (fun i => ln u (lreg i) l) b k + lim (pblk s.mem dp j l + 2 ^ 128) k := fun l hl k hk => by
+    rw [a₀ l hl k hk, tbl_zero, eblk l hl, ite_eq_left rfl]
+  have hlt₀ : ∀ l < 2, ∀ k < 5, ds (fun i => ln u (lreg i) l) b k + lim (pblk s.mem dp j l + 2 ^ 128) k < 2 ^ 62 :=
+    fun l hl k hk => by
+      have h₁ : ds (fun i => ln u (lreg i) l) b k < 2 ^ 61 := Nat.lt_trans (ds_lt (h.lt l hl) hb hk) (by decide)
+      have h₂ := lim_blk_lt (hN l) hk
+      omega_using [h₁, h₂]
+  refine WP.block_append (WP.mono (carryOps_ok u₀ (he.keep k₀) fun l hl k hk => by
+    rw [hln₀ l hl k hk]; exact hlt₀ l hl k hk) fun u₁ ⟨a₁, m₁, k₁⟩ => ?_)
+  have hln₁ : ∀ l < 2, ∀ k < 5, ln u₁ (lreg k) l =
+      cv (fun i => ds (fun i => ln u (lreg i) l) b i + lim (pblk s.mem dp j l + 2 ^ 128) i) k := fun l hl k hk => by
+    rw [a₁ l hl k hk]; exact cv_congr (fun i hi => hln₀ l hl i hi) k
+  have hsp₁ : u₁.gpr .esp + BitVec.ofNat 32 12 = B := by rw [k₁.gpr, k₀.gpr]; exact hsp
+  refine WP.block_append (WP.mono (storeH_ok (tb := tbl b c) u₁ hsp₁ hB (by rw [k₁.wr, k₀.wr]; exact hfr)
+    (by rw [m₁, m₀]; exact h.tab)) fun u₂ ⟨sl₂, T₂, f₂, k₂⟩ => ?_)
+  refine WP.block_append (WP.mono (gAdd_ok .esi 32 u₂) fun u₄ ⟨e₄, g₄⟩ => ?_)
+  refine WP.mono (gSub_ok .ecx 1 u₄) fun u₅ ⟨e₅, z₅, g₅⟩ => ?_
+  have hmem : u₅.mem = u₂.mem := by rw [g₅.mem, g₄.mem]
+  have hx : u₅.xmm = u₁.xmm := by rw [g₅.xmm, g₄.xmm]; exact funext fun r => k₂.xmm r List.not_mem_nil
+  have hln : ∀ l < 2, ∀ k < 5, ln u₅ (lreg k) l =
+      cv (fun i => ds (fun i => ln u (lreg i) l) b i + lim (pblk s.mem dp j l + 2 ^ 128) i) k := fun l hl k hk => by
+    rw [ln, hx]; exact hln₁ l hl k hk
+  refine ⟨⟨fun r h₁ h₂ h₃ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_, fun l hl k hk => ?_, fun hc => ?_⟩, ?_⟩
   · rw [g₅.gpr _ (by simpa only [List.mem_singleton] using h₂), g₄.gpr _ (by simpa only [List.mem_singleton] using h₃),
-      k₃.gpr, k₂.gpr, k₁.gpr]
+      k₂.gpr, k₁.gpr, k₀.gpr]
     exact h.gpr r h₁ h₂ h₃
-  · rw [g₅.gpr _ (by decide), e₄, k₃.gpr, k₂.gpr, k₁.gpr, h.esi]
+  · rw [g₅.gpr _ (by decide), e₄, k₂.gpr, k₁.gpr, k₀.gpr, h.esi]
     show dp + BitVec.ofNat 32 (32 * j) + BitVec.ofNat 32 32 = _
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     rfl
-  · rw [e₅, g₄.gpr _ (by decide), k₃.gpr, k₂.gpr, k₁.gpr, h.ecx]
+  · rw [e₅, g₄.gpr _ (by decide), k₂.gpr, k₁.gpr, k₀.gpr, h.ecx]
     exact VG.X86.Wp.ofNat_pred (by omega_using [hj])
-  · rw [g₅.rd, g₄.rd, k₃.rd, k₂.rd, k₁.rd, h.rd]
-  · rw [g₅.wr, g₄.wr, k₃.wr, k₂.wr, k₁.wr, h.wr]
-  · rw [g₅.mcdt, g₄.mcdt, k₃.mcdt, k₂.mcdt, k₁.mcdt, h.mcdt]
-  · rw [hmem]; exact h.frame.trans (frame_fR hB (by decide) f₁)
-  · rw [hmem]; exact T₁
-  · rw [g₅.lane, g₄.lane, k₃.lane (by decide)]; exact hm₂ l hl
-  · rw [hln l hl k hk]; exact lane_step_lt (h.lt l hl) hb (hN l) hk
+  · rw [g₅.rd, g₄.rd, k₂.rd, k₁.rd, k₀.rd, h.rd]
+  · rw [g₅.wr, g₄.wr, k₂.wr, k₁.wr, k₀.wr, h.wr]
+  · rw [g₅.mcdt, g₄.mcdt, k₂.mcdt, k₁.mcdt, k₀.mcdt, h.mcdt]
+  · rw [hmem]
+    exact h.frame.trans (by rw [← m₀, ← m₁]; exact frame_fR hB (by decide) f₂)
+  · rw [hmem]; exact T₂
+  · rw [hmem, hx]; exact sl₂ k hk
+  · rw [hln l hl k hk]
+    exact Nat.lt_trans (cv_lt (d := fun i => ds (fun i => ln u (lreg i) l) b i + lim (pblk s.mem dp j l + 2 ^ 128) i)
+      (hlt₀ l hl) hk) (by decide)
   · obtain ⟨hr2, hr⟩ := hC hc
     subst hr
     rw [pairs_succ, val_congr (hln 0 (by decide)), val_congr (hln 1 (by decide))]
     refine pair_step (by rw [Poly1305.length_bytesAt]; omega_arith) (Poly1305.length_bytesAt _ _ _)
       (Poly1305.length_bytesAt _ _ _) hr2 (h.acc hc) ?_ ?_
-    · rw [lane_step, mv_bytes]
-    · rw [lane_step, mv_bytes]
-  · rw [z₅, g₄.gpr _ (by decide), k₃.gpr, k₂.gpr, k₁.gpr, h.ecx]
+    · rw [turn_step, mv_bytes]
+    · rw [turn_step, mv_bytes]
+  · rw [z₅, g₄.gpr _ (by decide), k₂.gpr, k₁.gpr, k₀.gpr, h.ecx]
+
+/-- The instructions after the loop. -/
+abbrev endB : List Instr :=
+  (sumsOps 1 false).flatMap (LOp.instrs 12) ++ (sumLanes ++ (carryOps.flatMap (LOp.instrs 12) ++ storeOut 12))
 
 /-- After the loop: the lanes times `(r², r)`, summed and carried, and the
 limbs stored. -/
 theorem lanesEnd_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st dp p s) {b c : Nat → Nat}
     (hb : ∀ k < 5, b k < 2 ^ 26) (hcl : ∀ k < 5, c k < 2 ^ 26) {C : Prop} {R X : Nat}
     {u : State} (h : LInv B dp p b c C R X s p u) :
-    WP isa (.block (mulV 12 1 ++ (sumLanes ++ (carryV ++ storeOut 12)))) u fun u' =>
+    WP isa (.block endB) u fun u' =>
       u'.gpr = u.gpr ∧ u'.rd = s.rd ∧ u'.wr = s.wr ∧ u'.mcdt = s.mcdt ∧ Frame [fR B] s.mem u'.mem ∧
       ∃ f : Nat → Nat, (∀ k < 5, f k < 2 ^ 26 + 2 ^ 14) ∧
         (∀ k < 5, (u'.mem.readW (addr B (outOff k)) 32).toNat = f k) ∧
@@ -2276,8 +2473,13 @@ theorem lanesEnd_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st 
     rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [tbl_one0]; exact hb i hi
     · rw [tbl_one1]; exact hcl i hi
-  refine WP.block_append (WP.mono (mulV_ok 1 (by decide) u hsp hB hfr (by rw [h.mcdt]; exact hp.mcdt) h.tab h.lt
-    (fun l hl i hi => Nat.lt_trans (htb l hl i hi) (by decide))) fun u₁ ⟨a₁, m5₁, _, f₁, k₁⟩ => ?_)
+  -- No data is read after the loop.
+  have he : LEnv 12 0 B (u.gpr .esi) u :=
+    ⟨hsp, hB, hfr, by rw [h.mcdt]; exact hp.mcdt, rfl, fun d hd => absurd hd (by omega_arith)⟩
+  refine WP.block_append (WP.mono (sumsOps_ok 1 (by decide) false sums_bnd1 u he (fun hf => nomatch hf) h.tab h.slots
+    h.lt (fun l hl i hi => Nat.lt_trans (htb l hl i hi) (by decide))) fun u₁ ⟨a₁', m₁, k₁⟩ => ?_)
+  have a₁ : ∀ l < 2, ∀ k < 5, ln u₁ (lreg k) l = ds (fun i => ln u (lreg i) l) (tbl b c 1 l) k := fun l hl k hk => by
+    rw [a₁' l hl k hk, ite_eq_right (by decide), Nat.add_zero]
   have hds : ∀ l < 2, ∀ k < 5, ds (fun i => ln u (lreg i) l) (tbl b c 1 l) k < 2 ^ 59 := fun l hl k hk =>
     Nat.lt_trans (ds_lt (h.lt l hl) (htb l hl) hk) (by decide)
   refine WP.block_append (WP.mono (sumLanes_ok u₁ (fun l => ds (fun i => ln u (lreg i) l) (tbl b c 1 l))
@@ -2287,8 +2489,7 @@ theorem lanesEnd_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st 
   have hsum : ∀ k < 5, ds (fun i => ln u (lreg i) 0) (tbl b c 1 0) k + ds (fun i => ln u (lreg i) 1) (tbl b c 1 1) k <
       2 ^ 62 := fun k hk => by
     have h₀ := hds 0 (by decide) k hk; have h₁ := hds 1 (by decide) k hk; omega_using [h₀, h₁]
-  refine WP.block_append (WP.mono (carryV_ok u₂ (fun l hl => by rw [k₂.lane (by decide)]; exact m5₁ l hl)
-    fun l hl k hk => by
+  refine WP.block_append (WP.mono (carryOps_ok u₂ ((he.keep k₁).keep k₂) fun l hl k hk => by
       rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
       · rw [a₂ k hk]; exact hsum k hk
       · rw [b₂ k hk]; exact Nat.lt_trans (hds 1 (by decide) k hk) (by decide))
@@ -2302,7 +2503,7 @@ theorem lanesEnd_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st 
       ds (fun i => ln u (lreg i) 1) (tbl b c 1 1) i) hsum hk
   refine ⟨by rw [k₄.gpr, k₃.gpr, k₂.gpr, k₁.gpr], by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd, h.rd],
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr, h.wr], by rw [k₄.mcdt, k₃.mcdt, k₂.mcdt, k₁.mcdt, h.mcdt],
-    (h.frame.trans (frame_fR hB (by decide) f₁)).trans (by rw [← m₂, ← m₃]; exact frame_fR hB (by decide) f₄),
+    h.frame.trans (by rw [← m₁, ← m₂, ← m₃]; exact frame_fR hB (by decide) f₄),
     _, hlt, fun k hk => ?_, fun hc => ?_⟩
   · rw [o₄ k hk, a₃ 0 (by decide) k hk, cv_congr (fun i hi => a₂ i hi) k]
     exact Nat.mod_eq_of_lt (Nat.lt_trans (hlt k hk) (by decide))
@@ -2310,19 +2511,16 @@ theorem lanesEnd_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st 
     exact (add_mod_congr (ds_mod _ _) (ds_mod _ _)).trans (h.acc hc)
 
 theorem lanes_eq : Impl.Poly1305.X86.lanes = .seq (.block (consts 12 ++ (tables 12 ++ (initH 12 ++ (addMsg 12 ++
-      (([.alu .add .esi (.imm 32)] : List Instr) ++ (([.mov .ecx (.mem (fs 12 cntOff))] : List Instr) ++
-        ([.alu .sub .ecx (.imm 1)] : List Instr))))))))
-    (.seq (.loop (.block (mulV 12 0 ++ (carryV ++ (addMsg 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++
-      ([.alu .sub .ecx (.imm 1)] : List Instr)))))) .ne)
-      (.block (mulV 12 1 ++ (sumLanes ++ (carryV ++ storeOut 12))))) := by
-  simp only [Impl.Poly1305.X86.lanes, List.append_assoc, List.cons_append, List.nil_append]
+      (storeH 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++ (([.mov .ecx (.mem (fs 12 cntOff))] : List Instr) ++
+        ([.alu .sub .ecx (.imm 1)] : List Instr)))))))))
+    (.seq (.loop (.block turnB) .ne) (.block endB)) := by
+  simp only [Impl.Poly1305.X86.lanes, turn, turnB, endB, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- A turn of the loop with `n` turns left: it loops back while `1 < n`. -/
 theorem lanesBody_step {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st dp p s) {C : Prop} {R X : Nat}
     (hC : C → val (rdb s.mem st) % P = R * R % P ∧ val (rdc s.mem st) = R) {n : Nat} {u : State}
     (h : ∃ j, n = p - j ∧ j < p ∧ LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s j u) :
-    WP isa (.block (mulV 12 0 ++ (carryV ++ (addMsg 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++
-      ([.alu .sub .ecx (.imm 1)] : List Instr)))))) u fun u' =>
+    WP isa (.block turnB) u fun u' =>
       isa.eval .ne u' = some (decide (1 < n)) ∧
       (1 < n → ∃ j, n - 1 = p - j ∧ j < p ∧ LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s j u') ∧
       (¬ 1 < n → LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s p u') := by
@@ -2344,8 +2542,7 @@ theorem lanesBody_step {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B 
 theorem lanesLoop_ok {B st dp : BitVec 32} {p : Nat} {s : State} (hp : LPre B st dp p s) {C : Prop} {R X : Nat}
     (hC : C → val (rdb s.mem st) % P = R * R % P ∧ val (rdc s.mem st) = R) {s₁ : State}
     (h₁ : LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s 1 s₁) :
-    WP isa (.loop (.block (mulV 12 0 ++ (carryV ++ (addMsg 12 ++ (([.alu .add .esi (.imm 32)] : List Instr) ++
-      ([.alu .sub .ecx (.imm 1)] : List Instr)))))) .ne) s₁ (LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s p) := by
+    WP isa (.loop (.block turnB) .ne) s₁ (LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s p) := by
   let Inv : Nat → State → Prop := fun m u =>
     ∃ j, m = p - j ∧ j < p ∧ LInv B dp p (rdb s.mem st) (rdc s.mem st) C R X s j u
   refine WP.loop (M := isa) Inv (fun m u hI => ?_) (p - 1) s₁
