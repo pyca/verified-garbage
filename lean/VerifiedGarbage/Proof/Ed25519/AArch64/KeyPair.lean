@@ -4,6 +4,9 @@ public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Impl.Ed25519.AArch64.KeyPair
 public import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Sha512.PostOut
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -1405,5 +1408,38 @@ theorem sat : spec.pre satState := spec_of sat_pre (by decide)
 theorem verified {dn pn : String} :
     Verified AArch64.target (keyPair dn (dgCode v) pn PublicKey.codeExpanded) spec :=
   ⟨fun _ h => keyPair_ok v h, keyPair_ct v, ⟨_, sat⟩⟩
+
+/-! ## The function as emitted -/
+
+omit [Proof.Ed25519.AArch64.Divstep.Sound] in
+/-- A test of every instruction of `vg_ed25519_key_pair` and of what it
+calls, from its own code's, the digest's and the public key's. -/
+theorem keyPair_side {p : Instr → Bool} (dn pn : String) {dg pk : Prog isa}
+    (h0 : ScrubAll.sideAll p (keyPair "" (.block []) "" (.block [])) = true)
+    (hd : ScrubAll.sideAll p dg = true) (hk : ScrubAll.sideAll p pk = true) :
+    ScrubAll.sideAll p (keyPair dn dg pn pk) = true := by
+  simp only [keyPair, ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hd
+    | exact fun _ => hk
+    | refine And.imp ?_ ?_
+
+/-- `vg_ed25519_key_pair` made with `v` as emitted, cleanup included
+(`Impl.Ed25519.AArch64.KeyPair.Fn.keyPair`): it meets its contract in
+constant time and returns without secret residue. -/
+theorem keyPair_scrubbed :
+    VerifiedScrubbed AArch64.target (Impl.Ed25519.AArch64.KeyPair.Fn.keyPair v.suffix v.code) spec 0 :=
+  ScrubAll.verifiedScrubbedOf (verified v) Proof.Ed25519.AArch64.Scrub.keyPairOk (by decide)
+    (by
+      have h1 := dg_depth v
+      have h2 := pk_depth
+      simp only [keyPair, Code.aarch64Depth, Instr.frameUnits]
+      omega)
+    (keyPair_side _ _ (by kernel_rfl)
+      (ScrubAll.sideAll_scrubAll (Proof.Pbkdf2.Md.AArch64.mdDigest_side _ _ _ (by kernel_rfl) v.side))
+      (by kernel_rfl))
+    (Or.inl rfl)
 
 end VG.Proof.Ed25519.AArch64.KeyPair

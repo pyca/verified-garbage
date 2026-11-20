@@ -4,14 +4,22 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Exchange
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.EcKey.P224
 public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Ecdh.P224
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.Exchange
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.EcKey.P224
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
+meta import VerifiedGarbage.Spec.Ecdh.P224
 
 /-!
 # ECDH over P-224 on RISC-V: `Verified`
@@ -76,5 +84,14 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_implies_sat [Spec.EcKey.P224.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P224.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
           RISCV64.argRegs] [ecdhSat] using ecdhSat }
+
+/-- `vg_ecdh_p224` as emitted, cleanup included (`Impl.Ecdh.RISCV64.Fn.exchangeP224`),
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.exchangeP224
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdh.P224.exchangeApi) (W := 0)
+    { code := ecdhP224, verified := ecdh_verified hL }
+    (EcKey.RISCV64.Scrub.exchangeOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.P224

@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Poly1305.Arm.Init
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Init
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -1039,6 +1041,8 @@ instructions that set the registers a callee may change and the flags to
 constants. The code has the same shape with either arithmetic, so what the
 cleanup needs of it (`CodeOk`) is proven once for both, and `Fn` has the
 theorem of each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+`vg_poly1305_init` has no frame, and is emitted with only the second part of
+that cleanup (`Arm.Scrub.verifiedScrubbed`).
 -/
 
 @[expose] public section
@@ -1141,6 +1145,11 @@ end VG.Proof.Poly1305.Arm.Scrub
 namespace VG.Proof.Poly1305.Arm.Fn
 
 open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_poly1305_init`. -/
+theorem init : VerifiedScrubbed target Impl.Poly1305.Arm.Fn.init (Spec.Poly1305.initContract abi) 0 :=
+  verifiedScrubbed (api := Spec.Poly1305.initApi)
+    { code := Impl.Poly1305.Arm.init, verified := Proof.Poly1305.Arm.init_verified } rfl
 
 /-- `vg_poly1305_update`, with either arithmetic. -/
 theorem update (umaal : Bool) :

@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-public import VerifiedGarbage.Proof.Idea.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
+public import VerifiedGarbage.Proof.Idea.Arm.Scrub
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -17,16 +15,16 @@ namespace VG.Artifacts.IdeaCfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncrypt
-    verified := .unscrubbed Proof.Idea.Arm.cfbEncrypt_framed },
+    code := Impl.Idea.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Idea.Arm.Fn.cfbEncrypt },
   Spec.Idea.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecrypt
-    verified := .unscrubbed Proof.Idea.Arm.cfbDecrypt_framed },
+    code := Impl.Idea.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Idea.Arm.Fn.cfbDecrypt },
   Spec.Idea.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncryptFinal
-    verified := .unscrubbed Proof.Idea.Arm.cfbEncryptFinal_framed },
+    code := Impl.Idea.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Idea.Arm.Fn.cfbEncryptFinal },
   Spec.Idea.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecryptFinal
-    verified := .unscrubbed Proof.Idea.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Idea.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Idea.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.IdeaCfb.Arm

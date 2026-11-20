@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -1029,15 +1030,15 @@ theorem openBsOut :
     PostOut (Spec.Gcm.openBitslicedContract RISCV64.abi 4640) (Spec.Gcm.openBitslicedSig.retBits 64) :=
   postOut_of_local (leak := some _) ScrubAbi.plain (Proof.AesGcm.openBitslicedPost_out _)
 
-/-- `Spec.Gcm.openBitslicedApi`. -/
-def openBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.openBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 3 Impl.AesGcm.RISCV64.openBs
+/-- `vg_aes_gcm_open_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.openBs`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem openBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.openBs
+      (Spec.Gcm.openBitslicedContract RISCV64.abi 4640) 32 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.openBitslicedApi) (W := 4640)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 3 Impl.AesGcm.RISCV64.openBs
       verified := Proof.AesGcm.openBitsliced_keyed openBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])]
-    openBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb openBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 3 Impl.AesGcm.RISCV64.openBs) 4640 32
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])] []
+    openBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64

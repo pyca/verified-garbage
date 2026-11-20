@@ -274,45 +274,80 @@ theorem sha256FinSide :
     scrubFSide (withStackScratch (finFrame Spec.Hmac.sha256I) 5 sha256MStub.hmacFin) [] (28 + finFrame Spec.Hmac.sha256I) = true := by
   lit_decide
 
+/-- The Merkle–Damgård hash with a backend's compression and streaming functions. -/
+private def withBackend (M : Impl.Pbkdf2.Md.X86.Hash) (cn un fn : String) (c u f : Prog isa) :=
+  { M with compN := cn, compC := c, st := { M.st with updN := un, updC := u, finN := fn, finC := f } }
+
+/-- Both branches of HMAC initialization have the same code shape across
+the three hashes, including the long-key path's calls. -/
+private theorem init_fill (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.X86.Hash)
+    (F : Impl.Pbkdf2.Whole.X86.Fns) (cn un fn hin : String) (c u f : Prog isa)
+    (hc : calleeSide c 20 = true) (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true)
+    (hinit : Fill 20 M.st.initC M.st.initC) :
+    let stub := withBackend M M.compN M.st.updN M.st.finN (.block []) (.block []) (.block [])
+    let md := withBackend M cn un fn c u f
+    Fill 20 (initCode I stub.hmacInit { F with H := stub.st, hiC := stub.hmacInit })
+      (initCode I md.hmacInit { F with H := md.st, hiN := hin, hiC := md.hmacInit }) := by
+  dsimp only
+  fill_calls <;> exact hinit
+
+/-- Finalization calls the compression and streaming finalize functions. -/
+private theorem fin_fill (M : Impl.Pbkdf2.Md.X86.Hash) (bytes : Nat)
+    (cn un fn : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
+    (hf : calleeSide f 20 = true) :
+    Fill 20 (withStackScratch bytes 5
+      (withBackend M M.compN M.st.updN M.st.finN (.block []) (.block []) (.block [])).hmacFin)
+      (withStackScratch bytes 5 (withBackend M cn un fn c u f).hmacFin) := by
+  fill_calls
+
 theorem sha1InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
     Fill 20 (initCode Spec.Hmac.sha1I sha1MStub.hmacInit sha1FStub)
       (initCode Spec.Hmac.sha1I (Proof.Sha1.X86.Variants.mdHash sfx cN c u f).hmacInit
         (Proof.Sha1.X86.Variants.fns sfx cN c u f)) := by
-  fill_calls
+  let F := Proof.Sha1.X86.Variants.fns sfx cN c u f
+  exact init_fill Spec.Hmac.sha1I sha1MStub sha1FStub cN F.H.updN F.H.finN F.hiN
+    c u f hc hu hf (by fill_calls)
 
 theorem sha1FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :
     Fill 20 (withStackScratch (finFrame Spec.Hmac.sha1I) 5 sha1MStub.hmacFin)
       (withStackScratch (finFrame Spec.Hmac.sha1I) 5 (Proof.Sha1.X86.Variants.mdHash sfx cN c u f).hmacFin) := by
-  fill_calls
+  let M := Proof.Sha1.X86.Variants.mdHash sfx cN c u f
+  exact fin_fill sha1MStub (finFrame Spec.Hmac.sha1I) cN M.st.updN M.st.finN c u f hc hf
 
 theorem sha224InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
     Fill 20 (initCode Spec.Hmac.sha224I sha224MStub.hmacInit sha224FStub)
       (initCode Spec.Hmac.sha224I (Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f).hmacInit
         (Proof.Sha256.X86.Variants.fns224 sfx cN c u f)) := by
-  fill_calls
+  let F := Proof.Sha256.X86.Variants.fns224 sfx cN c u f
+  exact init_fill Spec.Hmac.sha224I sha224MStub sha224FStub cN F.H.updN F.H.finN F.hiN
+    c u f hc hu hf (by fill_calls)
 
 theorem sha224FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :
     Fill 20 (withStackScratch (finFrame Spec.Hmac.sha224I) 5 sha224MStub.hmacFin)
       (withStackScratch (finFrame Spec.Hmac.sha224I) 5
         (Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f).hmacFin) := by
-  fill_calls
+  let M := Proof.Sha256.X86.Variants.mdHash224 sfx cN c u f
+  exact fin_fill sha224MStub (finFrame Spec.Hmac.sha224I) cN M.st.updN M.st.finN c u f hc hf
 
 theorem sha256InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
     Fill 20 (initCode Spec.Hmac.sha256I sha256MStub.hmacInit sha256FStub)
       (initCode Spec.Hmac.sha256I (Proof.Sha256.X86.Variants.mdHash sfx cN c u f).hmacInit
         (Proof.Sha256.X86.Variants.fns sfx cN c u f)) := by
-  fill_calls
+  let F := Proof.Sha256.X86.Variants.fns sfx cN c u f
+  exact init_fill Spec.Hmac.sha256I sha256MStub sha256FStub cN F.H.updN F.H.finN F.hiN
+    c u f hc hu hf (by fill_calls)
 
 theorem sha256FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :
     Fill 20 (withStackScratch (finFrame Spec.Hmac.sha256I) 5 sha256MStub.hmacFin)
       (withStackScratch (finFrame Spec.Hmac.sha256I) 5 (Proof.Sha256.X86.Variants.mdHash sfx cN c u f).hmacFin) := by
-  fill_calls
+  let M := Proof.Sha256.X86.Variants.mdHash sfx cN c u f
+  exact fin_fill sha256MStub (finFrame Spec.Hmac.sha256I) cN M.st.updN M.st.finN c u f hc hf
 
 /-! ### SHA-1 -/
 

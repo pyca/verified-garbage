@@ -147,7 +147,8 @@ def artifacts : List Artifact :=
     let b := Proof.Ffdh.Arm.parameterBackend v
     [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
       suffix := b.suffix
-      code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
-      verified := .unscrubbed (Proof.Ffdh.Arm.ParameterSearch.verified b) }])
+      code := Impl.Ffdh.Arm.Fn.sievedParameterSearch
+        (Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate))
+      verified := .scrubbed (Proof.Ffdh.Arm.Fn.sievedParameterSearch v) }])
 
 end VG.Artifacts.Ffdh.Arm

@@ -32,8 +32,14 @@ open VG.Spec.MlDsa (Params)
 /-- The name of `vg_mldsa*_sign_core`, for the module `module`. -/
 def coreName (module : String) : String := s!"vg_{module}_sign_core"
 
-/-- The name of `vg_mldsa*_sign_prepared`, for the module `module`. -/
-def preparedName (module : String) : String := s!"vg_{module}_sign_prepared"
+/-- The name the message functions call `vg_mldsa*_sign` by, for the module
+`module`: the same code as verified, without the cleanup of the exported
+function, which the message functions' own cleanup covers. -/
+def entryName (module : String) : String := s!"vg_{module}_sign_entry"
+
+/-- The name the message functions call `vg_mldsa*_sign_prepared` by, for the
+module `module`, likewise. -/
+def preparedEntryName (module : String) : String := s!"vg_{module}_sign_prepared_entry"
 
 section
 variable (p : Params)

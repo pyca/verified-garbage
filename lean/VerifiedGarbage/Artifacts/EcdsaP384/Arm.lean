@@ -27,7 +27,14 @@ def artifacts : List Artifact := [
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.Fn.verifyP384U
     verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP384U hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P384.Scrub.signReg hasLaw.law),
-  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P384.Scrub.signUReg hasLaw.law)]
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target {
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signP384 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP384 hasLaw.law) },
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signP384U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP384U hasLaw.law) }]
 
 end VG.Artifacts.EcdsaP384.Arm

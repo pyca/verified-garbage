@@ -51,9 +51,12 @@ working space in a frame of its own. -/
 def ctrFn : Fn :=
   ⟨"vg_sm4_ctr32", Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr32⟩
 
-/-- `vg_sm4_expand_key`, as registered (`Artifacts/Sm4/X86.lean`). -/
+/-- `vg_sm4_expand_key`'s code (`Artifacts/Sm4/X86.lean`), called as an
+internal function of its own, `vg_sm4_expand_key_core`, rather than as
+`vg_sm4_expand_key`, which also clears the registers and the stack it leaves
+(`Impl.Sm4.X86.Fn.expandKey`). -/
 def keyFn : Fn :=
-  ⟨"vg_sm4_expand_key", Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey⟩
+  ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey⟩
 
 /-! ## Calls -/
 

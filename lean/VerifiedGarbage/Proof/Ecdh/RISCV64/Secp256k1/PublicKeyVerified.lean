@@ -16,6 +16,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.Tail
 public import VerifiedGarbage.Proof.Ecdsa.RISCV64.Secp256k1.CombVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Spec.EcKey
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
@@ -28,6 +31,9 @@ meta import VerifiedGarbage.Spec.EcKey
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.Secp256k1.RISCV64
 
 /-! ### `Ecdh.RISCV64.Secp256k1.PublicKey`, which only this module used -/
 
@@ -234,5 +240,15 @@ theorem pk_verified (hL : VG.Proof.Weierstrass.Law W) :
     Verified RISCV64.target publicKeySecp256k1 (Spec.EcKey.Secp256k1.inst.publicKeyContract
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts)) :=
   Verified.of_correct (pk_rv hL) pk_ct pkRVC_implies
+
+/-- `vg_ec_secp256k1_public_key` as emitted, cleanup included
+(`Impl.Ecdh.RISCV64.Fn.publicKeySecp256k1`), meets its contract in constant time and
+returns without secret residue. -/
+theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeySecp256k1
+      (Spec.EcKey.Secp256k1.inst.publicKeyContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts)) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.Secp256k1.publicKeyApi) (W := 0)
+    { code := publicKeySecp256k1, verified := pk_verified hL }
+    (EcKey.RISCV64.Scrub.publicKeyOut _ _ Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.Secp256k1

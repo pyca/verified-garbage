@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.CbcVerified
+public import VerifiedGarbage.Proof.Idea.Arm.Scrub
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -15,10 +15,10 @@ namespace VG.Artifacts.IdeaCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cbcEncryptChained
-    verified := .unscrubbed Proof.Idea.Arm.cbcEncryptChained_framed },
+    code := Impl.Idea.Arm.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Idea.Arm.Fn.cbcEncryptChained },
   Spec.Idea.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cbcDecryptChained
-    verified := .unscrubbed Proof.Idea.Arm.cbcDecryptChained_framed }]
+    code := Impl.Idea.Arm.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Idea.Arm.Fn.cbcDecryptChained }]
 
 end VG.Artifacts.IdeaCbc.Arm

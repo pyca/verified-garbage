@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Scrub
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
@@ -13,8 +14,14 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.Bitsliced.Lit
 namespace VG.Artifacts.TripleDes.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.expandKeyApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.expandKeyReg,
-  Spec.TripleDes.ecbEncryptApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.ecbEncryptReg,
-  Spec.TripleDes.ecbDecryptApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.ecbDecryptReg]
+  Spec.TripleDes.expandKeyApi.artifact RISCV64.target {
+    code := Impl.TripleDes.RISCV64.Fn.expandKey
+    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.expandKey_scrubbed },
+  Spec.TripleDes.ecbEncryptApi.artifact RISCV64.target {
+    code := Impl.TripleDes.RISCV64.Fn.ecbEncrypt
+    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ecbEncrypt_scrubbed },
+  Spec.TripleDes.ecbDecryptApi.artifact RISCV64.target {
+    code := Impl.TripleDes.RISCV64.Fn.ecbDecrypt
+    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.TripleDes.RISCV64

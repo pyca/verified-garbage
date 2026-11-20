@@ -5,11 +5,11 @@ public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 /-!
 # Scrubbed code with its facts proved (ARMv7)
 
-`verifiedScrubbed` and `verifiedScrubbedF` are what `scrubReg` and
-`scrubRegF` register, as theorems about the code with its cleanup
-(`Impl.Residue.Arm.scrub rb c` and `scrubF rb n c`, which `Impl/` defines as
-the function): the proof a registration binds (`verified := .scrubbed …`),
-whose code is that definition. The stack and the result's bits are
+`verifiedScrubbed` and `verifiedScrubbedF` are `Verified.scrub` and
+`Verified.scrubFS` of a function's proof (`Unscrubbed`), as theorems about
+the code with its cleanup (`Impl.Residue.Arm.scrub rb c` and `scrubF rb n c`,
+which `Impl/` defines as the function): the proof a registration binds
+(`verified := .scrubbed …`), whose code is that definition. The stack and the result's bits are
 arguments (literals at the call site), and what the cleanup needs of the
 code is one Boolean, whose proof the call site gives and the kernel checks
 when its module is built: `Code.noFrames` for `scrub` (the code writes memory
@@ -92,39 +92,42 @@ theorem retBits_abi {api : Api} (r : Unscrubbed api target) :
 
 /-- `r`'s code, which has no frames, with its cleanup (`scrub`, the result's
 `rb` bits kept) meets `r`'s contract in constant time and returns without
-secret residue: what `scrubReg` registers, as the theorem about the code
-that a registration binds (`verified := .scrubbed …`). -/
+secret residue (`Verified.scrub`): the theorem about the code that a
+registration binds (`verified := .scrubbed …`). -/
 theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
     (hs : r.code.noFrames = true) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl) :
     VerifiedScrubbed target (scrub rb r.code) r.contract rb := by
-  have h : Verification target
+  have h : VerifiedScrubbed target
       (scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code)
-      r.contract (api.sig.retBits target.abi.ptrBits) false := (scrubReg r hs).verified
+      r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    rw [e] at hv ⊢
+    obtain ⟨h₁, h₂⟩ := Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hs rfl
+    exact ⟨h₁, h₂⟩
   rw [retBits_abi, hb] at h
-  cases h with
-  | scrubbed h => exact h
+  exact h
 
 /-- `r`'s code, whose frames use at most the `n` bytes of stack its contract
 reserves (`scrubSideF`), with its cleanup (`scrubF`: those bytes zeroed, the
 result's `rb` bits kept) meets `r`'s contract in constant time and returns
 without secret residue, if its postcondition reads the memory on return only
-within the buffers (`PostOut`): what `scrubRegFT` registers, as the theorem
-about the code that a registration binds (`verified := .scrubbed …`). -/
+within the buffers (`PostOut`; `Verified.scrubFS`, whose functions called
+indirectly are those of the tables, `tablesCall_pub`): the theorem about the
+code that a registration binds (`verified := .scrubbed …`). -/
 theorem verifiedScrubbedF {api : Api} (r : Unscrubbed api target) {n rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSideF r.code n r.tables = true)
-    (hW : r.stack = n := by rfl) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl)
-    (hw : r.written = [] := by rfl) :
+    (hW : r.stack = n := by rfl) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl) :
     VerifiedScrubbed target (scrubF rb n r.code) r.contract rb := by
   obtain ⟨hd, hn, htc⟩ := of_scrubSideF hs
   have e := (retBits_abi r).trans hb
-  rw [← hW] at hd hn
-  have h : Verification target
-      (scrubF (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.stack
-        r.code)
-      r.contract (api.sig.retBits target.abi.ptrBits) false :=
-    (scrubRegFT r hd htc hn (by rw [e]; exact hpost) hw).verified
-  rw [e, hb, hW] at h
-  cases h with
-  | scrubbed h => exact h
+  rw [← hW] at hd hn ⊢
+  rw [← e] at hpost ⊢
+  obtain ⟨pre, post, leak, ec⟩ := r.ofSig
+  have hv := r.verified
+  rw [ec] at hv hpost ⊢
+  obtain ⟨h₁, h₂⟩ := Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
+    rfl hpost
+  exact ⟨h₁, h₂⟩
 
 end VG.Arm.Scrub

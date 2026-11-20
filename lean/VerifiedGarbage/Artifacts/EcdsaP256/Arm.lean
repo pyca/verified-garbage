@@ -27,7 +27,14 @@ def artifacts : List Artifact := [
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.Fn.verifyP256U
     verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP256U hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P256.Scrub.signReg hasLaw.law),
-  Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P256.Scrub.signUReg hasLaw.law)]
+  Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target {
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signP256 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP256 hasLaw.law) },
+  Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signP256U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP256U hasLaw.law) }]
 
 end VG.Artifacts.EcdsaP256.Arm

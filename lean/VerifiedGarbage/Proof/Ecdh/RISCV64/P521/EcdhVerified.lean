@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.EcdhLit
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Exchange
@@ -17,7 +20,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulVerified
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.MulVerified
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
+import VerifiedGarbage.Spec.Ecdh.P521
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
+meta import VerifiedGarbage.Spec.Ecdh.P521
 
 /-!
 # ECDH over P-521 on RISC-V: `Verified`
@@ -87,5 +95,14 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_implies_sat [Spec.EcKey.P521.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P521.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
           RISCV64.argRegs] [ecdhSat] using ecdhSat }
+
+/-- `vg_ecdh_p521` as emitted, cleanup included (`Impl.Ecdh.RISCV64.Fn.exchangeP521`),
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.exchangeP521
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdh.P521.exchangeApi) (W := 0)
+    { code := ecdhP521, verified := ecdh_verified hL }
+    (EcKey.RISCV64.Scrub.exchangeOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.P521

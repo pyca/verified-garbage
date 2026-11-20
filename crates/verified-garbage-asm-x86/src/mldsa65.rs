@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -462,7 +464,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACLXCQcg8NAvUAAAACJ94HHyAAAAFdVU1JRUA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "WFhYWFhYi4aEAwAAi3QkCIt8JASLLCRbW1tbww=="
+.base64 "WFhYWFhYi4aEAwAAi3QkCIt8JASLLCRbW1tbZg/vwI1kJKDzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUI1kJGC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -483,6 +485,8 @@ call {vg_keccak_squeeze_scratch}
 /// ML-DSA-65 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa65_verify_message_cached` takes.
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -507,7 +511,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACLXCQYg8MAvUAAAACJ94HHyAAAAFdVU1JRUA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "WFhYWFhYi3QkCIt8JASLLCRbW1tbww=="
+.base64 "WFhYWFhYi3QkCIt8JASLLCRbW1tbZg/vwLkAAAAAjWQkyPMPfwQk8w9/RCQQ8w9/RCQgiUwkMIlMJDSNZCQ4uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -518,6 +522,8 @@ call {vg_keccak_squeeze_scratch}
 /// ML-DSA-65 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa65_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -560,7 +566,7 @@ call {vg_mldsa_ntt}
 call {vg_mldsa_unpack_t1}
 .base64 "WFiLRCQYBaAbAACJ8YPBAFFQ"
 call {vg_mldsa_ntt}
-.base64 "WFiLdCQIi3wkBIssJFtbW1vD"
+.base64 "WFiLdCQIi3wkBIssJFtbW1tmD+/AjWQkoPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQjWQkYLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -570,6 +576,8 @@ call {vg_mldsa_ntt}
 /// ML-DSA-65 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa65_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -657,7 +665,7 @@ call {vg_mldsa_ntt}
 call {vg_mldsa_bit_unpack}
 .base64 "WFhYWFiLRCQYBcBPAACJ8YPBAFFQ"
 call {vg_mldsa_ntt}
-.base64 "WFiLdCQIi3wkBIssJFtbW1vD"
+.base64 "WFiLdCQIi3wkBIssJFtbW1tmD+/AjWQkoPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQjWQkYLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -667,6 +675,8 @@ call {vg_mldsa_ntt}
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -687,7 +697,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_sign(sk: *const [u8; 4032], mu: *cons
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JCS4AAAAAImGUAQAAItEJBSDwACLTCQYg8EAi1QkHIPCAItcJCCDwwCJ94PHAFdTUlFQ"
 call {vg_mldsa65_sign_core}
-.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1vD"
+.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1tmD+/AuQAAAACNpCR4////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHCJjCSAAAAAiYwkhAAAAI2kJIgAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_mldsa65_sign_core = sym super::mldsa65::vg_mldsa65_sign_core::vg_mldsa65_sign_core,
     )
@@ -696,6 +706,8 @@ call {vg_mldsa65_sign_core}
 /// ML-DSA-65 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa65_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -721,7 +733,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_sign_prepared(sk: *const [u8; 21440],
 jne 20b
 .base64 "i0QkFIPAAItMJBiDwQCLVCQcg8IAi1wkIIPDAIn3g8cAV1NSUVA="
 call {vg_mldsa65_sign_core}
-.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1vD"
+.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1tmD+/AuQAAAACNpCR4////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHCJjCSAAAAAiYwkhAAAAI2kJIgAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_mldsa65_sign_core = sym super::mldsa65::vg_mldsa65_sign_core::vg_mldsa65_sign_core,
     )
@@ -730,6 +742,8 @@ call {vg_mldsa65_sign_core}
 /// ML-DSA-65 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -764,24 +778,26 @@ call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
 call {vg_keccak_squeeze_scratch}
 .base64 "WFhYWFhYi0QkFInxgcFIAwAAi1QkKItcJCyLfCQwV1NSUVA="
-call {vg_mldsa65_sign}
+call {vg_mldsa65_sign_entry}
 .base64 "WVlZWVk="
 jmp 21f
 20:
 .base64 "uAIAAAA="
 21:
-.base64 "i3QkCIt8JASLLCRbW1tbww=="
+.base64 "i3QkCIt8JASLLCRbW1tbZg/vwI2kJFD////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAI2kJLAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa65_sign = sym super::mldsa65::vg_mldsa65_sign,
+        vg_mldsa65_sign_entry = sym super::mldsa65::vg_mldsa65_sign_entry::vg_mldsa65_sign_entry,
     )
 }
 
 /// ML-DSA-65 signing with a prepared private key: `vg_mldsa65_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -817,24 +833,26 @@ call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
 call {vg_keccak_squeeze_scratch}
 .base64 "WFhYWFhYi0QkFInxgcFIAwAAi1QkKItcJCyLfCQwV1NSUVA="
-call {vg_mldsa65_sign_prepared}
+call {vg_mldsa65_sign_prepared_entry}
 .base64 "WVlZWVk="
 jmp 21f
 20:
 .base64 "uAIAAAA="
 21:
-.base64 "i3QkCIt8JASLLCRbW1tbww=="
+.base64 "i3QkCIt8JASLLCRbW1tbZg/vwI2kJFD////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAI2kJLAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa65_sign_prepared = sym super::mldsa65::vg_mldsa65_sign_prepared,
+        vg_mldsa65_sign_prepared_entry = sym super::mldsa65::vg_mldsa65_sign_prepared_entry::vg_mldsa65_sign_prepared_entry,
     )
 }
 
 /// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -876,7 +894,7 @@ call {vg_mldsa_unpack_t1}
 call {vg_mldsa_ntt}
 .base64 "WFiLRCQUg8AAi0wkGIPBAItUJByDwgCJ84PDAIn3gccAfAEAV1NSUVA="
 call {vg_mldsa65_verify_core}
-.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1vD"
+.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1tmD+/AuQAAAACNpCR4////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHCJjCSAAAAAiYwkhAAAAI2kJIgAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
@@ -887,6 +905,8 @@ call {vg_mldsa65_verify_core}
 /// ML-DSA-65 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa65_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -905,7 +925,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa65_verify_prepared(pk: *const [u8; 8096]
     core::arch::naked_asm!(
         r#".base64 "U1ZXVYt0JCCLRCQUg8AAi0wkGIPBAItUJByDwgCJ84PDAIt8JBSBx6AHAABXU1JRUA=="
 call {vg_mldsa65_verify_core}
-.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1vD"
+.base64 "WVlZWVmLdCQIi3wkBIssJFtbW1tmD+/AuQAAAACNpCR4////8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHCJjCSAAAAAiYwkhAAAAI2kJIgAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_mldsa65_verify_core = sym super::mldsa65::vg_mldsa65_verify_core::vg_mldsa65_verify_core,
     )
@@ -914,6 +934,8 @@ call {vg_mldsa65_verify_core}
 /// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -947,24 +969,26 @@ call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
 call {vg_keccak_squeeze_scratch}
 .base64 "WFhYWFhYi0QkFInxgcFIAwAAi1QkKItcJCxTUlFQ"
-call {vg_mldsa65_verify}
+call {vg_mldsa65_verify_entry}
 .base64 "WVlZWQ=="
 jmp 21f
 20:
 .base64 "uAIAAAA="
 21:
-.base64 "i3QkCIt8JASLLCRbW1tbww=="
+.base64 "i3QkCIt8JASLLCRbW1tbZg/vwLkAAAAAjaQkVP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAjaQkrAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa65_verify = sym super::mldsa65::vg_mldsa65_verify,
+        vg_mldsa65_verify_entry = sym super::mldsa65::vg_mldsa65_verify_entry::vg_mldsa65_verify_entry,
     )
 }
 
 /// ML-DSA-65 verification with a prepared public key: `vg_mldsa65_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -999,18 +1023,18 @@ call {vg_keccak_pad_scratch}
 .base64 "WFhYWFiJ8IPAALmIAAAAugAAAACJ84HDSAMAAL1AAAAAifeBx8gAAABXVVNSUVA="
 call {vg_keccak_squeeze_scratch}
 .base64 "WFhYWFhYi0QkFInxgcFIAwAAi1QkKItcJCxTUlFQ"
-call {vg_mldsa65_verify_prepared}
+call {vg_mldsa65_verify_prepared_entry}
 .base64 "WVlZWQ=="
 jmp 21f
 20:
 .base64 "uAIAAAA="
 21:
-.base64 "i3QkCIt8JASLLCRbW1tbww=="
+.base64 "i3QkCIt8JASLLCRbW1tbZg/vwLkAAAAAjaQkVP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAjaQkrAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa65_verify_prepared = sym super::mldsa65::vg_mldsa65_verify_prepared,
+        vg_mldsa65_verify_prepared_entry = sym super::mldsa65::vg_mldsa65_verify_prepared_entry::vg_mldsa65_verify_prepared_entry,
     )
 }
 
@@ -1019,5 +1043,21 @@ jmp 21f
 pub(crate) mod vg_mldsa65_sign_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mldsa65_sign_entry.rs"]
+pub(crate) mod vg_mldsa65_sign_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_sign_prepared_entry.rs"]
+pub(crate) mod vg_mldsa65_sign_prepared_entry;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mldsa65_verify_core.rs"]
 pub(crate) mod vg_mldsa65_verify_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_verify_entry.rs"]
+pub(crate) mod vg_mldsa65_verify_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa65_verify_prepared_entry.rs"]
+pub(crate) mod vg_mldsa65_verify_prepared_entry;

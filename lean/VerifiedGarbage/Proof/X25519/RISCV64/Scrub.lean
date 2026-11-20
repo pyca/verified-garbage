@@ -6,15 +6,17 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Verified
 public import VerifiedGarbage.Proof.X25519.RISCV64.BaseVerified
 public import VerifiedGarbage.Proof.X25519.RISCV64.Exchange
+public import VerifiedGarbage.Impl.X25519.RISCV64.Fn
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519 on RISC-V, without secret residue
 
-`vg_x25519_base` and `vg_x25519_exchange`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+`vg_x25519_base` and `vg_x25519_exchange` as emitted (`Impl.X25519.RISCV64.Fn`), each
+followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and the
+stack its frames used: the theorems their registrations bind
+(`RISCV64.Scrub.verifiedScrubbed`). Their postconditions read the memory on return only
 within `out` (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/X25519/X86_64/Scrub.lean`).
 -/
 
@@ -65,20 +67,26 @@ theorem exchangeOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     show Spec.X25519.bytesAt m₂ o 32 = _ ∧ _
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.X25519.exchangeApi`. -/
-def exchangeReg : Registration Spec.X25519.exchangeApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Xdh.RISCV64.exchange "vg_x25519" Impl.X25519.RISCV64.R64.x25519 32
+/-- `vg_x25519_exchange` as emitted (`Impl.X25519.RISCV64.Fn.exchange`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem exchange_scrubbed :
+    VerifiedScrubbed target Impl.X25519.RISCV64.Fn.exchange
+      (Spec.X25519.exchangeContract RISCV64.abi 16) 32 :=
+  verifiedScrubbed (api := Spec.X25519.exchangeApi) (W := 16)
+    { code := Impl.Xdh.RISCV64.exchange "vg_x25519" Impl.X25519.RISCV64.R64.x25519 32
       verified := Proof.X25519.RISCV64.Exchange.exchange_verified }
-    (exchangeOut [] _)
+    (exchangeOut [] _) (by lit_decide)
 
-/-- `Spec.X25519.x25519BaseApi`. -/
-def baseReg : Registration Spec.X25519.x25519BaseApi RISCV64.target :=
-  scrubOf {
-      code := Impl.X25519.RISCV64.Base.x25519Base
+/-- `vg_x25519_base` as emitted (`Impl.X25519.RISCV64.Fn.base`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem base_scrubbed :
+    VerifiedScrubbed target Impl.X25519.RISCV64.Fn.base
+      (Spec.X25519.x25519BaseContract (RISCV64.abi.withConsts Impl.Ed25519.RISCV64.combConsts)) 0 :=
+  verifiedScrubbed (api := Spec.X25519.x25519BaseApi) (W := 0)
+    { code := Impl.X25519.RISCV64.Base.x25519Base
       verified := Proof.X25519.RISCV64.Base.x25519Base_verified }
-    (baseOut Impl.Ed25519.RISCV64.combConsts 0)
+    (baseOut Impl.Ed25519.RISCV64.combConsts 0) (by lit_decide)
 
 end VG.Proof.X25519.RISCV64.Scrub

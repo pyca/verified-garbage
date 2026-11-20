@@ -12,8 +12,14 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.AesSiv.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Siv.initApi.artifact RISCV64.target Proof.AesSiv.RISCV64.initReg,
-  Spec.Siv.encryptApi.artifact RISCV64.target Proof.AesSiv.RISCV64.Scrub.encryptReg,
-  Spec.Siv.decryptApi.artifact RISCV64.target Proof.AesSiv.RISCV64.Scrub.decryptReg]
+  Spec.Siv.initApi.artifact RISCV64.target {
+    code := Impl.AesSiv.RISCV64.Fn.init
+    verified := .scrubbed Proof.AesSiv.RISCV64.init_scrubbed },
+  Spec.Siv.encryptApi.artifact RISCV64.target {
+    code := Impl.AesSiv.RISCV64.Fn.encrypt
+    verified := .scrubbed Proof.AesSiv.RISCV64.Scrub.encrypt_scrubbed },
+  Spec.Siv.decryptApi.artifact RISCV64.target {
+    code := Impl.AesSiv.RISCV64.Fn.decrypt
+    verified := .scrubbed Proof.AesSiv.RISCV64.Scrub.decrypt_scrubbed }]
 
 end VG.Artifacts.AesSiv.RISCV64

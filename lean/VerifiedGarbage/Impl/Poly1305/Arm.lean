@@ -476,6 +476,10 @@ namespace VG.Impl.Poly1305.Arm.Fn
 
 open VG.Arm VG.Impl.Residue.Arm
 
+/-- `vg_poly1305_init`: `init`, which has no frame, and the registers a
+callee may change set to constants. -/
+def init : Prog isa := scrub 0 Arm.init
+
 /-- `vg_poly1305_update`, with either arithmetic: `update umaal`, its working
 space in a frame of 144 bytes, which is then zeroed, and the registers a
 callee may change set to constants. -/

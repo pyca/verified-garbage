@@ -50520,6 +50520,8 @@ pub const VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES: verified_garbage_cpu::Feat
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -50750,12 +50752,38 @@ ldr r10, [sp, #8]
 ldr r11, [sp, #12]
 ldr lr, [sp, #20]
 ldr r4, [sp], #24
+sub sp, sp, #232
+add r12, sp, #0
+mov r2, #0
+mov r3, #7
+222:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 222b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #232
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ffdh_parameter_candidate_sieved_umaal = sym super::ffdh::vg_ffdh_parameter_candidate_sieved_umaal::vg_ffdh_parameter_candidate_sieved_umaal,
     )
 }
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -50985,6 +51013,30 @@ ldr r10, [sp, #8]
 ldr r11, [sp, #12]
 ldr lr, [sp, #20]
 ldr r4, [sp], #24
+sub sp, sp, #232
+add r12, sp, #0
+mov r2, #0
+mov r3, #7
+222:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 222b
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #232
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )

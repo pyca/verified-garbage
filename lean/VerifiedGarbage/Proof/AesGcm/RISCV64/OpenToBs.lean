@@ -31,6 +31,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -734,15 +735,15 @@ theorem openToBsOut :
     PostOut (Spec.Gcm.openToBitslicedContract RISCV64.abi 4656) (Spec.Gcm.openToBitslicedSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain (Proof.AesGcm.openToBitslicedPost_out _)
 
-/-- `Spec.Gcm.openToBitslicedApi`. -/
-def openToBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.openToBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs
+/-- `vg_aes_gcm_open_to_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.openToBs`) meets its contract
+in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem openToBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.openToBs
+      (Spec.Gcm.openToBitslicedContract RISCV64.abi 4656) 32 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.openToBitslicedApi) (W := 4656)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs
       verified := Proof.AesGcm.openToBitsliced_keyed openToBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])]
-    openToBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb openToBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs) 4656 32
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])] []
+    openToBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64

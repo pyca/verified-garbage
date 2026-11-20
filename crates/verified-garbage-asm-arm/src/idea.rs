@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -412,6 +414,12 @@ movt r3, #16320
 and r2, r3, r2, ror #18
 eor r12, r12, r2
 str r12, [r1, #100]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -419,6 +427,8 @@ bx lr",
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1222,6 +1232,22 @@ ldr r7, [r2, #12]
 ldr r8, [r2, #16]
 ldr r9, [r2, #20]
 add sp, sp, #24
+sub sp, sp, #24
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #24
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
@@ -1229,6 +1255,8 @@ bx lr",
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1895,6 +1923,28 @@ ldr r9, [r3, #20]
 ldr r10, [r3, #24]
 ldr r11, [r3, #28]
 add sp, sp, #32
+sub sp, sp, #32
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add sp, sp, #32
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_idea_ecb_entry.rs"]
+pub(crate) mod vg_idea_ecb_entry;

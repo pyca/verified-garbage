@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Idea.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Idea.RISCV64.ModesLit
@@ -13,7 +14,11 @@ import VerifiedGarbage.Proof.Idea.RISCV64.FbFinalLit
 namespace VG.Artifacts.IdeaOfb.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Idea.ofbApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.ofbReg,
-  Spec.Idea.ofbFinalApi.artifact RISCV64.target Proof.Idea.RISCV64.Scrub.ofbFinalReg]
+  Spec.Idea.ofbApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.ofb
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.ofb_scrubbed },
+  Spec.Idea.ofbFinalApi.artifact RISCV64.target {
+    code := Impl.Idea.RISCV64.Fn.ofbFinal
+    verified := .scrubbed Proof.Idea.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.RISCV64

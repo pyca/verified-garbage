@@ -32,6 +32,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
@@ -51,7 +52,7 @@ its algebra), and of `copyLoopW` (`copyLoopW_ok`). Then constant time (only
 the pointers reach addresses and branches), the shared contract with the
 working space in a frame of its own (`bitslice_framed`), and that frame,
 which holds the bitsliced round keys, cleared on return with the
-caller-saved registers (`bitsliceReg`, `RISCV64.Scrub.scrubSelOf`).
+caller-saved registers (`bitslice_scrubbed`, `RISCV64.Scrub.verifiedScrubbedSelT`).
 -/
 
 @[expose] public section
@@ -477,13 +478,14 @@ theorem bitsliceOut :
   postOut_of_local (leak := none) ScrubAbi.plain bitslicePost_out
 
 open VG.RISCV64.Scrub in
-/-- `vg_aes_gcm_bitslice`, followed by the clearing of the caller-saved registers and of
-its working space, which holds the bitsliced round keys. -/
-def bitsliceReg [Proof.Gcm.RISCV64.PrepLaw] : Registration Spec.Gcm.bitsliceApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 Impl.AesGcm.RISCV64.Bitslice.bitslice, verified := bitslice_framed } [(2048, [(0, 256)])]
-    bitsliceOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb bitsliceOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 bitslice) 2048 0 rfl rfl rfl
-      (by exact ⟨_, by taint_decide_ct⟩))
+/-- `vg_aes_gcm_bitslice` as emitted (`Impl.AesGcm.RISCV64.Fn.bitslice`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem bitslice_scrubbed [Proof.Gcm.RISCV64.PrepLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.bitslice
+      (Spec.Gcm.bitsliceContract RISCV64.abi 2048) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.bitsliceApi) (W := 2048)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 Impl.AesGcm.RISCV64.Bitslice.bitslice
+      verified := bitslice_framed }
+    [(2048, [(0, 256)])] [] bitsliceOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64.Bitslice

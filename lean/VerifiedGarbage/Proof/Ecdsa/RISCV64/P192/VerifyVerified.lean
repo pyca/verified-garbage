@@ -22,6 +22,8 @@ public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P192
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.JointJ
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.VerifyAll
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.Sign
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Exchange
@@ -29,6 +31,8 @@ meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.P192
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.JointJ
 meta import VerifiedGarbage.Spec.Ecdsa.Verify
 meta import VerifiedGarbage.Proof.Ecdsa.Verify
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 
 /-! ### `Ecdsa.RISCV64.P192.Verify`, which only this module used -/
 
@@ -174,5 +178,17 @@ theorem verifyHash_verified (hL : VG.Proof.Weierstrass.Law W) :
     (by taint_decide) (Proof.Ecdsa.Verify.RISCV64.hashSat_nil (by decide) verify_sat (by decide) fun r hr => by
       simp only [verifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+/-- `vg_ecdsa_p192_verify` as emitted, cleanup included
+(`Impl.Ecdsa.RISCV64.Fn.verifyP192`), meets its contract in constant time and
+returns without secret residue. -/
+theorem verifyHash_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdsa.RISCV64.Fn.verifyP192
+      (Spec.Ecdsa.Instance.verifyHashContract Spec.Ecdsa.P192.inst RISCV64.abi 80) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdsa.P192.verifyHashApi) (W := 80)
+    { code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+        Impl.Ecdsa.RISCV64.P192.verifyP192
+      verified := verifyHash_verified hL }
+    (EcKey.RISCV64.Scrub.verifyHashOut _ [] _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.RISCV64.P192

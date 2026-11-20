@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
 import VerifiedGarbage.Proof.AesGcm.CtxFrame
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
@@ -100,8 +101,8 @@ return address and `bk`'s bytes and the key context come back from it, and
   as `Gather/CT.lean`'s, `RelCT.alloc` for the frame), and `Verified`
   against the shared contract with 4672 bytes of stack
   (`sealGatherBs_verified`).
-* **No secret residue:** the registration (`sealGatherBsReg`) is
-  `scrubSelOf`, as ChaCha20-Poly1305's `seal_gather`
+* **No secret residue:** `sealGatherBs_scrubbed`, by
+  `verifiedScrubbedSelT`, as ChaCha20-Poly1305's `seal_gather`
   (`Proof/ChaCha20Poly1305/RISCV64/Scrub.lean`).
 -/
 
@@ -1065,16 +1066,15 @@ theorem gatherBsOut (stack : Nat) :
     PostOut (Spec.Gcm.sealGatherBitslicedContract abi stack) (Spec.Gcm.sealGatherBitslicedSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain (Proof.AesGcm.sealGatherBitslicedPost_out _)
 
-/-- `Spec.Gcm.sealGatherBitslicedApi`: the frames of the call of
-`vg_aes_gcm_seal_bitsliced` (`sealBsReg`), 32 bytes lower, below our own. -/
-def sealGatherBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] :
-    Registration Spec.Gcm.sealGatherBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := sealGatherBs
+/-- `vg_aes_gcm_seal_gather_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.sealGatherBs`) meets its
+contract in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem sealGatherBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.sealGatherBs
+      (Spec.Gcm.sealGatherBitslicedContract abi 4672) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.sealGatherBitslicedApi) (W := 4672)
+    { code := sealGatherBs
       verified := Proof.AesGcm.sealGatherBitsliced_keyed sealGatherBs_verified }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (176, [(0, 22)])]
-    (gatherBsOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (gatherBsOut _) (hbp_nil _) sealGatherBs 4672 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (176, [(0, 22)])] []
+    (gatherBsOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64.GatherBs

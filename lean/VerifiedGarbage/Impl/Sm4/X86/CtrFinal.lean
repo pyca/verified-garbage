@@ -41,7 +41,10 @@ open VG.Impl.AesCfb.X86 (finalSaved)
 open VG.Impl.AesCtr.X86 (zeroSlots)
 open VG.Impl.Modes.X86 (tailByte)
 
-/-- `vg_sm4_ctr`, with its working space on the stack. -/
+/-- `vg_sm4_ctr`'s code, with its working space on the stack: called as an
+internal function of its own, `vg_sm4_ctr_core`, rather than as `vg_sm4_ctr`,
+which also clears the registers and the stack it leaves
+(`Impl.Sm4.X86.Fn.ctr`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 ctr
 
 /-- `save` (our stack argument 4) to `eax`, and the registers saved there. -/
@@ -52,9 +55,10 @@ of whole blocks, `len >> 4`, for `len`. -/
 def ctrFinalArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .edx (argOp 1), .mov .ebx (argOp 2), .mov .esi (argOp 3), .shift .shr .esi 4]
 
-/-- The call of `vg_sm4_ctr(eax, edx, ebx, esi)`, its arguments pushed last
-to first. -/
-def ctrCall : Prog isa := .frame (.push [.esi, .ebx, .edx, .eax]) (.call "vg_sm4_ctr" ctrFramed) (.pop .eax 4)
+/-- The call of `vg_sm4_ctr(eax, edx, ebx, esi)`'s code, as `vg_sm4_ctr_core`,
+its arguments pushed last to first. -/
+def ctrCall : Prog isa :=
+  .frame (.push [.esi, .ebx, .edx, .eax]) (.call "vg_sm4_ctr_core" ctrFramed) (.pop .eax 4)
 
 /-- ZF set if no bytes are left after the whole blocks. -/
 def ctrFinalTest : List Instr := [.mov .eax (argOp 3), .alu .and .eax (.imm 15), .alu .test .eax (.reg .eax)]
