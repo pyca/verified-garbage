@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
 public import VerifiedGarbage.Impl.P256.Booth
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64.Comb
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.AArch64.Comb
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64.Comb
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64.Comb
 public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
@@ -82,6 +83,11 @@ def secp256k1 (hs : List Hash) : Prog isa :=
 def brainpoolp256r1 (hs : List Hash) : Prog isa :=
   sign Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg false 0 128
     "vg_ecdsa_brainpoolp256r1_sign_k" Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb hs
+
+/-- `vg_ecdsa_brainpoolp320r1_sign`, with the tables of `hs`. -/
+def brainpoolp320r1 (hs : List Hash) : Prog isa :=
+  sign Impl.Ecdsa.AArch64.BrainpoolP320r1.combCfg false 0 128
+    "vg_ecdsa_brainpoolp320r1_sign_k" Impl.Ecdsa.AArch64.BrainpoolP320r1.signComb hs
 
 /-- `vg_ecdsa_brainpoolp384r1_sign`, with the tables of `hs`. -/
 def brainpoolp384r1 (hs : List Hash) : Prog isa :=
