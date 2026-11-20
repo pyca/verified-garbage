@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Camellia.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
@@ -17,6 +18,7 @@ import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Camellia.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Camellia.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
@@ -46,19 +48,22 @@ message's last piece 88 bytes of their own around ECB's 2816 and the groups'
 128, and CTR over a message's last piece 72 bytes around CTR's. None makes
 an indirect call, and their postconditions read the memory on return only
 within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
-`Proof/Camellia/ScrubLocal.lean` that RISC-V uses too). Each is emitted
-followed by a wipe of the stack its contract reserves, rounded up to a
-frame size the model accepts (`Arm.Scrub.Verified.stack_le`), and by
-instructions that set the registers a callee may change, but the result,
-and the flags to constants (`Impl.Camellia.Arm.Fn`), and `Fn` below states
-that each returns without secret residue (`Arm.Scrub.verifiedScrubbedF`),
-which is what its registration binds.
+`Proof/Camellia/ScrubLocal.lean` that RISC-V uses too). Each wipes its own
+working space, and is emitted followed by a wipe of only the words of the
+stack its contract reserves (rounded up to a frame size the model accepts,
+`Arm.Scrub.Verified.stack_le`) that the residue analysis finds may differ
+between two runs (`Impl.Residue.Arm.scrubSel`), and by instructions that
+set the registers a callee may change, but the result, and the flags to
+constants (`Impl.Camellia.Arm.Fn`). `Fn` below states that each returns
+without secret residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis,
+`Arm.rtaint`, the kernel evaluates here: `taint_decide_ct`), which is what
+its registration binds.
 
 The modes call ECB's and CTR's code as it is verified, without the wipe,
 under names of their own (`vg_camellia_ecb_encrypt_entry`,
 `Impl.Camellia.Arm.ecbCore`; `vg_camellia_ctr_entry`,
 `Impl.Camellia.Arm.ctrCall`), which the emitter writes as internal
-functions: their own wipe covers the frame of that call.
+functions: the analysis of each mode covers the frame of that call.
 -/
 
 @[expose] public section
@@ -210,151 +215,12 @@ theorem ctrFinalOut (stack : Nat) :
       rw [aesBytesAt_of hb.2.2 (len_le1 ln), aesBytesAt_of (n := 16) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
-/-! ## The code: its frames, and no indirect call -/
+/-! ## The code as literals
 
-/-! The code of the table's construction and of the encipherment from it,
-as literals, which `lit_decide` reads. -/
+The code of the table's construction and of the encipherment from it, as
+literals, which the residue analysis of the modes (`taint_decide_ct`) reads. -/
 materialize_flat_code ecbKeysEncrypt := Impl.Camellia.Arm.ecbKeys .encrypt
 materialize_flat_code ecbKeyedCode := Impl.Camellia.Arm.ecbKeyed
-
-theorem frameOk_2720 : FrameOk 2720 := by decide
-theorem frameOk_2816 : FrameOk 2816 := by decide
-theorem frameOk_2832 : FrameOk 2832 := by decide
-theorem frameOk_2912 : FrameOk 2912 := by decide
-theorem frameOk_3040 : FrameOk 3040 := by decide
-theorem frameOk_3120 : FrameOk 3120 := by decide
-
-theorem expandKey_code : armStack Impl.Camellia.Arm.expandKey = 0 ∧
-    noIcall Impl.Camellia.Arm.expandKey = true := by lit_decide
-
-theorem encrypt_code : armStack (Impl.Camellia.Arm.ecb .encrypt) = 0 ∧
-    noIcall (Impl.Camellia.Arm.ecb .encrypt) = true := by lit_decide
-
-theorem decrypt_code : armStack (Impl.Camellia.Arm.ecb .decrypt) = 0 ∧
-    noIcall (Impl.Camellia.Arm.ecb .decrypt) = true := by lit_decide
-
-theorem keys_code : armStack (Impl.Camellia.Arm.ecbKeys .encrypt) = 0 ∧
-    noIcall (Impl.Camellia.Arm.ecbKeys .encrypt) = true := by lit_decide
-
-theorem keyed_code : armStack Impl.Camellia.Arm.ecbKeyed = 0 ∧
-    noIcall Impl.Camellia.Arm.ecbKeyed = true := by lit_decide
-
-theorem ecbCode_scrub (d : Impl.Camellia.Arm.Dir) :
-    CodeOk (Impl.Camellia.Arm.ecbCode d) 2816 := by
-  cases d
-  · exact withStackScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq encrypt_code.1, encrypt_code.2⟩
-  · exact withStackScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq decrypt_code.1, decrypt_code.2⟩
-
-/-- ECB's code, as the modes call it. -/
-theorem ecbCore_scrub (d : Impl.Camellia.Arm.Dir) :
-    armStack (Impl.Camellia.Arm.ecbCore d).code + callExtraArm (Impl.Camellia.Arm.ecbCore d) ≤ 2816 ∧
-      noIcall (Impl.Camellia.Arm.ecbCore d).code = true := by
-  simpa only [callExtraArm, Impl.Camellia.Arm.ecbCore, ite_true, Nat.add_zero] using ecbCode_scrub d
-
-/-- A mode in groups of blocks: the groups' buffer of 128 bytes, around the
-calls of the core, and the blocks left as `Core.seq`'s. -/
-theorem seq8_scrub {c : Impl.Modes.Arm.Core} {n : Nat}
-    (hc : armStack c.code + callExtraArm c ≤ n ∧ noIcall c.code = true)
-    (m : Impl.Modes.Arm.Mode) (wm : Impl.Modes.Arm.WMode) :
-    armStack (c.seq8 m wm) ≤ n + 128 ∧ noIcall (c.seq8 m wm) = true := by
-  obtain ⟨h₁, h₂⟩ := callStep_scrubArm hc
-  simp only [Impl.Modes.Arm.Core.seq8, Impl.Modes.Arm.Core.seqW, Impl.Modes.Arm.Core.wide,
-    Impl.Modes.Arm.wideLevels, Impl.Modes.Arm.wideBuf, Impl.Modes.Arm.Core.wlevels,
-    Impl.Modes.Arm.Core.wlevel, Impl.Modes.Arm.Core.wbody, Impl.Modes.Arm.Core.body, armStack, noIcall,
-    hc.2, h₂, Bool.and_true, Nat.zero_max, Nat.max_zero, and_true]
-  omega
-
-/-- A mode one block at a time from the table built once: its construction,
-then a call of the encipherment from it, in a frame of 8 bytes. -/
-theorem seqK_scrub {c : Impl.Modes.Arm.Core} {k : Impl.Modes.Arm.Keyed} {n : Nat}
-    (hk : armStack k.keysCode ≤ n ∧ noIcall k.keysCode = true ∧ armStack k.code + 8 ≤ n ∧
-      noIcall k.code = true)
-    (m : Impl.Modes.Arm.Mode) :
-    armStack (c.seqK k m) ≤ n ∧ noIcall (c.seqK k m) = true := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hk
-  simp only [Impl.Modes.Arm.Core.seqK, Impl.Modes.Arm.Core.keysStep, Impl.Modes.Arm.Core.bodyK,
-    Impl.Modes.Arm.Keyed.callStep, armStack, noIcall, h₂, h₄, Bool.and_true,
-    List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero, and_true]
-  omega
-
-theorem keyed_scrub : armStack (Impl.Camellia.Arm.keyed .encrypt).keysCode ≤ 8 ∧
-    noIcall (Impl.Camellia.Arm.keyed .encrypt).keysCode = true ∧
-    armStack (Impl.Camellia.Arm.keyed .encrypt).code + 8 ≤ 8 ∧
-    noIcall (Impl.Camellia.Arm.keyed .encrypt).code = true := by
-  simp only [Impl.Camellia.Arm.keyed]
-  exact ⟨by rw [keys_code.1]; omega, keys_code.2, by rw [keyed_code.1], keyed_code.2⟩
-
-/-- A mode one block at a time, in its 2816-byte scratch frame. -/
-theorem seqK_framed_scrub (m : Impl.Modes.Arm.Mode) :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698
-      ((Impl.Camellia.Arm.scrCore .encrypt).seqK (Impl.Camellia.Arm.keyed .encrypt) m)) ≤ 2832 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698
-        ((Impl.Camellia.Arm.scrCore .encrypt).seqK (Impl.Camellia.Arm.keyed .encrypt) m)) = true := by
-  obtain ⟨h₁, h₂⟩ := withStackScratchWiped_scrubArm (bytes := 2816) (m := 1) (words := 698)
-    (seqK_scrub (c := Impl.Camellia.Arm.scrCore .encrypt) keyed_scrub m)
-  exact ⟨by omega, h₂⟩
-
-/-- A mode in groups of blocks, in its 88-byte scratch frame. -/
-theorem seq8_framed_scrub (d : Impl.Camellia.Arm.Dir) (m : Impl.Modes.Arm.Mode) (wm : Impl.Modes.Arm.WMode) :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 ((Impl.Camellia.Arm.ecbCore d).seq8 m wm))
-      ≤ 3032 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18
-        ((Impl.Camellia.Arm.ecbCore d).seq8 m wm)) = true :=
-  withStackScratchWiped_scrubArm (seq8_scrub (ecbCore_scrub d) m wm)
-
-/-- A mode over a message's last piece, in its 88-byte scratch frame. -/
-theorem seqFinal_scrub (m : Impl.Modes.Arm.Mode) :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18
-      ((Impl.Camellia.Arm.ecbCore .encrypt).seqFinal m)) ≤ 2904 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18
-        ((Impl.Camellia.Arm.ecbCore .encrypt).seqFinal m)) = true :=
-  withStackScratchWiped_scrubArm (seqFinal_scrubArm (ecbCore_scrub .encrypt) m)
-
-theorem ctrFramed_scrub : CodeOk Impl.Camellia.Arm.ctrFramed 3032 :=
-  seq8_framed_scrub .encrypt Impl.Modes.Arm.ctr Impl.Modes.Arm.ctrW
-
-theorem cbcEncrypt_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained) 2832 :=
-  seqK_framed_scrub Impl.Modes.Arm.cbcEncChained
-
-theorem cfbEncrypt_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt) 2832 :=
-  seqK_framed_scrub Impl.Modes.Arm.cfbEnc
-
-theorem ofb_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.ofb) 2832 :=
-  seqK_framed_scrub Impl.Modes.Arm.ofb
-
-theorem cbcDecrypt_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcDecryptChained) 3032 :=
-  seq8_framed_scrub .decrypt Impl.Modes.Arm.cbcDecChained Impl.Modes.Arm.cbcDecW
-
-theorem cfbDecrypt_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt) 3032 :=
-  seq8_framed_scrub .encrypt Impl.Modes.Arm.cfbDec Impl.Modes.Arm.cfbDecW
-
-theorem cfbEncryptFinal_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal) 2904 :=
-  seqFinal_scrub Impl.Modes.Arm.cfbEnc
-
-theorem cfbDecryptFinal_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal) 2904 :=
-  seqFinal_scrub Impl.Modes.Arm.cfbDecF
-
-theorem ofbFinal_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ofbFinal) 2904 :=
-  seqFinal_scrub Impl.Modes.Arm.ofb
-
-/-- CTR over a message's last piece: its calls of CTR, in a frame of 8 bytes,
-in its 72-byte frame. -/
-theorem ctrFinal_scrub :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 Impl.Camellia.Arm.ctrFinal) 3112 := by
-  refine withStackScratchWiped_scrubArm (n := 3040) ?_
-  obtain ⟨h₁, h₂⟩ := ctrFramed_scrub
-  simp only [Impl.Camellia.Arm.ctrFinal, Impl.Camellia.Arm.ctrFinalTail, Impl.Camellia.Arm.ctrCall, armStack,
-    noIcall, h₂, Bool.and_true, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero,
-    and_true]
-  omega
 
 /-! ## The stack, rounded up to a frame size -/
 
@@ -408,107 +274,114 @@ open VG.Proof.Camellia.ScrubLocal
 /-- `vg_camellia_expand_key`. -/
 theorem expandKey :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.expandKey (expandKeyContract Arm.abi 2720) 0 :=
-  verifiedScrubbedF (api := expandKeyApi)
+  verifiedScrubbedSel (api := expandKeyApi) (W := 2720)
     { code := Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 Impl.Camellia.Arm.expandKey
       verified := Proof.Camellia.Arm.expandKey_framed }
-    (Scrub.expandKeyOut _)
-    (scrubSideF_of (withRegScratchWiped_scrubArm (n := 0)
-      ⟨Nat.le_of_eq Scrub.expandKey_code.1, Scrub.expandKey_code.2⟩) Scrub.frameOk_2720 _)
+    Impl.Camellia.Arm.Fn.expandKeyWords []
+    (Scrub.expandKeyOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ecb_encrypt`. -/
 theorem ecbEncrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.ecbEncrypt (ecbContract Arm.abi .encrypt 2816) 0 :=
-  verifiedScrubbedF (api := ecbEncryptApi)
+  verifiedScrubbedSel (api := ecbEncryptApi) (W := 2816)
     { code := Impl.Camellia.Arm.ecbCode .encrypt
       verified := Proof.Camellia.Arm.ecb_framed .encrypt }
-    (Scrub.ecbOut .encrypt _) (scrubSideF_of (Scrub.ecbCode_scrub .encrypt) Scrub.frameOk_2816 _)
+    Impl.Camellia.Arm.Fn.ecbWords []
+    (Scrub.ecbOut .encrypt _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ecb_decrypt`. -/
 theorem ecbDecrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.ecbDecrypt (ecbContract Arm.abi .decrypt 2816) 0 :=
-  verifiedScrubbedF (api := ecbDecryptApi)
+  verifiedScrubbedSel (api := ecbDecryptApi) (W := 2816)
     { code := Impl.Camellia.Arm.ecbCode .decrypt
       verified := Proof.Camellia.Arm.ecb_framed .decrypt }
-    (Scrub.ecbOut .decrypt _) (scrubSideF_of (Scrub.ecbCode_scrub .decrypt) Scrub.frameOk_2816 _)
+    Impl.Camellia.Arm.Fn.ecbWords []
+    (Scrub.ecbOut .decrypt _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cbcEncrypt (cbcEncryptChainedContract Arm.abi 2832) 0 :=
-  verifiedScrubbedF (api := cbcEncryptChainedApi)
+  verifiedScrubbedSel (api := cbcEncryptChainedApi) (W := 2832)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cbcEncryptChained_framed Scrub.cbcEncryptSat }
-    (Scrub.cbcEncryptOut _) (scrubSideF_of Scrub.cbcEncrypt_scrub Scrub.frameOk_2832 _)
+    Impl.Camellia.Arm.Fn.seqWords []
+    (Scrub.cbcEncryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cbc_decrypt_chained`. -/
 theorem cbcDecrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cbcDecrypt (cbcDecryptChainedContract Arm.abi 3040) 0 :=
-  verifiedScrubbedF (api := cbcDecryptChainedApi)
+  verifiedScrubbedSel (api := cbcDecryptChainedApi) (W := 3040)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cbcDecryptChained
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cbcDecryptChained_framed Scrub.cbcDecryptSat }
-    (Scrub.cbcDecryptOut _)
-    (scrubSideF_of (CodeOk.mono Scrub.cbcDecrypt_scrub (by decide)) Scrub.frameOk_3040 _)
+    Impl.Camellia.Arm.Fn.wideWords []
+    (Scrub.cbcDecryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cfb128_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cfbEncrypt (cfbEncryptContract Arm.abi 2832) 0 :=
-  verifiedScrubbedF (api := cfbEncryptApi)
+  verifiedScrubbedSel (api := cfbEncryptApi) (W := 2832)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cfbEncrypt_framed Scrub.cfbEncryptSat }
-    (Scrub.cfbEncryptOut _) (scrubSideF_of Scrub.cfbEncrypt_scrub Scrub.frameOk_2832 _)
+    Impl.Camellia.Arm.Fn.seqWords []
+    (Scrub.cfbEncryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cfb128_decrypt`. -/
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cfbDecrypt (cfbDecryptContract Arm.abi 3040) 0 :=
-  verifiedScrubbedF (api := cfbDecryptApi)
+  verifiedScrubbedSel (api := cfbDecryptApi) (W := 3040)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecrypt
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cfbDecrypt_framed Scrub.cfbDecryptSat }
-    (Scrub.cfbDecryptOut _)
-    (scrubSideF_of (CodeOk.mono Scrub.cfbDecrypt_scrub (by decide)) Scrub.frameOk_3040 _)
+    Impl.Camellia.Arm.Fn.wideWords []
+    (Scrub.cfbDecryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cfb128_encrypt_final`. -/
 theorem cfbEncryptFinal :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cfbEncryptFinal (cfbEncryptFinalContract Arm.abi 2912) 0 :=
-  verifiedScrubbedF (api := cfbEncryptFinalApi)
+  verifiedScrubbedSel (api := cfbEncryptFinalApi) (W := 2912)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbEncryptFinal
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cfbEncryptFinal_framed Scrub.cfbEncryptFinalSat }
-    (Scrub.cfbEncryptFinalOut _)
-    (scrubSideF_of (CodeOk.mono Scrub.cfbEncryptFinal_scrub (by decide)) Scrub.frameOk_2912 _)
+    Impl.Camellia.Arm.Fn.finalWords []
+    (Scrub.cfbEncryptFinalOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_cfb128_decrypt_final`. -/
 theorem cfbDecryptFinal :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cfbDecryptFinal (cfbDecryptFinalContract Arm.abi 2912) 0 :=
-  verifiedScrubbedF (api := cfbDecryptFinalApi)
+  verifiedScrubbedSel (api := cfbDecryptFinalApi) (W := 2912)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.cfbDecryptFinal
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cfbDecryptFinal_framed Scrub.cfbDecryptFinalSat }
-    (Scrub.cfbDecryptFinalOut _)
-    (scrubSideF_of (CodeOk.mono Scrub.cfbDecryptFinal_scrub (by decide)) Scrub.frameOk_2912 _)
+    Impl.Camellia.Arm.Fn.finalWords []
+    (Scrub.cfbDecryptFinalOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ctr`. -/
 theorem ctr : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ctr (ctrContract Arm.abi 3040) 0 :=
-  verifiedScrubbedF (api := ctrApi)
+  verifiedScrubbedSel (api := ctrApi) (W := 3040)
     { code := Impl.Camellia.Arm.ctrFramed
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.ctr_framed Scrub.ctrSat }
-    (Scrub.ctrOut _) (scrubSideF_of (CodeOk.mono Scrub.ctrFramed_scrub (by decide)) Scrub.frameOk_3040 _)
+    Impl.Camellia.Arm.Fn.wideWords []
+    (Scrub.ctrOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ctr_final`. -/
 theorem ctrFinal : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ctrFinal (ctrFinalContract Arm.abi 3120) 0 :=
-  verifiedScrubbedF (api := ctrFinalApi)
+  verifiedScrubbedSel (api := ctrFinalApi) (W := 3120)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 Impl.Camellia.Arm.ctrFinal
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.CtrFinal.ctrFinal_framed Scrub.ctrFinalSat }
-    (Scrub.ctrFinalOut _) (scrubSideF_of (CodeOk.mono Scrub.ctrFinal_scrub (by decide)) Scrub.frameOk_3120 _)
+    Impl.Camellia.Arm.Fn.ctrFinalWords []
+    (Scrub.ctrFinalOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ofb (ofbContract Arm.abi 2832) 0 :=
-  verifiedScrubbedF (api := ofbApi)
+  verifiedScrubbedSel (api := ofbApi) (W := 2832)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.ofb
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.ofb_framed Scrub.ofbSat }
-    (Scrub.ofbOut _) (scrubSideF_of Scrub.ofb_scrub Scrub.frameOk_2832 _)
+    Impl.Camellia.Arm.Fn.seqWords []
+    (Scrub.ofbOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_camellia_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ofbFinal (ofbFinalContract Arm.abi 2912) 0 :=
-  verifiedScrubbedF (api := ofbFinalApi)
+  verifiedScrubbedSel (api := ofbFinalApi) (W := 2912)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 88 1 18 Impl.Camellia.Arm.ofbFinal
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.ofbFinal_framed Scrub.ofbFinalSat }
-    (Scrub.ofbFinalOut _) (scrubSideF_of (CodeOk.mono Scrub.ofbFinal_scrub (by decide)) Scrub.frameOk_2912 _)
+    Impl.Camellia.Arm.Fn.finalWords []
+    (Scrub.ofbFinalOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Camellia.Arm.Fn

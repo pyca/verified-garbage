@@ -795,23 +795,14 @@ vg_camellia_ofb:
 	sub sp, sp, #2832
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #88
-23:
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
 	str r2, [r12, #16]
 	str r2, [r12, #20]
 	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 23b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
+	str r2, [r12, #2820]
+	str r2, [r12, #2824]
+	str r2, [r12, #2828]
 	add sp, sp, #2832
 	mov r0, #0
 	mov r1, #0
@@ -941,19 +932,34 @@ vg_camellia_ofb_final:
 	sub sp, sp, #2912
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #91
-26:
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 26b
+	str r2, [r12, #2736]
+	str r2, [r12, #2740]
+	str r2, [r12, #2744]
+	str r2, [r12, #2748]
+	str r2, [r12, #2752]
+	str r2, [r12, #2756]
+	str r2, [r12, #2760]
+	str r2, [r12, #2764]
+	str r2, [r12, #2768]
+	str r2, [r12, #2772]
+	str r2, [r12, #2776]
+	str r2, [r12, #2780]
+	str r2, [r12, #2784]
+	str r2, [r12, #2788]
+	str r2, [r12, #2792]
+	str r2, [r12, #2796]
+	str r2, [r12, #2800]
+	str r2, [r12, #2804]
+	str r2, [r12, #2808]
+	str r2, [r12, #2812]
+	str r2, [r12, #2816]
+	str r2, [r12, #2820]
+	str r2, [r12, #2824]
+	str r2, [r12, #2828]
+	str r2, [r12, #2832]
+	str r2, [r12, #2908]
 	add sp, sp, #2912
 	mov r0, #0
 	mov r1, #0
