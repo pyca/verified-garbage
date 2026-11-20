@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 import VerifiedGarbage.Proof.Scrypt.Whole
@@ -1878,5 +1880,37 @@ theorem pbk_noDit : (pbkOf c).all (fun i => !i.touchesDit) = true :=
 theorem scrypt_verified :
     Verified AArch64.target (scrypt (pbkName c) (pbkOf c)) (Spec.Scrypt.scryptContract AArch64.abi 96) :=
   scrypt_verified_of (pbk_verified c) (pbk_depth c) (pbkName c) (pbk_noDit c)
+
+/-! ## The function as emitted -/
+
+/-- A test of every instruction of `vg_scrypt` and of what it calls, from its
+own code's (ROMix included) and PBKDF2's. -/
+theorem scrypt_side {p : Instr → Bool} (n : String) {pbk : Prog isa}
+    (h0 : ScrubAll.sideAll p (scrypt "" (.block [])) = true) (hp : ScrubAll.sideAll p pbk = true) :
+    ScrubAll.sideAll p (scrypt n pbk) = true := by
+  simp only [scrypt, scryptBody, pbkCall, romixLoop, ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+  revert h0
+  repeat' first
+    | exact id
+    | exact fun _ => hp
+    | refine And.imp ?_ ?_
+
+/-- `vg_scrypt` made with `c` as emitted, cleanup included
+(`Impl.Scrypt.AArch64.Fn.scrypt`): it meets its contract in constant time and
+returns without secret residue. -/
+theorem scrypt_scrubbed :
+    VerifiedScrubbed AArch64.target (Impl.Scrypt.AArch64.Fn.scrypt c.name c.suffix c.code)
+      (Spec.Scrypt.scryptContract AArch64.abi 96) 0 :=
+  ScrubAll.verifiedScrubbedOf (scrypt_verified c) (Proof.Scrypt.AArch64.Scrub.scryptOk 96) (by decide)
+    (by
+      have hp := pbk_depth c
+      have hr := roMix_depth
+      simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.aarch64Depth, Instr.frameUnits]
+      omega)
+    (scrypt_side _ (by kernel_rfl)
+      (Proof.Pbkdf2.Md.AArch64.pbkdf2_side Proof.Pbkdf2.Md.AArch64.Sha256.coreSide.pbk
+        (Proof.Pbkdf2.Md.AArch64.Sha256.calleeSide c).init (Proof.Pbkdf2.Md.AArch64.Sha256.calleeSide c).upd
+        (Proof.Pbkdf2.Md.AArch64.Sha256.calleeSide c).fin (Proof.Pbkdf2.Md.AArch64.Sha256.calleeSide c).comp))
+    (Or.inl rfl)
 
 end VG.Proof.Scrypt.AArch64.Whole

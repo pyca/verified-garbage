@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+public import VerifiedGarbage.Impl.Scrub.RISCV64
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP320r1
 
 /-! # ECDSA over brainpoolp320r1 on RISC-V: `vg_ecdsa_brainpoolp320r1_sign` and `vg_ecdsa_brainpoolp320r1_verify`
 
@@ -25,3 +28,22 @@ def verifyBrainpoolP320r1 : Prog isa :=
   VerifyJ.Cfg.verify brainpoolp320r1 Impl.Weierstrass.dblJa brainpoolp320r1Order "vg_brainpoolp320r1_check_point" Ecdh.RISCV64.checkBrainpoolP320r1
 
 end VG.Impl.Ecdsa.RISCV64
+
+/-! ## Verification as emitted
+
+`vg_ecdsa_brainpoolp320r1_verify`: `VerifyHash.verifyHash` of the curve's verification,
+then its cleanup (`Impl.Scrub.RISCV64.scrub`): the caller-saved registers
+cleared but the 32 bits of its result, and the 80 bytes of stack its frames
+use zeroed, so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdsa.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdsa_brainpoolp320r1_verify` as emitted. -/
+def verifyBrainpoolP320r1 : Prog isa :=
+  Impl.Scrub.RISCV64.scrub 32 80
+    (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
+      Impl.Ecdsa.RISCV64.verifyBrainpoolP320r1)
+
+end VG.Impl.Ecdsa.RISCV64.Fn

@@ -1,21 +1,9 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.PublicKeyVerified
-public import VerifiedGarbage.Proof.Ed448.Facts
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
+public import VerifiedGarbage.Proof.Ed448.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
-public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignVerified
-public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.VerifyVerified
-public import VerifiedGarbage.Proof.Ed448.RISCV64.Scrub
-public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # Ed448 (RFC 8032) on RISC-V -/
 
@@ -24,17 +12,14 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 namespace VG.Artifacts.Ed448.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.Ed448.RISCV64.Whole.publicKeyCode
-    verified := Proof.Ed448.RISCV64.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }
-    (Proof.Ed448.RISCV64.Scrub.publicKeyOut _)),
-  Spec.Ed448.signCachedApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.Ed448.RISCV64.Whole.signCachedCode
-    verified := Proof.Ed448.RISCV64.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }
-    (Proof.Ed448.RISCV64.Scrub.signCachedOut _)),
-  Spec.Ed448.verifyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.Ed448.RISCV64.Whole.verifyCode
-    verified := Proof.Ed448.RISCV64.Whole.verify_framed Proof.Ed448.recover_ok }
-    (Proof.Ed448.RISCV64.Scrub.verifyOut _))]
+  Spec.Ed448.publicKeyApi.artifact RISCV64.target {
+    code := Impl.Ed448.RISCV64.Fn.publicKey
+    verified := .scrubbed Proof.Ed448.RISCV64.Fn.publicKey },
+  Spec.Ed448.signCachedApi.artifact RISCV64.target {
+    code := Impl.Ed448.RISCV64.Fn.signCached
+    verified := .scrubbed Proof.Ed448.RISCV64.Fn.signCached },
+  Spec.Ed448.verifyApi.artifact RISCV64.target {
+    code := Impl.Ed448.RISCV64.Fn.verify
+    verified := .scrubbed Proof.Ed448.RISCV64.Fn.verify }]
 
 end VG.Artifacts.Ed448.RISCV64

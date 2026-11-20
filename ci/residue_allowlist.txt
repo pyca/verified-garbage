@@ -51,7 +51,6 @@ arm vg_idea_expand_key
 arm vg_idea_invert_key
 arm vg_idea_ofb
 arm vg_idea_ofb_final
-arm vg_poly1305_init
 arm vg_seed_cbc_decrypt_chained
 arm vg_seed_cbc_encrypt_chained
 arm vg_seed_cfb128_decrypt
@@ -63,13 +62,6 @@ arm vg_seed_ecb_encrypt
 arm vg_seed_expand_key
 arm vg_seed_ofb
 arm vg_seed_ofb_final
-x86 vg_argon2
-x86 vg_blake2b_finalize
-x86 vg_blake2b_init
-x86 vg_blake2b_update
-x86 vg_blake2s_finalize
-x86 vg_blake2s_init
-x86 vg_blake2s_update
 x86 vg_sm4_cbc_decrypt_chained
 x86 vg_sm4_cbc_encrypt_chained
 x86 vg_sm4_cfb128_decrypt

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.Exchange
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
 public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.RISCV64
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.EcdhLit
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.Exchange
@@ -17,7 +20,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulVerified
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulVerified
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulFn
+import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP320r1.MulFn
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.RISCV64
+meta import VerifiedGarbage.Spec.Ecdh.BrainpoolP320r1
 
 /-!
 # ECDH over brainpoolP320r1 on RISC-V: `Verified`
@@ -86,5 +94,14 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_implies_sat [Spec.EcKey.BrainpoolP320r1.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
           RISCV64.argRegs] [ecdhSat] using ecdhSat }
+
+/-- `vg_ecdh_brainpoolp320r1` as emitted, cleanup included (`Impl.Ecdh.RISCV64.Fn.exchangeBrainpoolP320r1`),
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.exchangeBrainpoolP320r1
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi) (W := 0)
+    { code := ecdhBrainpoolP320r1, verified := ecdh_verified hL }
+    (EcKey.RISCV64.Scrub.exchangeOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.BrainpoolP320r1

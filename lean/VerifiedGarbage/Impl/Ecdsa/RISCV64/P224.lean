@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyHash
+public import VerifiedGarbage.Impl.Scrub.RISCV64
+public import VerifiedGarbage.Spec.Ecdsa.P224
 
 /-!
 # ECDSA over P-224 on RISC-V
@@ -62,3 +65,22 @@ def verifyP224 : Prog isa :=
   .seq (Verify.Cfg.compare p224 p224Order) (.block (Verify.Cfg.finish p224))
 
 end VG.Impl.Ecdsa.RISCV64.P224
+
+/-! ## Verification as emitted
+
+`vg_ecdsa_p224_verify`: `VerifyHash.verifyHash` of the curve's verification,
+then its cleanup (`Impl.Scrub.RISCV64.scrub`): the caller-saved registers
+cleared but the 32 bits of its result, and the 80 bytes of stack its frames
+use zeroed, so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdsa.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdsa_p224_verify` as emitted. -/
+def verifyP224 : Prog isa :=
+  Impl.Scrub.RISCV64.scrub 32 80
+    (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
+      Impl.Ecdsa.RISCV64.P224.verifyP224)
+
+end VG.Impl.Ecdsa.RISCV64.Fn

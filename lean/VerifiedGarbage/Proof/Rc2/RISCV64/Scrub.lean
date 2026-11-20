@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Rc2.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Chained
@@ -1245,14 +1246,14 @@ end
 # Rc2 on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.Rc2.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Rc2/X86_64/Scrub.lean`).
 
 Every function instead clears only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
+(`Impl.Scrub.RISCV64.scrubSel`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -1273,30 +1274,42 @@ theorem cbcEncryptChainedOut (stack : Nat) : PostOut (Spec.Rc2.cbcEncryptChained
 theorem cbcDecryptChainedOut (stack : Nat) : PostOut (Spec.Rc2.cbcDecryptChainedContract RISCV64.abi stack) (Spec.Rc2.cbcChainedSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Rc2.cbcDecChainedPostOut_local (pb := 64))
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.Rc2.cbcInitApi`. -/
-def cbcInitReg : Registration Spec.Rc2.cbcInitApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init, verified := Proof.Rc2.RISCV64.Stream.init_framed } [(608, [(72, 4)])]
-    (cbcInitOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (cbcInitOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init) 608 32
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+Each theorem states that a function as emitted (`Impl.Rc2.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.Rc2.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Rc2.cbcEncryptChainedApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt, verified := Proof.Rc2.RISCV64.Cbc.encryptChained_framed } []
-    (cbcEncryptChainedOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (cbcEncryptChainedOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt) 512 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Rc2.cbcInitApi` as emitted (`Impl.Rc2.RISCV64.Fn.cbcInit`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcInit_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcInit
+      (Spec.Rc2.cbcInitContract RISCV64.abi 608) 32 :=
+  verifiedScrubbedSelT (api := Spec.Rc2.cbcInitApi) (W := 608) (rb := 32)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init
+      verified := Proof.Rc2.RISCV64.Stream.init_framed }
+    _ [] (cbcInitOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Rc2.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Rc2.cbcDecryptChainedApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.decrypt, verified := Proof.Rc2.RISCV64.Cbc.decryptChained_framed } []
-    (cbcDecryptChainedOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (cbcDecryptChainedOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.decrypt) 512 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Rc2.cbcEncryptChainedApi` as emitted (`Impl.Rc2.RISCV64.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcEncryptChained
+      (Spec.Rc2.cbcEncryptChainedContract RISCV64.abi 512) 0 :=
+  verifiedScrubbedSelT (api := Spec.Rc2.cbcEncryptChainedApi) (W := 512) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt
+      verified := Proof.Rc2.RISCV64.Cbc.encryptChained_framed }
+    _ [] (cbcEncryptChainedOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+
+/-- `Spec.Rc2.cbcDecryptChainedApi` as emitted (`Impl.Rc2.RISCV64.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcDecryptChained
+      (Spec.Rc2.cbcDecryptChainedContract RISCV64.abi 512) 0 :=
+  verifiedScrubbedSelT (api := Spec.Rc2.cbcDecryptChainedApi) (W := 512) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.decrypt
+      verified := Proof.Rc2.RISCV64.Cbc.decryptChained_framed }
+    _ [] (cbcDecryptChainedOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Rc2.RISCV64.Scrub

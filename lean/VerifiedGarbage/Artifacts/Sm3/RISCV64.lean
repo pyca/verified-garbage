@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Sm3.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
@@ -12,8 +13,14 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.Sm3.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact RISCV64.target Proof.Sm3.RISCV64.initReg,
-  Spec.Sm3.updateApi.artifact RISCV64.target Proof.Sm3.RISCV64.updateReg,
-  Spec.Sm3.finalizeApi.artifact RISCV64.target Proof.Sm3.RISCV64.finalizeReg]
+  Spec.Sm3.initApi.artifact RISCV64.target {
+    code := Impl.Sm3.RISCV64.Fn.init
+    verified := .scrubbed Proof.Sm3.RISCV64.init_scrubbed },
+  Spec.Sm3.updateApi.artifact RISCV64.target {
+    code := Impl.Sm3.RISCV64.Fn.update
+    verified := .scrubbed Proof.Sm3.RISCV64.update_scrubbed },
+  Spec.Sm3.finalizeApi.artifact RISCV64.target {
+    code := Impl.Sm3.RISCV64.Fn.finalize
+    verified := .scrubbed Proof.Sm3.RISCV64.finalize_scrubbed }]
 
 end VG.Artifacts.Sm3.RISCV64

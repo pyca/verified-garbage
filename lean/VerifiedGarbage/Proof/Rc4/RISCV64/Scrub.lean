@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Rc4.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Rc4.Scratch
@@ -1897,14 +1898,14 @@ end
 # Rc4 on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.Rc4.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Rc4/X86_64/Scrub.lean`).
 
 Every function instead clears only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
+(`Impl.Scrub.RISCV64.scrubSel`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -1922,22 +1923,32 @@ theorem initOut (stack : Nat) : PostOut (Spec.Rc4.initContract RISCV64.abi stack
 theorem applyOut (stack : Nat) : PostOut (Spec.Rc4.applyContract RISCV64.abi stack) (Spec.Rc4.applySig.retBits 64) :=
   postOut_of_local (leak := some _) ScrubAbi.plain (Proof.Rc4.applyPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.Rc4.initApi`. -/
-def initReg : Registration Spec.Rc4.initApi RISCV64.target :=
-  scrubSelOf { code := Impl.Rc4.RISCV64.init, verified := Proof.Rc4.RISCV64.init_verified } []
-    (initOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (initOut _) (hbp_nil _)
-      (Impl.Rc4.RISCV64.init) 256 32
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+Each theorem states that a function as emitted (`Impl.Rc4.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.Rc4.applyApi`. -/
-def applyReg : Registration Spec.Rc4.applyApi RISCV64.target :=
-  scrubSelOf { code := Impl.Rc4.RISCV64.apply, verified := Proof.Rc4.RISCV64.apply_verified } []
-    (applyOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (applyOut _) (hbp_nil _)
-      (Impl.Rc4.RISCV64.apply) 256 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Rc4.initApi` as emitted (`Impl.Rc4.RISCV64.Fn.init`) meets its contract
+in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Rc4.RISCV64.Fn.init
+      (Spec.Rc4.initContract RISCV64.abi 256) 32 :=
+  verifiedScrubbedSelT (api := Spec.Rc4.initApi) (W := 256) (rb := 32)
+    { code := Impl.Rc4.RISCV64.init
+      verified := Proof.Rc4.RISCV64.init_verified }
+    _ [] (initOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+
+/-- `Spec.Rc4.applyApi` as emitted (`Impl.Rc4.RISCV64.Fn.apply`) meets its contract
+in constant time and returns without secret residue. -/
+theorem apply_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Rc4.RISCV64.Fn.apply
+      (Spec.Rc4.applyContract RISCV64.abi 256) 0 :=
+  verifiedScrubbedSelT (api := Spec.Rc4.applyApi) (W := 256) (rb := 0)
+    { code := Impl.Rc4.RISCV64.apply
+      verified := Proof.Rc4.RISCV64.apply_verified }
+    _ [] (applyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Rc4.RISCV64.Scrub

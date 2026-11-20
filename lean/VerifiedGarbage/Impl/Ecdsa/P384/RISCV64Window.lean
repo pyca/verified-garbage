@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.P384.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.WindowA
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-! # `vg_p384_mul` on RISC-V, by four-bit windows, and ECDH
 
@@ -35,3 +36,18 @@ open VG.RISCV64 VG.Impl.Ecdsa.RISCV64
 def ecdhP384 : Prog isa := Cfg.ecdhFn p384 "vg_p384_check_point" "vg_p384_mul" checkP384 mulP384
 
 end VG.Impl.Ecdh.RISCV64
+
+/-! ## ECDH as emitted
+
+`vg_ecdh_p384`, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+caller-saved registers cleared but the 32 bits of its result (it uses no
+stack), so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdh.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdh_p384` as emitted. -/
+def exchangeP384 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.ecdhP384
+
+end VG.Impl.Ecdh.RISCV64.Fn

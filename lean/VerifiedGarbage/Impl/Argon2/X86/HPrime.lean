@@ -8,7 +8,8 @@ public import VerifiedGarbage.Impl.Blake2.X86.CompressB
 
 `vg_argon2_hprime(input, input_len, out, out_len, scratch)`, cdecl: the
 arguments are at `[esp + 4]` … `[esp + 20]`. Every hash is computed by the
-x86 BLAKE2b streaming functions (`vg_blake2b_init`, `_update_scratch`, `_finalize_scratch`),
+x86 BLAKE2b streaming functions (`vg_blake2b_init_core`, an internal copy of
+`vg_blake2b_init` without its cleanup, `_update_scratch`, `_finalize_scratch`),
 each called with its arguments pushed in a frame of their own.
 
 `ebx` holds `scratch` throughout; its first bytes are laid out as:
@@ -40,7 +41,7 @@ def saved : List (Reg × Nat) := [(.ebx, 840), (.esi, 844), (.edi, 848)]
 def outOff : Nat := 856
 def leftOff : Nat := 860
 
-def initName : String := "vg_blake2b_init"
+def initName : String := "vg_blake2b_init_core"
 def updateName : String := "vg_blake2b_update_scratch"
 def finalizeName : String := "vg_blake2b_finalize_scratch"
 

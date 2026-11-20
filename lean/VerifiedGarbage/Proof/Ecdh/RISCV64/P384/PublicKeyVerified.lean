@@ -19,6 +19,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Exchange
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Tail
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Spec.EcKey
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.P384.RISCV64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
@@ -30,6 +33,9 @@ meta import VerifiedGarbage.Spec.EcKey
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.P384.RISCV64
 
 /-! ### `Ecdh.RISCV64.P384.PublicKey`, which only this module used -/
 
@@ -239,5 +245,15 @@ theorem pk_verified (hL : VG.Proof.Weierstrass.Law W) :
     Verified RISCV64.target publicKeyP384 (Spec.EcKey.P384.inst.publicKeyContract
       (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts)) :=
   Verified.of_correct (pk_rv hL) pk_ct pkRVC_implies
+
+/-- `vg_ec_p384_public_key` as emitted, cleanup included
+(`Impl.Ecdh.RISCV64.Fn.publicKeyP384`), meets its contract in constant time and
+returns without secret residue. -/
+theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeyP384
+      (Spec.EcKey.P384.inst.publicKeyContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.p384CombConsts)) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi) (W := 0)
+    { code := publicKeyP384, verified := pk_verified hL }
+    (EcKey.RISCV64.Scrub.publicKeyOut _ _ Impl.Ecdsa.RISCV64.Comb.p384CombConsts) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.P384

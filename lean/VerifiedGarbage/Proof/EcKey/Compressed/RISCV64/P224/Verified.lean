@@ -31,6 +31,8 @@ public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 import VerifiedGarbage.Proof.EcKey.Compressed.Decode
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Root
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.P224.SqrtTable
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.CheckLit
@@ -54,6 +56,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 
 /-! ### `EcKey.Compressed.RISCV64.P224.Main`, which only this module used -/
 
@@ -1184,5 +1188,25 @@ theorem decompress_verified (hL : VG.Proof.Weierstrass.Law Spec.P224.curve) :
     Verified RISCV64.target decompressP224
       (Spec.EcKey.P224.inst.decompressPublicKeyContract (RISCV64.abi.withConsts sqrtConsts)) :=
   Verified.of_correct (decompress_rv hL) decompress_ct decRVC_implies
+
+/-- `vg_ec_p224_compress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.compressP224`), meets its contract in constant
+time and returns without secret residue. -/
+theorem compress_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.compressP224
+      (Spec.EcKey.P224.inst.compressPublicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.P224.inst.compressPublicKeyApi) (W := 0)
+    { code := compressP224, verified := compress_verified }
+    (EcKey.RISCV64.Scrub.compressOut _ _ []) (by dsimp only; lit_decide)
+
+/-- `vg_ec_p224_decompress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.decompressP224`), meets its contract in
+constant time and returns without secret residue. -/
+theorem decompress_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.P224.curve) :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.decompressP224
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract (RISCV64.abi.withConsts sqrtConsts)) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.P224.inst.decompressPublicKeyApi) (W := 0)
+    { code := decompressP224, verified := decompress_verified hL }
+    (EcKey.RISCV64.Scrub.decompressOut _ _ sqrtConsts) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.RISCV64.P224
