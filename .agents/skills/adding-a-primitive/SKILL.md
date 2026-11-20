@@ -110,9 +110,10 @@ instructions in an ISA model) go in their own PR before either.
    form, no register list, no side condition and no tactic in it
    (`Fn` in `Impl/Sha3/AArch64/Instances.lean`,
    `Proof/Sha3/AArch64/Scrub.lean`, `Artifacts/Sha3/AArch64.lean`).
-   Nothing is worked out of the code when the emitter runs: it only
-   prints, and the kernel has checked what the cleanup needs of the code
-   (`scrubSide … = true`, by `lit_decide`) when the proof module was built.
+   With the registers stated, nothing is worked out of the code when the
+   emitter runs: it only prints, and the kernel has checked what the cleanup
+   needs of the code (`scrubSide … = true`, by `lit_decide`) when the proof
+   module was built.
    For code generic over a variant, the registers are the function's own
    joined with those the variant states it writes (`Clear.union`,
    `Callee.clear`); each variant proves that of its own code where it is
@@ -139,6 +140,26 @@ instructions in an ISA model) go in their own PR before either.
    On AArch64 the cleanup is `Impl.Residue.AArch64.scrubAll` and the
    theorem comes from `AArch64.ScrubAll.verifiedScrubbed`
    (`Proof/Framework/AArch64/ScrubProved.lean`).
+   A function generic over implementations whose registers do not fit one
+   list each (HMAC and PBKDF2 over the hashes: what `finalize` writes is not
+   what `update` writes, and their own instructions differ by parameter
+   set) states no registers. It is
+   `Impl.Residue.AArch64.scrubOf W rb body`, whose cleanup clears the
+   registers `Clear.of` reads off `body`, the functions it calls included
+   (`Impl/Residue/AArch64/Writes.lean`), and its theorem comes from
+   `AArch64.ScrubAll.verifiedScrubbedOf`. That needs of the code only that
+   no instruction writes PSTATE.DIT and that it calls nothing indirectly
+   (`sideAll`), and its frames' depth: each implementation's record carries
+   the fact about its own code (`Compress.side`, by `lit_decide` where it is
+   defined), and the function proves it of its own instructions once, with
+   empty code in the place of the functions it calls
+   (`Fn` in `Impl/Pbkdf2/Md/AnyKey/AArch64.lean`, `hmacInit_scrubbed` in
+   `Proof/Pbkdf2/Md/AArch64/Variant.lean`, `Artifacts/HmacSha256/AArch64.lean`).
+   There the registers are worked out of the code where the definition is
+   evaluated, by the emitter too; that they cover what the code writes is a
+   theorem about every code (`Clear.of_keeps`), not a check of each function.
+   Prefer stated registers for a function that is not generic: its assembly's
+   cleanup is then readable next to its definition.
    On ARM the cleanup is `Impl.Residue.Arm.scrub rb c` for code without
    frames (`Code.noFrames`: it writes memory only in its buffers) and
    `Impl.Residue.Arm.scrubF rb n c` for code with frames, which first

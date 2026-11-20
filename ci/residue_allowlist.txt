@@ -70,15 +70,6 @@ x86 vg_blake2b_update
 x86 vg_blake2s_finalize
 x86 vg_blake2s_init
 x86 vg_blake2s_update
-x86 vg_dsa_derive_key
-x86 vg_dsa_generate_key
-x86 vg_dsa_parameter_search
-x86 vg_dsa_parameter_search_init
-x86 vg_dsa_parameter_search_sha1_shani_sha256_shani
-x86 vg_dsa_sign_random_prevalidated
-x86 vg_dsa_validate_private_key
-x86 vg_dsa_validate_public_key
-x86 vg_dsa_verify_prevalidated
 x86 vg_sm4_cbc_decrypt_chained
 x86 vg_sm4_cbc_encrypt_chained
 x86 vg_sm4_cfb128_decrypt
