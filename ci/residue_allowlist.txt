@@ -44,8 +44,6 @@ arm vg_ecdh_p521
 arm vg_ecdh_p521_umaal
 arm vg_ecdh_secp256k1
 arm vg_ecdh_secp256k1_umaal
-arm vg_ffdh_generate_parameters
-arm vg_ffdh_generate_parameters_umaal
 arm vg_idea_cbc_decrypt_chained
 arm vg_idea_cbc_encrypt_chained
 arm vg_idea_cfb64_decrypt
