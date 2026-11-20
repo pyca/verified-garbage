@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Aes.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Aes.Contract
@@ -79,40 +81,26 @@ theorem expandKeyOut (stack : Nat) :
 abbrev expandKeyCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey
 
-def expandKeyKs : List Nat := keep_for% Spec.Aes.expandKeyApi.sig 520 expandKeyCode []
+theorem expandKey_scrubbed :
+    VerifiedScrubbed target Impl.Aes.X86_64.Fn.expandKey (Spec.Aes.expandKeyApi.contract X86_64.abi 520) 0 :=
+  verifiedScrubbedSel (api := Spec.Aes.expandKeyApi)
+    { code := expandKeyCode
+      stack := 520
+      verified := Proof.Aes.X86_64.scalar_expandKey_framed }
+    .sse [(0, 1)] (expandKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Aes.expandKeyApi.sig 520 []) expandKeyCode
-      h).any (RScrub.resOkB · 520 expandKeyKs (Impl.Scrub.X86_64.chunks 520)) = true :=
-  RScrub.Analysed.ok_of expandKeyKs (by taint_decide)
+theorem expandKey_spSafe : Impl.Aes.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def expandKeyAesniKs : List Nat :=
-  keep_for% Spec.Aes.expandKeyApi.sig 0 Impl.Aes.X86_64.AesNi.expandKey []
+theorem expandKeyAesni_scrubbed :
+    VerifiedScrubbed target Impl.Aes.X86_64.Fn.expandKeyAesni (Spec.Aes.expandKeyApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Aes.expandKeyApi)
+    { code := Impl.Aes.X86_64.AesNi.expandKey
+      verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified }
+    .sse [] (expandKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem expandKeyAesniOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Aes.expandKeyApi.sig 0 [])
-      Impl.Aes.X86_64.AesNi.expandKey h).any
-      (RScrub.resOkB · 0 expandKeyAesniKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of expandKeyAesniKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_aes_expand_key`. -/
-def expandKeyReg : Registration Spec.Aes.expandKeyApi X86_64.target :=
-  scrubOf {
-    code := expandKeyCode
-    stack := 520
-    verified := Proof.Aes.X86_64.scalar_expandKey_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_aes_expand_key_aesni`. -/
-def expandKeyAesniReg : Registration Spec.Aes.expandKeyApi X86_64.target :=
-  scrubOf {
-    suffix := "_aesni"
-    code := Impl.Aes.X86_64.AesNi.expandKey
-    verified := Proof.Aes.X86_64.AesNi.Key.expandKey3_verified } .sse true [.rsi]
-    (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyAesniKs, expandKeyAesniOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem expandKeyAesni_spSafe :
+    Impl.Aes.X86_64.Fn.expandKeyAesni.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
 end VG.Proof.Aes.X86_64.Scrub
