@@ -921,7 +921,7 @@ theorem block_rel :
 
 theorem init_rel :
     RelCT isa (fun x y => Pro4 a x ∧ Pro4 b y)
-      (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init) fun _ _ => True :=
+      (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init) fun _ _ => True :=
   RelCT.callWith Proof.Poly1305.X86.init_ok Proof.Poly1305.X86.init_ct (rdInit a) (wrInit a)
     fun x y ⟨hx, hy⟩ => by
       obtain py := init_pre hb hy.at_ hy.ecx hy.edx
