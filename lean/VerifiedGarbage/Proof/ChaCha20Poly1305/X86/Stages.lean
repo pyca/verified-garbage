@@ -731,7 +731,7 @@ theorem init_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (hecx : s.
       Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem →
       Repr s'.mem (cx s₀ + BitVec.ofNat 64 448) (bytesAt s.mem (cx s₀ + BitVec.ofNat 64 128) 32) [] →
       Q s') :
-    WP isa (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init) s Q := by
+    WP isa (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init) s Q := by
   obtain hk : [Reg.ecx, .edx].length ≤ 5 := by decide
   obtain fit := h.fit hp hk
   have e := hp.sp_lo
@@ -1956,7 +1956,7 @@ theorem pro4_ok {s₀ : State} {s : State} (h : Pro3 s₀ s) :
     by rw [g₂ _ (by decide), e₁, h.edi], by rw [e₂, edi₁]⟩
 
 theorem post_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Pro4 s₀ s) :
-    WP isa (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init) s (PostP s₀) := by
+    WP isa (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init) s (PostP s₀) := by
   refine init_call hp h.at_ h.ecx h.edx fun s' at' cs' f' repr' => ?_
   obtain hd : ∀ {k n : Nat}, k + n ≤ 704 → (k + n ≤ 448 ∨ 448 + 128 ≤ k) →
       ∀ r ∈ [sub s₀ 448 128, stkR s₀], (sub s₀ k n).Disjoint r := by
@@ -1985,7 +1985,7 @@ theorem prologue_eq : prologue =
     (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
     (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
     (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
-      (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init)))) := rfl
+      (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init)))) := rfl
 
 theorem prologue_ok {s₀ : State} (hp : APre e s₀) : WP isa prologue s₀ (PostP s₀) := by
   rw [prologue_eq]
