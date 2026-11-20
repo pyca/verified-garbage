@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Verified
 public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesXts.X86Unit
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -14,6 +16,8 @@ meta import VerifiedGarbage.Spec.Xts.Contract
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesXts.X86Unit
 
 /-!
 # XTS-AES on x86 (32-bit), without secret residue
@@ -23,9 +27,10 @@ return only within the data unit (`encryptUnitOut`, `decryptUnitOut`), as on
 PPC64LE (`Proof/AesXts/PPC64LE/Scrub.lean`): what the scrub of their frames
 and calls needs (`X86.Scrub.PostOut`).
 
-Each is registered with `X86.Scrub.scrubFOf` (`encryptUnitReg`,
-`decryptUnitReg`), which zeroes the stack of its contract below `esp` and
-clears the registers. What that needs of the code (`scrubFSide`) holds
+Each as emitted (`Impl.AesXts.X86Unit.Fn`) zeroes the stack of its
+contract below `esp` and clears the registers, and returns without secret
+residue (`X86.Scrub.verifiedScrubbedF`: `encryptUnit_scrubbed`,
+`decryptUnit_scrubbed`). What that needs of the code (`scrubFSide`) holds
 whatever the implementation of the block functions (`encrypt_scrub`,
 `decrypt_scrub`): from XTS's code with stub block functions, whose code is
 `.block []`, which the kernel evaluates once (`encrypt_side`,
@@ -118,24 +123,49 @@ theorem decrypt_scrub (v : BlocksImpl) :
   scrubFSide_of_fill (decrypt_fill _ _ _ (calleeSide_of_eq v.encStack v.encScrub)
     (calleeSide_of_eq v.decStack v.decScrub)) decrypt_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_xts_encrypt_unit` over `v`, without secret residue. -/
-def encryptUnitReg (v : BlocksImpl) : Registration Spec.Xts.aesEncryptUnitApi target :=
-  scrubFOf {
+/-- `vg_aes_xts_encrypt_unit` over `v` as emitted (`Impl.AesXts.X86Unit.Fn.encrypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem encryptUnit_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.encrypt (Proof.AesXts.X86.Unit.xtsE v))
+      (Spec.Xts.aesEncryptUnitContract X86.abi 52) 0 :=
+  verifiedScrubbedF (api := Spec.Xts.aesEncryptUnitApi) {
       suffix := v.suffix
       code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)
       verified := Unit.encrypt_verified v
       spSafe := Unit.encrypt_spSafe v }
     (encryptUnitOut _) (W := 52) (hs := encrypt_scrub v)
 
-/-- `vg_aes_xts_decrypt_unit` over `v`, without secret residue. -/
-def decryptUnitReg (v : BlocksImpl) : Registration Spec.Xts.aesDecryptUnitApi target :=
-  scrubFOf {
+/-- `vg_aes_xts_decrypt_unit` over `v` as emitted (`Impl.AesXts.X86Unit.Fn.decrypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem decryptUnit_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesXts.X86Unit.Fn.decrypt (Proof.AesXts.X86.Unit.xtsE v) (Proof.AesXts.X86.Unit.xtsD v))
+      (Spec.Xts.aesDecryptUnitContract X86.abi 52) 0 :=
+  verifiedScrubbedF (api := Spec.Xts.aesDecryptUnitApi) {
       suffix := v.suffix
       code := Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)
       verified := Unit.decrypt_verified v
       spSafe := Unit.decrypt_spSafe v }
     (decryptUnitOut _) (W := 52) (hs := decrypt_scrub v)
+
+/-- The code as emitted, `c` and then its cleanup, writes `esp` only in its
+frames and calls, as `c` does. -/
+theorem scrubF_spSafe {rb W : Nat} {c : Prog X86.isa} (h : c.all (fun i => !X86.isa.writesSp i) = true) :
+    (Impl.Scrub.X86.scrubF rb W c).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
+    Bool.true_and, Bool.and_true]
+  exact wipe_all _
+
+/-- `Impl.AesXts.X86Unit.Fn.encrypt` writes `esp` only in its frames and calls. -/
+theorem encryptUnit_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesXts.X86Unit.Fn.encrypt (Proof.AesXts.X86.Unit.xtsE v)).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Unit.encrypt_spSafe v)
+
+/-- `Impl.AesXts.X86Unit.Fn.decrypt` writes `esp` only in its frames and calls. -/
+theorem decryptUnit_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesXts.X86Unit.Fn.decrypt (Proof.AesXts.X86.Unit.xtsE v) (Proof.AesXts.X86.Unit.xtsD v)).all
+      (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Unit.decrypt_spSafe v)
 
 end VG.Proof.AesXts.X86.Scrub
