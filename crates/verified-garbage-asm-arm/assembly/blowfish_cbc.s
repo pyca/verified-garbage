@@ -44,7 +44,7 @@ vg_blowfish_cbc_encrypt_chained:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_blowfish_ecb_encrypt}
+	bl {vg_blowfish_ecb_encrypt_entry}
 	ldr r9, [r8, #40]
 	str r9, [r6, #0]
 	ldr r9, [r8, #44]
@@ -85,6 +85,29 @@ vg_blowfish_cbc_encrypt_chained:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	add sp, sp, #320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_blowfish_cbc_decrypt_chained:
@@ -123,7 +146,7 @@ vg_blowfish_cbc_decrypt_chained:
 	mov r0, r4
 	add r1, r6, #0
 	mov r2, #1
-	bl {vg_blowfish_ecb_decrypt}
+	bl {vg_blowfish_ecb_decrypt_entry}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -172,4 +195,27 @@ vg_blowfish_cbc_decrypt_chained:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	add sp, sp, #320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

@@ -32,6 +32,7 @@ meta import VerifiedGarbage.Proof.Modes.Arm.ScrubCode
 meta import VerifiedGarbage.Proof.Blowfish.ScrubLocal
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # Blowfish on ARMv7, without secret residue
