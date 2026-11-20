@@ -27,7 +27,8 @@ section
 /-!
 # ChaCha20 on x86 (32-bit): the quarter round on XMM registers
 
-`vqr a b c d` computes the quarter round on each doubleword of `a, b, c, d`.
+`vqr a b c d t` computes the quarter round on each doubleword of `a, b, c, d`,
+with `t` as scratch.
 -/
 
 @[expose] public section
@@ -62,21 +63,21 @@ abbrev dw (s : State) (r : XReg) (l : Nat) : Word := dword (s.xmm r) l
 theorem ea_setXmm' (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
 
 /-- The quarter round on each doubleword of `a, b, c, d`, and only them and
-`xmm7` written. -/
-def QrPost (a b c d : XReg) (s s' : State) : Prop :=
+`t` written. -/
+def QrPost (a b c d t : XReg) (s s' : State) : Prop :=
   (∀ l, l < 4 →
     dw s' a l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).1 ∧
     dw s' b l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.1 ∧
     dw s' c l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.2.1 ∧
     dw s' d l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.2.2) ∧
-  (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → r ≠ .xmm7 → s'.xmm r = s.xmm r) ∧
+  (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → r ≠ t → s'.xmm r = s.xmm r) ∧
   s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
 
-/-- `vqr a b c d` computes the quarter round on each doubleword of `a, b, c,
-d` (four distinct registers other than `xmm7`), writing only them and `xmm7`. -/
-theorem vqr_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c)
-    (hbd : b ≠ d) (hcd : c ≠ d) (ha : a ≠ .xmm7) (hb : b ≠ .xmm7) (hc : c ≠ .xmm7)
-    (hd : d ≠ .xmm7) (s : State) : WP isa (.block (vqr a b c d)) s (QrPost a b c d s) := by
+/-- `vqr a b c d t` computes the quarter round on each doubleword of `a, b, c,
+d` (four distinct registers other than `t`), writing only them and `t`. -/
+theorem vqr_ok {a b c d t : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c)
+    (hbd : b ≠ d) (hcd : c ≠ d) (ha : a ≠ t) (hb : b ≠ t) (hc : c ≠ t)
+    (hd : d ≠ t) (s : State) : WP isa (.block (vqr a b c d t)) s (QrPost a b c d t s) := by
   unfold QrPost
   apply WP.of_runBlock
   simp only [vqr, vrot, xb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
@@ -137,15 +138,15 @@ theorem dword_pshufb8 (x : BitVec 128) {i : Nat} (hi : i < 4) :
     dword (XBinOp.eval .pshufb x mask8) i = (dword x i).rotateLeft 8 := by
   rw [pshufb8_bytes, dword_rotBytes _ hi (t := 3) (by decide)]
 
-/-- `vqr3 a b c d` computes the quarter round on each doubleword of `a, b, c,
-d` (four distinct registers other than `xmm7`), writing only them and `xmm7`,
+/-- `vqr3 a b c d t` computes the quarter round on each doubleword of `a, b,
+c, d` (four distinct registers other than `t`), writing only them and `t`,
 with `edi` pointing at memory holding its controls. -/
-theorem vqr3_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c)
-    (hbd : b ≠ d) (hcd : c ≠ d) (ha : a ≠ .xmm7) (hb : b ≠ .xmm7) (hc : c ≠ .xmm7)
-    (hd : d ≠ .xmm7) {p₁ p₂ : Addr} (s : State) (e₁ : s.ea (at_ .edi rot16Off) = p₁)
+theorem vqr3_ok {a b c d t : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c)
+    (hbd : b ≠ d) (hcd : c ≠ d) (ha : a ≠ t) (hb : b ≠ t) (hc : c ≠ t)
+    (hd : d ≠ t) {p₁ p₂ : Addr} (s : State) (e₁ : s.ea (at_ .edi rot16Off) = p₁)
     (e₂ : s.ea (at_ .edi rot8Off) = p₂) (i₁ : InRegions (s.rd ++ s.wr) p₁ 16)
     (i₂ : InRegions (s.rd ++ s.wr) p₂ 16) (m₁ : s.mem.readW p₁ 128 = mask16)
-    (m₂ : s.mem.readW p₂ 128 = mask8) : WP isa (.block (vqr3 a b c d)) s (QrPost a b c d s) := by
+    (m₂ : s.mem.readW p₂ 128 = mask8) : WP isa (.block (vqr3 a b c d t)) s (QrPost a b c d t s) := by
   unfold QrPost
   apply WP.of_runBlock
   simp only [vqr3, vrot, xb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
@@ -180,9 +181,10 @@ end
 Doubleword `l` of each slot of `buf` (and of each register) holds a word of
 block `l`; each quarter round of the code is the specification's on each of
 the four blocks. During the rounds a word is in its slot or in a register
-(`Loc`); one lemma (`step_ok`) covers every quarter round of `plan`, whose
-loads, registers and stores are checked against where the words are by
-evaluation (`stepOk`). The output XORs each 16 bytes of keystream with the
+(`Loc`); one lemma (`step_ok`) covers every quarter round of a schedule,
+whose loads, registers and stores are checked against where the words are
+by evaluation (`stepOk`), and a double round is the specification's whatever
+the order of each round's quarter rounds (`SchedOk`, `qround_comm`). The output XORs each 16 bytes of keystream with the
 source into the destination if they lie within the data, and stores the 16
 bytes that run past its end in `buf[0, 16)` (`chunk_ok`). The destination is
 the source itself or apart from it; either way the source of a chunk not yet
@@ -310,17 +312,25 @@ def storesLoc : Loc → List (Nat × XReg) → Loc
   | L, p :: ps => storesLoc (upd L p.1 none) ps
 
 /-- The quarter round on `x, y, z, w`: they are in `q`'s registers, distinct
-and not `xmm7`, which hold no other word; no word is in `xmm7`. -/
+and not its temporary's, which hold no other word; no word is in the
+temporary's. -/
 def quadOk (L : Loc) (q : QStep) (x y z w : Nat) : Bool := decide (
   L x = some q.a ∧ L y = some q.b ∧ L z = some q.c ∧ L w = some q.d ∧
   q.a ≠ q.b ∧ q.a ≠ q.c ∧ q.a ≠ q.d ∧ q.b ≠ q.c ∧ q.b ≠ q.d ∧ q.c ≠ q.d ∧
-  q.a ≠ .xmm7 ∧ q.b ≠ .xmm7 ∧ q.c ≠ .xmm7 ∧ q.d ≠ .xmm7 ∧
-  (∀ j : Nat, j < 16 → L j ≠ some .xmm7) ∧
+  q.a ≠ q.t ∧ q.b ≠ q.t ∧ q.c ≠ q.t ∧ q.d ≠ q.t ∧
+  (∀ j : Nat, j < 16 → L j ≠ some q.t) ∧
   ∀ j : Nat, j < 16 → j = x ∨ j = y ∨ j = z ∨ j = w ∨
     (L j ≠ some q.a ∧ L j ≠ some q.b ∧ L j ≠ some q.c ∧ L j ≠ some q.d))
 
-def stepOk (L : Loc) (q : QStep) (x y z w : Nat) : Bool :=
-  loadsOk L q.loads && quadOk (loadsLoc L q.loads) q x y z w && storesOk (loadsLoc L q.loads) q.stores
+/-- A quarter round of a schedule, with the words where `L` says: its words
+are words of the state, and its loads, its registers and its stores fit. -/
+def stepOk (L : Loc) (q : QStep) : Bool :=
+  decide (q.on.1 < 16 ∧ q.on.2.1 < 16 ∧ q.on.2.2.1 < 16 ∧ q.on.2.2.2 < 16) && loadsOk L q.loads &&
+    quadOk (loadsLoc L q.loads) q q.on.1 q.on.2.1 q.on.2.2.1 q.on.2.2.2 && storesOk (loadsLoc L q.loads) q.stores
+
+/-- The specification's quarter round that `q` is. -/
+def rnd (q : QStep) (v : CState) : CState :=
+  qround v (Fin.ofNat 16 q.on.1) (Fin.ofNat 16 q.on.2.1) (Fin.ofNat 16 q.on.2.2.1) (Fin.ofNat 16 q.on.2.2.2)
 
 def stepLoc (L : Loc) (q : QStep) : Loc := storesLoc (loadsLoc L q.loads) q.stores
 
@@ -336,6 +346,93 @@ theorem RI.congr {buf : Addr} {L L' : Loc} {vs : Nat → CState} {s₀ s : State
     (he : ∀ j, j < 16 → L j = L' j) (h : RI buf L vs s₀ s) : RI buf L' vs s₀ s :=
   ⟨h.holds.congr he, h.frame, h.gpr, h.rd, h.wr⟩
 
+/-! ## Schedules -/
+
+/-- The loads of a schedule's cached words. -/
+def enter (sc : Sched) : List (XReg × Nat) := sc.cached.map fun p => (p.2, p.1)
+
+/-- Where the words are between double rounds. -/
+def loc₀ (sc : Sched) : Loc := loadsLoc (fun _ => none) (enter sc)
+
+/-- Where the words are before quarter round `i` of a double round. -/
+def locs (sc : Sched) : Nat → Loc
+  | 0 => loc₀ sc
+  | i + 1 => stepLoc (locs sc i) (sc.q i)
+
+/-- Two quarter rounds on different words commute. -/
+theorem qround_comm (v : CState) (x y z w x' y' z' w' : Fin 16)
+    (h : decide (x.1 ≠ x'.1 ∧ x.1 ≠ y'.1 ∧ x.1 ≠ z'.1 ∧ x.1 ≠ w'.1 ∧ y.1 ≠ x'.1 ∧ y.1 ≠ y'.1 ∧ y.1 ≠ z'.1 ∧
+      y.1 ≠ w'.1 ∧ z.1 ≠ x'.1 ∧ z.1 ≠ y'.1 ∧ z.1 ≠ z'.1 ∧ z.1 ≠ w'.1 ∧ w.1 ≠ x'.1 ∧ w.1 ≠ y'.1 ∧
+      w.1 ≠ z'.1 ∧ w.1 ≠ w'.1) = true) :
+    qround (qround v x y z w) x' y' z' w' = qround (qround v x' y' z' w') x y z w := by
+  obtain ⟨xx, xy, xz, xw, yx, yy, yz, yw, zx, zy, zz, zw, wx, wy, wz, ww⟩ := of_decide_eq_true h
+  have o : ∀ (v : CState) (a b c d k : Fin 16), a.1 ≠ k.1 → b.1 ≠ k.1 → c.1 ≠ k.1 → d.1 ≠ k.1 →
+      (qround v a b c d)[k] = v[k] := fun v a b c d k ha hb hc hd => by
+    rw [Fin.getElem_fin, qround_get, ite_eq_right hd, ite_eq_right hc, ite_eq_right hb, ite_eq_right ha]; rfl
+  apply Vector.ext
+  intro k hk
+  rw [qround_get, o v x y z w x' xx yx zx wx, o v x y z w y' xy yy zy wy, o v x y z w z' xz yz zz wz,
+    o v x y z w w' xw yw zw ww, qround_get]
+  conv => rhs; rw [qround_get, o v x' y' z' w' x (Ne.symm xx) (Ne.symm xy) (Ne.symm xz) (Ne.symm xw),
+    o v x' y' z' w' y (Ne.symm yx) (Ne.symm yy) (Ne.symm yz) (Ne.symm yw),
+    o v x' y' z' w' z (Ne.symm zx) (Ne.symm zy) (Ne.symm zz) (Ne.symm zw),
+    o v x' y' z' w' w (Ne.symm wx) (Ne.symm wy) (Ne.symm wz) (Ne.symm ww), qround_get]
+  by_cases hwp : w'.1 = k
+  · subst hwp
+    rw [ite_eq_left rfl, ite_eq_right ww, ite_eq_right zw, ite_eq_right yw, ite_eq_right xw, ite_eq_left rfl]
+  by_cases hzp : z'.1 = k
+  · subst hzp
+    rw [ite_eq_right hwp, ite_eq_left rfl, ite_eq_right wz, ite_eq_right zz, ite_eq_right yz, ite_eq_right xz,
+      ite_eq_right hwp, ite_eq_left rfl]
+  by_cases hyp : y'.1 = k
+  · subst hyp
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_left rfl, ite_eq_right wy, ite_eq_right zy, ite_eq_right yy,
+      ite_eq_right xy, ite_eq_right hwp, ite_eq_right hzp, ite_eq_left rfl]
+  by_cases hxp : x'.1 = k
+  · subst hxp
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_left rfl, ite_eq_right wx, ite_eq_right zx,
+      ite_eq_right yx, ite_eq_right xx, ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_left rfl]
+  by_cases hw : w.1 = k
+  · subst hw
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp, ite_eq_left rfl, ite_eq_left rfl]
+  by_cases hz : z.1 = k
+  · subst hz
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp, ite_eq_right hw, ite_eq_left
+      rfl, ite_eq_right hw, ite_eq_left rfl]
+  by_cases hy : y.1 = k
+  · subst hy
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp, ite_eq_right hw, ite_eq_right
+      hz, ite_eq_left rfl, ite_eq_right hw, ite_eq_right hz, ite_eq_left rfl]
+  by_cases hx : x.1 = k
+  · subst hx
+    rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp, ite_eq_right hw, ite_eq_right
+      hz, ite_eq_right hy, ite_eq_left rfl, ite_eq_right hw, ite_eq_right hz, ite_eq_right hy, ite_eq_left rfl]
+  rw [ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp, ite_eq_right hw, ite_eq_right hz,
+    ite_eq_right hy, ite_eq_right hx, ite_eq_right hw, ite_eq_right hz, ite_eq_right hy, ite_eq_right hx,
+    ite_eq_right hwp, ite_eq_right hzp, ite_eq_right hyp, ite_eq_right hxp]
+
+/-- What the rounds need of a schedule: its cached words' loads, each of its
+eight quarter rounds and its cached words' stores fit where the words are,
+which is the same after a double round as before it; and its quarter rounds
+are a double round of the specification. -/
+structure SchedOk (sc : Sched) : Prop where
+  enter : loadsOk (fun _ => none) (enter sc) = true
+  steps : ∀ i, i < 8 → stepOk (locs sc i) (sc.q i) = true
+  back : ∀ j, j < 16 → locs sc 8 j = loc₀ sc j
+  leave : storesOk (loc₀ sc) sc.cached = true
+  left : ∀ j, j < 16 → storesLoc (loc₀ sc) sc.cached j = none
+  round : ∀ v : CState, rnd (sc.q 7) (rnd (sc.q 6) (rnd (sc.q 5) (rnd (sc.q 4) (rnd (sc.q 3)
+    (rnd (sc.q 2) (rnd (sc.q 1) (rnd (sc.q 0) v))))))) = innerBlock v
+
+/-- `SchedOk.steps`, a quarter round at a time. -/
+theorem steps_of {sc : Sched} (h0 : stepOk (locs sc 0) (sc.q 0) = true) (h1 : stepOk (locs sc 1) (sc.q 1) = true)
+    (h2 : stepOk (locs sc 2) (sc.q 2) = true) (h3 : stepOk (locs sc 3) (sc.q 3) = true)
+    (h4 : stepOk (locs sc 4) (sc.q 4) = true) (h5 : stepOk (locs sc 5) (sc.q 5) = true)
+    (h6 : stepOk (locs sc 6) (sc.q 6) = true) (h7 : stepOk (locs sc 7) (sc.q 7) = true) :
+    ∀ i, i < 8 → stepOk (locs sc i) (sc.q i) = true
+  | 0, _ => h0 | 1, _ => h1 | 2, _ => h2 | 3, _ => h3 | 4, _ => h4 | 5, _ => h5 | 6, _ => h6 | 7, _ => h7
+  | _ + 8, h => absurd h (by omega_using [])
+
 /-- `buf[288, 320)`, where a quarter round may keep constants. -/
 abbrev kR (buf : Addr) : Region := ⟨buf + BitVec.ofNat 64 288, 32⟩
 
@@ -346,13 +443,14 @@ structure KernelOk (k : Kernel) where
   Inv : Addr → Mem → Prop
   inv_frame : ∀ {buf : Addr} {m m' : Mem} {rs : List Region}, Inv buf m → Frame rs m m' →
     (∀ r ∈ rs, (kR buf).Disjoint r) → Inv buf m'
-  qr_ok : ∀ {buf : Addr} {a b c d : XReg}, a ≠ b → a ≠ c → a ≠ d → b ≠ c → b ≠ d → c ≠ d →
-    a ≠ .xmm7 → b ≠ .xmm7 → c ≠ .xmm7 → d ≠ .xmm7 → ∀ s : State,
+  qr_ok : ∀ {buf : Addr} {a b c d t : XReg}, a ≠ b → a ≠ c → a ≠ d → b ≠ c → b ≠ d → c ≠ d →
+    a ≠ t → b ≠ t → c ≠ t → d ≠ t → ∀ s : State,
     (∀ e, e < 320 → s.ea (at_ .edi e) = buf + BitVec.ofNat 64 e) → bufR buf ∈ s.wr → Inv buf s.mem →
-    WP isa (.block (k.qr a b c d)) s (QrPost a b c d s)
+    WP isa (.block (k.qr a b c d t)) s (QrPost a b c d t s)
   init_ok : ∀ {buf : Addr} (s : State), (∀ e, e < 320 → s.ea (at_ .edi e) = buf + BitVec.ofNat 64 e) →
     bufR buf ∈ s.wr → WP isa (.block k.init) s fun s' => Inv buf s'.mem ∧ Frame [kR buf] s.mem s'.mem ∧
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+  sched : SchedOk k.sched
 
 theorem kR_slots (buf : Addr) : (kR buf).Disjoint (slotsR buf) := Offset.disjoint_base _ (by decide) (by decide)
 
@@ -430,7 +528,7 @@ theorem quad_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : L
     {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
     (hw : w < 16) (hok : quadOk L q x y z w = true) {vs : Nat → CState} {s : State}
     (h : RI buf L vs s₀ s) :
-    WP isa (.block (k.qr q.a q.b q.c q.d)) s
+    WP isa (.block (k.qr q.a q.b q.c q.d q.t)) s
       (RI buf L (fun l => qround (vs l) ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) := by
   simp only [quadOk, decide_eq_true_eq] at hok
   obtain ⟨hLa, hLb, hLc, hLd, hab, hac, had, hbc, hbd, hcd, ha7, hb7, hc7, hd7, h7, ho⟩ := hok
@@ -470,13 +568,16 @@ theorem quad_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : L
       (fun e => nc (by rw [hL, e])) (fun e => nd (by rw [hL, e])) (fun e => h7 k hk (by rw [hL, e]))]
 
 theorem step_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : Loc} {q : QStep}
-    {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
-    (hw : w < 16) (hok : stepOk L q x y z w = true) {vs : Nat → CState} {s : State}
-    (h : RI buf L vs s₀ s) :
-    WP isa (.block (q.code k)) s
-      (RI buf (stepLoc L q) (fun l => qround (vs l) ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) := by
-  simp only [stepOk, Bool.and_eq_true] at hok
-  obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hok
+    (hok : stepOk L q = true) {vs : Nat → CState} {s : State} (h : RI buf L vs s₀ s) :
+    WP isa (.block (q.code k)) s (RI buf (stepLoc L q) (fun l => rnd q (vs l)) s₀) := by
+  simp only [stepOk, Bool.and_eq_true, decide_eq_true_eq] at hok
+  obtain ⟨⟨⟨⟨hx, hy, hz, hw⟩, h₁⟩, h₂⟩, h₃⟩ := hok
+  have e : ∀ v, rnd q v = qround v ⟨_, hx⟩ ⟨_, hy⟩ ⟨_, hz⟩ ⟨_, hw⟩ := fun v => by
+    rw [rnd, show Fin.ofNat 16 q.on.1 = ⟨_, hx⟩ from Fin.ext (Nat.mod_eq_of_lt hx),
+      show Fin.ofNat 16 q.on.2.1 = ⟨_, hy⟩ from Fin.ext (Nat.mod_eq_of_lt hy),
+      show Fin.ofNat 16 q.on.2.2.1 = ⟨_, hz⟩ from Fin.ext (Nat.mod_eq_of_lt hz),
+      show Fin.ofNat 16 q.on.2.2.2 = ⟨_, hw⟩ from Fin.ext (Nat.mod_eq_of_lt hw)]
+  simp only [e]
   rw [QStep.code, WP.block_append_iff, WP.block_append_iff]
   exact WP.mono (loads_ok hb hwb _ _ s h₁ h) fun s₁ r₁ =>
     WP.mono (quad_ok hb hwb K hinv hx hy hz hw h₂ r₁) fun s₂ r₂ => stores_ok hb hwb _ _ s₂ h₃ r₂
@@ -484,22 +585,6 @@ theorem step_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : L
 end
 
 /-! ## Double rounds -/
-
-/-- The quarter rounds of `plan`. -/
-abbrev qs (i : Nat) : QStep := plan.getD i ⟨[], .xmm0, .xmm0, .xmm0, .xmm0, []⟩
-
-/-- The loads of `cached`. -/
-def enter : List (XReg × Nat) := cached.map fun p => (p.2, p.1)
-
-/-- Where the words are between double rounds. -/
-def loc₀ : Loc := loadsLoc (fun _ => none) enter
-
-/-- Where the words are before quarter round `i` of a double round. -/
-def locs : Nat → Loc
-  | 0 => loc₀
-  | i + 1 => stepLoc (locs i) (qs i)
-
-theorem locs_8 : ∀ j, j < 16 → locs 8 j = loc₀ j := by decide
 
 /-- The rounds invariant with every word in its slot. -/
 abbrev RI4 (buf : Addr) (vs : Nat → CState) (s₀ s : State) : Prop := RI buf (fun _ => none) vs s₀ s
@@ -510,44 +595,49 @@ variable {buf : Addr} {s₀ : State} (hb : ∀ d, d < 320 → s₀.ea (at_ .edi 
 include hb hwb
 
 theorem doubleRound4_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
-    {s : State} (h : RI buf loc₀ vs s₀ s) :
-    WP isa (doubleRound4 k) s (RI buf loc₀ (fun l => innerBlock (vs l)) s₀) := by
-  unfold doubleRound4
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 0) (q := qs 0) (x := 0) (y := 4) (z := 8) (w := 12)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h) fun _ h1 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 1) (q := qs 1) (x := 1) (y := 5) (z := 9) (w := 13)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h1) fun _ h2 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 2) (q := qs 2) (x := 2) (y := 6) (z := 10) (w := 14)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h2) fun _ h3 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 3) (q := qs 3) (x := 3) (y := 7) (z := 11) (w := 15)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h3) fun _ h4 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 4) (q := qs 4) (x := 0) (y := 5) (z := 10) (w := 15)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h4) fun _ h5 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 5) (q := qs 5) (x := 1) (y := 6) (z := 11) (w := 12)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h5) fun _ h6 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 6) (q := qs 6) (x := 2) (y := 7) (z := 8) (w := 13)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h6) fun _ h7 => ?_)
-  exact WP.mono (step_ok hb hwb K hinv (L := locs 7) (q := qs 7) (x := 3) (y := 4) (z := 9) (w := 14)
-    (by decide) (by decide) (by decide) (by decide) (by decide) h7) fun _ h8 => h8.congr locs_8
+    {s : State} (h : RI buf (loc₀ k.sched) vs s₀ s) :
+    WP isa (doubleRound4 k) s (RI buf (loc₀ k.sched) (fun l => innerBlock (vs l)) s₀) := by
+  unfold doubleRound4 quarter4
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 0) (K.sched.steps 0 (by decide)) h)
+    fun _ h1 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 1) (K.sched.steps 1 (by decide)) h1)
+    fun _ h2 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 2) (K.sched.steps 2 (by decide)) h2)
+    fun _ h3 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 3) (K.sched.steps 3 (by decide)) h3)
+    fun _ h4 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 4) (K.sched.steps 4 (by decide)) h4)
+    fun _ h5 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 5) (K.sched.steps 5 (by decide)) h5)
+    fun _ h6 => ?_)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs k.sched 6) (K.sched.steps 6 (by decide)) h6)
+    fun _ h7 => ?_)
+  refine WP.mono (step_ok hb hwb K hinv (L := locs k.sched 7) (K.sched.steps 7 (by decide)) h7) fun _ h8 => ?_
+  have e : (fun l => rnd (k.sched.q 7) (rnd (k.sched.q 6) (rnd (k.sched.q 5) (rnd (k.sched.q 4)
+      (rnd (k.sched.q 3) (rnd (k.sched.q 2) (rnd (k.sched.q 1) (rnd (k.sched.q 0) (vs l)))))))))
+      = fun l => innerBlock (vs l) := funext fun l => K.sched.round (vs l)
+  exact e ▸ h8.congr K.sched.back
 
 theorem rounds4_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
-    {s : State} (h : RI buf loc₀ vs s₀ s) :
-    ∀ n, WP isa (rounds4 k n) s (RI buf loc₀ (fun l => Nat.repeat innerBlock n (vs l)) s₀)
+    {s : State} (h : RI buf (loc₀ k.sched) vs s₀ s) :
+    ∀ n, WP isa (rounds4 k n) s (RI buf (loc₀ k.sched) (fun l => Nat.repeat innerBlock n (vs l)) s₀)
   | 0 => WP.block_nil h
   | n + 1 => WP.seq (WP.mono (rounds4_ok K hinv h n) fun _ h' => doubleRound4_ok hb hwb K hinv h')
 
 omit hb hwb in
-theorem enter_eq : cached.map (fun p => ld p.2 p.1) = enter.map fun p => ld p.1 p.2 := rfl
+theorem enter_eq (sc : Sched) : sc.cached.map (fun p => ld p.2 p.1) = (enter sc).map fun p => ld p.1 p.2 := by
+  simp only [enter, List.map_map]; rfl
 
 theorem rounds_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
     (h : Holds4 buf vs s₀.mem) :
     WP isa (rounds10 k) s₀ (RI4 buf (fun l => Nat.repeat innerBlock 10 (vs l)) s₀) := by
   unfold rounds10
   rw [enter_eq]
-  refine WP.seq (WP.mono (loads_ok hb hwb (vs := vs) enter (fun _ => none) s₀ (by decide)
+  refine WP.seq (WP.mono (loads_ok hb hwb (vs := vs) (enter k.sched) (fun _ => none) s₀ K.sched.enter
     ⟨h, Frame.refl _ _, rfl, rfl, rfl⟩) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (rounds4_ok hb hwb K hinv h₁ 10) fun s₂ h₂ => ?_)
-  exact WP.mono (stores_ok hb hwb cached loc₀ s₂ (by decide) h₂) fun _ h₃ => h₃.congr (by decide)
+  exact WP.mono (stores_ok hb hwb k.sched.cached (loc₀ k.sched) s₂ K.sched.leave h₂) fun _ h₃ =>
+    h₃.congr K.sched.left
 
 end
 
@@ -1266,7 +1356,7 @@ end
 `sse2Ok` and `ssse3Ok` are what the four-block code needs of its quarter
 round (`Quad.KernelOk`): `vqr` needs nothing; `vqr3` needs its `pshufb`
 controls in `buf[288, 320)`, which `masks` stores there and the four-block
-code never writes.
+code never writes. Each has its rounds' schedule (`earlyOk`, `fewLoadsOk`).
 -/
 
 @[expose] public section
@@ -1274,7 +1364,24 @@ code never writes.
 namespace VG.Proof.ChaCha20.X86.Kernels
 
 open VG VG.X86 VG.Impl.ChaCha20.X86 VG.Impl.ChaCha20.X86.Xor
-open VG.Proof.ChaCha20.X86.Quad (KernelOk kR bufR in_buf out_buf w32_other)
+open VG.Proof.ChaCha20.X86.Quad (KernelOk SchedOk steps_of qround_comm kR bufR in_buf out_buf w32_other)
+open VG.Spec.ChaCha20 (qround innerBlock)
+
+/-- `fewLoads` fits, and its quarter rounds are in the specification's order. -/
+theorem fewLoadsOk : SchedOk fewLoads :=
+  ⟨by decide, steps_of (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide), by decide, by decide, by decide, fun _ => rfl⟩
+
+/-- `early` fits; its column round is in the order 0, 3, 1, 2 of the
+specification's quarter rounds and its diagonal round in the order 0, 1, 3, 2. -/
+theorem earlyOk : SchedOk early := by
+  refine ⟨by decide, steps_of (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide), by decide, by decide, by decide, fun v => ?_⟩
+  show qround (qround (qround (qround (qround (qround (qround (qround v 0 4 8 12) 3 7 11 15) 1 5 9 13)
+    2 6 10 14) 0 5 10 15) 1 6 11 12) 3 4 9 14) 2 7 8 13 = _
+  rw [qround_comm (qround v 0 4 8 12) 3 7 11 15 1 5 9 13 (by decide), qround_comm _ 3 7 11 15 2 6 10 14 (by decide),
+    qround_comm _ 3 4 9 14 2 7 8 13 (by decide)]
+  rfl
 
 /-- `vqr`, in the baseline ISA. -/
 def sse2Ok : KernelOk sse2 where
@@ -1282,6 +1389,7 @@ def sse2Ok : KernelOk sse2 where
   inv_frame _ _ _ := trivial
   qr_ok hab hac had hbc hbd hcd ha hb hc hd s _ _ _ := vqr_ok hab hac had hbc hbd hcd ha hb hc hd s
   init_ok _ _ _ := WP.block_nil ⟨trivial, Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
+  sched := earlyOk
 
 /-- `vqr3`'s controls are in `buf`. -/
 def Masks (buf : Addr) (m : Mem) : Prop :=
@@ -1315,7 +1423,8 @@ def ssse3Ok : KernelOk ssse3 where
         exact h.1,
      by rw [hf.readW (r := kR buf) (Offset.contains _ (by decide) (by decide) (by decide)) hd (by decide)]
         exact h.2⟩
-  qr_ok := fun {buf} {_ _ _ _} hab hac had hbc hbd hcd ha hb hc hd s he hw hi =>
+  sched := fewLoadsOk
+  qr_ok := fun {buf} {_ _ _ _ _} hab hac had hbc hbd hcd ha hb hc hd s he hw hi =>
     vqr3_ok hab hac had hbc hbd hcd ha hb hc hd s (he _ (by decide)) (he _ (by decide))
       (in_buf (d := rot16Off) hw (by decide)) (in_buf (d := rot8Off) hw (by decide)) hi.1 hi.2
   init_ok {buf} s he hw := by
