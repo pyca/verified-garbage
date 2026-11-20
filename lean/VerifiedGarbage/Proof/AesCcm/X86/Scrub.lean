@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesCcm.X86.Frame
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesCcm.X86
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -16,6 +18,8 @@ meta import VerifiedGarbage.Spec.Ccm.Contract
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesCcm.X86
 
 /-!
 # AES-CCM on x86 (32-bit), without secret residue
@@ -25,9 +29,10 @@ within the data and the tag (`sealOut`, `openOut`), as on PPC64LE
 (`Proof/AesCcm/PPC64LE/Scrub.lean`): what the scrub of their frames and
 calls needs (`X86.Scrub.PostOut`).
 
-Each is registered with `X86.Scrub.scrubFOf` (`sealReg`, `openReg`), which
-zeroes its 2668 bytes of stack below `esp`, the working space among them,
-and clears the registers. What that needs of the code (`scrubFSide`) holds
+Each as emitted (`Impl.AesCcm.X86.Fn`) zeroes its 2668 bytes of stack below
+`esp`, the working space among them, and clears the registers, and returns
+without secret residue (`X86.Scrub.verifiedScrubbedF`: `seal_scrubbed`,
+`open_scrubbed`). What that needs of the code (`scrubFSide`) holds
 whatever the implementation of AES (`seal_scrub`, `open_scrub`): from CCM's
 code with a stub, whose code is `.block []`, which the kernel evaluates once
 for each way `vg_cmac_aes_update` chains (`Impl.CmacAes.X86.hardware`:
@@ -155,24 +160,48 @@ theorem open_scrub (v : Ctr32Impl) :
   · exact scrubFSide_of_fill (openNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) openNi_side
   · exact scrubFSide_of_fill (open_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) open_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_ccm_seal` over `v`, without secret residue. -/
-def sealReg (v : Ctr32Impl) : Registration Spec.Ccm.sealApi target :=
-  scrubFOf {
+/-- `vg_aes_ccm_seal` over `v` as emitted (`Impl.AesCcm.X86.Fn.«seal»`)
+meets its contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesCcm.X86.Fn.«seal» v.callee v.suffix)
+      (Spec.Ccm.sealContract X86.abi 2668) 0 :=
+  verifiedScrubbedF (api := Spec.Ccm.sealApi) {
       suffix := v.suffix
       code := withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» v.callee v.suffix)
       verified := Proof.AesCcm.seal_keyed (seal_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) }
     (sealOut _) (W := 2668) (hs := seal_scrub v)
 
-/-- `vg_aes_ccm_open` over `v`, without secret residue. -/
-def openReg (v : Ctr32Impl) : Registration Spec.Ccm.openApi target :=
-  scrubFOf {
+/-- `vg_aes_ccm_open` over `v` as emitted (`Impl.AesCcm.X86.Fn.«open»`)
+meets its contract in constant time and returns without secret residue. -/
+theorem open_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesCcm.X86.Fn.«open» v.callee v.suffix)
+      (Spec.Ccm.openContract X86.abi 2668) 32 :=
+  verifiedScrubbedF (api := Spec.Ccm.openApi) {
       suffix := v.suffix
       code := withStackScratch 2608 10 (Impl.AesCcm.X86.«open» v.callee v.suffix)
       verified := Proof.AesCcm.open_keyed (open_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }
     (openOut _) (W := 2668) (hs := open_scrub v)
+
+/-- The code as emitted, `c` and then its cleanup, writes `esp` only in its
+frames and calls, as `c` does. -/
+theorem scrubF_spSafe {rb W : Nat} {c : Prog X86.isa} (h : c.all (fun i => !X86.isa.writesSp i) = true) :
+    (Impl.Scrub.X86.scrubF rb W c).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
+    Bool.true_and, Bool.and_true]
+  exact wipe_all _
+
+/-- `Impl.AesCcm.X86.Fn.«seal»` writes `esp` only in its frames and calls. -/
+theorem seal_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesCcm.X86.Fn.«seal» v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v))
+
+/-- `Impl.AesCcm.X86.Fn.«open»` writes `esp` only in its frames and calls. -/
+theorem open_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesCcm.X86.Fn.«open» v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v))
 
 end VG.Proof.AesCcm.X86.Scrub

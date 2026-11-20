@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesCbc.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # AES-CFB8: x86 (32-bit) implementation
@@ -75,3 +76,23 @@ def encrypt (b : Blocks) : Prog isa := whole (body b encPost)
 def decrypt (b : Blocks) : Prog isa := whole (body b decPost)
 
 end VG.Impl.AesCfb8.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesCfb8.X86.Fn
+
+open VG.X86
+open VG.Impl.Aes.X86 (Blocks)
+
+/-- `vg_aes_cfb8_encrypt` over the block function `b`, as emitted. -/
+def encrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb8.X86.encrypt b)
+
+/-- `vg_aes_cfb8_decrypt` over the block function `b`, as emitted. -/
+def decrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb8.X86.decrypt b)
+
+end VG.Impl.AesCfb8.X86.Fn

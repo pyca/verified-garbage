@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesCbc.X86.Wiped
 public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesCbc.X86.Wiped
 import VerifiedGarbage.Proof.AesEcb.Wipe
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -14,6 +16,8 @@ meta import VerifiedGarbage.Spec.Cbc.Contract
 meta import VerifiedGarbage.Proof.AesEcb.Wipe
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesCbc.X86.Wiped
 
 /-!
 # AES-CBC on x86 (32-bit), without secret residue
@@ -23,12 +27,15 @@ within the IV, the data and `scratch` (`encryptOut`, `decryptOut`), as on
 PPC64LE (`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and
 calls needs (`X86.Scrub.PostOut`).
 
-Which code is registered for an implementation `v` of the block functions
-(`encryptRegs`, `decryptRegs`), as `Proof/AesCbc/X86/Wiped.lean` chooses
-it: the CBC code (`encryptCode v`) where it writes nothing in `scratch`,
-with 24 bytes of stack; otherwise the call of it, then of `vg_zeroize` on
-the bytes of `scratch` it writes, with 72. Each with `X86.Scrub.scrubFOf`,
-which zeroes that stack below `esp` and clears the registers. What that
+Which code is emitted for an implementation `v` of the block functions
+(`Impl.AesCbc.X86.Fn`), as `Proof/AesCbc/X86/Wiped.lean` chooses it: the
+CBC code (`encryptCode v`) where it writes nothing in `scratch`, with 24
+bytes of stack (`Fn.free`: `encryptFree_scrubbed`, `decryptFree_scrubbed`);
+otherwise the call of it, then of `vg_zeroize` on the bytes of `scratch` it
+writes, with 72 (`Fn.encrypt`, `Fn.decrypt`: `encryptWiped_scrubbed`,
+`decryptWiped_scrubbed`). Each zeroes that stack below `esp` and clears the
+registers, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedF`). What that
 needs of the code (`scrubFSide`) holds whatever the implementation: the CBC
 code for AES-NI (`hardware`) is a closed term, which the kernel evaluates
 (`ni_side`, `dec_callee`); for any other, the CBC code around a stub block
@@ -198,44 +205,99 @@ theorem decWiped_scrub (v : BlocksImpl) :
     exact scrubFSide_of_fill (decW_fill _ _ _ (calleeSide_of_eq v.decStack v.decScrub) (zeroArgs_side _ _))
       decW_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted: the
-CBC code itself (`encryptCode v`) where it writes nothing in `scratch`, the
-call wiping its first `encWritten v` bytes otherwise. -/
-def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi X86.target) :=
-  if h : encWritten v = 0 then [scrubFOf {
+For an implementation `v` of the block functions: the CBC code itself
+(`encryptCode v`, `decryptCode v`) where it writes nothing in `scratch`
+(`encryptFree_scrubbed`, `decryptFree_scrubbed`), the call wiping the bytes
+of `scratch` it writes otherwise (`encryptWiped_scrubbed`,
+`decryptWiped_scrubbed`). The registration file chooses between the two by
+the same condition. -/
+
+/-- `vg_aes_cbc_encrypt` as the CBC code over `v` itself, where it writes
+nothing in `scratch`, as emitted (`Impl.AesCbc.X86.Fn.free`), meets its
+contract in constant time and returns without secret residue. -/
+theorem encryptFree_scrubbed (v : BlocksImpl) (h : encWritten v = 0) :
+    VerifiedScrubbed X86.target (Impl.AesCbc.X86.Fn.free (encryptCode v))
+      (Spec.Cbc.aesEncryptContract X86.abi 24) 0 :=
+  verifiedScrubbedF (api := Spec.Cbc.aesEncryptApi) {
       suffix := v.suffix
       code := encryptCode v
       stack := 24
       verified := encrypt_free v h
       spSafe := encryptCode_spSafe v }
-    (encryptOut _) (W := 24) (hs := encFree_scrub v)]
-  else [scrubFOf {
+    (encryptOut _) (W := 24) (hs := encFree_scrub v)
+
+/-- `vg_aes_cbc_encrypt` over `v`, the call wiping `scratch`, as emitted
+(`Impl.AesCbc.X86.Fn.encrypt`), meets its contract in constant time and
+returns without secret residue. -/
+theorem encryptWiped_scrubbed (v : BlocksImpl) (h : ¬encWritten v = 0) :
+    VerifiedScrubbed X86.target (Impl.AesCbc.X86.Fn.encrypt (encryptCode v) v.suffix (encWritten v))
+      (Spec.Cbc.aesEncryptContract X86.abi 72) 0 :=
+  verifiedScrubbedF (api := Spec.Cbc.aesEncryptApi) {
       suffix := v.suffix
       code := Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)
       stack := 72
       verified := encrypt_verified v
       spSafe := encrypt_spSafe v }
-    (encryptOut _) (W := 72) (hs := encWiped_scrub v h)]
+    (encryptOut _) (W := 72) (hs := encWiped_scrub v h)
 
-/-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted: the
-CBC code itself (`decryptCode v`) where it writes nothing in `scratch`, the
-call wiping its first `decWritten v` bytes otherwise. -/
-def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi X86.target) :=
-  if h : decWritten v = 0 then [scrubFOf {
+/-- `vg_aes_cbc_decrypt` as the CBC code over `v` itself, where it writes
+nothing in `scratch`, as emitted (`Impl.AesCbc.X86.Fn.free`), meets its
+contract in constant time and returns without secret residue. -/
+theorem decryptFree_scrubbed (v : BlocksImpl) (h : decWritten v = 0) :
+    VerifiedScrubbed X86.target (Impl.AesCbc.X86.Fn.free (decryptCode v))
+      (Spec.Cbc.aesDecryptContract X86.abi 24) 0 :=
+  verifiedScrubbedF (api := Spec.Cbc.aesDecryptApi) {
       suffix := v.suffix
       code := decryptCode v
       stack := 24
       verified := decrypt_free v h
       spSafe := decryptCode_spSafe v }
-    (decryptOut _) (W := 24) (hs := decFree_scrub v h)]
-  else [scrubFOf {
+    (decryptOut _) (W := 24) (hs := decFree_scrub v h)
+
+/-- `vg_aes_cbc_decrypt` over `v`, the call wiping `scratch`, as emitted
+(`Impl.AesCbc.X86.Fn.decrypt`), meets its contract in constant time and
+returns without secret residue. -/
+theorem decryptWiped_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesCbc.X86.Fn.decrypt (decryptCode v) v.suffix (decWritten v))
+      (Spec.Cbc.aesDecryptContract X86.abi 72) 0 :=
+  verifiedScrubbedF (api := Spec.Cbc.aesDecryptApi) {
       suffix := v.suffix
       code := Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v)
       stack := 72
       verified := decrypt_verified v
       spSafe := decrypt_spSafe v }
-    (decryptOut _) (W := 72) (hs := decWiped_scrub v)]
+    (decryptOut _) (W := 72) (hs := decWiped_scrub v)
+
+/-- The code as emitted, `c` and then its cleanup, writes `esp` only in its
+frames and calls, as `c` does. -/
+theorem scrubF_spSafe {rb W : Nat} {c : Prog X86.isa} (h : c.all (fun i => !X86.isa.writesSp i) = true) :
+    (Impl.Scrub.X86.scrubF rb W c).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
+    Bool.true_and, Bool.and_true]
+  exact wipe_all _
+
+/-- `Impl.AesCbc.X86.Fn.free` of `v`'s encryption writes `esp` only in its frames and calls. -/
+theorem encryptFree_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesCbc.X86.Fn.free (encryptCode v)).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (encryptCode_spSafe v)
+
+/-- `Impl.AesCbc.X86.Fn.encrypt` over `v` writes `esp` only in its frames and calls. -/
+theorem encryptWiped_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesCbc.X86.Fn.encrypt (encryptCode v) v.suffix (encWritten v)).all
+      (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (encrypt_spSafe v)
+
+/-- `Impl.AesCbc.X86.Fn.free` of `v`'s decryption writes `esp` only in its frames and calls. -/
+theorem decryptFree_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesCbc.X86.Fn.free (decryptCode v)).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (decryptCode_spSafe v)
+
+/-- `Impl.AesCbc.X86.Fn.decrypt` over `v` writes `esp` only in its frames and calls. -/
+theorem decryptWiped_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesCbc.X86.Fn.decrypt (decryptCode v) v.suffix (decWritten v)).all
+      (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (decrypt_spSafe v)
 
 end VG.Proof.AesCbc.X86.Scrub

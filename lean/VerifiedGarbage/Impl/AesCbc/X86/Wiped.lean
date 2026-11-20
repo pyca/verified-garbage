@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCbc.X86
 public import VerifiedGarbage.Impl.CallWipe.X86
 public import VerifiedGarbage.Impl.Zeroize.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # AES-CBC on x86, zeroing its scratch
@@ -48,3 +49,32 @@ def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
   wiped ("vg_aes_cbc_decrypt_unwiped" ++ suffix) body w
 
 end VG.Impl.AesCbc.X86.Wiped
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF 0 W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared, so that it returns without secret
+residue. -/
+
+namespace VG.Impl.AesCbc.X86.Fn
+
+open VG.X86
+
+/-- `vg_aes_cbc_encrypt` or `vg_aes_cbc_decrypt` as the CBC code `body`
+itself, where it writes nothing in `scratch`, as emitted. -/
+def free (body : Prog isa) : Prog isa := Impl.Scrub.X86.scrubF 0 24 body
+
+/-- `vg_aes_cbc_encrypt` as the call of the CBC code `body`, then of
+`vg_zeroize` on the first `w` bytes of `scratch` (`Wiped.encrypt`), as
+emitted. -/
+def encrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.encrypt body suffix w)
+
+/-- `vg_aes_cbc_decrypt` as the call of the CBC code `body`, then of
+`vg_zeroize` on the first `w` bytes of `scratch` (`Wiped.decrypt`), as
+emitted. -/
+def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.decrypt body suffix w)
+
+end VG.Impl.AesCbc.X86.Fn
