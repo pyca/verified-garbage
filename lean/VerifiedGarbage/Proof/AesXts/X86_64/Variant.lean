@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Impl.AesXts.X86_64
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
@@ -662,6 +664,14 @@ structure XtsImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The level of the vector instructions of its functions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls them needs of their code, at
+  that level (`X86_64.Scrub.calleeSide`). -/
+  encSide : X86_64.Scrub.calleeSide enc.code level.level 8 = true
+  decSide : X86_64.Scrub.calleeSide dec.code level.level 8 = true
+  toEncSide : X86_64.Scrub.calleeSide to.enc.code level.level 16 = true
+  toDecSide : X86_64.Scrub.calleeSide to.dec.code level.level 16 = true
   /-- The residue analysis of `vg_aes_xts_encrypt_unit` over it, if the
   analysis handles it. -/
   encUnitRes : Option (RScrub.Analysed Spec.Xts.aesEncryptUnitApi.sig 16 []
@@ -699,6 +709,28 @@ theorem crypt_depth {b : Impl.Aes.X86_64.Blocks} (hb : b.code.depth = 0) :
     (Impl.AesXts.X86_64.crypt b).depth ≤ 1 := by
   simp [Impl.AesXts.X86_64.crypt, Impl.AesXts.X86_64.batch, Impl.AesXts.X86_64.pass, Code.depth, hb]
 
+theorem encrypt_side (v : BlocksImpl) :
+    X86_64.Scrub.calleeSide (Impl.AesXts.X86_64.encrypt v.enc) v.level.level 8 = true :=
+  X86_64.Scrub.calleeSide_of_fill (n := fun _ => 0) (a := Impl.AesXts.X86_64.encrypt ⟨"", .block []⟩)
+    (by have := v.encSide; fill_calls) (Nat.zero_le _) (by lit_decide)
+
+theorem decrypt_side (v : BlocksImpl) :
+    X86_64.Scrub.calleeSide (Impl.AesXts.X86_64.decrypt v.dec) v.level.level 8 = true :=
+  X86_64.Scrub.calleeSide_of_fill (n := fun _ => 0) (a := Impl.AesXts.X86_64.decrypt ⟨"", .block []⟩)
+    (by have := v.decSide; fill_calls) (Nat.zero_le _) (by lit_decide)
+
+theorem copyEncrypt_side (v : BlocksImpl) (sfx : String) :
+    X86_64.Scrub.calleeSide (Impl.AesXts.X86_64To.copyThen ⟨"vg_aes_xts_encrypt" ++ sfx, Impl.AesXts.X86_64.encrypt v.enc⟩)
+      v.level.level 16 = true :=
+  X86_64.Scrub.calleeSide_of_fill (n := fun _ => 8) (a := Impl.AesXts.X86_64To.copyThen ⟨"", .block []⟩)
+    (by have := encrypt_side v; fill_calls) (Nat.zero_le _) (by lit_decide)
+
+theorem copyDecrypt_side (v : BlocksImpl) (sfx : String) :
+    X86_64.Scrub.calleeSide (Impl.AesXts.X86_64To.copyThen ⟨"vg_aes_xts_decrypt" ++ sfx, Impl.AesXts.X86_64.decrypt v.dec⟩)
+      v.level.level 16 = true :=
+  X86_64.Scrub.calleeSide_of_fill (n := fun _ => 8) (a := Impl.AesXts.X86_64To.copyThen ⟨"", .block []⟩)
+    (by have := decrypt_side v; fill_calls) (Nat.zero_le _) (by lit_decide)
+
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
 def blocks (v : BlocksImpl) : XtsImpl where
@@ -727,6 +759,11 @@ def blocks (v : BlocksImpl) : XtsImpl where
     (crypt_nosp v.decNosp) (decrypt_mx v) (decrypt_spSafe v)
   suffix := v.suffix
   features := v.features
+  level := v.level
+  encSide := encrypt_side v
+  decSide := decrypt_side v
+  toEncSide := copyEncrypt_side v v.suffix
+  toDecSide := copyDecrypt_side v v.suffix
 
 theorem vaes_enc_nosp : NoSp Impl.AesXts.X86_64Vaes.encrypt :=
   nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
@@ -760,6 +797,11 @@ def vaesVpclmul : XtsImpl where
   to := VaesTo.toVaes
   suffix := "_vaes_vpclmul"
   features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"]
+  level := .avx
+  encSide := by lit_decide
+  decSide := by lit_decide
+  toEncSide := by lit_decide
+  toDecSide := by lit_decide
 
 /-- The one-pass functions with AES-NI and PCLMULQDQ,
 `vg_aes_xts_encrypt_aesni_pclmul` and `vg_aes_xts_decrypt_aesni_pclmul`. -/
@@ -781,6 +823,11 @@ def aesniPclmul : XtsImpl where
   to := VaesTo.toAesNi
   suffix := "_aesni_pclmul"
   features := ["aes", "pclmulqdq"]
+  level := .sse
+  encSide := by lit_decide
+  decSide := by lit_decide
+  toEncSide := by lit_decide
+  toDecSide := by lit_decide
 
 /-- The one-pass functions with AVX-512 VAES, sixteen blocks at a time,
 `vg_aes_xts_encrypt_vaes_vpclmul_avx512` and
@@ -803,6 +850,11 @@ def vaesVpclmulAvx512 : XtsImpl where
   to := VaesZ.toZ
   suffix := "_vaes_vpclmul_avx512"
   features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq", "avx512f", "avx512bw"]
+  level := .avx
+  encSide := by lit_decide
+  decSide := by lit_decide
+  toEncSide := by lit_decide
+  toDecSide := by lit_decide
 
 end XtsImpl
 
