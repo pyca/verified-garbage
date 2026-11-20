@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha1.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
@@ -55,7 +56,7 @@ theorem finalize_scrubbed :
 /-- `vg_sha1_digest`. -/
 def digestReg : Registration Spec.Sha1.digestApi PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha1.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha1Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha1.digest }
     496 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 20 Spec.Sha1.hash 64))

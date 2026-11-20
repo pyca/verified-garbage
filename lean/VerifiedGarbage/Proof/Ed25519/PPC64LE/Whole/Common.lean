@@ -29,7 +29,7 @@ namespace VG.Proof.Ed25519.PPC64LE.Whole
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE.Whole VG.Proof.X25519.PPC64LE
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 
-/-- SHA-512's streaming functions, as HMAC's proofs know them (`Proof.Hmac.Stream.PPC64LE.Sha512.hash`). -/
+/-- SHA-512's streaming functions, as HMAC's proofs know them (`Impl.Hmac.Stream.PPC64LE.sha512Hash`). -/
 def shaHash : Impl.Hmac.Stream.PPC64LE.Hash where
   B := 128
   N := 64

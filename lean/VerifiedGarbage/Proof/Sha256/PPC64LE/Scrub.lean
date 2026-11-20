@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
@@ -76,7 +77,7 @@ theorem finalize224_scrubbed :
 /-- `vg_sha256_digest`. -/
 def digest256Reg : Registration Spec.Sha256.digest256Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha256.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha256Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha256.digest }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -88,7 +89,7 @@ def digest256Reg : Registration Spec.Sha256.digest256Api PPC64LE.target :=
 /-- `vg_sha224_digest`. -/
 def digest224Reg : Registration Spec.Sha256.digest224Api PPC64LE.target :=
   scrubOf {
-      code := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha224.hash
+      code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha224Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha224.digest }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,

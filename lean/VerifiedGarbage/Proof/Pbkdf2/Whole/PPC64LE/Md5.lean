@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
@@ -96,37 +98,35 @@ a frame of its own (`pbkdf2`).
 namespace VG.Proof.Pbkdf2.Whole.PPC64LE.Md5
 
 open VG.PPC64LE
-open VG.Proof.Hmac.Stream.PPC64LE.Md5 (hash ok)
-
-/-- The functions `pbkdf2` calls. -/
-def F : Impl.Pbkdf2.Whole.PPC64LE.Fns :=
-  fnsOf hash Spec.Hmac.md5I 6 Pbkdf2.PPC64LE.Md5.code (8 * Spec.Hmac.md5I.scratch)
+open VG.Proof.Hmac.Stream.PPC64LE.Md5 (ok)
+open VG.Impl.Hmac.Stream.PPC64LE (hmacFrame)
+open VG.Impl.Pbkdf2.Whole.PPC64LE (md5F pbkFrame)
 
 /-- What the proofs need of them. -/
-def okF : FnsOK F :=
+def okF : FnsOK md5F :=
   okOf ok rfl Proof.Hmac.Stream.PPC64LE.Md5.initAny Proof.Hmac.Stream.PPC64LE.Md5.fin_ct
     (Pbkdf2.PPC64LE.correctG Pbkdf2.PPC64LE.Md5.hashOk Proof.Md5.PPC64LE.Stream.callee 96)
     (Pbkdf2.PPC64LE.ctG Pbkdf2.PPC64LE.Md5.iterate_ct 96) Pbkdf2.PPC64LE.Md5.fdepth Pbkdf2.PPC64LE.Md5.pushFrames
     (by decide) (Nat.le_refl _) (by decide) (by decide) (by decide)
 
-theorem checks : Checks F := by
+theorem checks : Checks md5F := by
   constructor <;> refine ⟨?_, ?_⟩
   taint_decide_all
 
-theorem scratch : Verified PPC64LE.target F.pbkdf2
-    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I + 144)) :=
+theorem scratch : Verified PPC64LE.target md5F.pbkdf2
+    (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.md5I PPC64LE.abi (hmacFrame Spec.Hmac.md5I + 144)) :=
   VG.Proof.Pbkdf2.Whole.PPC64LE.scratch okF checks rfl (by decide) (by
     inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchContract,
       Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5,
-      Proof.Hmac.Stream.PPC64LE.hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
+      hmacFrame, PPC64LE.abi, PPC64LE.argRegs]
       using pbkSat (8 * Spec.Hmac.md5I.pbkdf2Scratch))
 
 theorem pbkdf2 : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 F.pbkdf2)
-    (Spec.Hmac.md5I.pbkdf2Contract PPC64LE.abi (Proof.Hmac.Stream.PPC64LE.hmacFrame Spec.Hmac.md5I + 144 + pbkFrame Spec.Hmac.md5I)) :=
+    (Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 md5F.pbkdf2)
+    (Spec.Hmac.md5I.pbkdf2Contract PPC64LE.abi (hmacFrame Spec.Hmac.md5I + 144 + pbkFrame Spec.Hmac.md5I)) :=
   framed scratch (by decide) (by
     inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
-      Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, Proof.Hmac.Stream.PPC64LE.hmacFrame, pbkFrame, PPC64LE.abi, PPC64LE.argRegs]
+      Spec.Pbkdf2.pbkdf2Pre, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, hmacFrame, pbkFrame, PPC64LE.abi, PPC64LE.argRegs]
       using pbkSat0)
 
 end VG.Proof.Pbkdf2.Whole.PPC64LE.Md5
