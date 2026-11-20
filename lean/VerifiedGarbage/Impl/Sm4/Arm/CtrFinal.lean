@@ -45,7 +45,7 @@ open VG.Impl.AesCfb.Arm (finalSave finalRestore)
 open VG.Impl.Modes.Arm (xorByte)
 
 /-- `vg_sm4_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 BatchCtr.ctr
+def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratch 1520 0 BatchCtr.ctr
 
 /-- `save`, the stack argument, to `r12`. -/
 def ctrSave : List Instr := [.ldrSp .r12 0]

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.ScratchInScrub
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -37,7 +37,7 @@ meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesCbc.Mem32
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.ScratchInScrub
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -1032,9 +1032,9 @@ theorem ctrFinal_verified : Verified Arm.target ctrFinal ctrFinalScratchContract
 /-! ## With `save` on the stack
 
 The final function has no stack arguments, so `save` is its first: it runs
-its code in a frame of 64 bytes (`withStackScratchWiped`): `save`'s address,
-the word holding `lr`, and `save`'s 56 bytes, the block included, which it
-zeroes before returning. The code's calls use 1520 bytes below it, so 1584
+its code in a frame of 64 bytes (`withStackScratch`): `save`'s address,
+the word holding `lr`, and `save`'s 56 bytes, the block included, which the
+function's cleanup zeroes (`Impl.Sm4.Arm.Fn.ctrFinal`). The code's calls use 1520 bytes below it, so 1584
 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
@@ -1046,14 +1046,14 @@ theorem ctrFinalFrameSat_pre :
   implies_sat [Spec.Sm4.ctrFinalSig, Proof.Sm4.ctrFinalPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
 
-/-- `ctrFinal`, with `save` on the stack (zeroed on return). -/
+/-- `ctrFinal`, with `save` on the stack (zeroed by the cleanup, `Impl.Sm4.Arm.Fn`). -/
 theorem ctrFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ctrFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 ctrFinal)
       (Spec.Sm4.ctrFinalContract Arm.abi 1584) := by
   rw [Proof.Sm4.ctrFinalContract_eq]
-  exact Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
+  exact Arm.Verified.stackScratchInScrubArm (sig := Spec.Sm4.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
     (post := Proof.Sm4.ctrFinalPost Arm.abi.ptrBits) (wa := true) (stack := 1520) (m := 0) (bytes := 64)
-    ctrFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ctrFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (ctrFinalPost_local _)
     (Proof.Sm4.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
 

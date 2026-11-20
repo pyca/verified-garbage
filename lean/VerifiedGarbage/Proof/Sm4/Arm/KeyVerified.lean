@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.ScratchInScrub
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Sm4.Arm.Lit
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.ScratchInScrub
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
@@ -777,7 +777,7 @@ end
 time, by the taint analysis: the pointers are public, and so is the
 schedule's pointer the code keeps in a slot of the scratch buffer (stored
 through `sb`, the buffer's base, after each extraction). `expandKey_framed`
-runs it with its working space on the stack, zeroed on return, as
+runs it with its working space on the stack, as
 `ecbAny_framed` does.
 -/
 
@@ -875,11 +875,11 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract Arm.abi 1456)
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 1456 .r2 364 expandKey)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 1456 .r2 expandKey)
       (Spec.Sm4.expandKeyContract Arm.abi 1456) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratchInScrubArm (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 182) (post := Proof.Sm4.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
-    expandKey_verified (by decide) (by decide) (by decide) (by decide)
+    expandKey_verified (by decide) (by decide) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Sm4.Arm

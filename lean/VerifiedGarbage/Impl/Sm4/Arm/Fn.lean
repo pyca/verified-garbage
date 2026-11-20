@@ -14,10 +14,11 @@ public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 # SM4's key expansion, ECB and modes on ARMv7, as emitted
 
 Each function is its code with its working space in a frame on the stack
-(`withStackScratchWiped`, `withRegScratchWiped`), then its cleanup
+(`withStackScratch`, `withRegScratch`), then its cleanup
 (`Impl.Residue.Arm.scrubF`): the stack its contract reserves zeroed, which
-covers the frames of the functions it calls, and the registers a callee may
-change set to constants. That stack is a frame size of the model, a multiple
+covers that frame and the frames of the functions it calls, and the
+registers a callee may change set to constants. So no frame is wiped on its
+own: the cleanup zeroes each once. That stack is a frame size of the model, a multiple
 of 8 that an ARM immediate encodes: ECB's 1480 bytes and the final CFB and
 OFB functions' 1560 are not, so their cleanup zeroes 1488 and 1568.
 `Proof/Sm4/Arm/Scrub.lean` states that each returns without secret residue.
@@ -35,7 +36,7 @@ namespace VG.Impl.Sm4.Arm.Fn
 open VG.Arm VG.Impl.Residue.Arm VG.Impl.StackScratch.Arm
 
 /-- `vg_sm4_expand_key`. -/
-def expandKey : Prog isa := scrubF 0 1456 (withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey)
+def expandKey : Prog isa := scrubF 0 1456 (withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey)
 
 /-- `vg_sm4_ecb_encrypt`. -/
 def ecbEncrypt : Prog isa := scrubF 0 1488 (ecbCall .encrypt)
@@ -44,33 +45,33 @@ def ecbEncrypt : Prog isa := scrubF 0 1488 (ecbCall .encrypt)
 def ecbDecrypt : Prog isa := scrubF 0 1488 (ecbCall .decrypt)
 
 /-- `vg_sm4_cbc_encrypt_chained`. -/
-def cbcEncryptChained : Prog isa := scrubF 0 1520 (withStackScratchWiped 1520 0 378 SerialCbc.encrypt)
+def cbcEncryptChained : Prog isa := scrubF 0 1520 (withStackScratch 1520 0 SerialCbc.encrypt)
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := scrubF 0 1520 (withStackScratchWiped 1520 0 378 BatchCbc.decrypt)
+def cbcDecryptChained : Prog isa := scrubF 0 1520 (withStackScratch 1520 0 BatchCbc.decrypt)
 
 /-- `vg_sm4_cfb128_encrypt`. -/
-def cfbEncrypt : Prog isa := scrubF 0 1520 (withStackScratchWiped 1520 0 378 SerialCfb.encrypt)
+def cfbEncrypt : Prog isa := scrubF 0 1520 (withStackScratch 1520 0 SerialCfb.encrypt)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := scrubF 0 1520 (withStackScratchWiped 1520 0 378 BatchCfb.decrypt)
+def cfbDecrypt : Prog isa := scrubF 0 1520 (withStackScratch 1520 0 BatchCfb.decrypt)
 
 /-- `vg_sm4_cfb128_encrypt_final`. -/
-def cfbEncryptFinal : Prog isa := scrubF 0 1568 (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbEncryptFinal)
+def cfbEncryptFinal : Prog isa := scrubF 0 1568 (withStackScratch 80 0 Impl.Sm4.Arm.cfbEncryptFinal)
 
 /-- `vg_sm4_cfb128_decrypt_final`. -/
-def cfbDecryptFinal : Prog isa := scrubF 0 1568 (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbDecryptFinal)
+def cfbDecryptFinal : Prog isa := scrubF 0 1568 (withStackScratch 80 0 Impl.Sm4.Arm.cfbDecryptFinal)
 
 /-- `vg_sm4_ctr`. -/
 def ctr : Prog isa := scrubF 0 1520 ctrFramed
 
 /-- `vg_sm4_ctr_final`. -/
-def ctrFinal : Prog isa := scrubF 0 1584 (withStackScratchWiped 64 0 14 Impl.Sm4.Arm.ctrFinal)
+def ctrFinal : Prog isa := scrubF 0 1584 (withStackScratch 64 0 Impl.Sm4.Arm.ctrFinal)
 
 /-- `vg_sm4_ofb`. -/
-def ofb : Prog isa := scrubF 0 1520 (withStackScratchWiped 1520 0 378 SerialOfb.crypt)
+def ofb : Prog isa := scrubF 0 1520 (withStackScratch 1520 0 SerialOfb.crypt)
 
 /-- `vg_sm4_ofb_final`. -/
-def ofbFinal : Prog isa := scrubF 0 1568 (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.ofbFinal)
+def ofbFinal : Prog isa := scrubF 0 1568 (withStackScratch 80 0 Impl.Sm4.Arm.ofbFinal)
 
 end VG.Impl.Sm4.Arm.Fn

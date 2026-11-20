@@ -527,7 +527,7 @@ theorem gh_rel [VG.Proof.Gcm.Arm.GhashLaw] {P : State → State → Prop}
 /-! ## `vg_sm4_expand_key` -/
 
 theorem key_stack : FrameStack.armStack
-    (Impl.StackScratch.Arm.withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey) ≤ 1456 := by decide +kernel
+    (Impl.StackScratch.Arm.withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey) ≤ 1456 := by decide +kernel
 
 /-- What a call of `vg_sm4_expand_key` needs: the 16-byte key at `K` and the
 key schedule at `C`, and the 1456 bytes below the stack pointer. -/

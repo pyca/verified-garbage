@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.ScratchInScrub
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sm4.Scratch
@@ -101,7 +101,7 @@ end
 end
 
 
-/-! # Batched ARMv7 SM4-CTR meets the public, wiped-stack contract -/
+/-! # Batched ARMv7 SM4-CTR meets the public contract, its working space on the stack -/
 
 @[expose] public section
 namespace VG.Proof.Sm4.Arm.BatchVerified
@@ -160,11 +160,11 @@ theorem frameSat : ∃ s, (Spec.Sm4.ctrContract Arm.abi 1520).pre s := by
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 BatchCtr.ctr)
+    (Impl.StackScratch.Arm.withStackScratch 1520 0 BatchCtr.ctr)
     (Spec.Sm4.ctrContract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64) (n := 189)
+  Arm.Verified.stackScratchInScrubArm (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.ctrPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
-    verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ctrPost_local _)
     (Proof.Sm4.ctrPostOut_local _) frameSat
 
