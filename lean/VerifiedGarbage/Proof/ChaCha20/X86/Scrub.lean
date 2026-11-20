@@ -131,9 +131,7 @@ theorem apply_scrubbed (v : XorImpl) :
 
 /-- `vg_chacha20_apply` as emitted never writes `esp` but by its frames. -/
 theorem apply_spSafe (v : XorImpl) :
-    (Impl.ChaCha20.X86.Fn.apply v.callee).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [Impl.ChaCha20.X86.Fn.apply, Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all,
-    Proof.ChaCha20.X86.Stream.apply_spSafe v, zeroRegs_all, tail_all, Bool.true_and, Bool.and_true]
-  exact wipe_all _
+    (Impl.ChaCha20.X86.Fn.apply v.callee).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.ChaCha20.X86.Stream.apply_spSafe v)
 
 end VG.Proof.ChaCha20.X86.Scrub
