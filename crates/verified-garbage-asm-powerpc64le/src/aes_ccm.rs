@@ -24,7 +24,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "wf0h+AAAgTmgAgzoYAAM+KgCDOhoAAz4eAAMOHAADPgAAIE5cABs6aYCCHyIAOv5kAAL+pgAK/qgAEv6qABr+rAAi/q4AKv6wADL+sgA6/qAAMv50AAL+Hhbbn1oAOzpYABs6XgbcHx4I5F82ADu+OAADvnoAM748ABu+XhLNn14U1d9AAAAODAADvg4AA74DgAgOVBIJn0wAC6ZeCujfDEALjl4M8R8"
+        r#".base64 "wf0h+AAAgTmgAgzoYAAM+KgCDOhoAAz4gAAMOHAADPgAAIE5cABs6aYCCHyIAOv5kAAL+pgAK/qgAEv6qABr+rAAi/q4AKv6wADL+sgA6/qAAMv50AAL+Hhbbn1oAOzpYABs6XgbcHx4I5F82ADu+OAADvnoAM748ABu+XhLNn14U1d9AAAAODAADvg4AA74DgAgOVBIJn0wAC6ZeCujfDEALjl4M8R8"
 20:
 .base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
 bne %cr0, 20b
@@ -161,7 +161,7 @@ bne %cr0, 228b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "wf0h+AAAgTmgAgzoYAAM+KgCDOhoAAz4eAAMOHAADPgAAIE5cABs6aYCCHyIAOv5kAAL+pgAK/qgAEv6qABr+rAAi/q4AKv6wADL+sgA6/qAAMv50AAL+Hhbbn1oAOzpYABs6XgbcHx4I5F82ADu+OAADvnoAM748ABu+XhLNn14U1d9AAAAODAADvg4AA74DgAgOVBIJn0wAC6ZeCujfDEALjl4M8R8"
+        r#".base64 "wf0h+AAAgTmgAgzoYAAM+KgCDOhoAAz4gAAMOHAADPgAAIE5cABs6aYCCHyIAOv5kAAL+pgAK/qgAEv6qABr+rAAi/q4AKv6wADL+sgA6/qAAMv50AAL+Hhbbn1oAOzpYABs6XgbcHx4I5F82ADu+OAADvnoAM748ABu+XhLNn14U1d9AAAAODAADvg4AA74DgAgOVBIJn0wAC6ZeCujfDEALjl4M8R8"
 20:
 .base64 "AAADiAAACZgBAGM4AQApOf//hDgAACQo"
 bne %cr0, 20b
