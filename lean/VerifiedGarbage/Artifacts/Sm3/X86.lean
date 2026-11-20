@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm3.X86.Scrub
+public import VerifiedGarbage.Impl.Sm3.X86.Stream
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm3.X86.Lit
@@ -12,8 +13,14 @@ import VerifiedGarbage.Proof.Sm3.X86.Lit
 namespace VG.Artifacts.Sm3.X86
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact X86.target Proof.Sm3.X86.Scrub.initReg,
-  Spec.Sm3.updateApi.artifact X86.target Proof.Sm3.X86.Scrub.updateReg,
-  Spec.Sm3.finalizeApi.artifact X86.target Proof.Sm3.X86.Scrub.finalizeReg]
+  Spec.Sm3.initApi.artifact X86.target {
+    code := Impl.Sm3.X86.Fn.init
+    verified := .scrubbed Proof.Sm3.X86.Scrub.init_scrubbed },
+  Spec.Sm3.updateApi.artifact X86.target {
+    code := Impl.Sm3.X86.Fn.update
+    verified := .scrubbed Proof.Sm3.X86.Scrub.update_scrubbed },
+  Spec.Sm3.finalizeApi.artifact X86.target {
+    code := Impl.Sm3.X86.Fn.finalize
+    verified := .scrubbed Proof.Sm3.X86.Scrub.finalize_scrubbed }]
 
 end VG.Artifacts.Sm3.X86
