@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_ffdh_derive_public`, `vg_ffdh_exchange`,
 `vg_ffdh_generate_key_precompute`, `vg_ffdh_generate_key_search_cached` and
 `vg_ffdh_generate_parameters`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they may write and the stack their frames used: they work
 in the caller's `scratch` (or `ctx`) buffer, and the frames the searches'
 calls push are not wiped by the code itself.
@@ -204,7 +204,7 @@ its contract in constant time and returns without secret residue. -/
 theorem checkPublic_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.checkPublic
       (Spec.Ffdh.checkPublicContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.checkPublicApi) {
+  verifiedScrubbedAll (api := Spec.Ffdh.checkPublicApi) {
       code := Impl.Ffdh.PPC64LE.Domain.checkPublic
       verified := Proof.Ffdh.PPC64LE.Domain.cp_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -228,7 +228,7 @@ contract in constant time and returns without secret residue. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.exchange
       (Spec.Ffdh.exchangeContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.exchangeApi) {
+  verifiedScrubbedAll (api := Spec.Ffdh.exchangeApi) {
       code := Impl.Ffdh.PPC64LE.Domain.exchange
       verified := Proof.Ffdh.PPC64LE.Domain.ex_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -241,7 +241,7 @@ its contract in constant time and returns without secret residue. -/
 theorem derivePublic_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.derivePublic
       (Spec.Ffdh.derivePublicContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.derivePublicApi) {
+  verifiedScrubbedAll (api := Spec.Ffdh.derivePublicApi) {
       code := Impl.Ffdh.PPC64LE.Derive.derivePublic
       verified := Proof.Ffdh.PPC64LE.Derive.dp_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -254,7 +254,7 @@ its contract in constant time and returns without secret residue. -/
 theorem checkPrivate_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.checkPrivate
       (Spec.Ffdh.checkPrivateContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.checkPrivateApi) {
+  verifiedScrubbedAll (api := Spec.Ffdh.checkPrivateApi) {
       code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
       verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -268,7 +268,7 @@ returns without secret residue. -/
 theorem precompute_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.precompute
       (Spec.Ffdh.generationPrecomputeContract (PPC64LE.abi.withConsts Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.generationPrecomputeApi) {
+  verifiedScrubbedAll (api := Spec.Ffdh.generationPrecomputeApi) {
       code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
       verified := Proof.Ffdh.PPC64LE.Cached.pc_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

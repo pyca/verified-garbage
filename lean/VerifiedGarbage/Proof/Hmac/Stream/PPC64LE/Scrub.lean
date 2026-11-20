@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Each hash's HMAC `init` and `finalize` as emitted
 (`Impl/Hmac/Stream/PPC64LE/Fn.lean`), followed by its cleanup
-(`Impl.Scrub.PPC64LE.scrub`, `PPC64LE.Scrub.verifiedScrubbed`), which clears the
+(`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers and the stack its frames used: both keep their working
 space in a frame they do not wipe themselves (`withStackScratch`), and
 `init` calls the hash's compression function, which pushes frames of its own.
@@ -73,7 +73,7 @@ contract in constant time and returns without secret residue. -/
 theorem md5_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initMd5
       (Spec.Hmac.md5I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.md5I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.initAnyKeyApi) {
       code := initCode md5Hash Spec.Hmac.md5I 6
       verified := Md5.initAny }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -85,7 +85,7 @@ its contract in constant time and returns without secret residue. -/
 theorem md5_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeMd5
       (Spec.Hmac.md5I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.md5I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.md5I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 md5Hash.finalize
       verified := Md5.finalize }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -97,7 +97,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha1_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha1
       (Spec.Hmac.sha1I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha1I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha1I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.initAnyKeyApi) {
       code := initCode sha1Hash Spec.Hmac.sha1I 6
       verified := Sha1.initAny }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -109,7 +109,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha1_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha1
       (Spec.Hmac.sha1I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha1I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha1I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha1I) .r7 sha1Hash.finalize
       verified := Sha1.finalize }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -121,7 +121,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha224_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha224
       (Spec.Hmac.sha224I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha224I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha224I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.initAnyKeyApi) {
       code := initCode sha224Hash Spec.Hmac.sha224I 6
       verified := Sha224.initAny }
     960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -135,7 +135,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha224_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha224
       (Spec.Hmac.sha224I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha224I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha224I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha224I) .r7 sha224Hash.finalize
       verified := Sha224.finalize }
     960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -149,7 +149,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha256_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha256
       (Spec.Hmac.sha256I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha256I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha256I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.initAnyKeyApi) {
       code := initCode sha256Hash Spec.Hmac.sha256I 6
       verified := Sha256.initAny }
     960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -163,7 +163,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha256_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha256
       (Spec.Hmac.sha256I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha256I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha256I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha256I) .r7 sha256Hash.finalize
       verified := Sha256.finalize }
     960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -177,7 +177,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha384_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha384
       (Spec.Hmac.sha384I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha384I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha384I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.initAnyKeyApi) {
       code := initCode sha384Hash Spec.Hmac.sha384I 7
       verified := Sha384.initAny }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -191,7 +191,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha384_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha384
       (Spec.Hmac.sha384I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha384I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha384I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha384I) .r7 sha384Hash.finalize
       verified := Sha384.finalize }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -205,7 +205,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha512
       (Spec.Hmac.sha512I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.initAnyKeyApi) {
       code := initCode sha512Hash Spec.Hmac.sha512I 7
       verified := Sha512.initAny }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -219,7 +219,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha512_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha512
       (Spec.Hmac.sha512I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512I) .r7 sha512Hash.finalize
       verified := Sha512.finalize }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -233,7 +233,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_224_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha512_224
       (Spec.Hmac.sha512_224I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_224I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_224I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.initAnyKeyApi) {
       code := initCode sha512_224Hash Spec.Hmac.sha512_224I 7
       verified := Sha512_224.initAny }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -247,7 +247,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha512_224_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha512_224
       (Spec.Hmac.sha512_224I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_224I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_224I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512_224I) .r7 sha512_224Hash.finalize
       verified := Sha512_224.finalize }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -261,7 +261,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_256_init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.initSha512_256
       (Spec.Hmac.sha512_256I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_256I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_256I.initAnyKeyApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.initAnyKeyApi) {
       code := initCode sha512_256Hash Spec.Hmac.sha512_256I 7
       verified := Sha512_256.initAny }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -275,7 +275,7 @@ its contract in constant time and returns without secret residue. -/
 theorem sha512_256_finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha512_256
       (Spec.Hmac.sha512_256I.finalizeContract PPC64LE.abi (96 + hmacFrame Spec.Hmac.sha512_256I)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_256I.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch (hmacFrame Spec.Hmac.sha512_256I) .r7 sha512_256Hash.finalize
       verified := Sha512_256.finalize }
     1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

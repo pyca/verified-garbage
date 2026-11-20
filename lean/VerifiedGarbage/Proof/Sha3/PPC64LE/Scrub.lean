@@ -12,10 +12,10 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Each instance's `update` and `finalize`, and SHAKE's `squeeze`, as emitted
 (`Impl.Sha3.PPC64LE.Fn`): the function followed by its cleanup
-(`Impl.Scrub.PPC64LE.scrub`), which zeroes the stack its frames used and
+(`Impl.Scrub.PPC64LE.scrubAll`), which zeroes the stack its frames used and
 clears the volatile registers it wrote. Each theorem below states that one
 meets its contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `PPC64LE.Scrub.verifiedScrubbed`, whose condition on
+(`VerifiedScrubbed`, by `PPC64LE.Scrub.verifiedScrubbedAll`, whose condition on
 the code the kernel evaluates here), which is what its registration binds.
 Their postconditions read the memory on return only within their buffers:
 the state, through `stateAt` (`Proof/Sha3/PostOut.lean`,
@@ -35,7 +35,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_224_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len)
       (Spec.Sha3.finalizeContract PPC64LE.abi Spec.Sha3.hashSha3_224 (48 + 704)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeSha3_224Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_224Api)
     { code := Impl.Sha3.PPC64LE.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
       verified := Proof.Sha3.PPC64LE.Instances.finalize_sha3_224 }
     752 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -47,7 +47,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_256_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
       (Spec.Sha3.finalizeContract PPC64LE.abi Spec.Sha3.hashSha3_256 (48 + 704)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeSha3_256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_256Api)
     { code := Impl.Sha3.PPC64LE.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
       verified := Proof.Sha3.PPC64LE.Instances.finalize_sha3_256 }
     752 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -59,7 +59,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_384_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len)
       (Spec.Sha3.finalizeContract PPC64LE.abi Spec.Sha3.hashSha3_384 (48 + 704)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeSha3_384Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_384Api)
     { code := Impl.Sha3.PPC64LE.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
       verified := Proof.Sha3.PPC64LE.Instances.finalize_sha3_384 }
     752 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -71,7 +71,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_512_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len)
       (Spec.Sha3.finalizeContract PPC64LE.abi Spec.Sha3.hashSha3_512 (48 + 704)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeSha3_512Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_512Api)
     { code := Impl.Sha3.PPC64LE.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
       verified := Proof.Sha3.PPC64LE.Instances.finalize_sha3_512 }
     752 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -83,7 +83,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake128_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.xofFinalize Spec.Sha3.xofShake128.rate)
       (Spec.Sha3.xofFinalizeContract PPC64LE.abi Spec.Sha3.xofShake128 (48 + 672)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeShake128Api)
     { code := Impl.Sha3.PPC64LE.Instances.xofFinalize Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.PPC64LE.Instances.finalize_shake128 }
     720 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -95,7 +95,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake128_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.xofSqueeze Spec.Sha3.xofShake128.rate)
       (Spec.Sha3.xofSqueezeContract PPC64LE.abi Spec.Sha3.xofShake128 (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.squeezeShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.squeezeShake128Api)
     { code := Impl.Sha3.PPC64LE.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.PPC64LE.Instances.squeeze_shake128 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -107,7 +107,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake256_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.xofFinalize Spec.Sha3.xofShake256.rate)
       (Spec.Sha3.xofFinalizeContract PPC64LE.abi Spec.Sha3.xofShake256 (48 + 672)) 0 :=
-  verifiedScrubbed (api := Spec.Sha3.finalizeShake256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeShake256Api)
     { code := Impl.Sha3.PPC64LE.Instances.xofFinalize Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.PPC64LE.Instances.finalize_shake256 }
     720 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -119,7 +119,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake256_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.xofSqueeze Spec.Sha3.xofShake256.rate)
       (Spec.Sha3.xofSqueezeContract PPC64LE.abi Spec.Sha3.xofShake256 (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.squeezeShake256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.squeezeShake256Api)
     { code := Impl.Sha3.PPC64LE.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.PPC64LE.Instances.squeeze_shake256 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -146,7 +146,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_224_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.hashSha3_224.rate)
       (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_224.rate (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.updateSha3_224Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_224Api)
     { code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_224.rate
       verified := absorb_sha3_224 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -171,7 +171,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_256_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.hashSha3_256.rate)
       (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_256.rate (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.updateSha3_256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_256Api)
     { code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_256.rate
       verified := absorb_sha3_256 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -196,7 +196,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_384_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.hashSha3_384.rate)
       (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_384.rate (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.updateSha3_384Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_384Api)
     { code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_384.rate
       verified := absorb_sha3_384 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -221,7 +221,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_512_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.hashSha3_512.rate)
       (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.hashSha3_512.rate (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.updateSha3_512Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_512Api)
     { code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.hashSha3_512.rate
       verified := absorb_sha3_512 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -246,7 +246,7 @@ constant time and returns without secret residue. -/
 theorem update_shake128_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.xofShake128.rate)
       (Spec.Sha3.updateContract PPC64LE.abi Spec.Sha3.xofShake128.rate (48 + 672)) 64 :=
-  verifiedScrubbed (api := Spec.Sha3.updateShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateShake128Api)
     { code := Impl.Sha3.PPC64LE.Instances.absorb Spec.Sha3.xofShake128.rate
       verified := absorb_shake128 }
     720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

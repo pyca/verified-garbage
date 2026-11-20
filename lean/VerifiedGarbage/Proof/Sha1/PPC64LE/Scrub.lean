@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # SHA-1 on PPC64LE, without secret residue
 
 The streaming functions with frames and the one-shot digest, followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers and the stack their frames used. Their postconditions
 read the memory on return only within their buffers. HMAC, PBKDF2 and the
 other functions built on the hash call their code as internal functions of
@@ -34,7 +34,7 @@ in constant time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha1.PPC64LE.Fn.update
       (Spec.Sha1.updateContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Sha1.updateApi) {
+  verifiedScrubbedAll (api := Spec.Sha1.updateApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 Impl.Sha1.PPC64LE.Stream.update
       verified := Shared.update }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -46,7 +46,7 @@ contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha1.PPC64LE.Fn.finalize
       (Spec.Sha1.finalizeContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Sha1.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Sha1.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 Impl.Sha1.PPC64LE.Stream.finalize
       verified := Shared.finalize }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

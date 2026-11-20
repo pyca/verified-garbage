@@ -31,7 +31,7 @@ functions PBKDF2 calls for it (`fnsOf`: `md5F`, `sha1F`, …), and the frame
 that holds PBKDF2's working space (`pbkFrame`).
 
 `Fn` is each function as emitted: its code followed by its cleanup
-(`Impl.Scrub.PPC64LE.scrub`), with the result's bits (none), the bytes of
+(`Impl.Scrub.PPC64LE.scrubAll`), with the result's bits (none), the bytes of
 stack its frames use, which the cleanup zeroes, and the volatile registers it
 writes, which the cleanup clears (the vector registers SHA-2's compression
 functions use), so that it returns without secret residue
@@ -246,87 +246,87 @@ end VG.Impl.Pbkdf2.Whole.PPC64LE
 namespace VG.Impl.Hmac.Stream.PPC64LE.Fn
 
 open VG.PPC64LE
-open VG.Impl.Scrub.PPC64LE (scrub)
+open VG.Impl.Scrub.PPC64LE (scrubAll)
 open VG.Impl.StackScratch.PPC64LE (withStackScratch)
 
 /-- `vg_hmac_md5_init`, as emitted. -/
 def initMd5 : Prog isa :=
-  scrub 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (initCode md5Hash Spec.Hmac.md5I 6)
 
 /-- `vg_hmac_md5_finalize`, as emitted. -/
 def finalizeMd5 : Prog isa :=
-  scrub 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (withStackScratch (hmacFrame Spec.Hmac.md5I) .r7 md5Hash.finalize)
 
 /-- `vg_hmac_sha1_init`, as emitted. -/
 def initSha1 : Prog isa :=
-  scrub 0 576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (initCode sha1Hash Spec.Hmac.sha1I 6)
 
 /-- `vg_hmac_sha1_finalize`, as emitted. -/
 def finalizeSha1 : Prog isa :=
-  scrub 0 576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha1I) .r7 sha1Hash.finalize)
 
 /-- `vg_hmac_sha224_init`, as emitted. -/
 def initSha224 : Prog isa :=
-  scrub 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha224Hash Spec.Hmac.sha224I 6)
 
 /-- `vg_hmac_sha224_finalize`, as emitted. -/
 def finalizeSha224 : Prog isa :=
-  scrub 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha224I) .r7 sha224Hash.finalize)
 
 /-- `vg_hmac_sha256_init`, as emitted. -/
 def initSha256 : Prog isa :=
-  scrub 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha256Hash Spec.Hmac.sha256I 6)
 
 /-- `vg_hmac_sha256_finalize`, as emitted. -/
 def finalizeSha256 : Prog isa :=
-  scrub 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 960 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha256I) .r7 sha256Hash.finalize)
 
 /-- `vg_hmac_sha384_init`, as emitted. -/
 def initSha384 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha384Hash Spec.Hmac.sha384I 7)
 
 /-- `vg_hmac_sha384_finalize`, as emitted. -/
 def finalizeSha384 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha384I) .r7 sha384Hash.finalize)
 
 /-- `vg_hmac_sha512_init`, as emitted. -/
 def initSha512 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha512Hash Spec.Hmac.sha512I 7)
 
 /-- `vg_hmac_sha512_finalize`, as emitted. -/
 def finalizeSha512 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha512I) .r7 sha512Hash.finalize)
 
 /-- `vg_hmac_sha512_224_init`, as emitted. -/
 def initSha512_224 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha512_224Hash Spec.Hmac.sha512_224I 7)
 
 /-- `vg_hmac_sha512_224_finalize`, as emitted. -/
 def finalizeSha512_224 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha512_224I) .r7 sha512_224Hash.finalize)
 
 /-- `vg_hmac_sha512_256_init`, as emitted. -/
 def initSha512_256 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (initCode sha512_256Hash Spec.Hmac.sha512_256I 7)
 
 /-- `vg_hmac_sha512_256_finalize`, as emitted. -/
 def finalizeSha512_256 : Prog isa :=
-  scrub 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 1952 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (hmacFrame Spec.Hmac.sha512_256I) .r7 sha512_256Hash.finalize)
 
 end VG.Impl.Hmac.Stream.PPC64LE.Fn
@@ -334,47 +334,47 @@ end VG.Impl.Hmac.Stream.PPC64LE.Fn
 namespace VG.Impl.Pbkdf2.Whole.PPC64LE.Fn
 
 open VG.PPC64LE
-open VG.Impl.Scrub.PPC64LE (scrub)
+open VG.Impl.Scrub.PPC64LE (scrubAll)
 open VG.Impl.StackScratch.PPC64LE (withStackScratch)
 
 /-- `vg_pbkdf2_hmac_md5`, as emitted. -/
 def md5 : Prog isa :=
-  scrub 0 1616 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 1616 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 md5F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha1`, as emitted. -/
 def sha1 : Prog isa :=
-  scrub 0 1776 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+  scrubAll 0 1776 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha1I) .r10 sha1F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha224`, as emitted. -/
 def sha224 : Prog isa :=
-  scrub 0 2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha224I) .r10 sha224F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha256`, as emitted. -/
 def sha256 : Prog isa :=
-  scrub 0 2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha256I) .r10 sha256F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha384`, as emitted. -/
 def sha384 : Prog isa :=
-  scrub 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha384I) .r10 sha384F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha512`, as emitted. -/
 def sha512 : Prog isa :=
-  scrub 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha512I) .r10 sha512F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha512_224`, as emitted. -/
 def sha512_224 : Prog isa :=
-  scrub 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha512_224I) .r10 sha512_224F.pbkdf2)
 
 /-- `vg_pbkdf2_hmac_sha512_256`, as emitted. -/
 def sha512_256 : Prog isa :=
-  scrub 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
+  scrubAll 0 5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (withStackScratch (pbkFrame Spec.Hmac.sha512_256I) .r10 sha512_256F.pbkdf2)
 
 end VG.Impl.Pbkdf2.Whole.PPC64LE.Fn

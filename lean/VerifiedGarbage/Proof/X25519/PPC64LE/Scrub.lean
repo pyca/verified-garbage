@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # X25519 on PPC64LE, without secret residue
 
 `vg_x25519_exchange` and `vg_x25519_base`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they write and the stack their frames use (the 48 bytes
 of the exchange's frame; the base has none). Their postconditions read the
 memory on return only within `out` (`PPC64LE.Scrub.PostOut`), whatever
@@ -78,7 +78,7 @@ contract in constant time and returns without secret residue. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.X25519.PPC64LE.Fn.exchange
       (Spec.X25519.exchangeContract PPC64LE.abi 48) 32 :=
-  verifiedScrubbed (api := Spec.X25519.exchangeApi) {
+  verifiedScrubbedAll (api := Spec.X25519.exchangeApi) {
       code := Impl.Xdh.PPC64LE.exchange "vg_x25519" Impl.X25519.PPC64LE.Fe51.x25519 32
       verified := Proof.X25519.PPC64LE.Exchange.exchange_verified }
     48 ⟨true, true, [.r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -90,7 +90,7 @@ in constant time and returns without secret residue. -/
 theorem base_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.X25519.PPC64LE.Fn.base
       (Spec.X25519.x25519BaseContract (PPC64LE.abi.withConsts Impl.Ed25519.PPC64LE.combConsts)) 0 :=
-  verifiedScrubbed (api := Spec.X25519.x25519BaseApi) {
+  verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi) {
       code := Impl.X25519.PPC64LE.Base.x25519Base
       verified := Proof.X25519.PPC64LE.Base.x25519Base_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩

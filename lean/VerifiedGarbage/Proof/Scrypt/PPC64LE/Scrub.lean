@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Scrypt.PPC64LE.Lit
 # scrypt on PPC64LE, without secret residue
 
 `vg_scrypt` as emitted (`Impl/Scrypt/PPC64LE/Fn.lean`), followed by its
-cleanup (`Impl.Scrub.PPC64LE.scrub`, `PPC64LE.Scrub.verifiedScrubbed`), which
+cleanup (`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers, the vector registers it writes and the 1120
 bytes of stack its frames use. Its
 postcondition reads the memory on return only within `out`
@@ -85,7 +85,7 @@ theorem scrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target
       (Impl.Scrypt.PPC64LE.Fn.scrypt Proof.Scrypt.PPC64LE.Whole.pbkName Proof.Scrypt.PPC64LE.Whole.pbkCode)
       (Spec.Scrypt.scryptContract PPC64LE.abi Proof.Scrypt.PPC64LE.Whole.stackBytes) 0 :=
-  verifiedScrubbed (api := Spec.Scrypt.scryptApi) {
+  verifiedScrubbedAll (api := Spec.Scrypt.scryptApi) {
       code := Impl.Scrypt.PPC64LE.Whole.scrypt Proof.Scrypt.PPC64LE.Whole.pbkName
         Proof.Scrypt.PPC64LE.Whole.pbkCode
       verified := Proof.Scrypt.PPC64LE.Whole.scrypt_verified }

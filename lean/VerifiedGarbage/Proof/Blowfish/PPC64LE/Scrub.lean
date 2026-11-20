@@ -27,7 +27,7 @@ themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the
 volatile registers after them (`PPC64LE.Scrub.verifiedScrubbedWiped`). ECB's frame
 of 288 bytes, of which its own wipe clears 32, is wiped whole after it
-(`PPC64LE.Scrub.verifiedScrubbed`). Their postconditions read the memory on return
+(`PPC64LE.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on return
 only within their buffers, as on RISC-V (`Proof/Blowfish/RISCV64/Scrub.lean`).
 -/
 
@@ -222,7 +222,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blowfish.PPC64LE.Fn.ecbEncrypt
       (Spec.Blowfish.ecbContract PPC64LE.abi Spec.Blowfish.Direction.encrypt 288) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ecbEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Blowfish.ecbEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.encrypt
       verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.encrypt_verified }
     288 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -236,7 +236,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blowfish.PPC64LE.Fn.ecbDecrypt
       (Spec.Blowfish.ecbContract PPC64LE.abi Spec.Blowfish.Direction.decrypt 288) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ecbDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Blowfish.ecbDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 288 .r6 4 Impl.Blowfish.PPC64LE.decrypt
       verified := Proof.Blowfish.PPC64LE.ecb_framed Proof.Blowfish.PPC64LE.decrypt_verified }
     288 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # BLAKE2b and BLAKE2s on PPC64LE, without secret residue
 
 Each of the streaming functions, followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers they write
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers they write
 and the stack their frames used: `update` and `finalize` keep their working
 space, the 152 bytes of scratch they use, in a 192-byte frame they do not
 wipe themselves (`withStackScratch`), and a 48-byte frame below it that saves
@@ -38,7 +38,7 @@ contract in constant time and returns without secret residue. -/
 theorem initB_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.initB
       (Spec.Blake2.initBContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.initBApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.initBApi) {
       code := Impl.Blake2.PPC64LE.Stream.init Spec.Blake2.b
       verified := Proof.Blake2.PPC64LE.Stream.initB_verified }
     0 ⟨false, false, [.r5, .r6, .r9, .r10, .r12], false, []⟩
@@ -50,7 +50,7 @@ contract in constant time and returns without secret residue. -/
 theorem updateB_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.updateB
       (Spec.Blake2.updateBContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.updateBApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.updateBApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.b)
       verified := Proof.Blake2.PPC64LE.Stream.updateB_framed }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -62,7 +62,7 @@ its contract in constant time and returns without secret residue. -/
 theorem finalizeB_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.finalizeB
       (Spec.Blake2.finalizeBContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.finalizeBApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.finalizeBApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.b)
       verified := Proof.Blake2.PPC64LE.Stream.finalizeB_framed }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -74,7 +74,7 @@ contract in constant time and returns without secret residue. -/
 theorem initS_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.initS
       (Spec.Blake2.initSContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.initSApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.initSApi) {
       code := Impl.Blake2.PPC64LE.Stream.init Spec.Blake2.s
       verified := Proof.Blake2.PPC64LE.Stream.initS_verified }
     0 ⟨false, false, [.r5, .r6, .r9, .r10, .r12], false, []⟩
@@ -86,7 +86,7 @@ contract in constant time and returns without secret residue. -/
 theorem updateS_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.updateS
       (Spec.Blake2.updateSContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.updateSApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.updateSApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update Spec.Blake2.s)
       verified := Proof.Blake2.PPC64LE.Stream.updateS_framed }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -98,7 +98,7 @@ its contract in constant time and returns without secret residue. -/
 theorem finalizeS_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Blake2.PPC64LE.Fn.finalizeS
       (Spec.Blake2.finalizeSContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Blake2.finalizeSApi) {
+  verifiedScrubbedAll (api := Spec.Blake2.finalizeSApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize Spec.Blake2.s)
       verified := Proof.Blake2.PPC64LE.Stream.finalizeS_framed }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

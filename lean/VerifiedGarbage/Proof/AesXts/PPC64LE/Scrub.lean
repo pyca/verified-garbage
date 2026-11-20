@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # XTS-AES on PPC64LE, without secret residue
 
 `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they may write: they have no frames (their working space
 is the caller's scratch buffer, and their calls keep the return address in
 the link register), so there is no stack to wipe. Their postconditions read
@@ -61,7 +61,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem encryptUnit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.AesXts.PPC64LE.Fn.encryptUnit
       (Spec.Xts.aesEncryptUnitContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi) {
+  verifiedScrubbedAll (api := Spec.Xts.aesEncryptUnitApi) {
       code := Impl.AesXts.PPC64LEUnit.encrypt
       verified := Proof.AesXts.PPC64LE.Unit.encrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -75,7 +75,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem decryptUnit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.AesXts.PPC64LE.Fn.decryptUnit
       (Spec.Xts.aesDecryptUnitContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi) {
+  verifiedScrubbedAll (api := Spec.Xts.aesDecryptUnitApi) {
       code := Impl.AesXts.PPC64LEUnit.decrypt
       verified := Proof.AesXts.PPC64LE.Unit.decrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

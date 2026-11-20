@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSAES-PKCS1-v1_5 on PPC64LE, without secret residue
 
 `vg_rsa_pkcs1_decrypt_precomputed` and `vg_rsa_pkcs1_encrypt_random`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`),
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`),
 which clears the volatile registers each may write and zeroes the stack
 their frames used: decryption keeps the CRT's halves, the decoded message
 and its callees' state in frames that it does not wipe itself. Their
@@ -93,7 +93,7 @@ constant time and returns without secret residue. -/
 theorem decryptPrecomputed_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Enc.PPC64LE.Fn.decryptPrecomputed
       (Spec.RsaPkcs1Enc.decryptPrecomputedContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes) 32 :=
-  verifiedScrubbed (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi) {
       code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
       verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.codeP_verified }
     3648 Impl.Scrub.PPC64LE.Clear.all
@@ -106,7 +106,7 @@ time and returns without secret residue. -/
 theorem encryptRandom_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom
       (Spec.RsaPkcs1Enc.encryptRandomContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Rnd.rndStack) 32 :=
-  verifiedScrubbed (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
       code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
       verified := Proof.RsaPkcs1Enc.PPC64LE.Rnd.code_verified }
     3440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

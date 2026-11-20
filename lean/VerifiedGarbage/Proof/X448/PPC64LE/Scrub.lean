@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # X448 on PPC64LE, without secret residue
 
 `vg_x448_exchange` and `vg_x448_base`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they write and the stack their frames use (the 48 bytes
 of the exchange's frame; the base has none). Their postconditions read the
 memory on return only within `out` (`PPC64LE.Scrub.PostOut`), whatever
@@ -78,7 +78,7 @@ contract in constant time and returns without secret residue. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.X448.PPC64LE.Fn.exchange
       (Spec.X448.exchangeContract PPC64LE.abi 48) 32 :=
-  verifiedScrubbed (api := Spec.X448.exchangeApi) {
+  verifiedScrubbedAll (api := Spec.X448.exchangeApi) {
       code := Impl.Xdh.PPC64LE.exchange "vg_x448" Impl.X448.PPC64LE.x448 56
       verified := Proof.X448.PPC64LE.Exchange.exchange_verified }
     48 ⟨true, true, [.r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -90,7 +90,7 @@ constant time and returns without secret residue. -/
 theorem base_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.X448.PPC64LE.Fn.base
       (Spec.X448.x448BaseContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.X448.x448BaseApi) {
+  verifiedScrubbedAll (api := Spec.X448.x448BaseApi) {
       code := Impl.X448.PPC64LE.x448Base
       verified := Proof.X448.PPC64LE.x448Base_verified }
     0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩

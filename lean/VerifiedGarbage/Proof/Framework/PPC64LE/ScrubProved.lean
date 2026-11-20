@@ -15,7 +15,7 @@ out. The bytes of stack the tail wipes and the registers it clears are
 arguments (literals at the call site), and what the scrub needs of the code
 is one Boolean (`scrubSide`, `wipedSide`) whose proof the call site gives,
 checked by the kernel when its module is built: the registration is a record
-whose code is `scrub` of literals and the code, and evaluating it inspects no
+whose code is `scrubAll` of literals and the code, and evaluating it inspects no
 code.
 -/
 
@@ -141,7 +141,7 @@ theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : c
   · cases v <;> simp [vregs]
   · simpa using hv
 
-/-- `Verified.scrub`, with the registers the tail clears given: any `cl`
+/-- `Verified.scrubAll`, with the registers the tail clears given: any `cl`
 that is well-formed for the levels and that the code keeps. The functions
 the code calls indirectly have the same addresses in two runs that agree on
 what is public (`hsy`). -/
@@ -155,9 +155,9 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
       ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
     (hwf : cl.WF (chunks c.ppc64leDepth)) (hk : cl.Keeps c) :
-    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
+    Verified target (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
+      NoResidue (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hsum := chunks_sum h16
   refine Verified.scrubOf hA h (chunks_ok h16 h48) (by rw [hsum]; exact hd) hwf hk hrb hpost ?_
@@ -176,7 +176,7 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
   refine ⟨hU, fun x hx hc => hA' x hx fun hz => hc ?_⟩
   simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
 
-/-- What `scrubOf` needs of code `c` run by `scrub rb d cl`, with the tables
+/-- What `scrubOf` needs of code `c` run by `scrubAll rb d cl`, with the tables
 `ts` (none by default): `withScrub`'s conditions on its frames (which use
 `d` bytes) and its calls (indirectly, only of functions of `ts`:
 `tablesCall`, which with no table is that it makes no indirect call), that
@@ -192,8 +192,8 @@ verified against `r`'s contract and returns without secret residue. -/
 theorem scrubOf_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {cl : Clear}
     (hs : scrubSide r.code d (retBitsOf r) cl r.tables = true) (hd : d ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrub (retBitsOf r) d cl r.code) r.contract ∧
-      NoResidue (scrub (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
+    Verified target (scrubAll (retBitsOf r) d cl r.code) r.contract ∧
+      NoResidue (scrubAll (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
   simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩ := hs
   subst hde
@@ -224,7 +224,7 @@ def scrubOf {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb :
   {
   suffix := r.suffix
   tables := r.tables
-  code := scrub (retBitsOf r) d cl r.code
+  code := scrubAll (retBitsOf r) d cl r.code
   contract := r.contract
   verified := .scrubbed <| .abi ⟨(scrubOf_ok r hs hd hpost).1, (scrubOf_ok r hs hd hpost).2⟩
   consts := r.consts
@@ -301,27 +301,27 @@ def scrubWipedOf {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Re
 /-! ## The cleanup as part of the code
 
 The theorems a registration binds (`verified := .scrubbed …`): of the code
-as emitted, its body and then its cleanup (`scrub rb d cl c`), which `Impl/`
+as emitted, its body and then its cleanup (`scrubAll rb d cl c`), which `Impl/`
 defines as the function with the result's bits `rb`, the stack `d` and the
 registers `cl` as literals. Each takes what the cleanup needs of the code as
 one Boolean, which the proof module gives by `lit_decide`. `rb` is an
 argument, so that the hypotheses are stated with it and not with a
 projection of `r`; `hb` ties it to `r`'s result. -/
 
-/-- `r`'s code with its cleanup (`scrub rb d cl`) meets `r`'s contract in
+/-- `r`'s code with its cleanup (`scrubAll rb d cl`) meets `r`'s contract in
 constant time and returns without secret residue: what `scrubOf` registers,
 as the theorem about the code that a registration binds. -/
-theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
     (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrub rb d cl r.code) r.contract rb := by
+    VerifiedScrubbed target (scrubAll rb d cl r.code) r.contract rb := by
   subst hb
   have h := scrubOf_ok r hs hd hpost
   exact ⟨h.1, h.2⟩
 
-/-- `verifiedScrubbed`, of code that wipes its own frame
+/-- `verifiedScrubbedAll`, of code that wipes its own frame
 (`withStackScratchWiped bytes reg words body`, with no frame inside it): its
-cleanup clears the registers `cl` alone, `scrub rb 0 cl`, which wipes no
+cleanup clears the registers `cl` alone, `scrubAll rb 0 cl`, which wipes no
 stack. What `scrubWipedOf` registers, as the theorem about the code that a
 registration binds. -/
 theorem verifiedScrubbedWiped {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg)
@@ -329,7 +329,7 @@ theorem verifiedScrubbedWiped {api : Api} (r : Unscrubbed api target) (bytes : N
     (hc : r.code = withStackScratchWiped bytes reg words body) (hpost : PostOut r.contract rb)
     (hs : wipedSide r.code body bytes words rb cl = true)
     (hst : bytes ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrub rb 0 cl r.code) r.contract rb := by
+    VerifiedScrubbed target (scrubAll rb 0 cl r.code) r.contract rb := by
   subst hb
   have h := scrubWipedOf_ok r hc hs hst hpost
   exact ⟨h.1, h.2⟩

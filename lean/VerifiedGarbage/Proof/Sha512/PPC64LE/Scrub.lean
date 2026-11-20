@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 on PPC64LE, without secret residue
 
 The streaming functions with frames and the one-shot digests, followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers and the stack their frames used. Their postconditions
 read the memory on return only within their buffers. HMAC, PBKDF2 and the
 other functions built on the hash call their code as internal functions of
@@ -38,7 +38,7 @@ contract in constant time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.update
       (Spec.Sha512.updateContract PPC64LE.abi (0 + 1408)) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.updateApi) {
+  verifiedScrubbedAll (api := Spec.Sha512.updateApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r7 Impl.Sha512.PPC64LE.Stream.update
       verified := Shared.update }
     1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -52,7 +52,7 @@ contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.finalize
       (Spec.Sha512.finalizeContract PPC64LE.abi (0 + 1408)) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Sha512.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize
       verified := Shared.finalize }
     1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -66,7 +66,7 @@ its contract in constant time and returns without secret residue. -/
 theorem finalize384_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.finalize384
       (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 (0 + 1408)) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize384Api) {
+  verifiedScrubbedAll (api := Spec.Sha512.finalize384Api) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384
       verified := Shared.finalize384 }
     1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -80,7 +80,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem finalize512_224_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.finalize512_224
       (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 (0 + 1408)) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize512_224Api) {
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_224Api) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_224
       verified := Shared.finalize512_224 }
     1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -94,7 +94,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem finalize512_256_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.finalize512_256
       (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 (0 + 1408)) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize512_256Api) {
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_256Api) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256
       verified := Shared.finalize512_256 }
     1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Triple DES on PPC64LE, without secret residue
 
 Key expansion, which has no frames, is followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which wipes no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which wipes no
 stack for it. The ECB, CBC, CFB64, CFB8 and OFB functions zero their whole
 frame themselves before they release it (`withStackScratchWiped`), and have
 no frames of their own inside it, so they need only the clearing of the
@@ -87,7 +87,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.TripleDes.PPC64LE.Fn.expandKey
       (Spec.TripleDes.expandKeyContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.TripleDes.expandKeyApi) { code := Impl.TripleDes.PPC64LE.Key.expandKey, verified := Proof.TripleDes.PPC64LE.Key.verified }
+  verifiedScrubbedAll (api := Spec.TripleDes.expandKeyApi) { code := Impl.TripleDes.PPC64LE.Key.expandKey, verified := Proof.TripleDes.PPC64LE.Key.verified }
     0 ⟨true, false, [.r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ (expandKeyOut _)
     (by dsimp only; lit_decide)
 

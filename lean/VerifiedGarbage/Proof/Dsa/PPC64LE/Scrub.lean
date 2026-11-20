@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_dsa_derive_key`, `vg_dsa_generate_key`, `vg_dsa_sign_random_prevalidated`,
 `vg_dsa_validate_public_key`, `vg_dsa_validate_private_key`,
 `vg_dsa_verify_prevalidated` and `vg_dsa_parameter_search`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers and the stack their frames used, which they do not wipe
 themselves. Their postconditions read the memory on return only within
 their outputs, as x86-64's (`Proof/Dsa/X86_64/Scrub.lean`): the validations
@@ -154,7 +154,7 @@ contract in constant time and returns without secret residue. -/
 theorem deriveKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.deriveKey
       (Spec.Dsa.deriveKeyContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.deriveKeyApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.deriveKeyApi) {
       code := Impl.Dsa.PPC64LE.Derive.derive
       verified := Proof.Dsa.PPC64LE.deriveKey_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -168,7 +168,7 @@ time and returns without secret residue. -/
 theorem randomSignPrevalidated_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.randomSignPrevalidated
       (Spec.Dsa.randomSignPrevalidatedContract PPC64LE.abi Proof.Dsa.PPC64LE.rsStack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.randomSignPrevalidatedApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.randomSignPrevalidatedApi) {
       code := Impl.Dsa.PPC64LE.RandomSign.code
       verified := Proof.Dsa.PPC64LE.randomSign_verified }
     304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -181,7 +181,7 @@ contract in constant time and returns without secret residue. -/
 theorem generateKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.generateKey
       (Spec.Dsa.generateKeyContract PPC64LE.abi Proof.Dsa.PPC64LE.gkStack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.generateKeyApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.generateKeyApi) {
       code := Impl.Dsa.PPC64LE.Generate.code
       verified := Proof.Dsa.PPC64LE.generate_verified }
     304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -195,7 +195,7 @@ and returns without secret residue. -/
 theorem validatePublicKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.validatePublicKey
       (Spec.Dsa.validatePublicKeyContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePublicKeyApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.validatePublicKeyApi) {
       code := Impl.Dsa.PPC64LE.Prevalidated.validate
       verified := Proof.Dsa.PPC64LE.validate_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -209,7 +209,7 @@ and returns without secret residue. -/
 theorem validatePrivateKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.validatePrivateKey
       (Spec.Dsa.validatePrivateKeyContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePrivateKeyApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.validatePrivateKeyApi) {
       code := Impl.Dsa.PPC64LE.PrevalidatedSign.validate
       verified := Proof.Dsa.PPC64LE.validatePrivate_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -223,7 +223,7 @@ and returns without secret residue. -/
 theorem verifyPrevalidated_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Fn.verifyPrevalidated
       (Spec.Dsa.verifyPrevalidatedContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.verifyPrevalidatedApi) {
+  verifiedScrubbedAll (api := Spec.Dsa.verifyPrevalidatedApi) {
       code := Impl.Dsa.PPC64LE.Prevalidated.verify
       verified := Proof.Dsa.PPC64LE.prevalidated_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

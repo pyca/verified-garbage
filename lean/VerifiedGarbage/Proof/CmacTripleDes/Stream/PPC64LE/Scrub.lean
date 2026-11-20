@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_cmac_triple_des_stream_init`, `vg_cmac_triple_des_absorb` and
 `vg_cmac_triple_des_finish`, each followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers they may
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers they may
 write and the stack their frames used: they keep their working space, the key
 schedule among it, in a frame they do not wipe themselves
 (`withStackScratch`). Their postconditions read the memory on return only
@@ -48,7 +48,7 @@ time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.init
       (Spec.Cmac.tdesStreamInitContract PPC64LE.abi 672) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesStreamInitApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.streamInit
       verified := Proof.CmacTripleDes.Stream.PPC64LE.init_framed }
     672 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -61,7 +61,7 @@ time and returns without secret residue. -/
 theorem absorb_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.absorb
       (Spec.Cmac.tdesAbsorbContract PPC64LE.abi 720) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesAbsorbApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 720 .r7 Impl.CmacTripleDes.Stream.PPC64LE.absorb
       verified := Proof.CmacTripleDes.Stream.PPC64LE.absorb_framed }
     720 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -74,7 +74,7 @@ time and returns without secret residue. -/
 theorem finish_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.finish
       (Spec.Cmac.tdesFinishContract PPC64LE.abi 672) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesFinishApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.finish
       verified := Proof.CmacTripleDes.Stream.PPC64LE.finish_framed }
     672 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

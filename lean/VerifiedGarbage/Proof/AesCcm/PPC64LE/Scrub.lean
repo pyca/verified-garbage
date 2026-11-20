@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # AES-CCM on PPC64LE, without secret residue
 
 `vg_aes_ccm_seal` and `vg_aes_ccm_open`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they may write and the whole 576-byte frame
 (`withStackScratchArgs`) that holds their working space, the key schedule
 and their callees' working space among it, which they do not wipe
@@ -69,7 +69,7 @@ contract in constant time and returns without secret residue. -/
 theorem seal_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.AesCcm.PPC64LE.Fn.seal
       (Spec.Ccm.sealContract PPC64LE.abi 576) 0 :=
-  verifiedScrubbed (api := Spec.Ccm.sealApi) {
+  verifiedScrubbedAll (api := Spec.Ccm.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«seal»
       verified := Proof.AesCcm.seal_keyed seal_framed }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -82,7 +82,7 @@ contract in constant time and returns without secret residue. -/
 theorem open_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.AesCcm.PPC64LE.Fn.open
       (Spec.Ccm.openContract PPC64LE.abi 576) 32 :=
-  verifiedScrubbed (api := Spec.Ccm.openApi) {
+  verifiedScrubbedAll (api := Spec.Ccm.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«open»
       verified := Proof.AesCcm.open_keyed open_framed }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

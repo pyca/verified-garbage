@@ -28,7 +28,7 @@ buffers (`cbcEncOut`, …).
 `vg_camellia_ctr_core` (`Impl.Camellia.PPC64LE.ctrCall`), inside its own
 frame, so its body has a frame inside the one it wipes: the tail after it
 wipes the whole stack both frames use, the 3520 bytes of its contract's
-`stack`, and clears the volatile registers (`PPC64LE.Scrub.verifiedScrubbed`).
+`stack`, and clears the volatile registers (`PPC64LE.Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
@@ -542,7 +542,7 @@ its contract in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ctrFinal
       (Spec.Camellia.ctrFinalContract PPC64LE.abi 3520) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.ctrFinalApi) {
+  verifiedScrubbedAll (api := Spec.Camellia.ctrFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r8 10 Impl.Camellia.PPC64LE.ctrFinal
       verified := Proof.Camellia.PPC64LE.CtrFinal.ctrFinal_framed }
     3520 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

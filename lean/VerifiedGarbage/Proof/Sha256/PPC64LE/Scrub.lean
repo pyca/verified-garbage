@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # SHA-224 and SHA-256 on PPC64LE, without secret residue
 
 The streaming functions with frames and the one-shot functions, followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers and the stack their frames used. Their postconditions
 read the memory on return only within their buffers
 (`Proof/Sha256/PostOut.lean`). HMAC, PBKDF2 and RSA call their code as
@@ -37,7 +37,7 @@ contract in constant time and returns without secret residue.
 theorem update_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Fn.update
       (Spec.Sha256.updateContract PPC64LE.abi (48 + 640)) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.updateApi) {
+  verifiedScrubbedAll (api := Spec.Sha256.updateApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r7 Impl.Sha256.PPC64LE.Stream.update
       verified := Shared.update }
     688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -51,7 +51,7 @@ contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Fn.finalize
       (Spec.Sha256.finalizeContract PPC64LE.abi (48 + 640)) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.finalizeApi) {
+  verifiedScrubbedAll (api := Spec.Sha256.finalizeApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize
       verified := Shared.finalize }
     688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -65,7 +65,7 @@ its contract in constant time and returns without secret residue. -/
 theorem finalize224_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Fn.finalize224
       (Spec.Sha256.finalize224Contract PPC64LE.abi (48 + 640)) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.finalize224Api) {
+  verifiedScrubbedAll (api := Spec.Sha256.finalize224Api) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize224
       verified := Shared.finalize224 }
     688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

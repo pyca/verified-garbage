@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_aes_cfb128_encrypt`, `vg_aes_cfb128_decrypt`, `vg_aes_cfb8_encrypt`,
 `vg_aes_cfb8_decrypt` and `vg_aes_ofb`, and the final partial-block functions
 of CTR, CFB128 and OFB. Each is followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers and the
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers and the
 stack its frames used, but the final functions of CFB128 and OFB, which zero
 their whole frame themselves and have no frames of their own inside it, and
 need only the clearing of the registers (`PPC64LE.Scrub.verifiedScrubbedWiped`).
@@ -269,7 +269,7 @@ contract in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.expandKey
       (Spec.Aes.expandKeyContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Aes.expandKeyApi) {
+  verifiedScrubbedAll (api := Spec.Aes.expandKeyApi) {
       code := Impl.Aes.PPC64LE.expandKey
       verified := Proof.Aes.PPC64LE.expandKey_direct_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -282,7 +282,7 @@ contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.ecbEncrypt
       (Spec.AesEcb.encryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.AesEcb.encryptApi) {
+  verifiedScrubbedAll (api := Spec.AesEcb.encryptApi) {
       code := Impl.Aes.PPC64LE.encryptBlocks
       verified := Proof.AesEcb.PPC64LE.encrypt_verified }
     0 ⟨true, false, [.r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -295,7 +295,7 @@ contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.ecbDecrypt
       (Spec.AesEcb.decryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.AesEcb.decryptApi) {
+  verifiedScrubbedAll (api := Spec.AesEcb.decryptApi) {
       code := Impl.Aes.PPC64LE.decryptBlocks
       verified := Proof.AesEcb.PPC64LE.decrypt_verified }
     0 ⟨true, false, [.r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -308,7 +308,7 @@ contract in constant time and returns without secret residue. -/
 theorem cbcEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cbcEncrypt
       (Spec.Cbc.aesEncryptContract PPC64LE.abi 48) 0 :=
-  verifiedScrubbed (api := Spec.Cbc.aesEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi) {
       code := Impl.AesCbc.PPC64LE.Wiped.encrypt
       verified := Proof.AesCbc.PPC64LE.Wiped.encrypt_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -321,7 +321,7 @@ contract in constant time and returns without secret residue. -/
 theorem cbcDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cbcDecrypt
       (Spec.Cbc.aesDecryptContract PPC64LE.abi 48) 0 :=
-  verifiedScrubbed (api := Spec.Cbc.aesDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi) {
       code := Impl.AesCbc.PPC64LE.Wiped.decrypt
       verified := Proof.AesCbc.PPC64LE.Wiped.decrypt_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -334,7 +334,7 @@ constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.ctr
       (Spec.Ctr.aesContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Ctr.aesApi) {
+  verifiedScrubbedAll (api := Spec.Ctr.aesApi) {
       code := Impl.AesCtr.PPC64LE.crypt
       verified := Proof.AesCtr.keyed Proof.AesCtr.PPC64LE.crypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -347,7 +347,7 @@ contract in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.ctrFinal
       (Spec.Ctr.aesFinalContract PPC64LE.abi 112) 0 :=
-  verifiedScrubbed (api := Spec.Ctr.aesFinalApi) {
+  verifiedScrubbedAll (api := Spec.Ctr.aesFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r9 10 Impl.AesCtr.PPC64LE.cryptFinal
       verified := Proof.AesCtr.final_keyed Proof.AesCtr.PPC64LE.Final.cryptFinal_framed }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -360,7 +360,7 @@ its contract in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cfbEncrypt
       (Spec.Cfb.aesEncryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb.aesEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesEncryptApi) {
       code := Impl.AesCfb.PPC64LE.encrypt
       verified := Proof.AesCfb.encrypt_keyed Proof.AesCfb.PPC64LE.encrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -373,7 +373,7 @@ its contract in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cfbDecrypt
       (Spec.Cfb.aesDecryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb.aesDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesDecryptApi) {
       code := Impl.AesCfb.PPC64LE.decrypt
       verified := Proof.AesCfb.decrypt_keyed Proof.AesCfb.PPC64LE.decrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -412,7 +412,7 @@ contract in constant time and returns without secret residue. -/
 theorem cfb8Encrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cfb8Encrypt
       (Spec.Cfb8.aesEncryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb8.aesEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb8.aesEncryptApi) {
       code := Impl.AesCfb8.PPC64LE.encrypt
       verified := Proof.AesCfb8.encrypt_keyed Proof.AesCfb8.PPC64LE.encrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -425,7 +425,7 @@ contract in constant time and returns without secret residue. -/
 theorem cfb8Decrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.cfb8Decrypt
       (Spec.Cfb8.aesDecryptContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb8.aesDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb8.aesDecryptApi) {
       code := Impl.AesCfb8.PPC64LE.decrypt
       verified := Proof.AesCfb8.decrypt_keyed Proof.AesCfb8.PPC64LE.decrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,
@@ -438,7 +438,7 @@ constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Aes.PPC64LE.Fn.ofb
       (Spec.Ofb.aesContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Ofb.aesApi) {
+  verifiedScrubbedAll (api := Spec.Ofb.aesApi) {
       code := Impl.AesOfb.PPC64LE.crypt
       verified := Proof.AesOfb.keyed Proof.AesOfb.PPC64LE.crypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12], false,

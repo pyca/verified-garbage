@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_rsa_oaep_encrypt_precomputed` and `vg_rsa_oaep_decrypt_precomputed`,
 each as emitted (`Impl/RsaOaep/PPC64LE/Fn.lean`), followed by its cleanup
-(`Impl.Scrub.PPC64LE.scrub`, `PPC64LE.Scrub.verifiedScrubbed`), which clears
+(`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which clears
 the volatile registers each may write and zeroes the stack their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
 two runs agree on (`PPC64LE.Scrub.tablesCall`). Their postconditions read
@@ -104,7 +104,7 @@ theorem decryptP_scrubbed :
       (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables mvars), ("mgf1", tables mvars)])
         Proof.RsaOaep.PPC64LE.Dec.stackBytes) 32 :=
-  verifiedScrubbed (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi) {
+  verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
       verified := decP_ok mvars mvars_ok }
@@ -119,7 +119,7 @@ theorem encrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target (Impl.RsaOaep.PPC64LE.Fn.encrypt (fns3 mvars))
       (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables mvars), ("mgf1", tables mvars)]) 304) 32 :=
-  verifiedScrubbed (api := Spec.RsaOaep.encryptMdTablesApi) {
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
       verified := enc_ok mvars mvars_ok }

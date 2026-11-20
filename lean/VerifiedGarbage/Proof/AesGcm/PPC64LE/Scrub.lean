@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
 `vg_aes_gcm_open`, `vg_aes_gcm_open_to` and the streaming functions
 `vg_aes_gcm_stream_init`, `_aad`, `_encrypt`, `_decrypt`, `_finish` and
 `_verify`, each followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers and the
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers and the
 stack its frames used: each keeps its working space (the padded blocks,
 the saved registers and the tags compared) in a frame it does not wipe
 itself (`withStackScratch`, `withStackScratchArgs`, and the frames of
@@ -231,7 +231,7 @@ contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.init
       (Spec.Gcm.initContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.initApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.initApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 Impl.AesGcm.PPC64LE.init
       verified := init_framed }
     320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -245,7 +245,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem streamInit_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamInit
       (Spec.Gcm.streamInitContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.streamInitApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r7 Impl.AesGcm.PPC64LE.streamInit
       verified := streamInit_framed }
     320 clearAll
@@ -258,7 +258,7 @@ its contract in constant time and returns without secret residue. -/
 theorem streamAad_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamAad
       (Spec.Gcm.streamAadContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.streamAadApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamAadApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8 Impl.AesGcm.PPC64LE.streamAad
       verified := streamAad_framed }
     320 clearAll
@@ -272,7 +272,7 @@ and returns without secret residue. -/
 theorem streamEncrypt_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamEncrypt
       (Spec.Gcm.streamEncryptContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.streamEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
       verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed }
     320 clearAll
@@ -286,7 +286,7 @@ and returns without secret residue. -/
 theorem streamDecrypt_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamDecrypt
       (Spec.Gcm.streamDecryptContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.streamDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
       verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed }
     320 clearAll
@@ -299,7 +299,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem streamFinish_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamFinish
       (Spec.Gcm.streamFinishContract PPC64LE.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.streamFinishApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9 Impl.AesGcm.PPC64LE.streamFinish
       verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed }
     320 clearAll
@@ -312,7 +312,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem streamVerify_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.streamVerify
       (Spec.Gcm.streamVerifyContract PPC64LE.abi 320) 32 :=
-  verifiedScrubbed (api := Spec.Gcm.streamVerifyApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.streamVerifyApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r10 Impl.AesGcm.PPC64LE.streamVerify
       verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed }
     320 clearAll
@@ -325,7 +325,7 @@ contract in constant time and returns without secret residue. -/
 theorem seal_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.seal
       (Spec.Gcm.sealContract PPC64LE.abi 1264) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.sealApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal
       verified := Proof.AesGcm.seal_keyed seal_framed }
     1264 clearAll
@@ -338,7 +338,7 @@ contract in constant time and returns without secret residue. -/
 theorem open_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.open
       (Spec.Gcm.openContract PPC64LE.abi 1280) 32 :=
-  verifiedScrubbed (api := Spec.Gcm.openApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 2 Impl.AesGcm.PPC64LE.open
       verified := Proof.AesGcm.open_keyed open_framed }
     1280 clearAll
@@ -351,7 +351,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem sealGather_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.sealGather
       (Spec.Gcm.sealGatherContract PPC64LE.abi 1552) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.sealGatherApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi) {
       code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
       verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified }
     1552 clearAll
@@ -364,7 +364,7 @@ contract in constant time and returns without secret residue. -/
 theorem openTo_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] [Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     VerifiedScrubbed PPC64LE.target Impl.AesGcm.PPC64LE.Fn.openTo
       (Spec.Gcm.openToContract PPC64LE.abi 1312) 32 :=
-  verifiedScrubbed (api := Spec.Gcm.openToApi) {
+  verifiedScrubbedAll (api := Spec.Gcm.openToApi) {
       code := Impl.AesGcm.PPC64LE.OpenTo.openTo
       verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }
     1312 clearAll

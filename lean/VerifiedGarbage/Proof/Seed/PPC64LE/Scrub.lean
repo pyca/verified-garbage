@@ -28,7 +28,7 @@ themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the
 volatile registers they write after them (`PPC64LE.Scrub.verifiedScrubbedWiped`).
 ECB, whose wiped frame holds the frame of the call it makes, is followed by
-`Impl.Scrub.PPC64LE.scrubTail` with its stack wiped (`PPC64LE.Scrub.verifiedScrubbed`).
+`Impl.Scrub.PPC64LE.scrubTail` with its stack wiped (`PPC64LE.Scrub.verifiedScrubbedAll`).
 Their postconditions read the memory on return only within their buffers, by
 the target-independent lemmas RISC-V's and x86-64's proofs use
 (`Proof/Seed/RISCV64/Scrub.lean`).
@@ -93,7 +93,7 @@ contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Seed.PPC64LE.Fn.ecbEncrypt
       (Spec.Seed.ecbContract PPC64LE.abi Spec.Seed.Direction.encrypt 1168) 0 :=
-  verifiedScrubbed (api := Spec.Seed.ecbEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Seed.ecbEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1120 .r6 136 (Impl.Seed.PPC64LE.ecbCall .encrypt)
       verified := Proof.Seed.PPC64LE.ecbCall_framed .encrypt }
     1168 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -105,7 +105,7 @@ contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Seed.PPC64LE.Fn.ecbDecrypt
       (Spec.Seed.ecbContract PPC64LE.abi Spec.Seed.Direction.decrypt 1168) 0 :=
-  verifiedScrubbed (api := Spec.Seed.ecbDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Seed.ecbDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 1120 .r6 136 (Impl.Seed.PPC64LE.ecbCall .decrypt)
       verified := Proof.Seed.PPC64LE.ecbCall_framed .decrypt }
     1168 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

@@ -14,12 +14,12 @@ import VerifiedGarbage.Proof.Framework.Semantics
 /-!
 # Returning without secret residue (64-bit little-endian PowerPC)
 
-`Verified.scrub`: code verified against a contract that `Sig.contract`
+`Verified.scrubAll`: code verified against a contract that `Sig.contract`
 derives, whose frames use at most the contract's `stack` bytes
 (`Code.ppc64leDepth`), followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`scrub`), is verified against the same contract and returns without secret
+(`scrubAll`), is verified against the same contract and returns without secret
 residue (`NoResidue`), as on RISC-V (`Proof/Framework/RISCV64/Scrub.lean`).
-The proof of the code is used as it is: what `scrub` adds is checked once,
+The proof of the code is used as it is: what `scrubAll` adds is checked once,
 here, for all code. The clearing clears only the volatile registers the code
 may write (`Clear.of`, `Proof/Framework/PPC64LE/Writes.lean`): one it never
 writes holds on return what it held on entry, on which the two runs of
@@ -1343,7 +1343,7 @@ theorem chunks_ok {n : Nat} (h16 : n % 16 = 0) (h48 : n = 0 ∨ 48 ≤ n) : Chun
 
 /-! ## What `Sig.contract` gives -/
 
-/-- What `Verified.scrub` needs of the calling convention a contract is for:
+/-- What `Verified.scrubAll` needs of the calling convention a contract is for:
 `abi`'s, possibly with tables of constants (`Abi.withConsts`), which add
 readable regions apart from the stack the function uses, and with tables of
 functions (`Abi.withTables`). -/
@@ -1546,7 +1546,7 @@ against the same contract, and without secret residue, if the postcondition
 reads the memory on return only within the buffers (`hpost`) and two runs
 of `c` that may differ only in what the contract keeps secret leave the same
 unknowns and memories that agree outside the buffers and the stack the
-clearing zeroes (`hag`). `Verified.scrub` gives `hag` for code whose frames
+clearing zeroes (`hag`). `Verified.scrubAll` gives `hag` for code whose frames
 the clearing wipes whole (`Exec.agree`); code that clears its own frames
 needs none wiped (`cs = []`). -/
 theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
@@ -1675,11 +1675,11 @@ theorem Verified.scrubOf {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
       · exact .inr (hA' x hx' hz)
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames use at most `stack` bytes, run by `scrub`, which clears the stack its
+frames use at most `stack` bytes, run by `scrubAll`, which clears the stack its
 frames may have written and the volatile registers: verified against the
 same contract, and without secret residue, if the postcondition reads the
 memory on return only within the buffers (`hpost`). -/
-theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
@@ -1688,10 +1688,10 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth
+    Verified target (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth
           (Clear.of c (chunks c.ppc64leDepth)) c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth
+      NoResidue (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth
           (Clear.of c (chunks c.ppc64leDepth)) c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hsum := chunks_sum h16
@@ -1751,9 +1751,9 @@ theorem scrubCode_ok {api : Api} (r : Unscrubbed api target)
     (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
     (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrub (retBitsOf r) r.code.ppc64leDepth
+    Verified target (scrubAll (retBitsOf r) r.code.ppc64leDepth
         (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract ∧
-      NoResidue (scrub (retBitsOf r) r.code.ppc64leDepth
+      NoResidue (scrubAll (retBitsOf r) r.code.ppc64leDepth
         (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract (retBitsOf r) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
@@ -1761,11 +1761,11 @@ theorem scrubCode_ok {api : Api} (r : Unscrubbed api target)
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  refine Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48
+  refine Verified.scrubAll (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48
     (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
   simpa using List.all_eq_true.mp htc n hn
 
-/-- `r`, scrubbed: its code followed by the clearing (`scrub`) of the stack
+/-- `r`, scrubbed: its code followed by the clearing (`scrubAll`) of the stack
 its frames use and its volatile registers. -/
 def scrubReg {api : Api} (r : Unscrubbed api target)
     (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
@@ -1774,7 +1774,7 @@ def scrubReg {api : Api} (r : Unscrubbed api target)
     Registration api target where
   suffix := r.suffix
   tables := r.tables
-  code := scrub (retBitsOf r) r.code.ppc64leDepth (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code
+  code := scrubAll (retBitsOf r) r.code.ppc64leDepth (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code
   contract := r.contract
   verified := .scrubbed <| .abi ⟨(scrubCode_ok r hd h16 h48 htc hrb hpost).1, (scrubCode_ok r hd h16 h48 htc hrb hpost).2⟩
   consts := r.consts
@@ -1788,7 +1788,7 @@ def scrubReg {api : Api} (r : Unscrubbed api target)
   vendor := r.vendor
   notWith := r.notWith
 
-/-- `r`, returning without secret residue (`scrubReg`) if `scrub`'s side
+/-- `r`, returning without secret residue (`scrubReg`) if `scrubAll`'s side
 conditions hold: its frames use at most `r.stack` bytes, it calls
 indirectly only functions of its tables (`tablesCall`), and it states no
 `written`; otherwise `r`

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_rsa_pss_verify_precomputed` and `vg_rsa_pss_sign_precomputed`, each
 as emitted (`Impl/RsaPss/PPC64LE/Fn.lean`), followed by its cleanup
-(`Impl.Scrub.PPC64LE.scrub`, `PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers each may write and zeroes the stack
+(`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers each may write and zeroes the stack
 their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
 two runs agree on (`PPC64LE.Scrub.tablesCall`). Their postconditions read
@@ -86,7 +86,7 @@ theorem verifyPrecomputed_scrubbed :
       (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tables mvars), ("mgf1", tables mvars)])
         304) 32 :=
-  verifiedScrubbed (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
       verified := verify_ok' mvars_ok }
@@ -102,7 +102,7 @@ theorem signP_scrubbed :
       (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tables mvars), ("mgf1", tables mvars)])
         3792) 32 :=
-  verifiedScrubbed (api := Spec.RsaPss.signPrecomputedMdTableApi) {
+  verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.Sign.signP (fnsOf mvars) (fns3 mvars)
       verified := signP_ok' mvars_ok }
