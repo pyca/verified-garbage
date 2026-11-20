@@ -44,8 +44,6 @@ abbrev dp : BitVec 32 := arg s₀ 3
 abbrev dl : Nat := (arg s₀ 4).toNat
 abbrev dR : Region := ⟨(dp s₀).setWidth 64, dl s₀⟩
 abbrev scR : Region := ⟨(arg s₀ 5).setWidth 64, 128⟩
-/-- The stack `pairs` uses. -/
-abbrev stkR : Region := ⟨(s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524, 524⟩
 /-- The first `c` bytes of data. -/
 abbrev Dt (c : Nat) : List Byte := bytesAt s₀.mem ((dp s₀).setWidth 64) c
 end
