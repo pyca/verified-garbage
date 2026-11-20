@@ -17,9 +17,17 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
 namespace VG.Artifacts.TripleDesCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cfbEncryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfbEncryptReg,
-  Spec.TripleDes.cfbDecryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfbDecryptReg,
-  Spec.TripleDes.cfbEncryptFinalApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfbEncryptFinalReg,
-  Spec.TripleDes.cfbDecryptFinalApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfbDecryptFinalReg]
+  Spec.TripleDes.cfbEncryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfbEncrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfbEncrypt_scrubbed },
+  Spec.TripleDes.cfbDecryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfbDecrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfbDecrypt_scrubbed },
+  Spec.TripleDes.cfbEncryptFinalApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.TripleDes.cfbDecryptFinalApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb.PPC64LE

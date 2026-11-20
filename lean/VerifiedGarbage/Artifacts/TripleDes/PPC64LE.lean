@@ -15,8 +15,14 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Lit
 namespace VG.Artifacts.TripleDes.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.expandKeyApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.expandKeyReg,
-  Spec.TripleDes.ecbEncryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.ecbEncryptReg,
-  Spec.TripleDes.ecbDecryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.ecbDecryptReg]
+  Spec.TripleDes.expandKeyApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.expandKey
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.expandKey_scrubbed },
+  Spec.TripleDes.ecbEncryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.ecbEncrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+  Spec.TripleDes.ecbDecryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.ecbDecrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.TripleDes.PPC64LE
