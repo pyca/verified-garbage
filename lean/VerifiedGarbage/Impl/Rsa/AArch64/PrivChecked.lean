@@ -187,4 +187,28 @@ def codeP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) 
   .frame (.push .x30) (.frame (.alloc frameBytes) (bodyP crtName crt pdName pd) (.free frameBytes))
     (.pop .x30)
 
+/-- An implementation of the private-key operation, by the symbols and code
+of its functions: `vg_rsa_private_crt`, `vg_rsa_private_crt_precomputed`
+(`crtP`), `vg_rsa_public_precompute` (`pc`) and
+`vg_rsa_public_precomputed_checked` (`pd`), and what the names of the
+functions that call them end with (e.g. `_neon`; nothing for the baseline
+implementation). -/
+structure Crt where
+  name : String
+  code : Prog isa
+  crtPName : String
+  crtP : Prog isa
+  pcName : String
+  pc : Prog isa
+  pdName : String
+  pd : Prog isa
+  suffix : String
+
+/-- The symbol of `vg_rsa_private_checked_precomputed` calling `c`, an
+internal function of the functions that call it. -/
+def Crt.privPName (c : Crt) : String := "vg_rsa_private_checked_precomputed" ++ c.suffix
+
+/-- `vg_rsa_private_checked_precomputed` calling `c`. -/
+def Crt.privP (c : Crt) : Prog isa := codeP c.crtPName c.crtP c.pdName c.pd
+
 end VG.Impl.Rsa.AArch64.PrivChecked
