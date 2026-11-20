@@ -7225,9 +7225,12 @@ vg_ecdh_p256_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+16]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+8]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7236,7 +7239,6 @@ vg_ecdh_p256_ifma:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -24639,7 +24641,9 @@ vg_ecdh_p256:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -24649,7 +24653,6 @@ vg_ecdh_p256:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -35157,7 +35160,9 @@ vg_ecdh_p256_adx:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -35167,6 +35172,5 @@ vg_ecdh_p256_adx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

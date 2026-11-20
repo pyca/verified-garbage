@@ -264,7 +264,9 @@ vg_ec_p192_compress_public_key:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -274,7 +276,6 @@ vg_ec_p192_compress_public_key:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2643,7 +2644,25 @@ vg_ec_p192_decompress_public_key:
 	mov r13, QWORD PTR [rdi+24]
 	mov r14, QWORD PTR [rdi+32]
 	mov r15, QWORD PTR [rdi+40]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
@@ -2653,6 +2672,5 @@ vg_ec_p192_decompress_public_key:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
