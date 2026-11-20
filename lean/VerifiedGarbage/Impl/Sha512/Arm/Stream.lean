@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm.Digest
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Streaming SHA-512: 32-bit ARM implementation
@@ -74,4 +76,75 @@ def params512_224 : Params := { params with out := (List.range 3).flatMap outW +
 /-- `finalize`, writing the digest `P.out` writes (`params384`, …). -/
 def finalizeDigest (P : Params) : Prog isa := MdStream.Arm.finalize P "vg_sha512_compress" compress
 
+/-- The SHA-512 family's streaming functions as HMAC, PBKDF2 and the one-shot
+digest call them (`Impl.Pbkdf2.Stream.Arm.Hash`), for the member with
+initial hash value `iv`, a `D`-byte digest and `init` named `initN`: a
+192-byte streaming state and 34 words of working space. -/
+def streamFnsOf (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Impl.Pbkdf2.Stream.Arm.Hash :=
+  ⟨128, 192, D, 64, 34, initN, init iv, "vg_sha512_update_scratch", update, "vg_sha512_finalize_scratch",
+    finalize⟩
+
+def streamFns384 : Impl.Pbkdf2.Stream.Arm.Hash := streamFnsOf 48 "vg_sha384_init_core" Spec.Sha512.H0_384
+def streamFns512 : Impl.Pbkdf2.Stream.Arm.Hash := streamFnsOf 64 "vg_sha512_init_core" Spec.Sha512.H0_512
+def streamFns512_224 : Impl.Pbkdf2.Stream.Arm.Hash :=
+  streamFnsOf 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
+def streamFns512_256 : Impl.Pbkdf2.Stream.Arm.Hash :=
+  streamFnsOf 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
+
 end VG.Impl.Sha512.Arm.Stream
+
+/-! ## The functions as emitted
+
+Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+a callee may change set to constants, and for every function but `init` first
+the stack of its contract zeroed: the 288 bytes of the frame of `update` and
+`finalize` (`withStackScratch`), and `digest`'s (`withRegScratchWiped`, and
+the 16 bytes it pushes). None returns a value. -/
+
+namespace VG.Impl.Sha512.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_sha384_init`. -/
+def init384 : Prog isa := scrub 0 (Stream.init Spec.Sha512.H0_384)
+
+/-- `vg_sha512_init`. -/
+def init512 : Prog isa := scrub 0 (Stream.init Spec.Sha512.H0_512)
+
+/-- `vg_sha512_224_init`. -/
+def init512_224 : Prog isa := scrub 0 (Stream.init Spec.Sha512.H0_512_224)
+
+/-- `vg_sha512_256_init`. -/
+def init512_256 : Prog isa := scrub 0 (Stream.init Spec.Sha512.H0_512_256)
+
+/-- `vg_sha512_update`, which the truncations share. -/
+def update : Prog isa := scrubF 0 288 (Impl.StackScratch.Arm.withStackScratch 288 2 Stream.update)
+
+/-- `vg_sha512_finalize`. -/
+def finalize : Prog isa := scrubF 0 288 (Impl.StackScratch.Arm.withStackScratch 288 1 Stream.finalize)
+
+/-- `vg_sha384_finalize`. -/
+def finalize384 : Prog isa :=
+  scrubF 0 288 (Impl.StackScratch.Arm.withStackScratch 288 1 (Stream.finalizeDigest Stream.params384))
+
+/-- `vg_sha512_256_finalize`. -/
+def finalize512_256 : Prog isa :=
+  scrubF 0 288 (Impl.StackScratch.Arm.withStackScratch 288 1 (Stream.finalizeDigest Stream.params512_256))
+
+/-- `vg_sha512_224_finalize`. -/
+def finalize512_224 : Prog isa :=
+  scrubF 0 288 (Impl.StackScratch.Arm.withStackScratch 288 1 (Stream.finalizeDigest Stream.params512_224))
+
+/-- `vg_sha384_digest`. -/
+def digest384 : Prog isa := scrubF 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns384)
+
+/-- `vg_sha512_digest`. -/
+def digest512 : Prog isa := scrubF 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512)
+
+/-- `vg_sha512_224_digest`. -/
+def digest512_224 : Prog isa := scrubF 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_224)
+
+/-- `vg_sha512_256_digest`. -/
+def digest512_256 : Prog isa := scrubF 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_256)
+
+end VG.Impl.Sha512.Arm.Fn

@@ -11,9 +11,17 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Sha1.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha1.initApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha1InitReg,
-  Spec.Sha1.updateApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha1UpdateReg,
-  Spec.Sha1.finalizeApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha1FinalizeReg,
-  Spec.Sha1.digestApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha1DigestReg]
+  Spec.Sha1.initApi.artifact Arm.target {
+    code := Impl.Sha1.Arm.Fn.init
+    verified := .scrubbed Proof.Sha1.Arm.Fn.init },
+  Spec.Sha1.updateApi.artifact Arm.target {
+    code := Impl.Sha1.Arm.Fn.update
+    verified := .scrubbed Proof.Sha1.Arm.Fn.update },
+  Spec.Sha1.finalizeApi.artifact Arm.target {
+    code := Impl.Sha1.Arm.Fn.finalize
+    verified := .scrubbed Proof.Sha1.Arm.Fn.finalize },
+  Spec.Sha1.digestApi.artifact Arm.target {
+    code := Impl.Sha1.Arm.Fn.digest
+    verified := .scrubbed Proof.Sha1.Arm.Fn.digest }]
 
 end VG.Artifacts.Sha1.Arm

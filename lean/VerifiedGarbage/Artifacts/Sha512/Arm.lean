@@ -11,18 +11,44 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Sha512.Arm
 
 def artifacts : List Artifact := [
-  Spec.Sha512.init384Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha384InitReg,
-  Spec.Sha512.init512Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512InitReg,
-  Spec.Sha512.init512_224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_224InitReg,
-  Spec.Sha512.init512_256Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_256InitReg,
-  Spec.Sha512.updateApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512UpdateReg,
-  Spec.Sha512.finalizeApi.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512FinalizeReg,
-  Spec.Sha512.finalize384Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha384FinalizeReg,
-  Spec.Sha512.finalize512_256Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_256FinalizeReg,
-  Spec.Sha512.finalize512_224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_224FinalizeReg,
-  Spec.Sha512.digest384Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha384DigestReg,
-  Spec.Sha512.digest512Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512DigestReg,
-  Spec.Sha512.digest512_224Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_224DigestReg,
-  Spec.Sha512.digest512_256Api.artifact Arm.target Proof.MdStream.Arm.ShaScrub.sha512_256DigestReg]
+  Spec.Sha512.init384Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.init384
+    verified := .scrubbed Proof.Sha512.Arm.Fn.init384 },
+  Spec.Sha512.init512Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.init512
+    verified := .scrubbed Proof.Sha512.Arm.Fn.init512 },
+  Spec.Sha512.init512_224Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.init512_224
+    verified := .scrubbed Proof.Sha512.Arm.Fn.init512_224 },
+  Spec.Sha512.init512_256Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.init512_256
+    verified := .scrubbed Proof.Sha512.Arm.Fn.init512_256 },
+  Spec.Sha512.updateApi.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.update
+    verified := .scrubbed Proof.Sha512.Arm.Fn.update },
+  Spec.Sha512.finalizeApi.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.finalize
+    verified := .scrubbed Proof.Sha512.Arm.Fn.finalize },
+  Spec.Sha512.finalize384Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.finalize384
+    verified := .scrubbed Proof.Sha512.Arm.Fn.finalize384 },
+  Spec.Sha512.finalize512_256Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.finalize512_256
+    verified := .scrubbed Proof.Sha512.Arm.Fn.finalize512_256 },
+  Spec.Sha512.finalize512_224Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.finalize512_224
+    verified := .scrubbed Proof.Sha512.Arm.Fn.finalize512_224 },
+  Spec.Sha512.digest384Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.digest384
+    verified := .scrubbed Proof.Sha512.Arm.Fn.digest384 },
+  Spec.Sha512.digest512Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.digest512
+    verified := .scrubbed Proof.Sha512.Arm.Fn.digest512 },
+  Spec.Sha512.digest512_224Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.digest512_224
+    verified := .scrubbed Proof.Sha512.Arm.Fn.digest512_224 },
+  Spec.Sha512.digest512_256Api.artifact Arm.target {
+    code := Impl.Sha512.Arm.Fn.digest512_256
+    verified := .scrubbed Proof.Sha512.Arm.Fn.digest512_256 }]
 
 end VG.Artifacts.Sha512.Arm
