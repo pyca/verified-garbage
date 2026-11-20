@@ -282,7 +282,14 @@ instructions in an ISA model) go in their own PR before either.
    variant (`fill_calls`), and `verifiedScrubbedAllFill` joins them with
    `stubSide` of the stub, which the kernel evaluates once
    (`Proof/Framework/X86_64/ScrubCall.lean`;
-   `Proof/TripleDes/X86_64/Batch/Scrub.lean`, `Artifacts/TripleDesCbc/X86_64.lean`). The families not yet converted build their
+   `Proof/TripleDes/X86_64/Batch/Scrub.lean`, `Artifacts/TripleDesCbc/X86_64.lean`).
+   Where each variant's function is evaluated anyway (a variant's own
+   streaming functions), the variant instead carries what `scrubSel`
+   needs of that function's code, `X86_64.Scrub.SelScrub` (its level, the
+   runs, the analysis by `taint_decide` and `scrubSideG` by `lit_decide`),
+   and `SelScrub.scrubbed` states the theorem (`Backend.updScrub`,
+   `Proof/Blake2/X86_64/Backend.lean`; `StreamFnS`, `FinImpl`,
+   `Proof/Pbkdf2/Md/X86_64/`). The families not yet converted build their
    registration in `Proof/` with the older forms below: never use them in
    new code.
    On a target whose `Proof/Framework/` does not yet state its scrub as a
