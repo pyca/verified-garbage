@@ -540,6 +540,135 @@ private theorem keyGen_sd (c : Impl.Sha3.AArch64.Callee)
         (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa87)
         (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
+/-! The entries (`Sign.entry`, `Verify.entry`) only call the function that
+works with the cached key, and the functions that take a message only hash
+it (`Message.muHash`) and call an entry as emitted: so the code with holes is
+evaluated of the functions with the cached key and of the hash alone, and
+what holds of an entry and of a message function follows from the shape of
+its code. -/
+
+private theorem signWC_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+        (Impl.MlDsa.AArch64.Fn.signPrims c) p) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+        (Impl.MlDsa.AArch64.Fn.signPrims c) p).aarch64Depth ≤ 3 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  refine side_depth_of_fill2 (a := .call n code) (da := 0)
+    (e := Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, ps, some (.call "" (.seq (.block []) (.block [])))⟩
+      (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, ps, some (.call "" (.seq (.block []) (.block [])))⟩) p)
+    ?_ hb (Nat.le_of_eq hbd) ho hod ?_ (Nat.le_of_ble_eq_true ?_)
+  all_goals (rcases hp with rfl | rfl | rfl <;> cases ps <;> kernel_rfl)
+
+private theorem verifyWC_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+        (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+        (Impl.MlDsa.AArch64.KeyGen.primsWith c) p).aarch64Depth ≤ 3 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  refine side_depth_of_fill2 (a := .call n code) (da := 0)
+    (e := Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, ps, some (.call "" (.seq (.block []) (.block [])))⟩
+      (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, ps, some (.call "" (.seq (.block []) (.block [])))⟩) p)
+    ?_ hb (Nat.le_of_eq hbd) ho hod ?_ (Nat.le_of_ble_eq_true ?_)
+  all_goals (rcases hp with rfl | rfl | rfl <;> cases ps <;> kernel_rfl)
+
+private theorem muHash_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {tr : Impl.MlDsa.AArch64.Message.Arg}
+    (htr : tr = .slotOff Impl.MlDsa.AArch64.Message.fKey 64 ∨ tr = .slot Impl.MlDsa.AArch64.Message.fRnd) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Message.muHash c tr) = true ∧
+      (Impl.MlDsa.AArch64.Message.muHash c tr).aarch64Depth ≤ 4 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  refine side_depth_of_fill2 (a := .call n code) (da := 0)
+    (e := Impl.MlDsa.AArch64.Message.muHash ⟨"", .block [], sfx, cl, ps, some (.call "" (.seq (.block []) (.block [])))⟩ tr)
+    ?_ hb (Nat.le_of_eq hbd) ho hod ?_ (Nat.le_of_ble_eq_true ?_)
+  all_goals (rcases htr with rfl | rfl <;> cases ps <;> kernel_rfl)
+
+private theorem signEntry_sd {name : String} {code : Prog isa} {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (prepared : Bool) {d : Nat}
+    (h : sideAll (fun i => !i.writesDit) code = true ∧ code.aarch64Depth ≤ d) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared).aarch64Depth ≤ d + 1 := by
+  have hb : sideAll (fun i => !i.writesDit)
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name (.block []) p prepared) = true := by
+    rcases hp with rfl | rfl | rfl <;> cases prepared <;> kernel_rfl
+  refine ⟨?_, ?_⟩
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Sign.entry, sideAll, Bool.and_eq_true] at hb ⊢
+    simp only [hb, h.1, and_self]
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Sign.entry, Code.aarch64Depth, Instr.frameUnits, Nat.zero_max]
+    exact Nat.add_le_add_right h.2 1
+
+private theorem verifyEntry_sd {name : String} {code : Prog isa} {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (prepared : Bool) {d : Nat}
+    (h : sideAll (fun i => !i.writesDit) code = true ∧ code.aarch64Depth ≤ d) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared).aarch64Depth ≤ d + 1 := by
+  have hb : sideAll (fun i => !i.writesDit)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name (.block []) p prepared) = true := by
+    rcases hp with rfl | rfl | rfl <;> cases prepared <;> kernel_rfl
+  refine ⟨?_, ?_⟩
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.entry, sideAll, Bool.and_eq_true] at hb ⊢
+    simp only [hb, h.1, and_self]
+  · simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.entry, Code.aarch64Depth, Instr.frameUnits, Nat.zero_max]
+    exact Nat.add_le_add_right h.2 1
+
+/-- The depth of a function as emitted, in a frame of 64 bytes: its code's,
+if that is at most the frame's 4 units. -/
+private theorem depth_scrubAll64 {c : Prog isa} (cl : VG.Impl.Residue.AArch64.Clear)
+    (h : c.aarch64Depth ≤ 4) : (VG.Impl.Residue.AArch64.scrubAll 64 32 cl c).aarch64Depth ≤ 4 := by
+  show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32
+    (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
+    (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
+  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+    Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
+  exact h
+
+private theorem signMessage_of {c : Impl.Sha3.AArch64.Callee} {n : String} {f : Prog isa} {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {d : Nat}
+    (hm : sideAll (fun i => !i.writesDit)
+        (Impl.MlDsa.AArch64.Message.muHash c (.slotOff Impl.MlDsa.AArch64.Message.fKey 64)) = true ∧
+      (Impl.MlDsa.AArch64.Message.muHash c (.slotOff Impl.MlDsa.AArch64.Message.fKey 64)).aarch64Depth ≤ d)
+    (hf : sideAll (fun i => !i.writesDit) f = true ∧ f.aarch64Depth ≤ d) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Message.signMessage c n f p) = true ∧
+      (Impl.MlDsa.AArch64.Message.signMessage c n f p).aarch64Depth ≤ d := by
+  have hb : sideAll (fun i => !i.writesDit)
+      (Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], "", ⟨[], [], []⟩, false, none⟩ n (.block []) p) = true := by
+    rcases hp with rfl | rfl | rfl <;> kernel_rfl
+  refine ⟨?_, ?_⟩
+  · simp only [Impl.MlDsa.AArch64.Message.signMessage, Impl.MlDsa.AArch64.Message.top,
+      Impl.MlDsa.AArch64.Message.callA, sideAll, Bool.and_eq_true] at hb ⊢
+    simp only [hb, hm.1, hf.1, and_self]
+  · simp only [Impl.MlDsa.AArch64.Message.signMessage, Impl.MlDsa.AArch64.Message.top,
+      Impl.MlDsa.AArch64.Message.callA, Code.aarch64Depth, Nat.max_le, Nat.zero_le, true_and, and_true]
+    exact ⟨hm.2, hf.2⟩
+
+private theorem verifyMessage_of {c : Impl.Sha3.AArch64.Callee} {n : String} {f : Prog isa} {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {d : Nat}
+    (hm : sideAll (fun i => !i.writesDit)
+        (Impl.MlDsa.AArch64.Message.muHash c (.slot Impl.MlDsa.AArch64.Message.fRnd)) = true ∧
+      (Impl.MlDsa.AArch64.Message.muHash c (.slot Impl.MlDsa.AArch64.Message.fRnd)).aarch64Depth ≤ d)
+    (hf : sideAll (fun i => !i.writesDit) f = true ∧ f.aarch64Depth ≤ d) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c n f p) = true ∧
+      (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c n f p).aarch64Depth ≤ d := by
+  have hb : sideAll (fun i => !i.writesDit)
+      (Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], "", ⟨[], [], []⟩, false, none⟩ n (.block []) p) = true := by
+    rcases hp with rfl | rfl | rfl <;> kernel_rfl
+  refine ⟨?_, ?_⟩
+  · simp only [Impl.MlDsa.AArch64.Optimized.verifyMessageCached, Impl.MlDsa.AArch64.Message.top,
+      Impl.MlDsa.AArch64.Message.callA, sideAll, Bool.and_eq_true] at hb ⊢
+    simp only [hb, hm.1, hf.1, and_self]
+  · simp only [Impl.MlDsa.AArch64.Optimized.verifyMessageCached, Impl.MlDsa.AArch64.Message.top,
+      Impl.MlDsa.AArch64.Message.callA, Code.aarch64Depth, Nat.max_le, Nat.zero_le, true_and, and_true]
+    exact ⟨hm.2, hf.2⟩
+
 private theorem sign_sd (c : Impl.Sha3.AArch64.Callee)
     (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
     (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
@@ -550,78 +679,8 @@ private theorem sign_sd (c : Impl.Sha3.AArch64.Callee)
           (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared) = true ∧
       (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
         (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
-          (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared).aarch64Depth ≤ 4 := by
-  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
-  rcases hp with rfl | rfl | rfl
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+          (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared).aarch64Depth ≤ 4 :=
+  signEntry_sd hp prepared (signWC_sd c hb hbd ho hod hp)
 
 private theorem verify_sd (c : Impl.Sha3.AArch64.Callee)
     (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
@@ -633,78 +692,8 @@ private theorem verify_sd (c : Impl.Sha3.AArch64.Callee)
           (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared) = true ∧
       (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
         (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
-          (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared).aarch64Depth ≤ 4 := by
-  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
-  rcases hp with rfl | rfl | rfl
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+          (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared).aarch64Depth ≤ 4 :=
+  verifyEntry_sd hp prepared (verifyWC_sd c hb hbd ho hod hp)
 
 private theorem signMessage_sd (c : Impl.Sha3.AArch64.Callee)
     (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
@@ -719,89 +708,8 @@ private theorem signMessage_sd (c : Impl.Sha3.AArch64.Callee)
         (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
             (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared)) p).aarch64Depth ≤ 4 := by
-  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
-  rcases hp with rfl | rfl | rfl
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  obtain ⟨hs, hd⟩ := sign_sd c hb hbd ho hod hp name prepared
+  exact signMessage_of hp (muHash_sd c hb hbd ho hod (.inl rfl)) ⟨sideAll_scrubAll hs, depth_scrubAll64 _ hd⟩
 
 private theorem verifyMessage_sd (c : Impl.Sha3.AArch64.Callee)
     (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
@@ -816,89 +724,8 @@ private theorem verifyMessage_sd (c : Impl.Sha3.AArch64.Callee)
         (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
             (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared)) p).aarch64Depth ≤ 4 := by
-  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
-  rcases hp with rfl | rfl | rfl
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-  · cases ps
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-    · cases prepared
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
-      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
-          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
-            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
-              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
-                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
-          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  obtain ⟨hs, hd⟩ := verify_sd c hb hbd ho hod hp name prepared
+  exact verifyMessage_of hp (muHash_sd c hb hbd ho hod (.inr rfl)) ⟨sideAll_scrubAll hs, depth_scrubAll64 _ hd⟩
 
 section
 variable (v : Proof.Sha3.AArch64.Permutation)
