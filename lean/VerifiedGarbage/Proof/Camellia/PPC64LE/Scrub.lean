@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
@@ -19,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 Key expansion and the ECB, CBC, CFB128, OFB and CTR functions zero their
 whole frame themselves before they release it (`withStackScratchWiped`), and
 have no frames of their own inside it, so they need only the clearing of the
-volatile registers after them (`PPC64LE.Scrub.scrubWipedOf`), with no stack
+volatile registers after them (`PPC64LE.Scrub.verifiedScrubbedWiped`), with no stack
 wiped. Their postconditions read the memory on return only within their
 buffers (`cbcEncOut`, …).
 
@@ -27,7 +28,7 @@ buffers (`cbcEncOut`, …).
 `vg_camellia_ctr_core` (`Impl.Camellia.PPC64LE.ctrCall`), inside its own
 frame, so its body has a frame inside the one it wipes: the tail after it
 wipes the whole stack both frames use, the 3520 bytes of its contract's
-`stack`, and clears the volatile registers (`PPC64LE.Scrub.scrubOf`).
+`stack`, and clears the volatile registers (`PPC64LE.Scrub.verifiedScrubbed`).
 -/
 
 @[expose] public section
@@ -382,8 +383,13 @@ theorem ofbFinalOut (stack : Nat) :
       rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
     exact h key hk
 
-def cbcEncReg : Registration Spec.Camellia.cbcEncryptChainedApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cbc_encrypt_chained` as emitted
+(`Impl.Camellia.PPC64LE.Fn.cbcEnc`) meets its contract in constant time and
+returns without secret residue. -/
+theorem cbcEnc_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cbcEnc
+      (Spec.Camellia.cbcEncryptChainedContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cbcEncryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained
       verified := Proof.Camellia.PPC64LE.cbcEnc_framed Proof.Camellia.PPC64LE.Modes.cbcEncryptChained_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.cbcEncryptChained
@@ -391,8 +397,13 @@ def cbcEncReg : Registration Spec.Camellia.cbcEncryptChainedApi PPC64LE.target :
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cbcEncOut _) (by dsimp only; lit_decide)
 
-def cbcDecReg : Registration Spec.Camellia.cbcDecryptChainedApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cbc_decrypt_chained` as emitted
+(`Impl.Camellia.PPC64LE.Fn.cbcDec`) meets its contract in constant time and
+returns without secret residue. -/
+theorem cbcDec_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cbcDec
+      (Spec.Camellia.cbcDecryptChainedContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cbcDecryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained
       verified := Proof.Camellia.PPC64LE.cbcDec_framed Proof.Camellia.PPC64LE.Modes.cbcDecryptChained_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.cbcDecryptChained
@@ -400,29 +411,45 @@ def cbcDecReg : Registration Spec.Camellia.cbcDecryptChainedApi PPC64LE.target :
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cbcDecOut _) (by dsimp only; lit_decide)
 
-def expandKeyReg : Registration Spec.Camellia.expandKeyApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_expand_key` as emitted (`Impl.Camellia.PPC64LE.Fn.expandKey`)
+meets its contract in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.expandKey
+      (Spec.Camellia.expandKeyContract PPC64LE.abi 3344) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.expandKeyApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
       verified := Proof.Camellia.PPC64LE.expandKey_framed }
     3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
     ⟨true, true, [.r4, .r6, .r7, .r8, .r9, .r11, .r12], false, []⟩ rfl (expandKeyOut _) (by dsimp only; lit_decide)
 
-def ecbEncReg : Registration Spec.Camellia.ecbEncryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_ecb_encrypt` as emitted (`Impl.Camellia.PPC64LE.Fn.ecbEnc`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ecbEnc_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ecbEnc
+      (Spec.Camellia.ecbContract PPC64LE.abi (Proof.Camellia.PPC64LE.specDir Impl.Camellia.PPC64LE.Dir.encrypt) 3344) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.ecbEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .encrypt)
       verified := Proof.Camellia.PPC64LE.ecb_framed .encrypt }
     3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .encrypt)
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbOut .encrypt _) (by dsimp only; lit_decide)
 
-def ecbDecReg : Registration Spec.Camellia.ecbDecryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_ecb_decrypt` as emitted (`Impl.Camellia.PPC64LE.Fn.ecbDec`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ecbDec_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ecbDec
+      (Spec.Camellia.ecbContract PPC64LE.abi (Proof.Camellia.PPC64LE.specDir Impl.Camellia.PPC64LE.Dir.decrypt) 3344) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.ecbDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .decrypt)
       verified := Proof.Camellia.PPC64LE.ecb_framed .decrypt }
     3344 .r7 414 (Impl.Camellia.PPC64LE.ecb .decrypt)
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbOut .decrypt _) (by dsimp only; lit_decide)
 
-def cfbEncReg : Registration Spec.Camellia.cfbEncryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cfb128_encrypt` as emitted (`Impl.Camellia.PPC64LE.Fn.cfbEnc`)
+meets its contract in constant time and returns without secret residue. -/
+theorem cfbEnc_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cfbEnc
+      (Spec.Camellia.cfbEncryptContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cfbEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
       verified := Proof.Camellia.PPC64LE.cfbEnc_framed Proof.Camellia.PPC64LE.Modes.cfbEncrypt_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
@@ -430,8 +457,12 @@ def cfbEncReg : Registration Spec.Camellia.cfbEncryptApi PPC64LE.target :=
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cfbEncOut _) (by dsimp only; lit_decide)
 
-def cfbDecReg : Registration Spec.Camellia.cfbDecryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cfb128_decrypt` as emitted (`Impl.Camellia.PPC64LE.Fn.cfbDec`)
+meets its contract in constant time and returns without secret residue. -/
+theorem cfbDec_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cfbDec
+      (Spec.Camellia.cfbDecryptContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cfbDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
       verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
@@ -439,8 +470,13 @@ def cfbDecReg : Registration Spec.Camellia.cfbDecryptApi PPC64LE.target :=
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cfbDecOut _) (by dsimp only; lit_decide)
 
-def cfbEncFinalReg : Registration Spec.Camellia.cfbEncryptFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cfb128_encrypt_final` as emitted
+(`Impl.Camellia.PPC64LE.Fn.cfbEncFinal`) meets its contract in constant time
+and returns without secret residue. -/
+theorem cfbEncFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cfbEncFinal
+      (Spec.Camellia.cfbEncryptFinalContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cfbEncryptFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.cfbEncryptFinal_framed }
     3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
@@ -448,8 +484,13 @@ def cfbEncFinalReg : Registration Spec.Camellia.cfbEncryptFinalApi PPC64LE.targe
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cfbEncFinalOut _) (by dsimp only; lit_decide)
 
-def cfbDecFinalReg : Registration Spec.Camellia.cfbDecryptFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_cfb128_decrypt_final` as emitted
+(`Impl.Camellia.PPC64LE.Fn.cfbDecFinal`) meets its contract in constant time
+and returns without secret residue. -/
+theorem cfbDecFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.cfbDecFinal
+      (Spec.Camellia.cfbDecryptFinalContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.cfbDecryptFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.cfbDecryptFinal_framed }
     3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
@@ -457,8 +498,12 @@ def cfbDecFinalReg : Registration Spec.Camellia.cfbDecryptFinalApi PPC64LE.targe
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (cfbDecFinalOut _) (by dsimp only; lit_decide)
 
-def ofbReg : Registration Spec.Camellia.ofbApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_ofb` as emitted (`Impl.Camellia.PPC64LE.Fn.ofb`) meets its
+contract in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ofb
+      (Spec.Camellia.ofbContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.ofbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ofb
       verified := Proof.Camellia.PPC64LE.ofb_framed Proof.Camellia.PPC64LE.Modes.ofb_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.ofb
@@ -466,8 +511,12 @@ def ofbReg : Registration Spec.Camellia.ofbApi PPC64LE.target :=
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (ofbOut _) (by dsimp only; lit_decide)
 
-def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_ofb_final` as emitted (`Impl.Camellia.PPC64LE.Fn.ofbFinal`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ofbFinal
+      (Spec.Camellia.ofbFinalContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.ofbFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ofbFinal
       verified := Proof.Camellia.PPC64LE.FbFinal.ofbFinal_framed }
     3408 .r8 422 Impl.Camellia.PPC64LE.ofbFinal
@@ -475,8 +524,12 @@ def ofbFinalReg : Registration Spec.Camellia.ofbFinalApi PPC64LE.target :=
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (ofbFinalOut _) (by dsimp only; lit_decide)
 
-def ctrReg : Registration Spec.Camellia.ctrApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_camellia_ctr` as emitted (`Impl.Camellia.PPC64LE.Fn.ctr`) meets its
+contract in constant time and returns without secret residue. -/
+theorem ctr_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ctr
+      (Spec.Camellia.ctrContract PPC64LE.abi 3408) 0 :=
+  verifiedScrubbedWiped (api := Spec.Camellia.ctrApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.ctr
       verified := Proof.Camellia.PPC64LE.ctr_framed Proof.Camellia.PPC64LE.Modes.ctr_verified }
     3408 .r8 422 Impl.Camellia.PPC64LE.ctr
@@ -484,9 +537,12 @@ def ctrReg : Registration Spec.Camellia.ctrApi PPC64LE.target :=
       [.v0, .v1, .v2, .v3, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18,
        .v19]⟩ rfl (ctrOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Camellia.ctrFinalApi`. -/
-def ctrFinalReg : Registration Spec.Camellia.ctrFinalApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_camellia_ctr_final` as emitted (`Impl.Camellia.PPC64LE.Fn.ctrFinal`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ctrFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Camellia.PPC64LE.Fn.ctrFinal
+      (Spec.Camellia.ctrFinalContract PPC64LE.abi 3520) 0 :=
+  verifiedScrubbed (api := Spec.Camellia.ctrFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r8 10 Impl.Camellia.PPC64LE.ctrFinal
       verified := Proof.Camellia.PPC64LE.CtrFinal.ctrFinal_framed }
     3520 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

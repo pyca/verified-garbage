@@ -15,7 +15,11 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 namespace VG.Artifacts.CamelliaCtr.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Camellia.ctrApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.ctrReg,
-  Spec.Camellia.ctrFinalApi.artifact PPC64LE.target Proof.Camellia.PPC64LE.Scrub.ctrFinalReg]
+  Spec.Camellia.ctrApi.artifact PPC64LE.target {
+    code := Impl.Camellia.PPC64LE.Fn.ctr
+    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.ctr_scrubbed },
+  Spec.Camellia.ctrFinalApi.artifact PPC64LE.target {
+    code := Impl.Camellia.PPC64LE.Fn.ctrFinal
+    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.ctrFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCtr.PPC64LE
