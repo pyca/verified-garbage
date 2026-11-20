@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
@@ -1418,9 +1418,11 @@ precondition, of the code with its working space as its last argument
 (`sealScratchContract`, `openZeroScratchContract`, `openToScratchContract`),
 and then of the functions, which allocate it in a frame of 740 bytes on the
 stack (the return address, the seven other arguments and the 704 bytes of
-working space; 748 for `open_to`, with nine) and wipe it after the code
-(`Verified.stackScratchWiped`; `Verified.stackScratchWipedPre` for `open_to`,
-whose postcondition reads only `dst` on return given `dst_len = len`).
+working space; 748 for `open_to`, with nine: `Verified.stackScratch`, whose
+`hpostOut` is given the precondition, as `open_to`'s postcondition reads only
+`dst` on return given `dst_len = len`). The frame does not zero the working
+space: the functions as emitted zero all of their stack
+(`Proof/ChaCha20Poly1305/X86/Scrub.lean`).
 -/
 
 namespace VG.Proof.ChaCha20Poly1305.X86
@@ -1630,14 +1632,14 @@ theorem openTo_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.openTo v.callee
 
 /-! ## The frame -/
 
-/-- The frame of `withStackScratchWiped` keeps the stack pointer for any `c`
+/-- The frame of `withStackScratch` keeps the stack pointer for any `c`
 that does, if it does for an empty body (decided for literal sizes). -/
-theorem withStackScratchWiped_spSafe {bytes n words : Nat} {c : Prog isa}
+theorem withStackScratch_spSafe {bytes n : Nat} {c : Prog isa}
     (h : c.all (fun i => !isa.writesSp i) = true)
-    (hf : (Impl.StackScratch.X86.withStackScratchWiped bytes n words (.block [])).all
+    (hf : (Impl.StackScratch.X86.withStackScratch bytes n (.block [])).all
       (fun i => !isa.writesSp i) = true := by decide +kernel) :
-    (Impl.StackScratch.X86.withStackScratchWiped bytes n words c).all (fun i => !isa.writesSp i) = true := by
-  simp only [Impl.StackScratch.X86.withStackScratchWiped, Impl.StackScratch.X86.withStackScratch, Code.all,
+    (Impl.StackScratch.X86.withStackScratch bytes n c).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.StackScratch.X86.withStackScratch, Code.all,
     List.all_nil, Bool.and_eq_true] at hf ⊢
   simp_all
 
@@ -1698,12 +1700,13 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86.abi 12
 
 theorem seal_framed (v : XorImpl) :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee))
+      (Impl.StackScratch.X86.withStackScratch 740 7 (Impl.ChaCha20Poly1305.X86.«seal» v.callee))
       (Spec.ChaCha20Poly1305.sealContract X86.abi 1280) :=
-  X86.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
     (n := 88) (post := Spec.ChaCha20Poly1305.sealPost X86.abi.ptrBits) (wa := true) (stack := 540)
-    (bytes := 740) (words := 176) (seal_verified v) (by decide) (seal_noEsp v) (seal_stackUse v) (by decide)
-    (pre_local _ _) (sealPost_local _) (sealPost_out _) sealFrameSat_pre
+    (bytes := 740) (seal_verified v) (by decide) (seal_noEsp v) (seal_stackUse v)
+    (pre_local _ _) (sealPost_local _) (fun vs m m₁ m₂ r hl _ hb => sealPost_out _ vs m m₁ m₂ r hl hb)
+    sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
 def openFrameSat : State := { openSat with wr := [⟨0x2100, 0⟩, ⟨0x5004, 28⟩] }
@@ -1715,13 +1718,14 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86.ab
 
 theorem open_framed (v : XorImpl) :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee))
+      (Impl.StackScratch.X86.withStackScratch 740 7 (Impl.ChaCha20Poly1305.X86.«open» v.callee))
       (Spec.ChaCha20Poly1305.openZeroContract X86.abi 1280) :=
-  X86.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
     (n := 88) (post := Spec.ChaCha20Poly1305.openZeroPost X86.abi.ptrBits) (wa := true) (stack := 540)
     (leak := some (Spec.ChaCha20Poly1305.openLeak X86.abi.ptrBits))
-    (bytes := 740) (words := 176) (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (by decide)
-    (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _) openFrameSat_pre
+    (bytes := 740) (open_verified v) (by decide) (open_noEsp v) (open_stackUse v)
+    (pre_local _ _) (openZeroPost_local _)
+    (fun vs m m₁ m₂ r hl _ hb => openZeroPost_out _ vs m m₁ m₂ r hl hb) openFrameSat_pre
     (hleak := openLeak_local _)
 
 /-- A state satisfying `open_to`'s precondition, without the working space. -/
@@ -1737,13 +1741,13 @@ theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract X86.ab
 memory on return only within `dst`. -/
 theorem openTo_framed (v : XorImpl) :
     Verified X86.target
-      (Impl.StackScratch.X86.withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee))
+      (Impl.StackScratch.X86.withStackScratch 748 9 (Impl.ChaCha20Poly1305.X86.openTo v.callee))
       (Spec.ChaCha20Poly1305.openToContract X86.abi 1288) :=
-  X86.Verified.stackScratchWipedPre (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
+  X86.Verified.stackScratch (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
     (n := 88) (pre := Spec.ChaCha20Poly1305.openToPre X86.abi.ptrBits)
     (post := Spec.ChaCha20Poly1305.openToPost X86.abi.ptrBits) (wa := true) (stack := 540)
     (leak := some (Spec.ChaCha20Poly1305.openToLeak X86.abi.ptrBits))
-    (bytes := 748) (words := 176) (openTo_verified v) (by decide) (openTo_noEsp v) (openTo_stackUse v) (by decide)
+    (bytes := 748) (openTo_verified v) (by decide) (openTo_noEsp v) (openTo_stackUse v)
     (openToPre_local _) (openToPost_local _) (openToPost_out _) openToFrameSat_pre
     (hleak := openToLeak_local _)
 
