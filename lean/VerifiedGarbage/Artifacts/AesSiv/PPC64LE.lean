@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.AesSiv.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Siv.initApi.artifact PPC64LE.target Proof.AesSiv.PPC64LE.Scrub.initReg,
-  Spec.Siv.encryptApi.artifact PPC64LE.target Proof.AesSiv.PPC64LE.Scrub.encryptReg,
-  Spec.Siv.decryptApi.artifact PPC64LE.target Proof.AesSiv.PPC64LE.Scrub.decryptReg]
+  Spec.Siv.initApi.artifact PPC64LE.target {
+    code := Impl.AesSiv.PPC64LE.Fn.init
+    verified := .scrubbed Proof.AesSiv.PPC64LE.Scrub.init_scrubbed },
+  Spec.Siv.encryptApi.artifact PPC64LE.target {
+    code := Impl.AesSiv.PPC64LE.Fn.encrypt
+    verified := .scrubbed Proof.AesSiv.PPC64LE.Scrub.encrypt_scrubbed },
+  Spec.Siv.decryptApi.artifact PPC64LE.target {
+    code := Impl.AesSiv.PPC64LE.Fn.decrypt
+    verified := .scrubbed Proof.AesSiv.PPC64LE.Scrub.decrypt_scrubbed }]
 
 end VG.Artifacts.AesSiv.PPC64LE

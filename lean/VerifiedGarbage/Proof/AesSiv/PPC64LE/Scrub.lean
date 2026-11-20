@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesSiv.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Verified
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # AES-SIV on PPC64LE, without secret residue
 
 `vg_aes_siv_init`, `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
 clears the volatile registers they may write and the whole frame
 (`withStackScratch`: 144 bytes for `init`, 480 for the others) that holds
 their working space, the key schedules and their callees' working space
@@ -65,11 +66,14 @@ theorem decryptOut (stack : Nat) :
       rw [e]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Siv.initApi`. -/
-def initReg : Registration Spec.Siv.initApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_siv_init` as emitted (`Impl.AesSiv.PPC64LE.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesSiv.PPC64LE.Fn.init
+      (Spec.Siv.initContract PPC64LE.abi 144) 0 :=
+  verifiedScrubbed (api := Spec.Siv.initApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r6 Impl.AesSiv.PPC64LE.init
       verified := Proof.AesSiv.PPC64LE.init_framed }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -77,9 +81,12 @@ def initReg : Registration Spec.Siv.initApi PPC64LE.target :=
     (initOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Siv.encryptApi`. -/
-def encryptReg : Registration Spec.Siv.encryptApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_siv_encrypt` as emitted (`Impl.AesSiv.PPC64LE.Fn.encrypt`) meets its
+contract in constant time and returns without secret residue. -/
+theorem encrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesSiv.PPC64LE.Fn.encrypt
+      (Spec.Siv.encryptContract PPC64LE.abi 480) 0 :=
+  verifiedScrubbed (api := Spec.Siv.encryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 480 .r10 Impl.AesSiv.PPC64LE.encrypt
       verified := Proof.AesSiv.encrypt_keyed Proof.AesSiv.PPC64LE.encrypt_framed }
     480 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -87,9 +94,12 @@ def encryptReg : Registration Spec.Siv.encryptApi PPC64LE.target :=
     (encryptOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Siv.decryptApi`. -/
-def decryptReg : Registration Spec.Siv.decryptApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_siv_decrypt` as emitted (`Impl.AesSiv.PPC64LE.Fn.decrypt`) meets its
+contract in constant time and returns without secret residue. -/
+theorem decrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesSiv.PPC64LE.Fn.decrypt
+      (Spec.Siv.decryptContract PPC64LE.abi 480) 32 :=
+  verifiedScrubbed (api := Spec.Siv.decryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 480 .r10 Impl.AesSiv.PPC64LE.decrypt
       verified := Proof.AesSiv.decrypt_keyed Proof.AesSiv.PPC64LE.decrypt_framed }
     480 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
