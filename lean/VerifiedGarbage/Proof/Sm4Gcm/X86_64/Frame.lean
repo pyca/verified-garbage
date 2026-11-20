@@ -30,6 +30,8 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Impl.Sm4Gcm.X86_64Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -1987,8 +1989,8 @@ theorem open_framed :
 
 /-! ## Without secret residue
 
-Each function followed by the clearing of its whole stack
-(`X86_64.Scrub.withScrubAll`): its own frame, and below it the frames of
+Each function followed by the clearing of every register it may write and
+of its whole stack (`Impl.Sm4Gcm.X86_64.Fn`): its own frame, and below it the frames of
 `vg_sm4_ctr32` and `vg_sm4_expand_key`, which leave them as they are (the
 working space they share: the key schedule they prepare and the keystream,
 cleared once here for all the calls). Their postconditions read the memory
@@ -2099,68 +2101,201 @@ theorem streamVerifyOut (stack : Nat) :
     match vs, hlen with
     | [ctx, st, al, tl, tag, tagLen], _ => exact h
 
-/-- `vg_sm4_gcm_init`, its whole stack cleared. -/
-def initReg : Registration Spec.Sm4.Gcm.initApi X86_64.target :=
-  scrubAllOf {
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init
-    stack := 5792
-    verified := init_framed
-    spSafe := X86_64.withStackScratch_spSafe_of init_spSafe } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (initOut _)
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- The callees of a stub: every function's code empty, called by its own
+name. -/
+def stubCallees : Impl.AesGcm.X86_64.Callees :=
+  ⟨⟨"c", .block []⟩, ⟨"k", .block []⟩, ⟨"g", .block []⟩, ⟨"e", .block []⟩, ⟨"d", .block []⟩⟩
 
-/-- `vg_sm4_gcm_seal` over `v`, its whole stack cleared. -/
-def sealReg : Registration Spec.Sm4.Gcm.sealApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 («seal» v.callees)
-    stack := 5816
-    verified := seal_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) } (sealOut _)
+/-- The level of the cleanup over `v`'s `vg_ghash`: its, and SSE for the
+code's own. -/
+def sm4Level : Impl.Scrub.X86_64.VecLevel := v.gh.level.join .sse
 
-/-- `vg_sm4_gcm_open` over `v`, its whole stack cleared. -/
-def openReg : Registration Spec.Sm4.Gcm.openApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («open» v.callees)
-    stack := 5824
-    verified := open_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) } (openOut _)
+/-- `Spec.Sm4.Gcm.initApi`'s function as emitted (`Impl.Sm4Gcm.X86_64.Fn.init`)
+meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Sm4Gcm.X86_64.Fn.init (Spec.Sm4.Gcm.initApi.contract X86_64.abi 5792) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi)
+    { code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init
+      stack := 5792
+      verified := init_framed
+      spSafe := X86_64.withStackScratch_spSafe_of init_spSafe } .sse (initOut _)
 
-/-- `vg_sm4_gcm_stream_encrypt` over `v`, its whole stack cleared. -/
-def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt v.callees)
-    stack := 4008
-    verified := streamEncrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) } (streamEncryptOut _)
+theorem init_spSafeFn : Impl.Sm4Gcm.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of init_spSafe)
 
-/-- `vg_sm4_gcm_stream_decrypt` over `v`, its whole stack cleared. -/
-def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt v.callees)
-    stack := 4008
-    verified := streamDecrypt_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) } (streamDecryptOut _)
+/-- `vg_sm4_gcm_init`. -/
+def initReg : Registration Spec.Sm4.Gcm.initApi X86_64.target where
+  code := Impl.Sm4Gcm.X86_64.Fn.init
+  verified := .scrubbed init_scrubbed
+  spSafe := init_spSafeFn
 
-/-- `vg_sm4_gcm_stream_finish` over `v`, its whole stack cleared. -/
-def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees)
-    stack := 4000
-    verified := streamFinish_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) } (streamFinishOut _)
+/-- `Spec.Sm4.Gcm.sealApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.«seal»`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem seal_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.«seal» (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.sealApi.contract X86_64.abi 5816) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.sealApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 («seal» stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 («seal» v.callees)
+      stack := 5816
+      verified := seal_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) }
+    (sm4Level v) (sealOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_sm4_gcm_stream_verify` over `v`, its whole stack cleared. -/
-def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi X86_64.target :=
-  withScrubAll {
-    suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify v.callees)
-    stack := 4008
-    verified := streamVerify_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) } (streamVerifyOut _)
+theorem seal_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.«seal» (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (seal_spSafe v))
+
+/-- `vg_sm4_gcm_seal` over `v`. -/
+def sealReg : Registration Spec.Sm4.Gcm.sealApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.«seal» (sm4Level v) v.callees
+  verified := .scrubbed (seal_scrubbed v)
+  spSafe := seal_spSafeFn v
+
+/-- `Spec.Sm4.Gcm.openApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.«open»`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem open_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.«open» (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.openApi.contract X86_64.abi 5824) 32 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.openApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («open» stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («open» v.callees)
+      stack := 5824
+      verified := open_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }
+    (sm4Level v) (openOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
+
+theorem open_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.«open» (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (open_spSafe v))
+
+/-- `vg_sm4_gcm_open` over `v`. -/
+def openReg : Registration Spec.Sm4.Gcm.openApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.«open» (sm4Level v) v.callees
+  verified := .scrubbed (open_scrubbed v)
+  spSafe := open_spSafeFn v
+
+/-- `Spec.Sm4.Gcm.streamEncryptApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.streamEncrypt`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem streamEncrypt_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.streamEncrypt (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.streamEncryptApi.contract X86_64.abi 4008) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamEncryptApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt v.callees)
+      stack := 4008
+      verified := streamEncrypt_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) }
+    (sm4Level v) (streamEncryptOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
+
+theorem streamEncrypt_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.streamEncrypt (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v))
+
+/-- `vg_sm4_gcm_streamEncrypt` over `v`. -/
+def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.streamEncrypt (sm4Level v) v.callees
+  verified := .scrubbed (streamEncrypt_scrubbed v)
+  spSafe := streamEncrypt_spSafeFn v
+
+/-- `Spec.Sm4.Gcm.streamDecryptApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.streamDecrypt`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem streamDecrypt_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.streamDecrypt (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.streamDecryptApi.contract X86_64.abi 4008) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamDecryptApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt v.callees)
+      stack := 4008
+      verified := streamDecrypt_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) }
+    (sm4Level v) (streamDecryptOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
+
+theorem streamDecrypt_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.streamDecrypt (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v))
+
+/-- `vg_sm4_gcm_streamDecrypt` over `v`. -/
+def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.streamDecrypt (sm4Level v) v.callees
+  verified := .scrubbed (streamDecrypt_scrubbed v)
+  spSafe := streamDecrypt_spSafeFn v
+
+/-- `Spec.Sm4.Gcm.streamFinishApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.streamFinish`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem streamFinish_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.streamFinish (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.streamFinishApi.contract X86_64.abi 4000) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamFinishApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees)
+      stack := 4000
+      verified := streamFinish_framed v
+      spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) }
+    (sm4Level v) (streamFinishOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
+
+theorem streamFinish_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.streamFinish (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v))
+
+/-- `vg_sm4_gcm_streamFinish` over `v`. -/
+def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.streamFinish (sm4Level v) v.callees
+  verified := .scrubbed (streamFinish_scrubbed v)
+  spSafe := streamFinish_spSafeFn v
+
+/-- `Spec.Sm4.Gcm.streamVerifyApi`'s function as emitted over `v`
+(`Impl.Sm4Gcm.X86_64.Fn.streamVerify`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with `v`'s
+`vg_ghash` where it calls it (`Fill`). -/
+theorem streamVerify_scrubbed :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86_64.Fn.streamVerify (sm4Level v) v.callees)
+      (Spec.Sm4.Gcm.streamVerifyApi.contract X86_64.abi 4008) 32 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamVerifyApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify stubCallees))
+    { suffix := v.gh.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify v.callees)
+      stack := 4008
+      verified := streamVerify_framed v
+      spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) }
+    (sm4Level v) (streamVerifyOut _) (by have := calleeSide_mono (level_join_left v.gh.level .sse) (Nat.le_refl 0) v.gh.side; fill_calls)
+    (Nat.zero_le _) (Nat.le_refl _)
+
+theorem streamVerify_spSafeFn :
+    (Impl.Sm4Gcm.X86_64.Fn.streamVerify (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v))
+
+/-- `vg_sm4_gcm_streamVerify` over `v`. -/
+def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi X86_64.target where
+  suffix := v.gh.suffix
+  code := Impl.Sm4Gcm.X86_64.Fn.streamVerify (sm4Level v) v.callees
+  verified := .scrubbed (streamVerify_scrubbed v)
+  spSafe := streamVerify_spSafeFn v
 
 end Scrub
 
