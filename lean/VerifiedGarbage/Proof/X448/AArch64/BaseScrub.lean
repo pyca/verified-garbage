@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -44,17 +43,18 @@ theorem baseOk (c₀ : String × List (BitVec 64)) (cs : List (String × List (B
       exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
     rw [this]; exact h
 
-/-- `vg_x448_base`, scrubbed. -/
-def baseReg : Registration Spec.X448.x448BaseApi AArch64.target :=
-  ScrubAll.scrubAllOf {
-    code := Impl.X448.AArch64.Base.x448Base
-    verified := Proof.X448.AArch64.Base.x448Base_verified
-    consts := Impl.X448.AArch64.Base.combConsts
-    stack := 0 }
-    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-      .v26, .v27, .v28, .v29, .v30, .v31],
-     [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
-    (baseOk _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
+/-- `vg_x448_base` as emitted, cleanup included
+(`Impl.X448.AArch64.Base.Fn.x448Base`): it meets its contract in constant
+time and returns without secret residue. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem x448Base :
+    VerifiedScrubbed AArch64.target Impl.X448.AArch64.Base.Fn.x448Base
+      (Spec.X448.x448BaseContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts)) 0 :=
+  ScrubAll.verifiedScrubbed (api := Spec.X448.x448BaseApi)
+    { code := Impl.X448.AArch64.Base.x448Base
+      verified := Proof.X448.AArch64.Base.x448Base_verified
+      consts := Impl.X448.AArch64.Base.combConsts
+      stack := 0 } _
+    (baseOk _ _) (by dsimp only; lit_decide)
 
 end VG.Proof.X448.AArch64.BaseScrub
