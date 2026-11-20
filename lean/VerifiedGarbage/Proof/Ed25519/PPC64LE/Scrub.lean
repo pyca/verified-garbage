@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Fn
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
@@ -15,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed25519 on PPC64LE, without secret residue
 
 `vg_ed25519_key_pair`, `vg_ed25519_sign_expanded` and `vg_ed25519_verify`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
+each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`),
 which clears the volatile registers, the vector registers and the stack
 their frames use (720, 320 and 224 bytes). The postconditions of
 `key_pair` and `sign_expanded` read the memory on return only within
@@ -68,7 +69,7 @@ theorem verifyOut :
     match vs, hlen with
     | [_, _, _, _, _], _ => exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
 /-- `Spec.Ed25519.keyPairApi`. -/
 def keyPairReg : Registration Spec.Ed25519.keyPairApi PPC64LE.target :=
@@ -83,9 +84,12 @@ def keyPairReg : Registration Spec.Ed25519.keyPairApi PPC64LE.target :=
     (keyPairOut Impl.Ed25519.PPC64LE.combConsts _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ed25519.signExpandedApi`. -/
-def signExpandedReg : Registration Spec.Ed25519.signExpandedApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed25519_sign_expanded` as emitted (`Impl.Ed25519.PPC64LE.Fn.signExpanded`)
+meets its contract in constant time and returns without secret residue. -/
+theorem signExpanded_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.signExpanded
+      (Spec.Ed25519.signExpandedContract (PPC64LE.abi.withConsts Impl.Ed25519.PPC64LE.combConsts) (48 + 320)) 0 :=
+  verifiedScrubbed (api := Spec.Ed25519.signExpandedApi) {
       code := Impl.Ed25519.PPC64LE.Whole.signExpandedCode
       verified := Proof.Ed25519.PPC64LE.Whole.signExpanded_framed }
     320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -94,9 +98,12 @@ def signExpandedReg : Registration Spec.Ed25519.signExpandedApi PPC64LE.target :
     (signExpandedOut Impl.Ed25519.PPC64LE.combConsts _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ed25519.verifyApi`. -/
-def verifyReg : Registration Spec.Ed25519.verifyApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed25519_verify` as emitted (`Impl.Ed25519.PPC64LE.Fn.verify`) meets its
+contract in constant time and returns without secret residue. -/
+theorem verify_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.verify
+      (Spec.Ed25519.verifyContract (PPC64LE.abi.withConsts Impl.Ed25519.PPC64LE.bConsts) (48 + 224)) 32 :=
+  verifiedScrubbed (api := Spec.Ed25519.verifyApi) {
       code := Impl.Ed25519.PPC64LE.Whole.verifyCode
       verified := Proof.Ed25519.PPC64LE.Whole.verify_framed }
     224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
