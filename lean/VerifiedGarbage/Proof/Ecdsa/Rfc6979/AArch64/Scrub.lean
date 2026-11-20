@@ -101,23 +101,23 @@ with nothing in the place of `vg_ecdsa_<curve>_sign_k` (`hc`, `he`, `ht`,
 `hd`), and that function's own (`hk`). -/
 theorem sign_scrubbed {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance}
     {cs : List (String × List (BitVec 64))} (hv : Verified target (signCodeT R T.tries variants) (specK T cs variants))
-    (ht8 : T.tries = 8)
+    {n : Nat} (ht8 : T.tries = n)
     (hk : sideAll (fun i => !i.writesDit) R.coreC = true)
-    (hc : signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh R.coreN R.coreC hashes) =
+    (hc : signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n R.coreN R.coreC hashes) =
       Code.fill2 (.call R.coreN R.coreC) (.block [])
-        (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh "" (.block []) hashes)))
-    (he : (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh "" (.block []) hashes)).all
+        (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)))
+    (he : (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)).all
       (fun i => !i.writesDit) = true)
-    (ht : tablesCall (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh "" (.block []) hashes))
+    (ht : tablesCall (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes))
       [("hmac", tables variants)] = true)
     (hd : Code.aarch64Depth2 0 0
-      (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh "" (.block []) hashes)) ≤ 40) :
-    VerifiedScrubbed target (Impl.Ecdsa.Rfc6979.AArch64.Fn.sign R.E R.big R.sh R.coreN R.coreC hashes)
+      (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)) ≤ 40) :
+    VerifiedScrubbed target (Impl.Ecdsa.Rfc6979.AArch64.Fn.sign R.E R.big R.sh n R.coreN R.coreC hashes)
       (specK T cs variants) 32 := by
   obtain ⟨hdit, htc, hdc⟩ := table_depth_of_fill2 (ts := [("hmac", tables variants)]) hc hk
     (Nat.le_of_eq (Proof.Pbkdf2.Md.AArch64.fdepth_of_noFrames R.coreNoFrames)) (by rfl) (Nat.le_refl _) he ht hd
   have e : signCodeT R T.tries variants =
-      signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh R.coreN R.coreC hashes) := by
+      signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n R.coreN R.coreC hashes) := by
     rw [signCodeT, cfgT, fnsOf_hashes, ht8]
     rfl
   rw [e] at hv

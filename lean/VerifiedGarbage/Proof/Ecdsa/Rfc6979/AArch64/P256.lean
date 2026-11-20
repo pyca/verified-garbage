@@ -98,7 +98,9 @@ theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
 
 /-- No instruction of `vg_ecdsa_p256_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
-theorem p256_core_side : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) Impl.P256.Booth.sign = true := by
+theorem p256_core_side :
+    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+      Impl.P256.Booth.sign = true := by
   lit_decide
 
 /-- `vg_ecdsa_p256_sign` as emitted, cleanup included
@@ -109,11 +111,14 @@ nothing in the place of `vg_ecdsa_p256_sign_k`, whose own is evaluated
 apart. -/
 theorem p256Sign_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
-    VerifiedScrubbed AArch64.target (Impl.Ecdsa.Rfc6979.AArch64.Fn.p256 Proof.Variants.MdHash.AArch64.hashes)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts Proof.Variants.MdHash.AArch64.variants)
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.p256 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
       32 :=
   Scrub.sign_scrubbed (R := p256 hL hI hT)
-    (p256T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩) rfl p256_core_side
+    (p256T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl p256_core_side
     (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

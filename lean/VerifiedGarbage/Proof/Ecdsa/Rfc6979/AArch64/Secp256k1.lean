@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Verified
@@ -92,21 +93,28 @@ clear, and what `ScrubAll.scrubAllOf` needs of their code
 (`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
-/-- The registers the tail of `vg_ecdsa_secp256k1_sign` clears: those its code,
-with the HMAC implementations of its table, may write. -/
-def secp256k1SignClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
-   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-   .v27, .v28, .v29, .v30, .v31], []⟩
+/-- No instruction of `vg_ecdsa_secp256k1_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem secp256k1_core_side :
+    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.signSecp256k1 = true := by
+  lit_decide
 
-theorem secp256k1SignSide (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
-    AArch64.ScrubAll.scrubSide
-      (signCodeT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries Proof.Variants.MdHash.AArch64.variants)
-      stackT
-      (Spec.Ecdsa.Rfc6979.Curves.secp256k1.signSig.retBits
-        ((AArch64.abi.withConsts []).withTables Spec.Ecdsa.Rfc6979.Curves.secp256k1.signSig
-          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      secp256k1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
+/-- `vg_ecdsa_secp256k1_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.secp256k1`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_secp256k1_sign_k`, whose own is evaluated
+apart. -/
+theorem secp256k1Sign_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.secp256k1 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 []
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := secp256k1 hL hI)
+    (secp256k1T_verified hL hI _ Scrub.variants_ok) rfl secp256k1_core_side
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_secp256k1_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash`): it meets its contract in

@@ -52,23 +52,14 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaP192.AArch64.Rfc6979
 
 open VG.Proof.P192.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p192 p192T_verified)
-open VG.Proof.HmacTable.AArch64 (tables names)
+open VG.Proof.HmacTable.AArch64 (tables)
+open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifactsFor : List Artifact :=
-  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      suffix := ""
-      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
-      code := signCodeT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries VG.Proof.Variants.MdHash.AArch64.variants
-      verified := p192T_verified hasLaw.law hasLaw.inv VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p192SignClear
-      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
-        Spec.Ecdsa.Rfc6979.Curves.p192 [] VG.Proof.Variants.MdHash.AArch64.variants)
-      (Proof.Ecdsa.Rfc6979.AArch64.p192SignSide hasLaw.law hasLaw.inv))]
-  else []
-
-def artifacts : List Artifact :=
-  artifactsFor
+def artifacts : List Artifact := [
+  Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact AArch64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p192 hashes
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p192Sign_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcdsaP192.AArch64.Rfc6979
 
