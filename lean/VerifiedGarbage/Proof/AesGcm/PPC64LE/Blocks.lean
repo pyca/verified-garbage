@@ -4878,17 +4878,22 @@ theorem bulk_output {s u : State} {n nr : Nat} (lay : WrapperLayout s n) (hnr : 
   exact ⟨hd,hctr,hy⟩
 
 
+/-- The bulk call, expressed in the wrapper's memory regions. -/
+private theorem bulkCoreFrame {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block}
+    {hashIn : Bool} {input : Nat → BitVec 64 → BitVec 64 → Prop}
+    (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext hashIn input u) :
+    Frame (wrapperWrites s (n-n%8)) (wrapperHeaderMem s) u.mem := hc.frame
+
 theorem bulk_pending {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Block} {hashIn : Bool} {input : Nat → BitVec 64 → BitVec 64 → Prop} (lay : WrapperLayout s n)
     (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext hashIn input u) :
     Spec.Gcm.blocksAt u.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8))=
       Spec.Gcm.blocksAt s.mem (s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8))) (n-(n-n%8)) := by
-  have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
-      coreCounter (wrapperView s),coreY (wrapperView s)] (wrapperHeaderMem s) u.mem := hc.frame
+  have hf := bulkCoreFrame hc
   refine (blocks_frame hf ?_).trans (header_data_suffix lay (by omega_using []))
   intro r hr
   obtain hsub : Region.Sub (⟨s.gpr .r7+BitVec.ofNat 64 (16*(n-n%8)),16*(n-(n-n%8))⟩ : Region)
       (coreData (wrapperView s) n) := Offset.sub_base _ (by omega_using [])
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  simp only [wrapperWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact (lay.core.scratch (coreData (wrapperView s) n) (by simp)).sub_left hsub
   · exact Offset.disjoint_base _ (by omega_using []) (by have := lay.core.size; omega_using [this])
@@ -4919,11 +4924,10 @@ theorem bulk_frame {s u : State} {n nr : Nat} {plaintext : Nat → Spec.Gcm.Bloc
     {input : Nat → BitVec 64 → BitVec 64 → Prop}
     (hc : CoreResultWith (bulkArgsState (wrapperEntryState s)) (n-n%8) nr plaintext hashIn input u) :
     Frame (wrapperWrites s n) (wrapperHeaderMem s) u.mem := by
-  have hf : Frame [coreWork (wrapperView s),coreData (wrapperView s) (n-n%8),
-      coreCounter (wrapperView s),coreY (wrapperView s)] (wrapperHeaderMem s) u.mem := hc.frame
+  have hf := bulkCoreFrame hc
   apply hf.sub
   intro r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  simp only [wrapperWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨coreWork (wrapperView s),by simp [wrapperWrites],fun _ h => h⟩
   · exact ⟨coreData (wrapperView s) n,by simp [wrapperWrites],
