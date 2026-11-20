@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCtr.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Impl.AesOfb.X86_64.Fn
 public import VerifiedGarbage.Impl.AesCfb.X86_64.Fn
@@ -105,23 +106,43 @@ theorem ofbFinalOut (stack : Nat) :
 
 open VG.X86_64.RScrub VG.Proof.Aes.X86_64
 
-/-- `vg_aes_ctr` over `v`. -/
-def ctrReg (v : Ctr32Impl) : Registration Spec.Ctr.aesApi X86_64.target :=
-  withScrubAllM {
-    suffix := v.suffix
-    code := Impl.AesCtr.X86_64.crypt v.callee
-    stack := 8
-    verified := Proof.AesCtr.keyed (Proof.AesCtr.X86_64.crypt_verified v)
-    spSafe := Proof.AesCtr.X86_64.crypt_spSafe v } (ctrOut _)
+/-- `Spec.Ctr.aesApi`'s function as emitted over `v` (`Impl.AesCtr.X86_64.Fn.ctr`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem ctr_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed target (Impl.AesCtr.X86_64.Fn.ctr v.level v.callee)
+      (Spec.Ctr.aesApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Ctr.aesApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesCtr.X86_64.crypt ⟨"", .block [], v.callee.scrOff⟩)
+    { suffix := v.suffix
+      code := Impl.AesCtr.X86_64.crypt v.callee
+      stack := 8
+      verified := Proof.AesCtr.keyed (Proof.AesCtr.X86_64.crypt_verified v)
+      spSafe := Proof.AesCtr.X86_64.crypt_spSafe v }
+    v.level (ctrOut _) (by have := v.side; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.scrOk with h | h <;> rw [h] <;> lit_decide)
 
-/-- `vg_aes_ctr_final` over `v`. -/
-def ctrFinalReg (v : Ctr32Impl) : Registration Spec.Ctr.aesFinalApi X86_64.target :=
-  withScrubAllM {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 80 0 (Impl.AesCtr.X86_64.cryptFinal v.callee v.suffix)
-    stack := 96
-    verified := Proof.AesCtr.final_keyed (Proof.AesCtr.X86_64.cryptFinal_framed v)
-    spSafe := Proof.AesCtr.X86_64.cryptFinal_framed_spSafe v } (ctrFinalOut _)
+theorem ctr_spSafeFn (v : Ctr32Impl) :
+    (Impl.AesCtr.X86_64.Fn.ctr v.level v.callee).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCtr.X86_64.crypt_spSafe v)
+
+/-- `Spec.Ctr.aesFinalApi`'s function as emitted over `v` (`Impl.AesCtr.X86_64.Fn.ctrFinal`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem ctrFinal_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed target (Impl.AesCtr.X86_64.Fn.ctrFinal v.level v.callee v.suffix)
+      (Spec.Ctr.aesFinalApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Ctr.aesFinalApi) (ks := 0) (n := fun _ => 0) (a := Impl.StackScratch.X86_64.withStackArgScratch 80 0 (Impl.AesCtr.X86_64.cryptFinal ⟨"", .block [], v.callee.scrOff⟩ ""))
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 80 0 (Impl.AesCtr.X86_64.cryptFinal v.callee v.suffix)
+      stack := 96
+      verified := Proof.AesCtr.final_keyed (Proof.AesCtr.X86_64.cryptFinal_framed v)
+      spSafe := Proof.AesCtr.X86_64.cryptFinal_framed_spSafe v }
+    v.level (ctrFinalOut _) (by have := v.side; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    (ha := by rcases v.scrOk with h | h <;> rw [h] <;> lit_decide)
+
+theorem ctrFinal_spSafeFn (v : Ctr32Impl) :
+    (Impl.AesCtr.X86_64.Fn.ctrFinal v.level v.callee v.suffix).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCtr.X86_64.cryptFinal_framed_spSafe v)
 
 /-- `Spec.Cfb.aesEncryptFinalApi`'s function as emitted over `v` (`Impl.AesCfb.X86_64.Fn.cfbEncryptFinal`) meets its
 contract in constant time and returns without secret residue: its code is
