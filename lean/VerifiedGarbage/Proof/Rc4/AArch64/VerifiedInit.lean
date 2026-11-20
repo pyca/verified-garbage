@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
@@ -785,5 +786,13 @@ theorem init_verified : Verified AArch64.target VG.Impl.Rc4.AArch64.init
 /-- `init`, with what it leaves cleared, meets the same contract. -/
 theorem initCleared_verified : Verified AArch64.target initCleared (Spec.Rc4.initContract AArch64.abi) :=
   Clears.Verified.withClears init_verified (by decide)
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc4.AArch64.initCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Rc4.AArch64.initCleared
+      (Spec.Rc4.initContract AArch64.abi) 32 :=
+  ⟨Proof.Rc4.AArch64.initCleared_verified,
+    Proof.Rc4.AArch64.initCleared_noResidue _⟩
 
 end VG.Proof.Rc4.AArch64

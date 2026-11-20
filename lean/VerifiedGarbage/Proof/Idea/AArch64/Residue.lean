@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Idea.AArch64.Key
 public meta import VerifiedGarbage.Proof.Idea.AArch64.Key
 public import VerifiedGarbage.Proof.Idea.AArch64.Invert
@@ -62,5 +63,29 @@ theorem ecbCleared_verified : Verified AArch64.target ecbCleared (Spec.Idea.ecbC
 
 theorem ecbCleared_noResidue (k : Contract isa) : NoResidue ecbCleared k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.Residue.expandKeyCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.Residue.expandKeyCleared
+      (Spec.Idea.expandKeyContract AArch64.abi) 0 :=
+  ⟨Proof.Idea.AArch64.Residue.expandKeyCleared_verified,
+    Proof.Idea.AArch64.Residue.expandKeyCleared_noResidue _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.Residue.invertKeyCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.Residue.invertKeyCleared
+      (Spec.Idea.invertKeyContract AArch64.abi) 0 :=
+  ⟨Proof.Idea.AArch64.Residue.invertKeyCleared_verified,
+    Proof.Idea.AArch64.Residue.invertKeyCleared_noResidue _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.Residue.ecbCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.Residue.ecbCleared
+      (Spec.Idea.ecbContract AArch64.abi) 0 :=
+  ⟨Proof.Idea.AArch64.Residue.ecbCleared_verified,
+    Proof.Idea.AArch64.Residue.ecbCleared_noResidue _⟩
 
 end VG.Proof.Idea.AArch64.Residue

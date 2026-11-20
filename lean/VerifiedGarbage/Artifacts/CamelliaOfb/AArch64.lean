@@ -17,11 +17,9 @@ namespace VG.Artifacts.CamelliaOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.ofbCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ofbCode_verified,
-      Proof.Camellia.AArch64.Residue.ofbCode_noResidue⟩ },
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ofbCode_scrubbed },
   Spec.Camellia.ofbFinalApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.ofbFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ofbFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.ofbFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.CamelliaOfb.AArch64

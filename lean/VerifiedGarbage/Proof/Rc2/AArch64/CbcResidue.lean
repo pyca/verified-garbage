@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -60,5 +61,21 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.Rc2.cbcDecryptChainedContract AArch64.abi 512) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Rc2.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
+      (Spec.Rc2.cbcEncryptChainedContract AArch64.abi 512) 0 :=
+  ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified,
+    Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode
+      (Spec.Rc2.cbcDecryptChainedContract AArch64.abi 512) 0 :=
+  ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified,
+    Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩
 
 end VG.Proof.Rc2.AArch64.CbcResidue

@@ -17,19 +17,15 @@ namespace VG.Artifacts.BlowfishCfb.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Blowfish.cfbEncryptFinalApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Blowfish.cfbDecryptFinalApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.BlowfishCfb.AArch64

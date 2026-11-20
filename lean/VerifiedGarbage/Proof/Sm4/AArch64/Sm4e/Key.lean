@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
 public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
@@ -265,5 +266,29 @@ theorem ecbCleared_verified (dir : VG.Impl.Sm4.AArch64.Dir) :
 theorem ecbCleared_noResidue (k : Contract isa) : ∀ dir, NoResidue (ecbCleared dir) k 0
   | .encrypt => RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
   | .decrypt => RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.expandKey_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Sm4e.expandKey
+      (Spec.Sm4.expandKeyContract AArch64.abi) 0 :=
+  ⟨Proof.Sm4.AArch64.Sm4e.expandKey_verified,
+    Proof.Sm4.AArch64.Sm4e.expandKey_noResidue _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed :
+    VerifiedScrubbed AArch64.target (Proof.Sm4.AArch64.Sm4e.ecbCleared Impl.Sm4.AArch64.Dir.encrypt)
+      (Spec.Sm4.ecbContract AArch64.abi (Proof.Sm4.AArch64.Sm4e.dirOf Impl.Sm4.AArch64.Dir.encrypt)) 0 :=
+  ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .encrypt,
+    Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .encrypt⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.ecbDecrypt_scrubbed :
+    VerifiedScrubbed AArch64.target (Proof.Sm4.AArch64.Sm4e.ecbCleared Impl.Sm4.AArch64.Dir.decrypt)
+      (Spec.Sm4.ecbContract AArch64.abi (Proof.Sm4.AArch64.Sm4e.dirOf Impl.Sm4.AArch64.Dir.decrypt)) 0 :=
+  ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .decrypt,
+    Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .decrypt⟩
 
 end VG.Proof.Sm4.AArch64.Sm4e

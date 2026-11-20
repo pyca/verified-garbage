@@ -17,15 +17,12 @@ namespace VG.Artifacts.Blowfish.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.expandKeyCleared
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.expandKeyCleared_verified,
-      Proof.Blowfish.AArch64.expandKeyCleared_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.expandKeyCleared_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Blowfish.AArch64

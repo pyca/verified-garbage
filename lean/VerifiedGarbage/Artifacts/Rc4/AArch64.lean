@@ -15,11 +15,9 @@ namespace VG.Artifacts.Rc4.AArch64
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact AArch64.target {
     code := Proof.Rc4.AArch64.initCleared
-    verified := .scrubbed ⟨Proof.Rc4.AArch64.initCleared_verified,
-      Proof.Rc4.AArch64.initCleared_noResidue _⟩ },
+    verified := .scrubbed Proof.Rc4.AArch64.initCleared_scrubbed },
   Spec.Rc4.applyApi.artifact AArch64.target {
     code := Proof.Rc4.AArch64.applyCleared
-    verified := .scrubbed ⟨Proof.Rc4.AArch64.applyCleared_verified,
-      Proof.Rc4.AArch64.applyCleared_noResidue⟩ }]
+    verified := .scrubbed Proof.Rc4.AArch64.applyCleared_scrubbed }]
 
 end VG.Artifacts.Rc4.AArch64

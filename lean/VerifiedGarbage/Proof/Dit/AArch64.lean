@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Dit.AArch64
 meta import VerifiedGarbage.Impl.Dit.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -227,5 +228,37 @@ theorem enterSb_noResidue (k : Contract isa) (r : Nat) : NoResidue enterSb k r :
 
 theorem clear_noResidue (k : Contract isa) (r : Nat) : NoResidue clear k r :=
   Residue.noResidue_of_blind (by decide) k r
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enter_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enter
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enter_verified,
+    Proof.Dit.AArch64.enter_noResidue _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enterDsb_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enterDsb
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enterDsb_verified,
+    Proof.Dit.AArch64.enterDsb_noResidue _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.enterSb_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.enterSb
+      (Spec.Dit.enterContract AArch64.abi) 32 :=
+  ⟨Proof.Dit.AArch64.enterSb_verified,
+    Proof.Dit.AArch64.enterSb_noResidue _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dit.AArch64.clear_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dit.AArch64.clear
+      (Spec.Dit.clearContract AArch64.abi) 0 :=
+  ⟨Proof.Dit.AArch64.clear_verified,
+    Proof.Dit.AArch64.clear_noResidue _ _⟩
 
 end VG.Proof.Dit.AArch64

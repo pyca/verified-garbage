@@ -37,15 +37,12 @@ namespace VG.Artifacts.TripleDes.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.expandKeyCleared
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.Key.verifiedCleared,
-      Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
+    verified := .scrubbed Proof.TripleDes.AArch64.expandKeyCleared_scrubbed },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
     code := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.TripleDes.AArch64

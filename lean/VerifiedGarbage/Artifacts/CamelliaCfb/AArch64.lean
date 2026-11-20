@@ -17,19 +17,15 @@ namespace VG.Artifacts.CamelliaCfb.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbEncryptCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbEncryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbDecryptCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbDecryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_noResidue⟩ },
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact AArch64.target {
     code := Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.AArch64

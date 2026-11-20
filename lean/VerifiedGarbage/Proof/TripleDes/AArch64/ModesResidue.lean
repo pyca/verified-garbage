@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
@@ -245,5 +246,101 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Tripl
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.TripleDes.ofbFinalContract AArch64.abi 560) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.TripleDes.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode
+      (Spec.TripleDes.ecbContract AArch64.abi Spec.TripleDes.Direction.encrypt 1024) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode
+      (Spec.TripleDes.ecbContract AArch64.abi Spec.TripleDes.Direction.decrypt 1024) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode
+      (Spec.TripleDes.cbcEncryptChainedContract AArch64.abi 464) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode
+      (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1120) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode
+      (Spec.TripleDes.cfbEncryptContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode
+      (Spec.TripleDes.cfbDecryptContract AArch64.abi 1120) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode
+      (Spec.TripleDes.cfbEncryptFinalContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode
+      (Spec.TripleDes.cfbDecryptFinalContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode
+      (Spec.TripleDes.cfb8EncryptContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode
+      (Spec.TripleDes.cfb8DecryptContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.ofbCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.ofbCode
+      (Spec.TripleDes.ofbContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.ofbCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.ofbCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode
+      (Spec.TripleDes.ofbFinalContract AArch64.abi 560) 0 :=
+  ⟨Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_verified,
+    Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
 
 end VG.Proof.TripleDes.AArch64.ModesResidue

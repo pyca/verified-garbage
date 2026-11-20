@@ -18,11 +18,9 @@ def artifacts : List Artifact := [
     verified := .scrubbed Proof.Cast5.AArch64.Scrub.expandKey },
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.Tbl.ecbEncryptCleared
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified,
-      Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue⟩ },
+    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed },
   Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
     code := Proof.Cast5.AArch64.Tbl.ecbDecryptCleared
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_verified,
-      Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue⟩ }]
+    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed }]
 
 end VG.Artifacts.Cast5.AArch64

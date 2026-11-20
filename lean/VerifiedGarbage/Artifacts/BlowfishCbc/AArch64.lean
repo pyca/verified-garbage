@@ -14,11 +14,9 @@ namespace VG.Artifacts.BlowfishCbc.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩ },
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Blowfish.cbcDecryptChainedApi.artifact AArch64.target {
     code := Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode
-    verified := .scrubbed ⟨Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-      Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.AArch64

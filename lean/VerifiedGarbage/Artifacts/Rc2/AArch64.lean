@@ -18,15 +18,12 @@ namespace VG.Artifacts.Rc2.AArch64
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.InitResidue.cbcInitCode
-    verified := .scrubbed ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified,
-      Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩ },
+    verified := .scrubbed Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
-    verified := .scrubbed ⟨Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_verified,
-      Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_noResidue⟩ },
+    verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Rc2.cbcDecryptChainedApi.artifact AArch64.target {
     code := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode
-    verified := .scrubbed ⟨Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_verified,
-      Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Rc2.AArch64

@@ -20,38 +20,30 @@ def artifacts : List Artifact := [
   Spec.Sm4.cfbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbEncryptSm4Code_scrubbed },
   Spec.Sm4.cfbEncryptApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Sm4.cfbDecryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbDecryptSm4Code_scrubbed },
   Spec.Sm4.cfbDecryptApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Sm4.cfbEncryptFinalApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalSm4Code_scrubbed },
   Spec.Sm4.cfbEncryptFinalApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Sm4.cfbDecryptFinalApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalSm4Code_scrubbed },
   Spec.Sm4.cfbDecryptFinalApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.Sm4Cfb.AArch64

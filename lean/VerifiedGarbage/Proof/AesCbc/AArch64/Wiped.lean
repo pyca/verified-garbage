@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.AesCbc.Wipe
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Verified
@@ -254,5 +255,21 @@ def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi tar
     code := decrypt v
     stack := 32
     verified := decrypt_verified v } decryptOk]
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Proof.AesCbc.AArch64.Decrypt.codeC
+      (Sig.contract AArch64.abi Spec.Cbc.aesSig (Proof.AesCbc.Wipe.pre 64)   (Proof.AesCbc.Wipe.scrubbedPost 64 (Proof.AesCbc.Wipe.decPost 64))) 0 :=
+  ⟨Proof.AesCbc.AArch64.Wiped.decryptSha3C_scrubbed,
+    Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Proof.AesCbc.AArch64.Decrypt.codeAesC
+      (Sig.contract AArch64.abi Spec.Cbc.aesSig (Proof.AesCbc.Wipe.pre 64)   (Proof.AesCbc.Wipe.scrubbedPost 64 (Proof.AesCbc.Wipe.decPost 64))) 0 :=
+  ⟨Proof.AesCbc.AArch64.Wiped.decryptAesC_scrubbed,
+    Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _⟩
 
 end VG.Proof.AesCbc.AArch64.Wiped

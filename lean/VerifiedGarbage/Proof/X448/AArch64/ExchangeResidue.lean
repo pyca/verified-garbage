@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -90,5 +91,13 @@ theorem exchangeCode_verified : Verified AArch64.target exchangeCode (Spec.X448.
 theorem exchangeCode_noResidue : NoResidue exchangeCode (Spec.X448.exchangeContract AArch64.abi 16) 32 :=
   noResidue_withScrubG (P₀ := 0) exchangeBase_verified ⟨by decide, by decide, by decide⟩ exchangeScrubOk.sp
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.X448.AArch64.ExchangeResidue.exchangeCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.X448.AArch64.ExchangeResidue.exchangeCode
+      (Spec.X448.exchangeContract AArch64.abi 16) 32 :=
+  ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified,
+    Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩
 
 end VG.Proof.X448.AArch64.ExchangeResidue

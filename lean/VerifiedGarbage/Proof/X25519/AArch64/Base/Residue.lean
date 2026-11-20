@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 public meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 public import VerifiedGarbage.Impl.Residue.AArch64
@@ -67,5 +68,13 @@ theorem x25519BaseCleared_noResidue [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     NoResidue x25519BaseCleared
       (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)) 0 :=
   RTaintCT.noResidue_of_verified x25519BaseCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed [Ed25519.AArch64.Divstep.Sound] :
+    VerifiedScrubbed _root_.VG.AArch64.target Proof.X25519.AArch64.Base.x25519BaseCleared
+      (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)) 0 :=
+  ⟨Proof.X25519.AArch64.Base.x25519BaseCleared_verified,
+    Proof.X25519.AArch64.Base.x25519BaseCleared_noResidue⟩
 
 end VG.Proof.X25519.AArch64.Base

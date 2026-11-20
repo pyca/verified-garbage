@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
@@ -203,5 +204,53 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   noResidue_withScrubG (P₀ := 0) cfbDecryptFinalBase_verified ⟨by decide, by decide, by decide⟩ cfbDecryptFinalScrubOk.sp
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode
+      (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode
+      (Spec.Cast5.cbcDecryptChainedContract AArch64.abi 224) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode
+      (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode
+      (Spec.Cast5.cfbDecryptContract AArch64.abi 224) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode
+      (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode
+      (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+    Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
 
 end VG.Proof.Cast5.AArch64.ModesResidue

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -58,5 +59,13 @@ theorem cbcInitCode_verified : Verified AArch64.target cbcInitCode (Spec.Rc2.cbc
 theorem cbcInitCode_noResidue : NoResidue cbcInitCode (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
   noResidue_withScrubG (P₀ := 0) cbcInitBase_verified ⟨by decide, by decide, by decide⟩ cbcInitScrubOk.sp
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Rc2.AArch64.InitResidue.cbcInitCode
+      (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
+  ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified,
+    Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩
 
 end VG.Proof.Rc2.AArch64.InitResidue

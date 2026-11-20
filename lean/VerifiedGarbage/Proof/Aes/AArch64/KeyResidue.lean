@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
@@ -58,5 +59,21 @@ theorem expandKeyAesCode_verified : Verified AArch64.target expandKeyAesCode (Sp
 theorem expandKeyAesCode_noResidue : NoResidue expandKeyAesCode (Spec.Aes.expandKeyContract AArch64.abi 512) 0 :=
   noResidue_of_doneG expandKeyAesCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Aes.expandKeyApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Aes.AArch64.KeyResidue.expandKeyCode
+      (Spec.Aes.expandKeyContract AArch64.abi 512) 0 :=
+  ⟨Proof.Aes.AArch64.KeyResidue.expandKeyCode_verified,
+    Proof.Aes.AArch64.KeyResidue.expandKeyCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Aes.AArch64.KeyResidue.expandKeyAesCode
+      (Spec.Aes.expandKeyContract AArch64.abi 512) 0 :=
+  ⟨Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_verified,
+    Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_noResidue⟩
 
 end VG.Proof.Aes.AArch64.KeyResidue

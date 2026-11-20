@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public meta import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public import VerifiedGarbage.Impl.Residue.AArch64
@@ -48,5 +49,13 @@ theorem applyCleared_verified :
 theorem applyCleared_noResidue :
     NoResidue applyCleared (Spec.Rc4.applyContract AArch64.abi) 0 :=
   RTaintCT.noResidue_of_verified applyCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc4.AArch64.applyCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Rc4.AArch64.applyCleared
+      (Spec.Rc4.applyContract AArch64.abi) 0 :=
+  ⟨Proof.Rc4.AArch64.applyCleared_verified,
+    Proof.Rc4.AArch64.applyCleared_noResidue⟩
 
 end VG.Proof.Rc4.AArch64

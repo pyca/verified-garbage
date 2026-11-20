@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -80,5 +81,21 @@ theorem ecbDecryptCode_verified : Verified AArch64.target ecbDecryptCode (Spec.S
 theorem ecbDecryptCode_noResidue : NoResidue ecbDecryptCode (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.decrypt 1472) 0 :=
   noResidue_withScrubG (P₀ := 0) ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ ecbDecryptScrubOk.sp
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Seed.AArch64.EcbResidue.ecbEncryptCode
+      (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.encrypt 1472) 0 :=
+  ⟨Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_verified,
+    Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Seed.AArch64.EcbResidue.ecbDecryptCode
+      (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.decrypt 1472) 0 :=
+  ⟨Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_verified,
+    Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩
 
 end VG.Proof.Seed.AArch64.EcbResidue

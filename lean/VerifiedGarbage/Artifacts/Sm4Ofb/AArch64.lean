@@ -19,20 +19,16 @@ def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.ofbSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.ofbSm4Code_scrubbed },
   Spec.Sm4.ofbApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.ofbCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.ofbCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.ofbCode_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.ofbCode_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_verified,
-      Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_noResidue⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.ofbFinalSm4Code_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact AArch64.target {
     code := Proof.Sm4.AArch64.ModesResidue.ofbFinalCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_verified,
-      Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.Sm4Ofb.AArch64

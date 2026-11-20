@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public meta import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public import VerifiedGarbage.Impl.Residue.AArch64
@@ -57,5 +58,13 @@ theorem expandKeyCleared_verified : Verified target expandKeyCleared
 theorem expandKeyCleared_noResidue :
     NoResidue expandKeyCleared (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) 0 :=
   RTaintCT.noResidue_of_verified expandKeyCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Blowfish.AArch64.expandKeyCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Blowfish.AArch64.expandKeyCleared
+      (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) 0 :=
+  ⟨Proof.Blowfish.AArch64.expandKeyCleared_verified,
+    Proof.Blowfish.AArch64.expandKeyCleared_noResidue⟩
 
 end VG.Proof.Blowfish.AArch64

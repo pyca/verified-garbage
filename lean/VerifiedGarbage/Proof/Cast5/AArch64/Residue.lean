@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public import VerifiedGarbage.Proof.Cast5.Rounds
@@ -65,5 +66,21 @@ theorem ecbEncryptCleared_noResidue :
 theorem ecbDecryptCleared_noResidue :
     NoResidue ecbDecryptCleared (Spec.Cast5.ecbDecryptContract AArch64.abi) 0 :=
   RTaintCT.noResidue_of_verified ecbDecryptCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.Tbl.ecbEncryptCleared
+      (Spec.Cast5.ecbEncryptContract AArch64.abi) 0 :=
+  ⟨Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified,
+    Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.Tbl.ecbDecryptCleared
+      (Spec.Cast5.ecbDecryptContract AArch64.abi) 0 :=
+  ⟨Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_verified,
+    Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue⟩
 
 end VG.Proof.Cast5.AArch64.Tbl

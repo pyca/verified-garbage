@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
@@ -124,5 +125,69 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Idea.
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Idea.ofbFinalContract AArch64.abi 208) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode
+      (Spec.Idea.cbcEncryptChainedContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode
+      (Spec.Idea.cbcDecryptChainedContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cfbEncryptCode
+      (Spec.Idea.cfbEncryptContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cfbDecryptCode
+      (Spec.Idea.cfbDecryptContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode
+      (Spec.Idea.cfbEncryptFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode
+      (Spec.Idea.cfbDecryptFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.ofbCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.ofbCode
+      (Spec.Idea.ofbContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.ofbCode_verified,
+    Proof.Idea.AArch64.ModesResidue.ofbCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.ofbFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Idea.AArch64.ModesResidue.ofbFinalCode
+      (Spec.Idea.ofbFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.ofbFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
 
 end VG.Proof.Idea.AArch64.ModesResidue

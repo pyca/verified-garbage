@@ -17,11 +17,9 @@ namespace VG.Artifacts.SeedOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact AArch64.target {
     code := Proof.Seed.AArch64.ModesResidue.ofbCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.ofbCode_verified,
-      Proof.Seed.AArch64.ModesResidue.ofbCode_noResidue⟩ },
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.ofbCode_scrubbed },
   Spec.Seed.ofbFinalApi.artifact AArch64.target {
     code := Proof.Seed.AArch64.ModesResidue.ofbFinalCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.ofbFinalCode_verified,
-      Proof.Seed.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.SeedOfb.AArch64

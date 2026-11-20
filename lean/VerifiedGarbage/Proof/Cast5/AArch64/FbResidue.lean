@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalVerified
@@ -160,5 +161,21 @@ theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode
     (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   RTaintF.noResidue_withScrub ofbFinalBase_verified ⟨by decide, by decide, by decide⟩
     ofbFinalScrubOk.sp ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.FbResidue.ofbCode
+      (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.FbResidue.ofbCode_verified,
+    Proof.Cast5.AArch64.FbResidue.ofbCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.FbResidue.ofbFinalCode
+      (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
+  ⟨Proof.Cast5.AArch64.FbResidue.ofbFinalCode_verified,
+    Proof.Cast5.AArch64.FbResidue.ofbFinalCode_noResidue⟩
 
 end VG.Proof.Cast5.AArch64.FbResidue
