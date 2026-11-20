@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfBase
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
@@ -370,13 +371,13 @@ def artifacts : List Artifact :=
       verified := .unscrubbed (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) },
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+      code := Impl.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name
         (Proof.Rsa.Arm.pdOfCrt v).code
-      verified := .unscrubbed (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v)) },
+      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed v) },
     Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+      code := Impl.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name
         (Proof.Rsa.Arm.pdOfCrt v).code
-      verified := .unscrubbed (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v)) }]
+      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed v) }]
 
 end VG.Artifacts.RsaPkcs1Sig.Arm
