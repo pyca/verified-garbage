@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Impl.Argon2.X86_64.Compressor
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 /-!
 # Implementations of G that the derivation calls

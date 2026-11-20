@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common

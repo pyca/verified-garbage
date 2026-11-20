@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 /-!
 # The cleanup of a function generic over what it calls (x86-64)
@@ -34,27 +35,6 @@ kernel evaluates once, of the stub's code (as x86's `ScrubCall.lean`).
 namespace VG.X86_64.Scrub
 
 open VG.X86_64 VG.Impl.Scrub.X86_64
-
-/-- What the cleanup of a function that calls `c` needs of it: at most `n`
-bytes of stack, vector instructions of at most the level `k`, no load of
-MXCSR, and no indirect call. Only the kernel evaluates it. -/
-noncomputable def calleeSide (c : Prog isa) (k n : Nat) : Bool :=
-  decide (c.x86_64Depth ≤ n) && c.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
-    (UpperLock.inames c).isEmpty
-
-/-- `Code.x86_64Depth` of code with a stub for the implementations it calls,
-each call `.call f (.block [])` of one (`Fill.hole`) taking `n f` bytes: the
-stack of the code with implementations that need at most that much
-(`Fill.depth_leH`). -/
-def depthH (n : String → Nat) : Prog isa → Nat
-  | .block _ => 0
-  | .call f (.block []) => n f + 8
-  | .seq a b => max (depthH n a) (depthH n b)
-  | .ite _ t e => max (depthH n t) (depthH n e)
-  | .loop b _ => depthH n b
-  | .call _ b => depthH n b + 8
-  | .frame i b _ => depthH n b + i.frameBytes
-  | .icall _ _ b x => max (depthH n b + 8) (depthH n x)
 
 /-- What the cleanup of a function needs of its code `a` with a stub for
 the implementations it calls, which need at most `n` bytes of stack: its
@@ -184,14 +164,6 @@ theorem side_mono {a : Prog isa} {ks k : Nat} (hk : ks ≤ k)
   have := List.all_eq_true.mp hI i hi
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this ⊢
   exact ⟨Nat.le_trans this.1 hk, this.2⟩
-
-/-- What `calleeSide` needs of code `a` with a stub for the implementations
-it calls, which need at most `n f` bytes of stack: its stack with theirs at
-most `m`, vector instructions of at most the level `k`, no load of MXCSR,
-and no indirect call. -/
-noncomputable def stubCallee (a : Prog isa) (k : Nat) (n : String → Nat) (m : Nat) : Bool :=
-  decide (depthH n a ≤ m) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
-    (UpperLock.inames a).isEmpty
 
 /-- Code generic over the implementations it calls meets `calleeSide`, as
 an implementation of a function that others call, from `stubCallee` of its

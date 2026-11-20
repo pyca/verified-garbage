@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch

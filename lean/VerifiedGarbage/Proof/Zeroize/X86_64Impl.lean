@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim

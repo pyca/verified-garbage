@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 public import VerifiedGarbage.Spec.Cmac.Contract
