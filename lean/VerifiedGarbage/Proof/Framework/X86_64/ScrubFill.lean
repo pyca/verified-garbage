@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86_64.FillRefl
 
 /-!
 # More on code generic over what it calls (x86-64)
 
 Additions to `ScrubCall.lean` for the AEADs over GHASH and ChaCha20:
 `calleeSide` of an implementation with a block appended (an implementation
-that clears or zeroes something before it returns), `Fill.refl` (code that
-the stub and the implementations share, such as interleaved loops a
-variant names, relates to itself), and `fill_calls_refl`, `fill_calls` that
-closes such shared code by `Fill.refl` (and `fill_calls_wide`, which does
+that clears or zeroes something before it returns), `Fill.mono`, and
+`fill_calls_refl`, `fill_calls` that
+closes code the stub and the implementations share by `Fill.refl`
+(`FillRefl.lean`) (and `fill_calls_wide`, which does
 the same breadth first, for large code).
 -/
 
@@ -31,16 +32,6 @@ theorem calleeSide_seqBlock {c : Prog isa} {b : List Instr} {k n : Nat}
   · show c.allInstrs _ && (Code.block b : Prog isa).allInstrs _ = true
     rw [h.1.2, hb]; rfl
   · simpa [UpperLock.inames] using h.2
-
-/-- Code relates to itself: what the stub and the implementations share. -/
-theorem Fill.refl {k : Nat} {n : String → Nat} : ∀ c : Prog isa, Fill k n c c
-  | .block is => .block is
-  | .seq a b => .seq (Fill.refl a) (Fill.refl b)
-  | .ite c t e => .ite c (Fill.refl t) (Fill.refl e)
-  | .loop b c => .loop c (Fill.refl b)
-  | .call f b => .call f f (Fill.refl b)
-  | .frame i b j => .frame i j (Fill.refl b)
-  | .icall i f b x => .icall i f (Fill.refl b) (Fill.refl x)
 
 /-- `Fill` at a level, at any level above it. -/
 theorem Fill.mono {k k' : Nat} {n : String → Nat} {a b : Prog isa} (hk : k ≤ k') (h : Fill k n a b) :

@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
-public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
