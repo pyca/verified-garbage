@@ -1580,9 +1580,13 @@ vg_mldsa87_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1591,7 +1595,6 @@ vg_mldsa87_keygen_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -3155,9 +3158,13 @@ vg_mldsa87_keygen_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -3166,7 +3173,6 @@ vg_mldsa87_keygen_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4730,10 +4736,13 @@ vg_mldsa87_keygen:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4742,7 +4751,6 @@ vg_mldsa87_keygen:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4819,11 +4827,29 @@ vg_mldsa87_pk_tr:
 	mov rbp, QWORD PTR [rbx+848]
 	mov rbx, QWORD PTR [rbx+840]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4832,7 +4858,6 @@ vg_mldsa87_pk_tr:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4961,8 +4986,14 @@ vg_mldsa87_prepare_verifying_key_avx2:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4970,6 +5001,7 @@ vg_mldsa87_prepare_verifying_key_avx2:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
+	xor r10d, r10d
 	ret
 	.p2align 6
 
@@ -5317,8 +5349,14 @@ vg_mldsa87_prepare_signing_key_avx2:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5326,7 +5364,7 @@ vg_mldsa87_prepare_signing_key_avx2:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
+	xor r10d, r10d
 	ret
 	.p2align 6
 
@@ -5455,8 +5493,14 @@ vg_mldsa87_prepare_verifying_key:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5464,6 +5508,7 @@ vg_mldsa87_prepare_verifying_key:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
+	xor r10d, r10d
 	ret
 	.p2align 6
 
@@ -5811,8 +5856,14 @@ vg_mldsa87_prepare_signing_key:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-24]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+24]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5820,7 +5871,7 @@ vg_mldsa87_prepare_signing_key:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
+	xor r10d, r10d
 	ret
 	.p2align 6
 
@@ -5860,10 +5911,12 @@ vg_mldsa87_sign_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5872,7 +5925,6 @@ vg_mldsa87_sign_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5912,10 +5964,12 @@ vg_mldsa87_sign_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5924,7 +5978,6 @@ vg_mldsa87_sign_prepared_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5948,10 +6001,12 @@ vg_mldsa87_sign_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5960,7 +6015,6 @@ vg_mldsa87_sign_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5984,10 +6038,12 @@ vg_mldsa87_sign_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5996,7 +6052,6 @@ vg_mldsa87_sign_prepared_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6020,11 +6075,13 @@ vg_mldsa87_sign:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6033,7 +6090,6 @@ vg_mldsa87_sign:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6057,11 +6113,13 @@ vg_mldsa87_sign_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6070,7 +6128,6 @@ vg_mldsa87_sign_prepared:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6227,12 +6284,15 @@ vg_mldsa87_sign_message_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6241,7 +6301,6 @@ vg_mldsa87_sign_message_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6398,12 +6457,15 @@ vg_mldsa87_sign_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6412,7 +6474,6 @@ vg_mldsa87_sign_message_prepared_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6553,12 +6614,15 @@ vg_mldsa87_sign_message_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6567,7 +6631,6 @@ vg_mldsa87_sign_message_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6708,12 +6771,15 @@ vg_mldsa87_sign_message_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6722,7 +6788,6 @@ vg_mldsa87_sign_message_prepared_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6863,15 +6928,18 @@ vg_mldsa87_sign_message:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6880,7 +6948,6 @@ vg_mldsa87_sign_message:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7021,15 +7088,18 @@ vg_mldsa87_sign_message_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7038,7 +7108,6 @@ vg_mldsa87_sign_message_prepared:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7078,10 +7147,12 @@ vg_mldsa87_verify_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7090,7 +7161,6 @@ vg_mldsa87_verify_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7130,10 +7200,12 @@ vg_mldsa87_verify_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7142,7 +7214,6 @@ vg_mldsa87_verify_prepared_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7166,10 +7237,12 @@ vg_mldsa87_verify_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7178,7 +7251,6 @@ vg_mldsa87_verify_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7202,10 +7274,12 @@ vg_mldsa87_verify_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7214,7 +7288,6 @@ vg_mldsa87_verify_prepared_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7238,11 +7311,13 @@ vg_mldsa87_verify:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7251,7 +7326,6 @@ vg_mldsa87_verify:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7275,11 +7349,13 @@ vg_mldsa87_verify_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp-32]
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+32]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7288,7 +7364,6 @@ vg_mldsa87_verify_prepared:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7443,12 +7518,15 @@ vg_mldsa87_verify_message_cached_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7457,7 +7535,6 @@ vg_mldsa87_verify_message_cached_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7612,12 +7689,15 @@ vg_mldsa87_verify_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7626,7 +7706,6 @@ vg_mldsa87_verify_message_prepared_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7765,12 +7844,15 @@ vg_mldsa87_verify_message_cached_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7779,7 +7861,6 @@ vg_mldsa87_verify_message_cached_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -7918,12 +7999,15 @@ vg_mldsa87_verify_message_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -7932,7 +8016,6 @@ vg_mldsa87_verify_message_prepared_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -8071,15 +8154,18 @@ vg_mldsa87_verify_message_cached:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -8088,7 +8174,6 @@ vg_mldsa87_verify_message_cached:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -8227,15 +8312,18 @@ vg_mldsa87_verify_message_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-104]
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+104]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -8244,6 +8332,5 @@ vg_mldsa87_verify_message_prepared:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
