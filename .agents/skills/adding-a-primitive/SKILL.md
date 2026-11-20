@@ -239,9 +239,11 @@ instructions in an ISA model) go in their own PR before either.
    (`Proof/Framework/RISCV64/ScrubCall.lean`;
    `Proof/RsaKeyGen/RISCV64/Fn.lean`, and `sign_fill` in
    `Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean` for calls through tables):
-   never a proof over the list of variants. `RISCV64.Scrub.scrubOf` and
-   `scrubSelOf` build the registration of the same in `Proof/`: no
-   registration uses them, and new code never does.
+   never a proof over the list of variants. RISC-V's framework states its
+   scrub only as these theorems about named code, and has no form that
+   builds a registration: each entry of a 64-bit RISC-V registration file
+   binds `code := Impl.…` and `verified := .scrubbed Proof.…`, and nothing
+   else (`ci/check_registrations.py` checks it).
    On PPC64LE the cleanup is `Impl.Scrub.PPC64LE.scrub rb d cl c`, which
    zeroes the `d` bytes of stack the code's frames use and clears the
    volatile registers `cl` states (a `Clear`: `r0`, the bits of `r3` above
