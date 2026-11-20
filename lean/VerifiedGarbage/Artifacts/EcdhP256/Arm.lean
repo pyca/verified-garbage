@@ -1,43 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdh.P256.Arm
-public import VerifiedGarbage.Proof.Ecdh.Arm.Verified
+public import VerifiedGarbage.Impl.Ecdh.P256.ArmFn
+public import VerifiedGarbage.Proof.Ecdh.Arm.P256.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Ecdh.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.TaintSum
-public import VerifiedGarbage.Spec.Ecdh.P256
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Ecdh.Arm.Peer
-public import VerifiedGarbage.Proof.Ecdh.Exchange
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Framework.NativeTaintCore
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
-public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P256.Arm.Law
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-! # ECDH over P-256 (SP 800-56A) on ARMv7 -/
 
@@ -49,11 +17,11 @@ open VG.Proof.P256.Arm (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact Arm.target {
-    code := Impl.Ecdh.Arm.exchangeP256
-    verified := .unscrubbed (Proof.Ecdh.Arm.ecdh_verified hasLaw.law) },
+    code := Impl.Ecdh.Arm.Fn.exchangeP256
+    verified := .scrubbed (Proof.Ecdh.Arm.Fn.exchangeP256 hasLaw.law) },
   Spec.Ecdh.P256.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Ecdh.Arm.exchangeP256U
-    verified := .unscrubbed (Proof.Ecdh.Arm.ecdhU_verified hasLaw.law) }]
+    code := Impl.Ecdh.Arm.Fn.exchangeP256U
+    verified := .scrubbed (Proof.Ecdh.Arm.Fn.exchangeP256U hasLaw.law) }]
 
 end VG.Artifacts.EcdhP256.Arm
