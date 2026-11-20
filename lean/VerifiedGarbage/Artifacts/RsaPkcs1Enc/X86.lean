@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.Scrub
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.TCB.Emit
@@ -17,7 +18,10 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 namespace VG.Artifacts.RsaPkcs1Enc.X86
 
 def direct : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target Proof.RsaPkcs1Enc.X86.Scrub.encryptRandomReg]
+  Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target {
+    code := Impl.RsaPkcs1Enc.X86.Fn.encryptRandom Proof.RsaPkcs1Enc.X86.Rnd.encName
+      (Proof.RsaPkcs1Enc.X86.Rnd.enc Proof.RsaPkcs1Sig.X86.Ver.baseline)
+    verified := .scrubbed Proof.RsaPkcs1Enc.X86.Scrub.encryptRandom_scrubbed }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86
 

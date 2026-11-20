@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.RsaOaep.X86.Fn
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
-public import VerifiedGarbage.Proof.Framework.QualifiedName
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Sha1.X86.Lit
@@ -17,12 +16,11 @@ import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Md5.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.RsaOaep.X86.Fn
 meta import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 meta import VerifiedGarbage.Proof.Variants.Sha1.X86
 meta import VerifiedGarbage.Proof.Variants.Sha256.X86
-meta import VerifiedGarbage.Proof.Framework.QualifiedName
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Sha1.X86.Lit
@@ -37,9 +35,10 @@ meta import VerifiedGarbage.Proof.Md5.X86.Lit
 
 `vg_rsa_oaep_encrypt_precomputed`, with the tables of every hash function
 (`Proof.Variants.Sha1.X86.variants`, `Proof.Variants.Sha256.X86.variants`),
-which it calls indirectly, followed by the zeroing of the stack its
+which it calls indirectly, emitted with the zeroing of the stack its
 contract reserves and the tail that clears the registers
-(`X86.Scrub.scrubFOf`): the functions it calls indirectly are its tables'
+(`Impl.RsaOaep.X86.Fn.encryptPrecomputed`), returns without secret residue
+(`encrypt_scrubbed`): the functions it calls indirectly are its tables'
 (`X86.Scrub.tablesCall`). Its postcondition reads the memory on return only
 within `out`, given that `out` holds `n_len` bytes (`X86.Scrub.PostOut`).
 -/
@@ -70,17 +69,21 @@ theorem encryptOut (ts : List FnTable) (stack : Nat) :
       have e' := bytesAt_of hb.1 (hp.2.1 ▸ toNat_sw_le _ (ScrubAbi.plain.tables _ _) outLen)
       exact fun H G h1 h2 h3 => written_of e' (h H G h1 h2 h3)
 
-/-! ## The registration -/
+/-! ## The function, with its cleanup -/
 
 /-- The tables of every hash function on x86. -/
 abbrev allVars : List Proof.HashTable.X86.TVar :=
   vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants
 
-/-- `Spec.RsaOaep.encryptMdTablesApi`, with the tables of every hash
-function and the baseline public-key operation. -/
-def encryptReg (h : OK allVars) : Registration Spec.RsaOaep.encryptMdTablesApi X86.target :=
-  scrubFOf {
-      suffix := qualifiedName "" []
+/-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of every hash function,
+the baseline public-key operation and its cleanup, returns without secret
+residue. -/
+theorem encrypt_scrubbed (h : OK allVars) :
+    VerifiedScrubbed target
+      (Impl.RsaOaep.X86.Fn.encryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
+        Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
+      (Proof.RsaOaep.X86.Enc.espec allVars) 32 :=
+  verifiedScrubbedF (api := Spec.RsaOaep.encryptMdTablesApi) {
       tables := [("hash", tables allVars), ("mgf1", tables allVars)]
       code := Proof.RsaOaep.X86.Enc.encryptCode allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
       verified := enc_ok _ h

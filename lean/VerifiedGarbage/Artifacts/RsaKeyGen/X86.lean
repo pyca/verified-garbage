@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Scrub
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.Fn
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
@@ -16,7 +17,9 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
 namespace VG.Artifacts.RsaKeyGen.X86
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact X86.target Proof.RsaKeyGen.X86.Scrub.keyInitReg]
+  Spec.RsaKeyGen.keyInitApi.artifact X86.target {
+    code := Impl.RsaKeyGen.X86.Fn.generateInit
+    verified := .scrubbed Proof.RsaKeyGen.X86.Scrub.generateInit_scrubbed }]
 
 end VG.Artifacts.RsaKeyGen.X86
 

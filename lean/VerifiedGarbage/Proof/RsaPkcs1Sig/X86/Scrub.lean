@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified
@@ -26,8 +26,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # RSASSA-PKCS1-v1_5 on x86 (32-bit), without secret residue
 
 `vg_rsa_pkcs1_verify_precomputed` and `vg_rsa_pkcs1_recover_precomputed`,
-each followed by the zeroing of the stack its contract reserves and the
-tail that clears the registers (`X86.Scrub.scrubFOf`). Their
+each emitted with the zeroing of the stack its contract reserves and the
+tail that clears the registers (`Impl.RsaPkcs1Sig.X86.Fn`), return without
+secret residue (`…_scrubbed`). Their
 postconditions read the memory on return only within `out`: verification
 not at all, recovery the recovered digest (`X86.Scrub.PostOut`).
 -/
@@ -58,21 +59,27 @@ theorem recoverPrecomputedOut (stack : Nat) :
       dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
       exact fun hP H hH => written_of (bytesAt_of hb.1 (toNat_sw_le abi ScrubAbi.plain outLen)) (h hP H hH)
 
-/-! ## The registrations -/
+/-! ## The functions, with their cleanup -/
 
 open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 
-/-- `Spec.RsaPkcs1Sig.verifyPrecomputedApi`, with the baseline public-key operation. -/
-def verifyPrecomputedReg : Registration Spec.RsaPkcs1Sig.verifyPrecomputedApi X86.target :=
-  scrubFOf {
+/-- `vg_rsa_pkcs1_verify_precomputed`, with the baseline public-key operation
+and its cleanup, returns without secret residue. -/
+theorem verifyPrecomputed_scrubbed :
+    VerifiedScrubbed target (Impl.RsaPkcs1Sig.X86.Fn.verifyPrecomputed baseline.name baseline.code)
+      (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi Proof.RsaPkcs1Sig.X86.Ver.verifyStack) 32 :=
+  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.X86.Verify.code baseline.name baseline.code
       verified := Proof.RsaPkcs1Sig.X86.Ver.verify_verified baseline
       spSafe := Proof.RsaPkcs1Sig.X86.Ver.code_sp baseline }
     (verifyPrecomputedOut _)
 
-/-- `Spec.RsaPkcs1Sig.recoverPrecomputedApi`, with the baseline public-key operation. -/
-def recoverPrecomputedReg : Registration Spec.RsaPkcs1Sig.recoverPrecomputedApi X86.target :=
-  scrubFOf {
+/-- `vg_rsa_pkcs1_recover_precomputed`, with the baseline public-key operation
+and its cleanup, returns without secret residue. -/
+theorem recoverPrecomputed_scrubbed :
+    VerifiedScrubbed target (Impl.RsaPkcs1Sig.X86.Fn.recoverPrecomputed baseline.name baseline.code)
+      (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi Proof.RsaPkcs1Sig.X86.Rcv.recoverStack) 32 :=
+  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.X86.Recover.code baseline.name baseline.code
       verified := Proof.RsaPkcs1Sig.X86.Rcv.recover_verified baseline
       spSafe := Proof.RsaPkcs1Sig.X86.Rcv.code_sp baseline }
