@@ -38,8 +38,15 @@ theorem (`Arm.Scrub.verifiedScrubbedF`).
 `vg_ecdsa_brainpoolp320r1_sign` calls indirectly only the HMAC functions of
 its table, from frames within the stack its contract reserves, and its
 postcondition reads the memory on return only at `out`
-(`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): it is registered followed by a wipe of
-that stack (`Arm.Scrub.scrubRegFT`). Both are then followed by instructions
+(`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): it is emitted followed by a wipe of
+that stack, and `Fn` below has its theorem (`Arm.Scrub.verifiedScrubbedF`).
+What the cleanup needs of
+signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
+from what the core states of its own code (`signCore_ok`, by `lit_decide`);
+`signCode_eq` is that the code `cfgT` builds is that of
+`Impl.Ecdsa.Arm.Fn.signCfgBrainpoolP320r1`, written without the group law that the curve's
+`RfcCurve` carries proofs of.
+Both are then followed by instructions
 that set the registers a callee may change, but the result, and the flags to
 constants; with either multiplication of the field.
 -/
@@ -80,78 +87,17 @@ theorem verifyU_armStack : armStack (verifyCode true) ≤ 96 := by
 
 theorem frameOk_96 : FrameOk 96 := by decide
 
-theorem frameOk_stackT : FrameOk stackT := by decide
+theorem signCore_ok : CodeOk Impl.Ecdsa.Arm.signBrainpoolP320r1Comb 16 := by lit_decide
 
-/-- The configuration of signing's code, the comb's core calling
-`vg_brainpoolp320r1_mul` with `umaal` if `u`: the code is that of
-`brainpoolp320r1CombCurve`'s (`signCode_eq`), whose other fields are proofs. -/
-def signCfg (u : Bool) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
-  f := Proof.HmacTable.Arm.fnsOf vars
-  w := 2 * Impl.Ecdsa.Arm.brainpoolp320r1.n - (if Impl.Ecdsa.Arm.brainpoolp320r1.C.len = 28 then 1 else 0)
-  len := Impl.Ecdsa.Arm.brainpoolp320r1.C.len
-  big := false
-  sh := 0
-  n := Impl.Ecdsa.Arm.brainpoolp320r1.C.n
-  tries := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries
-  coreN := bif u then "vg_ecdsa_brainpoolp320r1_sign_k" ++ "_umaal" else "vg_ecdsa_brainpoolp320r1_sign_k"
-  coreC := bif u then Impl.Ecdsa.Arm.signBrainpoolP320r1CombU else Impl.Ecdsa.Arm.signBrainpoolP320r1Comb
+theorem signCoreU_ok : CodeOk Impl.Ecdsa.Arm.signBrainpoolP320r1CombU 16 := by lit_decide
 
 theorem signCode_eq (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     signCodeT (brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars =
-      (signCfg false).sign := rfl
+      (Impl.Ecdsa.Arm.Fn.signCfgBrainpoolP320r1 (Proof.HmacTable.Arm.fnsOf vars) false).sign := rfl
 
 theorem signCodeU_eq (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     signCodeT (brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars =
-      (signCfg true).sign := rfl
-
-theorem signCfg_tablesCall (u : Bool) : tablesCall (signCfg u).sign [("hmac", tables vars)] = true := by
-  cases u <;> lit_decide
-
-theorem signCfg_armStack (u : Bool) : armStack (signCfg u).sign ≤ stackT := by
-  cases u <;> lit_decide
-
-theorem sign_tablesCall (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    tablesCall (signCodeT (brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars)
-      [("hmac", tables vars)] = true := by
-  rw [signCode_eq]; exact signCfg_tablesCall false
-
-theorem signU_tablesCall (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    tablesCall (signCodeT (brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars)
-      [("hmac", tables vars)] = true := by
-  rw [signCodeU_eq]; exact signCfg_tablesCall true
-
-theorem sign_armStack (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    armStack (signCodeT (brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars) ≤
-      stackT := by
-  rw [signCode_eq]; exact signCfg_armStack false
-
-theorem signU_armStack (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    armStack (signCodeT (brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars) ≤
-      stackT := by
-  rw [signCodeU_eq]; exact signCfg_armStack true
-
-/-- `vg_ecdsa_brainpoolp320r1_sign`, given the group law. -/
-def signReg (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      tables := [("hmac", tables vars)]
-      code := signCodeT (brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars
-      verified := brainpoolp320r1T_verified hC }
-    (sign_armStack hC) (sign_tablesCall hC) frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
-      (brainpoolp320r1CombCurve hC).coreConsts vars) rfl
-
-/-- `vg_ecdsa_brainpoolp320r1_sign_umaal`, given the group law. -/
-def signUReg (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      suffix := "_umaal"
-      tables := [("hmac", tables vars)]
-      code := signCodeT (brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vars
-      verified := brainpoolp320r1UT_verified hC }
-    (signU_armStack hC) (signU_tablesCall hC) frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
-      (brainpoolp320r1CombCurveU hC).coreConsts vars) rfl
+      (Impl.Ecdsa.Arm.Fn.signCfgBrainpoolP320r1 (Proof.HmacTable.Arm.fnsOf vars) true).sign := rfl
 
 end VG.Proof.Ecdsa.Arm.BrainpoolP320r1.Scrub
 
@@ -184,5 +130,32 @@ theorem verifyBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve)
       Impl.Weierstrass.Arm.brainpoolp320r1CombConsts 96)
     (scrubSideF_of ⟨BrainpoolP320r1.Scrub.verifyU_armStack, BrainpoolP320r1.Scrub.verifyU_noIcall⟩
       BrainpoolP320r1.Scrub.frameOk_96 _)
+
+
+/-- `vg_ecdsa_brainpoolp320r1_sign`, given the group law. -/
+theorem signBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
+        (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.brainpoolp320r1T_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
+      (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurve hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (BrainpoolP320r1.Scrub.signCode_eq hC) rfl BrainpoolP320r1.Scrub.signCore_ok)
+
+/-- `vg_ecdsa_brainpoolp320r1_sign_umaal`, given the group law. -/
+theorem signBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
+        (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.brainpoolp320r1UT_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
+      (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurveU hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (BrainpoolP320r1.Scrub.signCodeU_eq hC) rfl BrainpoolP320r1.Scrub.signCoreU_ok)
 
 end VG.Proof.Ecdsa.Arm.Fn

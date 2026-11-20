@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 namespace VG.Artifacts.EcdsaBrainpoolP320r1.Arm
 
 open VG.Proof.BrainpoolP320r1.Arm (hasLaw)
-open VG.Proof.Ecdsa.Arm.BrainpoolP320r1.Scrub
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact Arm.target {
@@ -24,7 +23,14 @@ def artifacts : List Artifact := [
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1U
     verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyBrainpoolP320r1U hasLaw.law) },
-  Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact Arm.target (signReg hasLaw.law),
-  Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact Arm.target (signUReg hasLaw.law)]
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact Arm.target {
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signBrainpoolP320r1 hasLaw.law) },
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
+    code := Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signBrainpoolP320r1U hasLaw.law) }]
 
 end VG.Artifacts.EcdsaBrainpoolP320r1.Arm
