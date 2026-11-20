@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Sha1.RISCV64.Compress
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 public import VerifiedGarbage.Proof.Sha1.RISCV64.Stream
+public import VerifiedGarbage.Impl.Sha1.RISCV64.Fn
+meta import VerifiedGarbage.Impl.Sha1.RISCV64.Fn
 meta import VerifiedGarbage.Proof.Sha1.RISCV64.Stream
 public import VerifiedGarbage.Proof.Hmac.Stream.Reloc
 public import VerifiedGarbage.Proof.Hmac.Scratch
@@ -24,8 +26,9 @@ meta import VerifiedGarbage.Proof.MdStream.RISCV64.Digest
 # HMAC-SHA-1 on RISC-V
 
 SHA-1's streaming functions as HMAC's code over any streaming hash function
-calls them (`hash`), which keep their working space in frames of their own,
-within 144 bytes below the stack pointer; what the proofs need of them
+calls them (`hash`, which is `Impl.Sha1.RISCV64.Fn.hash`), which keep their
+working space in frames of their own, within 144 bytes below the stack
+pointer; what the proofs need of them
 (`ok`); the constant time of HMAC's code for them, which the kernel checks;
 and the functions against the shared contracts of `Spec.Hmac.sha1I`.
 -/
@@ -37,18 +40,9 @@ namespace VG.Proof.Hmac.Stream.RISCV64.Sha1
 open VG.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 
-/-- SHA-1's streaming functions. -/
-def hash : Hash where
-  b := 6
-  N := 20
-  D := 20
-  F := 144
-  initN := Spec.Sha1.initApi.name ++ "_core"
-  initC := Impl.Sha1.RISCV64.Stream.init
-  updN := Spec.Sha1.updateApi.name ++ "_core"
-  updC := Impl.Sha1.RISCV64.Stream.update
-  finN := Spec.Sha1.finalizeApi.name ++ "_core"
-  finC := Impl.Sha1.RISCV64.Stream.finalize
+/-- SHA-1's streaming functions, as emitted code calls them
+(`Impl.Sha1.RISCV64.Fn.hash`). -/
+abbrev hash : Hash := Impl.Sha1.RISCV64.Fn.hash
 
 theorem initSd : sdepth Impl.Sha1.RISCV64.Stream.init ≤ 144 := by decide +kernel
 theorem updSd : sdepth Impl.Sha1.RISCV64.Stream.update ≤ 144 := by decide +kernel
@@ -75,7 +69,7 @@ def ok : HashOK hash where
   finSd := finSd
   reloc m m' p q x hx h hr := Proof.Hmac.Stream.sha1_reloc m m' p q x hx h hr
   congr _ _ _ _ h hr := Proof.Hmac.sha1_local (fun i hi => h i hi) hr
-  hashLen x := by simp [hash, Spec.Hmac.sha1S, Spec.Hmac.sha1, Spec.Sha1.hash, Spec.Sha1.wordBytes,
+  hashLen x := by simp [hash, Impl.Sha1.RISCV64.Fn.hash, Spec.Hmac.sha1S, Spec.Hmac.sha1, Spec.Sha1.hash, Spec.Sha1.wordBytes,
     List.length_flatMap, List.map_const']
 
 /-! ## Constant time -/

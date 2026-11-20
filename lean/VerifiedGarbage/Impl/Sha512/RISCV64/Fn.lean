@@ -15,7 +15,8 @@ caller-saved registers, `a0` included (none returns a value), so that it
 returns without secret residue.
 
 `digest` is the generic one-shot digest (`Impl.MdStream.RISCV64.Digest`)
-over SHA-512's streaming functions (`hash`), then its cleanup
+over the streaming functions (`hash384`, `hash512`, …, each an instance of
+`hash`), then its cleanup
 (`Impl.Scrub.RISCV64.scrubSel rb fs`): the caller-saved registers cleared,
 and, of the 448 bytes of stack it and its callees use, only the runs of
 doublewords `fs` states, those the residue analysis (`RISCV64.rtaint`) finds
@@ -74,28 +75,40 @@ def hash (iv : HashValue) (D : Nat) (initN finN : String) (finC : Prog isa) : Ha
   finN := finN
   finC := finC
 
+/-- SHA-384's streaming functions. -/
+def hash384 : Hash :=
+  hash Spec.Sha512.H0_384 48 (Spec.Sha512.init384Api.name ++ "_core")
+    (Spec.Sha512.finalize384Api.name ++ "_core") Stream.finalize384
+
+/-- SHA-512's streaming functions. -/
+def hash512 : Hash :=
+  hash Spec.Sha512.H0_512 64 (Spec.Sha512.init512Api.name ++ "_core")
+    (Spec.Sha512.finalizeApi.name ++ "_core") Stream.finalize
+
+/-- SHA-512/224's streaming functions. -/
+def hash512_224 : Hash :=
+  hash Spec.Sha512.H0_512_224 28 (Spec.Sha512.init512_224Api.name ++ "_core")
+    (Spec.Sha512.finalize512_224Api.name ++ "_core") Stream.finalize512_224
+
+/-- SHA-512/256's streaming functions. -/
+def hash512_256 : Hash :=
+  hash Spec.Sha512.H0_512_256 32 (Spec.Sha512.init512_256Api.name ++ "_core")
+    (Spec.Sha512.finalize512_256Api.name ++ "_core") Stream.finalize512_256
+
 /-- The one-shot digest over `H`, as emitted. -/
 def digestOf (H : Hash) : Prog isa :=
   scrubSel 0 [(448, [(0, 26), (50, 6)])] (Impl.MdStream.RISCV64.Digest.digest H)
 
 /-- `vg_sha384_digest`, as emitted. -/
-def digest384 : Prog isa :=
-  digestOf (hash Spec.Sha512.H0_384 48 (Spec.Sha512.init384Api.name ++ "_core")
-    (Spec.Sha512.finalize384Api.name ++ "_core") Stream.finalize384)
+def digest384 : Prog isa := digestOf hash384
 
 /-- `vg_sha512_digest`, as emitted. -/
-def digest512 : Prog isa :=
-  digestOf (hash Spec.Sha512.H0_512 64 (Spec.Sha512.init512Api.name ++ "_core")
-    (Spec.Sha512.finalizeApi.name ++ "_core") Stream.finalize)
+def digest512 : Prog isa := digestOf hash512
 
 /-- `vg_sha512_224_digest`, as emitted. -/
-def digest512_224 : Prog isa :=
-  digestOf (hash Spec.Sha512.H0_512_224 28 (Spec.Sha512.init512_224Api.name ++ "_core")
-    (Spec.Sha512.finalize512_224Api.name ++ "_core") Stream.finalize512_224)
+def digest512_224 : Prog isa := digestOf hash512_224
 
 /-- `vg_sha512_256_digest`, as emitted. -/
-def digest512_256 : Prog isa :=
-  digestOf (hash Spec.Sha512.H0_512_256 32 (Spec.Sha512.init512_256Api.name ++ "_core")
-    (Spec.Sha512.finalize512_256Api.name ++ "_core") Stream.finalize512_256)
+def digest512_256 : Prog isa := digestOf hash512_256
 
 end VG.Impl.Sha512.RISCV64.Fn

@@ -314,7 +314,7 @@ theorem digest384_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest384
       (Spec.Sha512.digestContract RISCV64.abi 48 Spec.Sha512.sha384 448) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha512.digest384Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha384.hash,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash384,
       verified := Proof.Hmac.Stream.RISCV64.Sha384.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 48 Spec.Sha512.sha384 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -325,7 +325,7 @@ theorem digest512_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512
       (Spec.Sha512.digestContract RISCV64.abi 64 Spec.Sha512.sha512 448) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha512.digest512Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512.hash,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512,
       verified := Proof.Hmac.Stream.RISCV64.Sha512.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 64 Spec.Sha512.sha512 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -336,7 +336,7 @@ theorem digest512_224_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512_224
       (Spec.Sha512.digestContract RISCV64.abi 28 Spec.Sha512.sha512_224 448) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha512.digest512_224Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_224.hash,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_224,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_224.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 28 Spec.Sha512.sha512_224 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -347,7 +347,7 @@ theorem digest512_256_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512_256
       (Spec.Sha512.digestContract RISCV64.abi 32 Spec.Sha512.sha512_256 448) 0 :=
   verifiedScrubbedSelT (api := Spec.Sha512.digest512_256Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_256.hash,
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_256,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_256.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 32 Spec.Sha512.sha512_256 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
