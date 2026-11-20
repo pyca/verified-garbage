@@ -3166,7 +3166,8 @@ mod xmodes {
 /// in use with the upper halves of ymm0-ymm7 not zero. Next to them, the
 /// library's AES-128-GCM with additional data only (GHASH over 16 KiB and
 /// over 1 KiB, with the key schedule, the powers and the tag), which shows
-/// what a call adds to the loop.
+/// what a call adds to the loop, and its AES-128-GCM and AES-128-GCM-SIV
+/// seals of 16 KiB and of 1 KiB, in the same three states.
 ///
 /// One line each: `xghash <round> <mode> <name> <bytes> xinuse
 /// <before>-><after> min <ns> median <ns> ns, <ps> ps/block`.
@@ -3177,6 +3178,7 @@ mod xghash {
     use std::time::{Duration, Instant};
 
     use verified_garbage::aead::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm_siv::AesGcmSiv;
 
     use super::xprobe::{vzeroupper, xinuse};
 
@@ -5097,7 +5099,7 @@ mod xghash {
         };
         let line = |mode: &str, name: &str, bytes: usize, calls: u32, (before, after, min, med): (u32, u32, u32, u32)| {
             eprintln!(
-                "xghash {round} {mode:<7} {name:<10} {bytes:>5} xinuse {before:#x}->{after:#x} min {:>8.1} median {:>8.1} ns, {:>6} ps/block",
+                "xghash {round} {mode:<7} {name:<12} {bytes:>5} xinuse {before:#x}->{after:#x} min {:>8.1} median {:>8.1} ns, {:>6} ps/block",
                 f64::from(min) / f64::from(calls),
                 f64::from(med) / f64::from(calls),
                 u64::from(med) * 1000 / (u64::from(calls) * (bytes as u64 / 16))
@@ -5137,6 +5139,39 @@ mod xghash {
                 });
                 if let Some(t) = t {
                     line(mode, "lib-gmac", bytes, calls, t);
+                }
+            }
+            // The library's seals, with their key schedules: AES-128-GCM
+            // (counter mode and GHASH over the data) and AES-128-GCM-SIV
+            // (POLYVAL, which is this GHASH, and counter mode), each with 16
+            // bytes of additional data.
+            let mut buf = vec![0x5au8; 128 * TURNS];
+            for (bytes, calls) in [(128 * TURNS, 1u32), (1024, 16)] {
+                let t = time(m, || {
+                    for _ in 0..calls {
+                        black_box(
+                            AesGcm::new(black_box(&key))
+                                .unwrap()
+                                .encrypt_in_place(&nonce, &[0x5a; 16], black_box(&mut buf[..bytes]))
+                                .unwrap(),
+                        );
+                    }
+                });
+                if let Some(t) = t {
+                    line(mode, "lib-gcm-seal", bytes, calls, t);
+                }
+                let t = time(m, || {
+                    for _ in 0..calls {
+                        black_box(
+                            AesGcmSiv::new(black_box(&key))
+                                .unwrap()
+                                .encrypt_in_place(&nonce, &[0x5a; 16], black_box(&mut buf[..bytes]))
+                                .unwrap(),
+                        );
+                    }
+                });
+                if let Some(t) = t {
+                    line(mode, "lib-siv-seal", bytes, calls, t);
                 }
             }
         }
