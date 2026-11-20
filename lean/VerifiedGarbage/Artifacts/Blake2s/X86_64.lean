@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Blake2.X86_64.Fn
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -31,7 +32,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Blake2s.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initSApi.artifact X86_64.target Proof.Blake2.X86_64.initSReg] ++
+  Spec.Blake2.initSApi.artifact X86_64.target { code := Impl.Blake2.X86_64.Fn.initS, verified := .scrubbed Proof.Blake2.X86_64.initS_scrubbed, spSafe := Proof.Blake2.X86_64.initS_spSafe }] ++
   (VG.Proof.Variants.Blake2s.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.BackendS) => [
     Spec.Blake2.updateSApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.updateSReg v),
     Spec.Blake2.finalizeSApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.finalizeSReg v)])

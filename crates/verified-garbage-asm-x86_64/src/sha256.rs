@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "SLjYngXBB9V8NmZID27ASLgX3XAwOVkO92ZID27IZg9swfMPfwdIuDELwP8RFVhoZkgPbsBIuKeP+WSkT/q+ZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwEUx28M="
+        r#".base64 "SLjYngXBB9V8NmZID27ASLgX3XAwOVkO92ZID27IZg9swfMPfwdIuDELwP8RFVhoZkgPbsBIuKeP+WSkT/q+ZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
@@ -34,7 +34,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha224_init(state: *mut [u8; 96]) {
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "SLhn5glqha5nu2ZID27ASLhy8248OvVPpWZID27IZg9swfMPfwdIuH9SDlGMaAWbZkgPbsBIuKvZgx8ZzeBbZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwEUx28M="
+        r#".base64 "SLhn5glqha5nu2ZID27ASLhy8248OvVPpWZID27IZg9swfMPfwdIuH9SDlGMaAWbZkgPbsBIuKvZgx8ZzeBbZkgPbshmD2zB8w9/RxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }

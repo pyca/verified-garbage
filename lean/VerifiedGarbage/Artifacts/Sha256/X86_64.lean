@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sha256.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha256.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -33,8 +34,8 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Sha256.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha256.init224Api.artifact X86_64.target Proof.Sha256.X86_64.init224Reg,
-  Spec.Sha256.initApi.artifact X86_64.target Proof.Sha256.X86_64.initReg] ++
+  Spec.Sha256.init224Api.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init224, verified := .scrubbed Proof.Sha256.X86_64.init224_scrubbed, spSafe := Proof.Sha256.X86_64.init224_spSafe },
+  Spec.Sha256.initApi.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init, verified := .scrubbed Proof.Sha256.X86_64.init_scrubbed, spSafe := Proof.Sha256.X86_64.init_spSafe }] ++
   ((VG.Proof.Variants.MdHash.X86_64.sha224Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha256Variants).flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>

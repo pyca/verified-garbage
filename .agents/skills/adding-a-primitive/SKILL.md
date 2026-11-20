@@ -274,7 +274,15 @@ instructions in an ISA model) go in their own PR before either.
    binds too (`Impl/Rc2/X86_64/Fn.lean`, `Proof/Rc2/X86_64/Scrub.lean`,
    `Artifacts/Rc2/X86_64.lean`; `Proof/Framework/X86_64/ScrubFn.lean`).
    Neither writes MXCSR: code must leave it as two runs found it
-   (`scrubSideG`'s `mxSameB`). The families not yet converted build their
+   (`scrubSideG`'s `mxSameB`).
+   For code generic over a variant, each variant proves
+   `X86_64.Scrub.calleeSide` of its own code at its level where it is
+   defined (a field of the variant structure, by `lit_decide`; `EcbImpl.side`),
+   the function proves `Fill` from its code with a stub to its code with any
+   variant (`fill_calls`), and `verifiedScrubbedAllFill` joins them with
+   `stubSide` of the stub, which the kernel evaluates once
+   (`Proof/Framework/X86_64/ScrubCall.lean`;
+   `Proof/TripleDes/X86_64/Batch/Scrub.lean`, `Artifacts/TripleDesCbc/X86_64.lean`). The families not yet converted build their
    registration in `Proof/` with the older forms below: never use them in
    new code.
    On a target whose `Proof/Framework/` does not yet state its scrub as a

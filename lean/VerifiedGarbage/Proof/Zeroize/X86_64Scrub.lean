@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Zeroize.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Zeroize.Contract
@@ -47,33 +49,38 @@ theorem zeroizeOut : PostOut (zeroizeContract X86_64.abi) (zeroizeSig.retBits 64
     have := List.mem_range.mp hi
     exact (hb _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [e64, this]) (by omega_using [e64, this]))).symm
 
-def zeroizeKs : List Nat := keep_for% Spec.Zeroize.zeroizeApi.sig 0 Impl.Zeroize.X86_64.zeroize []
+/-! ## The functions as emitted -/
 
-theorem zeroizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Zeroize.zeroizeApi.sig 0 []) Impl.Zeroize.X86_64.zeroize
-      h).any (RScrub.resOkB · 0 zeroizeKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of zeroizeKs (by taint_decide)
+theorem zeroize_codeSp : (Impl.Zeroize.X86_64.zeroize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def zeroizeAvxKs : List Nat :=
-  keep_for% Spec.Zeroize.zeroizeApi.sig 0 Impl.Zeroize.X86_64.zeroizeAvx []
+/-- `Spec.Zeroize.zeroizeApi`'s function as emitted (`Impl.Zeroize.X86_64.Fn.zeroize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem zeroize_scrubbed :
+    VerifiedScrubbed target Impl.Zeroize.X86_64.Fn.zeroize (Spec.Zeroize.zeroizeApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Zeroize.zeroizeApi)
+    { code := Impl.Zeroize.X86_64.zeroize
+      verified := verified
+      spSafe := zeroize_codeSp }
+    .sse [] zeroizeOut (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem zeroizeAvxOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Zeroize.zeroizeApi.sig 0 []) Impl.Zeroize.X86_64.zeroizeAvx
-      h).any (RScrub.resOkB · 0 zeroizeAvxKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of zeroizeAvxKs (by taint_decide)
+theorem zeroize_spSafe : Impl.Zeroize.X86_64.Fn.zeroize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe zeroize_codeSp
 
-open VG.X86_64.RScrub in
-/-- `vg_zeroize`. -/
-def zeroizeReg : Registration Spec.Zeroize.zeroizeApi X86_64.target :=
-  scrubOf { code := Impl.Zeroize.X86_64.zeroize, verified := verified } .sse false [.rdx, .rdi] zeroizeOut []
-    (pubOk_nil _) ⟨zeroizeKs, zeroizeOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem zeroizeAvx_codeSp : (Impl.Zeroize.X86_64.zeroizeAvx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_zeroize_avx`. -/
-def zeroizeAvxReg : Registration Spec.Zeroize.zeroizeApi X86_64.target :=
-  scrubOf { suffix := "_avx", code := Impl.Zeroize.X86_64.zeroizeAvx, verified := verifiedAvx } .avx true [.rdx, .rdi]
-    zeroizeOut [] (pubOk_nil _) ⟨zeroizeAvxKs, zeroizeAvxOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Zeroize.zeroizeApi`'s function as emitted (`Impl.Zeroize.X86_64.Fn.zeroizeAvx`) meets its contract in
+constant time and returns without secret residue. -/
+theorem zeroizeAvx_scrubbed :
+    VerifiedScrubbed target Impl.Zeroize.X86_64.Fn.zeroizeAvx (Spec.Zeroize.zeroizeApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Zeroize.zeroizeApi)
+    { code := Impl.Zeroize.X86_64.zeroizeAvx
+      verified := verifiedAvx
+      suffix := "_avx"
+      spSafe := zeroizeAvx_codeSp }
+    .avx [] zeroizeOut (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem zeroizeAvx_spSafe : Impl.Zeroize.X86_64.Fn.zeroizeAvx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe zeroizeAvx_codeSp
 end VG.Proof.Zeroize.X86_64

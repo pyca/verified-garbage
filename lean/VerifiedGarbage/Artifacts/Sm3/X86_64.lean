@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sm3.X86_64.Fn
 public import VerifiedGarbage.Proof.Sm3.X86_64.Shared
 public import VerifiedGarbage.Proof.Sm3.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,8 +14,8 @@ import VerifiedGarbage.Proof.Sm3.X86_64.Lit
 namespace VG.Artifacts.Sm3.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sm3.initApi.artifact X86_64.target Proof.Sm3.X86_64.initReg,
-  Spec.Sm3.updateApi.artifact X86_64.target Proof.Sm3.X86_64.updateReg,
-  Spec.Sm3.finalizeApi.artifact X86_64.target Proof.Sm3.X86_64.finalizeReg]
+  Spec.Sm3.initApi.artifact X86_64.target { code := Impl.Sm3.X86_64.Fn.init, verified := .scrubbed Proof.Sm3.X86_64.init_scrubbed, spSafe := Proof.Sm3.X86_64.init_spSafe },
+  Spec.Sm3.updateApi.artifact X86_64.target { code := Impl.Sm3.X86_64.Fn.update, verified := .scrubbed Proof.Sm3.X86_64.update_scrubbed, spSafe := Proof.Sm3.X86_64.update_spSafe },
+  Spec.Sm3.finalizeApi.artifact X86_64.target { code := Impl.Sm3.X86_64.Fn.finalize, verified := .scrubbed Proof.Sm3.X86_64.finalize_scrubbed, spSafe := Proof.Sm3.X86_64.finalize_spSafe }]
 
 end VG.Artifacts.Sm3.X86_64

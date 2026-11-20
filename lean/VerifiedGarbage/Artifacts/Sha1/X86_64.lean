@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sha1.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha1.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha1.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -31,7 +32,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Sha1.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha1.initApi.artifact X86_64.target Proof.Sha1.X86_64.initReg] ++
+  Spec.Sha1.initApi.artifact X86_64.target { code := Impl.Sha1.X86_64.Fn.init, verified := .scrubbed Proof.Sha1.X86_64.init_scrubbed, spSafe := Proof.Sha1.X86_64.init_spSafe }] ++
   (VG.Proof.Variants.MdHash.X86_64.sha1Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
       f.api.artifact X86_64.target { f.reg with suffix := v.suffix})

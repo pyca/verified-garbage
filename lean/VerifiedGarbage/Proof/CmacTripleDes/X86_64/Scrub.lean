@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
@@ -127,60 +129,64 @@ theorem finishOut : PostOut (Spec.Cmac.tdesFinishContract X86_64.abi 128) (Spec.
 abbrev initCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.streamInit
 
-def initKs : List Nat := keep_for% Spec.Cmac.tdesStreamInitApi.sig 128 initCode []
-
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesStreamInitApi.sig 128 []) initCode
-      h).any (RScrub.resOkB · 128 initKs (Impl.Scrub.X86_64.chunks 128)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_cmac_triple_des_stream_init`. -/
-def initReg : Registration Spec.Cmac.tdesStreamInitApi X86_64.target :=
-  scrubOf {
-    code := initCode
-    stack := 128
-    verified := Proof.CmacTripleDes.Stream.X86_64.init_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_cmac_triple_des_absorb`'s code. -/
 abbrev absorbCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.CmacTripleDes.Stream.X86_64.absorb
-
-def absorbKs : List Nat := keep_for% Spec.Cmac.tdesAbsorbApi.sig 168 absorbCode []
-
-theorem absorbOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesAbsorbApi.sig 168 []) absorbCode
-      h).any (RScrub.resOkB · 168 absorbKs (Impl.Scrub.X86_64.chunks 168)) = true :=
-  RScrub.Analysed.ok_of absorbKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_cmac_triple_des_absorb`. -/
-def absorbReg : Registration Spec.Cmac.tdesAbsorbApi X86_64.target :=
-  scrubOf {
-    code := absorbCode
-    stack := 168
-    verified := Proof.CmacTripleDes.Stream.X86_64.absorb_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] absorbOut [] (pubOk_nil _) ⟨absorbKs, absorbOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_cmac_triple_des_finish`'s code. -/
 abbrev finishCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.finish
 
-def finishKs : List Nat := keep_for% Spec.Cmac.tdesFinishApi.sig 128 finishCode []
+/-! ## The functions as emitted -/
 
-theorem finishOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Cmac.tdesFinishApi.sig 128 []) finishCode
-      h).any (RScrub.resOkB · 128 finishKs (Impl.Scrub.X86_64.chunks 128)) = true :=
-  RScrub.Analysed.ok_of finishKs (by taint_decide)
+theorem init_codeSp : (Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.streamInit).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_cmac_triple_des_finish`. -/
-def finishReg : Registration Spec.Cmac.tdesFinishApi X86_64.target :=
-  scrubOf {
-    code := finishCode
-    stack := 128
-    verified := Proof.CmacTripleDes.Stream.X86_64.finish_framed } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] finishOut [] (pubOk_nil _) ⟨finishKs, finishOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Cmac.tdesStreamInitApi`'s function as emitted (`Impl.CmacTripleDes.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.X86_64.Fn.init (Spec.Cmac.tdesStreamInitApi.contract X86_64.abi 128) 0 :=
+  verifiedScrubbedSel (api := Spec.Cmac.tdesStreamInitApi)
+    { code := initCode
+      stack := 128
+      verified := Proof.CmacTripleDes.Stream.X86_64.init_framed
+      spSafe := init_codeSp }
+    .sse [(0, 1), (8, 8)] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem init_spSafe : Impl.CmacTripleDes.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
+
+theorem absorb_codeSp : (Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.CmacTripleDes.Stream.X86_64.absorb).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cmac.tdesAbsorbApi`'s function as emitted (`Impl.CmacTripleDes.X86_64.Fn.absorb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.X86_64.Fn.absorb (Spec.Cmac.tdesAbsorbApi.contract X86_64.abi 168) 0 :=
+  verifiedScrubbedSel (api := Spec.Cmac.tdesAbsorbApi)
+    { code := absorbCode
+      stack := 168
+      verified := Proof.CmacTripleDes.Stream.X86_64.absorb_framed
+      spSafe := absorb_codeSp }
+    .sse [(0, 11)] absorbOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem absorb_spSafe : Impl.CmacTripleDes.X86_64.Fn.absorb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe absorb_codeSp
+
+theorem finish_codeSp : (Impl.StackScratch.X86_64.withStackScratch 128 .rcx Impl.CmacTripleDes.Stream.X86_64.finish).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cmac.tdesFinishApi`'s function as emitted (`Impl.CmacTripleDes.X86_64.Fn.finish`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.X86_64.Fn.finish (Spec.Cmac.tdesFinishApi.contract X86_64.abi 128) 0 :=
+  verifiedScrubbedSel (api := Spec.Cmac.tdesFinishApi)
+    { code := finishCode
+      stack := 128
+      verified := Proof.CmacTripleDes.Stream.X86_64.finish_framed
+      spSafe := finish_codeSp }
+    .sse [(0, 1), (8, 8)] finishOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem finish_spSafe : Impl.CmacTripleDes.X86_64.Fn.finish.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finish_codeSp
 end VG.Proof.CmacTripleDes.X86_64.Scrub

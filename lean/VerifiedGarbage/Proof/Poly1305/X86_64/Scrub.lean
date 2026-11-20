@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Poly1305.Contract
@@ -100,36 +102,6 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract X86_64.abi stack) 
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
 
-def initKs : List Nat := keep_for% Spec.Poly1305.initApi.sig 0 Impl.Poly1305.X86_64.init []
-
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.initApi.sig 0 []) Impl.Poly1305.X86_64.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
-
-def finalizeKs : List Nat := keep_for% Spec.Poly1305.finalizeApi.sig 136 finalizeCode []
-
-theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Poly1305.finalizeApi.sig 136 []) finalizeCode
-      h).any (RScrub.resOkB · 136 finalizeKs (Impl.Scrub.X86_64.chunks 136)) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_poly1305_init`. -/
-def initReg : Registration Spec.Poly1305.initApi X86_64.target :=
-  scrubOf { code := Impl.Poly1305.X86_64.init, verified := init_verified } .sse false [.rcx, .rdx, .r8] (initOut _) [] (pubOk_nil _)
-    ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_poly1305_finalize`. -/
-def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
-  scrubOf {
-    code := finalizeCode
-    stack := 136
-    verified := finalize_framed } .sse false [.rcx, .rdx, .r8, .r9, .r10, .r11] (finalizeOut _) [] (pubOk_nil _) ⟨finalizeKs, finalizeOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`,
 as a registration before its clearing. -/
@@ -153,4 +125,38 @@ def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.tar
   | some a => withScrubResM (updatePlain v) (updateOut _) a.ks (resOk_regOps (updatePlain v) rfl (pubOk_nil _) a)
   | none => (updatePlain v).registration
 
+/-! ## The functions as emitted -/
+
+theorem init_codeSp : (Impl.Poly1305.X86_64.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Poly1305.initApi`'s function as emitted (`Impl.Poly1305.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.X86_64.Fn.init (Spec.Poly1305.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Poly1305.initApi)
+    { code := Impl.Poly1305.X86_64.init
+      verified := init_verified
+      spSafe := init_codeSp }
+    .sse [] (initOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem init_spSafe : Impl.Poly1305.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
+
+theorem finalize_codeSp : (Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Poly1305.finalizeApi`'s function as emitted (`Impl.Poly1305.X86_64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.X86_64.Fn.finalize (Spec.Poly1305.finalizeApi.contract X86_64.abi 136) 0 :=
+  verifiedScrubbedSel (api := Spec.Poly1305.finalizeApi)
+    { code := finalizeCode
+      stack := 136
+      verified := finalize_framed
+      spSafe := finalize_codeSp }
+    .sse [] (finalizeOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem finalize_spSafe : Impl.Poly1305.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalize_codeSp
 end VG.Proof.Poly1305.X86_64

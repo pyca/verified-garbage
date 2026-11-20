@@ -27,6 +27,10 @@ open VG.Proof.TripleDes.X86_64.Batch (EcbImpl)
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.TripleDesEcb.X86_64.variants.flatMap fun (v : EcbImpl) => [
-    Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target (Proof.TripleDes.X86_64.Batch.Scrub.cbcDecryptReg v)])
+    Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.TripleDes.X86_64.Fn.cbcDecrypt v.level (v.name .decrypt) (v.code .decrypt)
+      verified := .scrubbed (Proof.TripleDes.X86_64.Batch.Scrub.cbcDecrypt_scrubbed v)
+      spSafe := Proof.TripleDes.X86_64.Batch.Scrub.cbcDecrypt_spSafe v }])
 
 end VG.Artifacts.TripleDesCbc.X86_64

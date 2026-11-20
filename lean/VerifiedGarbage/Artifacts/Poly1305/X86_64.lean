@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Fn
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Scrub
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
@@ -35,8 +36,8 @@ public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.X86_64
 namespace VG.Artifacts.Poly1305.X86_64
 
 def direct : List Artifact := [
-  Spec.Poly1305.initApi.artifact X86_64.target Proof.Poly1305.X86_64.initReg,
-  Spec.Poly1305.finalizeApi.artifact X86_64.target Proof.Poly1305.X86_64.finalizeReg]
+  Spec.Poly1305.initApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.init, verified := .scrubbed Proof.Poly1305.X86_64.init_scrubbed, spSafe := Proof.Poly1305.X86_64.init_spSafe },
+  Spec.Poly1305.finalizeApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.finalize, verified := .scrubbed Proof.Poly1305.X86_64.finalize_scrubbed, spSafe := Proof.Poly1305.X86_64.finalize_spSafe }]
 
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 

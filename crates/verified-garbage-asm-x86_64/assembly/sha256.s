@@ -34,6 +34,13 @@ vg_sha224_init:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
 	xor r11d, r11d
 	ret
 	.p2align 6
@@ -68,6 +75,13 @@ vg_sha256_init:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
 	xor r11d, r11d
 	ret
 	.p2align 6

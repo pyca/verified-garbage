@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Batch
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
 public import VerifiedGarbage.Impl.TripleDes.X86_64.EcbCall
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
@@ -99,5 +100,19 @@ def ecbDecryptAvx2 : Prog isa :=
 def ecbDecryptSse : Prog isa :=
   scrubSel .sse 0 1040 [(8, 1)]
     (Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128 (Impl.TripleDes.X86_64.EcbCall.sse .decrypt))
+
+/-- `Spec.TripleDes.cbcDecryptChainedApi`'s function as emitted, over the
+ECB function `code` of the name `name`, at the level `v` of its vector
+instructions: its whole frame wiped. -/
+def cbcDecrypt (v : Impl.Scrub.X86_64.VecLevel) (name : String) (code : Prog isa) : Prog isa :=
+  scrubAll v 0 3176
+    (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false name code))
+
+/-- `Spec.TripleDes.cfbDecryptApi`'s function as emitted, over the ECB
+function `code` of the name `name`, at the level `v`: its whole frame
+wiped. -/
+def cfbDecrypt (v : Impl.Scrub.X86_64.VecLevel) (name : String) (code : Prog isa) : Prog isa :=
+  scrubAll v 0 3176
+    (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true name code))
 
 end VG.Impl.TripleDes.X86_64.Fn

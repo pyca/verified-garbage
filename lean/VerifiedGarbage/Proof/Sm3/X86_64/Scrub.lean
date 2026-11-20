@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Sm3.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sm3.Contract
@@ -59,50 +61,55 @@ abbrev updateCode : Prog isa :=
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize
 
-def initKs : List Nat := keep_for% Spec.Sm3.initApi.sig (0) Impl.Sm3.X86_64.Stream.init []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sm3.initApi.sig (0) []) Impl.Sm3.X86_64.Stream.init
-      h).any (RScrub.resOkB · (0) initKs (Impl.Scrub.X86_64.chunks (0))) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Sm3.X86_64.Stream.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def updateKs : List Nat := keep_for% Spec.Sm3.updateApi.sig (8 + 168) updateCode []
+/-- `Spec.Sm3.initApi`'s function as emitted (`Impl.Sm3.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.X86_64.Fn.init (Spec.Sm3.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm3.initApi)
+    { code := Impl.Sm3.X86_64.Stream.init
+      verified := Shared.init
+      spSafe := init_codeSp }
+    .sse [] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem updateOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sm3.updateApi.sig (8 + 168) []) updateCode
-      h).any (RScrub.resOkB · (8 + 168) updateKs (Impl.Scrub.X86_64.chunks (8 + 168))) = true :=
-  RScrub.Analysed.ok_of updateKs (by taint_decide)
+theorem init_spSafe : Impl.Sm3.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
-def finalizeKs : List Nat := keep_for% Spec.Sm3.finalizeApi.sig (8 + 168) finalizeCode []
+theorem update_codeSp : (Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.Sm3.X86_64.Stream.update).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sm3.finalizeApi.sig (8 + 168) []) finalizeCode
-      h).any (RScrub.resOkB · (8 + 168) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 168))) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
+/-- `Spec.Sm3.updateApi`'s function as emitted (`Impl.Sm3.X86_64.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.X86_64.Fn.update (Spec.Sm3.updateApi.contract X86_64.abi 176) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm3.updateApi)
+    { code := updateCode
+      stack := 8 + 168
+      verified := Shared.update
+      spSafe := update_codeSp }
+    .sse [(8, 5)] (updateOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
-open VG.X86_64.RScrub in
-/-- `vg_sm3_init`. -/
-def initReg : Registration Spec.Sm3.initApi X86_64.target :=
-  scrubOf { code := Impl.Sm3.X86_64.Stream.init, verified := Shared.init } .sse false [.r11] initOut [] (pubOk_nil _)
-    ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem update_spSafe : Impl.Sm3.X86_64.Fn.update.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe update_codeSp
 
-open VG.X86_64.RScrub in
-/-- `vg_sm3_update`. -/
-def updateReg : Registration Spec.Sm3.updateApi X86_64.target :=
-  scrubOf {
-    code := updateCode
-    stack := 8 + 168
-    verified := Shared.update } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (updateOut _) [] (pubOk_nil _) ⟨updateKs, updateOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem finalize_codeSp : (Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sm3_finalize`. -/
-def finalizeReg : Registration Spec.Sm3.finalizeApi X86_64.target :=
-  scrubOf {
-    code := finalizeCode
-    stack := 8 + 168
-    verified := Shared.finalize } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (finalizeOut _) [] (pubOk_nil _) ⟨finalizeKs, finalizeOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sm3.finalizeApi`'s function as emitted (`Impl.Sm3.X86_64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.X86_64.Fn.finalize (Spec.Sm3.finalizeApi.contract X86_64.abi 176) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm3.finalizeApi)
+    { code := finalizeCode
+      stack := 8 + 168
+      verified := Shared.finalize
+      spSafe := finalize_codeSp }
+    .sse [(8, 5)] (finalizeOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem finalize_spSafe : Impl.Sm3.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalize_codeSp
 end VG.Proof.Sm3.X86_64

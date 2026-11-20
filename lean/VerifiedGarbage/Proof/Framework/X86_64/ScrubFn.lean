@@ -53,6 +53,96 @@ theorem verifiedScrubbedKs {api : Api} (r : Unscrubbed api target) (v : VecLevel
   have h := scrubSideG_ok r v .avx true ks (chunksA r.stack) (gsAll ks) hs hpost hres (by decide)
   exact ⟨h.1, h.2⟩
 
+/-- What the cleanup `scrubKs v rb n ks` needs of its literals alone, the
+stack `n` of the code and the result's bits `rb`: the chunks `chunksA n`
+are ones the wipe takes, and the result fits the clearing of `rax`'s upper
+bits. -/
+def litSide (n rb : Nat) : Bool :=
+  decide (n + 8 < 2 ^ 64) && (chunksA n).sum == n &&
+  (chunksA n).all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) && (decide (rb ≤ 32) || rb == 64)
+
+theorem gsAll_cover (ks : List Nat) : ∀ q ∈ scratchRegs, q ∈ gsAll ks ∨ q ∈ psOf ks := by
+  intro q hq
+  unfold gsAll psOf
+  by_cases hk : ks = []
+  · simp only [hk, ↓reduceIte]; exact .inl hq
+  · simp only [hk, ↓reduceIte]
+    by_cases hr : q = .r11
+    · exact .inr (by simp [hr])
+    · exact .inl ((List.mem_erase_of_ne hr).mpr hq)
+
+/-- No instruction of `c` loads MXCSR, so two runs of it leave the MXCSR
+they started with. -/
+theorem mxSame_of_noLoad {c : Prog isa} (h : c.allInstrs (fun i => !loadsMxcsr i) = true) : MxSame c :=
+  MxSame.of_fun ⟨id, fun _ _ _ e => Exec.mxcsr (fun i hi => by
+    simpa using List.all_eq_true.mp ((Code.allInstrs_eq _ c).symm.trans h) i hi) e⟩
+
+/-- `verifiedScrubbedKs`, from what the cleanup needs of the code one fact
+at a time rather than as `scrubSideG`: its depth (`hd`), the level of its
+vector instructions (`hlv`), that it leaves MXCSR as two runs found it
+(`hmx`) and that it calls indirectly only its tables' functions (`hic`).
+For code generic over an implementation it calls, whose facts follow from
+the implementation's own (`ScrubCall.lean`), without evaluating it with
+the code. -/
+theorem verifiedScrubbedKsF {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
+    {n rb : Nat} (hpost : PostOut r.contract (retBitsOf r))
+    (hres : ResOk r.code r.contract r.stack ks (chunksA r.stack))
+    (hd : r.code.x86_64Depth ≤ r.stack)
+    (hlv : r.code.allInstrs (fun i => decide (i.vecLevelR ≤ v.level)) = true)
+    (hmx : MxSame r.code) (hic : tablesCall r.code r.tables = true)
+    (hl : litSide r.stack (retBitsOf r) = true)
+    (hn : r.stack = n) (hb : retBitsOf r = rb) :
+    VerifiedScrubbed target (scrubKs v rb n ks r.code) r.contract rb := by
+  subst hn hb
+  simp only [litSide, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hl
+  obtain ⟨⟨⟨hst, hcs⟩, hcv⟩, hrb⟩ := hl
+  have hcv' : ∀ b ∈ chunksA r.stack, 0 < b ∧ b < 4096 ∧ b % 8 = 0 :=
+    fun b hb => of_decide_eq_true (List.all_eq_true.mp hcv b hb)
+  have hlv' : ∀ i ∈ instrs r.code, i.vecLevelR ≤ v.level := fun i hi => by
+    simpa using List.all_eq_true.mp ((Code.allInstrs_eq _ r.code).symm.trans hlv) i hi
+  have ht : TailOk (retBitsOf r) xregs (psOf ks) (gsAll ks) ks :=
+    { x0 := fun _ => mem_xregs _
+      r11 := fun hk => by simp [psOf, hk]
+      psOk := fun q hq => by unfold psOf at hq; split at hq <;> simp_all [scratchRegs]
+      gsOk := fun q hq => by
+        unfold gsAll at hq; split at hq
+        · exact hq
+        · exact List.mem_of_mem_erase hq
+      gne := by unfold gsAll; split <;> simp [scratchRegs] }
+  have hgk : ∀ q ∈ scratchRegs, q ∉ gsAll ks → q ∉ psOf ks → ∀ i ∈ instrs r.code,
+      Taint.clobbers i q = false := fun q hq hg hp =>
+    ((gsAll_cover ks q hq).elim (fun h => absurd h hg) (fun h => absurd h hp))
+  have hrb' : retBitsOf r ≤ 32 ∨ retBitsOf r = 64 := hrb
+  obtain ⟨pre, post, leak, e⟩ := r.ofSig
+  have hv := r.verified
+  have hp := hpost
+  have hr := hres
+  unfold retBitsOf at hrb' hp ht ⊢
+  rw [e] at hv hp hr ⊢
+  have key := Verified.scrubM (f := .avx) (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
+    hcs hst hcv' hlv' (fun _ => hmx) hrb' hp hr ht (.inl mem_xregs) (fun _ => mem_xregs)
+    (fun _ _ e => absurd e (by decide)) hgk
+  exact ⟨key.1, key.2 (tablesCall_syms hic rfl)⟩
+
+/-- `verifiedScrubbedKsF` for `scrubAll v rb n`, which wipes every granule
+of the stack: for code generic over an implementation it calls. -/
+theorem verifiedScrubbedAllF {api : Api} (r : Unscrubbed api target) (v : VecLevel) {n rb : Nat}
+    (hpost : PostOut r.contract (retBitsOf r))
+    (hd : r.code.x86_64Depth ≤ r.stack)
+    (hlv : r.code.allInstrs (fun i => decide (i.vecLevelR ≤ v.level)) = true)
+    (hmx : MxSame r.code) (hic : tablesCall r.code r.tables = true)
+    (hl : litSide r.stack (retBitsOf r) = true := by decide)
+    (hn : r.stack = n := by rfl) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubAll v rb n r.code) r.contract rb := by
+  have hl' := hl
+  simp only [litSide, Bool.and_eq_true, beq_iff_eq] at hl'
+  have hres : ResOk r.code r.contract r.stack (wipeKs (chunksA r.stack)) (chunksA r.stack) := by
+    rw [wipeKs_eq]
+    exact RScrub.resOk_allC _ _ (fun b hb => (of_decide_eq_true (List.all_eq_true.mp hl'.1.2 b hb)).2.2)
+      hl'.1.1.2
+  subst hn
+  exact verifiedScrubbedKsF r v _ hpost hres hd hlv hmx hic hl rfl hb
+
 /-- `r`'s code followed by `scrubAll v rb n`, which wipes every granule of
 its `n` bytes of stack, meets `r`'s contract in constant time and returns
 without secret residue: for any code whose postcondition reads the memory

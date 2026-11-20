@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Blake2.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
@@ -68,38 +70,6 @@ theorem initSOut : PostOut (Spec.Blake2.initSContract X86_64.abi) (Spec.Blake2.i
 
 /-! ## The registrations -/
 
-def initBKs : List Nat := keep_for% Spec.Blake2.initBApi.sig 0 (Impl.Blake2.X86_64.Stream.init Spec.Blake2.b) []
-
-theorem initBOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.initBApi.sig 0 [])
-      (Impl.Blake2.X86_64.Stream.init Spec.Blake2.b)
-      h).any (RScrub.resOkB · 0 initBKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initBKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blake2b_init`. -/
-def initBReg : Registration Spec.Blake2.initBApi X86_64.target :=
-  scrubOf {
-    code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.b
-    verified := Proof.Blake2.X86_64.Stream.initB_verified } .sse false [.rcx, .r8] initBOut [] (pubOk_nil _) ⟨initBKs, initBOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-def initSKs : List Nat := keep_for% Spec.Blake2.initSApi.sig 0 (Impl.Blake2.X86_64.Stream.init Spec.Blake2.s) []
-
-theorem initSOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blake2.initSApi.sig 0 [])
-      (Impl.Blake2.X86_64.Stream.init Spec.Blake2.s)
-      h).any (RScrub.resOkB · 0 initSKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initSKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blake2s_init`. -/
-def initSReg : Registration Spec.Blake2.initSApi X86_64.target :=
-  scrubOf {
-    code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.s
-    verified := Proof.Blake2.X86_64.Stream.initS_verified } .sse false [.rcx, .r8] initSOut [] (pubOk_nil _) ⟨initSKs, initSOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 open VG.X86_64.RScrub in
 /-- `vg_blake2b_update` over the backend `v`: without secret residue where `v`
 gives its analysis (`Backend.updateRes`). -/
@@ -149,4 +119,37 @@ def finalizeSReg (v : BackendS) : Registration Spec.Blake2.finalizeSApi X86_64.t
     spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe } (finalizeSOut _) [] (pubOk_nil _)
     v.finalizeRes
 
+/-! ## The functions as emitted -/
+
+theorem initB_codeSp : (Impl.Blake2.X86_64.Stream.init Spec.Blake2.b).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blake2.initBApi`'s function as emitted (`Impl.Blake2.X86_64.Fn.initB`) meets its contract in
+constant time and returns without secret residue. -/
+theorem initB_scrubbed :
+    VerifiedScrubbed target Impl.Blake2.X86_64.Fn.initB (Spec.Blake2.initBApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Blake2.initBApi)
+    { code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.b
+      verified := Proof.Blake2.X86_64.Stream.initB_verified
+      spSafe := initB_codeSp }
+    .sse [] initBOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem initB_spSafe : Impl.Blake2.X86_64.Fn.initB.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe initB_codeSp
+
+theorem initS_codeSp : (Impl.Blake2.X86_64.Stream.init Spec.Blake2.s).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blake2.initSApi`'s function as emitted (`Impl.Blake2.X86_64.Fn.initS`) meets its contract in
+constant time and returns without secret residue. -/
+theorem initS_scrubbed :
+    VerifiedScrubbed target Impl.Blake2.X86_64.Fn.initS (Spec.Blake2.initSApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Blake2.initSApi)
+    { code := Impl.Blake2.X86_64.Stream.init Spec.Blake2.s
+      verified := Proof.Blake2.X86_64.Stream.initS_verified
+      spSafe := initS_codeSp }
+    .sse [] initSOut (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem initS_spSafe : Impl.Blake2.X86_64.Fn.initS.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe initS_codeSp
 end VG.Proof.Blake2.X86_64
