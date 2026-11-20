@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Derive.Verified
@@ -252,5 +253,12 @@ def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     176 Impl.Scrub.PPC64LE.Clear.all
     (parameterSearchOut Impl.RsaKeyGen.TrialTable32.consts 176)
     (parameterSearchSide v hv)
+
+/-- `vg_dsa_parameter_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Generation.init
+      (Spec.Dsa.parameterInitContract PPC64LE.abi) 32 :=
+  ⟨Proof.Dsa.PPC64LE.Gen.init_verified, Proof.Dsa.PPC64LE.Gen.init_noResidue _ _⟩
 
 end VG.Proof.Dsa.PPC64LE.Scrub

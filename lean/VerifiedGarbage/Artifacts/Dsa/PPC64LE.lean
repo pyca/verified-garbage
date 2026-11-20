@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
@@ -35,8 +34,7 @@ def artifacts : List Artifact := [
     verified := .scrubbed verifyPrevalidated_scrubbed },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
-    verified := .scrubbed ⟨Proof.Dsa.PPC64LE.Gen.init_verified,
-      Proof.Dsa.PPC64LE.Gen.init_noResidue _ _⟩ }] ++
+    verified := .scrubbed parameterInit_scrubbed }] ++
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.flatMap
     fun (v : { v : Proof.MillerRabin.PPC64LE.RoundImpl // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants }) => [
     Spec.Dsa.parameterSearchApi.artifact PPC64LE.target (parameterSearchReg v.1 v.2)])

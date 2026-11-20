@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -16,12 +14,10 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 def direct : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
-    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.Generation.init_verified,
-      Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.parameterInit_scrubbed },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
-    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified,
-      Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.keyInit_scrubbed },
   Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Fn.checkPublic
     verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.checkPublic_scrubbed },

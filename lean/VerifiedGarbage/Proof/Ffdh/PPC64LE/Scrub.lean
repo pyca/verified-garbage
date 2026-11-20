@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.Ffdh.Contract
@@ -312,5 +314,19 @@ def searchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (sievedParameterSearchOut Proof.Ffdh.PPC64LE.Generation.stackUse
       Proof.Ffdh.PPC64LE.Generation.tables)
     (searchSide v hv)
+
+/-- `vg_ffdh_parameter_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Generation.init
+      (Spec.Ffdh.parameterInitContract PPC64LE.abi) 32 :=
+  ⟨Proof.Ffdh.PPC64LE.Generation.init_verified, Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩
+
+/-- `vg_ffdh_key_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem keyInit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.KeyGeneration.init
+      (Spec.Ffdh.keyInitContract PPC64LE.abi) 32 :=
+  ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified, Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩
 
 end VG.Proof.Ffdh.PPC64LE.Scrub
