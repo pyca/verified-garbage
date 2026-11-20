@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
@@ -252,6 +256,44 @@ theorem verifyHash_verified_adx : Verified X86_64.target
     (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+omit hL hT hI in
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p521_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521)
+      (Spec.Ecdsa.P521.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521
+      stack := 96
+      verified := verifyHash_verified hL hT hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)
+
+omit hL hT hI in
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
+
+omit hL hT hI in
+theorem verifyHashAdx_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p521_verify_adx` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHashAdx_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx)
+      (Spec.Ecdsa.P521.verifyHashApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
+      stack := 96
+      verified := verifyHash_verified_adx hL hT hI
+      spSafe := verifyHashAdx_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)
+
+omit hL hT hI in
+theorem verifyHashAdx_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHashAdx_codeSp
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64.P521

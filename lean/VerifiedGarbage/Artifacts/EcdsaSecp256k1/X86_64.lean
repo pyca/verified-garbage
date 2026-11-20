@@ -107,12 +107,10 @@ namespace VG.Artifacts.EcdsaSecp256k1.X86_64
 open VG.Proof.Secp256k1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.verifySecp256k1
-    verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_verified hasLaw.law
-      (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.Secp256k1.inst Impl.Secp256k1.X86_64.secp256k1v.combConsts))] ++
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifySecp256k1
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_scrubbed hasLaw.law (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.X86_64

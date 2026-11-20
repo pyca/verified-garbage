@@ -104,7 +104,10 @@ open VG.Proof.P192.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target
-    (Proof.Ecdsa.Verify.X86_64.P192.scrubReg hasLaw.law hasLaw.inv)] ++
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+        Impl.Ecdsa.Verify.X86_64.verifyP192
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P192.verifyHash_scrubbed hasLaw.law hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.X86_64

@@ -105,11 +105,10 @@ namespace VG.Artifacts.EcdsaBrainpoolP256r1.X86_64
 open VG.Proof.BrainpoolP256r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1
-    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.verifyHash_verified hasLaw.law hasLaw.inv }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.BrainpoolP256r1.inst Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts))] ++
+  Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact X86_64.target
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.verifyHash_scrubbed hasLaw.law hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.X86_64

@@ -133,26 +133,20 @@ namespace VG.Artifacts.EcdsaP256.X86_64
 open VG.Proof.P256.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
-    suffix := "_ifma"
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma
-    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_ifma hasLaw.law (Proof.P256.gtabOk9 hasLaw.law)
-      hasLaw.inv hasLaw.prime }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP256
-    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    suffix := "_adx"
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
-    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_adx hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts))] ++
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target
+    { suffix := "_ifma"
+      code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHashEvex Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.verifyHashIfma_scrubbed hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdsa.Verify.X86_64.verifyHashIfma_spSafe },
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.verifyHash_scrubbed hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdsa.Verify.X86_64.verifyHash_spSafe },
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target
+    { suffix := "_adx"
+      code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.verifyHashAdx_scrubbed hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdsa.Verify.X86_64.verifyHashAdx_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.X86_64
