@@ -1099,24 +1099,22 @@ internal `vg_chacha20_poly1305_seal_core`, since the exported function then
 clears its stack and registers (`Impl.ChaCha20Poly1305.X86.Fn.seal`). -/
 def sealFn (v : XorImpl) : SealFn where
   name := "vg_chacha20_poly1305_seal_core" ++ v.suffix
-  code := withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
+  code := withStackScratch 740 7 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
   verified := Proof.ChaCha20Poly1305.X86.seal_framed v
   noSp := by
     have hs := NoSp.of_all (Proof.ChaCha20Poly1305.X86.seal_noEsp v)
     have ha : NoSp (.block (setArgs 740 7) : Prog isa) := NoSp.of_all (by decide +kernel)
-    have hw : NoSp (.block (wipe (8 + 4 * 7) 176) : Prog isa) := NoSp.of_all (by decide +kernel)
     intro i hi
-    simp only [withStackScratchWiped, withStackScratch, instrs, List.mem_cons, List.mem_append,
+    simp only [withStackScratch, instrs, List.mem_cons, List.mem_append,
       List.mem_singleton, List.not_mem_nil, or_false] at hi
-    rcases hi with (rfl | hi | hi | hi) | rfl
+    rcases hi with (rfl | hi | hi) | rfl
     · rfl
     · exact ha i hi
     · exact hs i hi
-    · exact hw i hi
     · rfl
   depth := by
     have := Proof.ChaCha20Poly1305.X86.seal_stackUse v
-    simp only [withStackScratchWiped, withStackScratch, stackUse, frameBytes, Nat.zero_max, Nat.max_zero]
+    simp only [withStackScratch, stackUse, frameBytes, Nat.zero_max, Nat.max_zero]
     exact Nat.le_trans (Nat.add_le_add_right this 740) (by decide)
 
 open VG.Proof.ChaCha20.X86 in
@@ -1125,7 +1123,7 @@ but its frames' push and pop. -/
 theorem sealGather_spSafe (v : XorImpl) :
     (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+    Proof.ChaCha20Poly1305.X86.withStackScratch_spSafe
       (Proof.ChaCha20Poly1305.X86.seal_spSafe v)
   have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hg : Impl.AesGcm.X86.SealGather.gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel

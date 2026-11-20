@@ -21,7 +21,7 @@ The postconditions of `vg_rsa_public_precompute`, `vg_rsa_generate_init` and
 (`ScrubAll.ScrubAllOk`, as x86-64's `Proof/Rsa/X86_64/Scrub.lean` and
 `Proof/RsaKeyGen/X86_64/KeyInitScrub.lean` prove them): each implementation
 returns with every register it may leave secret cleared, and its whole stack
-zeroed, if it has one (`ScrubAll.withScrubAll`).
+zeroed, if it has one (`Impl.Residue.AArch64.scrubAll`, in the function as emitted).
 -/
 
 @[expose] public section

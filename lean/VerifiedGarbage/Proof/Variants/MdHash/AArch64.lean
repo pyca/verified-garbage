@@ -78,4 +78,8 @@ def variants :=
   md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
     sha512Variants ++ sha512_224Variants ++ sha512_256Variants
 
+/-- The hash functions of `variants`, by their code and the names of their
+functions: what the code that calls them through tables is given. -/
+def hashes : List Impl.Pbkdf2.Md.AArch64.Hash := variants.map (·.H)
+
 end VG.Proof.Variants.MdHash.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Wiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
@@ -16,16 +17,14 @@ namespace VG.Artifacts.AesCbc.AArch64
 def direct : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
-    code := Proof.AesCbc.AArch64.Decrypt.codeC
-    verified := .scrubbed ⟨Proof.AesCbc.AArch64.Wiped.decryptSha3C_scrubbed,
-      Proof.AesCbc.AArch64.Decrypt.codeC_noResidue _⟩
+    code := Impl.AesCbc.AArch64.Fn.decrypt
+    verified := .scrubbed Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenC },
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes"
-    code := Proof.AesCbc.AArch64.Decrypt.codeAesC
-    verified := .scrubbed ⟨Proof.AesCbc.AArch64.Wiped.decryptAesC_scrubbed,
-      Proof.AesCbc.AArch64.Decrypt.codeAesC_noResidue _⟩
+    code := Impl.AesCbc.AArch64.Fn.decryptAes
+    verified := .scrubbed Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenAesC }]
 

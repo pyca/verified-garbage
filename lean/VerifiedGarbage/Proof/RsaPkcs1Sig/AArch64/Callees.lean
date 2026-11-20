@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # The RSA operations as the signatures' callees, on AArch64
@@ -88,5 +90,20 @@ def privPOf (v : CrtImpl) : PrivPChecked where
   noDit := privPCode_noDit v
   suffix := v.suffix
   features := v.features
+
+/-! ## What the cleanup of their callers needs -/
+
+open VG.AArch64.ScrubAll in
+/-- `vg_rsa_private_checked_precomputed` calling `v` has no indirect call and
+never writes `DIT`: its own instructions, evaluated once with nothing in the
+place of the functions it calls, and those of `v`. -/
+theorem privP_side (v : CrtImpl) : sideAll (fun i => !i.writesDit) v.privP = true := by
+  have hc : v.privP = Code.fill2 (.call v.crtPName v.crtP) (.call v.pdName v.pd)
+      (Impl.Rsa.AArch64.PrivChecked.codeP "" (.block []) "" (.seq (.block []) (.block []))) := by kernel_rfl
+  rw [hc]
+  exact sideAll_fill2 v.crtPSide v.pdSide (by kernel_rfl)
+
+/-- Its frames: 3248 bytes. -/
+theorem privP_depth (v : CrtImpl) : v.privP.aarch64Depth ≤ 203 := Nat.le_of_eq (privPCode_depth v)
 
 end VG.Proof.RsaPkcs1Sig.AArch64

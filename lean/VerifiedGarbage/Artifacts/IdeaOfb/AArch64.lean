@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Idea.AArch64.Fn
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.ModesResidue
@@ -16,12 +17,10 @@ namespace VG.Artifacts.IdeaOfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.ofbCode
-    verified := .scrubbed ⟨Proof.Idea.AArch64.ModesResidue.ofbCode_verified,
-      Proof.Idea.AArch64.ModesResidue.ofbCode_noResidue⟩ },
+    code := Impl.Idea.AArch64.Fn.ofb
+    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.ofbCode_scrubbed },
   Spec.Idea.ofbFinalApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.ofbFinalCode
-    verified := .scrubbed ⟨Proof.Idea.AArch64.ModesResidue.ofbFinalCode_verified,
-      Proof.Idea.AArch64.ModesResidue.ofbFinalCode_noResidue⟩ }]
+    code := Impl.Idea.AArch64.Fn.ofbFinal
+    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.AArch64

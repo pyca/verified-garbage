@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.Rc2.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Rc2.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -37,10 +40,7 @@ namespace VG.Proof.Rc2.AArch64.InitResidue
 open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_rc2_cbc_init`, before its granules [0] are zeroed. -/
-abbrev cbcInitBase : Prog isa :=
-  withClears [.x3, .x8]
-    [.v0, .v1, .v2, .v3] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init)
+abbrev cbcInitBase : Prog isa := Impl.Rc2.AArch64.Fn.cbcInitBase
 
 theorem cbcInitBase_verified : Verified AArch64.target cbcInitBase (Spec.Rc2.cbcInitContract AArch64.abi 592) :=
   Clears.Verified.withClears (Proof.Rc2.AArch64.Stream.init_framed) (by decide)
@@ -50,7 +50,7 @@ theorem cbcInitScrubOk : RTaintF.ScrubOk (Spec.Rc2.cbcInitContract AArch64.abi 5
     (Proof.Rc2.cbcInitPostOut_local _)
 
 /-- `vg_rc2_cbc_init`. -/
-abbrev cbcInitCode : Prog isa := withScrubG 592 [0] cbcInitBase
+abbrev cbcInitCode : Prog isa := Impl.Rc2.AArch64.Fn.cbcInit
 
 theorem cbcInitCode_verified : Verified AArch64.target cbcInitCode (Spec.Rc2.cbcInitContract AArch64.abi 592) :=
   RTaintG.Verified.withScrubG cbcInitBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cbcInitScrubOk
@@ -58,5 +58,13 @@ theorem cbcInitCode_verified : Verified AArch64.target cbcInitCode (Spec.Rc2.cbc
 theorem cbcInitCode_noResidue : NoResidue cbcInitCode (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
   noResidue_withScrubG (P₀ := 0) cbcInitBase_verified ⟨by decide, by decide, by decide⟩ cbcInitScrubOk.sp
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Rc2.AArch64.Fn.cbcInit
+      (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
+  ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified,
+    Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩
 
 end VG.Proof.Rc2.AArch64.InitResidue

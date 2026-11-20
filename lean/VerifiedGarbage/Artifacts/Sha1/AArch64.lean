@@ -16,7 +16,7 @@ namespace VG.Artifacts.Sha1.AArch64
 def artifacts : List Artifact := [
   Spec.Sha1.initApi.artifact AArch64.target {
     code := Impl.Sha1.AArch64.Stream.init
-    verified := .scrubbed ⟨Proof.Sha1.AArch64.Shared.init, Proof.Sha1.AArch64.Stream.init_noResidue _ _⟩ }] ++
+    verified := .scrubbed Proof.Sha1.AArch64.Stream.init_scrubbed }] ++
   (VG.Proof.Variants.Sha1Compress.AArch64.variants.flatMap fun (v : Proof.Sha1.AArch64.Compress) => [
     Spec.Sha1.updateApi.artifact AArch64.target {
       suffix := v.suffix

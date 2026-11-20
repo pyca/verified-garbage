@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
+public meta import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
 public import VerifiedGarbage.Proof.AesCbc.Rounds
 import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Correct
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
@@ -119,15 +121,13 @@ The decryptions leave blocks in `v0`–`v6` and the round keys in
 clear them before they return. -/
 
 /-- The vector registers the decryptions leave secrets in. -/
-def left : List VReg :=
-  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
-   .v25, .v26, .v27, .v28, .v29, .v30, .v31]
+def left : List VReg := Impl.AesCbc.AArch64.Fn.left
 
 /-- `code`, then `left` cleared. -/
-abbrev codeC : Prog isa := Impl.Residue.AArch64.withClears [] left none code
+abbrev codeC : Prog isa := Impl.AesCbc.AArch64.Fn.decrypt
 
 /-- `codeAes`, then `left` cleared. -/
-abbrev codeAesC : Prog isa := Impl.Residue.AArch64.withClears [] left none codeAes
+abbrev codeAesC : Prog isa := Impl.AesCbc.AArch64.Fn.decryptAes
 
 theorem codeC_noResidue (k : Contract isa) : NoResidue codeC k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k

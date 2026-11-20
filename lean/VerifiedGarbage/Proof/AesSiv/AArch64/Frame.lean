@@ -630,7 +630,7 @@ theorem keyRepr_local {m₁ m₂ : Mem} {p : Addr} {key : List Byte}
 
 /-- `vg_aes_siv_init`'s postcondition reads the memory on return only within
 the context, so it returns with its whole frame zeroed
-(`ScrubAll.withScrubAll`). -/
+(`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
     ScrubAll.ScrubAllOk (Spec.Siv.initContract abi W) W (Spec.Siv.initSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Siv.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)

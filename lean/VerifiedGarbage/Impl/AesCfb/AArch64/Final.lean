@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCfb.AArch64
 public import VerifiedGarbage.Impl.Modes.AArch64.FbFinal
 public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -92,9 +93,15 @@ so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the block function it calls
 states it writes (`b.clear`). -/
 
+/-- `vg_aes_cfb128_decrypt_final`'s code, calling `whole`, the code of
+`vg_aes_cfb128_decrypt` of the same suffix, as an internal function of its
+own, `vg_aes_cfb128_decrypt<sfx>_core`. -/
+def decryptFinal (b : Blocks) (sfx : String) (whole : Prog isa) : Prog isa :=
+  final ("vg_aes_cfb128_decrypt" ++ sfx ++ "_core") whole b
+
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Residue.AArch64 (Clear scrubAll scrubOf)
 
 /-- The registers `vg_aes_cfb128_encrypt`'s own instructions write. -/
 def encryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x16, .x17], [], []⟩
@@ -112,6 +119,15 @@ its registers cleared and its 64 bytes of stack zeroed. -/
 def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
   scrubAll 64 0 (encryptFinalOwn.union b.clear)
     (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (AesCfb.AArch64.encryptFinal b sfx))
+
+/-- `vg_aes_cfb128_decrypt`: `whole`, the code of an implementation of its
+whole blocks, its registers cleared; it uses no stack. -/
+def decrypt (whole : Prog isa) : Prog isa := scrubOf 0 0 whole
+
+/-- `vg_aes_cfb128_decrypt_final`: `decryptFinal` with `save` in its frame,
+its registers cleared and its 64 bytes of stack zeroed. -/
+def decryptFinal (b : Blocks) (sfx : String) (whole : Prog isa) : Prog isa :=
+  scrubOf 64 0 (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (AesCfb.AArch64.decryptFinal b sfx whole))
 
 end Fn
 

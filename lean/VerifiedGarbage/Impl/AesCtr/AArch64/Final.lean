@@ -30,7 +30,7 @@ whose callers' names end in `sfx`, e.g. `_aes`):
    bytes left, a byte at a time (the modes' `xorByte`);
 4. the registers restored.
 
-The registration's frame zeroes `save`, the block included, on return.
+The function as emitted zeroes `save`, the block included, on return.
 
 Only the pointers, `rounds`, `len` and the last 32 bits of the counter block
 can affect timing.

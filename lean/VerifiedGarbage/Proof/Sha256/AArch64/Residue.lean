@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public meta import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.TCB.AArch64.Residue
@@ -31,5 +33,21 @@ theorem init_noResidue (k : Contract isa) : NoResidue Impl.Sha256.AArch64.Stream
 
 theorem init224_noResidue (k : Contract isa) : NoResidue Impl.Sha256.AArch64.Stream.init224 k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha256.AArch64.Residue.init224_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Sha256.AArch64.Stream.init224
+      (Spec.Sha256.init224Contract AArch64.abi) 0 :=
+  ⟨Proof.Sha256.AArch64.Shared.init224,
+    Proof.Sha256.AArch64.Residue.init224_noResidue _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha256.AArch64.Residue.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Sha256.AArch64.Stream.init
+      (Spec.Sha256.initContract AArch64.abi) 0 :=
+  ⟨Proof.Sha256.AArch64.Shared.init,
+    Proof.Sha256.AArch64.Residue.init_noResidue _⟩
 
 end VG.Proof.Sha256.AArch64.Residue

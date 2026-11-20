@@ -15,7 +15,7 @@ The postcondition of `vg_cast5_expand_key` reads the memory on return only
 within `schedule` (`ScrubAll.ScrubAllOk`, as x86-64's
 `Proof/Cast5/X86_64/Scrub.lean` proves it): the code, which has no frames,
 returns with every register it may leave secret cleared (`scrubAll 0`,
-`ScrubAll.withScrubAll`).
+the function as emitted).
 -/
 
 @[expose] public section

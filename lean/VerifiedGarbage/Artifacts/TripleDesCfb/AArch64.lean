@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
@@ -17,20 +18,16 @@ namespace VG.Artifacts.TripleDesCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    code := Impl.TripleDes.AArch64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    code := Impl.TripleDes.AArch64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    code := Impl.TripleDes.AArch64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.TripleDes.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    code := Impl.TripleDes.AArch64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb.AArch64

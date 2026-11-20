@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Ct.AArch64
@@ -293,5 +294,13 @@ theorem wideVerified : Verified target zeroizeWide (Spec.Zeroize.zeroizeContract
 it leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
 theorem wide_noResidue (k : Contract isa) (r : Nat) : NoResidue zeroizeWide k r :=
   Residue.noResidue_of_blind (by decide) k r
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Zeroize.AArch64.wide_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Zeroize.AArch64.zeroizeWide
+      (Spec.Zeroize.zeroizeContract AArch64.abi) 0 :=
+  ⟨Proof.Zeroize.AArch64.wideVerified,
+    Proof.Zeroize.AArch64.wide_noResidue _ _⟩
 
 end VG.Proof.Zeroize.AArch64

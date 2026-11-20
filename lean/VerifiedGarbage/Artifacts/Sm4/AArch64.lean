@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
@@ -20,28 +21,23 @@ def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Sm4e.expandKey
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.Sm4e.expandKey_verified,
-      Proof.Sm4.AArch64.Sm4e.expandKey_noResidue _⟩ },
+    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.expandKey_scrubbed },
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Serial.Fn.expandKey
     verified := .scrubbed Proof.Sm4.AArch64.CtrScrub.expandKey },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
-    code := Proof.Sm4.AArch64.Sm4e.ecbCleared .encrypt
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .encrypt,
-      Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .encrypt⟩ },
+    code := Impl.Sm4.AArch64.Fn.ecb .encrypt
+    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
     suffix := "_sm4"
-    code := Proof.Sm4.AArch64.Sm4e.ecbCleared .decrypt
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .decrypt,
-      Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .decrypt⟩ },
+    code := Impl.Sm4.AArch64.Fn.ecb .decrypt
+    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.ecbDecrypt_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
-    code := Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_verified,
-      Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩ },
+    code := Impl.Sm4.AArch64.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
-    code := Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode
-    verified := .scrubbed ⟨Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_verified,
-      Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩ }]
+    code := Impl.Sm4.AArch64.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Sm4.AArch64

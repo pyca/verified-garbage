@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
 public import VerifiedGarbage.Proof.Camellia.AArch64.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
@@ -16,16 +17,13 @@ namespace VG.Artifacts.Camellia.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.expandKeyCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.expandKeyCode_verified,
-      Proof.Camellia.AArch64.Residue.expandKeyCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.expandKey
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.expandKeyCode_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.ecbEncryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ecbEncryptCode_verified,
-      Proof.Camellia.AArch64.Residue.ecbEncryptCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ecbEncryptCode_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.ecbDecryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ecbDecryptCode_verified,
-      Proof.Camellia.AArch64.Residue.ecbDecryptCode_noResidue⟩ }]
+    code := Impl.Camellia.AArch64.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Camellia.AArch64

@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
 public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 public import VerifiedGarbage.Impl.Residue.AArch64
 
--- separate module: the functions as emitted name code of the modules above, which do not import one another
 
 /-!
 # ML-KEM on AArch64: the functions as emitted

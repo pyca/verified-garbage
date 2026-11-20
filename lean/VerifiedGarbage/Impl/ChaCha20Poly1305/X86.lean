@@ -14,7 +14,8 @@ dst_len, tag, work)`, at `[esp + 4]`, …, `[esp + 40]`. They are composed of
 calls of the verified ChaCha20 and Poly1305 functions, as on x86-64 (`vg_poly1305_init`'s
 code as the internal `vg_poly1305_init_core`, since the exported one clears its registers). `work` is
 the working space, which the artifact's frame allocates on the stack
-(`withStackScratchWiped`).
+(`withStackScratch`) and its cleanup zeroes with the rest of its stack
+(`Impl.ChaCha20Poly1305.X86.Fn`).
 
 One body serves in place and out of place: it reads the data from `src`
 (`[esp + 20]`) and writes the result to the destination at `[esp + 32]`

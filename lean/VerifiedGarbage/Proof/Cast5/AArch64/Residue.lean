@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Cast5.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public import VerifiedGarbage.Proof.Cast5.Rounds
@@ -38,13 +41,10 @@ namespace VG.Proof.Cast5.AArch64.Tbl
 open VG VG.AArch64
 
 /-- `c`, then the clears of what both directions leave. -/
-abbrev ecbCleared (c : Prog isa) : Prog isa :=
-  Impl.Residue.AArch64.withClearsHi [.x6, .x9, .x10, .x13, .x15]
-    [.v0, .v1, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-     .v26, .v27] (some .x6) .x6 [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15] c
+abbrev ecbCleared (c : Prog isa) : Prog isa := Impl.Cast5.AArch64.Fn.ecbCleared c
 
-abbrev ecbEncryptCleared : Prog isa := ecbCleared Impl.Cast5.AArch64.Tbl.ecbEncrypt
-abbrev ecbDecryptCleared : Prog isa := ecbCleared Impl.Cast5.AArch64.Tbl.ecbDecrypt
+abbrev ecbEncryptCleared : Prog isa := Impl.Cast5.AArch64.Fn.ecbEncrypt
+abbrev ecbDecryptCleared : Prog isa := Impl.Cast5.AArch64.Fn.ecbDecrypt
 
 theorem ecbEncryptCleared_verified :
     Verified AArch64.target ecbEncryptCleared (Spec.Cast5.ecbEncryptContract AArch64.abi) :=
@@ -65,5 +65,21 @@ theorem ecbEncryptCleared_noResidue :
 theorem ecbDecryptCleared_noResidue :
     NoResidue ecbDecryptCleared (Spec.Cast5.ecbDecryptContract AArch64.abi) 0 :=
   RTaintCT.noResidue_of_verified ecbDecryptCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ecbEncrypt
+      (Spec.Cast5.ecbEncryptContract AArch64.abi) 0 :=
+  ⟨Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified,
+    Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ecbDecrypt
+      (Spec.Cast5.ecbDecryptContract AArch64.abi) 0 :=
+  ⟨Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_verified,
+    Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue⟩
 
 end VG.Proof.Cast5.AArch64.Tbl

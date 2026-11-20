@@ -1480,7 +1480,7 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {L n : Nat} (h : ∀ a, Region.Con
 within the state's 304 bytes (`repr_congr_304`, as x86-64's
 `Stream/X86_64/Scrub.lean` proves it), so it returns with every register it
 may leave secret cleared and its whole frame zeroed
-(`ScrubAll.withScrubAll`). -/
+(`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
 theorem absorbOk (W : Nat) (hW : 0 < W := by decide) :
     ScrubAll.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi W) W (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesAbsorbSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
@@ -1499,7 +1499,7 @@ theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
 
 /-- `vg_cmac_aes_init`'s postcondition reads the memory on return only within
 the state (`initPostOut_local`), so it returns with every register it may
-leave secret cleared and its whole frame zeroed (`ScrubAll.withScrubAll`). -/
+leave secret cleared and its whole frame zeroed (`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
     ScrubAll.ScrubAllOk (Spec.Cmac.aesInitContract abi W) W (Spec.Cmac.aesInitSig.retBits abi.ptrBits) :=
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesInitSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)

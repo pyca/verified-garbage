@@ -20,7 +20,7 @@ The postconditions of `vg_aes_ctr_final`, `vg_aes_ofb_final`,
 only within the block at `iv` (or `ctr`) and the data
 (`ScrubAll.ScrubAllOk`): each implementation, generic over the AES
 implementation it calls, returns with every register it may leave secret
-cleared, and its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`).
+cleared, and its whole stack zeroed, if it has one (`Impl.Residue.AArch64.scrubAll`, in the function as emitted).
 
 So do the whole-block functions of CTR, OFB and CFB128, `vg_aes_ctr`,
 `vg_aes_ofb`, `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`, which

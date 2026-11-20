@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
@@ -106,5 +107,13 @@ theorem finalize_scrubbed :
   AArch64.ScrubAll.verifiedScrubbed (api := Spec.Md5.finalizeApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
       verified := finalize } _ finalizeOk (by dsimp only; lit_decide)
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Md5.AArch64.Stream.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Md5.AArch64.Stream.init
+      (Spec.Md5.initContract AArch64.abi) 0 :=
+  ⟨Proof.Md5.AArch64.Shared.init,
+    Proof.Md5.AArch64.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Md5.AArch64.Shared

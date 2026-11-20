@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
@@ -36,16 +37,13 @@ namespace VG.Artifacts.TripleDes.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.expandKeyCleared
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.Key.verifiedCleared,
-      Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩ },
+    code := Impl.TripleDes.AArch64.Fn.expandKey
+    verified := .scrubbed Proof.TripleDes.AArch64.expandKeyCleared_scrubbed },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_noResidue⟩ },
+    code := Impl.TripleDes.AArch64.Fn.ecbEncrypt
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode
-    verified := .scrubbed ⟨Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_verified,
-      Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_noResidue⟩ }]
+    code := Impl.TripleDes.AArch64.Fn.ecbDecrypt
+    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.TripleDes.AArch64

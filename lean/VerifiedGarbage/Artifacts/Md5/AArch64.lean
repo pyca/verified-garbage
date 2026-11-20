@@ -14,7 +14,7 @@ namespace VG.Artifacts.Md5.AArch64
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.init
-    verified := .scrubbed ⟨Proof.Md5.AArch64.Shared.init, Proof.Md5.AArch64.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Md5.AArch64.Stream.init_scrubbed },
   Spec.Md5.updateApi.artifact AArch64.target {
     code := Impl.Md5.AArch64.Stream.Fn.update
     verified := .scrubbed Proof.Md5.AArch64.Shared.update_scrubbed },

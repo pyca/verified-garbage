@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
@@ -27,6 +28,7 @@ def variant : PublicImpl where
   spSafe := Code.all_of_forall (fun _ => rfl) _
   depth := by decide +kernel
   noDit := by lit_decide
+  side := by kernel_rfl
   suffix := ""
   features := []
 

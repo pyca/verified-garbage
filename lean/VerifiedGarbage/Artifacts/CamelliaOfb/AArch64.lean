@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
@@ -16,12 +17,10 @@ namespace VG.Artifacts.CamelliaOfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.ofbCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ofbCode_verified,
-      Proof.Camellia.AArch64.Residue.ofbCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.ofb
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ofbCode_scrubbed },
   Spec.Camellia.ofbFinalApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.ofbFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.ofbFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.ofbFinalCode_noResidue⟩ }]
+    code := Impl.Camellia.AArch64.Fn.ofbFinal
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.CamelliaOfb.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
@@ -215,7 +216,7 @@ def artifacts : List Artifact :=
       Proof.AesGcm.AArch64.Scrub.storePowersSide),
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       suffix := "_aes"
-      code := Proof.Gcm.AArch64.Pmull.keyPowersCleared
+      code := Impl.Gcm.AArch64.Fn.keyPowers
       verified := .scrubbed ⟨Proof.Gcm.AArch64.Pmull.keyPowersCleared_verified,
         Proof.Gcm.AArch64.Pmull.keyPowersCleared_noResidue _⟩ }]
 
