@@ -404,6 +404,18 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512_w;
 pub(crate) mod vg_aes_gcm_encrypt_blocks_w;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_aesni_pclmul_avx_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_aesni_pclmul_avx_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split.rs"]
 pub(crate) mod vg_aes_gcm_open_split;
 
@@ -462,6 +474,14 @@ pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_avx;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_pclmul.rs"]
 pub(crate) mod vg_aes_gcm_seal_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_seal_prepared_vaes_vpclmul_core.rs"]

@@ -226,6 +226,11 @@ instructions in an ISA model) go in their own PR before either.
    calls use and needs only that its postcondition reads the memory on
    return in its buffers alone (`PostOut`); its level `evex` also clears
    `zmm16`–`zmm31` and MXCSR's status flags, for code that writes those.
+   To wipe it faster, in chunks whose 16-byte stores are aligned (an
+   8-byte chunk at the top: `[8, 2616]` for a stack of 2624), use
+   `X86_64.RScrub.withScrubAllC`, or `withScrubAllRC` for code that leaves
+   MXCSR as it was along a path, at any level, `zmm16`–`zmm31` included
+   (AES-GCM's one-shot functions, `Proof/AesGcm/X86_64/Leaves.lean`).
    Code with no VEX or EVEX instruction, no frame and no call is scrubbed
    with `X86_64.RScrub.withScrubXs`, which clears only the SSE registers
    its instructions may write and wipes no stack, and keeps what the

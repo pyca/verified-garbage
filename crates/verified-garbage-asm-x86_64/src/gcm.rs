@@ -779,6 +779,8 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -1031,7 +1033,7 @@ jmp 261f
 211:
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJMj1///F/n+EJBgKAADF/n+EJPgJAADF/n+EJNgJAADF/n+EJLgJAADF/n+EJJgJAADF/n+EJHgJAADF/n+EJFgJAADF/n+EJDgJAADF/n+EJBgJAADF/n+EJPgIAADF/n+EJNgIAADF/n+EJLgIAADF/n+EJJgIAADF/n+EJHgIAADF/n+EJFgIAADF/n+EJDgIAADF/n+EJBgIAADF/n+EJPgHAADF/n+EJNgHAADF/n+EJLgHAADF/n+EJJgHAADF/n+EJHgHAADF/n+EJFgHAADF/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n+EJNgGAADF/n+EJLgGAADF/n+EJJgGAADF/n+EJHgGAADF/n+EJFgGAADF/n+EJDgGAADF/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
 jne 277f
@@ -1387,6 +1389,8 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -1711,7 +1715,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 236:
 .base64 "SIn4TCn4SMHoBEiD4AM="
 je 239f
@@ -2180,9 +2184,11 @@ jmp 2131b
 }
 
 /// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2197,7 +2203,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_gar
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512f`, `avx512bw`, `vaes` and `aes` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vpclmulqdq`, `avx512bw`, `vaes` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -2220,7 +2226,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -2271,7 +2277,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -2308,7 +2314,7 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul_avx512::vg_aes_gcm_open_split_vaes_vpclmul_avx512,
-        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core,
         vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
     )
 }
@@ -3052,9 +3058,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512BW | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3069,7 +3077,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx`, `avx2`, `avx512f`, `vaes`, `vpclmulqdq`, `avx512bw` and `aes` target features.
+/// * The CPU must support the `avx`, `avx512f`, `ssse3`, `pclmulqdq`, `avx2`, `vaes`, `vpclmulqdq`, `avx512bw` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -3265,7 +3273,7 @@ call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
 23:
 .base64 "SI2kJPAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJAD2///F/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQA9v//xf5/hCTgCQAAxf5/hCTACQAAxf5/hCSgCQAAxf5/hCSACQAAxf5/hCRgCQAAxf5/hCRACQAAxf5/hCQgCQAAxf5/hCQACQAAxf5/hCTgCAAAxf5/hCTACAAAxf5/hCSgCAAAxf5/hCSACAAAxf5/hCRgCAAAxf5/hCRACAAAxf5/hCQgCAAAxf5/hCQACAAAxf5/hCTgBwAAxf5/hCTABwAAxf5/hCSgBwAAxf5/hCSABwAAxf5/hCRgBwAAxf5/hCRABwAAxf5/hCQgBwAAxf5/hCQABwAAxf5/hCTgBgAAxf5/hCTABgAAxf5/hCSgBgAAxf5/hCSABgAAxf5/hCRgBgAAxf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkAAoAAEiNpCQACgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQgSD0AAQAA"
 jb 265f
@@ -3420,7 +3428,7 @@ jmp 2107f
 2106:
 2107:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core}
 .base64 "WFhY"
 289:
 278:
@@ -3465,7 +3473,7 @@ jmp 2121f
 2120:
 2121:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core}
 .base64 "WFhY"
 272:
 jmp 270f
@@ -3499,7 +3507,7 @@ jmp 21b
         vg_aes_gcm_seal_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_vaes_vpclmul_avx512::vg_aes_gcm_seal_vaes_vpclmul_avx512,
         vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
-        vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core = sym super::aes::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512_core,
     )
 }
 
@@ -3730,6 +3738,8 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -3891,7 +3901,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 242f
@@ -4182,6 +4192,8 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cp
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -4218,7 +4230,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -4269,7 +4281,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_vpclmul}
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -4306,7 +4318,7 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul::vg_aes_gcm_open_split_vaes_vpclmul,
-        vg_aes_gcm_open_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_core::vg_aes_gcm_open_prepared_vaes_vpclmul_core,
         vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
     )
 }
@@ -5050,9 +5062,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5067,7 +5081,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbag
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `avx2`, `avx`, `vaes`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq`, `avx2`, `vaes`, `vpclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -5263,7 +5277,7 @@ call {vg_aes_gcm_seal_vaes_vpclmul}
 23:
 .base64 "SI2kJPAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD2///F/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQA9v//xf5/hCTgCQAAxf5/hCTACQAAxf5/hCSgCQAAxf5/hCSACQAAxf5/hCRgCQAAxf5/hCRACQAAxf5/hCQgCQAAxf5/hCQACQAAxf5/hCTgCAAAxf5/hCTACAAAxf5/hCSgCAAAxf5/hCSACAAAxf5/hCRgCAAAxf5/hCRACAAAxf5/hCQgCAAAxf5/hCQACAAAxf5/hCTgBwAAxf5/hCTABwAAxf5/hCSgBwAAxf5/hCSABwAAxf5/hCRgBwAAxf5/hCRABwAAxf5/hCQgBwAAxf5/hCQABwAAxf5/hCTgBgAAxf5/hCTABgAAxf5/hCSgBgAAxf5/hCSABgAAxf5/hCRgBgAAxf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkAAoAAEiNpCQACgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
 jae 265f
@@ -5631,6 +5645,8 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_c
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -5766,7 +5782,7 @@ jmp 221f
 221:
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMj1///F/n+EJBgKAADF/n+EJPgJAADF/n+EJNgJAADF/n+EJLgJAADF/n+EJJgJAADF/n+EJHgJAADF/n+EJFgJAADF/n+EJDgJAADF/n+EJBgJAADF/n+EJPgIAADF/n+EJNgIAADF/n+EJLgIAADF/n+EJJgIAADF/n+EJHgIAADF/n+EJFgIAADF/n+EJDgIAADF/n+EJBgIAADF/n+EJPgHAADF/n+EJNgHAADF/n+EJLgHAADF/n+EJJgHAADF/n+EJHgHAADF/n+EJFgHAADF/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n+EJNgGAADF/n+EJLgGAADF/n+EJJgGAADF/n+EJHgGAADF/n+EJFgGAADF/n+EJDgGAADF/n+EJBgGAADF/n+EJPgFAADF/n+EJNgFAADF/n+EJLgFAADF/n+EJJgFAADF/n+EJHgFAADF/n+EJFgFAADF/n+EJDgFAADF/n+EJBgFAADF/n+EJPgEAADF/n+EJNgEAADF/n+EJLgEAADF/n+EJJgEAADF/n+EJHgEAADF/n+EJFgEAADF/n+EJDgEAADF/n+EJBgEAADF/n+EJPgDAADF/n+EJNgDAADF/n+EJLgDAADF/n+EJJgDAADF/n+EJHgDAADF/n+EJFgDAADF/n+EJDgDAADF/n+EJBgDAADF/n+EJPgCAADF/n+EJNgCAADF/n+EJLgCAADF/n+EJJgCAADF/n+EJHgCAADF/n+EJFgCAADF/n+EJDgCAADF/n+EJBgCAADF/n+EJPgBAADF/n+EJNgBAADF/n+EJLgBAADF/n+EJJgBAADF/n+EJHgBAADF/n+EJFgBAADF/n+EJDgBAADF/n+EJBgBAADF/n+EJPgAAADF/n+EJNgAAADF/n+EJLgAAADF/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
 jne 237f
@@ -6018,6 +6034,8 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_c
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -6179,7 +6197,7 @@ jmp 27f
 27:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJMD1///F/n+EJCAKAADF/n+EJAAKAADF/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRACgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 242f
@@ -6470,6 +6488,8 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbag
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -6506,7 +6526,7 @@ jmp 25f
 23:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJDD1///F/n+EJLAKAADF/n+EJJAKAADF/n+EJHAKAADF/n+EJFAKAADF/n+EJDAKAADF/n+EJBAKAADF/n+EJPAJAADF/n+EJNAJAADF/n+EJLAJAADF/n+EJJAJAADF/n+EJHAJAADF/n+EJFAJAADF/n+EJDAJAADF/n+EJBAJAADF/n+EJPAIAADF/n+EJNAIAADF/n+EJLAIAADF/n+EJJAIAADF/n+EJHAIAADF/n+EJFAIAADF/n+EJDAIAADF/n+EJBAIAADF/n+EJPAHAADF/n+EJNAHAADF/n+EJLAHAADF/n+EJJAHAADF/n+EJHAHAADF/n+EJFAHAADF/n+EJDAHAADF/n+EJBAHAADF/n+EJPAGAADF/n+EJNAGAADF/n+EJLAGAADF/n+EJJAGAADF/n+EJHAGAADF/n+EJFAGAADF/n+EJDAGAADF/n+EJBAGAADF/n+EJPAFAADF/n+EJNAFAADF/n+EJLAFAADF/n+EJJAFAADF/n+EJHAFAADF/n+EJFAFAADF/n+EJDAFAADF/n+EJBAFAADF/n+EJPAEAADF/n+EJNAEAADF/n+EJLAEAADF/n+EJJAEAADF/n+EJHAEAADF/n+EJFAEAADF/n+EJDAEAADF/n+EJBAEAADF/n+EJPADAADF/n+EJNADAADF/n+EJLADAADF/n+EJJADAADF/n+EJHADAADF/n+EJFADAADF/n+EJDADAADF/n+EJBADAADF/n+EJPACAADF/n+EJNACAADF/n+EJLACAADF/n+EJJACAADF/n+EJHACAADF/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SItEJBBIPQAEAAA="
 jae 27f
@@ -6557,7 +6577,7 @@ jmp 223f
 215:
 210:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_aesni_pclmul_avx}
+call {vg_aes_gcm_open_prepared_aesni_pclmul_avx_core}
 .base64 "hcA="
 je 225f
 jmp 226f
@@ -6594,7 +6614,7 @@ jmp 233f
 jmp 28b
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul_avx::vg_aes_gcm_open_split_aesni_pclmul_avx,
-        vg_aes_gcm_open_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_prepared_aesni_pclmul_avx,
+        vg_aes_gcm_open_prepared_aesni_pclmul_avx_core = sym super::aes::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core,
         vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx,
     )
 }
@@ -7338,9 +7358,11 @@ jmp 21b
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -7355,7 +7377,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_ga
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `pclmulqdq`, `aes` and `avx` target features.
+/// * The CPU must support the `avx`, `ssse3`, `pclmulqdq` and `aes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 129], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -7551,7 +7573,7 @@ call {vg_aes_gcm_seal_aesni_pclmul_avx}
 23:
 .base64 "SI2kJPAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJAD2///F/n+EJOAJAADF/n+EJMAJAADF/n+EJKAJAADF/n+EJIAJAADF/n+EJGAJAADF/n+EJEAJAADF/n+EJCAJAADF/n+EJAAJAADF/n+EJOAIAADF/n+EJMAIAADF/n+EJKAIAADF/n+EJIAIAADF/n+EJGAIAADF/n+EJEAIAADF/n+EJCAIAADF/n+EJAAIAADF/n+EJOAHAADF/n+EJMAHAADF/n+EJKAHAADF/n+EJIAHAADF/n+EJGAHAADF/n+EJEAHAADF/n+EJCAHAADF/n+EJAAHAADF/n+EJOAGAADF/n+EJMAGAADF/n+EJKAGAADF/n+EJIAGAADF/n+EJGAGAADF/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCQA9v//xf5/hCTgCQAAxf5/hCTACQAAxf5/hCSgCQAAxf5/hCSACQAAxf5/hCRgCQAAxf5/hCRACQAAxf5/hCQgCQAAxf5/hCQACQAAxf5/hCTgCAAAxf5/hCTACAAAxf5/hCSgCAAAxf5/hCSACAAAxf5/hCRgCAAAxf5/hCRACAAAxf5/hCQgCAAAxf5/hCQACAAAxf5/hCTgBwAAxf5/hCTABwAAxf5/hCSgBwAAxf5/hCSABwAAxf5/hCRgBwAAxf5/hCRABwAAxf5/hCQgBwAAxf5/hCQABwAAxf5/hCTgBgAAxf5/hCTABgAAxf5/hCSgBgAAxf5/hCSABgAAxf5/hCRgBgAAxf5/hCRABgAAxf5/hCQgBgAAxf5/hCQABgAAxf5/hCTgBQAAxf5/hCTABQAAxf5/hCSgBQAAxf5/hCSABQAAxf5/hCRgBQAAxf5/hCRABQAAxf5/hCQgBQAAxf5/hCQABQAAxf5/hCTgBAAAxf5/hCTABAAAxf5/hCSgBAAAxf5/hCSABAAAxf5/hCRgBAAAxf5/hCRABAAAxf5/hCQgBAAAxf5/hCQABAAAxf5/hCTgAwAAxf5/hCTAAwAAxf5/hCSgAwAAxf5/hCSAAwAAxf5/hCRgAwAAxf5/hCRAAwAAxf5/hCQgAwAAxf5/hCQAAwAAxf5/hCTgAgAAxf5/hCTAAgAAxf5/hCSgAgAAxf5/hCSAAgAAxf5/hCRgAgAAxf5/hCRAAgAAxf5/hCQgAgAAxf5/hCQAAgAAxf5/hCTgAQAAxf5/hCTAAQAAxf5/hCSgAQAAxf5/hCSAAQAAxf5/hCRgAQAAxf5/hCRAAQAAxf5/hCQgAQAAxf5/hCQAAQAAxf5/hCTgAAAAxf5/hCTAAAAAxf5/hCSgAAAAxf5/hCSAAAAAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkAAoAAEiNpCQACgAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 20:
 .base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
 jae 265f
@@ -7829,7 +7851,7 @@ jmp 2145f
 2144:
 2145:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
+call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core}
 .base64 "WFhY"
 2127:
 276:
@@ -7874,7 +7896,7 @@ jmp 2159f
 2158:
 2159:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
+call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core}
 .base64 "WFhY"
 270:
 jmp 268f
@@ -7910,7 +7932,7 @@ jmp 21b
         vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx,
-        vg_aes_gcm_seal_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
+        vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core = sym super::aes::vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core::vg_aes_gcm_seal_prepared_aesni_pclmul_avx_core,
     )
 }
 
@@ -8213,6 +8235,8 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cp
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -8245,7 +8269,7 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni_pclmul = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul::vg_aes_gcm_open_split_aesni_pclmul,
     )
@@ -8645,6 +8669,8 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbag
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -8850,7 +8876,7 @@ jmp 250f
 call {vg_aes_gcm_seal_aesni_pclmul}
 .base64 "WFhY"
 21:
-.base64 "SI2kJPAAAADD"
+.base64 "SI2kJPAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAPb///MPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAD2///zD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQACgAASI2kJAAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_gcm_stream_init_pclmul_core = sym super::aes::vg_aes_gcm_stream_init_pclmul_core::vg_aes_gcm_stream_init_pclmul_core,
         vg_aes_gcm_stream_aad_pclmul_core = sym super::aes::vg_aes_gcm_stream_aad_pclmul_core::vg_aes_gcm_stream_aad_pclmul_core,
@@ -8865,6 +8891,8 @@ call {vg_aes_gcm_seal_aesni_pclmul}
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8973,7 +9001,7 @@ jmp 222f
 call {vg_ghash}
 .base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
 call {vg_aes_ctr32_aesni}
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAww=="
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_encrypt_blocks_aesni = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
@@ -8985,6 +9013,8 @@ call {vg_aes_ctr32_aesni}
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9143,7 +9173,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         vg_aes_gcm_decrypt_blocks_aesni = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
@@ -9155,6 +9185,8 @@ jmp 25f
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -9188,7 +9220,7 @@ jmp 23f
 22:
 23:
 21:
-.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAww=="
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_aes_gcm_open_split_aesni = sym super::aes::vg_aes_gcm_open_split_aesni::vg_aes_gcm_open_split_aesni,
     )
@@ -9588,6 +9620,8 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -9793,7 +9827,7 @@ jmp 250f
 call {vg_aes_gcm_seal_aesni}
 .base64 "WFhY"
 21:
-.base64 "SI2kJPAAAADD"
+.base64 "SI2kJPAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkAPb///MPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJAD2///zD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCQACgAASI2kJAAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_aes_gcm_stream_init_core = sym super::aes::vg_aes_gcm_stream_init_core::vg_aes_gcm_stream_init_core,
         vg_aes_gcm_stream_aad_core = sym super::aes::vg_aes_gcm_stream_aad_core::vg_aes_gcm_stream_aad_core,

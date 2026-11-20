@@ -67,33 +67,12 @@ open VG.Proof.AesGcm.X86_64
 /-- The prepared artifacts of the implementations `v` whose loops read the
 48 prepared powers: by the flag, those or the ones on the key context. -/
 def artifactsR (v : GcmVariant) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := sealCodeF v
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v)))
-    spSafe := sealCodeF_spAll v },
-  Spec.Gcm.openPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := openCodeF v
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inr rfl) (openCodeF_verified v)))
-    spSafe := openCodeF_spAll v },
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v))
-    spSafe := openToCodeR_onFlag_spAll v },
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealRReg v),
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openRReg v),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToRReg v),
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF48Reg v),
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR48Reg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
-      (Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
-          (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn))
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR_onFlag v))
-    spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF_spAll v)
-      (X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))) }]
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherRReg v)]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
@@ -109,28 +88,11 @@ def artifactsW (v : GcmVariant) : List Artifact := [
 prepared powers: by the count, those or the ones on the key context. -/
 def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealF16Reg v r),
-  Spec.Gcm.openPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := openCodeF16 v
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inl rfl) (openCodeF16_verified v r)))
-    spSafe := openCodeF16_spAll v },
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR16_onFlag v r))
-    spSafe := openToCodeR16_onFlag_spAll v r },
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openR16Reg v r),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToR16Reg v r),
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF16Reg v),
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR16Reg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 16 (sealGatherCodeF16 v r)
-      (Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
-          (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn))
-    verified := .unscrubbed (VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR16_onFlag v r))
-    spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF16_spAll v r)
-      (X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))) }]
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherR16Reg v r)]
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/

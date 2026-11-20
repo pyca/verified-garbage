@@ -735,9 +735,11 @@ open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 `sealF16Vaes` for the function of the VAES variant's name, which returns
 without secret residue (`vg_aes_gcm_seal_gather_prepared` calls its code as
 it was, `vg_aes_gcm_seal_prepared_vaes_vpclmul_core`: `sealFnF16`), and
-`sealF16Plain` for the others. -/
+for the others `sealF16Plain` followed by the clearing of its whole frame of
+2624 bytes, in chunks whose 16-byte stores are aligned. -/
 def sealF16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
-  if v.impl.suffix = variant.impl.suffix then sealF16Vaes else (sealF16Plain v r).registration
+  if v.impl.suffix = variant.impl.suffix then sealF16Vaes
+  else RScrub.withScrubAllRC (sealF16Plain v r) (sealPreparedOut _) [8, 2616]
 
 /-- What `seal` needs of where its tag is, as a contract (`sealScratch_tagArgs`). -/
 def sealTagArgs : Contract isa :=
@@ -3980,41 +3982,31 @@ def openWAesniPclmul : Registration Spec.Gcm.openPreparedApi X86_64.target :=
   RScrub.withScrubResC openWPlainA (openPreparedOut _) openKs openCs
     (openW_resOk aesNiPclmulV openCode_aesniPclmul open_aesniPclmul_leaves)
 
-/-! ## The one-shot functions over the bitsliced `vg_aes_ctr32`, wiped whole
+/-! ## The one-shot functions wiped whole
 
-The variant on the baseline instruction set and the one on PCLMULQDQ alone
-(`scalarV`, `pclmulV`) run on CPUs without AES-NI, where the bitsliced
-`vg_aes_ctr32` and its working space, most of the frame, dominate: each of
-their one-shot functions is followed by the clearing of its whole frame, in
-chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`), which
-asks no proof of what the code leaves. -/
-
-/-- Whether `v` is `scalarV` or `pclmulV`, whose one-shot functions are wiped
-whole. -/
-def wipedWhole (v : GcmVariant) : Prop :=
-  v.impl.suffix = scalarV.impl.suffix ∨ v.impl.suffix = pclmulV.impl.suffix
-
-instance (v : GcmVariant) : Decidable (wipedWhole v) := inferInstanceAs (Decidable (_ ∨ _))
+The one-shot functions for which no proof says what they leave are followed
+by the clearing of their whole frame, in chunks whose 16-byte stores are
+aligned (an 8-byte chunk at the top, the stack pointer on entry being 8 off
+16; `X86_64.RScrub.withScrubAllC`, and `withScrubAllRC` at any level, for
+code that writes `zmm16`–`zmm31`), which asks no proof of what the code
+leaves: the wipe, 32 bytes a store at every level but SSE's, costs the same
+whatever the length of the input. -/
 
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
 context: `sealWAesniPclmul` for the function of the variant on AES-NI and
-PCLMULQDQ, which returns without secret residue, `sealWPlain` followed by the
-clearing of its whole frame of 2624 bytes for those `wipedWhole`, and
-`sealWPlain` for the others. -/
+PCLMULQDQ, which returns without secret residue, and for the others
+`sealWPlain` followed by the clearing of its whole frame of 2624 bytes. -/
 def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul
-  else if wipedWhole v then RScrub.withScrubAllC (sealWPlain v) (sealPreparedOut _) [8, 2616]
-  else (sealWPlain v).registration
+  else RScrub.withScrubAllC (sealWPlain v) (sealPreparedOut _) [8, 2616]
 
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read only the key
 context: `openWAesniPclmul` for the variant on AES-NI and PCLMULQDQ, which
-returns without secret residue, `openWPlain` followed by the clearing of its
-whole frame of 2632 bytes for those `wipedWhole`, and `openWPlain` for the
-others. -/
+returns without secret residue, and for the others `openWPlain` followed by
+the clearing of its whole frame of 2632 bytes. -/
 def openWReg (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target :=
   if v.impl.suffix = aesNiPclmulV.impl.suffix then openWAesniPclmul
-  else if wipedWhole v then RScrub.withScrubAllC (openWPlain v) (openPreparedOut _) [8, 2624]
-  else (openWPlain v).registration
+  else RScrub.withScrubAllC (openWPlain v) (openPreparedOut _) [8, 2624]
 
 /-- `vg_aes_gcm_open_to_prepared`'s postcondition reads the memory on return
 only within the buffers: the output, as long as the input by the
@@ -4045,11 +4037,9 @@ def openToWPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.openToPreparedApi X86_64
   spSafe := openToCode_spAll v
 
 /-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read only the key
-context: followed by the clearing of its whole frame of 2776 bytes for those
-`wipedWhole`. -/
+context, followed by the clearing of its whole frame of 2776 bytes. -/
 def openToWReg (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target :=
-  if wipedWhole v then RScrub.withScrubAllC (openToWPlain v) (openToPreparedOut _) [8, 2768]
-  else (openToWPlain v).registration
+  RScrub.withScrubAllC (openToWPlain v) (openToPreparedOut _) [8, 2768]
 
 /-- `vg_aes_gcm_seal_gather_prepared`'s postcondition reads the memory on
 return only within the buffers: the output and the tag. -/
@@ -4079,13 +4069,121 @@ def sealGatherWPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealGatherPreparedAp
       (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
 
 /-- `vg_aes_gcm_seal_gather_prepared` of a variant whose loops read only the
-key context: followed by the clearing of its whole frame of 5128 bytes, in
-two chunks below the top 8 bytes as each must be under a page, for those
-`wipedWhole`. -/
+key context, followed by the clearing of its whole frame of 5128 bytes, in
+two chunks below the top 8 bytes as each must be under a page. -/
 def sealGatherWReg (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target :=
-  if wipedWhole v then
-    RScrub.withScrubAllC (sealGatherWPlain v) (sealGatherPreparedOut _) [8, 2560, 2560]
-  else (sealGatherWPlain v).registration
+  RScrub.withScrubAllC (sealGatherWPlain v) (sealGatherPreparedOut _) [8, 2560, 2560]
+
+/-! ## The one-shot functions over the prepared powers, wiped whole
+
+The one-shot functions of the variants whose loops read prepared powers (48
+of them, `stitchR`, or 16, `R16`), by the flag or the count on those or on
+the key context, that no proof says what they leave: each followed by the
+clearing of its whole frame (`RScrub.withScrubAllRC`, which clears
+`zmm16`–`zmm31` too for the AVX-512 variant's code, which writes them). -/
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 prepared
+powers: by the flag, its code on those or on the key context. -/
+def sealRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := sealCodeF v
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v))
+  spSafe := sealCodeF_spAll v
+
+/-- `sealRPlain`, followed by the clearing of its whole frame of 2624
+bytes. -/
+def sealRReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (sealRPlain v) (sealPreparedOut _) [8, 2616]
+
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read the 48 prepared
+powers: by the flag, its code on those or on the key context. -/
+def openRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.openPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := openCodeF v
+  verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inr rfl) (openCodeF_verified v))
+  spSafe := openCodeF_spAll v
+
+/-- `openRPlain`, followed by the clearing of its whole frame of 2632 bytes. -/
+def openRReg (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (openRPlain v) (openPreparedOut _) [8, 2624]
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read the 48
+prepared powers: by the flag, its code on those or on the key context. -/
+def openToRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.openToPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
+  verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v)
+  spSafe := openToCodeR_onFlag_spAll v
+
+/-- `openToRPlain`, followed by the clearing of its whole frame of 2776
+bytes. -/
+def openToRReg (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (openToRPlain v) (openToPreparedOut _) [8, 2768]
+
+/-- `vg_aes_gcm_seal_gather_prepared` of a variant whose loops read the 48
+prepared powers: by the flag, its code on those or on the key context. -/
+def sealGatherRPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealGatherPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
+    (Impl.StackScratch.X86_64.withStackArgScratch 240 5
+      (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
+        (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn))
+  verified := VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR_onFlag v)
+  spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF_spAll v)
+    (X86_64.withStackArgScratch_spSafe
+      (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
+
+/-- `sealGatherRPlain`, followed by the clearing of its whole frame of 5128
+bytes, in two chunks below the top 8 bytes as each must be under a page. -/
+def sealGatherRReg (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (sealGatherRPlain v) (sealGatherPreparedOut _) [8, 2560, 2560]
+
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read 16 prepared
+powers: by the count, its code on those or on the key context. -/
+def openR16Plain (v : GcmVariant) (r : R16 v) : Unscrubbed Spec.Gcm.openPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := openCodeF16 v
+  verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inl rfl) (openCodeF16_verified v r))
+  spSafe := openCodeF16_spAll v
+
+/-- `openR16Plain`, followed by the clearing of its whole frame of 2632
+bytes. -/
+def openR16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.openPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (openR16Plain v r) (openPreparedOut _) [8, 2624]
+
+/-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read 16 prepared
+powers: by the count, its code on those or on the key context. -/
+def openToR16Plain (v : GcmVariant) (r : R16 v) : Unscrubbed Spec.Gcm.openToPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
+  verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR16_onFlag v r)
+  spSafe := openToCodeR16_onFlag_spAll v r
+
+/-- `openToR16Plain`, followed by the clearing of its whole frame of 2776
+bytes. -/
+def openToR16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.openToPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (openToR16Plain v r) (openToPreparedOut _) [8, 2768]
+
+/-- `vg_aes_gcm_seal_gather_prepared` of a variant whose loops read 16
+prepared powers: by the count, its code on those or on the key context. -/
+def sealGatherR16Plain (v : GcmVariant) (r : R16 v) :
+    Unscrubbed Spec.Gcm.sealGatherPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := Impl.Gcm.X86_64.Flag.onFlag 16 (sealGatherCodeF16 v r)
+    (Impl.StackScratch.X86_64.withStackArgScratch 240 5
+      (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
+        (shortFn v).code (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn))
+  verified := VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR16_onFlag v r)
+  spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF16_spAll v r)
+    (X86_64.withStackArgScratch_spSafe
+      (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
+
+/-- `sealGatherR16Plain`, followed by the clearing of its whole frame of
+5128 bytes, in two chunks below the top 8 bytes as each must be under a
+page. -/
+def sealGatherR16Reg (v : GcmVariant) (r : R16 v) :
+    Registration Spec.Gcm.sealGatherPreparedApi X86_64.target :=
+  RScrub.withScrubAllRC (sealGatherR16Plain v r) (sealGatherPreparedOut _) [8, 2560, 2560]
 
 end
 
