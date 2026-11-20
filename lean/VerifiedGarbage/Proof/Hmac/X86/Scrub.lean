@@ -97,7 +97,7 @@ theorem finOut (I : Spec.Hmac.Instance) (stack : Nat) :
 
 /-- No instruction of code followed by its cleanup writes `esp` if none of the
 code's does. -/
-theorem scrubF_spSafe {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) (rb W : Nat) :
+theorem hmacScrubF_spSafe {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) (rb W : Nat) :
     (Impl.Scrub.X86.scrubF rb W c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
     Bool.true_and, Bool.and_true]
@@ -115,7 +115,7 @@ theorem md5_init_scrubbed :
     (initOut Spec.Hmac.md5I Proof.Hmac.md5_local _)
 
 theorem md5_initSp : (Impl.Hmac.X86.Fn.md5Init md5M md5F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.md5_initSp _ _
+  hmacScrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.md5_initSp _ _
 
 theorem md5_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.md5Finalize md5M)
@@ -127,7 +127,7 @@ theorem md5_fin_scrubbed :
     (finOut Spec.Hmac.md5I _)
 
 theorem md5_finSp : (Impl.Hmac.X86.Fn.md5Finalize md5M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
+  hmacScrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
 
 theorem sha384_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha384M sha384F)
@@ -139,7 +139,7 @@ theorem sha384_init_scrubbed :
     (initOut Spec.Hmac.sha384I Proof.Hmac.sha384_local _)
 
 theorem sha384_initSp : (Impl.Hmac.X86.Fn.sha512Init sha384M sha384F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha384_initSp _ _
+  hmacScrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha384_initSp _ _
 
 theorem sha384_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha384M)
@@ -151,7 +151,7 @@ theorem sha384_fin_scrubbed :
     (finOut Spec.Hmac.sha384I _)
 
 theorem sha384_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha384M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
+  hmacScrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
 
 theorem sha512_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512M' sha512F)
@@ -163,7 +163,7 @@ theorem sha512_init_scrubbed :
     (initOut Spec.Hmac.sha512I Proof.Hmac.sha512_local _)
 
 theorem sha512_initSp : (Impl.Hmac.X86.Fn.sha512Init sha512M' sha512F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_initSp _ _
+  hmacScrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_initSp _ _
 
 theorem sha512_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512M')
@@ -175,7 +175,7 @@ theorem sha512_fin_scrubbed :
     (finOut Spec.Hmac.sha512I _)
 
 theorem sha512_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512M').all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
+  hmacScrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
 
 theorem sha512_224_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512_224M sha512_224F)
@@ -188,7 +188,7 @@ theorem sha512_224_init_scrubbed :
 
 theorem sha512_224_initSp :
     (Impl.Hmac.X86.Fn.sha512Init sha512_224M sha512_224F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp _ _
+  hmacScrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp _ _
 
 theorem sha512_224_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512_224M)
@@ -200,7 +200,7 @@ theorem sha512_224_fin_scrubbed :
     (finOut Spec.Hmac.sha512_224I _)
 
 theorem sha512_224_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512_224M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
+  hmacScrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
 
 theorem sha512_256_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512_256M sha512_256F)
@@ -213,7 +213,7 @@ theorem sha512_256_init_scrubbed :
 
 theorem sha512_256_initSp :
     (Impl.Hmac.X86.Fn.sha512Init sha512_256M sha512_256F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp _ _
+  hmacScrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp _ _
 
 theorem sha512_256_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512_256M)
@@ -225,7 +225,7 @@ theorem sha512_256_fin_scrubbed :
     (finOut Spec.Hmac.sha512_256I _)
 
 theorem sha512_256_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512_256M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
+  hmacScrubF_spSafe (Code.all_of_spTest (by lit_decide)) _ _
 
 /-! ## SHA-1, SHA-224 and SHA-256, generic over their backends
 
@@ -338,7 +338,7 @@ theorem sha1_init_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
 
 theorem sha1_initSp (v : Proof.Sha1.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha1Init v.M v.F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha1_initSp v) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha1_initSp v) _ _
 
 theorem sha1_fin_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha1Finalize v.M)
@@ -355,7 +355,7 @@ theorem sha1_fin_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
 
 theorem sha1_finSp (v : Proof.Sha1.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha1Finalize v.M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp) _ _
 
 /-! ### SHA-224 -/
 
@@ -373,7 +373,7 @@ theorem sha224_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha224_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M224 v.F224).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v) _ _
 
 theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M224)
@@ -390,7 +390,7 @@ theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha224_finSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Finalize v.M224).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp) _ _
 
 /-! ### SHA-256 -/
 
@@ -408,7 +408,7 @@ theorem sha256_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha256_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M v.F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v) _ _
 
 theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M)
@@ -425,6 +425,6 @@ theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha256_finSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Finalize v.M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp) _ _
+  hmacScrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp) _ _
 
 end VG.Proof.Hmac.X86.Scrub
