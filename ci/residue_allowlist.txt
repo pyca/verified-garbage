@@ -147,10 +147,6 @@ arm vg_mlkem768_encaps
 arm vg_mlkem768_encaps_h
 arm vg_mlkem768_keygen
 arm vg_poly1305_init
-arm vg_rsa_check_key
-arm vg_rsa_check_key_umaal
-arm vg_rsa_crt_values
-arm vg_rsa_crt_values_umaal
 arm vg_rsa_generate
 arm vg_rsa_generate_init
 arm vg_rsa_generate_umaal
@@ -168,16 +164,10 @@ arm vg_rsa_pkcs1_sign_precomputed
 arm vg_rsa_pkcs1_sign_precomputed_umaal
 arm vg_rsa_pkcs1_verify_precomputed
 arm vg_rsa_pkcs1_verify_precomputed_umaal
-arm vg_rsa_private_precompute
-arm vg_rsa_private_precompute_umaal
 arm vg_rsa_pss_sign_precomputed
 arm vg_rsa_pss_sign_precomputed_umaal
 arm vg_rsa_pss_verify_precomputed
 arm vg_rsa_pss_verify_precomputed_umaal
-arm vg_rsa_public_precompute
-arm vg_rsa_public_precompute_umaal
-arm vg_rsa_recover_primes_det
-arm vg_rsa_recover_primes_det_umaal
 arm vg_seed_cbc_decrypt_chained
 arm vg_seed_cbc_encrypt_chained
 arm vg_seed_cfb128_decrypt
