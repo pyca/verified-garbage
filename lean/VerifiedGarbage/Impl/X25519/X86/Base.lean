@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+public import VerifiedGarbage.Impl.X25519.X86.Fn
+public import VerifiedGarbage.Impl.Xdh.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # X25519 of the base point on x86 (32-bit)
@@ -52,3 +55,23 @@ def x25519BaseBody : Prog isa :=
 def x25519Base : Code Instr Cond := .seq (combAddr 2) x25519BaseBody
 
 end VG.Impl.X25519.X86.Base
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that its frames and calls use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.X25519.X86.Fn
+
+open VG.X86
+
+/-- `vg_x25519_exchange`, as emitted. -/
+def exchange : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 28 (Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32)
+
+/-- `vg_x25519_base`, as emitted. -/
+def base : Prog isa := Impl.Scrub.X86.scrubF 0 8 Impl.X25519.X86.Base.x25519Base
+
+end VG.Impl.X25519.X86.Fn

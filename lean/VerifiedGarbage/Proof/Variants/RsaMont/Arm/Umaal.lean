@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineFnBody
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.Fios2.CT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCallWith
 public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallContract
@@ -132,6 +133,35 @@ theorem armStack_rowLocal (replacement : Prog isa)
     · simp [stack]
     · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
+/-- Substituting code that calls nothing indirectly keeps code that calls
+nothing indirectly so. -/
+theorem noIcall_substLocal {a b : Prog isa} (hb : VG.Arm.noIcall b = true) (c : Prog isa)
+    (hc : VG.Arm.noIcall c = true) : VG.Arm.noIcall (Code.substLocal a b c) = true := by
+  induction c with
+  | block _ => simp only [Code.substLocal]; split <;> with_reducible assumption
+  | seq x y ihx ihy =>
+    simp only [VG.Arm.noIcall, Bool.and_eq_true] at hc
+    simp only [Code.substLocal]; split
+    · exact hb
+    · simp only [VG.Arm.noIcall, ihx hc.1, ihy hc.2, Bool.and_self]
+  | ite _ t e iht ihe =>
+    simp only [VG.Arm.noIcall, Bool.and_eq_true] at hc
+    simp only [Code.substLocal]; split
+    · exact hb
+    · simp only [VG.Arm.noIcall, iht hc.1, ihe hc.2, Bool.and_self]
+  | loop x _ ih =>
+    simp only [VG.Arm.noIcall] at hc
+    simp only [Code.substLocal]; split
+    · exact hb
+    · simp only [VG.Arm.noIcall, ih hc]
+  | call _ _ _ => exact hc
+  | icall => exact hc
+  | frame _ x _ ih =>
+    simp only [VG.Arm.noIcall] at hc
+    simp only [Code.substLocal]; split
+    · exact hb
+    · simp only [VG.Arm.noIcall, ih hc]
+
 /-- Any verified call-free, frame-free row replacement supplies a caller decorator. -/
 def rowCaller (replacement : Prog isa) (sim : Sim row replacement)
     (stack : FrameStack.armStack replacement = 0) (calls : replacement.calls = []) : CallerTransform where
@@ -201,6 +231,16 @@ def umaalArithmeticCaller : CallerTransform where
   stack_le := fun c => Nat.le_trans (downCaller.stack_le _) (umaalCaller.stack_le c)
   calls_eq := fun c => (downCaller.calls_eq _).trans (umaalCaller.calls_eq c)
 
+theorem rowU_noIcall : VG.Arm.noIcall rowU = true := by lit_decide
+
+theorem downRowU_noIcall : VG.Arm.noIcall DownRow.codeU = true := by lit_decide
+
+/-- The UMAAL rows keep what the cleanup needs of a caller's code. -/
+theorem umaalArithmeticCaller_ok (c : Prog isa) (n : Nat) (h : VG.Arm.Scrub.CodeOk c n) :
+    VG.Arm.Scrub.CodeOk (umaalArithmeticCaller.code c) n :=
+  ⟨Nat.le_trans (umaalArithmeticCaller.stack_le c) h.1,
+    noIcall_substLocal downRowU_noIcall _ (noIcall_substLocal rowU_noIcall c h.2)⟩
+
 end VG.Proof.Bignum.Arm
 
 end
@@ -240,6 +280,8 @@ def montCallFios2_backend
   rawCT := montCallWithFn_ct _ (montCallFios2_law law ctLaw)
   stackOk := montCallWith_stack _ (montCallFios2_law law ctLaw)
   caller := umaalArithmeticCaller
+  mulOk := by lit_decide
+  callerOk := umaalArithmeticCaller_ok
   suffix := "_umaal"
   features := ["umaal"]
 

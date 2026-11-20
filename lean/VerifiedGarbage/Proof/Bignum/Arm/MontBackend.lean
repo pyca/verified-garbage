@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCallEntry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallerTransform
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Rsa.MontContract
 
@@ -29,6 +30,11 @@ structure MontBackend where
       CallInput base len w o a b t ∧ s.sp = t.sp) mul (fun _ _ => True)
   stackOk : FrameStack.armStack mul ≤ 40
   caller : CallerTransform := CallerTransform.identity
+  /-- What the cleanup of a function that calls `mul` needs of it: its frames
+  use at most 40 bytes, and it calls nothing indirectly. -/
+  mulOk : VG.Arm.Scrub.CodeOk mul 40
+  /-- `caller` keeps what the cleanup needs of a caller's code. -/
+  callerOk : ∀ c n, VG.Arm.Scrub.CodeOk c n → VG.Arm.Scrub.CodeOk (caller.code c) n
   suffix : String
   features : List String
 

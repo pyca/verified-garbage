@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Blake2b.Arm
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.initBReg,
-  Spec.Blake2.updateBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.updateBReg,
-  Spec.Blake2.finalizeBApi.artifact Arm.target Proof.Blake2.Arm.Scrub.finalizeBReg]
+  Spec.Blake2.initBApi.artifact Arm.target {
+    code := Impl.Blake2.Arm.Fn.initB
+    verified := .scrubbed Proof.Blake2.Arm.Fn.initB },
+  Spec.Blake2.updateBApi.artifact Arm.target {
+    code := Impl.Blake2.Arm.Fn.updateB
+    verified := .scrubbed Proof.Blake2.Arm.Fn.updateB },
+  Spec.Blake2.finalizeBApi.artifact Arm.target {
+    code := Impl.Blake2.Arm.Fn.finalizeB
+    verified := .scrubbed Proof.Blake2.Arm.Fn.finalizeB }]
 
 end VG.Artifacts.Blake2b.Arm

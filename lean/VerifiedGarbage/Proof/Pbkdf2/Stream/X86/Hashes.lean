@@ -9,11 +9,13 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Impl.Sha512.X86.Digest
 meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Sha512.X86.Compress
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Impl.Sha512.X86.Digest
 import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.Stream
@@ -132,10 +134,10 @@ def md5OK : HashOK md5H := by
 
 /-! ## The SHA-512 family -/
 
-/-- The SHA-512 family member with initial hash value `iv` and a `D`-byte digest. -/
+/-- The SHA-512 family member with initial hash value `iv` and a `D`-byte digest: the
+streaming functions the one-shot digests are emitted with (`Impl.Sha512.X86.Fn.hash`). -/
 def sha512H (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash :=
-  ⟨128, 192, D, 64, 34, initN, Impl.Sha512.X86.Stream.init iv, "vg_sha512_update_scratch",
-    Impl.Sha512.X86.Stream.update, "vg_sha512_finalize_scratch", Impl.Sha512.X86.Stream.finalize⟩
+  Impl.Sha512.X86.Fn.hash D initN iv
 
 theorem sha512_updSp : NoSp Impl.Sha512.X86.Stream.update := nosp_of (by lit_decide)
 theorem sha512_finSp : NoSp Impl.Sha512.X86.Stream.finalize := nosp_of (by lit_decide)

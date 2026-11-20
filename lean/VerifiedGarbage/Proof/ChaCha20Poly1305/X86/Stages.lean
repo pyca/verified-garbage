@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.X86.Init
 public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86.BlocksFn
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Poly1305.Stream
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
@@ -37,8 +38,9 @@ return address) may be read and written, `key`, `nonce` and `aad` read, and
 `tag` written if `enc` (`seal`) and read if not (`open`); `work` and the
 arguments overlap none of the others, `data` neither `aad` nor `tag`, and
 `work`, `aad`, `data` and `tag` do not overlap the
-return address or the 32 bytes of stack below it, where the calls store their
-arguments and return addresses (and `vg_chacha20_xor` those of its own calls);
+return address or the 540 bytes of stack below it, where the calls store their
+arguments and return addresses (and `vg_chacha20_xor` those of its own calls,
+and `vg_poly1305_blocks` its frame);
 nothing wraps around the end of the address space. -/
 def preX86 (enc : Bool) (s : X86.State) : Prop :=
   let key : Region := ⟨(arg s 0).setWidth 64, 32⟩
@@ -49,7 +51,7 @@ def preX86 (enc : Bool) (s : X86.State) : Prop :=
   let ctx : Region := ⟨(arg s 7).setWidth 64, 704⟩
   let args : Region := ⟨argAddr s 0, 32⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 540, 540⟩
   s.rd = (if enc then [key, nonce, aad] else [key, nonce, aad, tag]) ∧
   s.wr = (if enc then [data, tag, ctx, args] else [data, ctx, args]) ∧
   ctx.Disjoint key ∧ ctx.Disjoint nonce ∧ ctx.Disjoint aad ∧ ctx.Disjoint data ∧ ctx.Disjoint tag ∧
@@ -60,7 +62,7 @@ def preX86 (enc : Bool) (s : X86.State) : Prop :=
   stack.Disjoint ctx ∧ stack.Disjoint aad ∧ stack.Disjoint data ∧ stack.Disjoint tag ∧
   (arg s 7).toNat + 704 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + 16 ≤ 2 ^ 32 ∧
-  (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 12 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
+  (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 12 ≤ 2 ^ 32 ∧ 540 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 36 ≤ 2 ^ 32
 
 open VG.X86 in
@@ -113,7 +115,7 @@ aad_len, src, len, dst, dst_len, tag, work)`: `work` (704 bytes), `dst` and
 the arguments (40 bytes above the return address) may be read and written,
 `key`, `nonce`, `aad`, `src` and `tag` read; the written ones overlap none of
 the others, and `work`, `aad`, `src`, `dst` and `tag` do not overlap the
-return address or the 32 bytes of stack below it; nothing wraps around the
+return address or the 540 bytes of stack below it; nothing wraps around the
 end of the address space; `dst_len = len`. -/
 def preToX86 (s : X86.State) : Prop :=
   let key : Region := ⟨(arg s 0).setWidth 64, 32⟩
@@ -125,7 +127,7 @@ def preToX86 (s : X86.State) : Prop :=
   let ctx : Region := ⟨(arg s 9).setWidth 64, 704⟩
   let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 540, 540⟩
   s.rd = [key, nonce, aad, src, tag] ∧ s.wr = [dst, ctx, args] ∧
   ctx.Disjoint key ∧ ctx.Disjoint nonce ∧ ctx.Disjoint aad ∧ ctx.Disjoint src ∧ ctx.Disjoint dst ∧
   ctx.Disjoint tag ∧
@@ -137,7 +139,7 @@ def preToX86 (s : X86.State) : Prop :=
   (arg s 9).toNat + 704 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
   (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧
-  (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 12 ≤ 2 ^ 32 ∧ 32 ≤ (s.gpr .esp).toNat ∧
+  (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 12 ≤ 2 ^ 32 ∧ 540 ≤ (s.gpr .esp).toNat ∧
   (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ (arg s 7).toNat = (arg s 5).toNat
 
 open VG.X86 in
@@ -226,7 +228,7 @@ abbrev oR : Region := ⟨op s₀, L s₀⟩
 abbrev argR : Region := ⟨argAddr s₀ 0, 32⟩
 abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
 /-- The stack below the return address that the calls use. -/
-abbrev stkR : Region := below (E s₀) 32
+abbrev stkR : Region := below (E s₀) 540
 /-- `ctx[k, k + n)`. -/
 abbrev sub (k n : Nat) : Region := ⟨cx s₀ + BitVec.ofNat 64 k, n⟩
 /-- `ctx + k`, as the code computes it. -/
@@ -282,7 +284,7 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
   fit_t : (TP s₀).toNat + 16 ≤ 2 ^ 32
   fit_k : (KP s₀).toNat + 32 ≤ 2 ^ 32
   fit_n : (NP s₀).toNat + 12 ≤ 2 ^ 32
-  sp_lo : 32 ≤ (E s₀).toNat
+  sp_lo : 540 ≤ (E s₀).toNat
   sp_hi : (E s₀).toNat + 36 ≤ 2 ^ 32
 
 /-- `seal` runs in place. -/
@@ -362,7 +364,7 @@ theorem APre.in_arg {i : Nat} (hi : i < 8) : InRegions (s₀.rd ++ s₀.wr) (arg
   have ⟨r, hr, hc⟩ := hp.arg_in i hi
   ⟨r, List.mem_append_right _ hr, hc⟩
 
-theorem APre.E64 {n : Nat} (hn : n ≤ 32) :
+theorem APre.E64 {n : Nat} (hn : n ≤ 540) :
     (E s₀ - BitVec.ofNat 32 n).setWidth 64 = (E s₀).setWidth 64 - BitVec.ofNat 64 n :=
   Taint.sub_setWidth (by have := hp.sp_lo; omega_arith)
 
@@ -384,7 +386,7 @@ theorem sub_disj (s₀ : State) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a
 theorem contains_sub (s₀ : State) {k n a w : Nat} (h₁ : k ≤ a) (h₂ : a + w ≤ k + n) (h₃ : k + n ≤ 704) :
     (sub s₀ k n).Contains (cx s₀ + BitVec.ofNat 64 a) w := Offset.contains (cx s₀) h₁ h₂ (by lit_omega)
 
-theorem stk_below (s₀ : State) {n : Nat} (hn : n ≤ 32) (hp : APre e s₀) :
+theorem stk_below (s₀ : State) {n : Nat} (hn : n ≤ 540) (hp : APre e s₀) :
     Region.Sub (below (E s₀) n) (stkR s₀) := below_sub hn hp.sp_lo
 
 section
@@ -394,7 +396,7 @@ include hp
 theorem APre.stk_sub {k n : Nat} (h : k + n ≤ 704) : (stkR s₀).Disjoint (sub s₀ k n) :=
   hp.stk_c.sub_right (sub_ctx s₀ h)
 
-theorem APre.below_sub {m k n : Nat} (hm : m ≤ 32) (h : k + n ≤ 704) :
+theorem APre.below_sub {m k n : Nat} (hm : m ≤ 540) (h : k + n ≤ 704) :
     (below (E s₀) m).Disjoint (sub s₀ k n) := (hp.stk_sub h).sub_left (stk_below s₀ hm hp)
 
 theorem APre.g_sub {k n : Nat} (h : k + n ≤ 704) : (argR s₀).Disjoint (sub s₀ k n) :=
@@ -412,9 +414,9 @@ theorem APre.a_sub {k n : Nat} (h : k + n ≤ 704) : (aR s₀).Disjoint (sub s�
 /-- The arguments are above the stack the calls use. -/
 theorem APre.g_stk : (argR s₀).Disjoint (stkR s₀) := by
   have h₂ := hp.sp_hi
-  have := Offset.disjoint_base ((E s₀).setWidth 64 - BitVec.ofNat 64 32) (d := 36) (n := 32) (k := 32)
+  have := Offset.disjoint_base ((E s₀).setWidth 64 - BitVec.ofNat 64 540) (d := 544) (n := 32) (k := 540)
     (by decide) (by decide)
-  rw [show (E s₀).setWidth 64 - BitVec.ofNat 64 32 + BitVec.ofNat 64 36 = (E s₀).setWidth 64 + BitVec.ofNat 64 4 by
+  rw [show (E s₀).setWidth 64 - BitVec.ofNat 64 540 + BitVec.ofNat 64 544 = (E s₀).setWidth 64 + BitVec.ofNat 64 4 by
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc]; rfl] at this
   simp only [stkR, below, hp.E64 (Nat.le_refl _), argR, argAddr]
   rw [show s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0) = s₀.gpr .esp + BitVec.ofNat 32 4 from rfl,
@@ -422,7 +424,7 @@ theorem APre.g_stk : (argR s₀).Disjoint (stkR s₀) := by
   exact this
 
 theorem APre.ret_stk : (retR s₀).Disjoint (stkR s₀) := by
-  have := Offset.disjoint_base ((E s₀).setWidth 64 - BitVec.ofNat 64 32) (d := 32) (n := 4) (k := 32)
+  have := Offset.disjoint_base ((E s₀).setWidth 64 - BitVec.ofNat 64 540) (d := 540) (n := 4) (k := 540)
     (by decide) (by decide)
   rw [BitVec.sub_add_cancel] at this
   simp only [stkR, below, hp.E64 (Nat.le_refl _)]
@@ -556,7 +558,7 @@ theorem finalize_nosp : NoSp Impl.Poly1305.X86.finalize := NoSp.of_all (by lit_d
 
 theorem block_stack : stackUse Impl.ChaCha20.X86.block = 0 := by lit_decide
 theorem init_stack : stackUse Impl.Poly1305.X86.init = 0 := by lit_decide
-theorem blocks_stack : stackUse Impl.Poly1305.X86.blocks = 0 := by lit_decide
+theorem blocks_stack : stackUse Impl.Poly1305.X86.blocks = 524 := by lit_decide
 theorem finalize_stack : stackUse Impl.Poly1305.X86.finalize = 0 := by lit_decide
 
 /-! ## The state a call is made from -/
@@ -569,7 +571,7 @@ structure At (s₀ s : State) : Prop where
 theorem Inv.at {s₀ s : State} (h : Inv s₀ s) : At s₀ s := ⟨h.esp, h.rd, h.wr⟩
 
 /-- Part of the stack below the return address. -/
-theorem stk_part {s₀ : State} (hp : APre e s₀) {a n : Nat} (h : n ≤ a) (ha : a ≤ 32) :
+theorem stk_part {s₀ : State} (hp : APre e s₀) {a n : Nat} (h : n ≤ a) (ha : a ≤ 540) :
     Region.Sub ⟨(E s₀ - BitVec.ofNat 32 a).setWidth 64, n⟩ (stkR s₀) :=
   fun x hx => below_sub ha hp.sp_lo x (Region.sub_prefix h x hx)
 
@@ -731,7 +733,7 @@ theorem init_call {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (hecx : s.
       Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem →
       Repr s'.mem (cx s₀ + BitVec.ofNat 64 448) (bytesAt s.mem (cx s₀ + BitVec.ofNat 64 128) 32) [] →
       Q s') :
-    WP isa (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init) s Q := by
+    WP isa (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init) s Q := by
   obtain hk : [Reg.ecx, .edx].length ≤ 5 := by decide
   obtain fit := h.fit hp hk
   have e := hp.sp_lo
@@ -796,8 +798,12 @@ theorem blocks_pre {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) {rn rp rs
       State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, h.argAddr0,
       h.esp64, h.espNat hp hk, hp.c64 (k := 448) (by lit_omega), hp.cNat (k := 448) (by lit_omega),
       List.length_cons, List.length_nil]
+    -- The callee's stack, within ours.
+    have hK : Region.Sub ⟨(E s₀ - BitVec.ofNat 32 16).setWidth 64 - BitVec.ofNat 64 524, 524⟩ (stkR s₀) := by
+      rw [hp.E64 (by lit_omega), BitVec.sub_sub, BitVec.ofNat_add_ofNat, ← hp.E64 (by lit_omega)]
+      exact stk_part hp (by lit_omega) (by lit_omega)
     refine ⟨trivial, trivial, hs.poly, (hp.below_sub (m := 12) (by lit_omega) (by lit_omega)), ?_, by omega_arith,
-      hf, by omega_arith⟩
+      hf, by omega_arith, (hp.stk_sub (by lit_omega)).sub_left hK, hs.stk.sub_left hK, by omega_arith⟩
     exact (hp.stk_sub (by lit_omega)).sub_left (stk_part hp (by lit_omega) (by lit_omega))
   · rw [h.esp, h.rd, h.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -890,7 +896,9 @@ theorem xor_args {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (heax : s.g
     · exact within (ctxR s₀) (by simp [hp.ctx_wr]) 64 rfl (by show 64 + 64 ≤ 704; omega_arith)
     · exact within (oR s₀) (List.mem_append_right _ hp.o_wr) 0 (by simp) (by simp)
     · exact within (ctxR s₀) (by simp [hp.ctx_wr]) 128 rfl (by show 128 + 320 ≤ 704; omega_arith)
-  refine ⟨h.esp, heax, hecx, by rw [hedx]; simp, hebx, hesi, by decide, hp.sp_lo, (LN s₀).isLt,
+  have e := hp.sp_lo
+  obtain hK : Region.Sub (below (E s₀) 32) (stkR s₀) := stk_below s₀ (by lit_omega) hp
+  refine ⟨h.esp, heax, hecx, by rw [hedx]; simp, hebx, hesi, by decide, by omega_arith, (LN s₀).isLt,
     by rw [hp.cNat (by lit_omega)]; omega_arith, hp.fit_d, hp.fit_o, by rw [hp.cNat (by lit_omega)]; omega_arith,
     ?_, ?_, ?_, ?_, ?_, hp.o_d, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     try simp only [xorRd, List.cons_append, List.nil_append, e64, e128]
@@ -899,10 +907,10 @@ theorem xor_args {s₀ s : State} (hp : APre e s₀) (h : At s₀ s) (heax : s.g
   · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
   · exact dB
   · exact oB
-  · exact hp.stk_sub (by lit_omega)
-  · exact hp.stk_d
-  · exact hp.stk_o
-  · exact hp.stk_sub (by lit_omega)
+  · exact (hp.stk_sub (by lit_omega)).sub_left hK
+  · exact hp.stk_d.sub_left hK
+  · exact hp.stk_o.sub_left hK
+  · exact (hp.stk_sub (by lit_omega)).sub_left hK
   · exact Covers.of_sub hcov
   · rw [h.wr]
     exact Covers.of_sub fun r hr => by
@@ -936,7 +944,7 @@ theorem xor_call (v : XorImpl) {s₀ s : State} (hp : APre e s₀) (h : At s₀ 
   · exact ⟨_, m1, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
   · exact ⟨_, m2, fun _ h => h⟩
   · exact ⟨_, m1, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-  · exact ⟨_, m3, fun _ h => h⟩
+  · exact ⟨_, m3, stk_below s₀ (by lit_omega) hp⟩
 
 /-! ## `vg_poly1305_finalize_scratch` -/
 
@@ -1956,7 +1964,7 @@ theorem pro4_ok {s₀ : State} {s : State} (h : Pro3 s₀ s) :
     by rw [g₂ _ (by decide), e₁, h.edi], by rw [e₂, edi₁]⟩
 
 theorem post_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Pro4 s₀ s) :
-    WP isa (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init) s (PostP s₀) := by
+    WP isa (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init) s (PostP s₀) := by
   refine init_call hp h.at_ h.ecx h.edx fun s' at' cs' f' repr' => ?_
   obtain hd : ∀ {k n : Nat}, k + n ≤ 704 → (k + n ≤ 448 ∨ 448 + 128 ≤ k) →
       ∀ r ∈ [sub s₀ 448 128, stkR s₀], (sub s₀ k n).Disjoint r := by
@@ -1985,7 +1993,7 @@ theorem prologue_eq : prologue =
     (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
     (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
     (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
-      (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init)))) := rfl
+      (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init)))) := rfl
 
 theorem prologue_ok {s₀ : State} (hp : APre e s₀) : WP isa prologue s₀ (PostP s₀) := by
   rw [prologue_eq]

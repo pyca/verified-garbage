@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesSiv.X86.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesSiv.X86
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -16,6 +18,8 @@ meta import VerifiedGarbage.Spec.Siv.Contract
 meta import VerifiedGarbage.Proof.AesSiv.Scratch
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesSiv.X86
 
 /-!
 # AES-SIV on x86 (32-bit), without secret residue
@@ -25,10 +29,11 @@ memory on return only within the context, the data and `siv` (`initOut`,
 `encryptOut`, `decryptOut`), as on PPC64LE (`Proof/AesSiv/PPC64LE/Scrub.lean`):
 what the scrub of their frames and calls needs (`X86.Scrub.PostOut`).
 
-Each is registered with `X86.Scrub.scrubFOf` (`initReg`, `encryptReg`,
-`decryptReg`), which zeroes the stack of its contract below `esp` (its frame
-of working space, `withStackScratch`, and its callees') and clears the
-registers. What that needs of the code (`scrubFSide`) holds whatever the
+Each as emitted (`Impl.AesSiv.X86.Fn`) zeroes the stack of its contract
+below `esp` (its frame of working space, `withStackScratch`, and its
+callees') and clears the registers, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedF`: `init_scrubbed`, `encrypt_scrubbed`,
+`decrypt_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of AES (`init_scrub`, …): from SIV's code with stub
 implementations, whose code is `.block []`, which the kernel evaluates once
 (`init_side`, …), the implementation's own facts (`Ctr32Impl.scrub`,
@@ -178,33 +183,57 @@ theorem decrypt_scrub (v : Ctr32Impl) :
   · exact scrubFSide_of_fill (decryptNi_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) decryptNi_side
   · exact scrubFSide_of_fill (decrypt_fill _ _ (calleeSide_of_eq v.stack v.scrub) h) decrypt_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_siv_init` over `v`, without secret residue. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Siv.initApi target :=
-  scrubFOf {
+/-- `vg_aes_siv_init` over `v` as emitted (`Impl.AesSiv.X86.Fn.init`)
+meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.init v.expand v.callee v.suffix)
+      (Spec.Siv.initContract X86.abi 2632) 0 :=
+  verifiedScrubbedF (api := Spec.Siv.initApi) {
       suffix := v.suffix
       code := withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
       verified := init_framed v
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v) }
     (initOut _) (W := 2632) (hs := init_scrub v)
 
-/-- `vg_aes_siv_encrypt` over `v`, without secret residue. -/
-def encryptReg (v : Ctr32Impl) : Registration Spec.Siv.encryptApi target :=
-  scrubFOf {
+/-- `vg_aes_siv_encrypt` over `v` as emitted (`Impl.AesSiv.X86.Fn.encrypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem encrypt_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.encrypt v.callee v.suffix)
+      (Spec.Siv.encryptContract X86.abi 2672) 0 :=
+  verifiedScrubbedF (api := Spec.Siv.encryptApi) {
       suffix := v.suffix
       code := withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v) }
     (encryptOut _) (W := 2672) (hs := encrypt_scrub v)
 
-/-- `vg_aes_siv_decrypt` over `v`, without secret residue. -/
-def decryptReg (v : Ctr32Impl) : Registration Spec.Siv.decryptApi target :=
-  scrubFOf {
+/-- `vg_aes_siv_decrypt` over `v` as emitted (`Impl.AesSiv.X86.Fn.decrypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem decrypt_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix)
+      (Spec.Siv.decryptContract X86.abi 2672) 32 :=
+  verifiedScrubbedF (api := Spec.Siv.decryptApi) {
       suffix := v.suffix
       code := withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v) }
     (decryptOut _) (W := 2672) (hs := decrypt_scrub v)
+
+/-- `Impl.AesSiv.X86.Fn.init` writes `esp` only in its frames and calls. -/
+theorem init_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesSiv.X86.Fn.init v.expand v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v))
+
+/-- `Impl.AesSiv.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
+theorem encrypt_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesSiv.X86.Fn.encrypt v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v))
+
+/-- `Impl.AesSiv.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
+theorem decrypt_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v))
 
 end VG.Proof.AesSiv.X86.Scrub

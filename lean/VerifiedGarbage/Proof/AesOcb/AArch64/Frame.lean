@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.Aes.ScrubLocal
@@ -1641,22 +1642,23 @@ theorem init_keepsV (v : BlocksImpl) : (init (callees v)).allInstrs keepsV = tru
 
 /-- The working space of `seal` and `open` over `v`: the 512 bytes the code
 uses itself, then its callee's (`BlocksImpl.scratch`). -/
-def sealT (v : BlocksImpl) : Nat := 512 + v.scratch
+def sealT (v : BlocksImpl) : Nat := Impl.AesOcb.AArch64.Fn.cryptWork v.scratch
 
 theorem sealT_cases (v : BlocksImpl) : sealT v = 512 ∨ sealT v = 2560 := by
-  rcases v.scratch_ok with h | h <;> simp [sealT, h]
+  rcases v.scratch_ok with h | h <;> simp [sealT, Impl.AesOcb.AArch64.Fn.cryptWork, h]
 
-theorem sealT_hv (v : BlocksImpl) : v.scratch ≤ sealT v - 512 := by simp [sealT]
+theorem sealT_hv (v : BlocksImpl) : v.scratch ≤ sealT v - 512 := by
+  simp [sealT, Impl.AesOcb.AArch64.Fn.cryptWork]
 
 /-- The scratch of `init` over `v`: as `sealT`, but at least the 512 bytes
 key expansion needs after the code's. -/
-def initT (v : BlocksImpl) : Nat := if v.scratch = 0 then 1024 else 2560
+def initT (v : BlocksImpl) : Nat := Impl.AesOcb.AArch64.Fn.initWork v.scratch
 
 theorem initT_cases (v : BlocksImpl) : initT v = 1024 ∨ initT v = 2560 := by
-  unfold initT; split <;> simp
+  unfold initT Impl.AesOcb.AArch64.Fn.initWork; split <;> simp
 
 theorem initT_hv (v : BlocksImpl) : v.scratch ≤ initT v - 512 := by
-  rcases v.scratch_ok with h | h <;> simp [initT, h]
+  rcases v.scratch_ok with h | h <;> simp [initT, Impl.AesOcb.AArch64.Fn.initWork, h]
 
 theorem seal_correct {T : Nat} (v : BlocksImpl) (hT : 512 ≤ T ∧ T ≤ 2560) (hv : v.scratch ≤ T - 512)
     (s : State) (hs : (sealAArch64 T).pre s) :
@@ -1827,7 +1829,8 @@ space and the working space, at the next 16-byte boundary
 the return address in `x30`. `open`'s leak, whether it succeeds, reads only
 its buffers (`openLeak_local`). Each postcondition reads the memory on
 return only within the function's buffers, so the whole frame is zeroed on
-return (`ScrubAll.withScrubAll`: `initReg`, `sealReg`, `openReg`).
+return (`init_scrubbed`, `seal_scrubbed`, `open_scrubbed`, of the functions
+as emitted, `Impl.AesOcb.AArch64.Fn`).
 -/
 
 @[expose] public section
@@ -2008,33 +2011,148 @@ theorem openOk (W : Nat) :
       rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
-/-- `vg_aes_ocb_init` over `v` in its frame (`init_framed`), scrubbed whole:
-1024 bytes over implementations that need no working space, else 2560. -/
-def initReg (v : BlocksImpl) : Registration Spec.Ocb.initApi AArch64.target :=
-  ScrubAll.withScrubAll
+/-! ## The functions, as emitted
+
+`vg_aes_ocb_init`, `vg_aes_ocb_seal` and `vg_aes_ocb_open` with their cleanup
+(`Impl.AesOcb.AArch64.Fn`): each meets its contract in constant time and
+returns without secret residue (`VerifiedScrubbed`), which is what its
+registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the functions it calls,
+and of each implementation where it is defined (`BlocksImpl.encScrub`,
+`decScrub`, `expandScrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem init_all {p : Instr → Bool} (B : Nat) (c : Callees)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩)) = true)
+    (hk : sideAll p c.key.code = true) (he : sideAll p c.enc.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init c)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, init, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hk, he, and_self]
+
+private theorem seal_all {p : Instr → Bool} (B : Nat) (c : Callees)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩)) = true)
+    (he : sideAll p c.enc.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» c)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», front, tagOut, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
+    whole, passFast, rest, padCk, xorPad, tag, callBlocks, sideAll, Bool.and_eq_true, ↓reduceIte] at h0 ⊢
+  simp only [h0, he, and_self]
+
+private theorem open_all {p : Instr → Bool} (B : Nat) (c : Callees)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩)) = true)
+    (he : sideAll p c.enc.code = true) (hd : sideAll p c.dec.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» c)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «open», front, recv, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
+    whole, passFast, rest, padCk, xorPad, tag, cmp, mask, callBlocks, sideAll, Bool.and_eq_true, Bool.false_eq_true, ↓reduceIte] at h0 ⊢
+  simp only [h0, he, hd, and_self]
+
+private theorem init_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩))
+      Impl.AesOcb.AArch64.Fn.initOwn = true := by
+  kernel_rfl
+
+private theorem seal_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩))
+      Impl.AesOcb.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem open_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩))
+      Impl.AesOcb.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem init_depth (c : Callees) (hk : c.key.code.aarch64Depth = 0) (he : c.enc.code.aarch64Depth = 0) :
+    (init c).aarch64Depth = 0 := by
+  simp only [init, Code.aarch64Depth, hk, he]
+  decide
+
+private theorem seal_depth (c : Callees) (he : c.enc.code.aarch64Depth = 0) : («seal» c).aarch64Depth = 0 := by
+  simp only [«seal», front, tagOut, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
+    whole, passFast, rest, padCk, xorPad, tag, callBlocks, Code.aarch64Depth, he, ↓reduceIte]
+  decide
+
+private theorem open_depth (c : Callees) (he : c.enc.code.aarch64Depth = 0) (hd : c.dec.code.aarch64Depth = 0) :
+    («open» c).aarch64Depth = 0 := by
+  simp only [«open», front, recv, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
+    whole, passFast, rest, padCk, xorPad, tag, cmp, mask, callBlocks, Code.aarch64Depth, he, hd, Bool.false_eq_true, ↓reduceIte]
+  decide
+
+theorem init_side (v : BlocksImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))) (initT v) 0
+      ((Impl.AesOcb.AArch64.Fn.initOwn.union v.expand.clear).union v.enc.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (init_all _ (callees v) (sideAll_union_left (sideAll_union_left (init_own _)))
+      (sideAll_union_left (sideAll_union_right v.expandScrub)) (sideAll_union_right v.encScrub))
+    (linkRegs_union (by decide))
+  · rcases initT_cases v with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      init_depth (callees v) (Proof.Aes.AArch64.depth_of_noFrames v.expandNoFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames)]
+    rcases initT_cases v with h | h <;> rw [h] <;> decide
+
+theorem seal_side (v : BlocksImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))) (sealT v + 32) 0
+      (Impl.AesOcb.AArch64.Fn.cryptOwn.union v.enc.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (seal_all _ (callees v) (sideAll_union_left (seal_own _)) (sideAll_union_right v.encScrub)) (by decide)
+  · rcases sealT_cases v with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, Code.aarch64Depth, Instr.frameUnits,
+      seal_depth (callees v) (Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames)]
+    rcases sealT_cases v with h | h <;> rw [h] <;> decide
+
+theorem open_side (v : BlocksImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))) (sealT v + 32) 32
+      ((Impl.AesOcb.AArch64.Fn.cryptOwn.union v.enc.clear).union v.dec.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (open_all _ (callees v) (sideAll_union_left (sideAll_union_left (open_own _)))
+      (sideAll_union_left (sideAll_union_right v.encScrub)) (sideAll_union_right v.decScrub))
+    (linkRegs_union (by decide))
+  · rcases sealT_cases v with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, Code.aarch64Depth, Instr.frameUnits,
+      open_depth (callees v) (Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.decNoFrames)]
+    rcases sealT_cases v with h | h <;> rw [h] <;> decide
+
+/-- `vg_aes_ocb_init` over `v` as emitted, cleanup included: its frame is 1024
+bytes over implementations that need no working space, else 2560. -/
+theorem init_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesOcb.AArch64.Fn.init (callees v))
+      (Spec.Ocb.initContract AArch64.abi (initT v)) 0 := by
+  unfold Impl.AesOcb.AArch64.Fn.init
+  rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
+  exact verifiedScrubbed (api := Spec.Ocb.initApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))
       verified := init_framed v
       consts := []
-      stack := initT v } (initOk _ (by rcases initT_cases v with h | h <;> rw [h] <;> decide))
+      stack := initT v } _ (initOk _ (by rcases initT_cases v with h | h <;> rw [h] <;> decide)) (init_side v)
 
-/-- `vg_aes_ocb_seal` over `v` in its frame (`seal_framed`), scrubbed whole:
-544 bytes over implementations that need no working space, else 2592. -/
-def sealReg (v : BlocksImpl) : Registration Spec.Ocb.sealApi AArch64.target :=
-  ScrubAll.withScrubAll
+/-- `vg_aes_ocb_seal` over `v` as emitted, cleanup included: its frame is 544
+bytes over implementations that need no working space, else 2592. -/
+theorem seal_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesOcb.AArch64.Fn.seal (callees v))
+      (Spec.Ocb.sealContract AArch64.abi (sealT v + 32)) 0 := by
+  unfold Impl.AesOcb.AArch64.Fn.seal
+  rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
+  exact verifiedScrubbed (api := Spec.Ocb.sealApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))
       verified := Proof.AesOcb.seal_keyed (seal_framed v)
       consts := []
-      stack := sealT v + 32 } (sealOk _)
+      stack := sealT v + 32 } _ (sealOk _) (seal_side v)
 
-/-- `vg_aes_ocb_open` over `v`, as `sealReg`. -/
-def openReg (v : BlocksImpl) : Registration Spec.Ocb.openApi AArch64.target :=
-  ScrubAll.withScrubAll
+/-- `vg_aes_ocb_open` over `v` as emitted, as `seal_scrubbed`. -/
+theorem open_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesOcb.AArch64.Fn.open (callees v))
+      (Spec.Ocb.openContract AArch64.abi (sealT v + 32)) 32 := by
+  unfold Impl.AesOcb.AArch64.Fn.open
+  rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
+  exact verifiedScrubbed (api := Spec.Ocb.openApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))
       verified := Proof.AesOcb.open_keyed (open_framed v)
       consts := []
-      stack := sealT v + 32 } (openOk _)
+      stack := sealT v + 32 } _ (openOk _) (open_side v)
 
 end VG.Proof.AesOcb.AArch64

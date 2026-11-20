@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # RC4 on baseline x86 (32-bit)
@@ -181,3 +183,25 @@ def apply : Prog isa :=
         (.seq (.loop (.block applyStep) .ne) (.block (finish ++ restore)))))
 
 end VG.Impl.Rc4.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+of stack below `esp` that its contract reserves zeroed, and the registers
+a callee may change cleared but the `rb` bits of the result, so that it
+returns without secret residue. -/
+
+namespace VG.Impl.Rc4.X86.Fn
+
+open VG.X86
+
+/-- `Spec.Rc4.initApi`'s function as emitted. -/
+def init : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 84 (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.init)
+
+/-- `Spec.Rc4.applyApi`'s function as emitted. -/
+def apply : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 84 (Impl.StackScratch.X86.withStackScratch 84 3 Impl.Rc4.X86.apply)
+
+end VG.Impl.Rc4.X86.Fn

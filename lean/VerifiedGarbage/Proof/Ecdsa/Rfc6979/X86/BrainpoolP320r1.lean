@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
 import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
@@ -112,15 +113,19 @@ theorem brainpoolp320r1T_scrub (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))] stackT = true :=
   brainpoolp320r1T_scrubLaw
 
-/-- `vg_ecdsa_brainpoolp320r1_sign`, with the tables of every HMAC implementation,
-scrubbed (`X86.Scrub.scrubFOf`), returning without secret residue. -/
-def brainpoolp320r1SignReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
+/-- `vg_ecdsa_brainpoolp320r1_sign` as emitted (`Impl.Ecdsa.X86.Fn.signBrainpoolP320r1`), with
+the tables of every HMAC implementation, meets its contract in constant time and returns without
+secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
     (hv : OK (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants) ∧
       "VG_BRAINPOOLP320R1_COMB" ∉ Proof.HmacTable.X86.names
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi X86.target :=
-  X86.Scrub.scrubFOf {
-      tables := [("hmac", Proof.HmacTable.X86.tables
+    VerifiedScrubbed X86.target
+      (Impl.Ecdsa.X86.Fn.signBrainpoolP320r1 (Proof.HmacTable.X86.fnsOf (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)))
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1 Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts
+        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)) 32 :=
+  X86.Scrub.verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86.tables
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))]
       code := signCodeT (brainpoolp320r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)
@@ -129,6 +134,6 @@ def brainpoolp320r1SignReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
       spSafe := signCode_sp _ _ _ }
     (Proof.Ecdsa.Rfc6979.X86.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
       Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts _)
-    stackT (brainpoolp320r1T_scrub hL)
+    (hs := brainpoolp320r1T_scrub hL)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

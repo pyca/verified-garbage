@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # XTS-AES of whole data units: x86 (32-bit) implementation
@@ -151,3 +152,23 @@ def decrypt (e d : Blocks) : Prog isa :=
     (.seq (.ite .e (.seq (.block argsAll) (xcall d)) (decSteal d)) (.block restore)))
 
 end VG.Impl.AesXts.X86Unit
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesXts.X86Unit.Fn
+
+open VG.X86
+open VG.Impl.Aes.X86 (Blocks)
+
+/-- `vg_aes_xts_encrypt_unit` over the block function `f`, as emitted. -/
+def encrypt (f : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 52 (Impl.AesXts.X86Unit.encrypt f)
+
+/-- `vg_aes_xts_decrypt_unit` over the block functions `e` and `d`, as emitted. -/
+def decrypt (e d : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 52 (Impl.AesXts.X86Unit.decrypt e d)
+
+end VG.Impl.AesXts.X86Unit.Fn

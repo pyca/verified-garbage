@@ -393,14 +393,25 @@ theorem clearAll_keeps (c : Prog isa) : Clear.all.Keeps c :=
   ⟨fun _ h h' => absurd h h', fun _ h => by
     rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ <;> exact absurd h h'⟩
 
-/-- What the tail after `c` clears: the general-purpose registers of
-`allGprs` that an instruction of `c` (callees included) may write, and the
-link registers if `c` calls; the vector registers of `allVecs` and of
-`hiVecs` that one may write. -/
-def _root_.VG.Impl.Residue.AArch64.Clear.of (c : Prog isa) : Clear where
-  gprs := allGprs.filter fun q => (instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)
-  vecs := allVecs.filter fun w => (instrs c).any fun i => vdstOf i == some w
-  his := hiVecs.filter fun w => (instrs c).any fun i => vdstOf i == some w
+theorem codeInstrs_eq (c : Prog isa) : codeInstrs c = instrs c := by
+  induction c with
+  | block is => rfl
+  | seq a b iha ihb => simp only [codeInstrs, instrs, iha, ihb]
+  | ite _ t e iht ihe => simp only [codeInstrs, instrs, iht, ihe]
+  | loop b _ ih => simp only [codeInstrs, instrs, ih]
+  | call _ b ih => simp only [codeInstrs, instrs, ih]
+  | frame i b j ih => simp only [codeInstrs, instrs, ih]
+  | icall i _ b n ihb ihn => simp only [codeInstrs, instrs, ihb, ihn]
+
+theorem codeNoCalls_eq (c : Prog isa) : codeNoCalls c = c.noCalls := by
+  induction c with
+  | block is => rfl
+  | seq a b iha ihb => simp only [codeNoCalls, Code.noCalls, iha, ihb]
+  | ite _ t e iht ihe => simp only [codeNoCalls, Code.noCalls, iht, ihe]
+  | loop b _ ih => simp only [codeNoCalls, Code.noCalls, ih]
+  | call _ b ih => rfl
+  | frame i b j ih => rfl
+  | icall i _ b n ihb ihn => rfl
 
 theorem _root_.VG.Impl.Residue.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=
   ⟨fun _ h => (List.mem_filter.mp h).1, fun _ h => (List.mem_filter.mp h).1,
@@ -409,7 +420,7 @@ theorem _root_.VG.Impl.Residue.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c)
 theorem _root_.VG.Impl.Residue.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c).Keeps c := by
   refine ⟨fun q hq hn s t u e => ?_, fun w hw s t u e => ?_⟩
   · have hf : ¬ ((instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)) = true :=
-      fun h => hn (List.mem_filter.mpr ⟨hq, h⟩)
+      fun h => hn (List.mem_filter.mpr ⟨hq, by rw [codeInstrs_eq, codeNoCalls_eq]; exact h⟩)
     simp only [Bool.or_eq_true, Bool.and_eq_true, Bool.not_eq_true', List.any_eq_true, not_or,
       not_exists, not_and, Bool.not_eq_true, List.contains_iff_mem] at hf
     refine Exec.gpr (fun i hi => ?_) e ?_
@@ -419,8 +430,8 @@ theorem _root_.VG.Impl.Residue.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of
       · exact .inr (fun hl => hf.2 (by simpa using hc) hl)
   · refine Exec.vec (fun i hi he => ?_) e
     rcases hw with ⟨ha, hn⟩ | ⟨ha, hn⟩
-    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
-    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
+    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, by rw [codeInstrs_eq]; exact hi, by simp [he]⟩⟩)
+    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, by rw [codeInstrs_eq]; exact hi, by simp [he]⟩⟩)
 
 /-- `x1` after the clearing agrees in two runs whose registers agree on entry. -/
 theorem clearedX1_agree {cl : Clear} {c : Prog isa} (hk : cl.Keeps c) {s₁ s₂ u₁ u₂ : State}

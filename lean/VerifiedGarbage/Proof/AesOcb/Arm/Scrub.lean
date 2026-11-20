@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.AesOcb.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 public import VerifiedGarbage.Proof.AesOcb.Arm.Init
@@ -8,7 +9,8 @@ import VerifiedGarbage.Proof.AesOcb.Scratch
 import VerifiedGarbage.Proof.AesGcm.Arm.Scrub
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.AesOcb.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Init
@@ -25,12 +27,14 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 within the stack their contracts reserve and make no indirect call
 (evaluated by `lit_decide`), and their postconditions read the memory on
 return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
-`Proof/AesOcb/PPC64LE/Scrub.lean`). Each is registered followed by a wipe of
+`Proof/AesOcb/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe of
 that stack and by instructions that set the registers a callee may change,
-but the result, and the flags to constants (`Arm.Scrub.scrubRegF`).
+but the result, and the flags to constants (`Impl.AesOcb.Arm.Fn`), and `Fn` below states
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): the 2568 and 2600
-bytes the proofs are stated with are not, and the functions are registered
+bytes the proofs are stated with are not, and the functions are stated
 with 2576 and 2608 (`Arm.Scrub.Verified.stack_le`), whose preconditions the
 same states as before satisfy.
 -/
@@ -106,44 +110,45 @@ theorem openSat : ∃ s, (Proof.AesOcb.openRoundsContract Arm.abi 2608).pre s :=
     using Proof.AesOcb.Arm.openFrameSat
 
 theorem init_code :
-    armStack (Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init) ≤ 2576 ∧
-      noIcall (Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init) = true := by
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init) 2576 := by
   lit_decide
 
 theorem seal_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal») ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 «seal») 2608 := by
   lit_decide
 
 theorem open_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») 2608 := by
   lit_decide
 
-/-! ## The registrations -/
+end VG.Proof.AesOcb.Arm.Scrub
+
+namespace VG.Proof.AesOcb.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.AesOcb.Arm
 
 /-- `vg_aes_ocb_init`. -/
-def initReg : Registration Spec.Ocb.initApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
-      verified := (Verified.stack_le (by decide) Proof.AesOcb.Arm.init_framed initSat :
+theorem init : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.init (Spec.Ocb.initContract abi 2576) 0 :=
+  verifiedScrubbedF (api := Spec.Ocb.initApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
+      verified := (Verified.stack_le (by decide) Proof.AesOcb.Arm.init_framed Scrub.initSat :
         Verified Arm.target _ (Spec.Ocb.initContract Arm.abi 2576)) }
-    init_code.1 init_code.2 frameOk_2576 (initOut _) rfl
+    (Scrub.initOut _) (scrubSideF_of Scrub.init_code Scrub.frameOk_2576 _)
 
 /-- `vg_aes_ocb_seal`. -/
-def sealReg : Registration Spec.Ocb.sealApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 «seal»
-      verified := Proof.AesOcb.seal_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.seal_framed sealSat :
+theorem «seal» : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.«seal» (Spec.Ocb.sealContract abi 2608) 0 :=
+  verifiedScrubbedF (api := Spec.Ocb.sealApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«seal»
+      verified := Proof.AesOcb.seal_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.seal_framed Scrub.sealSat :
         Verified Arm.target _ (Proof.AesOcb.sealRoundsContract Arm.abi 2608)) }
-    seal_code.1 seal_code.2 frameOk_2608 (sealOut _) rfl
+    (Scrub.sealOut _) (scrubSideF_of Scrub.seal_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_ocb_open`. -/
-def openReg : Registration Spec.Ocb.openApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 «open»
-      verified := Proof.AesOcb.open_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.open_framed openSat :
+theorem «open» : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.«open» (Spec.Ocb.openContract abi 2608) 32 :=
+  verifiedScrubbedF (api := Spec.Ocb.openApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«open»
+      verified := Proof.AesOcb.open_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.open_framed Scrub.openSat :
         Verified Arm.target _ (Proof.AesOcb.openRoundsContract Arm.abi 2608)) }
-    open_code.1 open_code.2 frameOk_2608 (openOut _) rfl
+    (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_2608 _)
 
-end VG.Proof.AesOcb.Arm.Scrub
+end VG.Proof.AesOcb.Arm.Fn

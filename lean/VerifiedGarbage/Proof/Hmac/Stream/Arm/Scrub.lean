@@ -1,31 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 import VerifiedGarbage.Proof.Hmac.AnyKey
 import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Sha1.Arm.Lit
-import VerifiedGarbage.Proof.Sha256.Arm.Lit
-import VerifiedGarbage.Proof.Sha512.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 meta import VerifiedGarbage.Proof.Hmac.AnyKey
 meta import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
-meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
-meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
-# HMAC on ARMv7, without secret residue
+# HMAC on ARMv7, as emitted
 
 Each hash's HMAC `init` and `finalize` keep their working space in frames
 (`init`'s for a key of any length wiped by its own code,
@@ -33,12 +24,16 @@ Each hash's HMAC `init` and `finalize` keep their working space in frames
 postconditions read the memory on return only within their buffers
 (`Arm.Scrub.PostOut`, from the lemmas of `Proof/Hmac/AnyKey.lean` and
 `Proof/Hmac/Scratch.lean` that the other targets use too: `initOutArm`,
-`finOutArm`, once for every hash). Each is registered followed by a wipe of
-the stack its contract reserves and by instructions that set the registers a
+`finOutArm`, once for every hash). Each is emitted followed by a wipe of the
+stack its contract reserves and by instructions that set the registers a
 callee may change, but the result, and the flags to constants
-(`Arm.Scrub.scrubRegF`). `init`'s proof reserves `24 + anyFrame I` bytes,
-which is no frame size of the model (`FrameOk`), so it is registered with the
-next multiple of 32 that is (`Arm.Scrub.Verified.stack_le`).
+(`Impl.Hmac.Stream.Arm.Fn`), and `Fn` below states that it returns without
+secret residue (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+What that cleanup needs of the code follows from what the hash function's
+own code gives (`MdOk`, `Proof/Hmac/Stream/Arm/CodeOk.lean`). `init`'s proof
+reserves `24 + anyFrame I` bytes, which is no frame size of the model
+(`FrameOk`), so its contract reserves the next multiple of 32 that is
+(`Arm.Scrub.Verified.stack_le`).
 
 ECDSA's table of HMAC functions (`Proof/Ecdsa/Rfc6979/Arm/Blocks.lean`,
 `tableOf`) names the forms that take their working space as an argument
@@ -67,26 +62,6 @@ theorem finOutArm (I : Spec.Hmac.Instance) (stack : Nat) :
 
 /-! ## md5 -/
 
-materialize_code md5InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
-      Pbkdf2.Whole.Arm.md5F
-
-materialize_code md5FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.md5I) 1
-      Pbkdf2.Md.Arm.md5Md.hmacFin
-
-theorem md5_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
-      Pbkdf2.Whole.Arm.md5F) ≤ 1088 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
-      Pbkdf2.Whole.Arm.md5F) = true := by
-  lit_decide
-
-theorem md5_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.md5I) 1
-      Pbkdf2.Md.Arm.md5Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.md5I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.md5I) 1
-      Pbkdf2.Md.Arm.md5Md.hmacFin) = true := by
-  lit_decide
-
 theorem md5_initSatArm : ∃ s, (Spec.Hmac.md5I.initAnyKeyContract abi 1088).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
       Spec.Hmac.initPost, Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, Spec.Hmac.Instance.initAnyKeyScratch,
@@ -102,45 +77,7 @@ theorem md5_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I 
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.md5I.initAnyKeyApi`, with its stack wiped on return. -/
-def md5InitRegArm : Registration Spec.Hmac.md5I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
-          Pbkdf2.Whole.Arm.md5F
-      verified := md5_initArm }
-    md5_initCodeArm.1 md5_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.md5I Hmac.md5_local (by decide) _) rfl
-
-/-- `Spec.Hmac.md5I.finalizeApi`, with its stack wiped on return. -/
-def md5FinRegArm : Registration Spec.Hmac.md5I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.md5I) 1
-          Pbkdf2.Md.Arm.md5Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.md5_finalize Hmac.md5_local
-        Pbkdf2.Md.Arm.md5_finFrameSat }
-    md5_finCodeArm.1 md5_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.md5I _) rfl
-
 /-! ## sha1 -/
-
-materialize_code sha1InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
-      Pbkdf2.Whole.Arm.sha1F
-
-materialize_code sha1FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 1
-      Pbkdf2.Md.Arm.sha1Md.hmacFin
-
-theorem sha1_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
-      Pbkdf2.Whole.Arm.sha1F) ≤ 1184 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
-      Pbkdf2.Whole.Arm.sha1F) = true := by
-  lit_decide
-
-theorem sha1_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 1
-      Pbkdf2.Md.Arm.sha1Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 1
-      Pbkdf2.Md.Arm.sha1Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha1_initSatArm : ∃ s, (Spec.Hmac.sha1I.initAnyKeyContract abi 1184).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -157,45 +94,7 @@ theorem sha1_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha1I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha1InitRegArm : Registration Spec.Hmac.sha1I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
-          Pbkdf2.Whole.Arm.sha1F
-      verified := sha1_initArm }
-    sha1_initCodeArm.1 sha1_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha1I Hmac.sha1_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha1I.finalizeApi`, with its stack wiped on return. -/
-def sha1FinRegArm : Registration Spec.Hmac.sha1I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 1
-          Pbkdf2.Md.Arm.sha1Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha1_finalize Hmac.sha1_local
-        Pbkdf2.Md.Arm.sha1_finFrameSat }
-    sha1_finCodeArm.1 sha1_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha1I _) rfl
-
 /-! ## sha224 -/
-
-materialize_code sha224InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha224F
-
-materialize_code sha224FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 1
-      Pbkdf2.Md.Arm.sha224Md.hmacFin
-
-theorem sha224_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha224F) ≤ 1664 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha224F) = true := by
-  lit_decide
-
-theorem sha224_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 1
-      Pbkdf2.Md.Arm.sha224Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 1
-      Pbkdf2.Md.Arm.sha224Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha224_initSatArm : ∃ s, (Spec.Hmac.sha224I.initAnyKeyContract abi 1664).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -212,45 +111,7 @@ theorem sha224_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sh
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha224I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha224InitRegArm : Registration Spec.Hmac.sha224I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
-          Pbkdf2.Whole.Arm.sha224F
-      verified := sha224_initArm }
-    sha224_initCodeArm.1 sha224_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha224I Hmac.sha224_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha224I.finalizeApi`, with its stack wiped on return. -/
-def sha224FinRegArm : Registration Spec.Hmac.sha224I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 1
-          Pbkdf2.Md.Arm.sha224Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha224_finalize Hmac.sha224_local
-        Pbkdf2.Md.Arm.sha224_finFrameSat }
-    sha224_finCodeArm.1 sha224_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha224I _) rfl
-
 /-! ## sha256 -/
-
-materialize_code sha256InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha256F
-
-materialize_code sha256FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
-      Pbkdf2.Md.Arm.sha256Md.hmacFin
-
-theorem sha256_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha256F) ≤ 1664 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha256F) = true := by
-  lit_decide
-
-theorem sha256_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
-      Pbkdf2.Md.Arm.sha256Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
-      Pbkdf2.Md.Arm.sha256Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha256_initSatArm : ∃ s, (Spec.Hmac.sha256I.initAnyKeyContract abi 1664).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -267,45 +128,7 @@ theorem sha256_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sh
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha256I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha256InitRegArm : Registration Spec.Hmac.sha256I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
-          Pbkdf2.Whole.Arm.sha256F
-      verified := sha256_initArm }
-    sha256_initCodeArm.1 sha256_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha256I Hmac.sha256_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha256I.finalizeApi`, with its stack wiped on return. -/
-def sha256FinRegArm : Registration Spec.Hmac.sha256I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
-          Pbkdf2.Md.Arm.sha256Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha256_finalize Hmac.sha256_local
-        Pbkdf2.Md.Arm.sha256_finFrameSat }
-    sha256_finCodeArm.1 sha256_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha256I _) rfl
-
 /-! ## sha384 -/
-
-materialize_code sha384InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
-      Pbkdf2.Whole.Arm.sha384F
-
-materialize_code sha384FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1
-      Pbkdf2.Md.Arm.sha384Md.hmacFin
-
-theorem sha384_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
-      Pbkdf2.Whole.Arm.sha384F) ≤ 3456 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
-      Pbkdf2.Whole.Arm.sha384F) = true := by
-  lit_decide
-
-theorem sha384_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1
-      Pbkdf2.Md.Arm.sha384Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1
-      Pbkdf2.Md.Arm.sha384Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha384_initSatArm : ∃ s, (Spec.Hmac.sha384I.initAnyKeyContract abi 3456).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -322,45 +145,7 @@ theorem sha384_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sh
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha384I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha384InitRegArm : Registration Spec.Hmac.sha384I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
-          Pbkdf2.Whole.Arm.sha384F
-      verified := sha384_initArm }
-    sha384_initCodeArm.1 sha384_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha384I Hmac.sha384_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha384I.finalizeApi`, with its stack wiped on return. -/
-def sha384FinRegArm : Registration Spec.Hmac.sha384I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1
-          Pbkdf2.Md.Arm.sha384Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha384_finalize Hmac.sha384_local
-        Pbkdf2.Md.Arm.sha384_finFrameSat }
-    sha384_finCodeArm.1 sha384_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha384I _) rfl
-
 /-! ## sha512 -/
-
-materialize_code sha512InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
-      Pbkdf2.Whole.Arm.sha512F
-
-materialize_code sha512FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1
-      Pbkdf2.Md.Arm.sha512Md'.hmacFin
-
-theorem sha512_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
-      Pbkdf2.Whole.Arm.sha512F) ≤ 3456 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
-      Pbkdf2.Whole.Arm.sha512F) = true := by
-  lit_decide
-
-theorem sha512_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1
-      Pbkdf2.Md.Arm.sha512Md'.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1
-      Pbkdf2.Md.Arm.sha512Md'.hmacFin) = true := by
-  lit_decide
 
 theorem sha512_initSatArm : ∃ s, (Spec.Hmac.sha512I.initAnyKeyContract abi 3456).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -377,45 +162,7 @@ theorem sha512_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sh
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha512I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha512InitRegArm : Registration Spec.Hmac.sha512I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
-          Pbkdf2.Whole.Arm.sha512F
-      verified := sha512_initArm }
-    sha512_initCodeArm.1 sha512_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha512I Hmac.sha512_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha512I.finalizeApi`, with its stack wiped on return. -/
-def sha512FinRegArm : Registration Spec.Hmac.sha512I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512I) 1
-          Pbkdf2.Md.Arm.sha512Md'.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_finalize Hmac.sha512_local
-        Pbkdf2.Md.Arm.sha512_finFrameSat }
-    sha512_finCodeArm.1 sha512_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha512I _) rfl
-
 /-! ## sha512_224 -/
-
-materialize_code sha512_224InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_224F
-
-materialize_code sha512_224FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_224I) 1
-      Pbkdf2.Md.Arm.sha512_224Md.hmacFin
-
-theorem sha512_224_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_224F) ≤ 3456 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_224F) = true := by
-  lit_decide
-
-theorem sha512_224_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_224I) 1
-      Pbkdf2.Md.Arm.sha512_224Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_224I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_224I) 1
-      Pbkdf2.Md.Arm.sha512_224Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha512_224_initSatArm : ∃ s, (Spec.Hmac.sha512_224I.initAnyKeyContract abi 3456).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -432,45 +179,7 @@ theorem sha512_224_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hma
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha512_224I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha512_224InitRegArm : Registration Spec.Hmac.sha512_224I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
-          Pbkdf2.Whole.Arm.sha512_224F
-      verified := sha512_224_initArm }
-    sha512_224_initCodeArm.1 sha512_224_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha512_224I Hmac.sha512_224_local (by decide) _) rfl
-
-/-- `Spec.Hmac.sha512_224I.finalizeApi`, with its stack wiped on return. -/
-def sha512_224FinRegArm : Registration Spec.Hmac.sha512_224I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_224I) 1
-          Pbkdf2.Md.Arm.sha512_224Md.hmacFin
-      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_224_finalize Hmac.sha512_224_local
-        Pbkdf2.Md.Arm.sha512_224_finFrameSat }
-    sha512_224_finCodeArm.1 sha512_224_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha512_224I _) rfl
-
 /-! ## sha512_256 -/
-
-materialize_code sha512_256InitCodeArm := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_256F
-
-materialize_code sha512_256FinCodeArm := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 1
-      Pbkdf2.Md.Arm.sha512_256Md.hmacFin
-
-theorem sha512_256_initCodeArm :
-    armStack (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_256F) ≤ 3456 ∧
-    noIcall (Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
-      Pbkdf2.Whole.Arm.sha512_256F) = true := by
-  lit_decide
-
-theorem sha512_256_finCodeArm :
-    armStack (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 1
-      Pbkdf2.Md.Arm.sha512_256Md.hmacFin) ≤ 16 + Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I ∧
-    noIcall (Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 1
-      Pbkdf2.Md.Arm.sha512_256Md.hmacFin) = true := by
-  lit_decide
 
 theorem sha512_256_initSatArm : ∃ s, (Spec.Hmac.sha512_256I.initAnyKeyContract abi 3456).pre s := by
   implies_sat [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -487,22 +196,170 @@ theorem sha512_256_initArm : Verified target (Pbkdf2.Whole.Arm.initCode Spec.Hma
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract at hv hs ⊢
   exact Verified.stack_le (by decide) hv hs
 
-/-- `Spec.Hmac.sha512_256I.initAnyKeyApi`, with its stack wiped on return. -/
-def sha512_256InitRegArm : Registration Spec.Hmac.sha512_256I.initAnyKeyApi target :=
-  scrubRegF
-    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
-          Pbkdf2.Whole.Arm.sha512_256F
-      verified := sha512_256_initArm }
-    sha512_256_initCodeArm.1 sha512_256_initCodeArm.2 (by decide)
-    (initOutArm Spec.Hmac.sha512_256I Hmac.sha512_256_local (by decide) _) rfl
+end VG.Proof.Hmac.Stream.Arm.Scrub
 
-/-- `Spec.Hmac.sha512_256I.finalizeApi`, with its stack wiped on return. -/
-def sha512_256FinRegArm : Registration Spec.Hmac.sha512_256I.finalizeApi target :=
-  scrubRegF
-    { code := Impl.StackScratch.Arm.withStackScratch (Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 1
-          Pbkdf2.Md.Arm.sha512_256Md.hmacFin
+namespace VG.Proof.Hmac.Stream.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Proof.Hmac.Stream.Arm VG.Proof.Hmac.Stream.Arm.Scrub
+
+/-- `vg_hmac_md5_init`. -/
+theorem initMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initMd5
+    (Spec.Hmac.md5I.initAnyKeyContract abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.md5I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
+        Pbkdf2.Whole.Arm.md5F
+      verified := md5_initArm }
+    (initOutArm Spec.Hmac.md5I Hmac.md5_local (by decide) _)
+    (scrubSideF_of (md5_mdOk.initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_md5_finalize`. -/
+theorem finalizeMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeMd5
+    (Spec.Hmac.md5I.finalizeContract abi 432) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.md5I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.md5_finalize Hmac.md5_local
+        Pbkdf2.Md.Arm.md5_finFrameSat }
+    (finOutArm Spec.Hmac.md5I _)
+    (scrubSideF_of (md5_mdOk.finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha1_init`. -/
+theorem initSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha1
+    (Spec.Hmac.sha1I.initAnyKeyContract abi 1184) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha1I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
+        Pbkdf2.Whole.Arm.sha1F
+      verified := sha1_initArm }
+    (initOutArm Spec.Hmac.sha1I Hmac.sha1_local (by decide) _)
+    (scrubSideF_of (sha1_mdOk.initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha1_finalize`. -/
+theorem finalizeSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha1
+    (Spec.Hmac.sha1I.finalizeContract abi 496) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha1I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha1_finalize Hmac.sha1_local
+        Pbkdf2.Md.Arm.sha1_finFrameSat }
+    (finOutArm Spec.Hmac.sha1I _)
+    (scrubSideF_of (sha1_mdOk.finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha224_init`. -/
+theorem initSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha224
+    (Spec.Hmac.sha224I.initAnyKeyContract abi 1664) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha224I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
+        Pbkdf2.Whole.Arm.sha224F
+      verified := sha224_initArm }
+    (initOutArm Spec.Hmac.sha224I Hmac.sha224_local (by decide) _)
+    (scrubSideF_of (sha224_mdOk.initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha224_finalize`. -/
+theorem finalizeSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha224
+    (Spec.Hmac.sha224I.finalizeContract abi 880) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha224I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha224_finalize Hmac.sha224_local
+        Pbkdf2.Md.Arm.sha224_finFrameSat }
+    (finOutArm Spec.Hmac.sha224I _)
+    (scrubSideF_of (sha224_mdOk.finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha256_init`. -/
+theorem initSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha256
+    (Spec.Hmac.sha256I.initAnyKeyContract abi 1664) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha256I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
+        Pbkdf2.Whole.Arm.sha256F
+      verified := sha256_initArm }
+    (initOutArm Spec.Hmac.sha256I Hmac.sha256_local (by decide) _)
+    (scrubSideF_of (sha256_mdOk.initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha256_finalize`. -/
+theorem finalizeSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha256
+    (Spec.Hmac.sha256I.finalizeContract abi 880) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha256I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha256_finalize Hmac.sha256_local
+        Pbkdf2.Md.Arm.sha256_finFrameSat }
+    (finOutArm Spec.Hmac.sha256I _)
+    (scrubSideF_of (sha256_mdOk.finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha384_init`. -/
+theorem initSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha384
+    (Spec.Hmac.sha384I.initAnyKeyContract abi 3456) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha384I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
+        Pbkdf2.Whole.Arm.sha384F
+      verified := sha384_initArm }
+    (initOutArm Spec.Hmac.sha384I Hmac.sha384_local (by decide) _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha384_finalize`. -/
+theorem finalizeSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha384
+    (Spec.Hmac.sha384I.finalizeContract abi 1904) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha384I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha384_finalize Hmac.sha384_local
+        Pbkdf2.Md.Arm.sha384_finFrameSat }
+    (finOutArm Spec.Hmac.sha384I _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_init`. -/
+theorem initSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512
+    (Spec.Hmac.sha512I.initAnyKeyContract abi 3456) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
+        Pbkdf2.Whole.Arm.sha512F
+      verified := sha512_initArm }
+    (initOutArm Spec.Hmac.sha512I Hmac.sha512_local (by decide) _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_finalize`. -/
+theorem finalizeSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512
+    (Spec.Hmac.sha512I.finalizeContract abi 1904) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_finalize Hmac.sha512_local
+        Pbkdf2.Md.Arm.sha512_finFrameSat }
+    (finOutArm Spec.Hmac.sha512I _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_224_init`. -/
+theorem initSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512_224
+    (Spec.Hmac.sha512_224I.initAnyKeyContract abi 3456) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
+        Pbkdf2.Whole.Arm.sha512_224F
+      verified := sha512_224_initArm }
+    (initOutArm Spec.Hmac.sha512_224I Hmac.sha512_224_local (by decide) _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_224_finalize`. -/
+theorem finalizeSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512_224
+    (Spec.Hmac.sha512_224I.finalizeContract abi 1904) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md
+      verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_224_finalize Hmac.sha512_224_local
+        Pbkdf2.Md.Arm.sha512_224_finFrameSat }
+    (finOutArm Spec.Hmac.sha512_224I _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).finCode_ok _ (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_256_init`. -/
+theorem initSha512_256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512_256
+    (Spec.Hmac.sha512_256I.initAnyKeyContract abi 3456) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
+    { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
+        Pbkdf2.Whole.Arm.sha512_256F
+      verified := sha512_256_initArm }
+    (initOutArm Spec.Hmac.sha512_256I Hmac.sha512_256_local (by decide) _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).initCode_ok _ (by decide) (by decide)) (by decide) _)
+
+/-- `vg_hmac_sha512_256_finalize`. -/
+theorem finalizeSha512_256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512_256
+    (Spec.Hmac.sha512_256I.finalizeContract abi 1904) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.finalizeApi)
+    { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_256_finalize Hmac.sha512_256_local
         Pbkdf2.Md.Arm.sha512_256_finFrameSat }
-    sha512_256_finCodeArm.1 sha512_256_finCodeArm.2 (by decide) (finOutArm Spec.Hmac.sha512_256I _) rfl
+    (finOutArm Spec.Hmac.sha512_256I _)
+    (scrubSideF_of ((sha512_mdOk _ _ _).finCode_ok _ (by decide)) (by decide) _)
 
-end VG.Proof.Hmac.Stream.Arm.Scrub
+end VG.Proof.Hmac.Stream.Arm.Fn

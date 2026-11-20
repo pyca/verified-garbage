@@ -11,7 +11,11 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.HmacSha512.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha512I.initAnyKeyApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.sha512InitRegArm,
-  Spec.Hmac.sha512I.finalizeApi.artifact Arm.target Proof.Hmac.Stream.Arm.Scrub.sha512FinRegArm]
+  Spec.Hmac.sha512I.initAnyKeyApi.artifact Arm.target {
+    code := Impl.Hmac.Stream.Arm.Fn.initSha512
+    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.initSha512 },
+  Spec.Hmac.sha512I.finalizeApi.artifact Arm.target {
+    code := Impl.Hmac.Stream.Arm.Fn.finalizeSha512
+    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.finalizeSha512 }]
 
 end VG.Artifacts.HmacSha512.Arm

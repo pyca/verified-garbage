@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
@@ -1433,25 +1434,8 @@ open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- The ARMv7 implementations of the primitives. -/
-def prims : Prims where
-  ntt := Impl.MlDsa.Arm.Arith.ntt
-  invNtt := Impl.MlDsa.Arm.Arith.nttInv
-  mul := Impl.MlDsa.Arm.Arith.mul
-  mulAdd := Impl.MlDsa.Arm.Arith.mulAdd
-  add := Impl.MlDsa.Arm.Arith.add
-  sub := Impl.MlDsa.Arm.Arith.sub
-  rejNTT := Impl.MlDsa.Arm.Sample.rejNTT
-  expandMask := Impl.MlDsa.Arm.Sample.expandMask
-  ball := Impl.MlDsa.Arm.Sample.sampleInBall
-  highBits := Impl.MlDsa.Arm.Round.highBits
-  lowBits := Impl.MlDsa.Arm.Round.lowBits
-  normLt := Impl.MlDsa.Arm.Round.normLt
-  makeHint := Impl.MlDsa.Arm.Round.makeHint
-  simpleBitPack := Impl.MlDsa.Arm.Pack.simpleBitPack
-  bitPack := Impl.MlDsa.Arm.Pack.bitPack
-  bitUnpack := Impl.MlDsa.Arm.Pack.bitUnpack
-  hintBitPack := Impl.MlDsa.Arm.Pack.hintBitPack
+/-- The ARMv7 implementations of the primitives (`Impl/MlDsa/Arm/Sign/Inst.lean`). -/
+def prims : Prims := Impl.MlDsa.Arm.Sign.prims
 
 /-- The stack signing may use below its stack pointer. -/
 abbrev signStack : Nat := 28

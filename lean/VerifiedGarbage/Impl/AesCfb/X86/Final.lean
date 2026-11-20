@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.AesCfb.X86
 public import VerifiedGarbage.Impl.Modes.X86.SeqFinal
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-CFB128 of a message's last piece: x86 (32-bit) implementation
@@ -96,3 +98,32 @@ def decryptFinal (b : Blocks) (sfx : String) : Prog isa :=
   final ("vg_aes_cfb128_decrypt" ++ sfx ++ "_core") (decrypt b) b
 
 end VG.Impl.AesCfb.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesCfb.X86.Fn
+
+open VG.X86
+open VG.Impl.Aes.X86 (Blocks)
+open Impl.StackScratch.X86 (withStackScratchWiped)
+
+/-- `vg_aes_cfb128_encrypt` over the block function `b`, as emitted. -/
+def encrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb.X86.encrypt b)
+
+/-- `vg_aes_cfb128_decrypt` over the block function `b`, as emitted. -/
+def decrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb.X86.decrypt b)
+
+/-- `vg_aes_cfb128_encrypt_final` over `b`, of the variant `sfx`, as emitted. -/
+def encryptFinal (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 100 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal b sfx))
+
+/-- `vg_aes_cfb128_decrypt_final` over `b`, of the variant `sfx`, as emitted. -/
+def decryptFinal (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 100 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal b sfx))
+
+end VG.Impl.AesCfb.X86.Fn

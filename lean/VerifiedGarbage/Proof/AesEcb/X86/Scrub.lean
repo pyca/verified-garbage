@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesEcb.X86
 public import VerifiedGarbage.Spec.AesEcb.Contract
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesEcb.X86
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
@@ -12,6 +14,8 @@ meta import VerifiedGarbage.Proof.AesEcb.X86
 meta import VerifiedGarbage.Spec.AesEcb.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesEcb.X86
 
 /-!
 # AES-ECB on x86 (32-bit), without secret residue
@@ -21,13 +25,15 @@ within the data and `scratch` (`encryptOut`, `decryptOut`), as on PPC64LE
 (`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and calls
 needs (`X86.Scrub.PostOut`).
 
-Which code is registered for an implementation `v` of the block functions
-(`encryptRegs`, `decryptRegs`): where `v`'s block function writes nothing
-in `scratch` and calls nothing (AES-NI's), that function's code, with
-`X86.Scrub.scrubOf`, which clears the registers; otherwise the call of it,
-then of `vg_zeroize` on the bytes of `scratch` it writes
-(`Impl.AesEcb.X86.wiped`), with `X86.Scrub.scrubFOf`, which also zeroes its
-32 bytes of stack. What that needs of the code (`scrubFSide`) holds
+Which code is emitted for an implementation `v` of the block functions
+(`Impl.AesEcb.X86.Fn.crypt`), with its stack (`ecbStack`): where `v`'s
+block function writes nothing in `scratch` and calls nothing (AES-NI's),
+that function's code, then the clearing of the registers
+(`X86.Scrub.verifiedScrubbed`), with none; otherwise the call of it, then
+of `vg_zeroize` on the bytes of `scratch` it writes
+(`Impl.AesEcb.X86.wiped`), which also zeroes its 32 bytes of stack
+(`X86.Scrub.verifiedScrubbedF`). `encrypt_scrubbed` and `decrypt_scrubbed`
+prove each by cases. What that needs of the code (`scrubFSide`) holds
 whatever the implementation (`wiped_scrub`): from the code with a stub,
 whose block function's code and the instructions that pass `vg_zeroize`
 its length, `zeroArgs`, are `.block []` (`wipedStub`), which the kernel
@@ -118,38 +124,87 @@ theorem free_scrub (b : Impl.Aes.X86.Blocks) (hn : b.code.noCalls = true) (hc : 
     scrubSide b.code = true := by
   simp only [scrubSide, hn, ((calleeOk_iff _).mp hc).2, Bool.and_self]
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- The implementation of `vg_aes_ecb_encrypt` over `v` that is emitted:
-its block function's code where that writes nothing in `scratch` and calls
-nothing, the call wiping `scratch` otherwise. -/
-def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi X86.target) :=
-  if h : v.encWritten = 0 ∧ v.enc.code.noCalls = true then [scrubOf {
-    suffix := v.suffix
-    code := v.enc.code
-    verified := encrypt_free v h.1
-    spSafe := v.encSpSafe } (free_scrub _ h.2 v.encScrub)]
-  else [scrubFOf {
-      suffix := v.suffix
-      code := Impl.AesEcb.X86.wiped v.enc v.encWritten
-      stack := 32
-      verified := encrypt_verified v
-      spSafe := encrypt_spSafe v }
-    (encryptOut _) (W := 32) (hs := wiped_scrub _ _ v.encStack v.encScrub)]
+/-- Whether `vg_aes_ecb_encrypt` or `vg_aes_ecb_decrypt` over the block
+function `b`, which writes the first `n` bytes of `scratch`, is `b`'s own
+code (`Impl.AesEcb.X86.Fn.crypt`): where `b` writes nothing in `scratch`
+and calls nothing. -/
+def ecbFree (b : Impl.Aes.X86.Blocks) (n : Nat) : Bool := n == 0 && b.code.noCalls
 
-/-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted. -/
-def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi X86.target) :=
-  if h : v.decWritten = 0 ∧ v.dec.code.noCalls = true then [scrubOf {
-    suffix := v.suffix
-    code := v.dec.code
-    verified := decrypt_free v h.1
-    spSafe := v.decSpSafe } (free_scrub _ h.2 v.decScrub)]
-  else [scrubFOf {
+/-- The stack of `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` over `b`:
+none for `b`'s own code, 32 bytes for the call wiping `scratch`. -/
+def ecbStack (b : Impl.Aes.X86.Blocks) (n : Nat) : Nat := if ecbFree b n then 0 else 32
+
+theorem ecbFree_iff {b : Impl.Aes.X86.Blocks} {n : Nat} : ecbFree b n = true ↔ n = 0 ∧ b.code.noCalls = true := by
+  simp only [ecbFree, Bool.and_eq_true, beq_iff_eq]
+
+/-- `vg_aes_ecb_encrypt` over `v` as emitted (`Impl.AesEcb.X86.Fn.crypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem encrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten)
+      (Spec.AesEcb.encryptContract X86.abi (ecbStack v.enc v.encWritten)) 0 := by
+  unfold Impl.AesEcb.X86.Fn.crypt ecbStack
+  by_cases hf : ecbFree v.enc v.encWritten = true
+  · have h := ecbFree_iff.mp hf
+    rw [ite_eq_left hf, ite_eq_left hf]
+    exact verifiedScrubbed (api := Spec.AesEcb.encryptApi) {
       suffix := v.suffix
-      code := Impl.AesEcb.X86.wiped v.dec v.decWritten
-      stack := 32
-      verified := decrypt_verified v
-      spSafe := decrypt_spSafe v }
-    (decryptOut _) (W := 32) (hs := wiped_scrub _ _ v.decStack v.decScrub)]
+      code := v.enc.code
+      verified := encrypt_free v h.1
+      spSafe := v.encSpSafe } (free_scrub _ h.2 v.encScrub)
+  · rw [ite_eq_right hf, ite_eq_right hf]
+    exact verifiedScrubbedF (api := Spec.AesEcb.encryptApi) {
+        suffix := v.suffix
+        code := Impl.AesEcb.X86.wiped v.enc v.encWritten
+        stack := 32
+        verified := encrypt_verified v
+        spSafe := encrypt_spSafe v }
+      (encryptOut _) (W := 32) (hs := wiped_scrub _ _ v.encStack v.encScrub)
+
+/-- `vg_aes_ecb_decrypt` over `v` as emitted (`Impl.AesEcb.X86.Fn.crypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem decrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten)
+      (Spec.AesEcb.decryptContract X86.abi (ecbStack v.dec v.decWritten)) 0 := by
+  unfold Impl.AesEcb.X86.Fn.crypt ecbStack
+  by_cases hf : ecbFree v.dec v.decWritten = true
+  · have h := ecbFree_iff.mp hf
+    rw [ite_eq_left hf, ite_eq_left hf]
+    exact verifiedScrubbed (api := Spec.AesEcb.decryptApi) {
+      suffix := v.suffix
+      code := v.dec.code
+      verified := decrypt_free v h.1
+      spSafe := v.decSpSafe } (free_scrub _ h.2 v.decScrub)
+  · rw [ite_eq_right hf, ite_eq_right hf]
+    exact verifiedScrubbedF (api := Spec.AesEcb.decryptApi) {
+        suffix := v.suffix
+        code := Impl.AesEcb.X86.wiped v.dec v.decWritten
+        stack := 32
+        verified := decrypt_verified v
+        spSafe := decrypt_spSafe v }
+      (decryptOut _) (W := 32) (hs := wiped_scrub _ _ v.decStack v.decScrub)
+
+/-- `Impl.AesEcb.X86.Fn.crypt` writes `esp` only in its frames and calls, if
+the block function and the call wiping `scratch` do. -/
+theorem crypt_fnSpSafe {free : Bool} {b : Impl.Aes.X86.Blocks} {n : Nat} (hb : b.code.all (fun i => !X86.isa.writesSp i) = true)
+    (hw : (Impl.AesEcb.X86.wiped b n).all (fun i => !X86.isa.writesSp i) = true) :
+    (Impl.AesEcb.X86.Fn.crypt free b n).all (fun i => !X86.isa.writesSp i) = true := by
+  unfold Impl.AesEcb.X86.Fn.crypt
+  split
+  · exact scrub_spSafe hb
+  · exact scrubF_spSafe hw
+
+/-- `vg_aes_ecb_encrypt` over `v` as emitted writes `esp` only in its frames and calls. -/
+theorem encrypt_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten).all
+      (fun i => !X86.isa.writesSp i) = true :=
+  crypt_fnSpSafe v.encSpSafe (encrypt_spSafe v)
+
+/-- `vg_aes_ecb_decrypt` over `v` as emitted writes `esp` only in its frames and calls. -/
+theorem decrypt_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten).all
+      (fun i => !X86.isa.writesSp i) = true :=
+  crypt_fnSpSafe v.decSpSafe (decrypt_spSafe v)
 
 end VG.Proof.AesEcb.X86.Scrub

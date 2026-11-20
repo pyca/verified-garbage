@@ -133,6 +133,8 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
+import VerifiedGarbage.Proof.Framework.Lit
+
 /-!
 # The shared round on ARMv7 with `umaal`: the variant's code and proofs
 
@@ -155,6 +157,7 @@ def variant : RoundImpl where
   code := umaalArithmetic (Impl.MillerRabin.Arm.code true)
   verified := round_verified
   stack := Nat.le_trans (armStack_umaalArithmetic _) (by decide +kernel)
+  icallFree := by lit_decide
   suffix := "_umaal"
   features := ["umaal"]
 

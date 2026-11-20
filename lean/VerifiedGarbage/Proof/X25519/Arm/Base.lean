@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 public import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Spec.X25519.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Registration
@@ -453,17 +453,30 @@ theorem x25519Base_verified : Verified Arm.target (x25519Base umaal) baseSpec :=
 
 /-! ## Without secret residue
 
-The code has no frames: it keeps the registers it saves in its scratch space, a buffer. It is
-registered scrubbed (`Arm.Scrub.scrubReg`): followed by instructions that set the registers a
-callee may change and the flags to constants. -/
+The code has no frames: it keeps the registers it saves in its scratch space, a buffer. Its shape
+is the same with either product of the field (`Proof.Ed25519.Arm.Shape`), so `Code.noFrames` is
+proven once for both. It is emitted with its cleanup (`Impl.X25519.Arm.Fn.x25519Base`):
+instructions that set the registers a callee may change and the flags to
+constants. -/
 
 theorem x25519Base_noFrames (umaal : Bool) : (x25519Base umaal).noFrames = true := by
-  cases umaal <;> lit_decide
-
-/-- `vg_x25519_base`, with either product of the field (`umaal`), scrubbed. -/
-def x25519BaseReg (umaal : Bool) (suffix : String) : Registration Spec.X25519.x25519BaseApi Arm.target :=
-  Arm.Scrub.scrubReg { suffix := suffix, code := x25519Base umaal, verified := x25519Base_verified }
-    (x25519Base_noFrames umaal)
-
+  simp only [x25519Base, engine, uEncode, Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.pointAffine,
+    Impl.Ed25519.Arm.invert, Impl.Ed25519.Arm.power250, Impl.Ed25519.Arm.pow250Fn, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.chain250,
+    Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Code.noFrames,
+    (Proof.Ed25519.Arm.Shape.fieldCode _ _).1, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).1,
+    (Proof.Ed25519.Arm.Shape.mulFn _).1, Bool.and_self]
 
 end VG.Proof.X25519.Arm.Base
+
+namespace VG.Proof.X25519.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_x25519_base`, with either product of the field. -/
+theorem x25519Base (umaal : Bool) :
+    VerifiedScrubbed target (Impl.X25519.Arm.Fn.x25519Base umaal) Base.baseSpec 0 :=
+  verifiedScrubbed (api := Spec.X25519.x25519BaseApi)
+    { code := Impl.X25519.Arm.Base.x25519Base umaal, verified := Base.x25519Base_verified }
+    (Base.x25519Base_noFrames umaal)
+
+end VG.Proof.X25519.Arm.Fn

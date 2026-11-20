@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-OCB: x86 (32-bit) implementation
@@ -562,3 +564,29 @@ def init : Prog isa :=
 end
 
 end VG.Impl.AesOcb.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesOcb.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_aes_ocb_init` over the functions `c`, as emitted. -/
+def init (c : Impl.AesOcb.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2604 (withStackScratch 2580 3 (Impl.AesOcb.X86.init c))
+
+/-- `vg_aes_ocb_seal` over the functions `c`, as emitted. -/
+def «seal» (c : Impl.AesOcb.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2632 (withStackScratch 2608 10 (Impl.AesOcb.X86.«seal» c))
+
+/-- `vg_aes_ocb_open` over the functions `c`, as emitted. -/
+def «open» (c : Impl.AesOcb.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 2632 (withStackScratch 2608 10 (Impl.AesOcb.X86.«open» c))
+
+end VG.Impl.AesOcb.X86.Fn

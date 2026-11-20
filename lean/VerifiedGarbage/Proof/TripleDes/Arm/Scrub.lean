@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.TripleDes.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
@@ -17,7 +18,8 @@ import VerifiedGarbage.Proof.TripleDes.FbScratch
 import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 meta import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
@@ -45,10 +47,12 @@ time 64 bytes of their own around ECB's 1024 (`withStackScratchWiped`).
 None makes an indirect call, and their postconditions read the memory on
 return only within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
 `Proof/TripleDes/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean` and
-`Proof/Modes/CfbFinalScratch.lean` that x86-64 uses too). Each is registered
+`Proof/Modes/CfbFinalScratch.lean` that x86-64 uses too). Each is emitted
 followed by a wipe of the stack its contract reserves and by instructions
 that set the registers a callee may change, but the result, and the flags
-to constants (`Arm.Scrub.scrubRegF`).
+to constants (`Impl.TripleDes.Arm.Fn`), and `Fn` below states
+that each returns without secret residue (`Arm.Scrub.verifiedScrubbedF`),
+which is what its registration binds.
 
 The modes call ECB's code as it is verified, without the wipe, under names
 of their own (`vg_triple_des_ecb_encrypt_entry`, `Impl.TripleDes.Arm.ecbCore`),
@@ -128,7 +132,7 @@ theorem cfbDecrypt_code : armStack Impl.TripleDes.Arm.Wide.cfbDecrypt = 0 ∧
     noIcall Impl.TripleDes.Arm.Wide.cfbDecrypt = true := by lit_decide
 
 theorem ecbCode_scrub (d : Spec.TripleDes.Direction) :
-    armStack (Impl.TripleDes.Arm.ecbCode d) ≤ 1024 ∧ noIcall (Impl.TripleDes.Arm.ecbCode d) = true := by
+    CodeOk (Impl.TripleDes.Arm.ecbCode d) 1024 := by
   cases d
   · exact withRegScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq encrypt_code.1, encrypt_code.2⟩
   · exact withRegScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq decrypt_code.1, decrypt_code.2⟩
@@ -155,143 +159,150 @@ theorem seqFinal_scrub (m : Impl.Modes.Arm.Mode) :
   withStackScratchWiped_scrubArm (seqFinal_scrubArm (ecbCore_scrub .encrypt) m)
 
 theorem cbcEncryptChained_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained) 1088 :=
   seq_scrub Impl.Modes.Arm.cbcEncChained
 
 theorem cfbEncrypt_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt) 1088 :=
   seq_scrub Impl.Modes.Arm.cfbEnc
 
 theorem cfbEncryptFinal_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal) 1088 :=
   seqFinal_scrub Impl.Modes.Arm.cfbEnc
 
 theorem cfbDecryptFinal_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal) 1088 :=
   seqFinal_scrub Impl.Modes.Arm.cfbDecF
 
 theorem cfb8Encrypt_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt) 1088 :=
   seq_scrub Impl.Modes.Arm.cfb8Enc
 
 theorem cfb8Decrypt_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt) 1088 :=
   seq_scrub Impl.Modes.Arm.cfb8Dec
 
 theorem ofb_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb) 1088 :=
   seq_scrub Impl.Modes.Arm.ofb
 
 theorem ofbFinal_scrub :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal) ≤ 1088 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal) 1088 :=
   seqFinal_scrub Impl.Modes.Arm.ofb
 
 theorem wide_scrub {c : Prog isa} (hc : armStack c = 0 ∧ noIcall c = true) :
-    armStack (Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 c) ≤ 1040 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 c) = true :=
+    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 c) 1040 :=
   withStackScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq hc.1, hc.2⟩
 
-/-! ## The registrations -/
+end VG.Proof.TripleDes.Arm.Scrub
+
+namespace VG.Proof.TripleDes.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Modes.Arm
 
 /-- `vg_triple_des_expand_key`. -/
-def expandKeyReg : Registration Spec.TripleDes.expandKeyApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
+theorem expandKey :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.expandKey (Spec.TripleDes.expandKeyContract Arm.abi 512) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
       verified := Proof.TripleDes.Arm.expandKey_framed }
-    (withRegScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq expandKey_code.1, expandKey_code.2⟩).1
-    (withRegScratchWiped_scrubArm (n := 0) ⟨Nat.le_of_eq expandKey_code.1, expandKey_code.2⟩).2
-    frameOk_512 expandKeyOut rfl
+    Scrub.expandKeyOut
+    (scrubSideF_of (withRegScratchWiped_scrubArm (n := 0)
+      ⟨Nat.le_of_eq Scrub.expandKey_code.1, Scrub.expandKey_code.2⟩) Scrub.frameOk_512 _)
 
 /-- `vg_triple_des_ecb_encrypt`. -/
-def ecbEncryptReg : Registration Spec.TripleDes.ecbEncryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.TripleDes.Arm.ecbCode .encrypt
+theorem ecbEncrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbEncrypt (Spec.TripleDes.ecbContract Arm.abi .encrypt 1024) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ecbEncryptApi)
+    { code := Impl.TripleDes.Arm.ecbCode .encrypt
       verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.encrypt_verified }
-    (ecbCode_scrub .encrypt).1 (ecbCode_scrub .encrypt).2 frameOk_1024 (ecbOut .encrypt) rfl
+    (Scrub.ecbOut .encrypt) (scrubSideF_of (Scrub.ecbCode_scrub .encrypt) Scrub.frameOk_1024 _)
 
 /-- `vg_triple_des_ecb_decrypt`. -/
-def ecbDecryptReg : Registration Spec.TripleDes.ecbDecryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.TripleDes.Arm.ecbCode .decrypt
+theorem ecbDecrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbDecrypt (Spec.TripleDes.ecbContract Arm.abi .decrypt 1024) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ecbDecryptApi)
+    { code := Impl.TripleDes.Arm.ecbCode .decrypt
       verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.decrypt_verified }
-    (ecbCode_scrub .decrypt).1 (ecbCode_scrub .decrypt).2 frameOk_1024 (ecbOut .decrypt) rfl
+    (Scrub.ecbOut .decrypt) (scrubSideF_of (Scrub.ecbCode_scrub .decrypt) Scrub.frameOk_1024 _)
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
-def cbcEncryptReg : Registration Spec.TripleDes.cbcEncryptChainedApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained
+theorem cbcEncrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cbcEncrypt (Spec.TripleDes.cbcEncryptChainedContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained
       verified := Proof.TripleDes.Arm.cbcEncryptChained_framed }
-    cbcEncryptChained_scrub.1 cbcEncryptChained_scrub.2 frameOk_1088 cbcEncryptOut rfl
+    Scrub.cbcEncryptOut (scrubSideF_of Scrub.cbcEncryptChained_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
-def cbcDecryptReg : Registration Spec.TripleDes.cbcDecryptChainedApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cbcDecrypt
+theorem cbcDecrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cbcDecrypt (Spec.TripleDes.cbcDecryptChainedContract Arm.abi 1040) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cbcDecrypt
       verified := Proof.TripleDes.Arm.Bitsliced.cbcDecrypt_framed }
-    (wide_scrub cbcDecrypt_code).1 (wide_scrub cbcDecrypt_code).2 frameOk_1040 cbcDecryptOut rfl
+    Scrub.cbcDecryptOut (scrubSideF_of (Scrub.wide_scrub Scrub.cbcDecrypt_code) Scrub.frameOk_1040 _)
 
 /-- `vg_triple_des_cfb64_encrypt`. -/
-def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
+theorem cfbEncrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbEncrypt (Spec.TripleDes.cfbEncryptContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
       verified := Proof.TripleDes.Arm.cfbEncrypt_framed }
-    cfbEncrypt_scrub.1 cfbEncrypt_scrub.2 frameOk_1088 cfbEncryptOut rfl
+    Scrub.cfbEncryptOut (scrubSideF_of Scrub.cfbEncrypt_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
-def cfbDecryptReg : Registration Spec.TripleDes.cfbDecryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cfbDecrypt
+theorem cfbDecrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbDecrypt (Spec.TripleDes.cfbDecryptContract Arm.abi 1040) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cfbDecrypt
       verified := Proof.TripleDes.Arm.Bitsliced.cfbDecrypt_framed }
-    (wide_scrub cfbDecrypt_code).1 (wide_scrub cfbDecrypt_code).2 frameOk_1040 cfbDecryptOut rfl
+    Scrub.cfbDecryptOut (scrubSideF_of (Scrub.wide_scrub Scrub.cfbDecrypt_code) Scrub.frameOk_1040 _)
 
 /-- `vg_triple_des_cfb64_encrypt_final`. -/
-def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
+theorem cfbEncryptFinal :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbEncryptFinal (Spec.TripleDes.cfbEncryptFinalContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
       verified := Proof.TripleDes.Arm.cfbEncryptFinal_framed }
-    cfbEncryptFinal_scrub.1 cfbEncryptFinal_scrub.2 frameOk_1088 cfbEncryptFinalOut rfl
+    Scrub.cfbEncryptFinalOut (scrubSideF_of Scrub.cfbEncryptFinal_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_cfb64_decrypt_final`. -/
-def cfbDecryptFinalReg : Registration Spec.TripleDes.cfbDecryptFinalApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal
+theorem cfbDecryptFinal :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbDecryptFinal (Spec.TripleDes.cfbDecryptFinalContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal
       verified := Proof.TripleDes.Arm.cfbDecryptFinal_framed }
-    cfbDecryptFinal_scrub.1 cfbDecryptFinal_scrub.2 frameOk_1088 cfbDecryptFinalOut rfl
+    Scrub.cfbDecryptFinalOut (scrubSideF_of Scrub.cfbDecryptFinal_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
-def cfb8EncryptReg : Registration Spec.TripleDes.cfb8EncryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt
+theorem cfb8Encrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfb8Encrypt (Spec.TripleDes.cfb8EncryptContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfb8EncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt
       verified := Proof.TripleDes.Arm.cfb8Encrypt_framed }
-    cfb8Encrypt_scrub.1 cfb8Encrypt_scrub.2 frameOk_1088 cfb8EncryptOut rfl
+    Scrub.cfb8EncryptOut (scrubSideF_of Scrub.cfb8Encrypt_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_cfb8_decrypt`. -/
-def cfb8DecryptReg : Registration Spec.TripleDes.cfb8DecryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt
+theorem cfb8Decrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfb8Decrypt (Spec.TripleDes.cfb8DecryptContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.cfb8DecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt
       verified := Proof.TripleDes.Arm.cfb8Decrypt_framed }
-    cfb8Decrypt_scrub.1 cfb8Decrypt_scrub.2 frameOk_1088 cfb8DecryptOut rfl
+    Scrub.cfb8DecryptOut (scrubSideF_of Scrub.cfb8Decrypt_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_ofb`. -/
-def ofbReg : Registration Spec.TripleDes.ofbApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
+theorem ofb : VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ofb (Spec.TripleDes.ofbContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ofbApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
       verified := Proof.TripleDes.Arm.ofb_framed }
-    ofb_scrub.1 ofb_scrub.2 frameOk_1088 ofbOut rfl
+    Scrub.ofbOut (scrubSideF_of Scrub.ofb_scrub Scrub.frameOk_1088 _)
 
 /-- `vg_triple_des_ofb_final`. -/
-def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal
+theorem ofbFinal :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ofbFinal (Spec.TripleDes.ofbFinalContract Arm.abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.TripleDes.ofbFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal
       verified := Proof.TripleDes.Arm.ofbFinal_framed }
-    ofbFinal_scrub.1 ofbFinal_scrub.2 frameOk_1088 ofbFinalOut rfl
+    Scrub.ofbFinalOut (scrubSideF_of Scrub.ofbFinal_scrub Scrub.frameOk_1088 _)
 
-end VG.Proof.TripleDes.Arm.Scrub
+end VG.Proof.TripleDes.Arm.Fn

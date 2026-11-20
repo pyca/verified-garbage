@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Sha1.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.Arm.Shared
+meta import VerifiedGarbage.Impl.Hmac.Stream.Arm
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha512
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInitCT
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
@@ -50,48 +52,8 @@ open VG.Proof.Pbkdf2.Stream.Arm (iterG below sha1H md5H sha384H sha512H' sha512_
 
 /-! ## The hash functions -/
 
-/-- SHA-1: a 20-byte hash value, a big-endian length field, and
-`vg_sha1_compress`, with 112 bytes of scratch space. -/
-def sha1Md : Hash where
-  st := sha1H
-  N := 20
-  L := 8
-  be := true
-  so := 112
-  out := Impl.Sha1.Arm.Stream.params.out
-  compN := "vg_sha1_compress"
-  compC := Impl.Sha1.Arm.compress
-
-/-- MD5: a 16-byte hash value, a little-endian length field, and
-`vg_md5_compress`, with 64 bytes of scratch space. -/
-def md5Md : Hash where
-  st := md5H
-  N := 16
-  L := 8
-  be := false
-  so := 64
-  out := Impl.Md5.Arm.Stream.params.out
-  compN := "vg_md5_compress"
-  compC := Impl.Md5.Arm.compress
-
-/-- The member of the SHA-512 family with a `D`-byte digest, initial hash
-value `iv` and streaming `init` named `initN`: a 64-byte hash value, a
-16-byte big-endian length field, and `vg_sha512_compress`, with 224 bytes of
-scratch space. -/
-def sha512Md (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash where
-  st := Pbkdf2.Stream.Arm.sha512H D initN iv
-  N := 64
-  L := 16
-  be := true
-  so := 224
-  out := (List.range 8).flatMap Impl.Sha512.Arm.Stream.outW
-  compN := "vg_sha512_compress"
-  compC := Impl.Sha512.Arm.compress
-
-def sha384Md : Hash := sha512Md 48 "vg_sha384_init_core" Spec.Sha512.H0_384
-def sha512Md' : Hash := sha512Md 64 "vg_sha512_init_core" Spec.Sha512.H0_512
-def sha512_224Md : Hash := sha512Md 28 "vg_sha512_224_init_core" Spec.Sha512.H0_512_224
-def sha512_256Md : Hash := sha512Md 32 "vg_sha512_256_init_core" Spec.Sha512.H0_512_256
+-- Defined with their code (`Impl/Hmac/Stream/Arm.lean`).
+export VG.Impl.Hmac.Stream.Arm (sha1Md md5Md sha512Md sha384Md sha512Md' sha512_224Md sha512_256Md)
 
 /-! ## What the proofs need of them -/
 

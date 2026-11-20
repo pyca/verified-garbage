@@ -34,6 +34,33 @@ vg_cmac_aes_init:
 	ldr lr, [r5, #2188]
 	ldr r5, [r5, #2180]
 	add sp, sp, #2304
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cmac_aes_absorb:
@@ -160,6 +187,29 @@ vg_cmac_aes_absorb:
 	ldr lr, [r10, #2204]
 	ldr r10, [r10, #2200]
 	add sp, sp, #2320
+	sub sp, sp, #2336
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #73
+216:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 216b
+	add sp, sp, #2336
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cmac_aes_finish:
@@ -204,4 +254,27 @@ vg_cmac_aes_finish:
 	ldr lr, [r5, #2184]
 	ldr r5, [r5, #2180]
 	add sp, sp, #2320
+	sub sp, sp, #2336
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #73
+22:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 22b
+	add sp, sp, #2336
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

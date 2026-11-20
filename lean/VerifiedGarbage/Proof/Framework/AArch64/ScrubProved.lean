@@ -309,4 +309,65 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (cl : Clear) {W
   rw [e] at hn
   exact ⟨h.verified, hn⟩
 
+/-- `c` with its cleanup over `W` bytes of stack, the registers it may write
+cleared (`Clear.of`, read off the code), meets `c`'s contract in constant
+time and returns without secret residue, if no instruction of it, or of what
+it calls, writes PSTATE.DIT and it calls nothing indirectly (`sideAll`): of a
+function generic over the implementations of the functions it calls, which
+states no registers. -/
+theorem verifiedScrubbedOf {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
+    (hok : ScrubAllOk k W rb) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hd : 16 * c.aarch64Depth ≤ W)
+    (hs : sideAll (fun i => !i.writesDit) c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    VerifiedScrubbed target (scrubAll W rb (Clear.of c) c) k rb :=
+  ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
+    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd
+      (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
+      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
+
+/-- `sideAll` of code in a frame of its own (`withStackScratch`). -/
+theorem sideAll_withStackScratch {p : Instr → Bool} {bytes : Nat} {r : Reg} {c : Prog isa}
+    (ha : p (.alloc bytes) = true) (hr : p (.addSp r 0) = true) (hf : p (.free bytes) = true)
+    (hc : sideAll p c = true) : sideAll p (Impl.StackScratch.AArch64.withStackScratch bytes r c) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, sideAll, Code.allInstrs_eq, instrs, List.all_cons,
+    List.all_nil, ha, hr, hf, hc, Bool.and_self]
+
+/-- How deeply the frames of code in a frame of its own nest. -/
+theorem depth_withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) :
+    (Impl.StackScratch.AArch64.withStackScratch bytes r c).aarch64Depth = c.aarch64Depth + bytes / 16 := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits, Nat.zero_max]
+
+/-- A function's cleanup (`scrubAll`) writes no PSTATE.DIT and calls nothing:
+`sideAll` of code with its cleanup, from the code's. For a function that
+calls another as emitted, cleanup included. -/
+theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
+    (hc : sideAll (fun i => !i.writesDit) c = true) :
+    sideAll (fun i => !i.writesDit) (scrubAll W rb cl c) = true := by
+  have hr : ∀ i ∈ retFix rb, (!i.writesDit) = true := by
+    intro i hi
+    unfold retFix at hi
+    split at hi
+    · rcases List.mem_singleton.mp hi with rfl; rfl
+    · rcases List.mem_singleton.mp hi with rfl; rfl
+    · exact absurd hi List.not_mem_nil
+  have hcl : ∀ i ∈ clearsOf cl, (!i.writesDit) = true := by
+    intro i hi
+    simp only [clearsOf, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with ((⟨r, -, rfl⟩ | ⟨v, -, rfl⟩) | rfl) | ⟨v, -, rfl⟩ <;> rfl
+  have hbody : sideAll (fun i => !i.writesDit) (withRet rb (.seq c (.block (clearsOf cl)))) = true := by
+    simp only [withRet, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
+    exact ⟨⟨hc, hcl⟩, hr⟩
+  unfold scrubAll withScrubG
+  split
+  · exact hbody
+  · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true, hbody,
+      true_and]
+    refine ⟨⟨rfl, fun i hi => ?_⟩, rfl⟩
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    simp only [scrubStoresL, List.mem_map] at hi
+    obtain ⟨k, -, rfl⟩ := hi
+    rfl
+
 end VG.AArch64.ScrubAll

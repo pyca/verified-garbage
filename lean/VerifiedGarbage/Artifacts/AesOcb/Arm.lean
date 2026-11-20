@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.AesOcb.Arm
 
 def artifacts : List Artifact := [
-  Spec.Ocb.initApi.artifact Arm.target Proof.AesOcb.Arm.Scrub.initReg,
-  Spec.Ocb.sealApi.artifact Arm.target Proof.AesOcb.Arm.Scrub.sealReg,
-  Spec.Ocb.openApi.artifact Arm.target Proof.AesOcb.Arm.Scrub.openReg]
+  Spec.Ocb.initApi.artifact Arm.target {
+    code := Impl.AesOcb.Arm.Fn.init
+    verified := .scrubbed Proof.AesOcb.Arm.Fn.init },
+  Spec.Ocb.sealApi.artifact Arm.target {
+    code := Impl.AesOcb.Arm.Fn.«seal»
+    verified := .scrubbed Proof.AesOcb.Arm.Fn.«seal» },
+  Spec.Ocb.openApi.artifact Arm.target {
+    code := Impl.AesOcb.Arm.Fn.«open»
+    verified := .scrubbed Proof.AesOcb.Arm.Fn.«open» }]
 
 end VG.Artifacts.AesOcb.Arm

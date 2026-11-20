@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -2064,6 +2065,11 @@ structure Backend where
   checkPublic_verified : Verified target checkPublic (Spec.Ffdh.checkPublicContract abi 128)
   checkPrivate : Prog isa
   checkPrivate_verified : Verified target checkPrivate (Spec.Ffdh.checkPrivateContract abi 128)
+  /-- What the cleanup of `checkDomain` needs of its code: its frames use at
+  most the 128 bytes it zeroes, and it calls nothing indirectly. -/
+  checkDomain_ok : VG.Arm.Scrub.CodeOk checkDomain 128
+  /-- What the cleanup of `checkPrivate` needs of its code. -/
+  checkPrivate_ok : VG.Arm.Scrub.CodeOk checkPrivate 128
   exchange : Prog isa
   exchange_verified : Verified target exchange (Spec.Ffdh.exchangeContract abi 128)
   suffix : String

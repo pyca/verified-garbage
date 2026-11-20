@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Blake2
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
+public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Streaming BLAKE2: 32-bit ARM implementation
@@ -232,3 +236,43 @@ def init : Prog isa :=
 end
 
 end VG.Impl.Blake2.Arm.Stream
+
+/-! ## The functions as emitted
+
+Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+a callee may change set to constants, and for `update` and `finalize`, which
+keep their working space in a frame of 592 bytes under the 16 bytes of the
+compression function's stack arguments, first the 608 bytes of stack their
+contracts reserve zeroed. None returns a value. -/
+
+namespace VG.Impl.Blake2.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_blake2b_init`. -/
+def initB : Prog isa := scrub 0 (Stream.init Spec.Blake2.b)
+
+/-- `vg_blake2b_update`. -/
+def updateB : Prog isa :=
+  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 2
+    (Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress))
+
+/-- `vg_blake2b_finalize`. -/
+def finalizeB : Prog isa :=
+  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 1
+    (Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress))
+
+/-- `vg_blake2s_init`. -/
+def initS : Prog isa := scrub 0 (Stream.init Spec.Blake2.s)
+
+/-- `vg_blake2s_update`. -/
+def updateS : Prog isa :=
+  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 2
+    (Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
+
+/-- `vg_blake2s_finalize`. -/
+def finalizeS : Prog isa :=
+  scrubF 0 608 (Impl.StackScratch.Arm.withStackScratch 592 1
+    (Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
+
+end VG.Impl.Blake2.Arm.Fn

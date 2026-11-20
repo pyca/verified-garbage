@@ -20,6 +20,7 @@ public import VerifiedGarbage.Impl.RsaPss.Arm
 public import VerifiedGarbage.Impl.MdHashTable.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
 public import VerifiedGarbage.Spec.Mgf1
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 
 /-! ### `RsaPss.Arm.Hash`, which this module and modules that import it used -/
 
@@ -78,6 +79,12 @@ structure PssHash where
   lenCk : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) (.block H.len) hc).isSome = true
   /-- MGF1's message `H ‖ C`, `0x80` and the length field fit one block. -/
   one : H.md.st.D + 5 + H.md.L ≤ H.md.st.B
+  /-- What the cleanup of a function that calls it through a table needs of
+  its code (`Arm.Scrub.CodeOk`): its streaming functions, its compression
+  function and its digest use no stack and make no indirect call. -/
+  scrub : VG.Arm.Scrub.CodeOk H.md.st.initC 0 ∧ VG.Arm.Scrub.CodeOk H.md.st.updC 0 ∧
+    VG.Arm.Scrub.CodeOk H.md.st.finC 0 ∧ VG.Arm.Scrub.CodeOk H.md.compC 0 ∧
+    VG.Arm.Scrub.CodeOk (Impl.MdHashTable.Arm.digest H.md.out) 0
 
 /-- Its shape, all the code uses of it but its functions. -/
 abbrev PssHash.sh (h : PssHash) : Impl.RsaPss.Arm.Sh := h.H.sh

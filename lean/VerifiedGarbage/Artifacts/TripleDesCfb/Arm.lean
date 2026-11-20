@@ -11,9 +11,17 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.TripleDesCfb.Arm
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cfbEncryptApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.cfbEncryptReg,
-  Spec.TripleDes.cfbDecryptApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.cfbDecryptReg,
-  Spec.TripleDes.cfbEncryptFinalApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.cfbEncryptFinalReg,
-  Spec.TripleDes.cfbDecryptFinalApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.cfbDecryptFinalReg]
+  Spec.TripleDes.cfbEncryptApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbEncrypt },
+  Spec.TripleDes.cfbDecryptApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbDecrypt },
+  Spec.TripleDes.cfbEncryptFinalApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbEncryptFinal },
+  Spec.TripleDes.cfbDecryptFinalApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.TripleDesCfb.Arm
