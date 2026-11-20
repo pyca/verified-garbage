@@ -44,6 +44,10 @@ open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 def artifacts : List Artifact :=
   direct ++
   VG.Proof.Variants.Poly1305Blocks.X86_64.variants.map fun (v : BlocksImpl) =>
-    Spec.Poly1305.updateApi.artifact X86_64.target (Proof.Poly1305.X86_64.updateReg v)
+    Spec.Poly1305.updateApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code
+      verified := .scrubbed (Proof.Poly1305.X86_64.update_scrubbed v)
+      spSafe := Proof.Poly1305.X86_64.updateFn_spSafe v }
 
 end VG.Artifacts.Poly1305.X86_64

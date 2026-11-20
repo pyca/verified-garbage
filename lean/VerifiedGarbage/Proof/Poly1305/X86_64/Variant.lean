@@ -92,10 +92,9 @@ structure BlocksImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
-  /-- The residue analysis of `vg_poly1305_update` over it, if the analysis
-  handles it: that instance then returns without secret residue
-  (`updateReg`). -/
-  update : Option (RScrub.AnalysedOps Spec.Poly1305.updateApi.sig 160 [] (updateCode name code)) := none
+  /-- What the cleanup of `vg_poly1305_update` over it needs
+  (`Impl.Poly1305.X86_64.Fn.update`). -/
+  upd : UpdScrub name code
 
 namespace BlocksImpl
 
@@ -122,7 +121,7 @@ def scalar : BlocksImpl where
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := Impl.Poly1305.X86_64.Blocks.features .scalar
-  update := some scalarUpdate
+  upd := scalarUpdate
 
 end BlocksImpl
 

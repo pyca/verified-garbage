@@ -19,7 +19,7 @@ differ between two runs, or all of them, zeroed.
 namespace VG.Impl.Poly1305.X86_64.Fn
 
 open VG.X86_64
-open VG.Impl.Scrub.X86_64 (scrubSel scrubAll)
+open VG.Impl.Scrub.X86_64 (VecLevel scrubSel scrubAll)
 
 /-- `Spec.Poly1305.initApi`'s function as emitted. -/
 def init : Prog isa :=
@@ -30,5 +30,12 @@ def init : Prog isa :=
 def finalize : Prog isa :=
   scrubSel .sse 0 136 []
     (Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize)
+
+/-- `Spec.Poly1305.updateApi`'s function as emitted, over the implementation
+of `vg_poly1305_blocks` with symbol `name` and code `code`, whose cleanup is
+at the level `v` and wipes the runs `rs`. -/
+def update (v : VecLevel) (rs : List (Nat × Nat)) (name : String) (code : Prog isa) : Prog isa :=
+  scrubSel v 0 160 rs
+    (Impl.StackScratch.X86_64.withStackScratch 136 .r8 (Impl.Poly1305.X86_64.update name code))
 
 end VG.Impl.Poly1305.X86_64.Fn
