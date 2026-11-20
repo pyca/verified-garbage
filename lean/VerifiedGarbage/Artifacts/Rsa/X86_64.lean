@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Fn
-public import VerifiedGarbage.Proof.Rsa.X86_64.Scrubbed
+public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # RSA (RFC 8017) on x86-64 -/
