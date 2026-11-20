@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
-public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Proof.Variants.Sm4Ctr.AArch64
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
@@ -16,17 +14,17 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
 namespace VG.Artifacts.Sm4Ctr.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.ctrApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Sm4.ctrApi.artifact AArch64.target {
     suffix := "_sm4"
-    code := Impl.StackScratch.AArch64.withStackScratch 224 .x4 Impl.Sm4.AArch64.Sm4e.ctr
-    verified := Proof.Sm4.AArch64.Sm4e.ctr_framed } (Proof.Sm4.AArch64.CtrScrub.ctrOk 224)),
-  Spec.Sm4.ctrApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
-    code := Impl.StackScratch.AArch64.withStackScratch 3264 .x4 Impl.Sm4.AArch64.ctr
-    verified := Proof.Sm4.AArch64.ctr_framed } (Proof.Sm4.AArch64.CtrScrub.ctrOk 3264))] ++
+    code := Impl.Sm4.AArch64.Fn.ctrSm4
+    verified := .scrubbed Proof.Sm4.AArch64.CtrScrub.ctrSm4 },
+  Spec.Sm4.ctrApi.artifact AArch64.target {
+    code := Impl.Sm4.AArch64.Fn.ctr
+    verified := .scrubbed Proof.Sm4.AArch64.CtrScrub.ctr }] ++
   Proof.Variants.Sm4Ctr.AArch64.variants.map fun (v : Proof.Sm4.AArch64.CtrFinal.CtrImpl) =>
-    Spec.Sm4.ctrFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+    Spec.Sm4.ctrFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x4 10 (Impl.Sm4.AArch64.ctrFinal v.name v.code)
-      verified := Proof.Sm4.AArch64.CtrFinal.ctrFinal_framed v } Proof.Sm4.AArch64.CtrScrub.ctrFinalOk)
+      code := Impl.Sm4.AArch64.Fn.ctrFinal v.clear v.name v.code
+      verified := .scrubbed (Proof.Sm4.AArch64.CtrScrub.ctrFinal v) }
 
 end VG.Artifacts.Sm4Ctr.AArch64
