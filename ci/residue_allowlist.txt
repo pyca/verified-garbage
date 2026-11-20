@@ -37,8 +37,6 @@ arm vg_cmac_aes_init
 arm vg_cmac_triple_des_absorb
 arm vg_cmac_triple_des_finish
 arm vg_cmac_triple_des_stream_init
-arm vg_dsa_parameter_search
-arm vg_dsa_parameter_search_umaal
 arm vg_ecdh_brainpoolp256r1
 arm vg_ecdh_brainpoolp256r1_umaal
 arm vg_ecdh_brainpoolp384r1

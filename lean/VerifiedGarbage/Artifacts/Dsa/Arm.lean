@@ -51,10 +51,10 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.Dsa.Arm.Fn.verifyPrevalidated v.umaal
       verified := .scrubbed (Proof.Dsa.Arm.Fn.verifyPrevalidated v.umaal) }]) ++
-  (searchPairs.flatMap fun (p : Proof.Variants.DsaArithmetic.Arm.Variant × Proof.MillerRabin.Arm.RoundImpl) => [
+  (searchPairs.map fun (p : Proof.Variants.DsaArithmetic.Arm.Variant × Proof.MillerRabin.Arm.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := p.1.suffix
-      code := Impl.Dsa.Arm.Generation.code (geo1 p.1.umaal p.2) (geo2 p.1.umaal p.2) (geo3 p.1.umaal p.2)
-      verified := .unscrubbed (search_params p.2) }])
+      code := Impl.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2.suffix p.2.code
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2) })
 
 end VG.Artifacts.Dsa.Arm

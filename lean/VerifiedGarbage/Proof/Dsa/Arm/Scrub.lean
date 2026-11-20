@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Init
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Dsa.Arm.PrevalidatedVerified
 meta import VerifiedGarbage.Proof.Dsa.Arm.Gen.Init
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
 meta import VerifiedGarbage.Proof.Dsa.Arm.Key.Verified
+meta import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -144,6 +146,108 @@ theorem generateKey_codeOk (umaal : Bool) :
   · exact ⟨by lit_decide, by lit_decide⟩
   · exact ⟨by lit_decide, by lit_decide⟩
 
+/-! ## The parameter search
+
+`vg_dsa_parameter_search` keeps its working space in a frame of 304 bytes,
+and its postcondition reads the memory on return only at `out`, `used` and
+`state`. Its code calls the Miller–Rabin round of a variant
+(`Proof/Variants/MillerRabin/Arm.lean`), which states its own stack and that
+it makes no indirect call (`RoundImpl.stack`, `RoundImpl.icallFree`, by
+`lit_decide` where it is defined). The search's own code is evaluated once
+for each multiplication, with a stub in the round's place (`holeStub 56`, a
+frame of the 56 bytes the round may use around nothing), and `Fill` carries
+that to the code with any round: its frames use no more stack than the
+stub's, and it makes no indirect call if the stub's code makes none. -/
+
+theorem parameterSearchOut (stack : Nat) :
+    PostOut (Spec.Dsa.parameterSearchContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 32) :=
+  postOut_of_local (leak := some _) ScrubAbi.plain fun
+    | [out, outLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _, _, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      rw [bytesAt_of hb.1 (toNat_sw_le outLen), wordsAt_of hb.2.1, wordsAt_of hb.2.2.2.2]
+      exact h
+
+/-- A place for the round in the stub of the search: a frame of `k` bytes
+around nothing, whose stack is `k`. -/
+def holeStub (k : Nat) : Prog isa := .frame (.alloc k) (.block []) (.free k)
+
+/-- `b` is `a` with some of its holes (`holeStub k`) replaced by code that
+meets `CodeOk _ k`, and the names of its calls changed; any code matches
+itself (`refl`). -/
+inductive Fill : Prog isa → Prog isa → Prop
+  | refl (a : Prog isa) : Fill a a
+  | hole {k : Nat} {d : Prog isa} : CodeOk d k → Fill (holeStub k) d
+  | seq {a b a' b' : Prog isa} : Fill a a' → Fill b b' → Fill (.seq a b) (.seq a' b')
+  | ite {t e t' e' : Prog isa} (c : Cond) : Fill t t' → Fill e e' → Fill (.ite c t e) (.ite c t' e')
+  | loop {b b' : Prog isa} (c : Cond) : Fill b b' → Fill (.loop b c) (.loop b' c)
+  | call {b b' : Prog isa} (f g : String) : Fill b b' → Fill (.call f b) (.call g b')
+  | frame {b b' : Prog isa} (i j : Instr) : Fill b b' → Fill (.frame i b j) (.frame i b' j)
+  | icall {b x b' x' : Prog isa} (i : Instr) (f : String) :
+      Fill b b' → Fill x x' → Fill (.icall i f b x) (.icall i f b' x')
+
+theorem armStack_frame_le {i j : Instr} {b b' : Prog isa} (h : armStack b' ≤ armStack b) :
+    armStack (.frame i b' j) ≤ armStack (.frame i b j) := by
+  cases i <;> simp only [armStack] <;> omega
+
+theorem Fill.armStack_le {a b : Prog isa} (h : Fill a b) : armStack b ≤ armStack a := by
+  induction h with
+  | refl => exact Nat.le_refl _
+  | hole hd => simp only [holeStub, armStack, Nat.zero_add]; exact hd.1
+  | seq _ _ iha ihb => simp only [armStack]; omega
+  | ite _ _ _ iht ihe => simp only [armStack]; omega
+  | loop _ _ ih => simp only [armStack]; exact ih
+  | call _ _ _ ih => simp only [armStack]; exact ih
+  | frame _ _ _ ih => exact armStack_frame_le ih
+  | icall _ _ _ _ ihb ihx => simp only [armStack]; omega
+
+theorem Fill.noIcall_of {a b : Prog isa} (h : Fill a b) (ha : noIcall a = true) : noIcall b = true := by
+  induction h with
+  | refl => exact ha
+  | hole hd => exact hd.2
+  | seq _ _ iha ihb | ite _ _ _ iha ihb =>
+    simp only [noIcall, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
+  | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [noIcall] at ha ⊢; exact ih ha
+  | icall => simp only [noIcall, Bool.false_eq_true] at ha
+
+/-- `CodeOk` of the code with implementations from that of the stub. -/
+theorem Fill.codeOk {a b : Prog isa} {n : Nat} (h : Fill a b) (ha : CodeOk a n) : CodeOk b n :=
+  ⟨Nat.le_trans h.armStack_le ha.1, h.noIcall_of ha.2⟩
+
+/-- Proves `Fill a b` of the stub's code `a` and the code `b` with a round,
+from a hypothesis `CodeOk c k` of the round's code `c`: code the two share
+is matched as one term (`Fill.refl`, at reducible transparency, which
+unfolds the geometries, `Impl.Dsa.Arm.Fn.geo`), and the rest is walked, its
+blocks matched last; the number of hashes of `p` (`Geo.count`), which its
+code recurses on, is evaluated first. -/
+macro "fill_round" : tactic => `(tactic| repeat' (first
+  | with_reducible exact Fill.refl _
+  | exact Fill.hole (by assumption)
+  | simp only [Impl.Dsa.Arm.Generation.Geo.count, Nat.reduceMul, Nat.reduceSub, Nat.reduceDiv]
+  | refine Fill.seq ?_ ?_
+  | refine Fill.ite _ ?_ ?_
+  | refine Fill.loop _ ?_
+  | refine Fill.call _ _ ?_
+  | refine Fill.frame _ _ ?_
+  | refine Fill.icall _ _ ?_ ?_
+  | exact Fill.refl _))
+
+theorem search_fill (umaal : Bool) (suffix : String) {round : Prog isa} (h : CodeOk round 56) :
+    Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56)) (Impl.Dsa.Arm.Fn.search umaal suffix round) := by
+  fill_round
+
+/-- The search's code with the stub, with either multiplication, uses at most
+304 bytes of stack and makes no indirect call. -/
+theorem search_stubOk (umaal : Bool) : CodeOk (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56)) 304 := by
+  cases umaal
+  · exact ⟨by lit_decide, by lit_decide⟩
+  · exact ⟨by lit_decide, by lit_decide⟩
+
+theorem frameOk_304 : FrameOk 304 := by decide
+
 end VG.Proof.Dsa.Arm.Scrub
 
 namespace VG.Proof.Dsa.Arm.Fn
@@ -201,5 +305,15 @@ theorem generateKey (umaal : Bool) :
         (Generate.checkParameters umaal) (Generate.deriveChecked umaal)
       verified := Key.generating_verified }
     (Scrub.generateKeyOut _) (scrubSideF_of (Scrub.generateKey_codeOk umaal) Scrub.frameOk_144 _)
+
+/-- `vg_dsa_parameter_search`, over the Miller–Rabin round `v`. -/
+theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
+    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract abi 304) 32 :=
+  verifiedScrubbedF (api := Spec.Dsa.parameterSearchApi)
+    { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code, verified := Gen.search_params v }
+    (Scrub.parameterSearchOut _)
+    (scrubSideF_of ((Scrub.search_fill umaal v.suffix ⟨v.stack, v.icallFree⟩).codeOk (Scrub.search_stubOk umaal))
+      Scrub.frameOk_304 _)
 
 end VG.Proof.Dsa.Arm.Fn
