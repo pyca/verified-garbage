@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnBase
 public import VerifiedGarbage.Proof.Bignum.X86_64.Template
@@ -33,6 +34,7 @@ def arith : RoundArith where
   arithSafe := by intro o a b; rfl
 
 
-def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) "" []
+def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) .sse (by lit_decide)
+  (by intro o a b; rfl) "" []
 
 end VG.Proof.Variants.MillerRabin.X86_64.Base
