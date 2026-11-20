@@ -52,6 +52,29 @@ theorem verifiedScrubbedOfT {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig 
   ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
     noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCall hpub ht) hrb⟩
 
+/-- `syms_of_tablesCall` for a contract whose ABI has the tables over any
+ABI `A` (one with tables of constants, `Abi.withConsts`). -/
+theorem syms_of_tablesCallA {A : Abi isa} {c : Prog isa} {k : Contract isa} {sig : Sig}
+    {ts : List (String × List FnTable)}
+    (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → (A.withTables sig ts).pub s₁ s₂) (ht : tablesCall c ts = true) :
+    ∀ s₁ s₂, k.pub s₁ s₂ → ∀ n ∈ inames c, s₁.syms n = s₂.syms n := by
+  intro s₁ s₂ hp n hn
+  have := List.all_eq_true.mp ht n hn
+  simp only [decide_eq_true_eq] at this
+  exact tables_pub_syms (hpub s₁ s₂ hp) n this
+
+/-- `verifiedScrubbedOfT` for a contract whose ABI has the tables over any
+ABI `A`: code that also reads tables of constants (ECDSA's comb). -/
+theorem verifiedScrubbedOfTA {A : Abi isa} {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig : Sig}
+    {ts : List (String × List FnTable)} (hv : Verified target c k)
+    (hok : ScrubAllOk k W rb) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hd : 16 * c.aarch64Depth ≤ W)
+    (hdit : c.all (fun i => !i.writesDit) = true)
+    (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → (A.withTables sig ts).pub s₁ s₂) (ht : tablesCall c ts = true)
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    VerifiedScrubbed target (scrubOf W rb c) k rb :=
+  ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
+    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd hdit (syms_of_tablesCallA hpub ht) hrb⟩
+
 /-- `verifiedScrubbedOfT` for `4080 < W < 8176` bytes of stack. -/
 theorem verifiedScrubbedOfLT {c : Prog isa} {k : Contract isa} {W rb : Nat} {sig : Sig}
     {ts : List (String × List FnTable)} (hv : Verified target c k)
