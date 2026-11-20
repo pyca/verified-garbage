@@ -15,12 +15,24 @@ namespace VG.Artifacts.Dsa.PPC64LE
 open VG Proof.Dsa.PPC64LE.Scrub
 
 def artifacts : List Artifact := [
-  Spec.Dsa.deriveKeyApi.artifact PPC64LE.target deriveKeyReg,
-  Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target randomSignPrevalidatedReg,
-  Spec.Dsa.generateKeyApi.artifact PPC64LE.target generateKeyReg,
-  Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target validatePublicKeyReg,
-  Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target validatePrivateKeyReg,
-  Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target verifyPrevalidatedReg,
+  Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.deriveKey
+    verified := .scrubbed deriveKey_scrubbed },
+  Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.randomSignPrevalidated
+    verified := .scrubbed randomSignPrevalidated_scrubbed },
+  Spec.Dsa.generateKeyApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.generateKey
+    verified := .scrubbed generateKey_scrubbed },
+  Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.validatePublicKey
+    verified := .scrubbed validatePublicKey_scrubbed },
+  Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.validatePrivateKey
+    verified := .scrubbed validatePrivateKey_scrubbed },
+  Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
+    code := Impl.Dsa.PPC64LE.Fn.verifyPrevalidated
+    verified := .scrubbed verifyPrevalidated_scrubbed },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
     verified := .scrubbed ⟨Proof.Dsa.PPC64LE.Gen.init_verified,
