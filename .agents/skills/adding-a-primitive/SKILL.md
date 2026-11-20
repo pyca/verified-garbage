@@ -121,8 +121,14 @@ instructions in an ISA model) go in their own PR before either.
    lemma joins the two (`AArch64.ScrubAll.scrubSide_union`): never a proof
    over the list of variants, which evaluates every variant's code again
    for every caller, and never `variants.attach` in a registration file.
-   On x86 (32-bit), whose tail clears every register a callee may change,
-   the variant states only `calleeOk` of each code it gives (no MMX, no
+   On x86 (32-bit) the cleanup is `Impl.Scrub.X86.scrub rb c` (code that
+   calls nothing) or `scrubF rb W c` (frames, calls, table calls), with the
+   result's bits and the stack as literals in the function's `Fn`
+   definition, and the theorem comes from `X86.Scrub.verifiedScrubbed` or
+   `verifiedScrubbedF` (`Proof/Framework/X86/ScrubFn.lean`;
+   `Impl.Sha3.X86.Fn`, `Proof/Sha3/X86/Scrub.lean`, `Artifacts/Sha3/X86.lean`).
+   Its tail clears every register a callee may change, so for code generic
+   over a variant the variant states only `calleeOk` of each code it gives (no MMX, no
    indirect call: `Ctr32Impl.scrub`, by `lit_decide`) besides its stack;
    the function's code with a stub of the variant (code `.block []`) is
    evaluated once (`scrubFSide … = true`, `lit_decide`), `fill_calls`
