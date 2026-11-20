@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
@@ -26,7 +27,7 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 namespace VG.Artifacts.Dsa.X86_64
 
 def direct : List Artifact := [
-  Spec.Dsa.parameterInitApi.artifact X86_64.target Proof.Dsa.X86_64.ParameterSearchInit.initReg]
+  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := .scrubbed Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
 
 end VG.Artifacts.Dsa.X86_64
 

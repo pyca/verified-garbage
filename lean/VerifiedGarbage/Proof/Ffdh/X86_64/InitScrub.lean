@@ -1,29 +1,22 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # FFDH's `init` functions on x86-64, without secret residue
 
 `vg_ffdh_parameter_generation_init` and `vg_ffdh_key_generation_init`, each
-followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`). Their
+followed by its cleanup, which clears every register it may write
+(`X86_64.Scrub.verifiedScrubbedAll`; they use no stack). Their
 postconditions read the memory on return only within the state
 (`wordsAt_congr`).
 -/
@@ -60,19 +53,19 @@ theorem parameterInitOut : PostOut (Spec.Ffdh.parameterInitContract abi) (Spec.F
     dsimp only [Curry.apply] at h ⊢
     rw [show ArgWord.addr.ofRaw a0 = a0 from rfl, hw]; exact h
 
-def parameterInitKs : List Nat := keep_for% Spec.Ffdh.parameterInitApi.sig 0 Impl.Ffdh.X86_64.Generation.init []
+theorem parameterInit_codeSp : Impl.Ffdh.X86_64.Generation.init.all (fun i => !isa.writesSp i) = true := by
+  sp_safe
 
-theorem parameterInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ffdh.parameterInitApi.sig 0 []) Impl.Ffdh.X86_64.Generation.init
-      h).any (RScrub.resOkB · 0 parameterInitKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of parameterInitKs (by taint_decide)
+/-- `Spec.Ffdh.parameterInitApi`'s function as emitted (`Impl.Ffdh.X86_64.Fn.parameterInit`) meets its
+contract in constant time and returns without secret residue. -/
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86_64.Fn.parameterInit (Spec.Ffdh.parameterInitApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.Ffdh.parameterInitApi)
+    { code := Impl.Ffdh.X86_64.Generation.init, verified := Generation.init_verified, spSafe := parameterInit_codeSp }
+    .sse parameterInitOut
 
-open VG.X86_64.RScrub in
-/-- `Spec.Ffdh.parameterInitApi` without secret residue. -/
-def parameterInitReg : Registration Spec.Ffdh.parameterInitApi X86_64.target :=
-  scrubOf { code := Impl.Ffdh.X86_64.Generation.init, verified := Generation.init_verified } .sse false [.rcx, .rdx, .rsi] parameterInitOut [] (pubOk_nil _)
-    ⟨parameterInitKs, parameterInitOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem parameterInit_spSafe : Impl.Ffdh.X86_64.Fn.parameterInit.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe parameterInit_codeSp
 
 theorem keyInitOut : PostOut (Spec.Ffdh.keyInitContract abi) (Spec.Ffdh.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -88,18 +81,17 @@ theorem keyInitOut : PostOut (Spec.Ffdh.keyInitContract abi) (Spec.Ffdh.keyInitS
     dsimp only [Curry.apply] at h ⊢
     rw [show ArgWord.addr.ofRaw a0 = a0 from rfl, hw]; exact h
 
-def keyInitKs : List Nat := keep_for% Spec.Ffdh.keyInitApi.sig 0 Impl.Ffdh.X86_64.KeyGeneration.init []
+theorem keyInit_codeSp : Impl.Ffdh.X86_64.KeyGeneration.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem keyInitOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ffdh.keyInitApi.sig 0 []) Impl.Ffdh.X86_64.KeyGeneration.init
-      h).any (RScrub.resOkB · 0 keyInitKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of keyInitKs (by taint_decide)
+/-- `Spec.Ffdh.keyInitApi`'s function as emitted (`Impl.Ffdh.X86_64.Fn.keyInit`) meets its contract in
+constant time and returns without secret residue. -/
+theorem keyInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86_64.Fn.keyInit (Spec.Ffdh.keyInitApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.Ffdh.keyInitApi)
+    { code := Impl.Ffdh.X86_64.KeyGeneration.init, verified := KeyGeneration.init_verified, spSafe := keyInit_codeSp }
+    .sse keyInitOut
 
-open VG.X86_64.RScrub in
-/-- `Spec.Ffdh.keyInitApi` without secret residue. -/
-def keyInitReg : Registration Spec.Ffdh.keyInitApi X86_64.target :=
-  scrubOf { code := Impl.Ffdh.X86_64.KeyGeneration.init, verified := KeyGeneration.init_verified } .sse false [.rsi] keyInitOut [] (pubOk_nil _)
-    ⟨keyInitKs, keyInitOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem keyInit_spSafe : Impl.Ffdh.X86_64.Fn.keyInit.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe keyInit_codeSp
 
 end VG.Proof.Ffdh.X86_64.Scrub

@@ -1,31 +1,22 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.MlKem.X86_64.Fn
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEkAvx2
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEkAvx2
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-KEM's encapsulation-key check on x86-64, without secret residue
 
 `vg_mlkem768_check_ek` and `vg_mlkem1024_check_ek`, with and without AVX2,
-each followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`),
-which clears the registers that the residue analysis (`X86_64.RTaint`) finds
-may hold secrets. Their postconditions read only the memory on entry.
+each followed by its cleanup, which clears every register it may write
+(`X86_64.Scrub.verifiedScrubbedAll`; they use no stack). Their postconditions read only the memory on entry.
 -/
 
 @[expose] public section
@@ -46,56 +37,52 @@ theorem checkEk1024Out : PostOut (Spec.MlKem1024.checkEkContract abi) (Spec.MlKe
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
-def checkEkKs : List Nat := keep_for% Spec.MlKem.checkEkApi.sig 0 Impl.MlKem.X86_64.checkEk []
+theorem checkEk_codeSp : Impl.MlKem.X86_64.checkEk.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem checkEkOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.MlKem.checkEkApi.sig 0 []) Impl.MlKem.X86_64.checkEk
-      h).any (RScrub.resOkB · 0 checkEkKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of checkEkKs (by taint_decide)
+/-- `Spec.MlKem.checkEkApi`'s function as emitted (`Impl.MlKem.X86_64.Fn.checkEk`) meets its contract in constant
+time and returns without secret residue. -/
+theorem checkEk_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86_64.Fn.checkEk (Spec.MlKem.checkEkApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.MlKem.checkEkApi)
+    { code := Impl.MlKem.X86_64.checkEk, verified := Proof.MlKem.X86_64.checkEk_verified, spSafe := checkEk_codeSp } .sse checkEkOut
 
-open VG.X86_64.RScrub in
-def checkEkReg : Registration Spec.MlKem.checkEkApi X86_64.target :=
-  scrubOf { code := Impl.MlKem.X86_64.checkEk, verified := Proof.MlKem.X86_64.checkEk_verified } .sse false [.rcx, .rdx, .rdi, .r8] checkEkOut [] (pubOk_nil _)
-    ⟨checkEkKs, checkEkOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem checkEk_spSafe : Impl.MlKem.X86_64.Fn.checkEk.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe checkEk_codeSp
 
-def checkEkAvx2Ks : List Nat := keep_for% Spec.MlKem.checkEkApi.sig 0 Impl.MlKem.X86_64.checkEkAvx2 []
+theorem checkEkAvx2_codeSp : Impl.MlKem.X86_64.checkEkAvx2.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem checkEkAvx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.MlKem.checkEkApi.sig 0 []) Impl.MlKem.X86_64.checkEkAvx2
-      h).any (RScrub.resOkB · 0 checkEkAvx2Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of checkEkAvx2Ks (by taint_decide)
+/-- `Spec.MlKem.checkEkApi`'s function as emitted (`Impl.MlKem.X86_64.Fn.checkEkAvx2`) meets its contract in constant
+time and returns without secret residue. -/
+theorem checkEkAvx2_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86_64.Fn.checkEkAvx2 (Spec.MlKem.checkEkApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.MlKem.checkEkApi)
+    { code := Impl.MlKem.X86_64.checkEkAvx2, verified := Proof.MlKem.X86_64.checkEkAvx2_verified, spSafe := checkEkAvx2_codeSp } .avx checkEkOut
 
-open VG.X86_64.RScrub in
-def checkEkAvx2Reg : Registration Spec.MlKem.checkEkApi X86_64.target :=
-  scrubOf { suffix := "_avx2", code := Impl.MlKem.X86_64.checkEkAvx2, verified := Proof.MlKem.X86_64.checkEkAvx2_verified } .avx true [.rcx, .rdi] checkEkOut [] (pubOk_nil _)
-    ⟨checkEkAvx2Ks, checkEkAvx2Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem checkEkAvx2_spSafe : Impl.MlKem.X86_64.Fn.checkEkAvx2.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe checkEkAvx2_codeSp
 
-def checkEk1024Ks : List Nat := keep_for% Spec.MlKem1024.checkEkApi.sig 0 Impl.MlKem1024.X86_64.checkEk1024 []
+theorem checkEk1024_codeSp : Impl.MlKem1024.X86_64.checkEk1024.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem checkEk1024Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.MlKem1024.checkEkApi.sig 0 []) Impl.MlKem1024.X86_64.checkEk1024
-      h).any (RScrub.resOkB · 0 checkEk1024Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of checkEk1024Ks (by taint_decide)
+/-- `Spec.MlKem1024.checkEkApi`'s function as emitted (`Impl.MlKem.X86_64.Fn.checkEk1024`) meets its contract in constant
+time and returns without secret residue. -/
+theorem checkEk1024_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86_64.Fn.checkEk1024 (Spec.MlKem1024.checkEkApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.MlKem1024.checkEkApi)
+    { code := Impl.MlKem1024.X86_64.checkEk1024, verified := Proof.MlKem1024.X86_64.checkEk1024_verified, spSafe := checkEk1024_codeSp } .sse checkEk1024Out
 
-open VG.X86_64.RScrub in
-def checkEk1024Reg : Registration Spec.MlKem1024.checkEkApi X86_64.target :=
-  scrubOf { code := Impl.MlKem1024.X86_64.checkEk1024, verified := Proof.MlKem1024.X86_64.checkEk1024_verified } .sse false [.rcx, .rdx, .rdi, .r8] checkEk1024Out [] (pubOk_nil _)
-    ⟨checkEk1024Ks, checkEk1024Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem checkEk1024_spSafe : Impl.MlKem.X86_64.Fn.checkEk1024.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe checkEk1024_codeSp
 
-def checkEk1024Avx2Ks : List Nat := keep_for% Spec.MlKem1024.checkEkApi.sig 0 Impl.MlKem1024.X86_64.checkEk1024Avx2 []
+theorem checkEk1024Avx2_codeSp : Impl.MlKem1024.X86_64.checkEk1024Avx2.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem checkEk1024Avx2Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.MlKem1024.checkEkApi.sig 0 []) Impl.MlKem1024.X86_64.checkEk1024Avx2
-      h).any (RScrub.resOkB · 0 checkEk1024Avx2Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of checkEk1024Avx2Ks (by taint_decide)
+/-- `Spec.MlKem1024.checkEkApi`'s function as emitted (`Impl.MlKem.X86_64.Fn.checkEk1024Avx2`) meets its contract in constant
+time and returns without secret residue. -/
+theorem checkEk1024Avx2_scrubbed :
+    VerifiedScrubbed target Impl.MlKem.X86_64.Fn.checkEk1024Avx2 (Spec.MlKem1024.checkEkApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.MlKem1024.checkEkApi)
+    { code := Impl.MlKem1024.X86_64.checkEk1024Avx2, verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified, spSafe := checkEk1024Avx2_codeSp } .avx checkEk1024Out
 
-open VG.X86_64.RScrub in
-def checkEk1024Avx2Reg : Registration Spec.MlKem1024.checkEkApi X86_64.target :=
-  scrubOf { suffix := "_avx2", code := Impl.MlKem1024.X86_64.checkEk1024Avx2, verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified } .avx true [.rcx, .rdi] checkEk1024Out [] (pubOk_nil _)
-    ⟨checkEk1024Avx2Ks, checkEk1024Avx2Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem checkEk1024Avx2_spSafe : Impl.MlKem.X86_64.Fn.checkEk1024Avx2.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe checkEk1024Avx2_codeSp
 
 end VG.Proof.MlKem.X86_64.Scrub

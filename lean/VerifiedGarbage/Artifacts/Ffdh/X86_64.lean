@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
@@ -29,8 +30,8 @@ namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
 
 def direct : List Artifact := [
-  Spec.Ffdh.parameterInitApi.artifact target Proof.Ffdh.X86_64.Scrub.parameterInitReg,
-  Spec.Ffdh.keyInitApi.artifact target Proof.Ffdh.X86_64.Scrub.keyInitReg]
+  Spec.Ffdh.parameterInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.parameterInit, verified := .scrubbed Proof.Ffdh.X86_64.Scrub.parameterInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.parameterInit_spSafe },
+  Spec.Ffdh.keyInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.keyInit, verified := .scrubbed Proof.Ffdh.X86_64.Scrub.keyInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.keyInit_spSafe }]
 end VG.Artifacts.Ffdh.X86_64
 
 -- Emit FFDH domain operations for every shared arithmetic backend and exponentiation
