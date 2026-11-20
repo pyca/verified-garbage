@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha256_init_shani` if the CPU supports its features (`VG_HMAC_SHA256_INIT_SHANI_FEATURES`); or else `vg_hmac_sha256_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -58,6 +60,8 @@ pub unsafe fn vg_hmac_sha256_init_auto(_dit: verified_garbage_cpu::Dit<'_>, inne
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_hmac_sha256_finalize_shani` if the CPU supports its features (`VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES`); or else `vg_hmac_sha256_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

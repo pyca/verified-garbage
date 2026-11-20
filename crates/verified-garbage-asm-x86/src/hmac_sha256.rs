@@ -10,6 +10,8 @@ pub const VG_HMAC_SHA256_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = v
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -43,7 +45,7 @@ call {vg_sha256_compress_shani}
 call {vg_sha256_compress_shani}
 .base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkWAMAAA=="
 21:
-.base64 "ww=="
+.base64 "Zg/vwLkAAAAAjaQkXPn///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAAiYwkoAYAAI2kJKQGAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 20:
 .base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
 jae 25f
@@ -78,6 +80,8 @@ pub const VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -96,7 +100,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_shani(inner: *mut [u8; 9
 call {vg_sha256_finalize_scratch_shani}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
 call {vg_sha256_compress_shani}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAADD"
+.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAABmD+/AuQAAAACNpCR0/P//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAACJjCSAAwAAiYwkhAMAAImMJIgDAACNpCSMAwAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
@@ -106,6 +110,8 @@ call {vg_sha256_compress_shani}
 /// Starts an HMAC-SHA-256 computation with a key of any length: makes the SHA-256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-256 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha256_finalize`.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -139,7 +145,7 @@ call {vg_sha256_compress}
 call {vg_sha256_compress}
 .base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkWAMAAA=="
 21:
-.base64 "ww=="
+.base64 "Zg/vwLkAAAAAjaQkXPn///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAAiYwkoAYAAI2kJKQGAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 20:
 .base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
 jae 25f
@@ -171,6 +177,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -188,7 +196,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
 call {vg_sha256_finalize_scratch}
 .base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4i43MAAAAiUs8uYAAAACJS0C5AAAAAIlLRLkAAAAAiUtIuQAAAACJS0y5AAAAAIlLULkAAAAAiUtUuQAAAACJS1i5AAADAIlLXInYg8AguQEAAABVUVBT"
 call {vg_sha256_compress}
-.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAADD"
+.base64 "WFhYWIn4iwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByJ6IuYoAAAAIuwpAAAAIu4qAAAAIuorAAAAI2kJFwDAABmD+/AuQAAAACNpCR0/P//8w9/BCTzD39EJBDzD39EJCDzD39EJDDzD39EJEDzD39EJFDzD39EJGDzD39EJHDzD3+EJIAAAADzD3+EJJAAAADzD3+EJKAAAADzD3+EJLAAAADzD3+EJMAAAADzD3+EJNAAAADzD3+EJOAAAADzD3+EJPAAAADzD3+EJAABAADzD3+EJBABAADzD3+EJCABAADzD3+EJDABAADzD3+EJEABAADzD3+EJFABAADzD3+EJGABAADzD3+EJHABAADzD3+EJIABAADzD3+EJJABAADzD3+EJKABAADzD3+EJLABAADzD3+EJMABAADzD3+EJNABAADzD3+EJOABAADzD3+EJPABAADzD3+EJAACAADzD3+EJBACAADzD3+EJCACAADzD3+EJDACAADzD3+EJEACAADzD3+EJFACAADzD3+EJGACAADzD3+EJHACAADzD3+EJIACAADzD3+EJJACAADzD3+EJKACAADzD3+EJLACAADzD3+EJMACAADzD3+EJNACAADzD3+EJOACAADzD3+EJPACAADzD3+EJAADAADzD3+EJBADAADzD3+EJCADAADzD3+EJDADAADzD3+EJEADAADzD3+EJFADAADzD3+EJGADAADzD3+EJHADAACJjCSAAwAAiYwkhAMAAImMJIgDAACNpCSMAwAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
