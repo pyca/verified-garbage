@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
@@ -27,6 +28,10 @@ namespace VG.Artifacts.Pbkdf2Sha256.X86
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) => [
-    Spec.Hmac.sha256I.pbkdf2Api.artifact X86.target (Proof.Pbkdf2.Whole.X86.Scrub.sha256Reg v)]
+    Spec.Hmac.sha256I.pbkdf2Api.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.Pbkdf2.Whole.X86.Fn.sha256 v.F
+      verified := .scrubbed (Proof.Pbkdf2.Whole.X86.Scrub.sha256_scrubbed v)
+      spSafe := Proof.Pbkdf2.Whole.X86.Scrub.sha256_spSafe v }]
 
 end VG.Artifacts.Pbkdf2Sha256.X86
