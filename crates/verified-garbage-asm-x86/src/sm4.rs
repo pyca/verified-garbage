@@ -154,3 +154,19 @@ jmp 22f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_crypt_prepared.rs"]
+pub(crate) mod vg_sm4_crypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr32.rs"]
+pub(crate) mod vg_sm4_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_expand_key_core.rs"]
+pub(crate) mod vg_sm4_expand_key_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_prepare_keys.rs"]
+pub(crate) mod vg_sm4_prepare_keys;
