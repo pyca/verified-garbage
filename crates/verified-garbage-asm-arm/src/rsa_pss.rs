@@ -11,6 +11,8 @@ pub const VG_RSA_PSS_SIGN_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Feat
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -40,7 +42,7 @@ pub const VG_RSA_PSS_SIGN_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
@@ -4164,6 +4166,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #3632
+add r12, sp, #0
+mov r2, #0
+mov r3, #113
+2166:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2166b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3632
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
     )
@@ -4176,6 +4204,8 @@ pub const VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Fe
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10628,6 +10658,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #240
+add r12, sp, #0
+mov r2, #0
+mov r3, #7
+2230:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2230b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked_umaal = sym super::rsa::vg_rsa_public_precomputed_checked_umaal::vg_rsa_public_precomputed_checked_umaal,
     )
@@ -10636,6 +10692,8 @@ bx lr",
 /// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
 /// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -10666,7 +10724,7 @@ bx lr",
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
@@ -14788,6 +14846,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #3632
+add r12, sp, #0
+mov r2, #0
+mov r3, #113
+2166:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2166b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #3632
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
@@ -14796,6 +14880,8 @@ bx lr",
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -21246,6 +21332,32 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
+sub sp, sp, #240
+add r12, sp, #0
+mov r2, #0
+mov r3, #7
+2230:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 2230b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #240
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
