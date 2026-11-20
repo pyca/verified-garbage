@@ -26,15 +26,35 @@ public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
 namespace VG.Artifacts.MlKem.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.MlKem.keyGenApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.keyGenReg,
-  Spec.MlKem.encapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsReg,
-  Spec.MlKem.encapsHApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsHReg,
-  Spec.MlKem.decapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.decapsReg,
-  Spec.MlKem.checkEkApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.checkEkReg,
-  Spec.MlKem1024.checkEkApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.checkEk1024Reg,
-  Spec.MlKem1024.keyGenApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.keyGen1024Reg,
-  Spec.MlKem1024.encapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encaps1024Reg,
-  Spec.MlKem1024.encapsHApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.encapsH1024Reg,
-  Spec.MlKem1024.decapsApi.artifact RISCV64.target Proof.MlKem.RISCV64.Scrub.decaps1024Reg]
+  Spec.MlKem.keyGenApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.keyGen
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.keyGen_scrubbed },
+  Spec.MlKem.encapsApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.encaps
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.encaps_scrubbed },
+  Spec.MlKem.encapsHApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.encapsH
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.encapsH_scrubbed },
+  Spec.MlKem.decapsApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.decaps
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.decaps_scrubbed },
+  Spec.MlKem.checkEkApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.checkEk
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.checkEk_scrubbed },
+  Spec.MlKem1024.checkEkApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.checkEk1024
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.checkEk1024_scrubbed },
+  Spec.MlKem1024.keyGenApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.keyGen1024
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.keyGen1024_scrubbed },
+  Spec.MlKem1024.encapsApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.encaps1024
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.encaps1024_scrubbed },
+  Spec.MlKem1024.encapsHApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.encapsH1024
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.encapsH1024_scrubbed },
+  Spec.MlKem1024.decapsApi.artifact RISCV64.target {
+    code := Impl.MlKem.RISCV64.Fn.decaps1024
+    verified := .scrubbed Proof.MlKem.RISCV64.Scrub.decaps1024_scrubbed }]
 
 end VG.Artifacts.MlKem.RISCV64
