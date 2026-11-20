@@ -35,7 +35,7 @@ constant time and returns without secret residue (`VerifiedScrubbed`, by
 `RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
 here), which is what its registration binds. Their postconditions read the
 memory on return only within the data and the tag (`RISCV64.Scrub.PostOut`),
-as on x86-64 (`Proof/ChaCha20Poly1305/X86_64/Scrub.lean`). They call
+as on x86-64 (`Proof/ChaCha20Poly1305/X86_64/ScrubFn.lean`). They call
 ChaCha20's and Poly1305's code, and `vg_chacha20_poly1305_seal_gather` that
 of `vg_chacha20_poly1305_seal`, as internal functions of their own
 (`vg_poly1305_init_core`, …), since the exported ones now clear their stack.

@@ -19,6 +19,12 @@ saves MXCSR and loads it from what it saved). The kernel evaluates
 `RScrub.Mx.mx` only on those functions, and the rest of the code one
 instruction at a time (`Code.allInstrs`): `mx` of a whole function whose
 blocks run to thousands of instructions is too deep for it.
+
+For code generic over the implementations it calls (`Fill`, as in
+`ScrubCall.lean`), `mxCallsS` checks the same of its code with a stub
+(`Fill.mxCalls`), and `verifiedScrubbedAllFillM` is
+`verifiedScrubbedAllFill` from it (`stubSideM`), for code that calls
+`vg_mcdt_enter` (ChaCha20-Poly1305, through Poly1305's vector code).
 -/
 
 @[expose] public section
@@ -161,30 +167,6 @@ theorem mxCalls_ok {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ 
 same trace from the same MXCSR. -/
 theorem mxSame_of_mxCalls {c : Prog isa} (h : mxCalls c = true) : MxSame c :=
   fun _ _ _ _ _ e₁ e₂ hm => (mxCalls_ok e₁ e₂ (r₁ := []) (r₂ := []) rfl h hm).2
-
-/-- What `scrubAll` needs of code `c` that loads MXCSR only in functions it
-calls (`mxCalls`): at most `stack` bytes of stack, vector instructions of at
-most the level `k`, and indirect calls only of its tables' functions. Only
-the kernel evaluates it. -/
-noncomputable def scrubSideM (c : Prog isa) (stack k : Nat) (ts : List (String × List FnTable)) : Bool :=
-  decide (c.x86_64Depth ≤ stack) && c.allInstrs (fun i => decide (i.vecLevelR ≤ k)) && mxCalls c &&
-    tablesCall c ts
-
-/-- `r`'s code followed by `scrubAll v rb stack`, which wipes every granule
-of its stack, meets `r`'s contract in constant time and returns without
-secret residue: from `scrubSideM` of its code, which the kernel evaluates
-once, for code that loads MXCSR only in functions it calls (`vg_mcdt_enter`)
-and whose blocks are too long for `scrubSideG`'s `RScrub.Mx.mx`. -/
-theorem verifiedScrubbedAllM {api : Api} (r : Unscrubbed api target) (v : VecLevel) {stack rb : Nat}
-    (hpost : PostOut r.contract (retBitsOf r))
-    (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl)
-    (hs : scrubSideM r.code stack v.level r.tables = true := by lit_decide)
-    (hl : litSide stack rb = true := by decide) :
-    VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
-  subst hn hb
-  simp only [scrubSideM, Bool.and_eq_true, decide_eq_true_eq] at hs
-  obtain ⟨⟨⟨hd, hlv⟩, hmx⟩, hic⟩ := hs
-  exact verifiedScrubbedAllF r v hpost hd hlv (mxSame_of_mxCalls hmx) hic hl rfl rfl
 
 /-! ## Over a stub for the implementations it calls -/
 

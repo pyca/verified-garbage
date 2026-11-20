@@ -1,6 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Scrub
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.MxCall
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
@@ -54,6 +60,89 @@ abbrev Combo (fold pass wide : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prop :=
   (fold = 0 ∧ pass = 0 ∧ wide = 4 ∧ b = .scalar) ∨
     (fold = 448 ∧ pass = 0 ∧ wide = 5 ∧ b = .avx2) ∨
     (fold = 960 ∧ pass = 1024 ∧ wide = 6 ∧ (b = .avx512 ∨ b = .ifma))
+
+/-! ## Without the cleanup -/
+
+section
+open VG.Impl.ChaCha20Poly1305.X86_64.Shared
+
+/-- `seal`'s postcondition reads the memory on return only within the
+buffers: the data and the tag. -/
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.ChaCha20Poly1305.sealContract abi stack) (Spec.ChaCha20Poly1305.sealSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain (sealPost_out _)
+
+/-- `seal` of an instance, unscrubbed. -/
+def sealPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.sealApi X86_64.target where
+  suffix := v.suffix
+  code := sealCode v.callee v.poly
+  verified := Shared.seal_verified v
+  spSafe := Shared.seal_sp v
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.ChaCha20Poly1305.openZeroContract abi stack) (Spec.ChaCha20Poly1305.openSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain (openZeroPost_out _)
+
+def openPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.openZeroApi X86_64.target where
+  suffix := v.suffix
+  code := openCode v.callee v.poly
+  verified := Shared.open_verified v
+  spSafe := Shared.open_sp v
+
+theorem openToOut (stack : Nat) :
+    PostOut (Spec.ChaCha20Poly1305.openToContract abi stack) (Spec.ChaCha20Poly1305.openToSig.retBits 64) :=
+  postOut_of_local_pre ScrubAbi.plain (openToPost_out _)
+
+def openToPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.openToApi X86_64.target where
+  suffix := v.suffix
+  code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
+  verified := OpenTo.openTo_verified v
+  spSafe := OpenTo.openTo_sp v
+
+/-- `seal_gather`'s postcondition reads the memory on return only within
+`dst` and `tag`. -/
+theorem sealGatherPost_out (pb : Nat) : ∀ vs m m₁ m₂ r,
+    vs.length = (Spec.ChaCha20Poly1305.sealGatherSig.words pb).length →
+    (∀ b ∈ Sig.bufs Spec.ChaCha20Poly1305.sealGatherSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Spec.ChaCha20Poly1305.sealGatherSig.words pb) (Spec.ChaCha20Poly1305.sealGatherPost pb) vs m m₁ r →
+      Curry.apply (Spec.ChaCha20Poly1305.sealGatherSig.words pb) (Spec.ChaCha20Poly1305.sealGatherPost pb)
+        vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 5
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.ChaCha20Poly1305.sealGatherSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.ChaCha20Poly1305.sealGatherPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Spec.ChaCha20Poly1305.sealGatherPost pb) _ m m₂ r
+  dsimp only [Curry.apply, Spec.ChaCha20Poly1305.sealGatherPost, ArgWord.ofRaw] at h ⊢
+  intro h₁ h₂
+  rw [bytesAt_congr_len (p := dst) (agree_of hb.2.2.2.1), bytesAt_congr (p := tag) (agree_of hb.2.2.2.2)]
+  exact h h₁ h₂
+
+theorem gatherOut (stack : Nat) :
+    PostOut (Spec.ChaCha20Poly1305.sealGatherContract abi stack)
+      (Spec.ChaCha20Poly1305.sealGatherSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain (sealGatherPost_out _)
+
+def gatherPlain (v : XorImpl) : Unscrubbed Spec.ChaCha20Poly1305.sealGatherApi X86_64.target where
+  suffix := v.suffix
+  code := Gather.gatherCode v
+  verified := Gather.gather_verified v
+  spSafe := Gather.gather_spSafe v
+
+end
 
 theorem side_cp (v : XorImpl) : calleeSide v.callee.code (cpLevel v).level 16 = true :=
   calleeSide_mono (level_join_left _ _) (Nat.le_refl _) v.side
@@ -126,7 +215,7 @@ and returns without secret residue. -/
 theorem seal_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Fn.seal (cpLevel v) v.callee v.poly)
       (Spec.ChaCha20Poly1305.sealApi.contract X86_64.abi 1768) 0 :=
-  verifiedScrubbedAllFillM (Scrub.sealPlain v) (cpLevel v) (Scrub.sealOut _)
+  verifiedScrubbedAllFillM (sealPlain v) (cpLevel v) (sealOut _)
     (seal_fill v.callee.name v.callee.code _ _ _ v.callee.vl v.poly (side_cp v) v.fold_poly)
     (poly_le v) (Nat.le_refl _)
     (ha := seal_stub _ _ _ v.callee.vl v.poly v.fold_poly)
@@ -201,7 +290,7 @@ and returns without secret residue. -/
 theorem open_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Fn.open (cpLevel v) v.callee v.poly)
       (Spec.ChaCha20Poly1305.openZeroApi.contract X86_64.abi 1784) 32 :=
-  verifiedScrubbedAllFillM (Scrub.openPlain v) (cpLevel v) (Scrub.openOut _)
+  verifiedScrubbedAllFillM (openPlain v) (cpLevel v) (openOut _)
     (open_fill v.callee.name v.callee.code _ _ _ v.callee.vl v.poly (side_cp v) v.fold_poly)
     (poly_le v) (Nat.le_refl _)
     (ha := open_stub _ _ _ v.callee.vl v.poly v.fold_poly)
@@ -276,7 +365,7 @@ and returns without secret residue. -/
 theorem openTo_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Fn.openTo (cpLevel v) v.callee v.poly)
       (Spec.ChaCha20Poly1305.openToApi.contract X86_64.abi 1800) 32 :=
-  verifiedScrubbedAllFillM (Scrub.openToPlain v) (cpLevel v) (Scrub.openToOut _)
+  verifiedScrubbedAllFillM (openToPlain v) (cpLevel v) (openToOut _)
     (openTo_fill v.callee.name v.callee.code _ _ _ v.callee.vl v.poly (side_cp v) v.fold_poly)
     (poly_le v) (Nat.le_refl _)
     (ha := openTo_stub _ _ _ v.callee.vl v.poly v.fold_poly)
@@ -381,18 +470,18 @@ theorem gather_scrubbed (v : XorImpl) :
       (Spec.ChaCha20Poly1305.sealGatherApi.contract X86_64.abi 1880) 0 := by
   have hf : Fill (cpLevel v).level (fun _ => 16)
       (Fn.gatherCode "" "" ⟨"", .block [], v.callee.fold, v.callee.pass, v.callee.wide, v.callee.vl⟩ v.poly)
-      (Scrub.gatherPlain v).code := by
+      (gatherPlain v).code := by
     show Fill _ _ _ (Gather.gatherCode v)
     rw [gatherCode_eq]
     exact gather_fill v.callee.name v.callee.code (sealName v) (splitName v) _ _ _ v.callee.vl v.poly
       (side_cp v) v.fold_poly
   have e : Fn.sealGather (cpLevel v) (sealName v) (splitName v) v.callee v.poly =
-      scrubAll (cpLevel v) 0 1880 (Scrub.gatherPlain v).code := by
+      scrubAll (cpLevel v) 0 1880 (gatherPlain v).code := by
     unfold Fn.sealGather
     rw [← gatherCode_eq]
     rfl
   rw [e]
-  exact verifiedScrubbedAllFillM (Scrub.gatherPlain v) (cpLevel v) (Scrub.gatherOut _) hf
+  exact verifiedScrubbedAllFillM (gatherPlain v) (cpLevel v) (gatherOut _) hf
     (poly_le v) (Nat.le_refl _) (ha := gather_stub _ _ _ v.callee.vl v.poly v.fold_poly)
 
 theorem gather_spSafeFn (v : XorImpl) :
