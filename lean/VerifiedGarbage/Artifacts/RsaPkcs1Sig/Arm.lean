@@ -367,8 +367,8 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
-      code := Proof.RsaPkcs1Sig.Arm.Sg.signCodeP v
-      verified := .unscrubbed (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) },
+      code := Impl.RsaPkcs1Sig.Arm.Fn.signPrecomputed (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v)
+      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.signPrecomputed v) },
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name

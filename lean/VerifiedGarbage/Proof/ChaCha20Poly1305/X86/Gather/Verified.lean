@@ -1094,9 +1094,11 @@ theorem sealGather_verified (F : SealFn) :
 
 open VG.Proof.ChaCha20.X86 VG.Impl.StackScratch.X86 in
 /-- The instance of `vg_chacha20_poly1305_seal` calling the implementation
-`v` of `vg_chacha20_xor`, with its working space in a frame of its own. -/
+`v` of `vg_chacha20_xor`, with its working space in a frame of its own: the
+internal `vg_chacha20_poly1305_seal_core`, since the exported function then
+clears its stack and registers (`Impl.ChaCha20Poly1305.X86.Fn.seal`). -/
 def sealFn (v : XorImpl) : SealFn where
-  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
+  name := "vg_chacha20_poly1305_seal_core" ++ v.suffix
   code := withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
   verified := Proof.ChaCha20Poly1305.X86.seal_framed v
   noSp := by

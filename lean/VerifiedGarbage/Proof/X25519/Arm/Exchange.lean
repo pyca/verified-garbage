@@ -30,6 +30,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.X25519.Arm.Exchange
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Impl.X25519.Arm.Words
 meta import VerifiedGarbage.Proof.X25519.Arm.Words.Ladder
 meta import VerifiedGarbage.Proof.X25519.Arm.Invert
@@ -44,6 +46,8 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Impl.X25519.Arm.Exchange
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 
 /-! ### `X25519.Arm.Words.Verified`, which only this module used -/
 
@@ -788,3 +792,76 @@ theorem exchange_umaal :
   exchange_verified _ Proof.X25519.Arm.Words.x25519Umaal_verified (by lit_decide) check_taint
 
 end VG.Proof.X25519.Arm.Exchange
+
+/-!
+# X25519 exchange on ARMv7, without secret residue
+
+`vg_x25519_exchange` calls `vg_x25519` (or `vg_x25519_umaal`) from frames of 8 bytes, and its
+postcondition reads the memory on return only at `out` (`exchangeOut`): it is emitted with
+those bytes zeroed and the registers a callee may change, but the result, and the flags set to
+constants (`Impl.X25519.Arm.Fn.exchange`). Each callee states that it uses no stack and calls
+nothing indirectly (`CodeOk`, by `lit_decide`), and the exchange's own frames add 8 bytes
+(`exchange_codeOk`).
+-/
+
+namespace VG.Proof.X25519.Arm.Exchange
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
+
+/-- The 32 bytes at `o` read the memory only within `⟨o, 32⟩`. -/
+theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr}
+    (h : ∀ a, Region.Contains ⟨o, 32⟩ a 1 → m₁ a = m₂ a) :
+    Spec.X25519.bytesAt m₂ o 32 = Spec.X25519.bytesAt m₁ o 32 := by
+  simp only [Spec.X25519.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have := List.mem_range.mp hi
+  exact (h _ (Offset.contains_base _ (by omega_using [this]) (by omega_using [this]))).symm
+
+theorem exchangeOut (stack : Nat) :
+    PostOut (Spec.X25519.exchangeContract abi stack) (Spec.X25519.exchangeSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun
+    | [out, _, _, _], m, m₁, m₂, r, _, hb, h => by
+      simp only [Spec.X25519.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _] _ _ _ m₁ r at h
+      change @Curry.apply (Mem → Mem → BitVec _ → Prop) [_, _, _, _] _ _ _ m₂ r
+      dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+      rw [bytesAt_of hb.1]
+      exact h
+
+/-- The exchange's frames, `push {lr}` and `push {r0}`, around a callee that uses no stack. -/
+theorem exchange_codeOk {c : Prog isa} (name : String) (hc : CodeOk c 0) :
+    CodeOk (Impl.Xdh.Arm.exchange name c 32) 8 :=
+  CodeOk.push (CodeOk.seq (CodeOk.push (CodeOk.call hc)) ((CodeOk.block _).mono (by decide)))
+
+theorem x25519_codeOk : CodeOk Impl.X25519.Arm.x25519 0 := by lit_decide
+
+theorem x25519Umaal_codeOk : CodeOk Impl.X25519.Arm.Words.x25519Umaal 0 := by lit_decide
+
+theorem frameOk_8 : FrameOk 8 := by decide
+
+end VG.Proof.X25519.Arm.Exchange
+
+namespace VG.Proof.X25519.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_x25519_exchange`. -/
+theorem exchange :
+    VerifiedScrubbed target Impl.X25519.Arm.Fn.exchange (Spec.X25519.exchangeContract abi 8) 32 :=
+  verifiedScrubbedF (api := Spec.X25519.exchangeApi)
+    { code := Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32
+      verified := Exchange.exchange_baseline }
+    (Exchange.exchangeOut _)
+    (scrubSideF_of (Exchange.exchange_codeOk _ Exchange.x25519_codeOk) Exchange.frameOk_8 _)
+
+/-- `vg_x25519_exchange_umaal`. -/
+theorem exchangeUmaal :
+    VerifiedScrubbed target Impl.X25519.Arm.Fn.exchangeUmaal (Spec.X25519.exchangeContract abi 8) 32 :=
+  verifiedScrubbedF (api := Spec.X25519.exchangeApi)
+    { code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32
+      verified := Exchange.exchange_umaal }
+    (Exchange.exchangeOut _)
+    (scrubSideF_of (Exchange.exchange_codeOk _ Exchange.x25519Umaal_codeOk) Exchange.frameOk_8 _)
+
+end VG.Proof.X25519.Arm.Fn

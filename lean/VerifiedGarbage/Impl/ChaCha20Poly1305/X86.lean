@@ -11,7 +11,8 @@ and `vg_chacha20_poly1305_open` (the same arguments, returning `eax`), cdecl:
 the arguments are at `[esp + 4]`, …, `[esp + 32]`; and
 `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst,
 dst_len, tag, work)`, at `[esp + 4]`, …, `[esp + 40]`. They are composed of
-calls of the verified ChaCha20 and Poly1305 functions, as on x86-64. `work` is
+calls of the verified ChaCha20 and Poly1305 functions, as on x86-64 (`vg_poly1305_init`'s
+code as the internal `vg_poly1305_init_core`, since the exported one clears its registers). `work` is
 the working space, which the artifact's frame allocates on the stack
 (`withStackScratchWiped`).
 
@@ -116,7 +117,7 @@ def prologue : Prog isa :=
   (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
   (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
   (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
-    (callWith [.ecx, .edx] "vg_poly1305_init" Impl.Poly1305.X86.init))))
+    (callWith [.ecx, .edx] "vg_poly1305_init_core" Impl.Poly1305.X86.init))))
 
 /-- The 16 bytes at `edi + k` absorbed as one block. -/
 def absorbOne (k : Nat) : Prog isa :=
