@@ -2376,7 +2376,8 @@ def initX86 : Contract X86.isa where
 
 open VG.X86 in
 /-- `vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n:
-usize)`. -/
+usize)`. It may use the 524 bytes below the stack pointer (the frames of
+`pairs`). -/
 def blocksX86 : Contract X86.isa where
   pre s :=
     let state : Region := ⟨(arg s 0).setWidth 64, 128⟩

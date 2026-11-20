@@ -83,12 +83,12 @@ theorem BInv.regs {s₀ s s' : State} {F : Nat → Nat} {i : Nat} (h : BInv s₀
   ⟨h.ctx.keep hedi hwr, hesp.trans h.esp, hesi.trans h.esi, by rw [hm]; exact h.frame, hrd.trans h.rd,
     hwr.trans h.wr, fun k hk hS => by rw [hm]; exact h.keep k hk hS, fun hA => by rw [hm]; exact h.acc hA⟩
 
-theorem BPre.stk_eq {s₀ : State} (hp : BPre s₀) : below (s₀.gpr .esp) 524 = stkR s₀ := by
+private theorem BPre.stk_eq {s₀ : State} (hp : BPre s₀) : below (s₀.gpr .esp) 524 = stkR s₀ := by
   show (⟨(s₀.gpr .esp - BitVec.ofNat 32 524).setWidth 64, 524⟩ : Region) = _
   rw [VG.X86.Taint.sub_setWidth hp.sp_stk]
 
 /-- The number of pairs into `ecx`: what `pairs` starts from. -/
-private theorem pairsArg_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {s : State} (h : BInv s₀ F 0 s)
+private theorem blockPairsArg_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {s : State} (h : BInv s₀ F 0 s)
     (hecx : s.gpr .ecx = arg s₀ 2) (h16 : 16 ≤ nb s₀) :
     WP isa (.block [.shift .shr .ecx 1]) s fun s₂ =>
       BInv s₀ F 0 s₂ ∧ Sse2.PPre (stp s₀) (bp s₀) (nb s₀ / 2) s₂ := by
@@ -116,8 +116,11 @@ private theorem pairsArg_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {s
       sd := by rw [hI₂.esp, hp.stk_eq]; exact hp.stk_bl.sub_right hsub
       ds := hp.st_bl.sub_right hsub }⟩
 
+theorem blks_zero (s₀ : State) : blks s₀ 0 = [] := by
+  simp only [blks, Nat.mul_zero, bytesAt, List.range_zero, List.map_nil]
+
 /-- The pairs of blocks, from the first block. -/
-private theorem pairsRun_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {p : Nat}
+private theorem blockPairsRun_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {p : Nat}
     {s₂ : State} (hI : BInv s₀ F 0 s₂) (hP : Sse2.PPre (stp s₀) (bp s₀) p s₂) (hpl : 2 * p ≤ nb s₀) :
     WP isa pairs s₂ (BInv s₀ F (2 * p)) := by
   have hbf := hp.bl_fit
@@ -125,7 +128,9 @@ private theorem pairsRun_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (h
     Region.sub_prefix (by omega_using [hpl])
   refine WP.mono (Sse2.pairs_ok hP.ctx hP.esi hP.ecx hP.two hP.dfit hP.din hP.sp hP.ss hP.sd hP.ds
     (C := A0 s₀ < P) (X := A0 s₀)
-    (fun hA => ⟨hF.coefs' fun k hk hS => hI.keep k hk hS, (hI.acc hA).1, (hI.acc hA).2⟩))
+    (fun hA => ⟨hF.coefs' fun k hk hS => hI.keep k hk hS, (hI.acc hA).1, by
+      have := (hI.acc hA).2
+      rwa [blks_zero, Poly1305.absorbAll_nil] at this⟩))
     fun s' ⟨g, esi, rd, wr, fr, same, hv⟩ => ?_
   rw [hI.esp, hp.stk_eq] at fr
   refine ⟨hI.ctx.keep (g _ (by decide) (by decide)) wr, by rw [g _ (by decide) (by decide)]; exact hI.esp,
@@ -144,16 +149,16 @@ private theorem pairsRun_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (h
   rw [show 16 * (2 * p) = 32 * p by omega_using []]
 
 /-- From 16 blocks on, the pairs of blocks. -/
-theorem pairsPart_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
+theorem blockPairs_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s₀ F) {s : State}
     (hL : BInv s₀ F 0 s) (hcx : s.gpr .ecx = arg s₀ 2) (hcf : s.cf = some (decide (nb s₀ < 16))) :
     WP isa (.ite .b (.block []) (.seq (.block [.shift .shr .ecx 1]) pairs)) s fun s' =>
-      ∃ i, i ≤ nb s₀ ∧ BInv s₀ F i s' := by
+      ∃ i, i ≤ nb s₀ ∧ nb s₀ - i < 16 ∧ BInv s₀ F i s' := by
   refine WP.ite (decide (nb s₀ < 16)) (by simp only [eval, hcf])
-    (fun _ => WP.block_nil ⟨0, Nat.zero_le _, hL⟩) (fun hb => ?_)
+    (fun hb => WP.block_nil ⟨0, Nat.zero_le _, by simpa using hb, hL⟩) (fun hb => ?_)
   simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
-  exact WP.seq (WP.mono (pairsArg_ok hp hL hcx hb) fun s₂ ⟨hI₂, hP₂⟩ =>
-    WP.mono (pairsRun_ok hp hF hI₂ hP₂ (by omega_using [])) fun s' h' =>
-      ⟨2 * (nb s₀ / 2), by omega_using [], h'⟩)
+  exact WP.seq (WP.mono (blockPairsArg_ok hp hL hcx hb) fun s₂ ⟨hI₂, hP₂⟩ =>
+    WP.mono (blockPairsRun_ok hp hF hI₂ hP₂ (by omega_using [])) fun s' h' =>
+      ⟨2 * (nb s₀ / 2), by omega_using [], by omega_using [], h'⟩)
 
 /-! ## The blocks left -/
 
@@ -165,8 +170,8 @@ theorem endAt_eq {bp : BitVec 32} {n i : Nat} (hi : i ≤ n) :
   omega_using [hi]
 
 /-- Whether block `i` is the end of the blocks. -/
-theorem atEndAt_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {i : Nat} (hi : i ≤ nb s₀) {s : State}
-    (hL : BInv s₀ F i s) :
+theorem atEndAt_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {i : Nat} (hi : i ≤ nb s₀)
+    (hlt : nb s₀ - i < 16) {s : State} (hL : BInv s₀ F i s) :
     WP isa (.block atEnd) s fun s' => BInv s₀ F i s' ∧ s'.zf = some (decide (i = nb s₀)) := by
   refine WP.mono (atEnd_ok (n := arg s₀ 2) (b := arg s₀ 1)
     (by rw [hL.esp]; exact hp.arg_same hL.frame (i := 2) (by decide))
@@ -174,7 +179,7 @@ theorem atEndAt_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} {i : Nat} (
     (by rw [hL.rd, hL.wr, hL.esp]; exact hp.argIn (i := 2) (by decide))
     (by rw [hL.rd, hL.wr, hL.esp]; exact hp.argIn (i := 1) (by decide))) fun s₃ ⟨k₃, z₃⟩ => ?_
   refine ⟨hL.regs k₃.gpr' k₃.gpr' k₃.gpr' k₃.2.1 k₃.2.2.1 k₃.2.2.2, ?_⟩
-  rw [z₃, hL.esi, endAt_eq hi, ofNat32_beq_zero (by have := hp.bl_fit; omega_using [hi, this])]
+  rw [z₃, hL.esi, endAt_eq hi, ofNat32_beq_zero (by omega_using [hlt])]
   exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega_using [h, hi], fun h => by omega_using [h]⟩)
 
 /-- The blocks from block `i` on, one at a time. -/
@@ -205,8 +210,8 @@ theorem blocks_correct {s₀ : State} (hp : BPre s₀) :
     WP isa blocks s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.blocksX86.post s₀ s' := by
   rw [blocks_eq]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨F, hF, hL₀, hcx, hcf⟩ => ?_)
-  refine WP.seq (WP.mono (pairsPart_ok hp hF hL₀ hcx hcf) fun s₂ ⟨i, hi, hL⟩ => ?_)
-  refine WP.seq (WP.mono (atEndAt_ok hp hi hL) fun s₃ ⟨hL₃, hz⟩ => ?_)
+  refine WP.seq (WP.mono (blockPairs_ok hp hF hL₀ hcx hcf) fun s₂ ⟨i, hi, hlt, hL⟩ => ?_)
+  refine WP.seq (WP.mono (atEndAt_ok hp hi hlt hL) fun s₃ ⟨hL₃, hz⟩ => ?_)
   exact WP.seq (WP.mono (loopPart_ok hp hF hi hL₃ hz) fun s₄ hc => blocks_epilogue_ok hp hF hc)
 
 /-! ## Constant time -/
@@ -306,7 +311,7 @@ private theorem blocks_rel {a b : State} (ha : BPre a) (hb : BPre b) (hesp : a.g
     exact VG.X86.taint.le_sound (τ := blocksτ [.esi, .edi] false) (by decide) A₁) fun hbq => ?_
   have h16 : 16 ≤ nb a := by simpa using hbq
   refine rel_seqR (rel_taint [] (fun _ h => absurd h List.not_mem_nil) ⟨_, by taint_decide⟩)
-    (pairsArg_ok ha I₁ cx₁ h16) (pairsArg_ok hb I₂ cx₂ (by rw [enb]; exact h16))
+    (blockPairsArg_ok ha I₁ cx₁ h16) (blockPairsArg_ok hb I₂ cx₂ (by rw [enb]; exact h16))
     fun x₄ y₄ _ ⟨D₁, P₁⟩ ⟨D₂, P₂⟩ => ?_
   rw [est, ebp, enb] at P₂
   have hpl : 2 * (nb a / 2) ≤ nb a := by omega_using []
@@ -314,8 +319,8 @@ private theorem blocks_rel {a b : State} (ha : BPre a) (hb : BPre b) (hesp : a.g
     (F₁ := BInv a F₁ (2 * (nb a / 2))) (F₂ := BInv b F₂ (2 * (nb a / 2)))
     fun u v huv => by
       obtain ⟨rfl, rfl⟩ := huv
-      exact ⟨pairsRun_ok ha hF₁ D₁ P₁ hpl,
-        pairsRun_ok hb hF₂ D₂ (by rw [est, ebp]; exact P₂) (by rw [enb]; exact hpl)⟩).mono
+      exact ⟨blockPairsRun_ok ha hF₁ D₁ P₁ hpl,
+        blockPairsRun_ok hb hF₂ D₂ (by rw [est, ebp]; exact P₂) (by rw [enb]; exact hpl)⟩).mono
     (fun _ _ h => h) fun x' y' ⟨_, K₁, K₂⟩ => ?_
   -- The states after the pairs satisfy the precondition, with the same arguments.
   obtain ⟨hx', ax'⟩ := K₁.mid ha
@@ -333,6 +338,9 @@ theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksX86.pre s) :
 
 theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86.pre Proof.Poly1305.blocksX86.pub
     blocks :=
-  ct_of fun _ _ h₁ h₂ hp => blocks_rel (BPre.of _ h₁) (BPre.of _ h₂) hp.1 ⟨hp.2.1, hp.2.2.1, hp.2.2.2⟩
+  ct_of fun _ _ h₁ h₂ hp => blocks_rel (BPre.of _ h₁) (BPre.of _ h₂) hp.1 fun i hi => by
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
+    rcases this with rfl | rfl | rfl
+    exacts [hp.2.1, hp.2.2.1, hp.2.2.2]
 
 end VG.Proof.Poly1305.X86
