@@ -1,0 +1,46 @@
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86Comb
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+
+/-!
+# ECDSA over Secp256k1 on x86 (32-bit): the functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that its frames and calls use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. `vg_ecdsa_secp256k1_sign` calls HMAC
+through a table: its code is given the functions that the table's calls may
+reach (`f`).
+-/
+
+@[expose] public section
+
+namespace VG.Impl.Ecdsa.X86.Fn
+
+open VG.X86
+
+/-- `vg_ecdsa_secp256k1_verify`, as emitted. -/
+def verifySecp256k1 : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 128
+    (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false (Impl.Ecdsa.Verify.X86.verifySecp256k1))
+
+/-- `vg_ecdsa_secp256k1_sign`, as emitted, with `f` the functions its table's calls may reach. -/
+def signSecp256k1 (f : Impl.Ecdsa.Rfc6979.X86.Fns) : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 588 (Impl.Ecdsa.Rfc6979.X86.signCode {
+    f := f
+    w := 2 * Impl.Ecdsa.X86.secp256k1Comb.n - (if Impl.Ecdsa.X86.secp256k1Comb.C.len = 28 then 1 else 0)
+    len := Impl.Ecdsa.X86.secp256k1Comb.C.len
+    big := false
+    sh := 0
+    n := Impl.Ecdsa.X86.secp256k1Comb.C.n
+    tries := Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries
+    coreN := "vg_ecdsa_secp256k1_sign_k"
+    coreC := Impl.Ecdsa.X86.signSecp256k1Comb })
+
+end VG.Impl.Ecdsa.X86.Fn
