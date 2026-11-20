@@ -89,13 +89,6 @@ arm vg_x25519_exchange_umaal
 riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
-x86 vg_argon2
-x86 vg_blake2b_finalize
-x86 vg_blake2b_init
-x86 vg_blake2b_update
-x86 vg_blake2s_finalize
-x86 vg_blake2s_init
-x86 vg_blake2s_update
 x86 vg_chacha20_apply
 x86 vg_chacha20_apply_ssse3
 x86 vg_chacha20_init

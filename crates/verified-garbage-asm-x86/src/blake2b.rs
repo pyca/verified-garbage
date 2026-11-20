@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blake2.initBContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -27,7 +29,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkBLkIybzziQi5Z+YJaolIBLk7p8qEiUgIuYWuZ7uJSAy5K/iU/olIELly8248iUgUufE2HV+JSBi5OvVPpYlIHLnRguatiUgguX9SDlGJSCS5H2w+K4lIKLmMaAWbiUgsuWu9QfuJSDC5q9mDH4lINLl5IX4TiUg4uRnN4FuJSDyLCIHxAAABAYtUJBDByhgx0TNMJAiJCMM="
+.base64 "i0QkBLkIybzziQi5Z+YJaolIBLk7p8qEiUgIuYWuZ7uJSAy5K/iU/olIELly8248iUgUufE2HV+JSBi5OvVPpYlIHLnRguatiUgguX9SDlGJSCS5H2w+K4lIKLmMaAWbiUgsuWu9QfuJSDC5q9mDH4lINLl5IX4TiUg4uRnN4FuJSDyLCIHxAAABAYtUJBDByhgx0TNMJAiJCLgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -35,6 +37,8 @@ jmp 21f
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -102,7 +106,7 @@ jmp 214f
 jmp 23f
 22:
 23:
-.base64 "ieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRcAgAAww=="
+.base64 "ieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRcAgAAZg/vwLkAAAAAjaQkhP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAAiYwkcAIAAImMJHQCAACJjCR4AgAAjaQkfAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -111,6 +115,8 @@ jmp 23f
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -140,7 +146,7 @@ jmp 23f
 23:
 .base64 "id6DxkC/AQAAALgBAAAAi0wkCItUJAxVUFJRV1ZT"
 call {vg_blake2b_compress}
-.base64 "WFhYWFhYWItEJBCLC4kIi0sEiUgEi0sIiUgIi0sMiUgMi0sQiUgQi0sUiUgUi0sYiUgYi0sciUgci0sgiUggi0skiUgki0soiUgoi0ssiUgsi0swiUgwi0s0iUg0i0s4iUg4i0s8iUg8ieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRYAgAAww=="
+.base64 "WFhYWFhYWItEJBCLC4kIi0sEiUgEi0sIiUgIi0sMiUgMi0sQiUgQi0sUiUgUi0sYiUgYi0sciUgci0sgiUggi0skiUgki0soiUgoi0ssiUgsi0swiUgwi0s0iUg0i0s4iUg4i0s8iUg8ieiLmAACAACLsAQCAACLuAgCAACLqAwCAACNpCRYAgAAZg/vwLkAAAAAjaQkiP3///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAAiYwkcAIAAImMJHQCAACNpCR4AgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -153,6 +159,10 @@ pub(crate) mod vg_blake2b_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_finalize_scratch.rs"]
 pub(crate) mod vg_blake2b_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_init_core.rs"]
+pub(crate) mod vg_blake2b_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_update_scratch.rs"]
