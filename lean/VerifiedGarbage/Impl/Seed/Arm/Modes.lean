@@ -11,8 +11,8 @@ public import VerifiedGarbage.Spec.Seed.Contract
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` are the generic modes (`Impl/Modes/Arm/Seq.lean`,
-`CbcChained.lean`) over SEED's ECB functions, `vg_seed_ecb_encrypt` and
-`vg_seed_ecb_decrypt` (`ecbCore`), which `cbcEncryptChained`, `ofb` and
+`CbcChained.lean`) over SEED's ECB functions, `vg_seed_ecb_encrypt`'s and
+`vg_seed_ecb_decrypt`'s code (`ecbCore`), which `cbcEncryptChained`, `ofb` and
 `cfbEncrypt` call once per block, and `cbcDecryptChained` and `cfbDecrypt`,
 whose blocks can be deciphered independently, once for a group of 8, 4 or 2
 blocks, then once per block for those left (`Impl/Modes/Arm/Wide.lean`).
@@ -29,11 +29,15 @@ open VG.Spec.Seed (Direction)
 artifact has it. -/
 def ecbCode (dir : Direction) : Prog isa := Impl.StackScratch.Arm.withRegScratchWiped 752 .r3 188 (ecb dir)
 
-/-- SEED's ECB function in the direction `dir`, as the modes call it. -/
+/-- SEED's ECB function in the direction `dir`, as the modes call it: its
+code as it is verified, under a name of its own
+(`vg_seed_ecb_encrypt_entry`), which the emitter writes as an internal
+function, since the artifact `vg_seed_ecb_encrypt` is that code scrubbed
+(`Proof/Seed/Arm/Scrub.lean`). -/
 def ecbCore (dir : Direction) : Core where
   name := match dir with
-    | .encrypt => Spec.Seed.ecbEncryptApi.name
-    | .decrypt => Spec.Seed.ecbDecryptApi.name
+    | .encrypt => Spec.Seed.ecbEncryptApi.name ++ "_entry"
+    | .decrypt => Spec.Seed.ecbDecryptApi.name ++ "_entry"
   code := ecbCode dir
   bw := 4
 
