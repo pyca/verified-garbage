@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.Impl.Sha3.PPC64LE.Stream
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 
@@ -89,3 +90,39 @@ def finalize (rate len : Nat) : Prog isa :=
   StackScratch.PPC64LE.withStackScratch 704 .r6 (finBody rate len)
 
 end VG.Impl.Sha3.PPC64LE.Instances
+
+/-! ## The functions as emitted
+
+Each function followed by its cleanup (`Impl.Scrub.PPC64LE.scrub`), which
+zeroes the stack its frames use (its working space, and the 48 bytes of the
+frame the sponge's code makes under it) and clears the volatile registers it
+writes, `r0` and `r4`–`r12`, and the bits of `r3` above its result where it
+writes `r3`, so that it returns without secret residue. None writes a vector
+register or `XER`'s carry. -/
+
+namespace VG.Impl.Sha3.PPC64LE.Fn
+
+open VG.PPC64LE
+open VG.Impl.Scrub.PPC64LE (scrub)
+
+/-- `vg_<f>_update` at rate `rate`, as emitted. -/
+def update (rate : Nat) : Prog isa :=
+  scrub 64 720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Instances.absorb rate)
+
+/-- SHA-3's `vg_<f>_finalize` at rate `rate`, of `len` bytes, as emitted. -/
+def finalize (rate len : Nat) : Prog isa :=
+  scrub 0 752 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Instances.finalize rate len)
+
+/-- SHAKE's `vg_<f>_finalize` at rate `rate`, as emitted. -/
+def xofFinalize (rate : Nat) : Prog isa :=
+  scrub 0 720 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Instances.xofFinalize rate)
+
+/-- SHAKE's `vg_<f>_squeeze` at rate `rate`, as emitted. -/
+def xofSqueeze (rate : Nat) : Prog isa :=
+  scrub 64 720 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
+    (Instances.xofSqueeze rate)
+
+end VG.Impl.Sha3.PPC64LE.Fn
