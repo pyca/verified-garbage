@@ -154,25 +154,24 @@ def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨digF, (digOut0 compress Proo
 
 end Scrub
 
-/-- `variant` before the residue analysis of HMAC's `finalize`. -/
-def unscrubbed : Proof.Pbkdf2.Md.X86_64.MdHash :=
+def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   Proof.Pbkdf2.Md.X86_64.Sha1.variant compress [update, finalize, digest]
 
-/-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
-      unscrubbed.H.hmacFin) []
+theorem fin_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) .r8 variant.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) (Impl.Scrub.X86_64.runKs [(120, 2)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(120, 2)] (by taint_decide_lit)
 
-theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
-      unscrubbed.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
+theorem fin_side : VG.X86_64.Scrub.scrubSideG
+    (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) .r8 variant.H.hmacFin)
+    (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) ((Spec.Hmac.finalizeSig variant.I.S).retBits 64) .sse true
+    (Impl.Scrub.X86_64.runKs [(120, 2)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(120, 2)])) [] = true := by
+  lit_decide
 
-def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }
+/-- HMAC's `finalize` over `variant`, with what its cleanup needs. -/
+def fin : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant, by decide, ⟨.sse, [(120, 2)], fin_ok, fin_side⟩⟩
 
 end VG.Proof.Variants.MdHash.X86_64.Sha1ShaNi
