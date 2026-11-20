@@ -1175,7 +1175,8 @@ theorem dbl_s5 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dblL
     hS.car 1 1 (by decide) rfl rfl z3, hS.car 2 1 (by decide) rfl rfl a3, hS.car 2 3 (by decide) rfl rfl x3,
     hS.raw 3 1 (by decide) rfl rfl (Raw.sqr a3), hS.raw 3 3 (by decide) rfl rfl (Raw.sqr x3)⟩
 
-private theorem flattenSix (a b c d e f : List α) : [a, b, c, d, e, f].flatten = a ++ (b ++ (c ++ (d ++ (e ++ f)))) := by
+private theorem flattenSix {α : Type} (a b c d e f : List α) :
+    [a, b, c, d, e, f].flatten = a ++ (b ++ (c ++ (d ++ (e ++ f)))) := by
   simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
 
 theorem dblPieces_flat : dblPieces.flatten = dblPieces.getD 0 [] ++ (dblPieces.getD 1 [] ++ (dblPieces.getD 2 [] ++
