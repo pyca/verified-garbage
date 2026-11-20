@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
+public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -13,7 +14,10 @@ The lemmas from which RSA's functions on x86 prove that their
 postconditions read the memory on return only within their buffers
 (`X86.Scrub.PostOut`): `postOut_of_local_pre`, for a postcondition that does
 so where the precondition holds, and the octets and words at an address,
-which read only the bytes there (`bytesAt_of`, `wordsAt_of`).
+which read only the bytes there (`bytesAt_of`, `wordsAt_of`); and that a
+function followed by its cleanup writes `esp` only by its frames, as the
+function does (`scrubF_all`), which a registration generic over a variant
+states of its code.
 -/
 
 @[expose] public section
@@ -98,5 +102,20 @@ the word. -/
 theorem toNat_sw_le (A : Abi isa) (hA : ScrubAbi A) (x : BitVec 64) : (x.setWidth A.ptrBits).toNat ≤ x.toNat := by
   rw [BitVec.toNat_setWidth, hA.ptrBits]
   exact Nat.mod_le _ _
+
+theorem writtenOutcome_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
+    (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.writtenOutcome m₁ o n r v) :
+    Spec.Rsa.writtenOutcome m₂ o n r v := by
+  cases v <;> simpa only [Spec.Rsa.writtenOutcome, e] using h
+
+/-! ## The cleanup keeps `esp` -/
+
+/-- Code followed by its cleanup (`Impl.Scrub.X86.scrubF`) writes `esp` only
+by its frames if the code does. -/
+theorem scrubF_all {rb n : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
+    (Impl.Scrub.X86.scrubF rb n c).all (fun i => !isa.writesSp i) = true := by
+  simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
+    Bool.true_and, Bool.and_true]
+  exact wipe_all _
 
 end VG.Proof.Rsa.X86.Scrub
