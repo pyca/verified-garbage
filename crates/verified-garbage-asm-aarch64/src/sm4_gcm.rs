@@ -20,7 +20,7 @@ pub const VG_SM4_GCM_SEAL_CTR32_SM4_GHASH_AES_FEATURES: verified_garbage_cpu::Fe
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -397,7 +397,7 @@ pub const VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES: verified_garbage_cpu::Fe
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
@@ -796,7 +796,7 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_GHASH_AES_FEATURES: verified_garba
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -1022,7 +1022,7 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_GHASH_AES_FEATURES: verified_garba
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -1247,7 +1247,7 @@ pub const VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_GHASH_AES_FEATURES: verified_garbag
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
@@ -1331,7 +1331,7 @@ pub const VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_GHASH_AES_FEATURES: verified_garbag
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sm4` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
@@ -1458,7 +1458,7 @@ pub const VG_SM4_GCM_INIT_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 /// * `key` must be valid for reads of 16 bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `ctx` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_init_ctr32_sm4(key: *const [u8; 16], ctx: *mut [u64; 32]) {
@@ -1494,7 +1494,7 @@ pub const VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_ctr32_sm4(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -1871,7 +1871,7 @@ pub const VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES: verified_garbage_cpu::Features = v
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_ctr32_sm4(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
@@ -2270,7 +2270,7 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES: verified_garbage_cpu::Fe
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -2496,7 +2496,7 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES: verified_garbage_cpu::Fe
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `data` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
@@ -2721,7 +2721,7 @@ pub const VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES: verified_garbage_cpu::Fea
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
@@ -2805,7 +2805,7 @@ pub const VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES: verified_garbage_cpu::Fea
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the 4032 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the 992 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_ctr32_sm4(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
