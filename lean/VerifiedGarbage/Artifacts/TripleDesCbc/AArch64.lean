@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcTables
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
@@ -15,10 +16,10 @@ namespace VG.Artifacts.TripleDesCbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode
+    code := Impl.TripleDes.AArch64.Fn.cbcEncryptChained
     verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode
+    code := Impl.TripleDes.AArch64.Fn.cbcDecryptChained
     verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.TripleDesCbc.AArch64

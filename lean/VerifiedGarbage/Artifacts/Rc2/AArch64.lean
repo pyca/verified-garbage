@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 public import VerifiedGarbage.Proof.Rc2.AArch64.Key
@@ -17,13 +18,13 @@ namespace VG.Artifacts.Rc2.AArch64
 
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
-    code := Proof.Rc2.AArch64.InitResidue.cbcInitCode
+    code := Impl.Rc2.AArch64.Fn.cbcInit
     verified := .scrubbed Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode
+    code := Impl.Rc2.AArch64.Fn.cbcEncryptChained
     verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Rc2.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode
+    code := Impl.Rc2.AArch64.Fn.cbcDecryptChained
     verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Rc2.AArch64

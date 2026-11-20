@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Proof.Gcm.Clmul.Arith
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
@@ -1445,10 +1447,7 @@ theorem keyPowers_verified :
 
 /-- `keyPowers`, then the powers of the hash key it leaves in `v3`–`v7` and
 `v16`–`v31` cleared. -/
-abbrev keyPowersCleared : Prog isa :=
-  Impl.Residue.AArch64.withClears []
-    [.v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-     .v27, .v28, .v29, .v30, .v31] none Impl.Gcm.AArch64.Pmull.keyPowers
+abbrev keyPowersCleared : Prog isa := Impl.Gcm.AArch64.Fn.keyPowers
 
 theorem keyPowersCleared_verified :
     Verified AArch64.target keyPowersCleared (Spec.Gcm.storePowersContract AArch64.abi) :=

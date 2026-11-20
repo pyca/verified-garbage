@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
@@ -105,14 +107,11 @@ theorem ofbScrubOk :
 /-! ## The code -/
 
 /-- `c`, then what CAST5-OFB leaves in its registers cleared. -/
-abbrev ofbCleared (c : Prog isa) : Prog isa :=
-  withClears [.x4, .x6, .x7, .x10, .x13, .x14, .x15]
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v16, .v17, .v18, .v19] (some .x4) c
+abbrev ofbCleared (c : Prog isa) : Prog isa := Impl.Cast5.AArch64.Fn.ofbCleared c
 
-abbrev ofbBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.ofb)
+abbrev ofbBase : Prog isa := Impl.Cast5.AArch64.Fn.ofbBase
 
-abbrev ofbCode : Prog isa := withScrub 112 ofbBase
+abbrev ofbCode : Prog isa := Impl.Cast5.AArch64.Fn.ofb
 
 theorem ofbBase_verified : Verified AArch64.target ofbBase
     (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
@@ -143,10 +142,9 @@ theorem ofbFinalScrubOk :
       exact ⟨(bytesAt_of0 hb.2.2 (Nat.le_of_eq (Nat.mul_one _).symm)).trans h₁,
         (bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)).trans h₂⟩
 
-abbrev ofbFinalBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.ofbFinal)
+abbrev ofbFinalBase : Prog isa := Impl.Cast5.AArch64.Fn.ofbFinalBase
 
-abbrev ofbFinalCode : Prog isa := withScrub 112 ofbFinalBase
+abbrev ofbFinalCode : Prog isa := Impl.Cast5.AArch64.Fn.ofbFinal
 
 theorem ofbFinalBase_verified : Verified AArch64.target ofbFinalBase
     (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
@@ -165,7 +163,7 @@ theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.FbResidue.ofbCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ofb
       (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.FbResidue.ofbCode_verified,
     Proof.Cast5.AArch64.FbResidue.ofbCode_noResidue⟩
@@ -173,7 +171,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbFinalCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.FbResidue.ofbFinalCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ofbFinal
       (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.FbResidue.ofbFinalCode_verified,
     Proof.Cast5.AArch64.FbResidue.ofbFinalCode_noResidue⟩

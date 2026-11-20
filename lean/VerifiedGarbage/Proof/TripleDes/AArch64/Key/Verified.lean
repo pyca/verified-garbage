@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
@@ -52,7 +53,7 @@ theorem verifiedCleared : Verified target Proof.TripleDes.AArch64.expandKeyClear
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.TripleDes.AArch64.expandKeyCleared_scrubbed :
-    VerifiedScrubbed _root_.VG.AArch64.target Proof.TripleDes.AArch64.expandKeyCleared
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.TripleDes.AArch64.Fn.expandKey
       (Spec.TripleDes.expandKeyContract AArch64.abi) 0 :=
   ⟨Proof.TripleDes.AArch64.Key.verifiedCleared,
     Proof.TripleDes.AArch64.expandKeyCleared_noResidue _⟩

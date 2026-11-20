@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.AArch64.Fn
+public meta import VerifiedGarbage.Impl.X25519.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 public meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
@@ -34,10 +36,7 @@ namespace VG.Proof.X25519.AArch64.Base
 
 open VG VG.AArch64
 
-abbrev x25519BaseCleared : Prog isa :=
-  Impl.Residue.AArch64.withClears
-    [.x1, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x12, .x13, .x14, .x15, .x16, .x17] [] (some .x1)
-    Impl.X25519.AArch64.Base.x25519Base
+abbrev x25519BaseCleared : Prog isa := Impl.X25519.AArch64.Fn.x25519Base
 
 theorem x25519BaseCleared_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target x25519BaseCleared
@@ -72,7 +71,7 @@ theorem x25519BaseCleared_noResidue [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed [Ed25519.AArch64.Divstep.Sound] :
-    VerifiedScrubbed _root_.VG.AArch64.target Proof.X25519.AArch64.Base.x25519BaseCleared
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.X25519.AArch64.Fn.x25519Base
       (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)) 0 :=
   ⟨Proof.X25519.AArch64.Base.x25519BaseCleared_verified,
     Proof.X25519.AArch64.Base.x25519BaseCleared_noResidue⟩

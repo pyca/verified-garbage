@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
@@ -253,11 +255,10 @@ theorem expandKey_noResidue (k : Contract isa) : NoResidue expandKey k 0 :=
 return. -/
 
 /-- The vector registers `ecb` leaves secrets in. -/
-def ecbLeft : List VReg :=
-  [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23]
+def ecbLeft : List VReg := Impl.Sm4.AArch64.Fn.ecbLeft
 
 /-- `ecb dir`, then `ecbLeft` cleared. -/
-abbrev ecbCleared (dir : VG.Impl.Sm4.AArch64.Dir) : Prog isa := Impl.Residue.AArch64.withClears [] ecbLeft none (ecb dir)
+abbrev ecbCleared (dir : VG.Impl.Sm4.AArch64.Dir) : Prog isa := Impl.Sm4.AArch64.Fn.ecb dir
 
 theorem ecbCleared_verified (dir : VG.Impl.Sm4.AArch64.Dir) :
     Verified AArch64.target (ecbCleared dir) (Spec.Sm4.ecbContract AArch64.abi (dirOf dir)) :=
@@ -278,7 +279,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.expandKey_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed :
-    VerifiedScrubbed AArch64.target (Proof.Sm4.AArch64.Sm4e.ecbCleared Impl.Sm4.AArch64.Dir.encrypt)
+    VerifiedScrubbed AArch64.target (Impl.Sm4.AArch64.Fn.ecb Impl.Sm4.AArch64.Dir.encrypt)
       (Spec.Sm4.ecbContract AArch64.abi (Proof.Sm4.AArch64.Sm4e.dirOf Impl.Sm4.AArch64.Dir.encrypt)) 0 :=
   ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .encrypt,
     Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .encrypt⟩
@@ -286,7 +287,7 @@ theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Sm4.AArch64.Sm4e.ecbDecrypt_scrubbed :
-    VerifiedScrubbed AArch64.target (Proof.Sm4.AArch64.Sm4e.ecbCleared Impl.Sm4.AArch64.Dir.decrypt)
+    VerifiedScrubbed AArch64.target (Impl.Sm4.AArch64.Fn.ecb Impl.Sm4.AArch64.Dir.decrypt)
       (Spec.Sm4.ecbContract AArch64.abi (Proof.Sm4.AArch64.Sm4e.dirOf Impl.Sm4.AArch64.Dir.decrypt)) 0 :=
   ⟨Proof.Sm4.AArch64.Sm4e.ecbCleared_verified .decrypt,
     Proof.Sm4.AArch64.Sm4e.ecbCleared_noResidue _ .decrypt⟩

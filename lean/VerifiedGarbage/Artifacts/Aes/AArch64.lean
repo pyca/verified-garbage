@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Aes.AArch64.Fn
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Frame
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
@@ -15,11 +16,11 @@ namespace VG.Artifacts.Aes.AArch64
 
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact AArch64.target {
-    code := Proof.Aes.AArch64.KeyResidue.expandKeyCode
+    code := Impl.Aes.AArch64.Fn.expandKey
     verified := .scrubbed Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed },
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     suffix := "_aes"
-    code := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode
+    code := Impl.Aes.AArch64.Fn.expandKeyAes
     verified := .scrubbed Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_scrubbed }]
 
 end VG.Artifacts.Aes.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblModesVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.ModesResidue
@@ -15,10 +16,10 @@ namespace VG.Artifacts.Cast5Cbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode
+    code := Impl.Cast5.AArch64.Fn.cbcEncryptChained
     verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Cast5.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode
+    code := Impl.Cast5.AArch64.Fn.cbcDecryptChained
     verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Cast5Cbc.AArch64

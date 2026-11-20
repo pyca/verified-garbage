@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Seed.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
@@ -37,10 +39,7 @@ namespace VG.Proof.Seed.AArch64.EcbResidue
 open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_seed_ecb_encrypt`, before its granules [0] are zeroed. -/
-abbrev ecbEncryptBase : Prog isa :=
-  withRet 0 (withClears [.x1, .x2, .x3, .x6, .x7, .x8, .x10, .x11, .x12, .x13, .x14]
-    [.v0, .v1, .v3] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbEncrypt))
+abbrev ecbEncryptBase : Prog isa := Impl.Seed.AArch64.Fn.ecbEncryptBase
 
 theorem ecbEncryptBase_verified : Verified AArch64.target ecbEncryptBase (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.encrypt 1472) :=
   RTaintF.Verified.withRet (Clears.Verified.withClears (Proof.Seed.AArch64.ecbFew_framed .encrypt) (by decide))
@@ -50,7 +49,7 @@ theorem ecbEncryptScrubOk : RTaintF.ScrubOk (Spec.Seed.ecbContract AArch64.abi S
     (Proof.Seed.ecbPostOut_local _ .encrypt)
 
 /-- `vg_seed_ecb_encrypt`. -/
-abbrev ecbEncryptCode : Prog isa := withScrubG 1472 [0] ecbEncryptBase
+abbrev ecbEncryptCode : Prog isa := Impl.Seed.AArch64.Fn.ecbEncrypt
 
 theorem ecbEncryptCode_verified : Verified AArch64.target ecbEncryptCode (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.encrypt 1472) :=
   RTaintG.Verified.withScrubG ecbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbEncryptScrubOk
@@ -60,10 +59,7 @@ theorem ecbEncryptCode_noResidue : NoResidue ecbEncryptCode (Spec.Seed.ecbContra
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_ecb_decrypt`, before its granules [0] are zeroed. -/
-abbrev ecbDecryptBase : Prog isa :=
-  withRet 0 (withClears [.x1, .x2, .x3, .x6, .x7, .x8, .x10, .x11, .x12, .x13, .x14]
-    [.v0, .v1, .v3] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbDecrypt))
+abbrev ecbDecryptBase : Prog isa := Impl.Seed.AArch64.Fn.ecbDecryptBase
 
 theorem ecbDecryptBase_verified : Verified AArch64.target ecbDecryptBase (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.decrypt 1472) :=
   RTaintF.Verified.withRet (Clears.Verified.withClears (Proof.Seed.AArch64.ecbFew_framed .decrypt) (by decide))
@@ -73,7 +69,7 @@ theorem ecbDecryptScrubOk : RTaintF.ScrubOk (Spec.Seed.ecbContract AArch64.abi S
     (Proof.Seed.ecbPostOut_local _ .decrypt)
 
 /-- `vg_seed_ecb_decrypt`. -/
-abbrev ecbDecryptCode : Prog isa := withScrubG 1472 [0] ecbDecryptBase
+abbrev ecbDecryptCode : Prog isa := Impl.Seed.AArch64.Fn.ecbDecrypt
 
 theorem ecbDecryptCode_verified : Verified AArch64.target ecbDecryptCode (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.decrypt 1472) :=
   RTaintG.Verified.withScrubG ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbDecryptScrubOk
@@ -85,7 +81,7 @@ theorem ecbDecryptCode_noResidue : NoResidue ecbDecryptCode (Spec.Seed.ecbContra
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Seed.AArch64.EcbResidue.ecbEncryptCode
+    VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.ecbEncrypt
       (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.encrypt 1472) 0 :=
   ⟨Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_verified,
     Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_noResidue⟩
@@ -93,7 +89,7 @@ theorem _root_.VG.Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Seed.AArch64.EcbResidue.ecbDecryptCode
+    VerifiedScrubbed AArch64.target Impl.Seed.AArch64.Fn.ecbDecrypt
       (Spec.Seed.ecbContract AArch64.abi Spec.Seed.Direction.decrypt 1472) 0 :=
   ⟨Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_verified,
     Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_noResidue⟩

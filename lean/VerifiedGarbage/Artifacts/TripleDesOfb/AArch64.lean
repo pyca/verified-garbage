@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ModesResidue
@@ -16,10 +17,10 @@ namespace VG.Artifacts.TripleDesOfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.ofbCode
+    code := Impl.TripleDes.AArch64.Fn.ofb
     verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ofbCode_scrubbed },
   Spec.TripleDes.ofbFinalApi.artifact AArch64.target {
-    code := Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode
+    code := Impl.TripleDes.AArch64.Fn.ofbFinal
     verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.TripleDesOfb.AArch64

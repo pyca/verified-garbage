@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Rc4.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Rc4.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public meta import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
@@ -36,11 +38,7 @@ namespace VG.Proof.Rc4.AArch64
 
 open VG VG.AArch64
 
-abbrev applyCleared : Prog isa :=
-  Impl.Residue.AArch64.withClearsHi [.x4, .x5, .x6, .x8, .x12, .x13]
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23,
-     .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31] none .x4 [.v9, .v10, .v11, .v14]
-    Impl.Rc4.AArch64.apply
+abbrev applyCleared : Prog isa := Impl.Rc4.AArch64.Fn.apply
 
 theorem applyCleared_verified :
     Verified AArch64.target applyCleared (Spec.Rc4.applyContract AArch64.abi) :=
@@ -53,7 +51,7 @@ theorem applyCleared_noResidue :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Rc4.AArch64.applyCleared_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Rc4.AArch64.applyCleared
+    VerifiedScrubbed AArch64.target Impl.Rc4.AArch64.Fn.apply
       (Spec.Rc4.applyContract AArch64.abi) 0 :=
   ⟨Proof.Rc4.AArch64.applyCleared_verified,
     Proof.Rc4.AArch64.applyCleared_noResidue⟩

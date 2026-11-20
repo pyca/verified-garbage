@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Idea.AArch64.Fn
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.ModesResidue
@@ -16,16 +17,16 @@ namespace VG.Artifacts.IdeaCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.cfbEncryptCode
+    code := Impl.Idea.AArch64.Fn.cfbEncrypt
     verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Idea.cfbDecryptApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.cfbDecryptCode
+    code := Impl.Idea.AArch64.Fn.cfbDecrypt
     verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Idea.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode
+    code := Impl.Idea.AArch64.Fn.cfbEncryptFinal
     verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Idea.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode
+    code := Impl.Idea.AArch64.Fn.cfbDecryptFinal
     verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.AArch64

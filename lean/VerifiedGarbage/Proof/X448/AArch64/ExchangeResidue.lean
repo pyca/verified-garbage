@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X448.AArch64.Fn
+public meta import VerifiedGarbage.Impl.X448.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
@@ -71,10 +73,7 @@ theorem exchangeOk : RTaintF.ScrubOk (Spec.X448.exchangeContract AArch64.abi 16)
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
 /-- `vg_x448_exchange`, before its granules [0] are zeroed. -/
-abbrev exchangeBase : Prog isa :=
-  withRet 32 (withClearsHi [.x2, .x4, .x5, .x6, .x7, .x8, .x10, .x13, .x14, .x15, .x16, .x17]
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v19, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29] (some .x2) .x2 [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]
-    (Impl.Xdh.AArch64.exchange "vg_x448" Impl.X448.AArch64.Fast.x448 56))
+abbrev exchangeBase : Prog isa := Impl.X448.AArch64.Fn.exchangeBase
 
 theorem exchangeBase_verified : Verified AArch64.target exchangeBase (Spec.X448.exchangeContract AArch64.abi 16) :=
   RTaintF.Verified.withRet (Clears.Verified.withClears (Proof.X448.AArch64.Exchange.exchange_verified) (by decide))
@@ -83,7 +82,7 @@ theorem exchangeScrubOk : RTaintF.ScrubOk (Spec.X448.exchangeContract AArch64.ab
   exchangeOk
 
 /-- `vg_x448_exchange`. -/
-abbrev exchangeCode : Prog isa := withScrubG 16 [0] exchangeBase
+abbrev exchangeCode : Prog isa := Impl.X448.AArch64.Fn.exchange
 
 theorem exchangeCode_verified : Verified AArch64.target exchangeCode (Spec.X448.exchangeContract AArch64.abi 16) :=
   RTaintG.Verified.withScrubG exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
@@ -95,7 +94,7 @@ theorem exchangeCode_noResidue : NoResidue exchangeCode (Spec.X448.exchangeContr
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.X448.AArch64.ExchangeResidue.exchangeCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.X448.AArch64.ExchangeResidue.exchangeCode
+    VerifiedScrubbed AArch64.target Impl.X448.AArch64.Fn.exchange
       (Spec.X448.exchangeContract AArch64.abi 16) 32 :=
   ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified,
     Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩

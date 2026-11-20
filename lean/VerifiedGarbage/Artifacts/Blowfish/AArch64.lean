@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Blowfish.AArch64.Fn
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Residue
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
@@ -16,13 +17,13 @@ namespace VG.Artifacts.Blowfish.AArch64
 
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact AArch64.target {
-    code := Proof.Blowfish.AArch64.expandKeyCleared
+    code := Impl.Blowfish.AArch64.Fn.expandKey
     verified := .scrubbed Proof.Blowfish.AArch64.expandKeyCleared_scrubbed },
   Spec.Blowfish.ecbEncryptApi.artifact AArch64.target {
-    code := Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode
+    code := Impl.Blowfish.AArch64.Fn.ecbEncrypt
     verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
   Spec.Blowfish.ecbDecryptApi.artifact AArch64.target {
-    code := Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode
+    code := Impl.Blowfish.AArch64.Fn.ecbDecrypt
     verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Blowfish.AArch64

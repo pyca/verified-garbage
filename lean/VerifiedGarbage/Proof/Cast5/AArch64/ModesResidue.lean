@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.CbcVerified
@@ -58,12 +60,9 @@ open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintF VG.AArch64.RTaintG
 
 /-! ## From tables, in 224 bytes -/
 
-abbrev tblCleared (c : Prog isa) : Prog isa :=
-  withClears [.x6, .x8, .x9] [.v0, .v1, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22,
-    .v23, .v24, .v25, .v26, .v27] (some .x6) c
+abbrev tblCleared (c : Prog isa) : Prog isa := Impl.Cast5.AArch64.Fn.tblCleared c
 
-abbrev cbcDecryptChainedCode : Prog isa :=
-  tblCleared (Impl.StackScratch.AArch64.withStackScratchWiped 224 .x5 28 Impl.Cast5.AArch64.Tbl.cbcDecryptChained)
+abbrev cbcDecryptChainedCode : Prog isa := Impl.Cast5.AArch64.Fn.cbcDecryptChained
 
 theorem cbcDecryptChainedCode_verified :
     Verified AArch64.target cbcDecryptChainedCode (Spec.Cast5.cbcDecryptChainedContract AArch64.abi 224) :=
@@ -75,8 +74,7 @@ theorem cbcDecryptChainedCode_noResidue :
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Cast5.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cfbDecryptCode : Prog isa :=
-  tblCleared (Impl.StackScratch.AArch64.withStackScratchWiped 224 .x5 28 Impl.Cast5.AArch64.Tbl.cfbDecrypt)
+abbrev cfbDecryptCode : Prog isa := Impl.Cast5.AArch64.Fn.cfbDecrypt
 
 theorem cfbDecryptCode_verified :
     Verified AArch64.target cfbDecryptCode (Spec.Cast5.cfbDecryptContract AArch64.abi 224) :=
@@ -102,10 +100,9 @@ theorem cbcEncryptChainedScrubOk : ScrubOk (Spec.Cast5.cbcEncryptChainedContract
       exact ⟨(cbcBlocksAt_of0 hb.2.2 (Nat.le_refl _)).trans h₁,
         (bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)).trans h₂⟩
 
-abbrev cbcEncryptChainedBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cbcEncryptChained)
+abbrev cbcEncryptChainedBase : Prog isa := Impl.Cast5.AArch64.Fn.cbcEncryptChainedBase
 
-abbrev cbcEncryptChainedCode : Prog isa := withScrubG 112 [6] cbcEncryptChainedBase
+abbrev cbcEncryptChainedCode : Prog isa := Impl.Cast5.AArch64.Fn.cbcEncryptChained
 
 theorem cbcEncryptChainedBase_verified : Verified AArch64.target cbcEncryptChainedBase (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.AArch64.cbcEncryptChained_framed)
@@ -131,10 +128,9 @@ theorem cfbEncryptScrubOk : ScrubOk (Spec.Cast5.cfbEncryptContract (AArch64.abi.
       exact ⟨(cbcBlocksAt_of0 hb.2.2 (Nat.le_refl _)).trans h₁,
         (bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)).trans h₂⟩
 
-abbrev cfbEncryptBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncrypt)
+abbrev cfbEncryptBase : Prog isa := Impl.Cast5.AArch64.Fn.cfbEncryptBase
 
-abbrev cfbEncryptCode : Prog isa := withScrubG 112 [6] cfbEncryptBase
+abbrev cfbEncryptCode : Prog isa := Impl.Cast5.AArch64.Fn.cfbEncrypt
 
 theorem cfbEncryptBase_verified : Verified AArch64.target cfbEncryptBase (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.AArch64.cfbEncrypt_framed)
@@ -160,10 +156,9 @@ theorem cfbEncryptFinalScrubOk : ScrubOk (Spec.Cast5.cfbEncryptFinalContract (AA
       exact ⟨(bytesAt_of0 hb.2.2 (Nat.le_of_eq (Nat.mul_one _).symm)).trans h₁,
         (bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)).trans h₂⟩
 
-abbrev cfbEncryptFinalBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncryptFinal)
+abbrev cfbEncryptFinalBase : Prog isa := Impl.Cast5.AArch64.Fn.cfbEncryptFinalBase
 
-abbrev cfbEncryptFinalCode : Prog isa := withScrubG 112 [6] cfbEncryptFinalBase
+abbrev cfbEncryptFinalCode : Prog isa := Impl.Cast5.AArch64.Fn.cfbEncryptFinal
 
 theorem cfbEncryptFinalBase_verified : Verified AArch64.target cfbEncryptFinalBase (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.AArch64.cfbEncryptFinal_framed)
@@ -189,10 +184,9 @@ theorem cfbDecryptFinalScrubOk : ScrubOk (Spec.Cast5.cfbDecryptFinalContract (AA
       exact ⟨(bytesAt_of0 hb.2.2 (Nat.le_of_eq (Nat.mul_one _).symm)).trans h₁,
         (bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)).trans h₂⟩
 
-abbrev cfbDecryptFinalBase : Prog isa :=
-  ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbDecryptFinal)
+abbrev cfbDecryptFinalBase : Prog isa := Impl.Cast5.AArch64.Fn.cfbDecryptFinalBase
 
-abbrev cfbDecryptFinalCode : Prog isa := withScrubG 112 [6] cfbDecryptFinalBase
+abbrev cfbDecryptFinalCode : Prog isa := Impl.Cast5.AArch64.Fn.cfbDecryptFinal
 
 theorem cfbDecryptFinalBase_verified : Verified AArch64.target cfbDecryptFinalBase (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.AArch64.cfbDecryptFinal_framed)
@@ -208,7 +202,7 @@ theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Cast
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cbcEncryptChained
       (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
@@ -216,7 +210,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbe
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cbcDecryptChained
       (Spec.Cast5.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
@@ -224,7 +218,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbe
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbEncrypt
       (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
@@ -232,7 +226,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbDecrypt
       (Spec.Cast5.cfbDecryptContract AArch64.abi 224) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
@@ -240,7 +234,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbEncryptFinal
       (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
@@ -248,7 +242,7 @@ theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode
+    VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbDecryptFinal
       (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
   ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
     Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩

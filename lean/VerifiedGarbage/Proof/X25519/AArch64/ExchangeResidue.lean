@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.AArch64.Fn
+public meta import VerifiedGarbage.Impl.X25519.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Residue.AArch64
 public meta import VerifiedGarbage.Impl.Residue.AArch64
@@ -73,10 +75,7 @@ theorem exchangeOk : RTaintF.ScrubOk (Spec.X25519.exchangeContract AArch64.abi 1
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
 /-- `vg_x25519_exchange`, before its granules [0] are zeroed. -/
-abbrev exchangeBase : Prog isa :=
-  withRet 32 (withClears [.x3, .x4, .x5, .x6, .x7, .x8, .x10, .x12, .x13, .x14, .x15, .x16, .x17]
-    [] (some .x3)
-    (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32))
+abbrev exchangeBase : Prog isa := Impl.X25519.AArch64.Fn.exchangeBase
 
 theorem exchangeBase_verified : Verified AArch64.target exchangeBase (Spec.X25519.exchangeContract AArch64.abi 16) :=
   RTaintF.Verified.withRet (Clears.Verified.withClears (Proof.X25519.AArch64.Exchange.exchange_verified) (by decide))
@@ -85,7 +84,7 @@ theorem exchangeScrubOk : RTaintF.ScrubOk (Spec.X25519.exchangeContract AArch64.
   exchangeOk
 
 /-- `vg_x25519_exchange`. -/
-abbrev exchangeCode : Prog isa := withScrubG 16 [0] exchangeBase
+abbrev exchangeCode : Prog isa := Impl.X25519.AArch64.Fn.exchange
 
 theorem exchangeCode_verified : Verified AArch64.target exchangeCode (Spec.X25519.exchangeContract AArch64.abi 16) :=
   RTaintG.Verified.withScrubG exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
@@ -97,7 +96,7 @@ theorem exchangeCode_noResidue : NoResidue exchangeCode (Spec.X25519.exchangeCon
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed :
-    VerifiedScrubbed AArch64.target Proof.X25519.AArch64.ExchangeResidue.exchangeCode
+    VerifiedScrubbed AArch64.target Impl.X25519.AArch64.Fn.exchange
       (Spec.X25519.exchangeContract AArch64.abi 16) 32 :=
   ⟨Proof.X25519.AArch64.ExchangeResidue.exchangeCode_verified,
     Proof.X25519.AArch64.ExchangeResidue.exchangeCode_noResidue⟩
