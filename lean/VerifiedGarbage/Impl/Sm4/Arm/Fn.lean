@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
@@ -15,7 +15,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 
 Each function is its code with its working space in a frame on the stack
 (`withStackScratchWiped`, `withRegScratchWiped`), which it wipes, then its
-cleanup (`Impl/Residue/ArmSel.lean`, `scrubSel`): of the stack its contract
+cleanup (`Impl/Scrub/ArmSel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may
@@ -36,7 +36,7 @@ verified, without the cleanup, under names of their own
 
 namespace VG.Impl.Sm4.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm VG.Impl.StackScratch.Arm
+open VG.Arm VG.Impl.Scrub.Arm VG.Impl.StackScratch.Arm
 
 /-- The words the key expansion leaves secret: none. -/
 def expandKeyWords : List Nat := []

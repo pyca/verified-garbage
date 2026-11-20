@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Arm.ResidueTaintSound
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -13,20 +13,20 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Clearing only the words of the stack that may hold secrets (ARMv7)
 
-`Impl.Residue.Arm.scrubSel rb n ws c` is `c`, then a frame of the `n` bytes
+`Impl.Scrub.Arm.scrubSel rb n ws c` is `c`, then a frame of the `n` bytes
 below the stack pointer in which only the words `ws` are zeroed (none, and no
 frame, for no word), then `tail rb`. Its run after `c` leaves the registers
 the calling convention preserves, the result's `rb` bits, and the memory
 outside that frame as they were (`scrubSel_run`), and leaks only addresses
 that are a function of the stack pointer, so it meets `c`'s contract
-(`Verified.scrubSel`), as `scrubF` does (`Verified.scrubFS`). It returns
+(`Verified.scrubSel`), as `scrubAll` does (`Verified.scrubAllS`). It returns
 without secret residue when the residue analysis (`Arm.rtaint`) of the whole
 of it, from where the contract starts it, ends in `RTaint.done`
 (`RTaint.noResidue_of_verified`): the analysis sees the cleanup's stores, and
 that they leave no byte of the window secret.
 
 `verifiedScrubbedSel` is the theorem a registration binds
-(`verified := .scrubbed …`), as `verifiedScrubbedF` is for `scrubF`
+(`verified := .scrubbed …`), as `verifiedScrubbedAll` is for `scrubAll`
 (`ScrubProved.lean`): of the code with its cleanup, from the function's
 `Verified`, the side condition on `n` and `ws` (`selSide`, by `decide`), and
 the analysis's result (`taint_decide_ct`).
@@ -36,7 +36,7 @@ the analysis's result (`taint_decide_ct`).
 
 namespace VG.Arm.Scrub
 
-open VG.Impl.Residue.Arm VG.Arm.FrameStack
+open VG.Impl.Scrub.Arm VG.Arm.FrameStack
 
 /-! ## The cleanup's run -/
 
@@ -157,14 +157,14 @@ theorem Verified.scrubSel {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     (hv : Verified target c (sig.contract A pre post wa stack leak)) {n : Nat} (hn : FrameOk n)
     (hns : n ≤ stack) {ws : List Nat} (hws : ∀ k ∈ ws, 4 * k + 4 ≤ n) {rb : Nat}
     (e : rb = sig.retBits A.ptrBits) (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
-    Verified target (Impl.Residue.Arm.scrubSel rb n ws c) (sig.contract A pre post wa stack leak) := by
+    Verified target (Impl.Scrub.Arm.scrubSel rb n ws c) (sig.contract A pre post wa stack leak) := by
   have hrb : rb = 0 ∨ rb = 32 ∨ rb = 64 := by rw [e, hA.ptrBits]; exact retBits_cases sig
   have h0 : stack ≠ 0 := by have := hn.1; omega_using [this, hns]
   have hsp : ∀ {s : State}, (sig.contract A pre post wa stack leak).pre s → n ≤ s.sp.toNat := fun hs => by
     have := (contract_pre_scrub hA hs h0).1; omega_using [this, hns]
   -- Every run is `c`'s run, then the cleanup.
   have run : ∀ {s u : State} {T : List Leak}, (sig.contract A pre post wa stack leak).pre s →
-      Exec isa (Impl.Residue.Arm.scrubSel rb n ws c) s T u →
+      Exec isa (Impl.Scrub.Arm.scrubSel rb n ws c) s T u →
         ∃ t w, Exec isa c s t w ∧ T = t ++ (wipeSelTr s.sp n ws ++ []) := by
     intro s u T hs h
     cases h with

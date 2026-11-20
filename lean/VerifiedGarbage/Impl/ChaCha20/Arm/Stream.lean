@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Streaming ChaCha20: 32-bit ARM implementation
@@ -154,7 +154,7 @@ end VG.Impl.ChaCha20.Arm.Stream
 
 namespace VG.Impl.ChaCha20.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_chacha20_init`: `Stream.init`, then the registers a callee may
 change set to constants. -/

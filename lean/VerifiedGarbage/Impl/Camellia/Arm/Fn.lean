@@ -6,12 +6,12 @@ public import VerifiedGarbage.Impl.Camellia.Arm.Fb
 public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 public import VerifiedGarbage.Impl.Camellia.Arm.CtrFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # Camellia on ARMv7, as emitted
 
-Each function's code followed by its cleanup (`Impl/Residue/ArmSel.lean`,
+Each function's code followed by its cleanup (`Impl/Scrub/ArmSel.lean`,
 `scrubSel`): of the stack its contract reserves, where its frames were, only
 the words that the residue analysis (`Arm.rtaint`) finds may differ between
 two runs zeroed (`…Words`, offsets in words from the lowest address of that
@@ -26,7 +26,7 @@ secret residue.
 
 namespace VG.Impl.Camellia.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- The words the key expansion leaves secret: none. -/
 def expandKeyWords : List Nat := []

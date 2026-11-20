@@ -6,13 +6,13 @@ public import VerifiedGarbage.Impl.TripleDes.Arm.Wide
 public import VerifiedGarbage.Impl.TripleDes.Arm.Fb
 public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # Triple DES on ARMv7, as emitted
 
 Each function's code, which wipes its own working space, followed by its
-cleanup (`Impl/Residue/ArmSel.lean`, `scrubSel`): of the stack its contract
+cleanup (`Impl/Scrub/ArmSel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may
@@ -24,7 +24,7 @@ change, but its result, set to constants.
 
 namespace VG.Impl.TripleDes.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- The words key expansion and ECB leave secret: none. -/
 def noWords : List Nat := []

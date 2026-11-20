@@ -9,15 +9,15 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 /-!
 # Zeroing more stack than one frame holds, with its facts proved (ARMv7)
 
-`Impl.Rsa.Arm.WipeTwo.scrubF2 rb a b c` is `Impl.Residue.Arm.scrubF` for
+`Impl.Rsa.Arm.WipeTwo.scrubAll2 rb a b c` is `Impl.Scrub.Arm.scrubAll` for
 code whose frames use more than one frame of the model holds: it zeroes the
 `a + b` bytes below the stack pointer in two frames, each a frame size of
-the model (`FrameOk`). `Verified.scrubF2` is `Arm.Scrub.Verified.scrubFS`'s
+the model (`FrameOk`). `Verified.scrubAll2` is `Arm.Scrub.Verified.scrubAllS`'s
 statement for it, by the same argument: in two runs that agree on what is
 public, the wiped bytes are zero before each frame's release, which the two
 runs then release from the same stack pointer and the same unknowns
 (`pop_mem_congr`), the inner frame first; every other byte is as the code
-left it. `verifiedScrubbedF2` is what a registration binds.
+left it. `verifiedScrubbedAll2` is what a registration binds.
 -/
 
 -- separate module: the cleanup of RSASSA-PKCS1-v1_5 signing on ARMv7, apart from the framework it extends.
@@ -26,7 +26,7 @@ left it. `verifiedScrubbedF2` is what a registration binds.
 
 namespace VG.Proof.Rsa.Arm.ScrubTwo
 
-open VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Impl.Residue.Arm VG.Impl.Rsa.Arm.WipeTwo
+open VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Impl.Scrub.Arm VG.Impl.Rsa.Arm.WipeTwo
 
 /-- What `wipeBelow2 a b` leaks from the stack pointer `sp`: the addresses
 of the wiped words of the outer frame, then of the inner. -/
@@ -154,13 +154,13 @@ theorem tail_zeroed2 (r : Reg) (h0 : r ≠ .r0) (h1 : r ≠ .r1) (hr : r ∉ pre
     r = .r2 ∨ r = .r3 ∨ r = .r12 := by
   revert h0 h1 hr; cases r <;> decide
 
-/-- A run of `scrubF2 rb a b c` from `s`, after `c`'s run to `w`: as
-`Arm.Scrub.scrubF_run`, with each frame of the wipe released from a state in
+/-- A run of `scrubAll2 rb a b c` from `s`, after `c`'s run to `w`: as
+`Arm.Scrub.scrubAll_run`, with each frame of the wipe released from a state in
 which its bytes are zero. -/
-theorem scrubF2_run {rb a b : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (ha : FrameOk a) (hb : FrameOk b)
+theorem scrubAll2_run {rb a b : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (ha : FrameOk a) (hb : FrameOk b)
     {c : Prog isa} (hd : armStack c ≤ a + b) {s w : State} {t : List Leak} (hsp : a + b ≤ s.sp.toNat)
     (he : Exec isa c s t w) :
-    ∃ u, Exec isa (scrubF2 rb a b c) s (t ++ (wipe2Tr s.sp a b ++ [])) u ∧
+    ∃ u, Exec isa (scrubAll2 rb a b c) s (t ++ (wipe2Tr s.sp a b ++ [])) u ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
       u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
       u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
@@ -188,20 +188,20 @@ theorem scrubF2_run {rb a b : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (ha : 
   · rw [hret, vreg .r1 (by decide) (by decide) (by decide), vreg .r0 (by decide) (by decide) (by decide)]
   · rw [hm]; exact vf x fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
 
-/-- `scrubF2 rb a b c` meets the contract of `c`, whose frames use at most
+/-- `scrubAll2 rb a b c` meets the contract of `c`, whose frames use at most
 the `a + b` bytes the contract reserves and which makes no indirect call, and
 whose postcondition reads the memory on return only within the buffers, and
-returns without secret residue: `Arm.Scrub.Verified.scrubFS`, with the stack
+returns without secret residue: `Arm.Scrub.Verified.scrubAllS`, with the stack
 wiped in two frames. -/
-theorem Verified.scrubF2 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+theorem Verified.scrubAll2 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {a b : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hv : Verified target c (sig.contract A pre post wa (a + b) leak)) (hd : armStack c ≤ a + b)
     (hni : noIcall c = true) (ha : FrameOk a) (hb : FrameOk b) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
     (hpost : PostOut (sig.contract A pre post wa (a + b) leak) rb) :
-    Verified target (Impl.Rsa.Arm.WipeTwo.scrubF2 rb a b c) (sig.contract A pre post wa (a + b) leak) ∧
-      NoResidue (Impl.Rsa.Arm.WipeTwo.scrubF2 rb a b c) (sig.contract A pre post wa (a + b) leak) rb := by
+    Verified target (Impl.Rsa.Arm.WipeTwo.scrubAll2 rb a b c) (sig.contract A pre post wa (a + b) leak) ∧
+      NoResidue (Impl.Rsa.Arm.WipeTwo.scrubAll2 rb a b c) (sig.contract A pre post wa (a + b) leak) rb := by
   have hrb : rb = 0 ∨ rb = 32 ∨ rb = 64 := by rw [e, hA.ptrBits]; exact retBits_cases sig
   have h0 : a + b ≠ 0 := by have := ha.1; omega
   have hsy : ∀ s₁ s₂, (sig.contract A pre post wa (a + b) leak).pub s₁ s₂ →
@@ -209,7 +209,7 @@ theorem Verified.scrubF2 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     fun _ _ _ n hn => absurd hn (by rw [inames_of_noIcall hni]; exact List.not_mem_nil)
   -- Every run is `c`'s run, then the wipe and the tail.
   have run : ∀ {s u : State} {T : List Leak}, (sig.contract A pre post wa (a + b) leak).pre s →
-      Exec isa (Impl.Rsa.Arm.WipeTwo.scrubF2 rb a b c) s T u → ∃ t w, Exec isa c s t w ∧
+      Exec isa (Impl.Rsa.Arm.WipeTwo.scrubAll2 rb a b c) s T u → ∃ t w, Exec isa c s t w ∧
         T = t ++ (wipe2Tr s.sp a b ++ []) ∧
         u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
         u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
@@ -227,14 +227,14 @@ theorem Verified.scrubF2 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     cases h with
     | seq x y =>
       rename_i w t₁ t₂
-      obtain ⟨u', hu', facts⟩ := scrubF2_run hrb ha hb hd (contract_pre_scrub hA hs h0).1 x
+      obtain ⟨u', hu', facts⟩ := scrubAll2_run hrb ha hb hd (contract_pre_scrub hA hs h0).1 x
       obtain ⟨hT, rfl⟩ := Exec.det (Exec.seq x y) hu'
       exact ⟨t₁, w, x, hT, facts⟩
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp e₁ e₂ => ?_, hv.2.2⟩, ?_⟩
   · obtain ⟨t, w, he, habi, hq⟩ := hv.1 s hs
     obtain ⟨hsp, hdis⟩ := contract_pre_scrub hA hs h0
     obtain ⟨u, hu, -, -, usp, upres, -, -, -, -, -, -, -, -, hret, -, hkeep, -⟩ :=
-      scrubF2_run hrb ha hb hd hsp he
+      scrubAll2_run hrb ha hb hd hsp he
     refine ⟨_, u, hu, ⟨fun r hr => (upres r hr).trans (habi.1 r hr), usp⟩,
       hpost s w u hs hq (fun x ⟨r, hr, hx⟩ => hkeep x fun hb => hdis r hr x hb hx) hret⟩
   · obtain ⟨a₁, w₁, x₁, rfl, -⟩ := run p₁ e₁
@@ -294,19 +294,19 @@ theorem Verified.scrubF2 {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 
 /-- `r`'s code, whose frames use at most the `a + b` bytes of stack its
 contract reserves and which makes no indirect call, with its cleanup
-(`scrubF2`: those bytes zeroed in two frames, the result's `rb` bits kept)
+(`scrubAll2`: those bytes zeroed in two frames, the result's `rb` bits kept)
 meets `r`'s contract in constant time and returns without secret residue, if
 its postcondition reads the memory on return only within the buffers
-(`PostOut`): `Arm.Scrub.verifiedScrubbedF`, for a stack of more than one
+(`PostOut`): `Arm.Scrub.verifiedScrubbedAll`, for a stack of more than one
 frame, as the theorem about the code that a registration binds. -/
-theorem verifiedScrubbedF2 {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+theorem verifiedScrubbedAll2 {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
     {post : sig.Post abi.ptrBits} {wa : Bool} {a b : Nat}
     {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hv : Verified target c (sig.contract abi pre post wa (a + b) leak)) (hok : CodeOk c (a + b))
     (ha : FrameOk a) (hb : FrameOk b) {rb : Nat} (e : rb = sig.retBits abi.ptrBits)
     (hpost : PostOut (sig.contract abi pre post wa (a + b) leak) rb) :
-    VerifiedScrubbed target (scrubF2 rb a b c) (sig.contract abi pre post wa (a + b) leak) rb :=
-  have h := Verified.scrubF2 ScrubAbi.plain hv hok.1 hok.2 ha hb e hpost
+    VerifiedScrubbed target (scrubAll2 rb a b c) (sig.contract abi pre post wa (a + b) leak) rb :=
+  have h := Verified.scrubAll2 ScrubAbi.plain hv hok.1 hok.2 ha hb e hpost
   ⟨h.1, h.2⟩
 
 end VG.Proof.Rsa.Arm.ScrubTwo

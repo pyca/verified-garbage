@@ -50,7 +50,7 @@ working space in a frame of 24 and 32 bytes (`withRegScratch`), and the CBC,
 CFB64 and OFB functions 64 bytes of their own around ECB's 32
 (`withStackScratchWiped`). None makes an indirect call. Key inversion and
 ECB are emitted followed by a wipe of the stack their contracts reserve,
-then the registers (`Arm.Scrub.verifiedScrubbedF`). The modes wipe their own
+then the registers (`Arm.Scrub.verifiedScrubbedAll`). The modes wipe their own
 frame, and are emitted followed by a wipe of only the words of that stack
 that the residue analysis (`Arm.rtaint`) finds may differ between two runs,
 then the registers (`Arm.Scrub.verifiedScrubbedSel`, whose analysis the
@@ -269,14 +269,14 @@ theorem expandKey :
 /-- `vg_idea_invert_key`. -/
 theorem invertKey :
     VerifiedScrubbed target Impl.Idea.Arm.Fn.invertKey (invertKeyContract Arm.abi 24) 0 :=
-  verifiedScrubbedF (api := invertKeyApi)
+  verifiedScrubbedAll (api := invertKeyApi)
     { code := Impl.StackScratch.Arm.withRegScratch 24 .r2 Impl.Idea.Arm.invertKey
       verified := Proof.Idea.Arm.invertKey_framed }
     (Scrub.invertKeyOut _) (scrubSideF_of Scrub.invertKey_scrub Scrub.frameOk_24 _)
 
 /-- `vg_idea_ecb`. -/
 theorem ecb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ecb (ecbContract Arm.abi 32) 0 :=
-  verifiedScrubbedF (api := ecbApi)
+  verifiedScrubbedAll (api := ecbApi)
     { code := Impl.Idea.Arm.ecbCode, verified := Proof.Idea.Arm.ecb_framed }
     (Scrub.ecbOut _) (scrubSideF_of Scrub.ecbCode_scrub Scrub.frameOk_32 _)
 

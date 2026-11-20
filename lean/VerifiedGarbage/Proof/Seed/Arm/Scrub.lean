@@ -47,7 +47,7 @@ buffers (`Arm.Scrub.PostOut`, from the lemmas of `Proof/Seed/Scratch.lean`,
 that x86 uses too). Each wipes its own working space, and is
 emitted followed by a wipe of only the words of the stack its contract
 reserves that the residue analysis finds may differ between two runs
-(`Impl.Residue.Arm.scrubSel`), and by instructions that set the
+(`Impl.Scrub.Arm.scrubSel`), and by instructions that set the
 registers a callee may change and the flags to constants
 (`Impl.Seed.Arm.Fn`). `Fn` below states that each returns without secret
 residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis, `Arm.rtaint`, the

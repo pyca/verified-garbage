@@ -21,7 +21,7 @@ secret residue (`VerifiedScrubbed`), which is what its registration binds.
 
 `vg_rsa_check_key` and `vg_rsa_crt_values` have no frame
 (`Arm.Scrub.verifiedScrubbed`, `Code.noFrames` by `lit_decide`). The others
-zero the stack their contracts reserve (`Arm.Scrub.verifiedScrubbedF`): their
+zero the stack their contracts reserve (`Arm.Scrub.verifiedScrubbedAll`): their
 code makes no indirect call and its frames are within those bytes (`CodeOk`,
 by `lit_decide`; of `vg_rsa_public_precompute`, which is an implementation's
 code, the implementation's own, `CrtImpl.pcOk`), and their postconditions
@@ -135,7 +135,7 @@ theorem crtValues [Proof.Rsa.Arm.Keys.InvLaw] (um : Bool) :
 `vg_rsa_recover_primes_det_umaal`. -/
 theorem recoverPrimesDet [Proof.Rsa.Arm.Keys.InvLaw] (um : Bool) :
     VerifiedScrubbed target (Impl.Rsa.Arm.Fn.recoverPrimesDet um) (Spec.Rsa.recoverPrimesDetContract abi 56) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.recoverPrimesDetApi)
+  verifiedScrubbedAll (api := Spec.Rsa.recoverPrimesDetApi)
     { code := Impl.Rsa.Arm.RecoverDet.codeFor um
       verified := Proof.Rsa.Arm.Recover.recover_primes_det_for_verified um }
     (recoverPrimesDetOut _) (scrubSideF_of (recoverPrimesDet_ok um) frameOk_56 _)
@@ -143,21 +143,21 @@ theorem recoverPrimesDet [Proof.Rsa.Arm.Keys.InvLaw] (um : Bool) :
 /-- `vg_rsa_private_precompute`. -/
 theorem privatePrecompute :
     VerifiedScrubbed target Impl.Rsa.Arm.Fn.privatePrecompute (Spec.Rsa.privatePrecomputeContract abi 168) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.privatePrecomputeApi)
+  verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
     { code := Impl.Bignum.Arm.PrivPreFn.code, verified := Proof.Bignum.Arm.privPre_verified }
     (privatePrecomputeOut _) (scrubSideF_of privatePrecompute_ok frameOk_168 _)
 
 /-- `vg_rsa_private_precompute_umaal`. -/
 theorem privatePrecomputeU :
     VerifiedScrubbed target Impl.Rsa.Arm.Fn.privatePrecomputeU (Spec.Rsa.privatePrecomputeContract abi 168) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.privatePrecomputeApi)
+  verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
     { code := Impl.Bignum.Arm.PrivPreFn.codeU, verified := Proof.Bignum.Arm.privPre_umaal_verified }
     (privatePrecomputeOut _) (scrubSideF_of privatePrecomputeU_ok frameOk_168 _)
 
 /-- `vg_rsa_public_precompute`, of the implementation `v`. -/
 theorem publicPrecompute (v : CrtImpl) :
     VerifiedScrubbed target (Impl.Rsa.Arm.Fn.publicPrecompute v.pc) (Spec.Rsa.publicPrecomputeContract abi 56) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.publicPrecomputeApi) { code := v.pc, verified := v.pcVerified }
+  verifiedScrubbedAll (api := Spec.Rsa.publicPrecomputeApi) { code := v.pc, verified := v.pcVerified }
     (publicPrecomputeOut _) (scrubSideF_of v.pcOk frameOk_56 _)
 
 end VG.Proof.Rsa.Arm.Fn

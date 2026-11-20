@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.X25519.Arm.Words
 public import VerifiedGarbage.Impl.Xdh.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # X25519 exchange on ARMv7, as emitted
@@ -17,13 +17,13 @@ to constants.
 
 namespace VG.Impl.X25519.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_x25519_exchange`: the check of `vg_x25519`'s result, then its cleanup. -/
-def exchange : Prog isa := scrubF 32 8 (Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32)
+def exchange : Prog isa := scrubAll 32 8 (Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32)
 
 /-- `vg_x25519_exchange_umaal`, as `exchange` with `vg_x25519_umaal`. -/
 def exchangeUmaal : Prog isa :=
-  scrubF 32 8 (Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32)
+  scrubAll 32 8 (Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32)
 
 end VG.Impl.X25519.Arm.Fn

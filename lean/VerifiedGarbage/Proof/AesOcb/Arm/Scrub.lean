@@ -30,7 +30,7 @@ return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
 `Proof/AesOcb/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe of
 that stack and by instructions that set the registers a callee may change,
 but the result, and the flags to constants (`Impl.AesOcb.Arm.Fn`), and `Fn` below states
-that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedAll`), which
 is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): the 2568 and 2600
@@ -129,7 +129,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.Ae
 
 /-- `vg_aes_ocb_init`. -/
 theorem init : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.init (Spec.Ocb.initContract abi 2576) 0 :=
-  verifiedScrubbedF (api := Spec.Ocb.initApi)
+  verifiedScrubbedAll (api := Spec.Ocb.initApi)
     { code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
       verified := (Verified.stack_le (by decide) Proof.AesOcb.Arm.init_framed Scrub.initSat :
         Verified Arm.target _ (Spec.Ocb.initContract Arm.abi 2576)) }
@@ -137,7 +137,7 @@ theorem init : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.init (Spec.Ocb.initCon
 
 /-- `vg_aes_ocb_seal`. -/
 theorem «seal» : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.«seal» (Spec.Ocb.sealContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Ocb.sealApi)
+  verifiedScrubbedAll (api := Spec.Ocb.sealApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«seal»
       verified := Proof.AesOcb.seal_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.seal_framed Scrub.sealSat :
         Verified Arm.target _ (Proof.AesOcb.sealRoundsContract Arm.abi 2608)) }
@@ -145,7 +145,7 @@ theorem «seal» : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.«seal» (Spec.Ocb
 
 /-- `vg_aes_ocb_open`. -/
 theorem «open» : VerifiedScrubbed target Impl.AesOcb.Arm.Fn.«open» (Spec.Ocb.openContract abi 2608) 32 :=
-  verifiedScrubbedF (api := Spec.Ocb.openApi)
+  verifiedScrubbedAll (api := Spec.Ocb.openApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesOcb.Arm.«open»
       verified := Proof.AesOcb.open_keyed (Verified.stack_le (by decide) Proof.AesOcb.Arm.open_framed Scrub.openSat :
         Verified Arm.target _ (Proof.AesOcb.openRoundsContract Arm.abi 2608)) }

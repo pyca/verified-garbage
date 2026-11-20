@@ -45,7 +45,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 Each function is its code with its cleanup (`Impl.Sm4.Arm.Fn`): of the stack
 its contract reserves, only the words that the residue analysis finds may
-differ between two runs zeroed (`Impl.Residue.Arm.scrubSel`), and the
+differ between two runs zeroed (`Impl.Scrub.Arm.scrubSel`), and the
 registers a callee may change set to constants. `Fn` below has the theorem of
 each: it meets its contract in constant time and returns without secret
 residue (`VerifiedScrubbed`), from `Arm.Scrub.verifiedScrubbedSel`, whose

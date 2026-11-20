@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Impl.Rc2.Arm.Stream
 public import VerifiedGarbage.Impl.Rc2.Arm.Cbc
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # RC2 on ARMv7, as emitted
 
 Each function's code, which wipes its own working space, followed by its
-cleanup (`Impl/Residue/ArmSel.lean`, `scrubSel`): of the stack its contract
+cleanup (`Impl/Scrub/ArmSel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may
@@ -21,7 +21,7 @@ change, but its result, set to constants.
 
 namespace VG.Impl.Rc2.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- The words the CBC key setup leaves secret. -/
 def initWords : List Nat := List.range' 0 6

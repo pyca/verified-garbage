@@ -25,7 +25,7 @@ RISC-V's `Proof/Scrypt/RISCV64/Scrub.lean` proves it, on the arguments' low
 32 bits as DSA's `Proof/Dsa/Arm/Scrub.lean` reads them), so its cleanup
 wipes those 40 bytes and the registers a callee may change
 (`Impl.Scrypt.Arm.Fn.scrypt`), and `Fn.scrypt` below states that it returns
-without secret residue (`Arm.Scrub.verifiedScrubbedF`), which its
+without secret residue (`Arm.Scrub.verifiedScrubbedAll`), which its
 registration binds. It makes no indirect call: ROMix's code, by
 `lit_decide`, and PBKDF2's, from what SHA-256's code gives
 (`Proof/Hmac/Stream/Arm/CodeOk.lean`).
@@ -87,7 +87,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Scrypt.Arm.Scrub
 
 /-- `vg_scrypt`. -/
 theorem scrypt : VerifiedScrubbed target Impl.Scrypt.Arm.Fn.scrypt (Spec.Scrypt.scryptContract abi 40) 0 :=
-  verifiedScrubbedF (api := Spec.Scrypt.scryptApi)
+  verifiedScrubbedAll (api := Spec.Scrypt.scryptApi)
     { code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Whole.pbkC
       verified := Whole.scrypt_verified }
     (scryptOut _) (scrubSideF_of ⟨scrypt_armStack, scrypt_noIcall⟩ frameOk_40 _)

@@ -19,7 +19,7 @@ has the theorem of each, for any implementation of the private CRT's
 interface, whose precomputed public operation it calls: it
 meets its contract in constant time and returns without secret residue
 (`VerifiedScrubbed`), which is what its registration binds
-(`Arm.Scrub.verifiedScrubbedF`). What the cleanup needs of the code
+(`Arm.Scrub.verifiedScrubbedAll`). What the cleanup needs of the code
 (`CodeOk`) is proven once for any public operation, from what it states of
 its own code (`CrtImpl.pdOk`), with the code around the call by
 `lit_decide`. Their postconditions read the memory on return only within
@@ -28,7 +28,7 @@ signature, as on x86 and PPC64LE (`Proof/RsaPkcs1Sig/X86/Scrub.lean`,
 `Proof/RsaPkcs1Sig/PPC64LE/Scrub.lean`).
 
 Signing's 4616 bytes of stack are zeroed in two frames
-(`Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedF2`): its frames' bytes, and the
+(`Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2`): its frames' bytes, and the
 private operation's (`privCodeP_ok`).
 -/
 
@@ -117,7 +117,7 @@ theorem verifyPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
       (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi 2192) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi)
     { code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
       verified := Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v) }
     (verifyPrecomputedOut _) (scrubSideF_of (verify_ok v.pdOk) frameOk_2192 _)
@@ -127,7 +127,7 @@ theorem recoverPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
       (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi 2192) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi)
     { code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
       verified := Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v) }
     (recoverPrecomputedOut _) (scrubSideF_of (recover_ok v.pdOk) frameOk_2192 _)
@@ -138,7 +138,7 @@ theorem signPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.signPrecomputed (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v))
       (Spec.RsaPkcs1Sig.signPrecomputedContract abi 4616) 32 :=
-  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedF2 (a := 4080) (b := 536)
+  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2 (a := 4080) (b := 536)
     (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) (sign_ok (Proof.Rsa.Arm.Scrub.privCodeP_ok v))
     frameOk_4080 frameOk_536 rfl (signPrecomputedOut _)
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.P192.ArmComb
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # P-192 public keys on 32-bit ARM, as emitted
@@ -11,14 +11,14 @@ public import VerifiedGarbage.Impl.Residue.Arm
 `vg_ec_p192_public_key`, `_compress_public_key` and `_decompress_public_key`,
 with and without `umaal`: each one's code, which has no frames, then the
 instructions that set the registers a callee may change, but the result, and
-the flags to constants (`Impl.Residue.Arm.scrub`).
+the flags to constants (`Impl.Scrub.Arm.scrub`).
 -/
 
 @[expose] public section
 
 namespace VG.Impl.EcKey.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ec_p192_public_key`. -/
 def publicKeyP192 : Prog isa := scrub 32 Impl.Ecdsa.Arm.publicKeyP192Comb

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-! Bytewise comparison, saving the one callee-saved scratch register. -/
 
@@ -34,11 +34,11 @@ open VG.Arm
 the caller's in both runs). -/
 def eqWords : List Nat := []
 
-/-- `vg_ct_eq` as emitted: `eq`, then its cleanup (`Impl/Residue/ArmSel.lean`):
+/-- `vg_ct_eq` as emitted: `eq`, then its cleanup (`Impl/Scrub/ArmSel.lean`):
 of the 8 bytes below the stack pointer, where its frame saved `r4`, only the
 words that the residue analysis (`Arm.rtaint`) finds may differ between two
 runs zeroed (none), and the registers a callee may change, but its 32-bit
 result, set to constants. -/
-def eq : Prog isa := VG.Impl.Residue.Arm.scrubSel 32 8 eqWords VG.Impl.Ct.Arm.eq
+def eq : Prog isa := VG.Impl.Scrub.Arm.scrubSel 32 8 eqWords VG.Impl.Ct.Arm.eq
 
 end VG.Impl.Ct.Arm.Fn

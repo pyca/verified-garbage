@@ -19,7 +19,7 @@ the theorem of each, for any implementation of the private CRT's interface
 and the hash functions of any tables (`vs`) of which `OK` holds: it meets
 its contract in constant time and returns without secret residue
 (`VerifiedScrubbed`), which is what its registration binds
-(`Arm.Scrub.verifiedScrubbedF`).
+(`Arm.Scrub.verifiedScrubbedAll`).
 
 Each calls the hash functions of its tables indirectly, which the cleanup
 accepts (`scrubSideF`'s `tablesCall`). What it needs of the code
@@ -178,7 +178,7 @@ theorem decryptPrecomputed (vs : List TVar) (hok : OK vs) (v : CrtImpl) :
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
         3632) 32 :=
   have hs := fnsOf_scrub (names_tableFns vs)
-  verifiedScrubbedF (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi)
+  verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi)
     { tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Proof.RsaOaep.Arm.Dec.decCodeP vs v
       verified := decryptVerified vs hok v }
@@ -192,7 +192,7 @@ theorem encryptPrecomputed (vs : List TVar) (hok : OK vs) (v : CrtImpl) :
       (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)]) 240) 32 :=
   have hs := fnsOf_scrub (names_tableFns vs)
-  verifiedScrubbedF (api := Spec.RsaOaep.encryptMdTablesApi)
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi)
     { tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Proof.RsaOaep.Arm.Enc.encryptCode vs (pdOfCrt v)
       verified := enc_ok vs hok (pdOfCrt v) }

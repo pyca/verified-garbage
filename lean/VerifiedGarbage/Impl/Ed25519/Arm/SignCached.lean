@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
@@ -69,11 +69,11 @@ end VG.Impl.Ed25519.Arm.SignCached
 
 namespace VG.Impl.Ed25519.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ed25519_sign_expanded`, with either product of the field (`umaal`), then the 280 bytes of
 stack its contract reserves zeroed and the registers a callee may change
 and the flags set to constants. -/
-def signExpanded (umaal : Bool) : Prog isa := scrubF 0 280 (SignCached.codeExpanded umaal)
+def signExpanded (umaal : Bool) : Prog isa := scrubAll 0 280 (SignCached.codeExpanded umaal)
 
 end VG.Impl.Ed25519.Arm.Fn

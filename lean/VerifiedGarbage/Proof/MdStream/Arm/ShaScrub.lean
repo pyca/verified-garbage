@@ -54,10 +54,10 @@ their compression functions use and the copies of their stack arguments,
 and the one-shot `digest` `16 + dbytes` (`withRegScratchWiped`, and the 16
 bytes it pushes around `update`). The cleanup of `update` and `finalize`
 zeroes that stack, then sets the registers a callee may change, but the
-result, and the flags to constants (`Arm.Scrub.verifiedScrubbedF`).
+result, and the flags to constants (`Arm.Scrub.verifiedScrubbedAll`).
 `digest` wipes its own working space, so its cleanup zeroes only the words
 of that stack that the residue analysis (`Arm.rtaint`) finds may differ
-between two runs (`Impl.Residue.Arm.scrubSel`, `digestWords`), and its
+between two runs (`Impl.Scrub.Arm.scrubSel`, `digestWords`), and its
 theorem comes from `Arm.Scrub.verifiedScrubbedSel`, whose analysis the
 kernel evaluates here (`taint_decide_ct`).
 
@@ -84,7 +84,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Modes.Arm
 
 /-! ## The code: its frames, and no indirect call -/
 
-/-- What `scrubF` needs of code `c`, with `n` bytes of stack (`CodeOk`). -/
+/-- What `scrubAll` needs of code `c`, with `n` bytes of stack (`CodeOk`). -/
 abbrev ScrubOk (c : Prog isa) (n : Nat) : Prop := armStack c ≤ n ∧ noIcall c = true
 
 theorem update_scrubArm (P : Impl.MdStream.Arm.Params) (name : String) {c : Prog isa} {n : Nat}
@@ -490,7 +490,7 @@ theorem init : VerifiedScrubbed target Impl.Sha1.Arm.Fn.init (Spec.Sha1.initCont
 
 /-- `vg_sha1_update`. -/
 theorem update : VerifiedScrubbed target Impl.Sha1.Arm.Fn.update (Spec.Sha1.updateContract abi 176) 0 :=
-  verifiedScrubbedF (api := Spec.Sha1.updateApi)
+  verifiedScrubbedAll (api := Spec.Sha1.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 176 2 Impl.Sha1.Arm.Stream.update
       verified := Proof.Sha1.Arm.Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.updatePost_out _))
@@ -498,7 +498,7 @@ theorem update : VerifiedScrubbed target Impl.Sha1.Arm.Fn.update (Spec.Sha1.upda
 
 /-- `vg_sha1_finalize`. -/
 theorem finalize : VerifiedScrubbed target Impl.Sha1.Arm.Fn.finalize (Spec.Sha1.finalizeContract abi 176) 0 :=
-  verifiedScrubbedF (api := Spec.Sha1.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sha1.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha1.Arm.Stream.finalize
       verified := Proof.Sha1.Arm.Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.finalizePost_out _))
@@ -533,7 +533,7 @@ theorem init : VerifiedScrubbed target Impl.Sha256.Arm.Fn.init (Spec.Sha256.init
 
 /-- `vg_sha256_update`, which SHA-224 shares. -/
 theorem update : VerifiedScrubbed target Impl.Sha256.Arm.Fn.update (Spec.Sha256.updateContract abi 176) 0 :=
-  verifiedScrubbedF (api := Spec.Sha256.updateApi)
+  verifiedScrubbedAll (api := Spec.Sha256.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 176 2 Impl.Sha256.Arm.Stream.update
       verified := sha256Update176 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.updatePost_out _))
@@ -542,7 +542,7 @@ theorem update : VerifiedScrubbed target Impl.Sha256.Arm.Fn.update (Spec.Sha256.
 /-- `vg_sha256_finalize`. -/
 theorem finalize :
     VerifiedScrubbed target Impl.Sha256.Arm.Fn.finalize (Spec.Sha256.finalizeContract abi 176) 0 :=
-  verifiedScrubbedF (api := Spec.Sha256.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sha256.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha256.Arm.Stream.finalize
       verified := sha256Finalize176 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalizePost_out _))
@@ -551,7 +551,7 @@ theorem finalize :
 /-- `vg_sha224_finalize`. -/
 theorem finalize224 :
     VerifiedScrubbed target Impl.Sha256.Arm.Fn.finalize224 (Spec.Sha256.finalize224Contract abi 176) 0 :=
-  verifiedScrubbedF (api := Spec.Sha256.finalize224Api)
+  verifiedScrubbedAll (api := Spec.Sha256.finalize224Api)
     { code := Impl.StackScratch.Arm.withStackScratch 176 1 Impl.Sha256.Arm.Stream.finalize224
       verified := sha224Finalize176 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalize224Post_out _))
@@ -613,7 +613,7 @@ theorem init512_256 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.init512_256 (Sp
 
 /-- `vg_sha512_update`, which the truncations share. -/
 theorem update : VerifiedScrubbed target Impl.Sha512.Arm.Fn.update (Spec.Sha512.updateContract abi 288) 0 :=
-  verifiedScrubbedF (api := Spec.Sha512.updateApi)
+  verifiedScrubbedAll (api := Spec.Sha512.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 288 2 Impl.Sha512.Arm.Stream.update
       verified := sha512Update288 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.updatePost_out _))
@@ -622,7 +622,7 @@ theorem update : VerifiedScrubbed target Impl.Sha512.Arm.Fn.update (Spec.Sha512.
 /-- `vg_sha512_finalize`. -/
 theorem finalize :
     VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize (Spec.Sha512.finalizeContract abi 288) 0 :=
-  verifiedScrubbedF (api := Spec.Sha512.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sha512.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 288 1 Impl.Sha512.Arm.Stream.finalize
       verified := sha512Finalize288 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.finalizePost_out _))
@@ -631,7 +631,7 @@ theorem finalize :
 /-- `vg_sha384_finalize`. -/
 theorem finalize384 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize384
     (Spec.Sha512.finalizeDigestContract abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 288) 0 :=
-  verifiedScrubbedF (api := Spec.Sha512.finalize384Api)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize384Api)
     { code := Impl.StackScratch.Arm.withStackScratch 288 1
         (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params384)
       verified := sha384Finalize288 }
@@ -642,7 +642,7 @@ theorem finalize384 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize384
 /-- `vg_sha512_256_finalize`. -/
 theorem finalize512_256 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize512_256
     (Spec.Sha512.finalizeDigestContract abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 288) 0 :=
-  verifiedScrubbedF (api := Spec.Sha512.finalize512_256Api)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_256Api)
     { code := Impl.StackScratch.Arm.withStackScratch 288 1
         (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params512_256)
       verified := sha512_256Finalize288 }
@@ -653,7 +653,7 @@ theorem finalize512_256 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize512
 /-- `vg_sha512_224_finalize`. -/
 theorem finalize512_224 : VerifiedScrubbed target Impl.Sha512.Arm.Fn.finalize512_224
     (Spec.Sha512.finalizeDigestContract abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 288) 0 :=
-  verifiedScrubbedF (api := Spec.Sha512.finalize512_224Api)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_224Api)
     { code := Impl.StackScratch.Arm.withStackScratch 288 1
         (Impl.Sha512.Arm.Stream.finalizeDigest Impl.Sha512.Arm.Stream.params512_224)
       verified := sha512_224Finalize288 }

@@ -13,7 +13,7 @@ result `r1 ++ r0` what is above its `rb` bits to zero (`r1` for a result of
 32 bits, both for no result). The calling convention restores `r4`–`r11`,
 `lr` and `sp`, so these are all that `c` may leave secret in registers.
 
-`scrubF rb n c` also zeroes the `n` bytes below the stack pointer, where
+`scrubAll rb n c` also zeroes the `n` bytes below the stack pointer, where
 `c`'s frames were, before the tail: it opens a frame of `n` bytes, zeroes its
 every word (`wipeBelow`: from 64 bytes by a loop of eight stores a pass,
 `wipeLoop`, the shorter code there, and below by a store for each word), and
@@ -27,7 +27,7 @@ what makes it return without secret residue.
 
 @[expose] public section
 
-namespace VG.Impl.Residue.Arm
+namespace VG.Impl.Scrub.Arm
 
 open VG.Arm VG.Impl.StackScratch.Arm
 
@@ -66,6 +66,6 @@ def wipeBelow (n : Nat) : Prog isa := .frame (.alloc n) (wipeBody n) (.free n)
 
 /-- `c`, then the `n` bytes below the stack pointer zeroed, then `tail rb`:
 the function as emitted, for code with frames. -/
-def scrubF (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
+def scrubAll (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
 
-end VG.Impl.Residue.Arm
+end VG.Impl.Scrub.Arm

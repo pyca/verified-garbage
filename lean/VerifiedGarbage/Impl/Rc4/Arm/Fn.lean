@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # RC4 on ARMv7, as emitted
 
 Each function's code, which wipes its own working space, followed by its
-cleanup (`Impl/Residue/ArmSel.lean`, `scrubSel`): of the stack its contract
+cleanup (`Impl/Scrub/ArmSel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may
@@ -21,7 +21,7 @@ stores nothing on the stack.
 
 namespace VG.Impl.Rc4.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- The words RC4's functions leave secret: none. -/
 def noWords : List Nat := []

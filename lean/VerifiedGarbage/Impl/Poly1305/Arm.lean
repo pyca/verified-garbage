@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Poly1305: 32-bit ARM implementation
@@ -474,7 +474,7 @@ end VG.Impl.Poly1305.Arm
 
 namespace VG.Impl.Poly1305.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_poly1305_init`: `init`, which has no frame, and the registers a
 callee may change set to constants. -/
@@ -484,10 +484,10 @@ def init : Prog isa := scrub 0 Arm.init
 space in a frame of 144 bytes, which is then zeroed, and the registers a
 callee may change set to constants. -/
 def update (umaal : Bool) : Prog isa :=
-  scrubF 0 144 (Impl.StackScratch.Arm.withStackScratch 144 2 (Arm.update umaal))
+  scrubAll 0 144 (Impl.StackScratch.Arm.withStackScratch 144 2 (Arm.update umaal))
 
 /-- `vg_poly1305_finalize`, as `update`. -/
 def finalize (umaal : Bool) : Prog isa :=
-  scrubF 0 144 (Impl.StackScratch.Arm.withStackScratch 144 1 (Arm.finalize umaal))
+  scrubAll 0 144 (Impl.StackScratch.Arm.withStackScratch 144 1 (Arm.finalize umaal))
 
 end VG.Impl.Poly1305.Arm.Fn

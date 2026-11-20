@@ -4,19 +4,19 @@ public import VerifiedGarbage.Impl.Idea.Arm
 public import VerifiedGarbage.Impl.Idea.Arm.Modes
 public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # IDEA on ARMv7, as emitted
 
-Each function's code followed by its cleanup (`Impl/Residue/Arm.lean`): for
+Each function's code followed by its cleanup (`Impl/Scrub/Arm.lean`): for
 key expansion, which has no frame, the registers a callee may change set to
 constants (`scrub`); for key inversion and ECB, first the stack their
-contracts reserve, where their frames were, zeroed (`scrubF`); for the modes,
+contracts reserve, where their frames were, zeroed (`scrubAll`); for the modes,
 which wipe their own working space, first only the words of that stack that
 the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Residue/ArmSel.lean`, `scrubSel`, `modeWords`, offsets in words from
+(`Impl/Scrub/ArmSel.lean`, `scrubSel`, `modeWords`, offsets in words from
 its lowest address). None returns a value.
 `Proof/Idea/Arm/Scrub.lean` states that each returns without secret residue.
 -/
@@ -25,16 +25,16 @@ its lowest address). None returns a value.
 
 namespace VG.Impl.Idea.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm VG.Impl.StackScratch.Arm
+open VG.Arm VG.Impl.Scrub.Arm VG.Impl.StackScratch.Arm
 
 /-- `vg_idea_expand_key`. -/
 def expandKey : Prog isa := scrub 0 Impl.Idea.Arm.expandKey
 
 /-- `vg_idea_invert_key`. -/
-def invertKey : Prog isa := scrubF 0 24 (withRegScratch 24 .r2 Impl.Idea.Arm.invertKey)
+def invertKey : Prog isa := scrubAll 0 24 (withRegScratch 24 .r2 Impl.Idea.Arm.invertKey)
 
 /-- `vg_idea_ecb`. -/
-def ecb : Prog isa := scrubF 0 32 Impl.Idea.Arm.ecbCode
+def ecb : Prog isa := scrubAll 0 32 Impl.Idea.Arm.ecbCode
 
 /-- The words the modes leave secret. -/
 def modeWords : List Nat := List.range' 0 10

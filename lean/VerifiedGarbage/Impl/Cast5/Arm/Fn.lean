@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Cast5.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # CAST5's functions on ARMv7, as emitted
 
-Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the registers
 a callee may change set to constants. Key expansion and ECB keep their
 working space in their caller's `scratch` and have no frames (`scrub`); the
 modes keep theirs, with ECB's, in a frame of 328 bytes
@@ -23,7 +23,7 @@ that stack). None returns a value.
 
 namespace VG.Impl.Cast5.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm VG.Impl.StackScratch.Arm
+open VG.Arm VG.Impl.Scrub.Arm VG.Impl.StackScratch.Arm
 
 /-- `vg_cast5_expand_key`. -/
 def expandKey : Prog isa := scrub 0 Arm.expandKey

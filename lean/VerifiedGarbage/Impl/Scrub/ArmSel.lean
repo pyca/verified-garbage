@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Clearing only the words of the stack that may hold secrets (ARMv7)
 
-`scrubSel rb n ws c` is `scrubF rb n c` (`Impl/Residue/Arm.lean`), but zeroes,
+`scrubSel rb n ws c` is `scrubAll rb n c` (`Impl/Scrub/Arm.lean`), but zeroes,
 of the `n` bytes below the stack pointer, only the words `ws` (word `k` the
 four bytes at `4 k` from the frame's base, its lowest address), one store
 each (`wipeSel`), and opens no frame for no word. They are the words that the
@@ -15,13 +15,13 @@ what is left of a function that wipes its own scratch space is the few words
 it does not wipe (the arguments it copies, its innermost frames).
 
 It is a module of its own so that adding it rebuilds none of the functions
-that import `scrubF`. `Proof/Framework/Arm/ScrubSel.lean` states what makes a
+that import `scrubAll`. `Proof/Framework/Arm/ScrubSel.lean` states what makes a
 function so emitted return without secret residue.
 -/
 
 @[expose] public section
 
-namespace VG.Impl.Residue.Arm
+namespace VG.Impl.Scrub.Arm
 
 open VG.Arm
 
@@ -41,4 +41,4 @@ analysis finds leaves secrets on the stack only in those words. -/
 def scrubSel (rb n : Nat) (ws : List Nat) (c : Prog isa) : Prog isa :=
   .seq c (.seq (wipeSel n ws) (.block (tail rb)))
 
-end VG.Impl.Residue.Arm
+end VG.Impl.Scrub.Arm

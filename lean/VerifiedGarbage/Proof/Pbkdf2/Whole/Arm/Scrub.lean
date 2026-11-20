@@ -36,7 +36,7 @@ callee may change and the flags to constants (`Impl.Pbkdf2.Whole.Arm.Fn`).
 Its postcondition reads the memory on return only within `out`
 (`pbkdf2OutArm`), as on RISC-V (`Proof/Pbkdf2/Whole/RISCV64/Scrub.lean`).
 `Fn` below states that each returns without secret residue
-(`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+(`Arm.Scrub.verifiedScrubbedAll`), which its registration binds.
 -/
 
 @[expose] public section
@@ -160,7 +160,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Hmac.Stream.Arm VG.Proof.Pbkdf2.Whole.Arm.S
 
 /-- `vg_pbkdf2_hmac_md5`. -/
 theorem md5 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.md5 (Spec.Hmac.md5I.pbkdf2Contract abi 1088) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.md5I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.md5I md5F
       verified := verifiedArm (pbkFramed Whole.Arm.md5 md5_pbkFrameSat) (by decide) md5_satArm
       spSafe := spSafe_any _ }
@@ -168,7 +168,7 @@ theorem md5 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.md5 (Spec.Hmac.md
 
 /-- `vg_pbkdf2_hmac_sha1`. -/
 theorem sha1 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha1 (Spec.Hmac.sha1I.pbkdf2Contract abi 1184) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha1I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha1I sha1F
       verified := verifiedArm (pbkFramed Whole.Arm.sha1 sha1_pbkFrameSat) (by decide) sha1_satArm
       spSafe := spSafe_any _ }
@@ -176,7 +176,7 @@ theorem sha1 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha1 (Spec.Hmac.
 
 /-- `vg_pbkdf2_hmac_sha224`. -/
 theorem sha224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha224 (Spec.Hmac.sha224I.pbkdf2Contract abi 1664) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha224I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha224I sha224F
       verified := verifiedArm (pbkFramed Whole.Arm.sha224 sha224_pbkFrameSat) (by decide) sha224_satArm
       spSafe := spSafe_any _ }
@@ -184,7 +184,7 @@ theorem sha224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha224 (Spec.H
 
 /-- `vg_pbkdf2_hmac_sha256`. -/
 theorem sha256 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha256 (Spec.Hmac.sha256I.pbkdf2Contract abi 1664) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha256I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha256I sha256F
       verified := verifiedArm (pbkFramed Whole.Arm.sha256 sha256_pbkFrameSat) (by decide) sha256_satArm
       spSafe := spSafe_any _ }
@@ -192,7 +192,7 @@ theorem sha256 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha256 (Spec.H
 
 /-- `vg_pbkdf2_hmac_sha384`. -/
 theorem sha384 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha384 (Spec.Hmac.sha384I.pbkdf2Contract abi 3488) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha384I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha384I sha384F
       verified := verifiedArm (pbkFramed Whole.Arm.sha384 sha384_pbkFrameSat) (by decide) sha384_satArm
       spSafe := spSafe_any _ }
@@ -200,7 +200,7 @@ theorem sha384 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha384 (Spec.H
 
 /-- `vg_pbkdf2_hmac_sha512`. -/
 theorem sha512 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512 (Spec.Hmac.sha512I.pbkdf2Contract abi 3488) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512I sha512F
       verified := verifiedArm (pbkFramed Whole.Arm.sha512 sha512_pbkFrameSat) (by decide) sha512_satArm
       spSafe := spSafe_any _ }
@@ -208,7 +208,7 @@ theorem sha512 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512 (Spec.H
 
 /-- `vg_pbkdf2_hmac_sha512_224`. -/
 theorem sha512_224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512_224 (Spec.Hmac.sha512_224I.pbkdf2Contract abi 3488) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512_224I sha512_224F
       verified := verifiedArm (pbkFramed Whole.Arm.sha512_224 sha512_224_pbkFrameSat) (by decide) sha512_224_satArm
       spSafe := spSafe_any _ }
@@ -216,7 +216,7 @@ theorem sha512_224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512_224
 
 /-- `vg_pbkdf2_hmac_sha512_256`. -/
 theorem sha512_256 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512_256 (Spec.Hmac.sha512_256I.pbkdf2Contract abi 3488) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.pbkdf2Api)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.pbkdf2Api)
     { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512_256I sha512_256F
       verified := verifiedArm (pbkFramed Whole.Arm.sha512_256 sha512_256_pbkFrameSat) (by decide) sha512_256_satArm
       spSafe := spSafe_any _ }

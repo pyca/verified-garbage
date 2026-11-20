@@ -32,7 +32,7 @@ stack arguments, and make no indirect call (`CodeOk`, by
 `lit_decide`). Their postconditions read the memory on return only within
 their buffers (`Proof/Blake2/Scratch.lean`), so their cleanup zeroes the 272
 bytes of stack their contracts reserve too
-(`Arm.Scrub.verifiedScrubbedF`). `Fn` below has the theorem of each, which
+(`Arm.Scrub.verifiedScrubbedAll`). `Fn` below has the theorem of each, which
 is what its registration binds.
 -/
 
@@ -80,7 +80,7 @@ theorem initB : VerifiedScrubbed target Impl.Blake2.Arm.Fn.initB (Spec.Blake2.in
 /-- `vg_blake2b_update`. -/
 theorem updateB :
     VerifiedScrubbed target Impl.Blake2.Arm.Fn.updateB (Spec.Blake2.updateBContract abi (16 + 256)) 0 :=
-  verifiedScrubbedF (api := Spec.Blake2.updateBApi)
+  verifiedScrubbedAll (api := Spec.Blake2.updateBApi)
     { code := Impl.StackScratch.Arm.withStackScratch 256 2
         (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
       verified := Proof.Blake2.ArmB.updateB_framed }
@@ -90,7 +90,7 @@ theorem updateB :
 /-- `vg_blake2b_finalize`. -/
 theorem finalizeB :
     VerifiedScrubbed target Impl.Blake2.Arm.Fn.finalizeB (Spec.Blake2.finalizeBContract abi (16 + 256)) 0 :=
-  verifiedScrubbedF (api := Spec.Blake2.finalizeBApi)
+  verifiedScrubbedAll (api := Spec.Blake2.finalizeBApi)
     { code := Impl.StackScratch.Arm.withStackScratch 256 1
         (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
       verified := Proof.Blake2.ArmB.finalizeB_framed }
@@ -107,7 +107,7 @@ theorem initS : VerifiedScrubbed target Impl.Blake2.Arm.Fn.initS (Spec.Blake2.in
 /-- `vg_blake2s_update`. -/
 theorem updateS :
     VerifiedScrubbed target Impl.Blake2.Arm.Fn.updateS (Spec.Blake2.updateSContract abi (16 + 256)) 0 :=
-  verifiedScrubbedF (api := Spec.Blake2.updateSApi)
+  verifiedScrubbedAll (api := Spec.Blake2.updateSApi)
     { code := Impl.StackScratch.Arm.withStackScratch 256 2
         (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
       verified := Proof.Blake2.Arm.Blake2s.updateS_framed }
@@ -117,7 +117,7 @@ theorem updateS :
 /-- `vg_blake2s_finalize`. -/
 theorem finalizeS :
     VerifiedScrubbed target Impl.Blake2.Arm.Fn.finalizeS (Spec.Blake2.finalizeSContract abi (16 + 256)) 0 :=
-  verifiedScrubbedF (api := Spec.Blake2.finalizeSApi)
+  verifiedScrubbedAll (api := Spec.Blake2.finalizeSApi)
     { code := Impl.StackScratch.Arm.withStackScratch 256 1
         (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
       verified := Proof.Blake2.Arm.Blake2s.finalizeS_framed }

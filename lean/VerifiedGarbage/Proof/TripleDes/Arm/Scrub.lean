@@ -53,7 +53,7 @@ return only within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
 `Proof/Modes/CfbFinalScratch.lean` that x86-64 uses too). Each wipes its own working space, and is
 emitted followed by a wipe of only the words of the stack its contract
 reserves that the residue analysis finds may differ between two runs
-(`Impl.Residue.Arm.scrubSel`), and by instructions that set the
+(`Impl.Scrub.Arm.scrubSel`), and by instructions that set the
 registers a callee may change, but the result, and the flags to constants
 (`Impl.TripleDes.Arm.Fn`). `Fn` below states that each returns without
 secret residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis,

@@ -34,7 +34,7 @@ within its buffers (`Arm.Scrub.PostOut`, from the lemmas of
 Each is emitted followed by a wipe of that stack and by instructions that
 set the registers a callee may change, but the result, and the flags to
 constants (`Impl.AesGcm.Arm.Fn`), and `Fn` below states
-that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedAll`), which
 is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): where the number
@@ -343,7 +343,7 @@ open VG.Proof.AesGcm (agree_of bytesAt_congr streamRepr_congr)
 
 /-- `vg_aes_gcm_init`. -/
 theorem init : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.init (Spec.Gcm.initContract abi 2576) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.initApi)
+  verifiedScrubbedAll (api := Spec.Gcm.initApi)
     { code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
       verified := (Verified.stack_le (by decide) init_framed Scrub.initSat :
         Verified Arm.target _ (Spec.Gcm.initContract Arm.abi 2576)) }
@@ -351,7 +351,7 @@ theorem init : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.init (Spec.Gcm.initCon
 
 /-- `vg_aes_gcm_stream_init`. -/
 theorem streamInit [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamInit (Spec.Gcm.streamInitContract abi 2592) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamInitApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamInitApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2576 0 Impl.AesGcm.Arm.streamInit
       verified := (Verified.stack_le (by decide) streamInit_framed Scrub.streamInitSat :
         Verified Arm.target _ (Spec.Gcm.streamInitContract Arm.abi 2592)) }
@@ -359,7 +359,7 @@ theorem streamInit [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.Ae
 
 /-- `vg_aes_gcm_stream_aad`. -/
 theorem streamAad [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamAad (Spec.Gcm.streamAadContract abi 2592) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamAadApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamAadApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2576 2 Impl.AesGcm.Arm.streamAad
       verified := (Verified.stack_le (by decide) streamAad_framed Scrub.streamAadSat :
         Verified Arm.target _ (Spec.Gcm.streamAadContract Arm.abi 2592)) }
@@ -367,7 +367,7 @@ theorem streamAad [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.Aes
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
 theorem streamEncrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamEncrypt (Spec.Gcm.streamEncryptContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamEncryptApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamEncryptApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamEncrypt
       verified := Proof.AesGcm.streamEncrypt_keyed (Verified.stack_le (by decide) streamEncrypt_framed
         Scrub.streamEncryptSat : Verified Arm.target _ (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2608)) }
@@ -375,7 +375,7 @@ theorem streamEncrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl
 
 /-- `vg_aes_gcm_stream_decrypt`. -/
 theorem streamDecrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamDecrypt (Spec.Gcm.streamDecryptContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamDecryptApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamDecryptApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamDecrypt
       verified := Proof.AesGcm.streamDecrypt_keyed (Verified.stack_le (by decide) streamDecrypt_framed
         Scrub.streamDecryptSat : Verified Arm.target _ (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2608)) }
@@ -383,7 +383,7 @@ theorem streamDecrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl
 
 /-- `vg_aes_gcm_stream_finish`. -/
 theorem streamFinish [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamFinish (Spec.Gcm.streamFinishContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamFinishApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamFinishApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.streamFinish
       verified := Proof.AesGcm.streamFinish_keyed (Verified.stack_le (by decide) streamFinish_framed
         Scrub.streamFinishSat : Verified Arm.target _ (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2608)) }
@@ -391,7 +391,7 @@ theorem streamFinish [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.
 
 /-- `vg_aes_gcm_stream_verify`. -/
 theorem streamVerify [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamVerify (Spec.Gcm.streamVerifyContract abi 2608) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamVerifyApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamVerifyApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamVerify
       verified := Proof.AesGcm.streamVerify_keyed (Verified.stack_le (by decide) streamVerify_framed
         Scrub.streamVerifySat : Verified Arm.target _ (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2608)) }
@@ -399,7 +399,7 @@ theorem streamVerify [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.
 
 /-- `vg_aes_gcm_seal`. -/
 theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.«seal» (Spec.Gcm.sealContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.sealApi)
+  verifiedScrubbedAll (api := Spec.Gcm.sealApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»
       verified := Proof.AesGcm.seal_keyed (Verified.stack_le (by decide) seal_framed
         Scrub.sealSat : Verified Arm.target _ (Proof.AesGcm.sealRoundsContract Arm.abi 2608)) }
@@ -407,7 +407,7 @@ theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesG
 
 /-- `vg_aes_gcm_open`. -/
 theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.«open» (Spec.Gcm.openContract abi 2608) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.openApi)
+  verifiedScrubbedAll (api := Spec.Gcm.openApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»
       verified := Proof.AesGcm.open_keyed (Verified.stack_le (by decide) open_framed
         Scrub.openSat : Verified Arm.target _ (Proof.AesGcm.openRoundsContract Arm.abi 2608)) }
@@ -415,14 +415,14 @@ theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesG
 
 /-- `vg_aes_gcm_seal_gather`. -/
 theorem sealGather [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.sealGather (Spec.Gcm.sealGatherContract abi 2640) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.sealGatherApi)
+  verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
     { code := Impl.AesGcm.Arm.SealGather.sealGather Scrub.sealFnEntry.name Scrub.sealFnEntry.code
       verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified Scrub.sealFnEntry) }
     (Scrub.sealGatherOut _) (scrubSideF_of Scrub.sealGather_code Scrub.frameOk_2640 _)
 
 /-- `vg_aes_gcm_open_to`. -/
 theorem openTo [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.openTo (Spec.Gcm.openToContract abi 2624) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.openToApi)
+  verifiedScrubbedAll (api := Spec.Gcm.openToApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2608 8 Impl.AesGcm.Arm.openTo
       verified := Proof.AesGcm.openTo_keyed (Verified.stack_le (by decide) openTo_framed
         Scrub.openToSat : Verified Arm.target _ (Proof.AesGcm.openToRoundsContract Arm.abi 2624)) }

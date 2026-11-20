@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 `vg_ct_eq` saves `r4` in a frame, the caller's value in both runs, so the
 residue analysis (`Arm.rtaint`) finds no word of the stack its contract
 reserves secret on return and its cleanup zeroes none
-(`Impl.Ct.Arm.Fn.eq`, `Impl.Residue.Arm.scrubSel`); `Fn.eq` below states
+(`Impl.Ct.Arm.Fn.eq`, `Impl.Scrub.Arm.scrubSel`); `Fn.eq` below states
 that it returns without secret residue (`Arm.Scrub.verifiedScrubbedSel`,
 whose analysis the kernel evaluates here: `taint_decide_ct`). Its proof is with the 4 bytes of that
 frame, which is no frame size of the model (`FrameOk`), so its contract

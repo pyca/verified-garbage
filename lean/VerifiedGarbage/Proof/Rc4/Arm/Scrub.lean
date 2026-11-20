@@ -29,7 +29,7 @@ other targets use too). Each wipes its working space, and the residue
 analysis (`Arm.rtaint`) finds no word of the stack its contract reserves that
 may differ between two runs, so each is emitted followed only by
 instructions that set the registers a callee may change, but the result,
-and the flags to constants (`Impl.Rc4.Arm.Fn`, `Impl.Residue.Arm.scrubSel`
+and the flags to constants (`Impl.Rc4.Arm.Fn`, `Impl.Scrub.Arm.scrubSel`
 of no word). `Fn` below states that each returns without secret residue
 (`Arm.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates here:
 `taint_decide_ct`), which is what its registration binds.

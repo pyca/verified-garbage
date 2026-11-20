@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: 32-bit ARM implementation
@@ -67,7 +67,7 @@ end VG.Impl.ChaCha20Poly1305.Arm.SealGather
 
 namespace VG.Impl.ChaCha20Poly1305.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- The words `seal` and `open` leave secret, with either arithmetic: the
 stack arguments and buffer addresses their frame copies, and their innermost
@@ -85,7 +85,7 @@ def sealGatherWords : List Nat := List.range' 166 8
 its working space in a frame of 656 bytes whose first 158 words it zeroes,
 then, of the 664 bytes of stack its contract reserves, the words the residue
 analysis (`Arm.rtaint`) finds may differ between two runs zeroed
-(`sealWords`, `Impl/Residue/ArmSel.lean`), and the registers a callee may
+(`sealWords`, `Impl/Scrub/ArmSel.lean`), and the registers a callee may
 change set to constants. -/
 def «seal» (umaal : Bool) : Prog isa :=
   scrubSel 0 664 sealWords (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.seal umaal))

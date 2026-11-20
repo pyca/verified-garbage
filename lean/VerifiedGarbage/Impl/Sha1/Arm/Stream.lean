@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Sha1.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
-public import VerifiedGarbage.Impl.Residue.Arm
-public import VerifiedGarbage.Impl.Residue.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm
+public import VerifiedGarbage.Impl.Scrub.ArmSel
 
 /-!
 # Streaming SHA-1: 32-bit ARM implementation
@@ -58,27 +58,27 @@ end VG.Impl.Sha1.Arm.Stream
 
 /-! ## The functions as emitted
 
-Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the registers
 a callee may change set to constants, and first, for `update` and
 `finalize`, the 176 bytes of the stack of their contract, their frame
 (`withStackScratch`), zeroed. `digest` wipes its own working space
 (`withRegScratchWiped`), and its cleanup zeroes only the words of its stack
 that the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Residue/ArmSel.lean`, `scrubSel`, `digestWords`, offsets in words from
+(`Impl/Scrub/ArmSel.lean`, `scrubSel`, `digestWords`, offsets in words from
 the lowest address of that stack). None returns a value. -/
 
 namespace VG.Impl.Sha1.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_sha1_init`. -/
 def init : Prog isa := scrub 0 Stream.init
 
 /-- `vg_sha1_update`. -/
-def update : Prog isa := scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 2 Stream.update)
+def update : Prog isa := scrubAll 0 176 (Impl.StackScratch.Arm.withStackScratch 176 2 Stream.update)
 
 /-- `vg_sha1_finalize`. -/
-def finalize : Prog isa := scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize)
+def finalize : Prog isa := scrubAll 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize)
 
 /-- The words `digest` leaves secret, which the residue analysis (`Arm.rtaint`)
 finds may differ between two runs. -/

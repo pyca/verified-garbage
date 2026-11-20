@@ -167,14 +167,14 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ed448_public_key`, with either multiplication of the field. -/
 theorem publicKey (u : Bool) :
     VerifiedScrubbed target (Impl.Ed448.Arm.Fn.publicKey u) (Spec.Ed448.publicKeyContract abi 280) 0 :=
-  verifiedScrubbedF (api := Spec.Ed448.publicKeyApi)
+  verifiedScrubbedAll (api := Spec.Ed448.publicKeyApi)
     { code := Impl.Ed448.Arm.PublicKey.code u, verified := PublicKey.publicKey_verified Proof.Ed448.baseComb_ok }
     (Scrub.publicKeyOut _) (scrubSideF_of (Scrub.publicKey_codeOk u) Scrub.frameOk_280 _)
 
 /-- `vg_ed448_sign_cached`, with either multiplication of the field. -/
 theorem signCached (u : Bool) :
     VerifiedScrubbed target (Impl.Ed448.Arm.Fn.signCached u) (Spec.Ed448.signCachedContract abi 280) 0 :=
-  verifiedScrubbedF (api := Spec.Ed448.signCachedApi)
+  verifiedScrubbedAll (api := Spec.Ed448.signCachedApi)
     { code := Impl.Ed448.Arm.SignCached.code u
       verified := SignCached.signCached_verified Proof.Ed448.baseComb_ok }
     (Scrub.signCachedOut _) (scrubSideF_of (Scrub.signCached_codeOk u) Scrub.frameOk_280 _)
@@ -182,7 +182,7 @@ theorem signCached (u : Bool) :
 /-- `vg_ed448_verify`, with either multiplication of the field. -/
 theorem verify (u : Bool) :
     VerifiedScrubbed target (Impl.Ed448.Arm.Fn.verify u) (Spec.Ed448.verifyContract abi 280) 32 :=
-  verifiedScrubbedF (api := Spec.Ed448.verifyApi)
+  verifiedScrubbedAll (api := Spec.Ed448.verifyApi)
     { code := Impl.Ed448.Arm.Verify.code u
       verified := Verify.verify_verified
         (Proof.Ed448.Arm.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEqComb_ok)

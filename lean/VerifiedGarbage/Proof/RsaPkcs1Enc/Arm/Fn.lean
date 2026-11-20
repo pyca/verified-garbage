@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 has the theorem of each, for any implementation of the private CRT's
 interface: it meets its contract in constant time and returns without
 secret residue (`VerifiedScrubbed`), which is what its registration binds
-(`Arm.Scrub.verifiedScrubbedF`).
+(`Arm.Scrub.verifiedScrubbedAll`).
 
 Their frames use 3592 and 2312 bytes, which are not frame sizes of the model
 (`FrameOk`), so their contracts reserve the next ones, 3600 and 2320
@@ -171,7 +171,7 @@ theorem decryptPrecomputed (v : CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (privNameP v) (privCodeP v))
       (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3600) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
     { code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v, verified := decryptVerified v }
     (decryptPrecomputedOut _) (scrubSideF_of (decrypt_ok v) frameOk_3600 _)
 
@@ -182,7 +182,7 @@ theorem encryptRandom (encName : String) (v : CrtImpl) :
       (Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom encName
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code))
       (Spec.RsaPkcs1Enc.encryptRandomContract abi 2320) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Enc.encryptRandomApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi)
     { code := Impl.RsaPkcs1Enc.Arm.Random.code encName
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code)
       verified := randomVerified encName (pdOfCrt v) }

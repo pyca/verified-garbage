@@ -554,7 +554,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_x448_exchange`, with either multiplication of the field. -/
 theorem exchange (u : Bool) :
     VerifiedScrubbed target (Impl.X448.Arm.Fn.exchange u) (Spec.X448.exchangeContract abi 8) 32 :=
-  verifiedScrubbedF (api := Spec.X448.exchangeApi)
+  verifiedScrubbedAll (api := Spec.X448.exchangeApi)
     { code := Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56
       verified := Exchange.exchange_variant u }
     (Scrub.exchangeOut _) (scrubSideF_of (Scrub.exchange_codeOk u) Scrub.frameOk_8 _)

@@ -164,26 +164,26 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.MlKem.Arm.Wipe
 
 /-- `vg_mlkem768_keygen`. -/
 theorem keyGen : VerifiedScrubbed target Impl.MlKem.Arm.Fn.keyGen (Spec.MlKem.keyGenContract abi 24) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem.keyGenApi)
+  verifiedScrubbedAll (api := Spec.MlKem.keyGenApi)
     { code := Impl.MlKem.Arm.Wipe.keyGen, contract := Spec.MlKem.keyGenContract abi 24, verified := keyGen_verified }
     Scrub.keyGenOut (scrubSideF_of Scrub.keyGen_ok (by decide) _)
 
 /-- `vg_mlkem768_encaps_h`. -/
 theorem encapsH : VerifiedScrubbed target Impl.MlKem.Arm.Fn.encapsH (Spec.MlKem.encapsHContract abi 32) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem.encapsHApi)
+  verifiedScrubbedAll (api := Spec.MlKem.encapsHApi)
     { code := Impl.MlKem.Arm.Wipe.encapsH, contract := Spec.MlKem.encapsHContract abi 32,
       verified := encapsH_verified }
     Scrub.encapsHOut (scrubSideF_of Scrub.encapsH_ok (by decide) _)
 
 /-- `vg_mlkem768_encaps`. -/
 theorem encaps : VerifiedScrubbed target Impl.MlKem.Arm.Fn.encaps (Spec.MlKem.encapsContract abi 32) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem.encapsApi)
+  verifiedScrubbedAll (api := Spec.MlKem.encapsApi)
     { code := Impl.MlKem.Arm.Wipe.encaps, contract := Spec.MlKem.encapsContract abi 32, verified := encaps_verified }
     Scrub.encapsOut (scrubSideF_of Scrub.encaps_ok (by decide) _)
 
 /-- `vg_mlkem768_decaps`. -/
 theorem decaps : VerifiedScrubbed target Impl.MlKem.Arm.Fn.decaps (Spec.MlKem.decapsContract abi 24) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem.decapsApi)
+  verifiedScrubbedAll (api := Spec.MlKem.decapsApi)
     { code := Impl.MlKem.Arm.Wipe.decaps, contract := Spec.MlKem.decapsContract abi 24, verified := decaps_verified }
     Scrub.decapsOut (scrubSideF_of Scrub.decaps_ok (by decide) _)
 
@@ -195,7 +195,7 @@ theorem checkEk : VerifiedScrubbed target Impl.MlKem.Arm.Fn.checkEk (Spec.MlKem.
 /-- `vg_mlkem1024_keygen`. -/
 theorem keyGen1024 :
     VerifiedScrubbed target Impl.MlKem.Arm.Fn.keyGen1024 (Spec.MlKem1024.keyGenContract abi 24) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem1024.keyGenApi)
+  verifiedScrubbedAll (api := Spec.MlKem1024.keyGenApi)
     { code := Impl.MlKem.Arm.Wipe.keyGen1024, contract := Spec.MlKem1024.keyGenContract abi 24,
       verified := keyGen1024_verified }
     Scrub.keyGen1024Out (scrubSideF_of Scrub.keyGen1024_ok (by decide) _)
@@ -203,7 +203,7 @@ theorem keyGen1024 :
 /-- `vg_mlkem1024_encaps_h`. -/
 theorem encapsH1024 :
     VerifiedScrubbed target Impl.MlKem.Arm.Fn.encapsH1024 (Spec.MlKem1024.encapsHContract abi 32) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem1024.encapsHApi)
+  verifiedScrubbedAll (api := Spec.MlKem1024.encapsHApi)
     { code := Impl.MlKem.Arm.Wipe.encapsH1024, contract := Spec.MlKem1024.encapsHContract abi 32,
       verified := encapsH1024_verified }
     Scrub.encapsH1024Out (scrubSideF_of Scrub.encapsH1024_ok (by decide) _)
@@ -211,7 +211,7 @@ theorem encapsH1024 :
 /-- `vg_mlkem1024_encaps`. -/
 theorem encaps1024 :
     VerifiedScrubbed target Impl.MlKem.Arm.Fn.encaps1024 (Spec.MlKem1024.encapsContract abi 32) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem1024.encapsApi)
+  verifiedScrubbedAll (api := Spec.MlKem1024.encapsApi)
     { code := Impl.MlKem.Arm.Wipe.encaps1024, contract := Spec.MlKem1024.encapsContract abi 32,
       verified := encaps1024_verified }
     Scrub.encaps1024Out (scrubSideF_of Scrub.encaps1024_ok (by decide) _)
@@ -219,7 +219,7 @@ theorem encaps1024 :
 /-- `vg_mlkem1024_decaps`. -/
 theorem decaps1024 :
     VerifiedScrubbed target Impl.MlKem.Arm.Fn.decaps1024 (Spec.MlKem1024.decapsContract abi 24) 32 :=
-  verifiedScrubbedF (api := Spec.MlKem1024.decapsApi)
+  verifiedScrubbedAll (api := Spec.MlKem1024.decapsApi)
     { code := Impl.MlKem.Arm.Wipe.decaps1024, contract := Spec.MlKem1024.decapsContract abi 24,
       verified := decaps1024_verified }
     Scrub.decaps1024Out (scrubSideF_of Scrub.decaps1024_ok (by decide) _)

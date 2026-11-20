@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.ArmComb
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP256r1
@@ -16,7 +16,7 @@ contract reserves (96 bytes for verification, whose frame keeps the hash's
 working values; 536 for signing, whose frames keep the nonce's HMAC states,
 and those of the HMAC functions it calls through its table) and set the
 registers a callee may change, but the result, and the flags to constants
-(`Impl.Residue.Arm.scrubF`). Signing takes the HMAC functions of its table
+(`Impl.Scrub.Arm.scrubAll`). Signing takes the HMAC functions of its table
 (`f`), as its registration gives them.
 -/
 
@@ -24,16 +24,16 @@ registers a callee may change, but the result, and the flags to constants
 
 namespace VG.Impl.Ecdsa.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ecdsa_brainpoolp256r1_verify`. -/
 def verifyBrainpoolP256r1 : Prog isa :=
-  scrubF 32 96
+  scrubAll 32 96
     (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Arm.verifyBrainpoolP256r1Comb)
 
 /-- `vg_ecdsa_brainpoolp256r1_verify_umaal`. -/
 def verifyBrainpoolP256r1U : Prog isa :=
-  scrubF 32 96
+  scrubAll 32 96
     (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false Impl.Ecdsa.Arm.verifyBrainpoolP256r1CombU)
 
 /-- The configuration of signing's code: the HMAC functions `f` of its table,
@@ -50,9 +50,9 @@ def signCfgBrainpoolP256r1 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) (u : Bool) : Impl.Ec
   coreC := bif u then Impl.Ecdsa.Arm.signBrainpoolP256r1CombU else Impl.Ecdsa.Arm.signBrainpoolP256r1Comb
 
 /-- `vg_ecdsa_brainpoolp256r1_sign`, calling the HMAC functions `f` through its table. -/
-def signBrainpoolP256r1 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubF 32 536 (signCfgBrainpoolP256r1 f false).sign
+def signBrainpoolP256r1 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 536 (signCfgBrainpoolP256r1 f false).sign
 
 /-- `vg_ecdsa_brainpoolp256r1_sign_umaal`, calling the HMAC functions `f` through its table. -/
-def signBrainpoolP256r1U (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubF 32 536 (signCfgBrainpoolP256r1 f true).sign
+def signBrainpoolP256r1U (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 536 (signCfgBrainpoolP256r1 f true).sign
 
 end VG.Impl.Ecdsa.Arm.Fn

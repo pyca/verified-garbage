@@ -882,7 +882,7 @@ read the memory on return only within the data, the tag and the destination
 (`Arm.Scrub.PostOut`; `open_to`'s where its precondition holds). Each is
 emitted with its cleanup (`Impl.ChaCha20Poly1305.Arm.Fn`): a wipe of only
 the words of the stack its contract reserves that the residue analysis
-(`Arm.rtaint`) finds may differ between two runs (`Impl.Residue.Arm.scrubSel`;
+(`Arm.rtaint`) finds may differ between two runs (`Impl.Scrub.Arm.scrubSel`;
 the stack arguments and buffer addresses its frame copies, and its innermost
 frame), then instructions that set the registers a callee may change, but
 the result, and the flags to constants. `Fn` has the theorem of each
@@ -986,7 +986,7 @@ theorem seal_codeOk (umaal : Bool) :
 /-- The wipe of `scrubSel`, of `seal`'s words of 664 bytes, in a frame of as
 many. -/
 theorem wipeSel_codeOk :
-    CodeOk (Impl.Residue.Arm.wipeSel 664 Impl.ChaCha20Poly1305.Arm.Fn.sealWords : Prog isa) 664 := by
+    CodeOk (Impl.Scrub.Arm.wipeSel 664 Impl.ChaCha20Poly1305.Arm.Fn.sealWords : Prog isa) 664 := by
   decide
 
 end VG.Proof.ChaCha20Poly1305.Arm.Scrub
