@@ -58,17 +58,6 @@ aarch64 vg_sm4_gcm_stream_verify_ctr32_sm4
 aarch64 vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes
 aarch64 vg_sm4_gcm_stream_verify_ghash_aes
 aarch64 vg_sm4_gcm_stream_verify_ghash_neon
-arm vg_blowfish_cbc_decrypt_chained
-arm vg_blowfish_cbc_encrypt_chained
-arm vg_blowfish_cfb64_decrypt
-arm vg_blowfish_cfb64_decrypt_final
-arm vg_blowfish_cfb64_encrypt
-arm vg_blowfish_cfb64_encrypt_final
-arm vg_blowfish_ecb_decrypt
-arm vg_blowfish_ecb_encrypt
-arm vg_blowfish_expand_key
-arm vg_blowfish_ofb
-arm vg_blowfish_ofb_final
 arm vg_cmac_aes_absorb
 arm vg_cmac_aes_finish
 arm vg_cmac_aes_init
