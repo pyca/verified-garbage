@@ -189,17 +189,6 @@ arm vg_seed_ecb_encrypt
 arm vg_seed_expand_key
 arm vg_seed_ofb
 arm vg_seed_ofb_final
-arm vg_sm4_cbc_decrypt_chained
-arm vg_sm4_cbc_encrypt_chained
-arm vg_sm4_cfb128_decrypt
-arm vg_sm4_cfb128_decrypt_final
-arm vg_sm4_cfb128_encrypt
-arm vg_sm4_cfb128_encrypt_final
-arm vg_sm4_ctr
-arm vg_sm4_ctr_final
-arm vg_sm4_ecb_decrypt
-arm vg_sm4_ecb_encrypt
-arm vg_sm4_expand_key
 arm vg_sm4_gcm_init
 arm vg_sm4_gcm_open
 arm vg_sm4_gcm_seal
@@ -209,8 +198,6 @@ arm vg_sm4_gcm_stream_encrypt
 arm vg_sm4_gcm_stream_finish
 arm vg_sm4_gcm_stream_init
 arm vg_sm4_gcm_stream_verify
-arm vg_sm4_ofb
-arm vg_sm4_ofb_final
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
 riscv64 vg_aes_ccm_open

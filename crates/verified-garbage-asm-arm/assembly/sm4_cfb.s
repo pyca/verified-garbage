@@ -2497,6 +2497,33 @@ vg_sm4_cfb128_encrypt:
 	str r2, [r12, #1504]
 	str r2, [r12, #1508]
 	add sp, sp, #1520
+	sub sp, sp, #1520
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #47
+221:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 221b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #1520
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_cfb128_decrypt:
@@ -4989,6 +5016,33 @@ vg_sm4_cfb128_decrypt:
 	str r2, [r12, #1504]
 	str r2, [r12, #1508]
 	add sp, sp, #1520
+	sub sp, sp, #1520
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #47
+223:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 223b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #1520
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_cfb128_encrypt_final:
@@ -5027,7 +5081,7 @@ vg_sm4_cfb128_encrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_sm4_ecb_encrypt}
+	bl {vg_sm4_ecb_encrypt_core}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -5112,6 +5166,29 @@ vg_sm4_cfb128_encrypt_final:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #80
+	sub sp, sp, #1568
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #49
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #1568
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_cfb128_decrypt_final:
@@ -5150,7 +5227,7 @@ vg_sm4_cfb128_decrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_sm4_ecb_encrypt}
+	bl {vg_sm4_ecb_encrypt_core}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -5243,4 +5320,27 @@ vg_sm4_cfb128_decrypt_final:
 	str r2, [r12, #64]
 	str r2, [r12, #68]
 	add sp, sp, #80
+	sub sp, sp, #1568
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #49
+26:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
+	add sp, sp, #1568
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
