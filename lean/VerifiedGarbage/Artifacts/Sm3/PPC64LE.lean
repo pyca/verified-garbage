@@ -16,7 +16,11 @@ def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact PPC64LE.target {
     code := Impl.Sm3.PPC64LE.Stream.init
     verified := .scrubbed ⟨Proof.Sm3.PPC64LE.Shared.init, Proof.Sm3.PPC64LE.Stream.init_noResidue _ _⟩ },
-  Spec.Sm3.updateApi.artifact PPC64LE.target Proof.Sm3.PPC64LE.updateReg,
-  Spec.Sm3.finalizeApi.artifact PPC64LE.target Proof.Sm3.PPC64LE.finalizeReg]
+  Spec.Sm3.updateApi.artifact PPC64LE.target {
+    code := Impl.Sm3.PPC64LE.Fn.update
+    verified := .scrubbed Proof.Sm3.PPC64LE.update_scrubbed },
+  Spec.Sm3.finalizeApi.artifact PPC64LE.target {
+    code := Impl.Sm3.PPC64LE.Fn.finalize
+    verified := .scrubbed Proof.Sm3.PPC64LE.finalize_scrubbed }]
 
 end VG.Artifacts.Sm3.PPC64LE
