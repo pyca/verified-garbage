@@ -108,15 +108,6 @@ x86 vg_chacha20_poly1305_seal_gather
 x86 vg_chacha20_poly1305_seal_gather_ssse3
 x86 vg_chacha20_poly1305_seal_ssse3
 x86 vg_chacha20_set_nonce
-x86 vg_dsa_derive_key
-x86 vg_dsa_generate_key
-x86 vg_dsa_parameter_search
-x86 vg_dsa_parameter_search_init
-x86 vg_dsa_parameter_search_sha1_shani_sha256_shani
-x86 vg_dsa_sign_random_prevalidated
-x86 vg_dsa_validate_private_key
-x86 vg_dsa_validate_public_key
-x86 vg_dsa_verify_prevalidated
 x86 vg_mldsa44_keygen
 x86 vg_mldsa44_pk_tr
 x86 vg_mldsa44_prepare_signing_key
