@@ -100,31 +100,31 @@ def variants :=
 /-! ## HMAC's `init`
 
 The implementations of `vg_hmac_<hash>_init`, best first: each variant's,
-which clears its frame before returning (`MdHash.initAuto`), and over the
+which clears its frame before returning (`MdHash.initSel`), and over the
 SHA-512 family one more, AVX2's with its two padded keys compressed at once
 with AVX-512VL (`Sha512Avx512`). -/
 
 open Proof.Pbkdf2.Md.X86_64 (InitImpl)
 
-def md5Inits : List (InitImpl Spec.Hmac.md5I) := [md5.initAuto]
+def md5Inits : List (InitImpl Spec.Hmac.md5I) := [md5.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
-def sha1Inits : List (InitImpl Spec.Hmac.sha1I) := [sha1ShaNi.initAuto, sha1AvxBmi.initAuto, sha1.initAuto]
+def sha1Inits : List (InitImpl Spec.Hmac.sha1I) := [sha1ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha1AvxBmi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha1.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
-def sha224Inits : List (InitImpl Spec.Hmac.sha224I) := [sha224ShaNi.initAuto, sha224Avx2.initAuto, sha224.initAuto]
+def sha224Inits : List (InitImpl Spec.Hmac.sha224I) := [sha224ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha224Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha224.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
-def sha256Inits : List (InitImpl Spec.Hmac.sha256I) := [sha256ShaNi.initAuto, sha256Avx2.initAuto, sha256.initAuto]
+def sha256Inits : List (InitImpl Spec.Hmac.sha256I) := [sha256ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha256Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha256.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
 def sha384Inits : List (InitImpl Spec.Hmac.sha384I) :=
-  [sha384ShaNi.initAuto, Sha512Avx512.init384, sha384Avx2.initAuto, sha384.initAuto]
+  [sha384ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init384, sha384Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha384.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
 def sha512Inits : List (InitImpl Spec.Hmac.sha512I) :=
-  [sha512ShaNi.initAuto, Sha512Avx512.init512, sha512Avx2.initAuto, sha512.initAuto]
+  [sha512ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512, sha512Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
 def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
-  [sha512_224ShaNi.initAuto, Sha512Avx512.init512_224, sha512_224Avx2.initAuto, sha512_224.initAuto]
+  [sha512_224ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512_224, sha512_224Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512_224.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
 def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
-  [sha512_256ShaNi.initAuto, Sha512Avx512.init512_256, sha512_256Avx2.initAuto, sha512_256.initAuto]
+  [sha512_256ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512_256, sha512_256Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512_256.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
 
 /-! ## HMAC's `finalize`
 
