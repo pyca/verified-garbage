@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.Impl.Ecdsa.P521.ArmFn
 public import VerifiedGarbage.Proof.P521.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
 
@@ -19,8 +20,13 @@ namespace VG.Artifacts.EcdsaP521.Arm
 open VG.Proof.P521.Arm (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.verifyReg hasLaw.law),
-  Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.verifyUReg hasLaw.law),
+  Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
+    code := Impl.Ecdsa.Arm.Fn.verifyP521
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP521 hasLaw.law) },
+  Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdsa.Arm.Fn.verifyP521U
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP521U hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.signReg hasLaw.law),
   Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact Arm.target (Proof.Ecdsa.Arm.P521.Scrub.signUReg hasLaw.law)]
 

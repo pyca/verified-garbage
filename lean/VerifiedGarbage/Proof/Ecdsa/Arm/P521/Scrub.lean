@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.P521.ArmFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Comb
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
@@ -18,8 +20,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 values in a frame of 96 bytes and make no indirect call (the kernel's
 evaluation of the code, with the literal of the verification core), and
 their postcondition does not read the memory on return
-(`Proof/Ecdsa/Verify/Arm/Scrub.lean`): each is registered followed by a
-wipe of that stack (`Arm.Scrub.scrubRegF`).
+(`Proof/Ecdsa/Verify/Arm/Scrub.lean`): each is emitted followed by a
+wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
+(`Arm.Scrub.verifiedScrubbedF`).
 `vg_ecdsa_p521_sign` and its `_umaal` variant call indirectly only the HMAC
 functions of their table, from frames within the stack their contract
 reserves, and their postcondition reads the memory on return only at
@@ -62,27 +65,6 @@ theorem verifyU_code : armStack (verifyCode true) ≤ 96 ∧ noIcall (verifyCode
 theorem frameOk_96 : FrameOk 96 := by decide
 
 theorem frameOk_stackT : FrameOk stackT := by decide
-
-/-- `vg_ecdsa_p521_verify`, given the group law. -/
-def verifyReg (hC : Weierstrass.Law Spec.P521.curve) :
-    Registration Spec.Ecdsa.P521.verifyHashApi target :=
-  Arm.Scrub.scrubRegF {
-      code := verifyCode false
-      verified := Proof.Ecdsa.Verify.Arm.P521.verifyHash_verified hC }
-    verify_code.1 verify_code.2 frameOk_96
-    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P521.inst
-      Impl.Weierstrass.Arm.p521CombConsts 96) rfl
-
-/-- `vg_ecdsa_p521_verify_umaal`, given the group law. -/
-def verifyUReg (hC : Weierstrass.Law Spec.P521.curve) :
-    Registration Spec.Ecdsa.P521.verifyHashApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := "_umaal"
-      code := verifyCode true
-      verified := Proof.Ecdsa.Verify.Arm.P521.verifyHashU_verified hC }
-    verifyU_code.1 verifyU_code.2 frameOk_96
-    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P521.inst
-      Impl.Weierstrass.Arm.p521CombConsts 96) rfl
 
 /-- The configuration of signing's code, with `umaal` if `u`: the code is that
 of `p521CombCurve`'s, whose other fields are proofs. -/
@@ -127,3 +109,33 @@ def signUReg (hC : Weierstrass.Law Spec.P521.curve) :
       (p521CombCurveU hC).coreConsts vars) rfl
 
 end VG.Proof.Ecdsa.Arm.P521.Scrub
+
+namespace VG.Proof.Ecdsa.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_ecdsa_p521_verify`, given the group law. -/
+theorem verifyP521 (hC : Weierstrass.Law Spec.P521.curve) :
+    VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP521
+      (Spec.Ecdsa.P521.inst.verifyHashContract
+        (abi.withConsts Impl.Weierstrass.Arm.p521CombConsts) 96) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := P521.Scrub.verifyCode false
+      verified := Proof.Ecdsa.Verify.Arm.P521.verifyHash_verified hC }
+    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P521.inst
+      Impl.Weierstrass.Arm.p521CombConsts 96)
+    (scrubSideF_of P521.Scrub.verify_code P521.Scrub.frameOk_96 _)
+
+/-- `vg_ecdsa_p521_verify_umaal`, given the group law. -/
+theorem verifyP521U (hC : Weierstrass.Law Spec.P521.curve) :
+    VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP521U
+      (Spec.Ecdsa.P521.inst.verifyHashContract
+        (abi.withConsts Impl.Weierstrass.Arm.p521CombConsts) 96) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.P521.verifyHashApi)
+    { code := P521.Scrub.verifyCode true
+      verified := Proof.Ecdsa.Verify.Arm.P521.verifyHashU_verified hC }
+    (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P521.inst
+      Impl.Weierstrass.Arm.p521CombConsts 96)
+    (scrubSideF_of P521.Scrub.verifyU_code P521.Scrub.frameOk_96 _)
+
+end VG.Proof.Ecdsa.Arm.Fn

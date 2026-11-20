@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmFn
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
 
@@ -20,8 +21,13 @@ namespace VG.Artifacts.EcdsaSecp256k1.Arm
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.verifyReg hasLaw.law),
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.verifyUReg hasLaw.law),
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
+    code := Impl.Ecdsa.Arm.Fn.verifySecp256k1
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifySecp256k1 hasLaw.law) },
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdsa.Arm.Fn.verifySecp256k1U
+    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifySecp256k1U hasLaw.law) },
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.signReg hasLaw.law),
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target (Proof.Ecdsa.Arm.Secp256k1.Scrub.signUReg hasLaw.law)]
 
