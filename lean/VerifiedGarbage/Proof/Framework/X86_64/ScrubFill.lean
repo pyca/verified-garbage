@@ -10,7 +10,8 @@ Additions to `ScrubCall.lean` for the AEADs over GHASH and ChaCha20:
 that clears or zeroes something before it returns), `Fill.refl` (code that
 the stub and the implementations share, such as interleaved loops a
 variant names, relates to itself), and `fill_calls_refl`, `fill_calls` that
-closes such shared code by `Fill.refl`.
+closes such shared code by `Fill.refl` (and `fill_calls_wide`, which does
+the same breadth first, for large code).
 -/
 
 @[expose] public section
@@ -69,5 +70,22 @@ macro "fill_calls_refl" : tactic => `(tactic| repeat' (first
   | refine Fill.if_pos ?_ (by assumption)
   | refine Fill.if_neg ?_ (by assumption)
   | exact Fill.refl _))
+
+/-- `fill_calls_refl` breadth first, a step on every goal at a time, for
+code too large for `repeat'`'s recursion, which follows one goal's subgoals
+before the next goal's; without `Fill.if_pos` and `Fill.if_neg`, whose
+`assumption` would compare every hypothesis with the condition, evaluating
+the large ones. -/
+macro "fill_calls_wide" : tactic => `(tactic| repeat (any_goals (first
+  | exact Fill.block _
+  | exact Fill.hole _ _ (by assumption)
+  | refine Fill.seq ?_ ?_
+  | refine Fill.ite _ ?_ ?_
+  | refine Fill.loop _ ?_
+  | refine Fill.call _ _ ?_
+  | refine Fill.frame _ _ ?_
+  | refine Fill.icall _ _ ?_ ?_
+  | refine Fill.ifp ?_ ?_
+  | exact Fill.refl _)))
 
 end VG.X86_64.Scrub

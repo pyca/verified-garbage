@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
+public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
+public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 
@@ -40,5 +45,78 @@ def streamFinish (v : VecLevel) (n : Nat) (c : Callees) : Prog isa :=
 /-- `Spec.Gcm.streamVerifyApi`'s function as emitted, in `n` bytes of stack. -/
 def streamVerify (v : VecLevel) (n : Nat) (c : Callees) : Prog isa :=
   scrubAll v 32 n (withStackArgScratch (n - 8) 1 (Impl.AesGcm.X86_64.streamVerify c))
+
+/-! ## On a prepared key context
+
+`short` and `fin` are the variant's (`GcmImpl.short`, `GcmImpl.fin`); `cp`
+are the callees with the whole-blocks functions on prepared powers, and `t`
+the count of powers that chooses them (`Impl.Gcm.X86_64.Flag.onFlag`). -/
+
+/-- `vg_aes_gcm_seal`'s code calling `c` (`GcmImpl.sealCode`). -/
+def sealCode (short fin : Bool) (c : Callees) : Prog isa :=
+  if short then Impl.AesGcm.X86_64.Short.«seal» c
+  else if fin then Impl.AesGcm.X86_64.SealFin.«seal» c else Impl.AesGcm.X86_64.«seal» c
+
+/-- `vg_aes_gcm_open`'s code calling `c` (`GcmImpl.openCode`). -/
+def openCode (short : Bool) (c : Callees) : Prog isa :=
+  if short then Impl.AesGcm.X86_64.Short.«open» c else Impl.AesGcm.X86_64.«open» c
+
+/-- `seal`'s code on prepared powers calling `c` (`GcmImpl.sealCodeP`). -/
+def sealCodeP (short fin : Bool) (c : Callees) : Prog isa :=
+  if short then
+    Impl.AesGcm.X86_64.Short.«seal» c Impl.AesGcm.X86_64.Short.powersP Impl.AesGcm.X86_64.Short.ghashP
+      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.Short.sealLong c))
+  else if fin then
+    Impl.AesGcm.X86_64.SealFin.«seal» c
+      (Impl.AesGcm.X86_64.FastSeal.sel c (Impl.AesGcm.X86_64.SealFin.mid c) Impl.AesGcm.X86_64.Short.finKsA true)
+  else Impl.AesGcm.X86_64.«seal» c
+
+/-- `open`'s code on prepared powers calling `c` (`GcmImpl.openCodeP`). -/
+def openCodeP (short : Bool) (c : Callees) : Prog isa :=
+  if short then
+    Impl.AesGcm.X86_64.Short.«open» c Impl.AesGcm.X86_64.Short.powersP
+      (Impl.AesGcm.X86_64.FastOpen.sel c (Impl.AesGcm.X86_64.Short.openLong c)) Impl.AesGcm.X86_64.Short.ghashP
+  else
+    Impl.AesGcm.X86_64.FastOpen.openFin
+      (Impl.AesGcm.X86_64.FastOpen.sel c (Impl.AesGcm.X86_64.Short.openLong c) Impl.AesGcm.X86_64.Short.finKsA true)
+
+/-- `Spec.Gcm.sealPreparedApi`'s function on the key context alone, as emitted. -/
+def sealW (v : VecLevel) (short fin : Bool) (c : Callees) : Prog isa :=
+  scrubAll v 0 2624 (withStackArgScratch 2600 3 (sealCode short fin c))
+
+/-- `Spec.Gcm.openPreparedApi`'s function on the key context alone, as emitted. -/
+def openW (v : VecLevel) (short : Bool) (c : Callees) : Prog isa :=
+  scrubAll v 32 2632 (withStackArgScratch 2608 4 (openCode short c))
+
+/-- `Spec.Gcm.streamEncryptPreparedApi`'s function on the key context alone, as emitted. -/
+def streamEncryptW (v : VecLevel) (c : Callees) : Prog isa :=
+  scrubAll v 0 2608 (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt c))
+
+/-- `Spec.Gcm.streamDecryptPreparedApi`'s function on the key context alone, as emitted. -/
+def streamDecryptW (v : VecLevel) (c : Callees) : Prog isa :=
+  scrubAll v 0 2608 (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt c))
+
+/-- `Spec.Gcm.sealPreparedApi`'s function, by the count `t` on the prepared
+powers (calling `cp`) or on the key context, as emitted. -/
+def sealP (v : VecLevel) (t : Nat) (short fin : Bool) (cp c : Callees) : Prog isa :=
+  scrubAll v 0 2624 (Impl.Gcm.X86_64.Flag.onFlag t (withStackArgScratch 2600 3 (sealCodeP short fin cp))
+    (withStackArgScratch 2600 3 (sealCode short fin c)))
+
+/-- `Spec.Gcm.openPreparedApi`'s function, as `sealP`. -/
+def openP (v : VecLevel) (t : Nat) (short : Bool) (cp c : Callees) : Prog isa :=
+  scrubAll v 32 2632 (Impl.Gcm.X86_64.Flag.onFlag t (withStackArgScratch 2608 4 (openCodeP short cp))
+    (withStackArgScratch 2608 4 (openCode short c)))
+
+/-- `Spec.Gcm.streamEncryptPreparedApi`'s function, as `sealP`. -/
+def streamEncryptP (v : VecLevel) (t : Nat) (cp c : Callees) : Prog isa :=
+  scrubAll v 0 2608 (Impl.Gcm.X86_64.Flag.onFlag t
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt cp))
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt c)))
+
+/-- `Spec.Gcm.streamDecryptPreparedApi`'s function, as `sealP`. -/
+def streamDecryptP (v : VecLevel) (t : Nat) (cp c : Callees) : Prog isa :=
+  scrubAll v 0 2608 (Impl.Gcm.X86_64.Flag.onFlag t
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt cp))
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt c)))
 
 end VG.Impl.AesGcm.X86_64.Fn
