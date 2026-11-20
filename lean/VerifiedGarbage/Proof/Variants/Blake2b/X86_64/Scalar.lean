@@ -97,6 +97,8 @@ def variant : Proof.Blake2.X86_64.Backend where
   suffix := ""
   features := []
   code := Impl.Blake2.X86_64.compress Spec.Blake2.b
+  level := .sse
+  side := by change VG.X86_64.Scrub.calleeSide (Impl.Blake2.X86_64.compress Spec.Blake2.b) _ 0 = true; lit_decide
   callee := Proof.Blake2.X86_64.Stream.calleeB
   verified := Proof.Blake2.X86_64.compressB_verified
   spSafe := Code.all_of_spTest (by lit_decide)

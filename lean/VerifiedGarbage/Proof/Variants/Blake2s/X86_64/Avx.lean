@@ -101,6 +101,8 @@ def variant : Proof.Blake2.X86_64.BackendS where
   features := ["avx"]
   notWith := ["zen5"]
   code := Impl.Blake2.X86_64.Avx.compress
+  level := .avx
+  side := by change VG.X86_64.Scrub.calleeSide (Impl.Blake2.X86_64.Avx.compress) _ 0 = true; lit_decide
   callee := Proof.Blake2.X86_64.Avx.callee
   verified := Proof.Blake2.X86_64.Avx.compress_verified
   spSafe := Code.all_of_spTest (by lit_decide)
