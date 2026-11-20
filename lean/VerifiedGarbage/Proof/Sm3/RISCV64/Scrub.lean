@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public import VerifiedGarbage.Proof.Sm3.RISCV64.Compress
 public import VerifiedGarbage.Spec.Sm3.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Impl.Sm3.RISCV64.Fn
 import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Init
@@ -163,10 +164,13 @@ end
 /-!
 # SM3 on RISC-V, without secret residue
 
-Each of the streaming functions, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
-within their buffers (`Proof/Sm3/PostOut.lean`).
+Each of the streaming functions as emitted (`Impl.Sm3.RISCV64.Fn`): the
+function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
+caller-saved registers and the stack its frames used. Each theorem below
+states that one meets its contract in constant time and returns without
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+which is what its registration binds. Their postconditions read the memory
+on return only within their buffers (`Proof/Sm3/PostOut.lean`).
 -/
 
 @[expose] public section
@@ -175,20 +179,31 @@ namespace VG.Proof.Sm3.RISCV64
 
 open VG.RISCV64 VG.RISCV64.Scrub
 
-/-- `vg_sm3_init`. -/
-def initReg : Registration Spec.Sm3.initApi RISCV64.target :=
-  scrubOf { code := Impl.Sm3.RISCV64.Stream.init, verified := Shared.init }
+/-- `vg_sm3_init` as emitted (`Impl.Sm3.RISCV64.Fn.init`) meets its contract in constant time
+and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.init (Spec.Sm3.initContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Sm3.initApi) (W := 0)
+    { code := Impl.Sm3.RISCV64.Stream.init, verified := Shared.init }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.initPost_out 64))
+    (show scrubSide Impl.Sm3.RISCV64.Stream.init 0 0 [] = true by lit_decide)
 
-/-- `vg_sm3_update`. -/
-def updateReg : Registration Spec.Sm3.updateApi RISCV64.target :=
-  scrubOf { code := Impl.Sm3.RISCV64.Stream.update, verified := Shared.update }
+/-- `vg_sm3_update` as emitted (`Impl.Sm3.RISCV64.Fn.update`) meets its contract in constant
+time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.update (Spec.Sm3.updateContract RISCV64.abi 144) 0 :=
+  verifiedScrubbed (api := Spec.Sm3.updateApi) (W := 144)
+    { code := Impl.Sm3.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.updatePost_out 64))
+    (show scrubSide Impl.Sm3.RISCV64.Stream.update 144 0 [] = true by lit_decide)
 
-/-- `vg_sm3_finalize`. -/
-def finalizeReg : Registration Spec.Sm3.finalizeApi RISCV64.target :=
-  scrubOf { code := Impl.Sm3.RISCV64.Stream.finalize, verified := Shared.finalize }
+/-- `vg_sm3_finalize` as emitted (`Impl.Sm3.RISCV64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.finalize (Spec.Sm3.finalizeContract RISCV64.abi 144) 0 :=
+  verifiedScrubbed (api := Spec.Sm3.finalizeApi) (W := 144)
+    { code := Impl.Sm3.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.finalizePost_out 64))
-
+    (show scrubSide Impl.Sm3.RISCV64.Stream.finalize 144 0 [] = true by lit_decide)
 
 end VG.Proof.Sm3.RISCV64

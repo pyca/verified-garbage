@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -56,7 +58,7 @@ str r9, [r8, #44]
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_idea_ecb}
+bl {vg_idea_ecb_entry}
 ldr r9, [r8, #40]
 str r9, [r6, #0]
 ldr r9, [r8, #44]
@@ -97,14 +99,39 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #64
+sub sp, sp, #96
+add r12, sp, #0
+mov r2, #0
+mov r3, #3
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+add sp, sp, #96
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_idea_ecb = sym super::idea::vg_idea_ecb,
+        vg_idea_ecb_entry = sym super::idea::vg_idea_ecb_entry::vg_idea_ecb_entry,
     )
 }
 
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -151,7 +178,7 @@ str r9, [r8, #52]
 mov r0, r4
 add r1, r6, #0
 mov r2, #1
-bl {vg_idea_ecb}
+bl {vg_idea_ecb_entry}
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -200,7 +227,30 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #64
+sub sp, sp, #96
+add r12, sp, #0
+mov r2, #0
+mov r3, #3
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+add sp, sp, #96
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_idea_ecb = sym super::idea::vg_idea_ecb,
+        vg_idea_ecb_entry = sym super::idea::vg_idea_ecb_entry::vg_idea_ecb_entry,
     )
 }

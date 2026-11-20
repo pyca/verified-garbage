@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-public import VerifiedGarbage.Proof.Sm4.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Sm4.X86.Scrub
+public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
@@ -15,10 +15,10 @@ namespace VG.Artifacts.Sm4Ofb.X86
 
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
-    verified := .unscrubbed Proof.Sm4.X86.Fb.ofb_framed },
+    code := Impl.Sm4.X86.Fn.ofb
+    verified := .scrubbed Proof.Sm4.X86.Scrub.ofb_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofbFinal
-    verified := .unscrubbed Proof.Sm4.X86.FbFinal.ofbFinal_framed }]
+    code := Impl.Sm4.X86.Fn.ofbFinal
+    verified := .scrubbed Proof.Sm4.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Sm4Ofb.X86

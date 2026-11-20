@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.SigEval
@@ -631,15 +632,15 @@ theorem sealBsOut :
     PostOut (Spec.Gcm.sealBitslicedContract RISCV64.abi 4640) (Spec.Gcm.sealBitslicedSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.sealBitslicedPost_out _)
 
-/-- `Spec.Gcm.sealBitslicedApi`. -/
-def sealBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.sealBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs
+/-- `vg_aes_gcm_seal_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.sealBs`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem sealBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.sealBs
+      (Spec.Gcm.sealBitslicedContract RISCV64.abi 4640) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.sealBitslicedApi) (W := 4640)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs
       verified := Proof.AesGcm.sealBitsliced_keyed sealBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])]
-    sealBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb sealBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs) 4640 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])] []
+    sealBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64

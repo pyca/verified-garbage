@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Cast5.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.ModesLit
@@ -13,9 +14,17 @@ import VerifiedGarbage.Proof.Cast5.RISCV64.FbFinalLit
 namespace VG.Artifacts.Cast5Cfb.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cfbEncryptApi.artifact RISCV64.target Proof.Cast5.RISCV64.Scrub.cfbEncryptReg,
-  Spec.Cast5.cfbDecryptApi.artifact RISCV64.target Proof.Cast5.RISCV64.Scrub.cfbDecryptReg,
-  Spec.Cast5.cfbEncryptFinalApi.artifact RISCV64.target Proof.Cast5.RISCV64.Scrub.cfbEncryptFinalReg,
-  Spec.Cast5.cfbDecryptFinalApi.artifact RISCV64.target Proof.Cast5.RISCV64.Scrub.cfbDecryptFinalReg]
+  Spec.Cast5.cfbEncryptApi.artifact RISCV64.target {
+    code := Impl.Cast5.RISCV64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cfbEncrypt_scrubbed },
+  Spec.Cast5.cfbDecryptApi.artifact RISCV64.target {
+    code := Impl.Cast5.RISCV64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cfbDecrypt_scrubbed },
+  Spec.Cast5.cfbEncryptFinalApi.artifact RISCV64.target {
+    code := Impl.Cast5.RISCV64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.Cast5.cfbDecryptFinalApi.artifact RISCV64.target {
+    code := Impl.Cast5.RISCV64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.Cast5Cfb.RISCV64

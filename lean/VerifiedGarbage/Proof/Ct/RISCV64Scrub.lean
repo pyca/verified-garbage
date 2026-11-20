@@ -234,9 +234,9 @@ end
 /-!
 # Constant-time comparison on RISC-V, without secret residue
 
-`vg_ct_eq`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+`vg_ct_eq` as emitted (`Impl.Ct.RISCV64.Fn.eq`): the function followed by
+`Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
+the stack its frames used (none). Their postconditions read the memory on return only
 within nothing: it writes no memory (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Ct/X86_64/Scrub.lean`).
 -/
 
@@ -260,13 +260,14 @@ theorem eqOut : PostOut (Spec.Ct.eqContract abi) (Spec.Ct.eqSig.retBits 64) :=
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
-/-! ## The registrations -/
+/-! ## The function as emitted -/
 
-/-- `Spec.Ct.eqApi`. -/
-def eqReg : Registration Spec.Ct.eqApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Ct.RISCV64.eq
-      verified := Proof.Ct.RISCV64.verified }
-    (eqOut)
+/-- `vg_ct_eq` as emitted (`Impl.Ct.RISCV64.Fn.eq`) meets its contract in
+constant time and returns without secret residue: the theorem its
+registration binds. -/
+theorem eq_scrubbed :
+    VerifiedScrubbed target Impl.Ct.RISCV64.Fn.eq (Spec.Ct.eqContract abi) 32 :=
+  verifiedScrubbed (api := Spec.Ct.eqApi) (W := 0)
+    { code := Impl.Ct.RISCV64.eq, verified := Proof.Ct.RISCV64.verified } eqOut (by lit_decide)
 
 end VG.Proof.Ct.RISCV64Scrub

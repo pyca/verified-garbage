@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Verified
-public import VerifiedGarbage.Proof.Idea.Arm.Key
+public import VerifiedGarbage.Proof.Idea.Arm.Scrub
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
@@ -16,13 +15,13 @@ namespace VG.Artifacts.Idea.Arm
 
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact Arm.target {
-    code := Impl.Idea.Arm.expandKey
-    verified := .unscrubbed Proof.Idea.Arm.expandKey_verified },
+    code := Impl.Idea.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Idea.Arm.Fn.expandKey },
   Spec.Idea.invertKeyApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 24 .r2 Impl.Idea.Arm.invertKey
-    verified := .unscrubbed Proof.Idea.Arm.invertKey_framed },
+    code := Impl.Idea.Arm.Fn.invertKey
+    verified := .scrubbed Proof.Idea.Arm.Fn.invertKey },
   Spec.Idea.ecbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 32 .r3 Impl.Idea.Arm.ecb
-    verified := .unscrubbed Proof.Idea.Arm.ecb_framed }]
+    code := Impl.Idea.Arm.Fn.ecb
+    verified := .scrubbed Proof.Idea.Arm.Fn.ecb }]
 
 end VG.Artifacts.Idea.Arm

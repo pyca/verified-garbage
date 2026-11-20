@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
-public import VerifiedGarbage.Proof.Seed.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
+public import VerifiedGarbage.Proof.Seed.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -14,16 +12,16 @@ namespace VG.Artifacts.SeedCfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncrypt
-    verified := .unscrubbed Proof.Seed.Arm.cfbEncrypt_framed },
+    code := Impl.Seed.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Seed.Arm.Fn.cfbEncrypt },
   Spec.Seed.cfbDecryptApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecrypt
-    verified := .unscrubbed Proof.Seed.Arm.cfbDecrypt_framed },
+    code := Impl.Seed.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Seed.Arm.Fn.cfbDecrypt },
   Spec.Seed.cfbEncryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncryptFinal
-    verified := .unscrubbed Proof.Seed.Arm.cfbEncryptFinal_framed },
+    code := Impl.Seed.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Seed.Arm.Fn.cfbEncryptFinal },
   Spec.Seed.cfbDecryptFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecryptFinal
-    verified := .unscrubbed Proof.Seed.Arm.cfbDecryptFinal_framed }]
+    code := Impl.Seed.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Seed.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.SeedCfb.Arm

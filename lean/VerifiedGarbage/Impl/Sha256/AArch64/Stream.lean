@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Sha256.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Impl.Residue.AArch64
 
 /-!
@@ -80,5 +83,42 @@ def finalize : Prog isa := MdStream.AArch64.finalize params "vg_sha256_compress"
 /-- SHA-224 outputs the first 28 bytes of the final hash value: `params`
 with a digest of 7 words. -/
 def params224 : MdStream.AArch64.Params := { params with out := MdStream.AArch64.out32 7 true }
+
+/-! ## The functions, as emitted
+
+Each streaming function over a compression function is its code with its
+working space in a frame on the stack, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the compression function's included, and zeroes that stack, so that it
+returns without secret residue. -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.StackScratch.AArch64 (withStackScratch)
+
+/-- `vg_sha256_update` over the compression function `code`, its working space in a frame of its own. -/
+def update (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 160) 0 (withStackScratch 160 .x4 (MdStream.AArch64.update params name code))
+
+/-- `vg_sha256_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 160) 0 (withStackScratch 160 .x3 (MdStream.AArch64.finalize params name code))
+
+/-- `vg_sha256_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest256 (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := out256 } (initQ Spec.Sha256.H0) name code)
+
+/-- `vg_sha224_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize224 (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 160) 0 (withStackScratch 160 .x3 (MdStream.AArch64.finalize params224 name code))
+
+/-- `vg_sha224_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest224 (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := MdStream.AArch64.out32 7 true } (initQ Spec.Sha256.H0_224) name code)
+
+end Fn
 
 end VG.Impl.Sha256.AArch64.Stream

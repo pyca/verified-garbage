@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.AesXts.RISCV64.Lit
@@ -12,7 +13,11 @@ import VerifiedGarbage.Proof.AesXts.RISCV64.Lit
 namespace VG.Artifacts.AesXts.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptUnitApi.artifact RISCV64.target Proof.AesXts.RISCV64.Scrub.encryptUnitReg,
-  Spec.Xts.aesDecryptUnitApi.artifact RISCV64.target Proof.AesXts.RISCV64.Scrub.decryptUnitReg]
+  Spec.Xts.aesEncryptUnitApi.artifact RISCV64.target {
+    code := Impl.Aes.RISCV64.Fn.xtsEncryptUnit
+    verified := .scrubbed Proof.AesXts.RISCV64.Scrub.xtsEncryptUnit_scrubbed },
+  Spec.Xts.aesDecryptUnitApi.artifact RISCV64.target {
+    code := Impl.Aes.RISCV64.Fn.xtsDecryptUnit
+    verified := .scrubbed Proof.AesXts.RISCV64.Scrub.xtsDecryptUnit_scrubbed }]
 
 end VG.Artifacts.AesXts.RISCV64

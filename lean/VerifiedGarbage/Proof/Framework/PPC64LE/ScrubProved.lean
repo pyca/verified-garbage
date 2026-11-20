@@ -70,13 +70,33 @@ def sideI (g : RegSet Reg) (v : RegSet VReg) (ca : Bool) (i : Instr) : Bool :=
 /-- Code `c` (callees included) writes no register the tail with `cl` leaves
 as it is, the link registers among them if `c` calls: `Clear.Keeps`, as one
 pass over the instructions with the registers as bit masks (`RegSet`). Only
-the kernel evaluates it (`Code.allInstrs`). -/
+the kernel evaluates it (`Code.allInstrs`). When the tail clears every
+register, only writes to CA can matter. -/
 noncomputable def keepsB (c : Prog isa) (cl : Clear) : Bool :=
-  c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
-    (callFree c || linkRegs.all fun r => !(keptG cl).contains r)
+  if keptG cl = [] ∧ keptV cl = [] then
+    cl.ca || c.allInstrs (fun i => !writesCa i)
+  else
+    c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
+      (callFree c || linkRegs.all fun r => !(keptG cl).contains r)
+
+private theorem keepsB_eq (c : Prog isa) (cl : Clear) : keepsB c cl =
+    (c.allInstrs (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) &&
+      (callFree c || linkRegs.all fun r => !(keptG cl).contains r)) := by
+  unfold keepsB
+  split
+  · rename_i h
+    obtain ⟨hg, hv⟩ := h
+    rw [hg, hv]
+    have empty : sideI (RegSet.ofList ([] : List Reg))
+        (RegSet.ofList ([] : List VReg)) cl.ca = (fun i => cl.ca || !writesCa i) := by
+      funext i
+      cases hd : dstOf i <;> cases hvec : vdstOf i <;> simp [sideI, hd, hvec, RegSet.ofList, RegSet.mem, RegSet.empty]
+    rw [empty]
+    cases cl.ca <;> simp [Code.allInstrs_eq, linkRegs]
+  · rfl
 
 theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : cl.Keeps c := by
-  simp only [keepsB, Bool.and_eq_true, Bool.or_eq_true] at h
+  simp only [keepsB_eq, Bool.and_eq_true, Bool.or_eq_true] at h
   obtain ⟨hi, hl⟩ := h
   have hall : ∀ i ∈ instrs c, (∀ r ∈ keptG cl, dstOf i ≠ some r) ∧ (∀ w ∈ keptV cl, vdstOf i ≠ some w) ∧
       (cl.ca = false → writesCa i = false) := by

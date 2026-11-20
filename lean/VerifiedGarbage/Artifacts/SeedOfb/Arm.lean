@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
+public import VerifiedGarbage.Proof.Seed.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-public import VerifiedGarbage.Proof.Seed.Arm.FbFinalVerified
-public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
 
 /-! # SEED-OFB on ARMv7 -/
 
@@ -14,10 +12,10 @@ namespace VG.Artifacts.SeedOfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofb
-    verified := .unscrubbed Proof.Seed.Arm.ofb_framed },
+    code := Impl.Seed.Arm.Fn.ofb
+    verified := .scrubbed Proof.Seed.Arm.Fn.ofb },
   Spec.Seed.ofbFinalApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofbFinal
-    verified := .unscrubbed Proof.Seed.Arm.ofbFinal_framed }]
+    code := Impl.Seed.Arm.Fn.ofbFinal
+    verified := .scrubbed Proof.Seed.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.SeedOfb.Arm

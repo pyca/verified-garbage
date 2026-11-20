@@ -5,6 +5,8 @@
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1823,7 +1825,7 @@ jmp 2467f
 .base64 "iAaDxgGD6QE="
 jne 2468b
 2467:
-.base64 "uAAAAACJRCRYiUQkXIlEJGCJRCRkiUQkaIlEJGyJRCRwiUQkdIuUJIQAAACLRCQ8iQK4AAAAAIlCBItcJCyLdCQwi3wkNItsJDiLRCRUjWQkeMM="
+.base64 "uAAAAACJRCRYiUQkXIlEJGCJRCRkiUQkaIlEJGyJRCRwiUQkdIuUJIQAAACLRCQ8iQK4AAAAAIlCBItcJCyLdCQwi3wkNItsJDiLRCRUjWQkeGYP78C5AAAAAI2kJBj////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAImMJOAAAACJjCTkAAAAjaQk6AAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
         vg_dsa_comb_prepare_32_5 = sym super::dsa::vg_dsa_comb_prepare_32_5::vg_dsa_comb_prepare_32_5,
@@ -1841,6 +1843,8 @@ jne 2468b
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3126,7 +3130,7 @@ jmp 2275f
 jne 2317b
 2275:
 23:
-.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAww=="
+.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAZg/vwLkAAAAAjWQklPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQiUwkYIlMJGSJTCRojWQkbLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5::vg_dsa_pow_32_5,
@@ -3139,6 +3143,8 @@ jne 2317b
 }
 
 /// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -4776,7 +4782,7 @@ jmp 2343f
 .base64 "uAAAAAA="
 2343:
 23:
-.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAww=="
+.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAZg/vwLkAAAAAjWQklPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQiUwkYIlMJGSJTCRojWQkbLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5::vg_dsa_pow_32_5,
@@ -4789,6 +4795,8 @@ jmp 2343f
 }
 
 /// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -4949,13 +4957,15 @@ jmp 244f
 .base64 "iAaDxgGD6QE="
 jne 245b
 244:
-.base64 "uAAAAACJRCRYiUQkXIlEJGCJRCRkiUQkaIlEJGyJRCRwiUQkdIuUJIQAAACLRCQ8iQK4AAAAAIlCBItcJCyLdCQwi3wkNItsJDiLRCRUjWQkeMM="
+.base64 "uAAAAACJRCRYiUQkXIlEJGCJRCRkiUQkaIlEJGyJRCRwiUQkdIuUJIQAAACLRCQ8iQK4AAAAAIlCBItcJCyLdCQwi3wkNItsJDiLRCRUjWQkeGYP78C5AAAAAI2kJBj////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAImMJOAAAACJjCTkAAAAjaQk6AAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_sign_prevalidated = sym super::dsa::vg_dsa_sign_prevalidated::vg_dsa_sign_prevalidated,
     )
 }
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -6243,7 +6253,7 @@ jmp 2275f
 .base64 "uAAAAAA="
 2275:
 23:
-.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAww=="
+.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAZg/vwLkAAAAAjWQklPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQiUwkYIlMJGSJTCRojWQkbLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
         vg_dsa_pow_32_5 = sym super::dsa::vg_dsa_pow_32_5::vg_dsa_pow_32_5,
@@ -6256,6 +6266,8 @@ jmp 2275f
 }
 
 /// DSA verification of a prehashed digest, for an already validated packed public key (big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; vg_dsa_validate_public_key validates it). The signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0: the result of fully checked verification (`VG.Spec.Dsa.verifyContract`), whose checks of the signature scalars and digest handling it keeps. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -8142,7 +8154,7 @@ jmp 2367f
 .base64 "uAAAAAA="
 2367:
 23:
-.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAww=="
+.base64 "i59AIAAAi69EIAAAi7dIIAAAi79MIAAAZg/vwLkAAAAAjWQklPMPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQiUwkYIlMJGSJTCRojWQkbLoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_dsa_pow_3_5 = sym super::dsa::vg_dsa_pow_3_5::vg_dsa_pow_3_5,
         vg_dsa_reduce_3 = sym super::dsa::vg_dsa_reduce_3::vg_dsa_reduce_3,
@@ -8158,6 +8170,8 @@ jmp 2367f
 /// Start a search for DSA domain parameters with a modulus of `p_len` octets (128, 256 or 384: 1024, 2048 or 3072 bits, with a subgroup of 160, 256 and 256 bits). Returns 1 and writes the search's four public words to `state`: the seeds it may still reject, `p_len`, its entropy budget, and the length of the first random tape to give `vg_dsa_parameter_search`. Returns 0 and writes zeros for any other `p_len`.
 ///
 /// Contract: `VG.Spec.Dsa.parameterInitContract`.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -8186,7 +8200,7 @@ jmp 21f
 20:
 .base64 "i0wkBLgAEAAAiQG4gAAAAIlBCLiAAEAAiUEQuAAAAQCJQRi4AAAAAIlBBIlBDIlBFIlBHLgBAAAA"
 21:
-.base64 "ww=="
+.base64 "ugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
     )
 }
@@ -8197,6 +8211,8 @@ pub const VG_DSA_PARAMETER_SEARCH_SHA1_SHANI_SHA256_SHANI_FEATURES: verified_gar
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -9476,7 +9492,7 @@ jmp 2334f
 .base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
 2334:
 21:
-.base64 "izwki3QkBItsJAhbW1tbww=="
+.base64 "izwki3QkBItsJAhbW1tbZg/vwLkAAAAAjaQkKP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAAiYwk0AAAAImMJNQAAACNpCTYAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
         vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,
@@ -9495,6 +9511,8 @@ jmp 2334f
 /// Search for DSA domain parameters (FIPS 186-4 A.1.1.2 and A.2.1) over the random tape `rand`, for the modulus width in `state`: each seed, its `q`, the `p` candidates from it and the generator's `h` candidates are read from `rand` in turn, with the rejected seeds counted in `state`. Returns 1 and writes `p || q || g` to `out` once parameters are found; 3 if the search is exhausted, by too many rejected seeds or by one seed needing more than the entropy budget; or 0 if the tape ran out inside a seed. Writes the octets of `rand` it consumed to `used`, and the state for the next call to `state`, whose last word is, for 0, the length of the next tape, more than the octets of `rand` after the first `used` and at most the entropy budget: keep those octets, in order, and append fresh random octets up to that length. `out` is zeros but for 1. Accepted parameters pass probable-prime tests, not primality certification.
 ///
 /// Contract: `VG.Spec.Dsa.parameterSearchContract`. Timing may depend on everything, `rand` included: these are public domain parameters.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -10773,7 +10791,7 @@ jmp 2334f
 .base64 "ugAAAAC5AAAAAIufEBwAAIkTiUsYuAAAAACJQwSJQxyLnwwcAACJQwSLhxwcAACJA7gBAAAA"
 2334:
 21:
-.base64 "izwki3QkBItsJAhbW1tbww=="
+.base64 "izwki3QkBItsJAhbW1tbZg/vwLkAAAAAjaQkKP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAAiYwk0AAAAImMJNQAAACNpCTYAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
         vg_dsa_probable_prime_256 = sym super::dsa::vg_dsa_probable_prime_256::vg_dsa_probable_prime_256,

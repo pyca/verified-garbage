@@ -5,12 +5,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhVerified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.Ecdh.P224
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P224.EcdhLit
 public import VerifiedGarbage.Proof.P224.RISCV64.Law
-public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # ECDH over P-224 (SP 800-56A) on RISC-V -/
 
@@ -21,9 +19,8 @@ namespace VG.Artifacts.EcdhP224.RISCV64
 open VG.Proof.P224.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P224.exchangeApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.Ecdh.RISCV64.ecdhP224
-    verified := Proof.Ecdh.RISCV64.P224.ecdh_verified hasLaw.law }
-    (Proof.EcKey.RISCV64.Scrub.exchangeOut _ _ []))]
+  Spec.Ecdh.P224.exchangeApi.artifact RISCV64.target {
+    code := Impl.Ecdh.RISCV64.Fn.exchangeP224
+    verified := .scrubbed (Proof.Ecdh.RISCV64.P224.exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP224.RISCV64

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.RISCV64
 public import VerifiedGarbage.Impl.Ecdh.P224.RISCV64
 public import VerifiedGarbage.Impl.EcKey.Compressed.RootTable
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-!
 # P-224's point compression and decompression on RISC-V
@@ -187,3 +188,21 @@ def tail224 : Prog isa :=
 def decompressP224 : Prog isa := .seq front224 (.seq (digits 24) tail224)
 
 end VG.Impl.EcKey.Compressed.RISCV64
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+caller-saved registers cleared but the 32 bits of its result (it uses no
+stack), so that it returns without secret residue. -/
+
+namespace VG.Impl.EcKey.Compressed.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ec_p224_compress_public_key` as emitted. -/
+def compressP224 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.EcKey.Compressed.RISCV64.compressP224
+
+/-- `vg_ec_p224_decompress_public_key` as emitted. -/
+def decompressP224 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.EcKey.Compressed.RISCV64.decompressP224
+
+end VG.Impl.EcKey.Compressed.RISCV64.Fn

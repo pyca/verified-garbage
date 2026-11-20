@@ -16,9 +16,15 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 namespace VG.Artifacts.AesGcmSiv.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact RISCV64.target
-    (Proof.AesGcmSiv.RISCV64.Scrub.sealReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG),
-  Spec.GcmSiv.openApi.artifact RISCV64.target
-    (Proof.AesGcmSiv.RISCV64.Scrub.openReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)]
+  Spec.GcmSiv.sealApi.artifact RISCV64.target {
+    code := Impl.AesGcmSiv.RISCV64.Fn.«seal»
+    verified := .scrubbed
+      (Proof.AesGcmSiv.RISCV64.Scrub.seal_scrubbed
+        Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) },
+  Spec.GcmSiv.openApi.artifact RISCV64.target {
+    code := Impl.AesGcmSiv.RISCV64.Fn.«open»
+    verified := .scrubbed
+      (Proof.AesGcmSiv.RISCV64.Scrub.open_scrubbed
+        Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) }]
 
 end VG.Artifacts.AesGcmSiv.RISCV64

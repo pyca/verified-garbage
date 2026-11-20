@@ -3,15 +3,19 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Aes.RISCV64.Fn
 public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Verified
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 /-!
 # XTS-AES on RISC-V, without secret residue
 
-`vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
-caller-saved registers and the stack its frames used. Their postconditions
+`vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit` as emitted
+(`Impl.Aes.RISCV64.Fn`), each followed by `Impl.Scrub.RISCV64.scrubTail`,
+which clears the caller-saved registers and the stack its frames used, meet
+their contracts in constant time and return without secret residue
+(`RISCV64.Scrub.verifiedScrubbed`): the theorems their registrations bind.
+Their postconditions
 read the memory on return only within the data (`RISCV64.Scrub.PostOut`),
 as on x86-64 (`Proof/AesXts/X86_64/Scrub.lean`).
 -/
@@ -51,20 +55,24 @@ theorem decryptUnitOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.2.1 (len_le1 ln)]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_xts_encrypt_unit`. -/
-def encryptUnitReg : Registration Spec.Xts.aesEncryptUnitApi RISCV64.target :=
-  scrubOf {
-      code := Impl.AesXts.RISCV64Unit.encrypt
+/-- `vg_aes_xts_encrypt_unit` as emitted (`Impl.Aes.RISCV64.Fn.xtsEncryptUnit`) meets its contract in
+constant time and returns without secret residue. -/
+theorem xtsEncryptUnit_scrubbed :
+    VerifiedScrubbed target Impl.Aes.RISCV64.Fn.xtsEncryptUnit (Spec.Xts.aesEncryptUnitContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi)
+    { code := Impl.AesXts.RISCV64Unit.encrypt
       verified := Proof.AesXts.RISCV64.Unit.encrypt_verified }
-    (encryptUnitOut _)
+    (encryptUnitOut _) (by lit_decide)
 
-/-- `vg_aes_xts_decrypt_unit`. -/
-def decryptUnitReg : Registration Spec.Xts.aesDecryptUnitApi RISCV64.target :=
-  scrubOf {
-      code := Impl.AesXts.RISCV64Unit.decrypt
+/-- `vg_aes_xts_decrypt_unit` as emitted (`Impl.Aes.RISCV64.Fn.xtsDecryptUnit`) meets its contract in
+constant time and returns without secret residue. -/
+theorem xtsDecryptUnit_scrubbed :
+    VerifiedScrubbed target Impl.Aes.RISCV64.Fn.xtsDecryptUnit (Spec.Xts.aesDecryptUnitContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi)
+    { code := Impl.AesXts.RISCV64Unit.decrypt
       verified := Proof.AesXts.RISCV64.Unit.decrypt_verified }
-    (decryptUnitOut _)
+    (decryptUnitOut _) (by lit_decide)
 
 end VG.Proof.AesXts.RISCV64.Scrub

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-!
 # Constant-time byte comparison on RISC-V
@@ -35,3 +36,13 @@ def eq : Prog isa :=
     (.ite (.zero .a7) equal (.block [.li .a0 0]))
 
 end VG.Impl.Ct.RISCV64
+
+namespace VG.Impl.Ct.RISCV64.Fn
+open VG.RISCV64
+
+/-- `vg_ct_eq` as emitted: `eq`, then its cleanup
+(`Impl.Scrub.RISCV64.scrub`): the caller-saved registers cleared but its
+32-bit result; it uses no stack. -/
+def eq : Prog isa := VG.Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ct.RISCV64.eq
+
+end VG.Impl.Ct.RISCV64.Fn

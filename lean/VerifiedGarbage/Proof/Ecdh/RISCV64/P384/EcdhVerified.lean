@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Exchange
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.EcKey.P384
 public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhLit
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Exchange
@@ -15,7 +18,12 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Field.Verified
+import VerifiedGarbage.Spec.Ecdh.P384
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Field.Verified
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdsa.P384.RISCV64Window
+meta import VerifiedGarbage.Spec.Ecdh.P384
 
 /-!
 # ECDH over P-384 on RISC-V: `Verified`
@@ -85,5 +93,14 @@ theorem ecdh_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_implies_sat [Spec.EcKey.P384.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P384.curve, Spec.EcKey.scratchWords, ecdhRV, ex, RISCV64.abi,
           RISCV64.argRegs] [ecdhSat] using ecdhSat }
+
+/-- `vg_ecdh_p384` as emitted, cleanup included (`Impl.Ecdh.RISCV64.Fn.exchangeP384`),
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.exchangeP384
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi) (W := 0)
+    { code := ecdhP384, verified := ecdh_verified hL }
+    (EcKey.RISCV64.Scrub.exchangeOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.P384

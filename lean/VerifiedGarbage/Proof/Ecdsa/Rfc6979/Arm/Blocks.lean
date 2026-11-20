@@ -35,6 +35,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Spec.HmacTable
@@ -159,6 +160,14 @@ open VG VG.Arm
 open VG.Impl.Ecdsa.Rfc6979.Arm (Fns)
 open VG.Proof.HashTable (pw_ne find_name)
 
+/-- What `HVar.scrub` states of the functions of the hash function `M`, from
+what `M` states of its own code. -/
+theorem fnsScrub {I : Spec.Hmac.Instance} {M : Impl.Pbkdf2.Md.Arm.Hash} (h : Proof.Hmac.Stream.Arm.MdOk M) :
+    Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).hiC 8 ∧
+      Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).H.updC 8 ∧
+      Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).hfC 8 :=
+  ⟨h.hmacInit_ok.mono (by decide), h.upd.mono (by decide), h.hmacFin_ok⟩
+
 /-- A hash function with HMAC on ARMv7: the functions PBKDF2's code calls,
 what is proven of them, and its place in `Spec.Mgf1.hashes`, whose HMAC is
 theirs. -/
@@ -169,23 +178,37 @@ structure HVar where
   idx : Spec.Mgf1.hashes[Spec.HashTable.index G]? = some G
   glen : G.len = F.H.D
   hmac : Spec.HmacTable.hmacOf G = some ok.hH.SH.H
+  /-- What the cleanup of a function that calls them through the table needs
+  of HMAC's `init`, the streaming `update` and HMAC's `finalize`: their frames
+  use at most 8 bytes, and they make no indirect call (`Arm.Scrub.CodeOk`),
+  from what the hash function states of its own code
+  (`Proof.Hmac.Stream.Arm.MdOk`). -/
+  scrub : Arm.Scrub.CodeOk F.hiC 8 ∧ Arm.Scrub.CodeOk F.H.updC 8 ∧ Arm.Scrub.CodeOk F.hfC 8
 
 open Proof.Pbkdf2.Whole.Arm in
-def md5V : HVar := ⟨md5F, md5OKF, Spec.Mgf1.md5, rfl, rfl, rfl⟩
+def md5V : HVar :=
+  ⟨md5F, md5OKF, Spec.Mgf1.md5, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.md5_mdOk⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha1V : HVar := ⟨sha1F, sha1OKF, Spec.Mgf1.sha1, rfl, rfl, rfl⟩
+def sha1V : HVar :=
+  ⟨sha1F, sha1OKF, Spec.Mgf1.sha1, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha1_mdOk⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha224V : HVar := ⟨sha224F, sha224OKF, Spec.Mgf1.sha224, rfl, rfl, rfl⟩
+def sha224V : HVar :=
+  ⟨sha224F, sha224OKF, Spec.Mgf1.sha224, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha224_mdOk⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha256V : HVar := ⟨sha256F, sha256OKF, Spec.Mgf1.sha256, rfl, rfl, rfl⟩
+def sha256V : HVar :=
+  ⟨sha256F, sha256OKF, Spec.Mgf1.sha256, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha256_mdOk⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha384V : HVar := ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, rfl, rfl, rfl⟩
+def sha384V : HVar :=
+  ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha512V : HVar := ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, rfl, rfl, rfl⟩
+def sha512V : HVar :=
+  ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha512_224V : HVar := ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, rfl, rfl, rfl⟩
+def sha512_224V : HVar :=
+  ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
 open Proof.Pbkdf2.Whole.Arm in
-def sha512_256V : HVar := ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, rfl, rfl, rfl⟩
+def sha512_256V : HVar :=
+  ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
 
 /-- Every hash function with HMAC on ARMv7. -/
 def vars : List HVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]

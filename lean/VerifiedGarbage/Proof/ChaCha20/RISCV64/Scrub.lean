@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.ChaCha20.RISCV64.Fn
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.RISCV64.Stream.Init
 import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
@@ -1816,9 +1817,10 @@ end
 /-!
 # ChaCha20 on RISC-V, without secret residue
 
-`vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+`vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply` as emitted
+(`Impl.ChaCha20.RISCV64.Fn`), each followed by `Impl.Scrub.RISCV64.scrubTail`, which clears
+the caller-saved registers and the stack its frames used: the theorems their registrations
+bind (`RISCV64.Scrub.verifiedScrubbed`). Their postconditions read the memory on return only
 within the streaming state and the data (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/ChaCha20/X86_64/Scrub.lean`).
 -/
 
@@ -1864,27 +1866,33 @@ theorem applyOut (stack : Nat) : PostOut (applyContract RISCV64.abi stack) (appl
   postOut_of_local (post := VG.Proof.ChaCha20.ScrubLocal.applyPost 64) ScrubAbi.plain
     (VG.Proof.ChaCha20.ScrubLocal.applyPost_out 64 rfl)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.ChaCha20.initApi`. -/
-def initReg : Registration Spec.ChaCha20.initApi RISCV64.target :=
-  scrubOf {
-      code := Impl.ChaCha20.RISCV64.Stream.init
+/-- `vg_chacha20_init` as emitted (`Impl.ChaCha20.RISCV64.Fn.init`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.init (initContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.ChaCha20.initApi) (W := 0)
+    { code := Impl.ChaCha20.RISCV64.Stream.init
       verified := Proof.ChaCha20.RISCV64.Stream.init_verified }
-    (initOut)
+    initOut (by lit_decide)
 
-/-- `Spec.ChaCha20.setNonceApi`. -/
-def setNonceReg : Registration Spec.ChaCha20.setNonceApi RISCV64.target :=
-  scrubOf {
-      code := Impl.ChaCha20.RISCV64.Stream.setNonce
+/-- `vg_chacha20_set_nonce` as emitted (`Impl.ChaCha20.RISCV64.Fn.setNonce`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem setNonce_scrubbed :
+    VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.setNonce (setNonceContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.ChaCha20.setNonceApi) (W := 0)
+    { code := Impl.ChaCha20.RISCV64.Stream.setNonce
       verified := Proof.ChaCha20.RISCV64.Stream.setNonce_verified }
-    (setNonceOut)
+    setNonceOut (by lit_decide)
 
-/-- `Spec.ChaCha20.applyApi`. -/
-def applyReg : Registration Spec.ChaCha20.applyApi RISCV64.target :=
-  scrubOf {
-      code := Impl.ChaCha20.RISCV64.Stream.apply
+/-- `vg_chacha20_apply` as emitted (`Impl.ChaCha20.RISCV64.Fn.apply`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem apply_scrubbed :
+    VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.apply (applyContract RISCV64.abi 0) 32 :=
+  verifiedScrubbed (api := Spec.ChaCha20.applyApi) (W := 0)
+    { code := Impl.ChaCha20.RISCV64.Stream.apply
       verified := Proof.ChaCha20.RISCV64.Stream.apply_verified }
-    (applyOut _)
+    (applyOut _) (by lit_decide)
 
 end VG.Proof.ChaCha20.RISCV64.Scrub

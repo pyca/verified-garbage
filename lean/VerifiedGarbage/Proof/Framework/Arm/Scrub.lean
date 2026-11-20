@@ -37,10 +37,11 @@ leak nothing, so `scrub rb c` meets `c`'s contract (`Verified.scrub`), and
 every run of it ends with the same values there: it returns without secret
 residue.
 
-`scrubReg` is a registration with its code scrubbed, which proves it;
-`scrubRegF` is the same for code with frames (see "Code with frames" below),
-and `scrubRegFT` for code with frames that calls indirectly only the
-functions of its tables (`tablesCall`).
+`Verified.scrub` proves it; `Verified.scrubFS` is the same for code with
+frames (see "Code with frames" below) whose functions called indirectly have
+the same addresses in two runs that agree on what is public, as those of its
+tables do (`tablesCall_pub`). `Proof/Framework/Arm/ScrubProved.lean` states
+both as theorems about the code a registration binds.
 -/
 
 @[expose] public section
@@ -401,9 +402,8 @@ end VG.Arm
 
 namespace VG.Arm.Scrub
 
-/-! The cleanup is code (`Impl/Residue/Arm.lean`); its names are also this
-namespace's, as they were before it moved there. -/
-export VG.Impl.Residue.Arm (retFix tail scrub wipeChunk wipeLoop wipeBody wipeBelow scrubF)
+/-! The cleanup is code (`Impl/Residue/Arm.lean`). -/
+open VG.Impl.Residue.Arm
 
 /-- A result on ARM is of 0, 32 or 64 bits. -/
 theorem retBits_cases (sig : Sig) : sig.retBits 32 = 0 ∨ sig.retBits 32 = 32 ∨ sig.retBits 32 = 64 := by
@@ -726,7 +726,7 @@ theorem sat_stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → P
 /-- Code that meets a contract `Sig.contract` with `n` bytes of stack meets
 it with more, `n'`, if its precondition is then still satisfiable: so a
 function whose frames use a number of bytes that is no frame size of the
-model (`FrameOk`) is registered with the next one, and `scrubRegF` wipes
+model (`FrameOk`) is registered with the next one, and `scrubF` wipes
 that. -/
 theorem Verified.stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
     {post : sig.Post abi.ptrBits} {wa : Bool} {n n' : Nat}
@@ -1095,7 +1095,7 @@ theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   have h0 : stack ≠ 0 := by have := hn.1; omega
   -- Every run is `c`'s run, then the wipe and the tail.
   have run : ∀ {s u : State} {T : List Leak}, (sig.contract A pre post wa stack leak).pre s →
-      Exec isa (Scrub.scrubF rb stack c) s T u → ∃ t w, Exec isa c s t w ∧
+      Exec isa (scrubF rb stack c) s T u → ∃ t w, Exec isa c s t w ∧
         T = t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 stack) stack ++ []) ∧
         u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
         u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
@@ -1240,112 +1240,5 @@ theorem tablesCall_pub {A : Abi isa} {sig : Sig} {ts : List (String × List FnTa
 /-- No ARM instruction writes the stack pointer, other than a frame's. -/
 theorem spSafe_any (c : Prog isa) : c.all (fun i => !target.isa.writesSp i) = true := by
   induction c <;> simp_all [Code.all, List.all_eq_true]
-
-/-- A function that writes at most the first bytes of some of its buffers
-still does when the state on return is replaced by one with its memory. -/
-theorem writtenWithin_mem {sig : Sig} {written : List (String × Nat)} {s u u' : State}
-    (h : Sig.writtenWithin abi sig written s u) (hm : u'.mem = u.mem) :
-    Sig.writtenWithin abi sig written s u' := by
-  cases written with
-  | nil => exact True.intro
-  | cons w ws =>
-    simp only [Sig.writtenWithin] at h ⊢
-    split
-    · exact True.intro
-    · rename_i vals hv
-      rw [hv] at h
-      intro w hw b hb hbw i hi hl
-      have := h w hw b hb hbw i hi hl
-      simp only [abi] at this ⊢
-      rw [hm]; exact this
-
-/-- `r`, a registration of code without frames, scrubbed: its code followed
-by `tail`, which returns without secret residue. -/
-def scrubReg {api : Api} (r : Unscrubbed api target) (hn : r.code.noFrames = true) :
-    Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).1), by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn
-      rfl).2⟩
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_any _
-  written := r.written
-  writtenOk := by
-    intro s t u' hs he
-    have hrb := retBits_cases api.sig
-    obtain ⟨u, a, b⟩ := exec_scrub (rb := api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-      (by rw [(ScrubAbi.tables (ScrubAbi.consts r.consts) api.sig r.tables).ptrBits]; exact hrb) he
-    obtain ⟨w, hw, hm, -⟩ := tail_run (rb := api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-      (by rw [(ScrubAbi.tables (ScrubAbi.consts r.consts) api.sig r.tables).ptrBits]; exact hrb) u
-    rw [hw, Option.some.injEq, Prod.mk.injEq] at b
-    obtain ⟨rfl, -⟩ := b
-    exact writtenWithin_mem (r.writtenOk s t u hs a) hm
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, a registration of code whose frames use at most the `stack` bytes
-its contract reserves and which calls indirectly only the functions of its
-tables (`tablesCall`), scrubbed: its code, then those bytes zeroed, then
-`tail`, which returns without secret residue, if its postcondition reads the
-memory on return only within the buffers. -/
-def scrubRegFT {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
-    (htc : tablesCall r.code r.tables = true) (hn : FrameOk r.stack)
-    (hpost : PostOut r.contract
-      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hw : r.written = []) : Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrubF (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    r.stack r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).1), by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
-      rfl hp).2⟩
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_any _
-  written := r.written
-  writtenOk := by
-    rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, a registration of code whose frames use at most the `stack` bytes
-its contract reserves and which makes no indirect call, scrubbed
-(`scrubRegFT`). -/
-def scrubRegF {api : Api} (r : Unscrubbed api target) (hd : armStack r.code ≤ r.stack)
-    (hni : noIcall r.code = true) (hn : FrameOk r.stack)
-    (hpost : PostOut r.contract
-      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hw : r.written = []) : Registration api target :=
-  scrubRegFT r hd (tablesCall_of_noIcall hni r.tables) hn hpost hw
 
 end VG.Arm.Scrub

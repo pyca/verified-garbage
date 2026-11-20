@@ -15,9 +15,10 @@ For every curve (`Spec.EcKey.Instance`), the postconditions of
 and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
 of `vg_ecdsa_<name>_verify` does not read it (`RISCV64.Scrub.PostOut`), as
 x86-64's `Proof/EcKey/X86_64/Scrub/Out.lean` proves them: each
-implementation, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), returns with the caller-saved registers cleared
-and the stack its frames used zeroed. Each lemma takes the tables of
+implementation, followed by `Impl.Scrub.RISCV64.scrubTail` (the function as
+emitted, `Impl.Scrub.RISCV64.scrub`, whose theorem is
+`RISCV64.Scrub.verifiedScrubbed`'s), returns with the caller-saved registers
+cleared and the stack its frames used zeroed. Each lemma takes the tables of
 constants `cs` the code reads, which may be none.
 -/
 

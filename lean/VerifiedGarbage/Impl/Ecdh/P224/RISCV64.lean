@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num4
 public import VerifiedGarbage.Impl.Ecdsa.P224.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb.P224
 public import VerifiedGarbage.Impl.Weierstrass.Layout.CheckPoint
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-!
 # P-224's check of a public point, ECDH and public keys on RISC-V
@@ -48,3 +49,21 @@ def publicKeyP224 : Prog isa :=
   .block (Cfg.zCode p224 ++ pointOut224 XO YO)
 
 end VG.Impl.Ecdh.RISCV64
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+caller-saved registers cleared but the 32 bits of its result (it uses no
+stack), so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdh.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdh_p224` as emitted. -/
+def exchangeP224 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.ecdhP224
+
+/-- `vg_ec_p224_public_key` as emitted. -/
+def publicKeyP224 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.publicKeyP224
+
+end VG.Impl.Ecdh.RISCV64.Fn

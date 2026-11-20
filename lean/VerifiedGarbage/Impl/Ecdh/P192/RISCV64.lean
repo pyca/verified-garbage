@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Num0
 public import VerifiedGarbage.Impl.Ecdsa.P192.RISCV64
 public import VerifiedGarbage.Impl.Weierstrass.Layout.CheckPoint
+public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 /-!
 # P-192's check of a public point, ECDH and public keys on RISC-V
@@ -48,3 +49,21 @@ def publicKeyP192 : Prog isa :=
   .block (Cfg.zCode p192 ++ pointOut192 XO YO)
 
 end VG.Impl.Ecdh.RISCV64
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+caller-saved registers cleared but the 32 bits of its result (it uses no
+stack), so that it returns without secret residue. -/
+
+namespace VG.Impl.Ecdh.RISCV64.Fn
+
+open VG.RISCV64
+
+/-- `vg_ecdh_p192` as emitted. -/
+def exchangeP192 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.ecdhP192
+
+/-- `vg_ec_p192_public_key` as emitted. -/
+def publicKeyP192 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.publicKeyP192
+
+end VG.Impl.Ecdh.RISCV64.Fn

@@ -53,4 +53,9 @@ those of the key-generation attempt it calls, use at most the 240 bytes of
 stack its contract reserves. -/
 def cachedKeySearch (c : Prog isa) : Prog isa := scrubF 32 240 c
 
+/-- `vg_ffdh_generate_parameters`, of its code `c`, whose frames, and those of
+the candidate it calls, use at most the 232 bytes of stack its contract
+reserves. -/
+def sievedParameterSearch (c : Prog isa) : Prog isa := scrubF 32 232 c
+
 end VG.Impl.Ffdh.Arm.Fn

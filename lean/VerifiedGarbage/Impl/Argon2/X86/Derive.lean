@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86.Fill
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Argon2 on x86 (32-bit): the derivation
@@ -68,3 +69,17 @@ def frames (c : Prog isa) : List Reg → Prog isa
 def derive : Prog isa := frames body saved
 
 end VG.Impl.Argon2.X86.Derive
+
+/-! ## The function, as emitted
+
+`vg_argon2`'s body and then its cleanup: the 244 bytes of stack its contract
+reserves below `esp`, its frames and those of the functions it calls, are
+zeroed, and the registers a callee may change are cleared (`scrubF`). -/
+
+namespace VG.Impl.Argon2.X86.Fn
+
+open VG.X86
+
+def derive : Prog isa := Impl.Scrub.X86.scrubF 0 244 Derive.derive
+
+end VG.Impl.Argon2.X86.Fn

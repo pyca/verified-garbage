@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Idea.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.Spec.Idea.Cbc
@@ -585,8 +586,8 @@ end
 # Idea on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.Idea.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Idea/X86_64/Scrub.lean`).
 -/
@@ -771,61 +772,122 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract RISCV64.abi stack)
     rw [bytesAt_of hb.2.2 (len_le1 ln), bytesAt_of (n := 8) hb.2.1 (Nat.le_refl _)]
     exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.Idea.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.Idea.expandKeyApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.expandKey, verified := Proof.Idea.RISCV64.expandKey_verified }
-    (expandKeyOut _)
+Each theorem states that a function as emitted (`Impl.Idea.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.Idea.invertKeyApi`. -/
-def invertKeyReg : Registration Spec.Idea.invertKeyApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.invertKey, verified := Proof.Idea.RISCV64.invertKey_verified }
-    (invertKeyOut _)
+/-- `Spec.Idea.expandKeyApi` as emitted (`Impl.Idea.RISCV64.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.expandKey
+      (Spec.Idea.expandKeyContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Idea.expandKeyApi) (W := 0) (rb := 0)
+    { code := Impl.Idea.RISCV64.expandKey
+      verified := Proof.Idea.RISCV64.expandKey_verified }
+    (expandKeyOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.ecbApi`. -/
-def ecbReg : Registration Spec.Idea.ecbApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.ecb, verified := Proof.Idea.RISCV64.ecb_verified }
-    (ecbOut _)
+/-- `Spec.Idea.invertKeyApi` as emitted (`Impl.Idea.RISCV64.Fn.invertKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem invertKey_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.invertKey
+      (Spec.Idea.invertKeyContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Idea.invertKeyApi) (W := 0) (rb := 0)
+    { code := Impl.Idea.RISCV64.invertKey
+      verified := Proof.Idea.RISCV64.invertKey_verified }
+    (invertKeyOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Idea.cbcEncryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cbcEncryptChained, verified := Proof.Idea.RISCV64.Modes.cbcEncryptChained_verified }
-    (cbcEncryptOut _)
+/-- `Spec.Idea.ecbApi` as emitted (`Impl.Idea.RISCV64.Fn.ecb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecb_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.ecb
+      (Spec.Idea.ecbContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Idea.ecbApi) (W := 0) (rb := 0)
+    { code := Impl.Idea.RISCV64.ecb
+      verified := Proof.Idea.RISCV64.ecb_verified }
+    (ecbOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Idea.cbcDecryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cbcDecryptChained, verified := Proof.Idea.RISCV64.Modes.cbcDecryptChained_verified }
-    (cbcDecryptOut _)
+/-- `Spec.Idea.cbcEncryptChainedApi` as emitted (`Impl.Idea.RISCV64.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cbcEncryptChained
+      (Spec.Idea.cbcEncryptChainedContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cbcEncryptChainedApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cbcEncryptChained
+      verified := Proof.Idea.RISCV64.Modes.cbcEncryptChained_verified }
+    (cbcEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.Idea.cfbEncryptApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cfbEncrypt, verified := Proof.Idea.RISCV64.Modes.cfbEncrypt_verified }
-    (cfbEncryptOut _)
+/-- `Spec.Idea.cbcDecryptChainedApi` as emitted (`Impl.Idea.RISCV64.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cbcDecryptChained
+      (Spec.Idea.cbcDecryptChainedContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cbcDecryptChainedApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cbcDecryptChained
+      verified := Proof.Idea.RISCV64.Modes.cbcDecryptChained_verified }
+    (cbcDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.Idea.cfbDecryptApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cfbDecrypt, verified := Proof.Idea.RISCV64.Modes.cfbDecrypt_verified }
-    (cfbDecryptOut _)
+/-- `Spec.Idea.cfbEncryptApi` as emitted (`Impl.Idea.RISCV64.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cfbEncrypt
+      (Spec.Idea.cfbEncryptContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cfbEncryptApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cfbEncrypt
+      verified := Proof.Idea.RISCV64.Modes.cfbEncrypt_verified }
+    (cfbEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.Idea.cfbEncryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cfbEncryptFinal, verified := Proof.Idea.RISCV64.Modes.cfbEncryptFinal_verified }
-    (cfbEncryptFinalOut _)
+/-- `Spec.Idea.cfbDecryptApi` as emitted (`Impl.Idea.RISCV64.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cfbDecrypt
+      (Spec.Idea.cfbDecryptContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cfbDecryptApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cfbDecrypt
+      verified := Proof.Idea.RISCV64.Modes.cfbDecrypt_verified }
+    (cfbDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.Idea.cfbDecryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.cfbDecryptFinal, verified := Proof.Idea.RISCV64.Modes.cfbDecryptFinal_verified }
-    (cfbDecryptFinalOut _)
+/-- `Spec.Idea.cfbEncryptFinalApi` as emitted (`Impl.Idea.RISCV64.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cfbEncryptFinal
+      (Spec.Idea.cfbEncryptFinalContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cfbEncryptFinalApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cfbEncryptFinal
+      verified := Proof.Idea.RISCV64.Modes.cfbEncryptFinal_verified }
+    (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.ofbApi`. -/
-def ofbReg : Registration Spec.Idea.ofbApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.ofb, verified := Proof.Idea.RISCV64.Modes.ofb_verified }
-    (ofbOut _)
+/-- `Spec.Idea.cfbDecryptFinalApi` as emitted (`Impl.Idea.RISCV64.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.cfbDecryptFinal
+      (Spec.Idea.cfbDecryptFinalContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.cfbDecryptFinalApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.cfbDecryptFinal
+      verified := Proof.Idea.RISCV64.Modes.cfbDecryptFinal_verified }
+    (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Idea.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.Idea.ofbFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Idea.RISCV64.ofbFinal, verified := Proof.Idea.RISCV64.Modes.ofbFinal_verified }
-    (ofbFinalOut _)
+/-- `Spec.Idea.ofbApi` as emitted (`Impl.Idea.RISCV64.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.ofb
+      (Spec.Idea.ofbContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.ofbApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.ofb
+      verified := Proof.Idea.RISCV64.Modes.ofb_verified }
+    (ofbOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.Idea.ofbFinalApi` as emitted (`Impl.Idea.RISCV64.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Idea.RISCV64.Fn.ofbFinal
+      (Spec.Idea.ofbFinalContract RISCV64.abi Proof.Idea.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Idea.ofbFinalApi) (W := 64) (rb := 0)
+    { code := Impl.Idea.RISCV64.ofbFinal
+      verified := Proof.Idea.RISCV64.Modes.ofbFinal_verified }
+    (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Idea.RISCV64.Scrub

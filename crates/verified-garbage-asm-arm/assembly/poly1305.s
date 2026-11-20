@@ -28,6 +28,12 @@ vg_poly1305_init:
 	str r2, [r0, #12]
 	str r2, [r0, #16]
 	str r2, [r0, #20]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_poly1305_update_umaal:

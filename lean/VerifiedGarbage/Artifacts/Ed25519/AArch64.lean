@@ -28,12 +28,10 @@ namespace VG.Artifacts.Ed25519.AArch64.KeyPair
 calling `vg_ed25519_public_key_expanded`. -/
 def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
   [
-  Spec.Ed25519.keyPairApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+  Spec.Ed25519.keyPairApi.artifact AArch64.target {
     suffix := v.suffix
-    code := Impl.Ed25519.AArch64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ v.suffix)
-      (Proof.Ed25519.AArch64.KeyPair.dgCode v) "vg_ed25519_public_key_expanded"
-      Impl.Ed25519.AArch64.PublicKey.codeExpanded
-    verified := Proof.Ed25519.AArch64.KeyPair.verified v } Proof.Ed25519.AArch64.Scrub.keyPairOk)]
+    code := Impl.Ed25519.AArch64.KeyPair.Fn.keyPair v.suffix v.code
+    verified := .scrubbed (Proof.Ed25519.AArch64.KeyPair.keyPair_scrubbed v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v

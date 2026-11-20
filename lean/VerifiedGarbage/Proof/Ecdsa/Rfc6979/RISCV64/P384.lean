@@ -9,7 +9,12 @@ import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Order.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Common
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Sign
 meta import VerifiedGarbage.Spec.Ecdsa.P384
@@ -20,6 +25,11 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Order.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
+meta import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Deterministic ECDSA on RISC-V: P-384's kit
@@ -186,5 +196,33 @@ theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) (vs : List Pro
   have hsat := sat_one (T := Spec.Ecdsa.Rfc6979.Curves.p384) h.1 VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem h.2
     (by rw [VG.Proof.Ecdsa.RISCV64.P384.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.P384.Comb.combSatMem_held (by decide) rfl
   exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h.1 hsat
+
+/-! ## The registration
+
+`vg_ecdsa_p384_sign`, with HMAC as a table of the hash functions of
+`Proof.Variants.MdHash.RISCV64.variants`, followed by the clearing of its
+stack and caller-saved registers (`RISCV64.Scrub.scrubOf`), which its
+registration file binds. What the scrub needs of the code
+(`RISCV64.Scrub.scrubSide`) is evaluated here, by the kernel. -/
+
+section
+
+open VG.Proof.HmacTable.RISCV64 (tables names)
+
+/-- `vg_ecdsa_p384_sign`, scrubbed, for the hash functions of
+`Proof.Variants.MdHash.RISCV64.variants` (`hv`, which its registration
+decides), and the curve's group law `hL`. -/
+def signReg (hL : VG.Proof.Weierstrass.Law Spec.P384.curve) (hv : OK VG.Proof.Variants.MdHash.RISCV64.variants ∧
+    Impl.Ecdsa.RISCV64.Comb.p384Sym ∉ names VG.Proof.Variants.MdHash.RISCV64.variants) :
+    Registration Spec.Ecdsa.Rfc6979.Curves.p384SignApi RISCV64.target :=
+  RISCV64.Scrub.scrubOf {
+    tables := [("hmac", tables VG.Proof.Variants.MdHash.RISCV64.variants)]
+    code := signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries VG.Proof.Variants.MdHash.RISCV64.variants
+    verified := verifiedT hL VG.Proof.Variants.MdHash.RISCV64.variants hv }
+    (Proof.Ecdsa.Rfc6979.RISCV64.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p384
+      (Proof.Ecdsa.Rfc6979.RISCV64.P384.kit hL).K VG.Proof.Variants.MdHash.RISCV64.variants)
+    (hs := by dsimp only [VG.RISCV64.Scrub.retBitsOf]; rw_lit; kernel_rfl)
+
+end
 
 end VG.Proof.Ecdsa.Rfc6979.RISCV64.P384

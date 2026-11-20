@@ -30,6 +30,7 @@ public import VerifiedGarbage.Impl.StackScratch.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesSiv.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
@@ -51,7 +52,7 @@ registers saved as streaming AES-CMAC's `init` saves them
 (`Proof/CmacAes/Stream/RISCV64/Scrub.lean`).
 
 It returns without secret residue followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and all
+(`RISCV64.Scrub.verifiedScrubbed`), which clears the caller-saved registers and all
 of its 2560 bytes of stack, which the residue analysis (`RISCV64.rtaint`)
 finds may all hold the key schedules. Its postcondition reads the memory on
 return only within the key context, as on PPC64LE
@@ -652,11 +653,23 @@ theorem initOut :
   VG.RISCV64.Scrub.postOut_of_local (leak := none) VG.RISCV64.Scrub.ScrubAbi.plain
     (Proof.AesSiv.initPostOut_local _)
 
-/-- `Spec.Siv.initApi`. -/
-def initReg : Registration Spec.Siv.initApi RISCV64.target :=
-  VG.RISCV64.Scrub.scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
+/-- What the cleanup needs of `vg_aes_siv_init`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem init_scrubSide :
+    VG.RISCV64.Scrub.scrubSide
+      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init) 2560 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_aes_siv_init` as emitted (`Impl.AesSiv.RISCV64.Fn.init`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem init_scrubbed :
+    VerifiedScrubbed VG.RISCV64.target Impl.AesSiv.RISCV64.Fn.init
+      (Spec.Siv.initContract RISCV64.abi 2560) 0 :=
+  VG.RISCV64.Scrub.verifiedScrubbed (api := Spec.Siv.initApi) (W := 2560)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
       verified := init_framed }
-    initOut
+    initOut init_scrubSide
 
 end VG.Proof.AesSiv.RISCV64

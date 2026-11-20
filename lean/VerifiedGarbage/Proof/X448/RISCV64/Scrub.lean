@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.X448.RISCV64.Fn
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X448.Contract
@@ -758,10 +759,11 @@ end
 /-!
 # X448 on RISC-V, without secret residue
 
-`vg_x448_base` and `vg_x448_exchange`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
-within `out` (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/X448/X86_64/Scrub.lean`).
+`vg_x448_base` and `vg_x448_exchange` as emitted (`Impl.X448.RISCV64.Fn`), each followed by
+`Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and the stack its
+frames used: the theorems their registrations bind (`RISCV64.Scrub.verifiedScrubbed`). Their
+postconditions read the memory on return only within `out` (`RISCV64.Scrub.PostOut`), as on
+x86-64 (`Proof/X448/X86_64/Scrub.lean`).
 -/
 
 @[expose] public section
@@ -811,20 +813,36 @@ theorem exchangeOut (stack : Nat) :
       exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
     rw [this]; exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.X448.exchangeApi`. -/
-def exchangeReg : Registration Spec.X448.exchangeApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56
+/-- What the cleanup needs of `vg_x448_exchange`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem exchange_scrubSide :
+    scrubSide (Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56) 16 32 []
+      = true := by
+  lit_decide
+
+/-- What the cleanup needs of `vg_x448_base`'s code (`scrubSide`). -/
+theorem base_scrubSide : scrubSide Impl.X448.RISCV64.R64.x448Base 0 0 [] = true := by lit_decide
+
+/-- `vg_x448_exchange` as emitted (`Impl.X448.RISCV64.Fn.exchange`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem exchange_scrubbed :
+    VerifiedScrubbed target Impl.X448.RISCV64.Fn.exchange
+      (Spec.X448.exchangeContract RISCV64.abi 16) 32 :=
+  verifiedScrubbed (api := Spec.X448.exchangeApi) (W := 16)
+    { code := Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56
       verified := Proof.X448.RISCV64.Exchange.exchange_verified }
-    (exchangeOut _)
+    (exchangeOut _) exchange_scrubSide
 
-/-- `Spec.X448.x448BaseApi`. -/
-def baseReg : Registration Spec.X448.x448BaseApi RISCV64.target :=
-  scrubOf {
-      code := Impl.X448.RISCV64.R64.x448Base
+/-- `vg_x448_base` as emitted (`Impl.X448.RISCV64.Fn.base`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem base_scrubbed :
+    VerifiedScrubbed target Impl.X448.RISCV64.Fn.base (Spec.X448.x448BaseContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.X448.x448BaseApi) (W := 0)
+    { code := Impl.X448.RISCV64.R64.x448Base
       verified := Proof.X448.RISCV64.R64.x448Base_verified }
-    (baseOut _)
+    (baseOut _) base_scrubSide
 
 end VG.Proof.X448.RISCV64.Scrub

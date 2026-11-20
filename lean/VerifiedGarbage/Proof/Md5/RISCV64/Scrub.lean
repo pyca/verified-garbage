@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Md5.RISCV64.Compress
 public import VerifiedGarbage.Proof.Md5.RISCV64.Stream
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Impl.Md5.RISCV64.Fn
 
 /-! ### `Md5.RISCV64.Shared`, which only this module used -/
 
@@ -60,10 +61,13 @@ end
 /-!
 # MD5 on RISC-V, without secret residue
 
-Each of the streaming functions, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
-within their buffers (`Proof/Md5/PostOut.lean`). HMAC-MD5 and
+Each of the streaming functions as emitted (`Impl.Md5.RISCV64.Fn`): the
+function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
+caller-saved registers and the stack its frames used. Each theorem below
+states that one meets its contract in constant time and returns without
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+which is what its registration binds. Their postconditions read the memory
+on return only within their buffers (`Proof/Md5/PostOut.lean`). HMAC-MD5 and
 PBKDF2 call their code as the internal `vg_md5_init_core`, … (an `_core`
 suffix to each name), not these functions.
 -/
@@ -74,20 +78,31 @@ namespace VG.Proof.Md5.RISCV64
 
 open VG.RISCV64 VG.RISCV64.Scrub
 
-/-- `vg_md5_init`. -/
-def initReg : Registration Spec.Md5.initApi RISCV64.target :=
-  scrubOf { code := Impl.Md5.RISCV64.Stream.init, verified := Shared.init }
+/-- `vg_md5_init` as emitted (`Impl.Md5.RISCV64.Fn.init`) meets its contract in constant time
+and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Md5.RISCV64.Fn.init (Spec.Md5.initContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Md5.initApi) (W := 0)
+    { code := Impl.Md5.RISCV64.Stream.init, verified := Shared.init }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.initPost_out 64))
+    (show scrubSide Impl.Md5.RISCV64.Stream.init 0 0 [] = true by lit_decide)
 
-/-- `vg_md5_update`. -/
-def updateReg : Registration Spec.Md5.updateApi RISCV64.target :=
-  scrubOf { code := Impl.Md5.RISCV64.Stream.update, verified := Shared.update }
+/-- `vg_md5_update` as emitted (`Impl.Md5.RISCV64.Fn.update`) meets its contract in constant
+time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Md5.RISCV64.Fn.update (Spec.Md5.updateContract RISCV64.abi 144) 0 :=
+  verifiedScrubbed (api := Spec.Md5.updateApi) (W := 144)
+    { code := Impl.Md5.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.updatePost_out 64))
+    (show scrubSide Impl.Md5.RISCV64.Stream.update 144 0 [] = true by lit_decide)
 
-/-- `vg_md5_finalize`. -/
-def finalizeReg : Registration Spec.Md5.finalizeApi RISCV64.target :=
-  scrubOf { code := Impl.Md5.RISCV64.Stream.finalize, verified := Shared.finalize }
+/-- `vg_md5_finalize` as emitted (`Impl.Md5.RISCV64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Md5.RISCV64.Fn.finalize (Spec.Md5.finalizeContract RISCV64.abi 144) 0 :=
+  verifiedScrubbed (api := Spec.Md5.finalizeApi) (W := 144)
+    { code := Impl.Md5.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.finalizePost_out 64))
-
+    (show scrubSide Impl.Md5.RISCV64.Stream.finalize 144 0 [] = true by lit_decide)
 
 end VG.Proof.Md5.RISCV64

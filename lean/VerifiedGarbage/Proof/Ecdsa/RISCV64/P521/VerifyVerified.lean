@@ -38,6 +38,9 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.JointComb
 import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 public import VerifiedGarbage.Proof.Ecdsa.Verify
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.P521
 import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.CheckLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
@@ -59,6 +62,9 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Proof.P521.Point
 meta import VerifiedGarbage.Proof.EcKey.PublicKey
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.P521
 
 /-! ### `Ecdsa.RISCV64.P521.Verify`, which only this module used -/
 
@@ -994,5 +1000,17 @@ theorem verifyHash_verified (hL : VG.Proof.Weierstrass.Law W) :
     (by taint_decide) (Proof.Ecdsa.Verify.RISCV64.hashSat_cons (by decide) verify_sat (by decide) fun r hr => by
       simp only [verifySatC, verifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+/-- `vg_ecdsa_p521_verify` as emitted, cleanup included
+(`Impl.Ecdsa.RISCV64.Fn.verifyP521`), meets its contract in constant time and
+returns without secret residue. -/
+theorem verifyHash_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdsa.RISCV64.Fn.verifyP521
+      (Spec.Ecdsa.Instance.verifyHashContract Spec.Ecdsa.P521.inst (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.CombU.p521CombConsts) 80) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdsa.P521.verifyHashApi) (W := 80)
+    { code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+        Impl.Ecdsa.RISCV64.P521.verifyP521
+      verified := verifyHash_verified hL }
+    (EcKey.RISCV64.Scrub.verifyHashOut _ Impl.Ecdsa.RISCV64.CombU.p521CombConsts _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.RISCV64.P521

@@ -16,12 +16,16 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.MainAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.Exchange
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP320r1.RISCV64
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.MainAll
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.Exchange
 meta import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP320r1.RISCV64
 meta import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 
 /-! ### `EcKey.Compressed.RISCV64.BrainpoolP320r1.Main`, which only this module used -/
 
@@ -223,5 +227,25 @@ theorem decompress_verified (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP320r1.
         sig_implies_sat [Spec.EcKey.BrainpoolP320r1.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
           Spec.EcKey.Instance.decompressPublicKeySig, Spec.BrainpoolP320r1.curve, Spec.EcKey.scratchWords, decRV, DPre,
           RISCV64.abi, RISCV64.argRegs, convSat] [convSat] using (convSat 81 41) }
+
+/-- `vg_ec_brainpoolp320r1_compress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.compressBrainpoolP320r1`), meets its contract in constant
+time and returns without secret residue. -/
+theorem compress_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.compressBrainpoolP320r1
+      (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi) (W := 0)
+    { code := compressBrainpoolP320r1, verified := compress_verified }
+    (EcKey.RISCV64.Scrub.compressOut _ _ []) (by dsimp only; lit_decide)
+
+/-- `vg_ec_brainpoolp320r1_decompress_public_key` as emitted, cleanup included
+(`Impl.EcKey.Compressed.RISCV64.Fn.decompressBrainpoolP320r1`), meets its contract in
+constant time and returns without secret residue. -/
+theorem decompress_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP320r1.curve) :
+    VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.decompressBrainpoolP320r1
+      (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi) (W := 0)
+    { code := decompressBrainpoolP320r1, verified := decompress_verified hL }
+    (EcKey.RISCV64.Scrub.decompressOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1

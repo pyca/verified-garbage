@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 
 /-!
 # scrypt: AArch64 implementation
@@ -86,5 +89,37 @@ def scryptBody (pbkName : String) (pbk : Prog isa) : Prog isa :=
 named `pbkName`. -/
 def scrypt (pbkName : String) (pbk : Prog isa) : Prog isa :=
   .frame (.push .x30) (.frame (.alloc 64) (scryptBody pbkName pbk) (.free 64)) (.pop .x30)
+
+/-- SHA-256's functions over the compression function `code`, named `name`,
+as PBKDF2 calls them: the names of the functions made with it end in
+`suffix`. -/
+def sha256 (name suffix : String) (code : Prog isa) : Impl.Pbkdf2.Md.AArch64.Hash where
+  P := Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params
+  D := 32
+  W := 104
+  compN := name
+  compC := code
+  initN := "vg_sha256_init"
+  initC := Impl.Sha256.AArch64.Stream.init
+  updN := "vg_sha256_update_scratch" ++ suffix
+  updC := Impl.MdStream.AArch64.update Impl.Sha256.AArch64.Stream.params name code
+  finN := "vg_sha256_finalize_scratch" ++ suffix
+  finC := Impl.MdStream.AArch64.finalize Impl.Sha256.AArch64.Stream.params name code
+  hmacInitN := "vg_hmac_sha256_init_scratch" ++ suffix
+  hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ suffix
+  iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ suffix
+
+namespace Fn
+
+/-- `vg_scrypt` as emitted, over SHA-256's compression function `code`: the
+code, which calls PBKDF2-HMAC-SHA256 made with it, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the functions it calls included, and zeroes the stack it used, so that
+it returns without secret residue. -/
+def scrypt (name suffix : String) (code : Prog isa) : Prog isa :=
+  Impl.Residue.AArch64.scrubOf 96 0
+    (VG.Impl.Scrypt.AArch64.scrypt ("vg_pbkdf2_hmac_sha256_scratch" ++ suffix) (sha256 name suffix code).pbkdf2)
+
+end Fn
 
 end VG.Impl.Scrypt.AArch64

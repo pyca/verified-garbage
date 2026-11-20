@@ -11,50 +11,113 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.MlDsa.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen44Reg,
-  Spec.MlDsa.keyGen65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen65Reg,
-  Spec.MlDsa.keyGen87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.keyGen87Reg,
-  Spec.MlDsa.pkTr44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr44Reg,
-  Spec.MlDsa.pkTr65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr65Reg,
-  Spec.MlDsa.pkTr87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.pkTr87Reg,
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic44Reg,
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret44Reg,
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic65Reg,
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret65Reg,
-  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.preparePublic87Reg,
-  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.prepareSecret87Reg,
-  Spec.MlDsa.sign44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.sign44Reg,
-  Spec.MlDsa.sign65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.sign65Reg,
-  Spec.MlDsa.sign87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.sign87Reg,
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signPrepared44Reg,
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signPrepared65Reg,
-  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signPrepared87Reg,
-  Spec.MlDsa.signMessage44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signMessage44Reg,
-  Spec.MlDsa.signMessage65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signMessage65Reg,
-  Spec.MlDsa.signMessage87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.signMessage87Reg,
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedSignMessage44Reg,
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedSignMessage65Reg,
-  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedSignMessage87Reg,
-  Spec.MlDsa.verify44Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verify44Reg,
-  Spec.MlDsa.verify65Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verify65Reg,
-  Spec.MlDsa.verify87Api.artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verify87Reg,
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verifyPrepared44Reg,
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verifyPrepared65Reg,
-  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target Proof.MlDsa.RISCV64.Scrub.verifyPrepared87Reg,
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.verifyMessageCached44Reg,
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.verifyMessageCached65Reg,
-  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.verifyMessageCached87Reg,
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage44Reg,
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage65Reg,
-  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target
-    Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage87Reg]
+  Spec.MlDsa.keyGen44Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.keyGen44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.keyGen44_scrubbed },
+  Spec.MlDsa.keyGen65Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.keyGen65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.keyGen65_scrubbed },
+  Spec.MlDsa.keyGen87Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.keyGen87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.keyGen87_scrubbed },
+  Spec.MlDsa.pkTr44Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.pkTr44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.pkTr44_scrubbed },
+  Spec.MlDsa.pkTr65Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.pkTr65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.pkTr65_scrubbed },
+  Spec.MlDsa.pkTr87Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.pkTr87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.pkTr87_scrubbed },
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparePublic44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparePublic44_scrubbed },
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.prepareSecret44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.prepareSecret44_scrubbed },
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparePublic65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparePublic65_scrubbed },
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.prepareSecret65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.prepareSecret65_scrubbed },
+  (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparePublic87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparePublic87_scrubbed },
+  (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.prepareSecret87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.prepareSecret87_scrubbed },
+  Spec.MlDsa.sign44Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.sign44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.sign44_scrubbed },
+  Spec.MlDsa.sign65Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.sign65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.sign65_scrubbed },
+  Spec.MlDsa.sign87Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.sign87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.sign87_scrubbed },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signPrepared44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signPrepared44_scrubbed },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signPrepared65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signPrepared65_scrubbed },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signPrepared87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signPrepared87_scrubbed },
+  Spec.MlDsa.signMessage44Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signMessage44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signMessage44_scrubbed },
+  Spec.MlDsa.signMessage65Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signMessage65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signMessage65_scrubbed },
+  Spec.MlDsa.signMessage87Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.signMessage87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.signMessage87_scrubbed },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedSignMessage44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedSignMessage44_scrubbed },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedSignMessage65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedSignMessage65_scrubbed },
+  (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedSignMessage87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedSignMessage87_scrubbed },
+  Spec.MlDsa.verify44Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verify44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verify44_scrubbed },
+  Spec.MlDsa.verify65Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verify65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verify65_scrubbed },
+  Spec.MlDsa.verify87Api.artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verify87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verify87_scrubbed },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyPrepared44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyPrepared44_scrubbed },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyPrepared65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyPrepared65_scrubbed },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyPrepared87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyPrepared87_scrubbed },
+  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyMessageCached44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyMessageCached44_scrubbed },
+  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyMessageCached65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyMessageCached65_scrubbed },
+  (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.verifyMessageCached87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.verifyMessageCached87_scrubbed },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage44
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage44_scrubbed },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage65
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage65_scrubbed },
+  (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact RISCV64.target {
+    code := Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage87
+    verified := .scrubbed Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage87_scrubbed }]
 
 end VG.Artifacts.MlDsa.RISCV64
