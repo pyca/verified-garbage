@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_init_aesni` if the CPU supports its features (`VG_AES_GCM_INIT_AESNI_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -60,6 +62,8 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -125,6 +129,8 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -186,6 +192,8 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES`); `vg_aes_gcm_stream_finish_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -249,6 +257,8 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES`); `vg_aes_gcm_stream_verify_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -314,6 +324,8 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_AESNI_FEATURES`); `vg_aes_gcm_seal_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -381,6 +393,8 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_AESNI_FEATURES`); `vg_aes_gcm_open_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PCLMUL_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -446,6 +460,8 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -515,6 +531,8 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AESNI_FEATURES`); `vg_aes_gcm_open_to_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -581,6 +599,8 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -633,6 +653,8 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
