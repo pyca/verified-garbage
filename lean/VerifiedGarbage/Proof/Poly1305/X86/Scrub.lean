@@ -54,10 +54,10 @@ theorem init_scrubbed :
 
 /-- `vg_poly1305_update`, as emitted. -/
 theorem update_scrubbed :
-    VerifiedScrubbed target Impl.Poly1305.X86.Fn.update (Spec.Poly1305.updateContract X86.abi 156) 0 :=
+    VerifiedScrubbed target Impl.Poly1305.X86.Fn.update (Spec.Poly1305.updateContract X86.abi 680) 0 :=
   verifiedScrubbedF (api := Spec.Poly1305.updateApi)
     { code := Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update
-      stack := 156
+      stack := 680
       verified := Proof.Poly1305.X86.update_framed }
     (updateOut _)
 

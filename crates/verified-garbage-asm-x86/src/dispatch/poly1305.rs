@@ -36,7 +36,7 @@ pub unsafe fn vg_poly1305_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 156 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
