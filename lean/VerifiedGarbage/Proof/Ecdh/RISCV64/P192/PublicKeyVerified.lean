@@ -11,6 +11,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.PublicKeyAll
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Exchange
 public import VerifiedGarbage.Spec.EcKey
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.PublicKeyAll
@@ -18,6 +21,9 @@ meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P192.Exchange
 meta import VerifiedGarbage.Spec.EcKey
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
+meta import VerifiedGarbage.Impl.Ecdh.P192.RISCV64
 
 /-! ### `Ecdh.RISCV64.P192.PublicKey`, which only this module used -/
 
@@ -170,5 +176,15 @@ theorem pk_verified (hL : VG.Proof.Weierstrass.Law W) :
         sig_implies_sat [Spec.EcKey.P192.inst, Spec.EcKey.Instance.publicKeyContract,
           Spec.EcKey.Instance.publicKeySig, Spec.P192.curve, Spec.EcKey.scratchWords, pkRV, pk, RISCV64.abi,
           RISCV64.argRegs] [pkSat] using pkSat }
+
+/-- `vg_ec_p192_public_key` as emitted, cleanup included
+(`Impl.Ecdh.RISCV64.Fn.publicKeyP192`), meets its contract in constant time and
+returns without secret residue. -/
+theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
+    VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeyP192
+      (Spec.EcKey.P192.inst.publicKeyContract RISCV64.abi) 32 :=
+  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.P192.publicKeyApi) (W := 0)
+    { code := publicKeyP192, verified := pk_verified hL }
+    (EcKey.RISCV64.Scrub.publicKeyOut _ _ []) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.RISCV64.P192

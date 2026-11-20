@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP320r1.RISCV64
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.PublicKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.EcKey.RISCV64.Scrub
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP320r1.EcdhLit
@@ -13,7 +12,6 @@ public import VerifiedGarbage.Proof.BrainpoolP320r1.RISCV64.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP320r1.RISCV64
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.Verified
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.Lit
-public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 
 /-! # brainpoolP320r1 public keys (FIPS 186-5 §A.2) on RISC-V -/
 
@@ -24,17 +22,14 @@ namespace VG.Artifacts.EcBrainpoolP320r1.RISCV64
 open VG.Proof.BrainpoolP320r1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.Ecdh.RISCV64.publicKeyBrainpoolP320r1
-    verified := Proof.Ecdh.RISCV64.BrainpoolP320r1.pk_verified hasLaw.law }
-    (Proof.EcKey.RISCV64.Scrub.publicKeyOut _ _ [])),
-  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.EcKey.Compressed.RISCV64.compressBrainpoolP320r1
-    verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.compress_verified }
-    (Proof.EcKey.RISCV64.Scrub.compressOut _ _ [])),
-  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact RISCV64.target (RISCV64.Scrub.scrubOf {
-    code := Impl.EcKey.Compressed.RISCV64.decompressBrainpoolP320r1
-    verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.decompress_verified hasLaw.law }
-    (Proof.EcKey.RISCV64.Scrub.decompressOut _ _ []))]
+  Spec.EcKey.BrainpoolP320r1.publicKeyApi.artifact RISCV64.target {
+    code := Impl.Ecdh.RISCV64.Fn.publicKeyBrainpoolP320r1
+    verified := .scrubbed (Proof.Ecdh.RISCV64.BrainpoolP320r1.publicKey_scrubbed hasLaw.law) },
+  Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi.artifact RISCV64.target {
+    code := Impl.EcKey.Compressed.RISCV64.Fn.compressBrainpoolP320r1
+    verified := .scrubbed Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.compress_scrubbed },
+  Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi.artifact RISCV64.target {
+    code := Impl.EcKey.Compressed.RISCV64.Fn.decompressBrainpoolP320r1
+    verified := .scrubbed (Proof.EcKey.Compressed.RISCV64.BrainpoolP320r1.decompress_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcBrainpoolP320r1.RISCV64
