@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesCbc.Wipe
 public import VerifiedGarbage.Proof.AesCbc.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Arm.CallWipeStack
 public import VerifiedGarbage.Proof.Zeroize.Arm
+public import VerifiedGarbage.Impl.AesCbc.Arm.Wiped
 
 /-!
 # AES-CBC on ARMv7, zeroing its scratch
@@ -26,18 +27,6 @@ namespace VG.Proof.AesCbc.Arm.Wiped
 
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.AesCbc.Wipe
 
-/-- A call of `name`, whose code is `body`, then of `vg_zeroize`'s code
-(as the internal `vg_zeroize_core`) on the
-2176 bytes of `scratch`. -/
-def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.ArmStack.callWipeStack 2 4 2176 name body "vg_zeroize_core" Impl.Zeroize.Arm.zeroize
-
-/-- `vg_aes_cbc_encrypt`. -/
-def encrypt : Prog isa := wiped "vg_aes_cbc_encrypt_unwiped" Impl.AesCbc.Arm.encrypt
-
-/-- `vg_aes_cbc_decrypt`. -/
-def decrypt : Prog isa := wiped "vg_aes_cbc_decrypt_unwiped" Impl.AesCbc.Arm.decryptG
-
 theorem sat (P : Spec.Cbc.aesSig.Post 32) :
     ∃ s, (Spec.Cbc.aesSig.contract abi (pre 32) P false 32 none).pre s := by
   implies_sat [Spec.Cbc.aesSig, pre, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
@@ -54,7 +43,7 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 32} {name : String} {body : Pro
       (∀ b ∈ Sig.bufs Spec.Cbc.aesSig.params vs, b.1.Disjoint ⟨vs.getD 5 0, 272 * Elem.u64.size⟩ →
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 32) P vs m m₁ x → Curry.apply (Spec.Cbc.aesSig.words 32) P vs m m₂ x) :
-    Verified target (wiped name body)
+    Verified target (Impl.AesCbc.Arm.Wiped.wiped name body)
       (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 P) false 32 none) :=
   Verified.callWipeStack' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
@@ -65,19 +54,19 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 32} {name : String} {body : Pro
     (pre_local 32) hpost hout (Wipe.wiped 32 P) (sat _)
 
 theorem encrypt_scrubbed :
-    Verified target encrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (encPost 32)) false 32 none) :=
+    Verified target Impl.AesCbc.Arm.Wiped.encrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (encPost 32)) false 32 none) :=
   wiped_verified (Proof.AesCbc.encrypt_keyed Proof.AesCbc.Arm.encrypt_verified) (by decide)
     (encPost_local 32) (encPost_out 32)
 
 theorem decrypt_scrubbed :
-    Verified target decrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (decPost 32)) false 32 none) :=
+    Verified target Impl.AesCbc.Arm.Wiped.decrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (decPost 32)) false 32 none) :=
   wiped_verified (Proof.AesCbc.decrypt_keyed Proof.AesCbc.Arm.decrypt_verified) (by decide)
     (decPost_local 32) (decPost_out 32)
 
-theorem encrypt_verified : Verified target encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
+theorem encrypt_verified : Verified target Impl.AesCbc.Arm.Wiped.encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
   encrypt_scrubbed
 
-theorem decrypt_verified : Verified target decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
+theorem decrypt_verified : Verified target Impl.AesCbc.Arm.Wiped.decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
   decrypt_scrubbed
 
 end VG.Proof.AesCbc.Arm.Wiped
