@@ -26,6 +26,9 @@ meta import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `AesCcm.AArch64.SealCT`, which only this module used -/
 
@@ -336,5 +339,105 @@ theorem open_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (leak := some (Spec.Ccm.openLeak AArch64.abi.ptrBits))
       hv (by decide) (by decide) (openPre_local _) (openPost_local _) (openPostOut_local _) openFrameSat_pre2592
       (hleak := openLeak_local _)
+
+end VG.Proof.AesCcm.AArch64
+
+/-! ## The functions, as emitted
+
+`vg_aes_ccm_seal` and `vg_aes_ccm_open` with their cleanup
+(`Impl.AesCcm.AArch64.Fn`), around an implementation `v` of
+`vg_cmac_aes_update` and its counter mode: each meets its contract in
+constant time and returns without secret residue (`VerifiedScrubbed`), which
+is what its registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the functions it calls,
+and of each implementation where it is defined (`UpdateImpl.scrub`,
+`Ctr32Impl.scrub`). -/
+
+namespace VG.Proof.AesCcm.AArch64
+
+open VG VG.AArch64 VG.AArch64.ScrubAll VG.Impl.AesCcm.AArch64
+
+private theorem seal_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block []⟩ ⟨"", .block []⟩)) = true)
+    (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» u c)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hu, hc, and_self]
+
+private theorem seal_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block []⟩ ⟨"", .block []⟩))
+      Impl.AesCcm.AArch64.Fn.sealOwn = true := by
+  kernel_rfl
+
+private theorem seal_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
+    (hu : u.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : («seal» u c).aarch64Depth = 0 := by
+  simp only [«seal», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, Code.aarch64Depth, hu, hc]
+  decide
+
+theorem seal_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee)) (416 + v.scratch) 0
+      ((Impl.AesCcm.AArch64.Fn.sealOwn.union v.clear).union v.ctr.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (seal_all _ v.callee v.ctr.callee (sideAll_union_left (sideAll_union_left (seal_own _)))
+      (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, Code.aarch64Depth, Instr.frameUnits,
+      seal_depth _ _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.ctr.noFrames)]
+    rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+
+/-- `vg_aes_ccm_seal` as emitted, cleanup included. -/
+theorem seal_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.AesCcm.AArch64.Fn.seal v.clear v.ctr.clear v.scratch v.callee v.ctr.callee)
+      (Spec.Ccm.sealContract AArch64.abi (416 + v.scratch)) 0 :=
+  verifiedScrubbed (api := Spec.Ccm.sealApi)
+    { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee)
+      verified := Proof.AesCcm.seal_keyed (seal_framed v) } _
+    (Scrub.sealOk _) (seal_side v)
+
+private theorem open_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block []⟩ ⟨"", .block []⟩)) = true)
+    (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» u c)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «open», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hu, hc, and_self]
+
+private theorem open_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackArgScratch B 2 («open» ⟨"", .block []⟩ ⟨"", .block []⟩))
+      Impl.AesCcm.AArch64.Fn.openOwn = true := by
+  kernel_rfl
+
+private theorem open_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
+    (hu : u.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : («open» u c).aarch64Depth = 0 := by
+  simp only [«open», mac, b0, updBlock, callUpdate, absTail, absorbPad, aadHead, tag, callCtr, ctrChunk, ctrTail, ctr, Code.aarch64Depth, hu, hc]
+  decide
+
+theorem open_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee)) (416 + v.scratch) 32
+      ((Impl.AesCcm.AArch64.Fn.openOwn.union v.clear).union v.ctr.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (open_all _ v.callee v.ctr.callee (sideAll_union_left (sideAll_union_left (open_own _)))
+      (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackArgScratch, Code.aarch64Depth, Instr.frameUnits,
+      open_depth _ _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.ctr.noFrames)]
+    rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+
+/-- `vg_aes_ccm_open` as emitted, cleanup included. -/
+theorem open_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.AesCcm.AArch64.Fn.open v.clear v.ctr.clear v.scratch v.callee v.ctr.callee)
+      (Spec.Ccm.openContract AArch64.abi (416 + v.scratch)) 32 :=
+  verifiedScrubbed (api := Spec.Ccm.openApi)
+    { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee)
+      verified := Proof.AesCcm.open_keyed (open_framed v) } _
+    (Scrub.openOk _) (open_side v)
 
 end VG.Proof.AesCcm.AArch64

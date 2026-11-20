@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # AES-CMAC: AArch64 implementation
@@ -129,6 +130,13 @@ def body (c : Ctr32) : Prog isa :=
 def update (c : Ctr32) : Prog isa :=
   .seq (.block (save ++ setup))
     (.seq (.ite (.zero .x .x23) (.block []) (.loop (body c) (.nonzero .x .x23))) (.block restore))
+
+/-- The registers `update`'s own instructions write, of those the calling
+convention does not preserve: with those the implementation of
+`vg_aes_ctr32` it calls writes, what a function that calls it clears for
+it. -/
+def updateOwn : Impl.Residue.AArch64.Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x16, .x17], [], []⟩
 
 /-! ## `vg_cmac_aes_finalize` -/
 
