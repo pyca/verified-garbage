@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Spec.Sm4.Contract
@@ -37,8 +38,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion and SM4's ECB, CBC, CFB128, OFB and CTR functions, and the
 final pieces of CFB128, OFB and CTR, run with their working space in a frame
-on the stack, wiped before they return (`withStackScratchWiped`). As emitted
-(`Impl.Sm4.X86.Fn`), each then zeroes the stack its contract reserves below
+on the stack, wiped before they return (`withStackScratchWiped`). Key
+expansion calls nothing in its frame: as emitted
+(`Impl.Sm4.X86.Fn.expandKey`) it then clears the registers alone
+(`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
+the others then zeroes the stack its contract reserves below
 `esp` (its frame and the calls in it) and clears the registers a callee may
 change, and returns without secret residue (`X86.Scrub.verifiedScrubbedF`),
 given that its postcondition reads the memory on return only within the
@@ -60,9 +64,6 @@ open VG.X86 VG.X86.Scrub
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-! ## Postconditions -/
-
-theorem expandKeyOut (stack : Nat) : PostOut (Spec.Sm4.expandKeyContract X86.abi stack) (Spec.Sm4.expandKeySig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Spec.Sm4.Direction) (stack : Nat) :
     PostOut (Spec.Sm4.ecbContract X86.abi d stack) (Spec.Sm4.ecbSig.retBits 32) :=
@@ -109,10 +110,11 @@ theorem ctrFinalOut (stack : Nat) :
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.expandKey (Spec.Sm4.expandKeyContract X86.abi 1448) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.expandKeyApi)
-    { code := withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey
-      verified := Proof.Sm4.X86.expandKey_framed }
-    (expandKeyOut _)
+  verifiedScrubbedWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64) (n := 179)
+    (post := Proof.Sm4.expandKeyPost X86.abi.ptrBits) (bytes := 1448) (words := 358)
+    Proof.Sm4.X86.expandKey_verified (by decide) (by decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sm4.expandKeyPost_local _) (Proof.Sm4.expandKeyPostOut_local _) Proof.Sm4.X86.expandKeyFrameSat_pre rfl
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/

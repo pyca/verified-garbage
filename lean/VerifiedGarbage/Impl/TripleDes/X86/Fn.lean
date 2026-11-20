@@ -11,7 +11,8 @@ public import VerifiedGarbage.Impl.Scrub.X86
 /-! # Triple DES on x86 (32-bit): the functions as emitted
 
 Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
-`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls, or whose frame
+it wipes itself with nothing called in it: key expansion): the `W` bytes
 of stack below `esp` that its contract reserves zeroed, and the registers
 a callee may change cleared but the `rb` bits of the result, so that it
 returns without secret residue. -/
@@ -24,7 +25,7 @@ open VG.X86
 
 /-- `Spec.TripleDes.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 532 (Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey)
+  Impl.Scrub.X86.scrub 0 (Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey)
 
 /-- `Spec.TripleDes.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=

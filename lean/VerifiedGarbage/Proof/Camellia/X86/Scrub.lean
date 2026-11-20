@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Camellia.Contract
@@ -34,8 +35,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion and Camellia's ECB, CBC, CFB128, OFB and CTR functions, and the
 final pieces of CFB128, OFB and CTR, run with their working space in a frame
-on the stack (`withStackScratchWiped`). As emitted (`Impl.Camellia.X86.Fn`),
-each then zeroes the stack its contract reserves below `esp` (its frame and
+on the stack (`withStackScratchWiped`). Key expansion calls nothing in its
+frame, which it wipes itself: as emitted (`Impl.Camellia.X86.Fn.expandKey`)
+it then clears the registers alone (`X86.Scrub.verifiedScrubbedWiped`). As
+emitted, each of the others then zeroes the stack its contract reserves
+below `esp` (its frame and
 the calls of `vg_camellia_crypt_prepared` in it) and clears the registers a
 callee may change, and returns without secret residue
 (`X86.Scrub.verifiedScrubbedF`). What the cleanup needs of the
@@ -61,9 +65,6 @@ theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).t
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size := by
   have := len_le x 1
   simpa only [Nat.mul_one, Elem.size] using this
-
-theorem expandKeyOut (stack : Nat) : PostOut (expandKeyContract X86.abi stack) (expandKeySig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Camellia.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Direction) (stack : Nat) : PostOut (ecbContract X86.abi d stack) (ecbSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -192,10 +193,13 @@ theorem ctrFinalOut (stack : Nat) : PostOut (ctrFinalContract X86.abi stack) (ct
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.expandKey (Spec.Camellia.expandKeyContract X86.abi 2708) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.expandKeyApi)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 Impl.Camellia.X86.expandKey
-      verified := Proof.Camellia.X86.expandKey_framed }
-    (expandKeyOut _)
+  verifiedScrubbedWiped (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64) (n := 336)
+    (pre := Spec.Camellia.expandKeyPre X86.abi.ptrBits) (post := Spec.Camellia.expandKeyPost X86.abi.ptrBits)
+    (bytes := 2708) (words := 672)
+    (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact Proof.Camellia.X86.expandKey_verified)
+    (by decide) (by decide) (by lit_decide)
+    (Proof.Camellia.expandKeyPre_local _) (Proof.Camellia.expandKeyPost_local _)
+    (Proof.Camellia.expandKeyPostOut_local _) Proof.Camellia.X86.expandKeyFrameSat_pre rfl
 
 /-- `Spec.Camellia.ecbEncryptApi` as emitted (`Impl.Camellia.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
