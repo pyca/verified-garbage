@@ -164,6 +164,10 @@ structure Compress where
   keepsV : code.allInstrs keepsV = true
   /-- It never writes PSTATE.DIT, so its callers' runs keep it (`DitDet.of_noWrite`). -/
   noDit : code.all (fun i => !i.writesDit) = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`ScrubAll.verifiedScrubbedOf`). -/
+  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre

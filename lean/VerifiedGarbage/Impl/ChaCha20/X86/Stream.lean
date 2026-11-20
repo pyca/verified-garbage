@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86.Callee
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Streaming ChaCha20: x86 (32-bit) implementation
@@ -153,3 +154,26 @@ def apply (v : Callee) : Prog isa :=
     (.seq part1 (.seq (part2 v) (.seq part3 (.block finish))))))
 
 end VG.Impl.ChaCha20.X86.Stream
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup: the registers a callee may change cleared
+but the bits of the result (`Impl.Scrub.X86.scrub rb`), and, for `apply`,
+which calls `vg_chacha20_block` and `vg_chacha20_xor`, the 32 bytes of stack
+below `esp` that it and they use zeroed first (`Impl.Scrub.X86.scrubF rb W`),
+so that each returns without secret residue. -/
+
+namespace VG.Impl.ChaCha20.X86.Fn
+
+open VG.X86
+
+/-- `vg_chacha20_init`, as emitted. -/
+def init : Prog isa := Impl.Scrub.X86.scrub 0 Stream.init
+
+/-- `vg_chacha20_set_nonce`, as emitted. -/
+def setNonce : Prog isa := Impl.Scrub.X86.scrub 0 Stream.setNonce
+
+/-- `vg_chacha20_apply`, calling the implementation `c` of `vg_chacha20_xor`, as emitted. -/
+def apply (c : Callee) : Prog isa := Impl.Scrub.X86.scrubF 32 32 (Stream.apply c)
+
+end VG.Impl.ChaCha20.X86.Fn
