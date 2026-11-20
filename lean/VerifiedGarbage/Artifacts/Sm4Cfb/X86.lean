@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-public import VerifiedGarbage.Proof.Sm4.X86.FbFinalVerified
+public import VerifiedGarbage.Proof.Sm4.X86.Scrub
+public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
@@ -15,16 +15,16 @@ namespace VG.Artifacts.Sm4Cfb.X86
 
 def artifacts : List Artifact := [
   Spec.Sm4.cfbEncryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncrypt
-    verified := .unscrubbed Proof.Sm4.X86.Fb.cfbEncrypt_framed },
+    code := Impl.Sm4.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Sm4.cfbDecryptApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecrypt
-    verified := .unscrubbed Proof.Sm4.X86.Fb.cfbDecrypt_framed },
+    code := Impl.Sm4.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.Sm4.cfbEncryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncryptFinal
-    verified := .unscrubbed Proof.Sm4.X86.FbFinal.cfbEncryptFinal_framed },
+    code := Impl.Sm4.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Sm4.cfbDecryptFinalApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecryptFinal
-    verified := .unscrubbed Proof.Sm4.X86.FbFinal.cfbDecryptFinal_framed }]
+    code := Impl.Sm4.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.Sm4Cfb.X86
