@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.Scrub
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
@@ -13,7 +14,11 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.FbFinalLit
 namespace VG.Artifacts.TripleDesOfb.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.ofbApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.ofbReg,
-  Spec.TripleDes.ofbFinalApi.artifact RISCV64.target Proof.TripleDes.RISCV64.Scrub.ofbFinalReg]
+  Spec.TripleDes.ofbApi.artifact RISCV64.target {
+    code := Impl.TripleDes.RISCV64.Fn.ofb
+    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ofb_scrubbed },
+  Spec.TripleDes.ofbFinalApi.artifact RISCV64.target {
+    code := Impl.TripleDes.RISCV64.Fn.ofbFinal
+    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesOfb.RISCV64

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Spec.TripleDes.Cbc
@@ -615,8 +616,8 @@ end
 # TripleDes on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.TripleDes.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/TripleDes/X86_64/Scrub.lean`).
 -/
@@ -665,71 +666,142 @@ theorem ofbFinalOut (stack : Nat) : PostOut (Spec.TripleDes.ofbFinalContract RIS
 theorem ecbOut (d : Spec.TripleDes.Direction) (stack : Nat) : PostOut (Spec.TripleDes.ecbContract RISCV64.abi d stack) (Spec.TripleDes.ecbSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.ecbPostOut_local _ d)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.TripleDes.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.TripleDes.expandKeyApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.Key.expandKey, verified := Proof.TripleDes.RISCV64.Key.verified }
-    (expandKeyOut _)
+Each theorem states that a function as emitted (`Impl.TripleDes.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.TripleDes.ecbEncryptApi`. -/
-def ecbEncryptReg : Registration Spec.TripleDes.ecbEncryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.Bitslice.encrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified }
-    (ecbOut .encrypt _)
+/-- `Spec.TripleDes.expandKeyApi` as emitted (`Impl.TripleDes.RISCV64.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.expandKey
+      (Spec.TripleDes.expandKeyContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.expandKeyApi) (W := 0) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.Key.expandKey
+      verified := Proof.TripleDes.RISCV64.Key.verified }
+    (expandKeyOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.ecbDecryptApi`. -/
-def ecbDecryptReg : Registration Spec.TripleDes.ecbDecryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.Bitslice.decrypt, verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }
-    (ecbOut .decrypt _)
+/-- `Spec.TripleDes.ecbEncryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.ecbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ecbEncrypt
+      (Spec.TripleDes.ecbEncryptContract RISCV64.abi 1056) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.ecbEncryptApi) (W := 1056) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.Bitslice.encrypt
+      verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified }
+    (ecbOut .encrypt _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.TripleDes.cbcEncryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cbcEncryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
-    (cbcEncryptOut _)
+/-- `Spec.TripleDes.ecbDecryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.ecbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ecbDecrypt
+      (Spec.TripleDes.ecbDecryptContract RISCV64.abi 1056) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.ecbDecryptApi) (W := 1056) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.Bitslice.decrypt
+      verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }
+    (ecbOut .decrypt _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.TripleDes.cbcDecryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cbcDecryptChained, verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }
-    (cbcDecryptOut _)
+/-- `Spec.TripleDes.cbcEncryptChainedApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cbcEncryptChained
+      (Spec.TripleDes.cbcEncryptChainedContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cbcEncryptChainedApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cbcEncryptChained
+      verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
+    (cbcEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.TripleDes.cfbEncryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfbEncrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
-    (cfbEncryptOut _)
+/-- `Spec.TripleDes.cbcDecryptChainedApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cbcDecryptChained
+      (Spec.TripleDes.cbcDecryptChainedContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.wideBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cbcDecryptChainedApi) (W := 1120) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cbcDecryptChained
+      verified := Proof.TripleDes.RISCV64.Modes.cbcDecryptChained_verified }
+    (cbcDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.TripleDes.cfbDecryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfbDecrypt, verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified }
-    (cfbDecryptOut _)
+/-- `Spec.TripleDes.cfbEncryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbEncrypt
+      (Spec.TripleDes.cfbEncryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfbEncryptApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfbEncrypt
+      verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
+    (cfbEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.TripleDes.cfbEncryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfbEncryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbEncryptFinal_verified }
-    (cfbEncryptFinalOut _)
+/-- `Spec.TripleDes.cfbDecryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbDecrypt
+      (Spec.TripleDes.cfbDecryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.wideBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfbDecryptApi) (W := 1120) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfbDecrypt
+      verified := Proof.TripleDes.RISCV64.Modes.cfbDecrypt_verified }
+    (cfbDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.TripleDes.cfbDecryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfbDecryptFinal, verified := Proof.TripleDes.RISCV64.Modes.cfbDecryptFinal_verified }
-    (cfbDecryptFinalOut _)
+/-- `Spec.TripleDes.cfbEncryptFinalApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbEncryptFinal
+      (Spec.TripleDes.cfbEncryptFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfbEncryptFinalApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfbEncryptFinal
+      verified := Proof.TripleDes.RISCV64.Modes.cfbEncryptFinal_verified }
+    (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfb8EncryptApi`. -/
-def cfb8EncryptReg : Registration Spec.TripleDes.cfb8EncryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfb8Encrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Encrypt_verified }
-    (cfb8EncryptOut _)
+/-- `Spec.TripleDes.cfbDecryptFinalApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbDecryptFinal
+      (Spec.TripleDes.cfbDecryptFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfbDecryptFinalApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfbDecryptFinal
+      verified := Proof.TripleDes.RISCV64.Modes.cfbDecryptFinal_verified }
+    (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.cfb8DecryptApi`. -/
-def cfb8DecryptReg : Registration Spec.TripleDes.cfb8DecryptApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.cfb8Decrypt, verified := Proof.TripleDes.RISCV64.Modes.cfb8Decrypt_verified }
-    (cfb8DecryptOut _)
+/-- `Spec.TripleDes.cfb8EncryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfb8Encrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfb8Encrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfb8Encrypt
+      (Spec.TripleDes.cfb8EncryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfb8EncryptApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfb8Encrypt
+      verified := Proof.TripleDes.RISCV64.Modes.cfb8Encrypt_verified }
+    (cfb8EncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.ofbApi`. -/
-def ofbReg : Registration Spec.TripleDes.ofbApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.ofb, verified := Proof.TripleDes.RISCV64.Modes.ofb_verified }
-    (ofbOut _)
+/-- `Spec.TripleDes.cfb8DecryptApi` as emitted (`Impl.TripleDes.RISCV64.Fn.cfb8Decrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfb8Decrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfb8Decrypt
+      (Spec.TripleDes.cfb8DecryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.cfb8DecryptApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.cfb8Decrypt
+      verified := Proof.TripleDes.RISCV64.Modes.cfb8Decrypt_verified }
+    (cfb8DecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.TripleDes.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.TripleDes.ofbFinalApi RISCV64.target :=
-  scrubOf { code := Impl.TripleDes.RISCV64.ofbFinal, verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }
-    (ofbFinalOut _)
+/-- `Spec.TripleDes.ofbApi` as emitted (`Impl.TripleDes.RISCV64.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ofb
+      (Spec.TripleDes.ofbContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.ofbApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.ofb
+      verified := Proof.TripleDes.RISCV64.Modes.ofb_verified }
+    (ofbOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.TripleDes.ofbFinalApi` as emitted (`Impl.TripleDes.RISCV64.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ofbFinal
+      (Spec.TripleDes.ofbFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.TripleDes.ofbFinalApi) (W := 944) (rb := 0)
+    { code := Impl.TripleDes.RISCV64.ofbFinal
+      verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }
+    (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.TripleDes.RISCV64.Scrub
