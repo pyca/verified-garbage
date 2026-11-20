@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Scrub
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaPss.AArch64.Sat
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
