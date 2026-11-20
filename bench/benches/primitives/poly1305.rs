@@ -2685,6 +2685,24 @@ mod xcand {
         true
     }
 
+    /// The AVX state in use, with the upper halves of ymm0-ymm7 not zero.
+    fn dirty_nz() -> bool {
+        if !std::is_x86_feature_detected!("avx2") {
+            return false;
+        }
+        // SAFETY: AVX2 is available.
+        unsafe {
+            asm!("vpcmpeqd ymm0, ymm0, ymm0", "vpcmpeqd ymm1, ymm1, ymm1",
+                "vpcmpeqd ymm2, ymm2, ymm2", "vpcmpeqd ymm3, ymm3, ymm3",
+                "vpcmpeqd ymm4, ymm4, ymm4", "vpcmpeqd ymm5, ymm5, ymm5",
+                "vpcmpeqd ymm6, ymm6, ymm6", "vpcmpeqd ymm7, ymm7, ymm7",
+                out("xmm0") _, out("xmm1") _, out("xmm2") _, out("xmm3") _,
+                out("xmm4") _, out("xmm5") _, out("xmm6") _, out("xmm7") _,
+                options(nostack, nomem));
+        }
+        true
+    }
+
     /// The fastest and the median of 41 timings of `f`, in nanoseconds.
     fn time(mut f: impl FnMut()) -> (u32, u32) {
         let mut t = [0u32; 41];
@@ -2709,13 +2727,15 @@ mod xcand {
                 xinuse(), u64::from(med) * 1000 / PAIRS as u64
             );
         };
-        for mode in ["fast", "slow"] {
+        for mode in ["fast", "slow", "nonzero"] {
             let set = || {
                 if mode == "fast" {
                     std::thread::sleep(std::time::Duration::from_millis(3));
                     true
-                } else {
+                } else if mode == "slow" {
                     dirty()
+                } else {
+                    dirty_nz()
                 }
             };
             for (name, f) in CANDS {
@@ -2750,6 +2770,7 @@ mod xcand {
                 line(mode, "lib-scalar", before, t);
             }
         }
+        super::xprobe::vzeroupper();
     }
 }
 // XCAND END
