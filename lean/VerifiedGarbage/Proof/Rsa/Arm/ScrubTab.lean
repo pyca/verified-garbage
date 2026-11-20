@@ -84,6 +84,30 @@ theorem CodeOkT.icalls {i : Instr} {n : Nat} {T : List String} :
     rw [inames_of_noIcall hb.2]
     simp only [List.cons_append, List.nil_append, List.all_cons, h2, decide_eq_true hf, Bool.and_self]
 
+/-- Code that names no function it may call indirectly makes no indirect
+call. -/
+theorem noIcall_of_inames : ∀ {c : Prog isa}, inames c = [] → noIcall c = true
+  | .block _, _ => rfl
+  | .seq a b, h => by
+    simp only [inames, List.append_eq_nil_iff] at h
+    simp only [noIcall, noIcall_of_inames h.1, noIcall_of_inames h.2, Bool.and_self]
+  | .ite _ t e, h => by
+    simp only [inames, List.append_eq_nil_iff] at h
+    simp only [noIcall, noIcall_of_inames h.1, noIcall_of_inames h.2, Bool.and_self]
+  | .loop b _, h => noIcall_of_inames (c := b) h
+  | .call _ b, h => noIcall_of_inames (c := b) h
+  | .frame _ b _, h => noIcall_of_inames (c := b) h
+  | .icall .., h => by simp [inames] at h
+
+/-- `CodeOkT` with no table is `CodeOk`: what `code_okT` gives of code that
+calls nothing indirectly. -/
+theorem CodeOkT.toOk {c : Prog isa} {n : Nat} (h : CodeOkT c n []) : CodeOk c n := by
+  refine ⟨h.1, noIcall_of_inames ?_⟩
+  have h2 := h.2
+  cases hc : inames c with
+  | nil => rfl
+  | cons f fs => simp [hc] at h2
+
 /-- `scrubSideF` of code from `CodeOkT` of it. -/
 theorem scrubSideF_ofT {c : Prog isa} {n : Nat} {ts : List (String × List FnTable)}
     (h : CodeOkT c n (tableFns ts)) (hn : FrameOk n) : scrubSideF c n ts = true := by
