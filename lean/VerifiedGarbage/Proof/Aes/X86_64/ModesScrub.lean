@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Impl.AesOfb.X86_64.Fn
+public import VerifiedGarbage.Impl.AesCfb8.X86_64.Fn
+public import VerifiedGarbage.Impl.AesCfb.X86_64.Fn
 public import VerifiedGarbage.Spec.Cfb8.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -108,49 +112,94 @@ theorem ofbOut (stack : Nat) :
 
 open VG.X86_64.RScrub VG.Proof.Aes.X86_64
 
-/-- `vg_aes_cfb8_encrypt` over `v`. -/
-def cfb8EncryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesEncryptApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesCfb8.X86_64.encrypt v.enc
-    stack := 8
-    verified := Proof.AesCfb8.encrypt_keyed (Proof.AesCfb8.X86_64.encrypt_verified v)
-    spSafe := Proof.AesCfb8.X86_64.encrypt_spSafe v } (cfb8EncryptOut _) [] (pubOk_nil _) v.cfb8EncRes
+/-- `Spec.Cfb8.aesEncryptApi`'s function as emitted over `v` (`Impl.AesCfb8.X86_64.Fn.cfb8Encrypt`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem cfb8Encrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesCfb8.X86_64.Fn.cfb8Encrypt v.level v.enc)
+      (Spec.Cfb8.aesEncryptApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Cfb8.aesEncryptApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesCfb8.X86_64.encrypt ⟨"", .block []⟩)
+    { suffix := v.suffix
+      code := Impl.AesCfb8.X86_64.encrypt v.enc
+      stack := 8
+      verified := Proof.AesCfb8.encrypt_keyed (Proof.AesCfb8.X86_64.encrypt_verified v)
+      spSafe := Proof.AesCfb8.X86_64.encrypt_spSafe v }
+    v.level (cfb8EncryptOut _) (by have := v.encSide; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_cfb8_decrypt` over `v`. -/
-def cfb8DecryptReg (v : BlocksImpl) : Registration Spec.Cfb8.aesDecryptApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesCfb8.X86_64.decrypt v.enc
-    stack := 8
-    verified := Proof.AesCfb8.decrypt_keyed (Proof.AesCfb8.X86_64.decrypt_verified v)
-    spSafe := Proof.AesCfb8.X86_64.decrypt_spSafe v } (cfb8DecryptOut _) [] (pubOk_nil _) v.cfb8DecRes
+theorem cfb8Encrypt_spSafeFn (v : BlocksImpl) :
+    (Impl.AesCfb8.X86_64.Fn.cfb8Encrypt v.level v.enc).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCfb8.X86_64.encrypt_spSafe v)
 
-/-- `vg_aes_cfb128_encrypt` over `v`. -/
-def cfbEncryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesEncryptApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesCfb.X86_64.encrypt v.enc
-    stack := 8
-    verified := Proof.AesCfb.encrypt_keyed (Proof.AesCfb.X86_64.encrypt_verified v)
-    spSafe := Proof.AesCfb.X86_64.encrypt_spSafe v } (cfbEncryptOut _) [] (pubOk_nil _) v.cfbEncRes
+/-- `Spec.Cfb8.aesDecryptApi`'s function as emitted over `v` (`Impl.AesCfb8.X86_64.Fn.cfb8Decrypt`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem cfb8Decrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesCfb8.X86_64.Fn.cfb8Decrypt v.level v.enc)
+      (Spec.Cfb8.aesDecryptApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Cfb8.aesDecryptApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesCfb8.X86_64.decrypt ⟨"", .block []⟩)
+    { suffix := v.suffix
+      code := Impl.AesCfb8.X86_64.decrypt v.enc
+      stack := 8
+      verified := Proof.AesCfb8.decrypt_keyed (Proof.AesCfb8.X86_64.decrypt_verified v)
+      spSafe := Proof.AesCfb8.X86_64.decrypt_spSafe v }
+    v.level (cfb8DecryptOut _) (by have := v.encSide; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_cfb128_decrypt` over `v`. -/
-def cfbDecryptReg (v : BlocksImpl) : Registration Spec.Cfb.aesDecryptApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesCfb.X86_64.decrypt v.enc
-    stack := 8
-    verified := Proof.AesCfb.decrypt_keyed (Proof.AesCfb.X86_64.decrypt_verified v)
-    spSafe := Proof.AesCfb.X86_64.decrypt_spSafe v } (cfbDecryptOut _) [] (pubOk_nil _) v.cfbDecRes
+theorem cfb8Decrypt_spSafeFn (v : BlocksImpl) :
+    (Impl.AesCfb8.X86_64.Fn.cfb8Decrypt v.level v.enc).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCfb8.X86_64.decrypt_spSafe v)
 
-/-- `vg_aes_ofb` over `v`. -/
-def ofbReg (v : BlocksImpl) : Registration Spec.Ofb.aesApi X86_64.target :=
-  withScrubOrAll {
-    suffix := v.suffix
-    code := Impl.AesOfb.X86_64.crypt v.enc
-    stack := 8
-    verified := Proof.AesOfb.keyed (Proof.AesOfb.X86_64.crypt_verified v)
-    spSafe := Proof.AesOfb.X86_64.crypt_spSafe v } (ofbOut _) [] (pubOk_nil _) v.ofbRes
+/-- `Spec.Cfb.aesEncryptApi`'s function as emitted over `v` (`Impl.AesCfb.X86_64.Fn.cfbEncrypt`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem cfbEncrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesCfb.X86_64.Fn.cfbEncrypt v.level v.enc)
+      (Spec.Cfb.aesEncryptApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Cfb.aesEncryptApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesCfb.X86_64.encrypt ⟨"", .block []⟩)
+    { suffix := v.suffix
+      code := Impl.AesCfb.X86_64.encrypt v.enc
+      stack := 8
+      verified := Proof.AesCfb.encrypt_keyed (Proof.AesCfb.X86_64.encrypt_verified v)
+      spSafe := Proof.AesCfb.X86_64.encrypt_spSafe v }
+    v.level (cfbEncryptOut _) (by have := v.encSide; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem cfbEncrypt_spSafeFn (v : BlocksImpl) :
+    (Impl.AesCfb.X86_64.Fn.cfbEncrypt v.level v.enc).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCfb.X86_64.encrypt_spSafe v)
+
+/-- `Spec.Cfb.aesDecryptApi`'s function as emitted over `v` (`Impl.AesCfb.X86_64.Fn.cfbDecrypt`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem cfbDecrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesCfb.X86_64.Fn.cfbDecrypt v.level v.enc)
+      (Spec.Cfb.aesDecryptApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Cfb.aesDecryptApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesCfb.X86_64.decrypt ⟨"", .block []⟩)
+    { suffix := v.suffix
+      code := Impl.AesCfb.X86_64.decrypt v.enc
+      stack := 8
+      verified := Proof.AesCfb.decrypt_keyed (Proof.AesCfb.X86_64.decrypt_verified v)
+      spSafe := Proof.AesCfb.X86_64.decrypt_spSafe v }
+    v.level (cfbDecryptOut _) (by have := v.encSide; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem cfbDecrypt_spSafeFn (v : BlocksImpl) :
+    (Impl.AesCfb.X86_64.Fn.cfbDecrypt v.level v.enc).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesCfb.X86_64.decrypt_spSafe v)
+
+/-- `Spec.Ofb.aesApi`'s function as emitted over `v` (`Impl.AesOfb.X86_64.Fn.ofb`) meets its
+contract in constant time and returns without secret residue: its code is
+its code over a stub, with `v`'s where it calls it (`Fill`). -/
+theorem ofb_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesOfb.X86_64.Fn.ofb v.level v.enc)
+      (Spec.Ofb.aesApi.contract X86_64.abi 8) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Ofb.aesApi) (ks := 0) (n := fun _ => 0) (a := Impl.AesOfb.X86_64.crypt ⟨"", .block []⟩)
+    { suffix := v.suffix
+      code := Impl.AesOfb.X86_64.crypt v.enc
+      stack := 8
+      verified := Proof.AesOfb.keyed (Proof.AesOfb.X86_64.crypt_verified v)
+      spSafe := Proof.AesOfb.X86_64.crypt_spSafe v }
+    v.level (ofbOut _) (by have := v.encSide; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem ofb_spSafeFn (v : BlocksImpl) :
+    (Impl.AesOfb.X86_64.Fn.ofb v.level v.enc).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.AesOfb.X86_64.crypt_spSafe v)
 
 end VG.Proof.Aes.X86_64.ModesScrub
