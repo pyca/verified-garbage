@@ -56,10 +56,10 @@ theorem args_in {s : State} {n : Nat} (h : Covers [args s n] (s.rd ++ s.wr)) (hn
 
 /-- After the entry, the environment. -/
 theorem one_env {s₀ s₁ : State} {W T : Addr} (h1 : SO1 W T s₀ s₁)
-    (hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr)) (hW : Covers [⟨W, 2560⟩] s₀.wr) :
+    (hC : Covers [⟨s₀.gpr .r3, 256⟩] (s₀.rd ++ s₀.wr)) (hW : Covers [⟨W, 1152⟩] s₀.wr) :
     Env s₁.gpr s₀.sp s₁ := by
   obtain perm : Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₁ :=
-    (⟨hC, covers_off hW (show 16 + 80 ≤ 2560 by decide) (by decide), covers_prefix hW (by decide)⟩ :
+    (⟨hC, covers_off hW (show 16 + 80 ≤ 1152 by decide) (by decide), covers_prefix hW (by decide)⟩ :
       Perm (s₀.gpr .r3) (W + BitVec.ofNat 64 16) W s₀).of_eq h1.en.keeps.rd h1.en.keeps.wr
   exact ⟨fun _ _ => rfl, h1.en.keeps.sp, by rw [h1.r29, h1.r30, h1.r31]; exact perm⟩
 
@@ -80,8 +80,8 @@ end
 
 theorem SO1.aadFrame {s₀ s₁ s₂ : State} {W T : Addr} {H : Block} {iv a : List Byte}
     (h1 : SO1 W T s₀ s₁) (oa : OA s₁.gpr s₀.sp H iv a s₁.mem s₂) :
-    Frame [⟨W,2560⟩] s₀.mem s₂.mem := by
-  obtain f₁ : Frame [⟨W,2560⟩] s₀.mem s₁.mem := h1.en.frame.sub (by
+    Frame [⟨W,1152⟩] s₀.mem s₂.mem := by
+  obtain f₁ : Frame [⟨W,1152⟩] s₀.mem s₁.mem := h1.en.frame.sub (by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -99,7 +99,7 @@ def sealReads (s : State) : List Region :=
   [⟨s.gpr .r3,256⟩,⟨s.gpr .r5,(s.gpr .r6).toNat⟩,
     ⟨s.gpr .r7,(s.gpr .r8).toNat⟩,args s 2]
 def sealWrites (s : State) : List Region :=
-  [⟨s.gpr .r9,(s.gpr .r10).toNat⟩,⟨stackArg s 0,16⟩,⟨stackArg s 1,2560⟩]
+  [⟨s.gpr .r9,(s.gpr .r10).toNat⟩,⟨stackArg s 0,16⟩,⟨stackArg s 1,1152⟩]
 
 structure SealAccess (s : State) : Prop where
   pre : sealPre (s.withRegions (sealReads s) (sealWrites s))
@@ -125,7 +125,7 @@ theorem oneAad_entry_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ s₁ : State}
   obtain L₀ := oneLay fc fW dcW
   obtain hC : Covers [⟨s₀.gpr .r3,256⟩] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
-  obtain hW : Covers [⟨stackArg s₀ 1,2560⟩] s₀.wr :=
+  obtain hW : Covers [⟨stackArg s₀ 1,1152⟩] s₀.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
   obtain hNr : Covers [⟨s₀.gpr .r5,(s₀.gpr .r6).toNat⟩] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
@@ -180,7 +180,7 @@ theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
   have h' := h.pre
   obtain ⟨_,_,dcd,dcW,dnd,dnW,dad,daW,ddt,ddW,ddA,dtW,dWA,fc,fn,fa,fd,fW,fsp,hR⟩ := h'
   obtain L₀ := oneLay fc fW dcW
-  obtain hW : Covers [⟨stackArg s₀ 1,2560⟩] s₀.wr :=
+  obtain hW : Covers [⟨stackArg s₀ 1,1152⟩] s₀.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
   obtain hA : Covers [args s₀ 2] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads

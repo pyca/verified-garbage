@@ -30,7 +30,7 @@ theorem entry_ready {s₀ s₁ : State} (h : SealAccess s₀)
   obtain ⟨_,_,dcd,dcW,dnd,dnW,dad,daW,ddt,ddW,ddA,dtW,dWA,fc,fn,fa,fd,fW,fsp,hR⟩ := h.pre
   have hC : Covers [⟨s₀.gpr .r3,256⟩] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
-  have hW : Covers [⟨stackArg s₀ 1,2560⟩] s₀.wr :=
+  have hW : Covers [⟨stackArg s₀ 1,1152⟩] s₀.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
   have hNr : Covers [⟨s₀.gpr .r5,(s₀.gpr .r6).toNat⟩] (s₀.rd++s₀.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads
@@ -58,7 +58,7 @@ theorem entry_ready {s₀ s₁ : State} (h : SealAccess s₀)
 theorem entry_wp {s : State} (h : SealAccess s) :
     WP isa (.block (oneEntry 104)) s (SO1 (stackArg s 1) (stackArg s 0) s) := by
   obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,dWA,_⟩ := h.pre
-  have hW : Covers [⟨stackArg s 1,2560⟩] s.wr :=
+  have hW : Covers [⟨stackArg s 1,1152⟩] s.wr :=
     Covers.trans (Covers.of_mem (by simp [sealWrites])) h.writes
   have hA : Covers [args s 2] (s.rd++s.wr) :=
     Covers.trans (Covers.of_mem (by simp [sealReads])) h.reads

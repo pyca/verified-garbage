@@ -223,15 +223,6 @@ riscv64 vg_aes_ocb_seal
 riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
-riscv64 vg_sm4_gcm_init
-riscv64 vg_sm4_gcm_open
-riscv64 vg_sm4_gcm_seal
-riscv64 vg_sm4_gcm_stream_aad
-riscv64 vg_sm4_gcm_stream_decrypt
-riscv64 vg_sm4_gcm_stream_encrypt
-riscv64 vg_sm4_gcm_stream_finish
-riscv64 vg_sm4_gcm_stream_init
-riscv64 vg_sm4_gcm_stream_verify
 x86 vg_argon2
 x86 vg_blake2b_finalize
 x86 vg_blake2b_init

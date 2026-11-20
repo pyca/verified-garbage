@@ -20,7 +20,7 @@ open VG VG.PPC64LE
 
 
 def scratchContract : Contract isa :=
-  Sig.scratchContract PPC64LE.abi Proof.Gcm.sealSplitSig "work" .u64 320
+  Sig.scratchContract PPC64LE.abi Proof.Gcm.sealSplitSig "work" .u64 144
     (Proof.Gcm.sealSplitPre PPC64LE.abi.ptrBits) (Proof.Gcm.sealSplitPost PPC64LE.abi.ptrBits) true 112
 
 
@@ -51,7 +51,7 @@ def aadR (s : State) : Region := ⟨s.gpr .r7,(s.gpr .r8).toNat⟩
 def sourceR (s : State) : Region := ⟨s.gpr .r9,(s.gpr .r10).toNat⟩
 def dataR (s : State) : Region := ⟨stackArg s 0,(stackArg s 1).toNat⟩
 def tagR (s : State) : Region := ⟨stackArg s 2,16⟩
-def workR (s : State) : Region := ⟨stackArg s 3,2560⟩
+def workR (s : State) : Region := ⟨stackArg s 3,1152⟩
 def argsR (s : State) : Region := ⟨s.sp+96,32⟩
 def stackR (s : State) : Region := ⟨s.sp-112,112⟩
 

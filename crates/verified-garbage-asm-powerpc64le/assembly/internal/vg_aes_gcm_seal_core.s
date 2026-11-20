@@ -5,9 +5,9 @@
 // gives.
 
 vg_aes_gcm_seal_core:
-	stdu %r1, -2672(%r1)
+	stdu %r1, -1264(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2768(%r12)
+	ld %r0, 1360(%r12)
 	std %r0, 96(%r12)
 	addi %r0, %r12, 112
 	std %r0, 104(%r12)
@@ -735,5 +735,5 @@ vg_aes_gcm_seal_core:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2672
+	addi %r1, %r1, 1264
 	blr

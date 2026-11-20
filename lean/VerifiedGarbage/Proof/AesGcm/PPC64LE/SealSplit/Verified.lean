@@ -23,7 +23,7 @@ def sat : State where
   mem a := bif Nat.beq a.toNat 0x9061 then 0x40 else
     bif Nat.beq a.toNat 0x9071 then 0x50 else bif Nat.beq a.toNat 0x9079 then 0x60 else 0
   rd := [⟨0x1000,256⟩,⟨0x2000,0⟩,⟨0x3000,0⟩,⟨0x7000,0⟩,⟨0x9060,32⟩]
-  wr := [⟨0x4000,0⟩,⟨0x5000,16⟩,⟨0x6000,2560⟩]
+  wr := [⟨0x4000,0⟩,⟨0x5000,16⟩,⟨0x6000,1152⟩]
 
 
 theorem sat_pre : scratchContract.pre sat := by

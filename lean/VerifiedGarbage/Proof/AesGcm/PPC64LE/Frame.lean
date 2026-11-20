@@ -671,11 +671,11 @@ def sealSat : State where
   sp := 0x9000
   mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9069 then 0x60 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 1152⟩]
 
 theorem sealFused_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
     Verified PPC64LE.target Impl.AesGcm.PPC64LE.SealFused.seal
-      (Proof.AesGcm.sealScratchContract PPC64LE.abi) :=
+      (Proof.AesGcm.sealScratchContract PPC64LE.abi (n := 144)) :=
   Verified.of_correct sealFused_correct sealFused_ct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Proof.AesGcm.sealRoundsPost, sealPPC64LE, sealPre, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
@@ -690,7 +690,7 @@ def openSat : State where
   sp := 0x9000
   mem a := bif Nat.beq a.toNat 0x9061 then 0x50 else bif Nat.beq a.toNat 0x9071 then 0x60 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 24⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0x6000, 2560⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x6000, 1152⟩]
 
 /-- The leak `open` may have: whether it succeeds. -/
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
@@ -700,7 +700,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 of `r3`; and `open`'s public data include its leak, whether it succeeds (for
 `rounds` of 10, 12 or 14). -/
 theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target «open» (Proof.AesGcm.openScratchContract PPC64LE.abi) :=
+    Verified PPC64LE.target «open» (Proof.AesGcm.openScratchContract PPC64LE.abi (n := 144)) :=
   Verified.of_correct open_correct open_ct
     { pre := by
         sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
@@ -912,7 +912,7 @@ def sealFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 8⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩]
 
-theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264).pre s := by
   implies_sat [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost, PPC64LE.abi,
     PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
@@ -920,11 +920,11 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2
 /-- `seal`, whose `tag` arrives on the stack: the frame copies it, then the
 working space's address, above its stack pointer (`Verified.stackScratchArgs`). -/
 theorem seal_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal)
-      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 2672) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal)
+      (Proof.AesGcm.sealRoundsContract PPC64LE.abi 1264) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 144)
     (pre := Spec.Gcm.sealPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.sealRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2672) (m := 1) sealFused_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 1264) (m := 1) sealFused_verified (by decide) (by decide)
     (Proof.AesGcm.sealPre_local _) (Proof.AesGcm.sealPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
 
@@ -938,18 +938,18 @@ def openFrameSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x5000, 0⟩, ⟨0x9060, 16⟩]
   wr := [⟨0x4000, 0⟩]
 
-theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract PPC64LE.abi 2688).pre s := by
+theorem openFrameSat_pre : ∃ s, (Proof.AesGcm.openRoundsContract PPC64LE.abi 1280).pre s := by
   implies_sat [Proof.AesGcm.openRoundsContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak,
     PPC64LE.abi, PPC64LE.argRegs, stackArg, stackArgAddr, List.getD, List.range, List.range.loop]
     [openFrameSat, openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openFrameSat
 
 /-- `open`, whose `tag` and `tag_len` arrive on the stack, as `seal`'s `tag` does. -/
 theorem open_framed [VG.Proof.Gcm.PPC64LE.GhashLaw] :
-    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 «open»)
-      (Proof.AesGcm.openRoundsContract PPC64LE.abi 2688) :=
-  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 2 «open»)
+      (Proof.AesGcm.openRoundsContract PPC64LE.abi 1280) :=
+  PPC64LE.Verified.stackScratchArgs (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 144)
     (pre := Spec.Gcm.openPre PPC64LE.abi.ptrBits) (post := Proof.AesGcm.openRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2688) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
+    (wa := true) (stack := 0) (bytes := 1280) (m := 2) (leak := some (Spec.Gcm.openLeak PPC64LE.abi.ptrBits))
     open_verified (by decide) (by decide) (Proof.AesGcm.openPre_local _) (Proof.AesGcm.openPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesGcm.openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := Proof.AesGcm.openLeak_local _)

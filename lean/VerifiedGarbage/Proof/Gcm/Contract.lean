@@ -52,4 +52,23 @@ def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
         blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
     (stack := stack)
 
+/-- `cryptBlocksSig` with `words` words of `scratch`, for a target whose
+code needs less working space than the most any target needs. -/
+def cryptBlocksSigOf (words : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("counter", .array true .u8 16), ("y", .array true .u8 16),
+    ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 words)]
+
+/-- `encryptBlocksContract` with `words` words of `scratch`. -/
+def encryptBlocksContractOf {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Contract M :=
+  (cryptBlocksSigOf words).contract A
+    (pre := fun _ctx rounds _counter _y _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun ctx rounds counter y data n _scratch m m' _ =>
+      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
+      blocksAt m' data n.toNat = c ∧
+        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
+        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
+    (stack := stack)
+
 end VG.Proof.Gcm

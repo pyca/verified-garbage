@@ -87,7 +87,7 @@ theorem sealGather_wp (hv : Gather.SealOk) (hs : SplitOk) {s : State} (h : Layou
   refine WP.seq (WP.mono (entered_wp h.base) fun e he => ?_)
   refine WP.mono (body_wp hv hs h he.1 he.2) fun y ⟨ha, hp⟩ m _ fl => ⟨⟨ha.1, ha.2.1, ha.2.2⟩, ?_⟩
   -- The `free` loses the frame's bytes, which lie apart from the ciphertext and the tag.
-  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 160, 160⟩ (below s.sp 2960) :=
+  have hsub : Region.Sub ⟨s.sp - BitVec.ofNat 64 160, 160⟩ (below s.sp 1552) :=
     Offset.sub_below _ (by omega_using []) (by omega_using [])
   have hd : (Gather.dR s).Disjoint ⟨s.sp - BitVec.ofNat 64 160, 160⟩ :=
     ((h.stack (Gather.dR s) (by simp)).sub_left hsub).symm

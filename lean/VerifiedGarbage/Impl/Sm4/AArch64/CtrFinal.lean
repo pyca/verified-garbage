@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # SM4-CTR of a message's last piece: AArch64 implementation
@@ -92,5 +93,51 @@ def ctrFinalTail (name : String) (whole : Prog isa) : Prog isa :=
 def ctrFinal (name : String) (whole : Prog isa) : Prog isa :=
   .seq (.block ctrFinalSetup) (.seq (.call name whole)
     (.seq (.ite (.zero .x .x23) (.block []) (ctrFinalTail name whole)) (.block finalRestore)))
+
+/-! ## The functions, as emitted
+
+Each function is its code above, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, and the stack it uses is zeroed,
+so that it returns without secret residue. `vg_sm4_ctr_final` clears the
+registers its own instructions write, stated here, and those the
+implementation of `vg_sm4_ctr` it calls writes. -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `ctrFramedSm4` writes. -/
+def ctrSm4Clear : Clear :=
+  ⟨[.x4, .x5, .x6, .x7, .x8, .x9, .x10, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23],
+   []⟩
+
+/-- The registers `ctrFramed` writes. -/
+def ctrClear : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
+
+/-- `vg_sm4_ctr_sm4`: `ctrFramedSm4`, its registers cleared and its 224 bytes
+of stack zeroed. -/
+def ctrSm4 : Prog isa := scrubAll 224 0 ctrSm4Clear ctrFramedSm4
+
+/-- `vg_sm4_ctr`: `ctrFramed`, its registers cleared and its 3264 bytes of
+stack zeroed. -/
+def ctr : Prog isa := scrubAll 3264 0 ctrClear ctrFramed
+
+/-- The registers `vg_sm4_ctr_final`'s own instructions write. -/
+def ctrFinalOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x6, .x7, .x9, .x10, .x16, .x17], [], []⟩
+
+/-- `vg_sm4_ctr_final` around the implementation `name`, `whole` of
+`vg_sm4_ctr`, which writes the registers `cl`: `ctrFinal` with `save` in its
+frame, its registers cleared and its 3344 bytes of stack zeroed. -/
+def ctrFinal (cl : Clear) (name : String) (whole : Prog isa) : Prog isa :=
+  scrubAll 3344 0 (ctrFinalOwn.union cl)
+    (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x4 10 (Sm4.AArch64.ctrFinal name whole))
+
+end Fn
 
 end VG.Impl.Sm4.AArch64

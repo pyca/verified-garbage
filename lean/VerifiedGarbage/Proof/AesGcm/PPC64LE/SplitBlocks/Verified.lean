@@ -45,13 +45,13 @@ structure CryptPost (dec : Bool) (s t : State) : Prop where
 theorem rest_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
     (t : State) (lay : Wrapper.Layout (Contract.prep t) (t.gpr .r10).toNat (t.gpr .r8).toNat)
     (hv : (t.gpr .r4).toNat=10 ∨ (t.gpr .r4).toNat=12 ∨ (t.gpr .r4).toNat=14)
-    (hwork : Covers [⟨t.gpr .r11,2112⟩] t.wr) :
+    (hwork : Covers [⟨t.gpr .r11,704⟩] t.wr) :
     WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.restOf dec) t (CryptPost dec t) := by
   rw [Impl.AesGcm.PPC64LE.SplitBlocks.restOf]
   apply WP.seq
   refine WP.mono (Wrapper.rest_ok t (by
     intro p hp
-    have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.SplitBlocks.extraSaved, p.2+8≤2112 := by decide
+    have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.SplitBlocks.extraSaved, p.2+8≤704 := by decide
     exact hwork _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega_using [this])⟩))
     fun restState hr => ?_
   subst restState

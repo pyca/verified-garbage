@@ -20,21 +20,21 @@
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3936 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 1632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "ofAh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AACA78AGOOEL4JXr//6U4"
+        r#".base64 "ofkh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AACA78AGOOEL4JXr//6U4"
 20:
 .base64 "AABvgAQAz4AIAO+AAAAkkwQAZJAIAMSQDADkkAEAOTsQAIQ4//+lOAAAJSg="
 bne %cr0, 20b
-.base64 "eIMDfniLJH7wAa44eMsmf/AG7jg="
+.base64 "eIMDfniLJH7wAa44eMsmfw=="
 bl {vg_aes_encrypt_blocks}
 .base64 "8AGuOBAAjjg="
 21:
 .base64 "AABl6AAAZPgQAKU4CACEOP//OTsAADko"
 bne %cr0, 21b
-.base64 "IABuOPr/kThkF4R4AAGuOPAGzjg="
+.base64 "IABuOPr/kThkF4R4AAGuOA=="
 bl {vg_aes_expand_key_scratch}
 .base64 "EABu6BgAjugBAKA4OChlfAAAwDhQMKV8QvhjeAb4hnh4M2N8QviEeADhwDzGB8Z4ODClfHgqhHxAAOA4KD2OfEgA4DgoPW58AAAAOFAADvhYAA74eJNXfnibeH4C4Qt7AAArKA=="
 beq %cr0, 22f
@@ -50,7 +50,7 @@ b 26f
 27:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 27b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELewAAKyg="
 bne %cr0, 24b
@@ -74,7 +74,7 @@ b 212f
 213:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 213b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELew=="
 b 29f
@@ -94,7 +94,7 @@ b 218f
 219:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 219b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELewAAKyg="
 bne %cr0, 216b
@@ -118,7 +118,7 @@ b 224f
 225:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 225b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELew=="
 b 221f
@@ -135,9 +135,9 @@ b 227f
 228:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 228b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
-.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA4AAAO+AgADvgAAW44eIskfnAArjjwBg45AADOOAEA4Dg="
+.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA4AAAO+AgADvgAAW44eIskfnAArjgAAM44AQDgOA=="
 bl {vg_aes_ctr32}
 .base64 "eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 229f
@@ -153,7 +153,7 @@ b 233f
 234:
 .base64 "YACu6GgAzugAAKT4CADE+GAAroABAKU4YACukBAAhDj//2M4AAAjKA=="
 bne %cr0, 234b
-.base64 "AAFuOHiLJH7wAa44eMsmf/AG7jg="
+.base64 "AAFuOHiLJH7wAa44eMsmfw=="
 bl {vg_aes_encrypt_blocks}
 .base64 "8AFuOHi75H6kDyV7"
 235:
@@ -166,7 +166,7 @@ b 230f
 230:
 .base64 "AAA4KA=="
 beq %cr0, 236f
-.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
+.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAAzjgBAOA4"
 bl {vg_aes_ctr32}
 .base64 "8ABuOHi75H54wwV/"
 238:
@@ -175,7 +175,7 @@ bne %cr0, 238b
 b 237f
 236:
 237:
-.base64 "AABu6AgAjugAAHb4CACW+OAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOAAAADih8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YA8hOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+.base64 "AABu6AgAjugAAHb4CACW+OAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYAYhOAAAADih+SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YAYhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
@@ -200,21 +200,21 @@ b 237f
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3936 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 1632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "ofAh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AAHboCACW6AAAbvgIAI74AAAgO/ABjjhC+CV6//+lOA=="
+        r#".base64 "ofkh+AAAgTloAAw4YAAM+AAAgTlgAGzppgIIfIgA6/mQAAv6mAAr+qAAS/qoAGv6sACL+rgAq/rAAMv6yADr+tAAC/vYACv7gADL+eAAC/h4W259eCuvfHgbcHx4I5F8eDPSfHg783x4QxR9eEs1fXhTVn0AAHboCACW6AAAbvgIAI74AAAgO/ABjjhC+CV6//+lOA=="
 20:
 .base64 "AABvgAQAz4AIAO+AAAAkkwQAZJAIAMSQDADkkAEAOTsQAIQ4//+lOAAAJSg="
 bne %cr0, 20b
-.base64 "eIMDfniLJH7wAa44eMsmf/AG7jg="
+.base64 "eIMDfniLJH7wAa44eMsmfw=="
 bl {vg_aes_encrypt_blocks}
 .base64 "8AGuOBAAjjg="
 21:
 .base64 "AABl6AAAZPgQAKU4CACEOP//OTsAADko"
 bne %cr0, 21b
-.base64 "IABuOPr/kThkF4R4AAGuOPAGzjg="
+.base64 "IABuOPr/kThkF4R4AAGuOA=="
 bl {vg_aes_expand_key_scratch}
 .base64 "EABu6BgAjugBAKA4OChlfAAAwDhQMKV8QvhjeAb4hnh4M2N8QviEeADhwDzGB8Z4ODClfHgqhHxAAOA4KD2OfEgA4DgoPW58AAAAOFAADvhYAA74eKOXfniruH4AAG7oCACO6AEAoDgG+KV4eCuEfGAAbvhoAI74AuELewAAKyg="
 beq %cr0, 22f
@@ -230,7 +230,7 @@ b 26f
 27:
 .base64 "YACu6GgAzugAAKT4CADE+GAAroABAKU4YACukBAAhDj//2M4AAAjKA=="
 bne %cr0, 27b
-.base64 "AAFuOHiLJH7wAa44eMsmf/AG7jg="
+.base64 "AAFuOHiLJH7wAa44eMsmfw=="
 bl {vg_aes_encrypt_blocks}
 .base64 "8AFuOHi75H6kDyV7"
 28:
@@ -243,7 +243,7 @@ b 23f
 23:
 .base64 "AAA4KA=="
 beq %cr0, 29f
-.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAGDjnwAM44AQDgOA=="
+.base64 "YABu6GgAjuhwAG74eACO+AAAADjwAA74+AAO+AABbjh4iyR+cACuOPAAzjgBAOA4"
 bl {vg_aes_ctr32}
 .base64 "8ABuOHi75H54wwV/"
 211:
@@ -266,7 +266,7 @@ b 216f
 217:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 217b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELewAAKyg="
 bne %cr0, 214b
@@ -290,7 +290,7 @@ b 222f
 223:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 223b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELew=="
 b 219f
@@ -310,7 +310,7 @@ b 228f
 229:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 229b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELewAAKyg="
 bne %cr0, 226b
@@ -334,7 +334,7 @@ b 234f
 235:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 235b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
 .base64 "AuELew=="
 b 231f
@@ -351,9 +351,9 @@ b 237f
 238:
 .base64 "KEy3fChU13wAAKT4CADE+BAA9zoQAIQ4//9jOAAAIyg="
 bne %cr0, 238b
-.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/8AXuOA=="
+.base64 "5CYle1DABX9AAG44UACOOPABrjh4yyZ/"
 bl {vg_ghash}
-.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA48AAO+PgADvgAAW44eIskfnAArjjwBg458ADOOAEA4Dg="
+.base64 "AuELe1gAIDkoTG58UAAgOShMjnwAAK/oeCpjfAgAr4B4KoR8pA+EeEL4hHhgAG74aACO+GAAbuhoAI7ocABu+HgAjvgAAAA48AAO+PgADvgAAW44eIskfnAArjjwAM44AQDgOA=="
 bl {vg_aes_ctr32}
 .base64 "AABu6PAAjuh4ImN8CACO6PgAruh4KoR8eCNjfAAAgDhQIIN8eCNjfOAPY3gBACA7UMgjfwAAIDlQSDl9eKODfsLopHokH4V4UKilfAAAJCg="
 beq %cr0, 239f
@@ -371,7 +371,7 @@ bne %cr0, 244b
 b 243f
 242:
 243:
-.base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOAAAADih8CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YA8hOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
+.base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYAYhOAAAADih+SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4kAAM+JgADPigAAz4qAAM+LAADPi4AAz4YAYhOMYHY3giAGN4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcRUShHEXGsRxGSMEcRsrRHEdM4RxHzvEcSEEBLEjDESxJRSEsSccxIgAIBO""#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
