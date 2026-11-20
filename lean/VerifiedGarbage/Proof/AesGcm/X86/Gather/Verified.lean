@@ -147,9 +147,11 @@ theorem sealGather_verified (F : SealFn) :
 
 open VG.Impl.AesGcm.X86 VG.Impl.StackScratch.X86 in
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`, with
-its working space in a frame of its own. -/
+its working space in a frame of its own, without the cleanup of the exported
+function: the internal `vg_aes_gcm_seal<suffix>_core`, whose stack the
+cleanup of `vg_aes_gcm_seal_gather` zeroes (`Impl.AesGcm.X86.Fn.sealGather`). -/
 def sealFn (v : GcmImpl) : SealFn where
-  name := Spec.Gcm.sealApi.name ++ v.suffix
+  name := "vg_aes_gcm_seal" ++ v.suffix ++ "_core"
   code := withStackScratch 2604 9 («seal» v.callees)
   verified := seal_framed v
   noSp := by
