@@ -396,12 +396,6 @@ x86 vg_mldsa87_verify_prepared
 x86 vg_poly1305_finalize
 x86 vg_poly1305_init
 x86 vg_poly1305_update
-x86 vg_rsa_generate
-x86 vg_rsa_oaep_decrypt_precomputed
-x86 vg_rsa_pkcs1_decrypt_precomputed
-x86 vg_rsa_pkcs1_decrypt_precomputed_sha256_shani
-x86 vg_rsa_pkcs1_sign_precomputed
-x86 vg_rsa_pss_sign_precomputed
 x86 vg_scrypt
 x86 vg_scrypt_shani
 x86 vg_seed_cbc_decrypt_chained
