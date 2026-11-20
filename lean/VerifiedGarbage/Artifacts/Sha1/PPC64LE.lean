@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Sha1.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -16,7 +14,7 @@ namespace VG.Artifacts.Sha1.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha1.initApi.artifact PPC64LE.target {
     code := Impl.Sha1.PPC64LE.Stream.init
-    verified := .scrubbed ⟨Proof.Sha1.PPC64LE.Shared.init, Proof.Sha1.PPC64LE.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Sha1.PPC64LE.init_scrubbed },
   Spec.Sha1.updateApi.artifact PPC64LE.target {
     code := Impl.Sha1.PPC64LE.Fn.update
     verified := .scrubbed Proof.Sha1.PPC64LE.update_scrubbed },

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sm3.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sm3.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -49,5 +50,12 @@ theorem finalize_scrubbed :
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.finalizePostOut_local 64))
     (by dsimp only; lit_decide)
 
+
+/-- `vg_sm3_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sm3.PPC64LE.Stream.init
+      (Spec.Sm3.initContract PPC64LE.abi) 0 :=
+  ⟨Proof.Sm3.PPC64LE.Shared.init, Proof.Sm3.PPC64LE.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sm3.PPC64LE

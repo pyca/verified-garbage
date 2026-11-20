@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Md5.PPC64LE.Stream.Init
-public import VerifiedGarbage.Proof.Md5.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -15,7 +13,7 @@ namespace VG.Artifacts.Md5.PPC64LE
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Stream.init
-    verified := .scrubbed ⟨Proof.Md5.PPC64LE.Shared.init, Proof.Md5.PPC64LE.Stream.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Md5.PPC64LE.init_scrubbed },
   Spec.Md5.updateApi.artifact PPC64LE.target {
     code := Impl.Md5.PPC64LE.Fn.update
     verified := .scrubbed Proof.Md5.PPC64LE.update_scrubbed },

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha512.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -144,5 +145,12 @@ def digest512_256Reg : Registration Spec.Sha512.digest512_256Api PPC64LE.target 
        .v17, .v18, .v19]⟩
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 32 Spec.Sha512.sha512_256 64))
     (by dsimp only; lit_decide)
+
+/-- SHA-512's `init` from the initial hash value `iv` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed (iv : Spec.Sha512.HashValue) :
+    VerifiedScrubbed PPC64LE.target (Impl.Sha512.PPC64LE.Stream.init iv)
+      (Spec.Sha512.initContract PPC64LE.abi iv) 0 :=
+  ⟨Proof.Sha512.PPC64LE.Shared.init iv, Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩
 
 end VG.Proof.Sha512.PPC64LE

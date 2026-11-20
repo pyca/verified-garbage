@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -95,5 +96,19 @@ def digest224Reg : Registration Spec.Sha256.digest224Api PPC64LE.target :=
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide)))
     (by dsimp only; lit_decide)
+
+/-- `vg_sha224_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem init224_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Stream.init224
+      (Spec.Sha256.init224Contract PPC64LE.abi) 0 :=
+  ⟨Proof.Sha256.PPC64LE.Shared.init224, Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩
+
+/-- `vg_sha256_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Stream.init
+      (Spec.Sha256.initContract PPC64LE.abi) 0 :=
+  ⟨Proof.Sha256.PPC64LE.Shared.init, Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sha256.PPC64LE

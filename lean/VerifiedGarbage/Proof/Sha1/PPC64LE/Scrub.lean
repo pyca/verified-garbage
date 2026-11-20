@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Init
 public import VerifiedGarbage.Impl.Sha1.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -60,5 +61,12 @@ def digestReg : Registration Spec.Sha1.digestApi PPC64LE.target :=
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 20 Spec.Sha1.hash 64))
     (by dsimp only; lit_decide)
 
+
+/-- `vg_sha1_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
+arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha1.PPC64LE.Stream.init
+      (Spec.Sha1.initContract PPC64LE.abi) 0 :=
+  ⟨Proof.Sha1.PPC64LE.Shared.init, Proof.Sha1.PPC64LE.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sha1.PPC64LE
