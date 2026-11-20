@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
+public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToSplit
+public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenTo
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 
@@ -118,5 +120,24 @@ def streamDecryptP (v : VecLevel) (t : Nat) (cp c : Callees) : Prog isa :=
   scrubAll v 0 2608 (Impl.Gcm.X86_64.Flag.onFlag t
     (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt cp))
     (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt c)))
+
+/-- `Spec.Gcm.openToPreparedApi`'s function on the key context alone, calling
+`S` (`vg_aes_gcm_open_split`), as emitted. -/
+def openToW (v : VecLevel) (S : Fn) : Prog isa :=
+  scrubAll v 32 2776 (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S))
+
+/-- `vg_aes_gcm_open_to`'s code on prepared powers: in one pass from `thr`
+bytes on by `fS` if `sel`, else by a copy and `fO`. -/
+def openToCodeP (sel : Bool) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (fO fS : Fn) : Prog isa :=
+  if sel then Impl.AesGcm.X86_64.OpenToSplit.openToSel Impl.AesGcm.X86_64.OpenToSplit.thr w fO fS
+  else Impl.AesGcm.X86_64.OpenTo.openTo w fO
+
+/-- `Spec.Gcm.openToPreparedApi`'s function, by the count `t` on the
+prepared powers (`openToCodeP`) or on the key context (`openToW`'s), as
+emitted. -/
+def openToP (v : VecLevel) (t : Nat) (sel : Bool) (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width)
+    (fO fS S : Fn) : Prog isa :=
+  scrubAll v 32 2776 (Impl.Gcm.X86_64.Flag.onFlag t (openToCodeP sel w fO fS)
+    (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S)))
 
 end VG.Impl.AesGcm.X86_64.Fn

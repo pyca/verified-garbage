@@ -40,6 +40,16 @@ def GcmVariant.own (v : GcmVariant) : VecLevel :=
 /-- The level of the cleanup of `v`'s functions. -/
 def GcmVariant.lv (v : GcmVariant) : VecLevel := v.impl.lv v.own
 
+/-- The level of the cleanup of `v`'s `open` on prepared powers, whose code
+past the short path is in VEX (`FastOpen.openFin`). -/
+def GcmVariant.lvA (v : GcmVariant) : VecLevel := v.impl.lv (v.own.join .avx)
+
+theorem GcmVariant.lv_le_lvA (v : GcmVariant) : v.lv.level ≤ v.lvA.level := by
+  unfold GcmVariant.lv GcmVariant.lvA GcmImpl.lv
+  generalize (v.impl.ctr.level.join v.impl.key.level).join v.impl.gh.level = a
+  generalize v.own = b
+  cases a <;> cases b <;> decide
+
 /-! ## The whole-blocks functions -/
 
 theorem encrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
@@ -177,6 +187,11 @@ structure CalleesSide (k : Nat) (c : Callees) : Prop where
   enc : calleeSide c.enc.code k 8 = true
   dec : calleeSide c.dec.code k 8 = true
 
+theorem CalleesSide.mono {k k' : Nat} {c : Callees} (hk : k ≤ k') (h : CalleesSide k c) : CalleesSide k' c :=
+  ⟨calleeSide_mono hk (Nat.le_refl _) h.ctr, calleeSide_mono hk (Nat.le_refl _) h.key,
+    calleeSide_mono hk (Nat.le_refl _) h.gh, calleeSide_mono hk (Nat.le_refl _) h.enc,
+    calleeSide_mono hk (Nat.le_refl _) h.dec⟩
+
 /-- `v`'s callees meet `CalleesSide`. -/
 theorem callees_side (v : GcmVariant) : CalleesSide v.lv.level v.impl.callees :=
   have h := v.impl.sides v.own
@@ -278,17 +293,17 @@ theorem sealR_of (v : GcmVariant) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.
   exact verifiedScrubbedAllFill (api := Spec.Gcm.sealPreparedApi) (ks := ks) (n := blkN) (a := Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP v.impl.short v.impl.fin stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode v.impl.short v.impl.fin stub5)))
     (sealRPlain v) v.lv (sealPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
 
-theorem openR_of (v : GcmVariant) (s : Bool) (ks : Nat) (hs : v.impl.short = s) (hks : ks ≤ v.lv.level)
+theorem openR_of (v : GcmVariant) (s : Bool) (ks : Nat) (hs : v.impl.short = s) (hks : ks ≤ v.lvA.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP s stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode s stub5))) ks blkN 2632 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lv 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees)
       (Spec.Gcm.openPreparedApi.contract X86_64.abi 2632) 32 := by
   rw [← hs] at ha
-  have hp := openCodeP_fill _ (withBlk_side v (blkR v) (blkR_sides v)) v.impl.short
-  have hb := openCode_fill _ (callees_side v) v.impl.short
+  have hp := openCodeP_fill _ (CalleesSide.mono v.lv_le_lvA (withBlk_side v (blkR v) (blkR_sides v))) v.impl.short
+  have hb := openCode_fill _ (CalleesSide.mono v.lv_le_lvA (callees_side v)) v.impl.short
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 48))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
   exact verifiedScrubbedAllFill (api := Spec.Gcm.openPreparedApi) (ks := ks) (n := blkN) (a := Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP v.impl.short stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode v.impl.short stub5)))
-    (openRPlain v) v.lv (openPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
+    (openRPlain v) v.lvA (openPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
 
 theorem streamEncryptR_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 48 (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt stub5)) (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt stub5))) ks blkN 2608 [] = true) :
@@ -338,17 +353,17 @@ theorem sealR16_of (v : GcmVariant) (r : R16 v) (s : Bool) (f : Bool) (ks : Nat)
   exact verifiedScrubbedAllFill (api := Spec.Gcm.sealPreparedApi) (ks := ks) (n := blkN) (a := Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP v.impl.short v.impl.fin stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode v.impl.short v.impl.fin stub5)))
     (sealF16Plain v r) v.lv (sealPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
 
-theorem openR16_of (v : GcmVariant) (r : R16 v) (s : Bool) (ks : Nat) (hs : v.impl.short = s) (hks : ks ≤ v.lv.level)
+theorem openR16_of (v : GcmVariant) (r : R16 v) (s : Bool) (ks : Nat) (hs : v.impl.short = s) (hks : ks ≤ v.lvA.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP s stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode s stub5))) ks blkN 2632 [] = true) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lv 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees)
       (Spec.Gcm.openPreparedApi.contract X86_64.abi 2632) 32 := by
   rw [← hs] at ha
-  have hp := openCodeP_fill _ (withBlk_side v (blkR16 v) (blkR16_sides v)) v.impl.short
-  have hb := openCode_fill _ (callees_side v) v.impl.short
+  have hp := openCodeP_fill _ (CalleesSide.mono v.lv_le_lvA (withBlk_side v (blkR16 v) (blkR16_sides v))) v.impl.short
+  have hb := openCode_fill _ (CalleesSide.mono v.lv_le_lvA (callees_side v)) v.impl.short
   have hf := Fill.seq (Fill.block (Impl.Gcm.X86_64.Flag.testFlag 16))
     (Fill.ite .ae (Fill.seq (Fill.seq (Fill.block []) (Fill.block [])) hp) hb)
   exact verifiedScrubbedAllFill (api := Spec.Gcm.openPreparedApi) (ks := ks) (n := blkN) (a := Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP v.impl.short stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode v.impl.short stub5)))
-    (openR16Plain v r) v.lv (openPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
+    (openR16Plain v r) v.lvA (openPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
 
 theorem streamEncryptR16_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level)
     (ha : stubSide (Impl.Gcm.X86_64.Flag.onFlag 16 (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt stub5)) (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt stub5))) ks blkN 2608 [] = true) :
@@ -385,5 +400,163 @@ theorem streamDecryptR16_of (v : GcmVariant) (ks : Nat) (hks : ks ≤ v.lv.level
        spSafe := VG.X86_64.onFlag_spSafe
          (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v)))
          (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) }) v.lv (streamDecryptPreparedOut _) hf hks (Nat.le_refl _) (ha := ha)
+
+/-! ## By the kind of interleaved loops -/
+
+/-- `Spec.Gcm.sealPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `sealW_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem sealW_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealW v.lv v.impl.short v.impl.fin v.impl.callees)
+      (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact sealW_of _ false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact sealW_of _ false false 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact sealW_of _ true false 2 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact sealW_of _ false true 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.openPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `openW_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem openW_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openW v.lv v.impl.short v.impl.callees)
+      (Spec.Gcm.openPreparedApi.contract X86_64.abi 2632) 32 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact openW_of _ false 0 rfl (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact openW_of _ false 1 rfl (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact openW_of _ true 2 rfl (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact openW_of _ false 1 rfl (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamEncryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamEncryptW_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamEncryptW_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamEncryptW v.lv v.impl.callees)
+      (Spec.Gcm.streamEncryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamEncryptW_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamEncryptW_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamEncryptW_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamEncryptW_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamDecryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamDecryptW_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamDecryptW_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamDecryptW v.lv v.impl.callees)
+      (Spec.Gcm.streamDecryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamDecryptW_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamDecryptW_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamDecryptW_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamDecryptW_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.sealPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `sealR_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem sealR_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees)
+      (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact sealR_of _ false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact sealR_of _ false false 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact sealR_of _ true false 2 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact sealR_of _ false true 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.openPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `openR_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem openR_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees)
+      (Spec.Gcm.openPreparedApi.contract X86_64.abi 2632) 32 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact openR_of _ false 1 rfl (GcmImpl.lv_le _ ((VecLevel.sse).join .avx)).2.2.2 (by lit_decide)
+  · cases name
+    · exact openR_of _ false 1 rfl (GcmImpl.lv_le _ ((StitchName.lv .vaes).join .avx)).2.2.2 (by lit_decide)
+    · exact openR_of _ true 2 rfl (GcmImpl.lv_le _ ((StitchName.lv .vaesAvx512).join .avx)).2.2.2 (by lit_decide)
+    · exact openR_of _ false 1 rfl (GcmImpl.lv_le _ ((StitchName.lv .aesniAvx).join .avx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamEncryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamEncryptR_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamEncryptR_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees)
+      (Spec.Gcm.streamEncryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamEncryptR_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamEncryptR_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamEncryptR_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamEncryptR_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamDecryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamDecryptR_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamDecryptR_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees)
+      (Spec.Gcm.streamDecryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamDecryptR_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamDecryptR_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamDecryptR_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamDecryptR_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.sealPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `sealR16_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem sealR16_scrubbed (v : GcmVariant) (r : R16 v) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees)
+      (Spec.Gcm.sealPreparedApi.contract X86_64.abi 2624) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact sealR16_of _ r false false 0 rfl rfl (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact sealR16_of _ r false false 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact sealR16_of _ r true false 2 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact sealR16_of _ r false true 1 rfl rfl (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.openPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `openR16_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem openR16_scrubbed (v : GcmVariant) (r : R16 v) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees)
+      (Spec.Gcm.openPreparedApi.contract X86_64.abi 2632) 32 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact openR16_of _ r false 1 rfl (GcmImpl.lv_le _ ((VecLevel.sse).join .avx)).2.2.2 (by lit_decide)
+  · cases name
+    · exact openR16_of _ r false 1 rfl (GcmImpl.lv_le _ ((StitchName.lv .vaes).join .avx)).2.2.2 (by lit_decide)
+    · exact openR16_of _ r true 2 rfl (GcmImpl.lv_le _ ((StitchName.lv .vaesAvx512).join .avx)).2.2.2 (by lit_decide)
+    · exact openR16_of _ r false 1 rfl (GcmImpl.lv_le _ ((StitchName.lv .aesniAvx).join .avx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamEncryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamEncryptR16_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamEncryptR16_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees)
+      (Spec.Gcm.streamEncryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamEncryptR16_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamEncryptR16_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamEncryptR16_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamEncryptR16_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
+
+/-- `Spec.Gcm.streamDecryptPreparedApi`'s function as emitted over `v` meets its contract in
+constant time and returns without secret residue: `streamDecryptR16_of`, its code over
+stubs evaluated for each kind of interleaved loops. -/
+theorem streamDecryptR16_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees)
+      (Spec.Gcm.streamDecryptPreparedApi.contract X86_64.abi 2608) 0 := by
+  rcases v with ⟨ctr, key, gh, _ | ⟨name, sfx, fs, eP, dP, pP, pR, tP⟩⟩
+  · exact streamDecryptR16_of _ 0 (Nat.zero_le _) (by lit_decide)
+  · cases name
+    · exact streamDecryptR16_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .vaes)).2.2.2 (by lit_decide)
+    · exact streamDecryptR16_of _ 2 (GcmImpl.lv_le _ (StitchName.lv .vaesAvx512)).2.2.2 (by lit_decide)
+    · exact streamDecryptR16_of _ 1 (GcmImpl.lv_le _ (StitchName.lv .aesniAvx)).2.2.2 (by lit_decide)
 
 end VG.Proof.AesGcm.X86_64
