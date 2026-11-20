@@ -371,19 +371,6 @@ theorem prepareSecretOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = m
 `ScrubAll.scrubSide` of the two functions, with each parameter set:
 evaluated here, by the kernel. -/
 
-/-- A parameter set, with the name of its module and its label, as the
-registration file names them. -/
-structure ParamSet where
-  p : Params
-  module : String
-  label : String
-  ok : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
-
-/-- The parameter sets the functions are emitted for. -/
-def sets : List ParamSet :=
-  [⟨mlDsa44, "mldsa44", "ML-DSA-44", .inl rfl⟩, ⟨mlDsa65, "mldsa65", "ML-DSA-65", .inr (.inl rfl)⟩,
-   ⟨mlDsa87, "mldsa87", "ML-DSA-87", .inr (.inr rfl)⟩]
-
 /-- Of preparing a verifying key. -/
 theorem preparePublicSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     scrubSide (Impl.MlDsa.AArch64.PreparedKey.preparePublic p)
@@ -950,72 +937,136 @@ theorem keyGen87 :
 open VG.Proof.MlDsa.AArch64.PreparedKey (rawSignK rawVerifyK messageSignK messageVerifyK)
 
 /-- `vg_<module>_sign` (or `_sign_prepared`) over `v`, as emitted. -/
-theorem sign (s : Scrub.ParamSet) (prepared : Bool) :
-    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee s.p s.module prepared)
-      (rawSignK s.p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
+theorem sign {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee p module prepared)
+      (rawSignK p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
   obtain ⟨hs, hd⟩ := sign_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
-    (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-    (s!"vg_{s.module}_sign_with_cache" ++ v.callee.suffix) prepared
+    (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+    (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) prepared
   cases prepared
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v s.ok _ false)
-      (Scrub.signPairedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v s.ok _ true)
-      (Scrub.preparedSignPairedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ false)
+      (Scrub.signPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ true)
+      (Scrub.preparedSignPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 /-- `vg_<module>_verify` (or `_verify_prepared`) over `v`, as emitted. -/
-theorem verify (s : Scrub.ParamSet) (prepared : Bool) :
-    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee s.p s.module prepared)
-      (rawVerifyK s.p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
+theorem verify {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee p module prepared)
+      (rawVerifyK p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
   obtain ⟨hs, hd⟩ := verify_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
-    (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-    (s!"vg_{s.module}_verify_with_cache" ++ v.callee.suffix) prepared
+    (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+    (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) prepared
   cases prepared
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v s.ok _ false)
-      (Scrub.verifySelectedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v s.ok _ true)
-      (Scrub.preparedVerifySelectedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ false)
+      (Scrub.verifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ true)
+      (Scrub.preparedVerifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 /-- `vg_<module>_sign_message` (or `_sign_message_prepared`) over `v`, as
 emitted: it calls `sign` as emitted. -/
-theorem signMessage (s : Scrub.ParamSet) (prepared : Bool) :
-    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee s.p s.module prepared)
-      (messageSignK s.p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
+theorem signMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee p module prepared)
+      (messageSignK p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
   cases prepared
   · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
-      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-      (s!"vg_{s.module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{s.module}_sign" ++ v.callee.suffix) false
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign" ++ v.callee.suffix) false
     exact verifiedScrubbedAll
-      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v s.ok (Scrub.message_sign_fn_scrub s.p v s.ok _ false))
-      (Scrub.signMessagePairedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ false))
+      (Scrub.signMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
   · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
-      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-      (s!"vg_{s.module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{s.module}_sign_prepared" ++ v.callee.suffix)
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign_prepared" ++ v.callee.suffix)
       true
     exact verifiedScrubbedAll
-      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v s.ok (Scrub.message_sign_fn_scrub s.p v s.ok _ true))
-      (Scrub.preparedSignMessagePairedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ true))
+      (Scrub.preparedSignMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 /-- `vg_<module>_verify_message_cached` (or `_verify_message_prepared`) over
 `v`, as emitted: it calls `verify` as emitted. -/
-theorem verifyMessage (s : Scrub.ParamSet) (prepared : Bool) :
-    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee s.p s.module prepared)
-      (messageVerifyK s.p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
+theorem verifyMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee p module prepared)
+      (messageVerifyK p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
   cases prepared
   · obtain ⟨hs, hd⟩ := verifyMessage_sd v.callee (perm_side v)
-      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-      (s!"vg_{s.module}_verify_with_cache" ++ v.callee.suffix) (s!"vg_{s.module}_verify" ++ v.callee.suffix) false
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) (s!"vg_{module}_verify" ++ v.callee.suffix) false
     exact verifiedScrubbedAll
-      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v s.ok
-        (Scrub.message_verify_fn_scrub s.p v s.ok _ false))
-      (Scrub.verifyMessageCachedSelectedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
+        (Scrub.message_verify_fn_scrub p v hp _ false))
+      (Scrub.verifyMessageCachedSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
   · obtain ⟨hs, hd⟩ := verifyMessage_sd v.callee (perm_side v)
-      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) s.ok
-      (s!"vg_{s.module}_verify_with_cache" ++ v.callee.suffix)
-      (s!"vg_{s.module}_verify_prepared" ++ v.callee.suffix) true
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix)
+      (s!"vg_{module}_verify_prepared" ++ v.callee.suffix) true
     exact verifiedScrubbedAll
-      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v s.ok
-        (Scrub.message_verify_fn_scrub s.p v s.ok _ true))
-      (Scrub.preparedVerifyMessageSelectedOk s.p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
+        (Scrub.message_verify_fn_scrub p v hp _ true))
+      (Scrub.preparedVerifyMessageSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+theorem sign44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa44 "mldsa44" prepared)
+      (rawSignK mlDsa44 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inl rfl) "mldsa44" prepared
+
+theorem sign65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa65 "mldsa65" prepared)
+      (rawSignK mlDsa65 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem sign87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa87 "mldsa87" prepared)
+      (rawSignK mlDsa87 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem verify44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa44 "mldsa44" prepared)
+      (rawVerifyK mlDsa44 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inl rfl) "mldsa44" prepared
+
+theorem verify65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa65 "mldsa65" prepared)
+      (rawVerifyK mlDsa65 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem verify87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa87 "mldsa87" prepared)
+      (rawVerifyK mlDsa87 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem signMessage44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa44 "mldsa44" prepared)
+      (messageSignK mlDsa44 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inl rfl) "mldsa44" prepared
+
+theorem signMessage65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa65 "mldsa65" prepared)
+      (messageSignK mlDsa65 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem signMessage87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa87 "mldsa87" prepared)
+      (messageSignK mlDsa87 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem verifyMessage44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa44 "mldsa44" prepared)
+      (messageVerifyK mlDsa44 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inl rfl) "mldsa44" prepared
+
+theorem verifyMessage65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa65 "mldsa65" prepared)
+      (messageVerifyK mlDsa65 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem verifyMessage87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa87 "mldsa87" prepared)
+      (messageVerifyK mlDsa87 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inr (.inr rfl)) "mldsa87" prepared
 
 end
 
