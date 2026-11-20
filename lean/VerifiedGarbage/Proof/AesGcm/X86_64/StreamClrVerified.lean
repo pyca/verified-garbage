@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
@@ -545,20 +545,9 @@ def Ctr32Small.wrapC (v : VecLevel) {c : Impl.Aes.X86_64.Ctr32} (f : Ctr32Small 
   ct := wrap_ct v f.ct
   off := f.off
 
-theorem calleeSide_seqBlock {c : Prog isa} {b : List Instr} {k n : Nat}
-    (h : X86_64.Scrub.calleeSide c k n = true)
-    (hb : (Code.block b : Prog isa).allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) = true) :
-    X86_64.Scrub.calleeSide (.seq c (.block b)) k n = true := by
-  simp only [X86_64.Scrub.calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
-  refine ⟨⟨?_, ?_⟩, ?_⟩
-  · simp only [Code.x86_64Depth]; exact Nat.max_le.mpr ⟨h.1.1, Nat.zero_le _⟩
-  · show c.allInstrs _ && (Code.block b : Prog isa).allInstrs _ = true
-    rw [h.1.2, hb]; rfl
-  · simpa [UpperLock.inames] using h.2
-
 theorem ctr32Wrap_side (v : VecLevel) (c : Ctr32Impl) :
     X86_64.Scrub.calleeSide (ctr32Wrap v c.callee).code (c.level.join v).level 0 = true :=
-  calleeSide_seqBlock (X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left c.level v) (Nat.le_refl 0) c.side)
+  X86_64.Scrub.calleeSide_seqBlock (X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left c.level v) (Nat.le_refl 0) c.side)
     (X86_64.Scrub.side_mono (X86_64.Scrub.level_join_right c.level v) (by cases v <;> decide))
 
 theorem ctr32Wrap_expandSide (v : VecLevel) (c : Ctr32Impl) :
@@ -609,7 +598,7 @@ def Ctr32Small.wipe {c : Impl.Aes.X86_64.Ctr32} (h9 : ∀ i ∈ instrs c.code, T
 
 theorem ctr32Wipe_side (c : Ctr32Impl) :
     X86_64.Scrub.calleeSide (ctr32Wipe 1480 c.callee).code c.level.level 0 = true :=
-  calleeSide_seqBlock c.side (X86_64.Scrub.side_mono (Nat.zero_le _) (by decide))
+  X86_64.Scrub.calleeSide_seqBlock c.side (X86_64.Scrub.side_mono (Nat.zero_le _) (by decide))
 
 /-- `c`'s `vg_aes_ctr32`, as `vg_aes_ctr32_w`, zeroing the 1480 bytes of its
 working space it may write before it returns, for an implementation that
@@ -654,6 +643,14 @@ def GhashFree.wrapC (v : VecLevel) {c : Prog isa} (f : GhashFree c) : GhashFree 
   ok := wrap_ok v (fun _ _ h => h) f.ok
   ct := wrap_ct v f.ct
 
+theorem ghWrap_side (v : VecLevel) (g : GhashImpl) :
+    X86_64.Scrub.calleeSide (g.fn.wrapC (clrAfter v)).code (g.level.join v).level 0 = true :=
+  X86_64.Scrub.calleeSide_seqBlock (X86_64.Scrub.calleeSide_mono (X86_64.Scrub.level_join_left g.level v) (Nat.le_refl 0) g.side)
+    (X86_64.Scrub.side_mono (X86_64.Scrub.level_join_right g.level v) (by cases v <;> decide))
+
+theorem ghWipe_side (g : GhashImpl) : X86_64.Scrub.calleeSide (g.fn.wipeR .r8 256).code g.level.level 0 = true :=
+  X86_64.Scrub.calleeSide_seqBlock g.side (X86_64.Scrub.side_mono (Nat.zero_le _) (by decide))
+
 /-- `g`, clearing the registers before it returns. -/
 def GhashImpl.wrapC (v : VecLevel) (g : GhashImpl) : GhashImpl :=
   { g with
@@ -665,6 +662,8 @@ def GhashImpl.wrapC (v : VecLevel) (g : GhashImpl) : GhashImpl :=
     nosp := wrap_nosp v g.nosp
     mxcsr := wrap_allInstrs v (clrAfter_mx v) g.mxcsr
     spSafe := wrap_all v (clrAfter_sp v) g.spSafe
+    level := g.level.join v
+    side := ghWrap_side v g
     free := g.free.map (·.wrapC v) }
 
 
@@ -690,6 +689,7 @@ def GhashImpl.wipe (g : GhashImpl) (h8 : ∀ i ∈ instrs g.fn.code, Taint.clobb
       · exact wipeX_nosp .r8 0 256 i hi
     mxcsr := by simp only [Fn.wipeR, Code.allInstrs, g.mxcsr, Bool.true_and]; exact wipeX_mx .r8 0 256
     spSafe := by simp only [Fn.wipeR, Code.all, g.spSafe, Bool.true_and]; exact wipeX_sp .r8 0 256
+    side := ghWipe_side g
     free := none }
 
 /-- `i`, its `vg_aes_ctr32` and `vg_ghash` clearing the registers before they return. -/

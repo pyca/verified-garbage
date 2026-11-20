@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
