@@ -51,7 +51,6 @@ arm vg_idea_expand_key
 arm vg_idea_invert_key
 arm vg_idea_ofb
 arm vg_idea_ofb_final
-arm vg_poly1305_init
 arm vg_seed_cbc_decrypt_chained
 arm vg_seed_cbc_encrypt_chained
 arm vg_seed_cfb128_decrypt
