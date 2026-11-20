@@ -94,3 +94,67 @@ jmp 21f
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_aesni_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_aesni_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_decrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_decrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_aesni_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_aesni_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cfb128_encrypt_core.rs"]
+pub(crate) mod vg_aes_cfb128_encrypt_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks.rs"]
+pub(crate) mod vg_aes_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_decrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
+pub(crate) mod vg_aes_expand_key_scratch_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aesni_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_aesni_pclmul_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_pclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_seal_pclmul_core;
