@@ -601,12 +601,20 @@ theorem rc_fold (b0 b1 b2 b3 b4 b5 b6 : Bool) :
         (if b6 then 1#64 <<< 63 else 0) := by
   cases b0 <;> cases b1 <;> cases b2 <;> cases b3 <;> cases b4 <;> cases b5 <;> cases b6 <;> decide
 
+private theorem rc_fold_bits (bit : Nat → Bool) :
+    (List.range 7).foldl (fun acc j => if bit j then acc ||| (1#64 <<< (2 ^ j - 1)) else acc) 0 =
+      ((BitVec.ofNat 64 ((if bit 0 then 1 else 0) + (if bit 1 then 2 else 0) +
+          (if bit 2 then 8 else 0) + (if bit 3 then 128 else 0)) |||
+        (if bit 4 then 1#64 <<< 15 else 0)) ||| (if bit 5 then 1#64 <<< 31 else 0)) |||
+        (if bit 6 then 1#64 <<< 63 else 0) :=
+  rc_fold (bit 0) (bit 1) (bit 2) (bit 3) (bit 4) (bit 5) (bit 6)
+
 /-- `RC k` as `rcBuild` builds it: the four low bits as a number, then bits
 15, 31 and 63. -/
 theorem rc_eq (k : Nat) :
     RC k = ((BitVec.ofNat 64 (rcLo k) ||| (if rcBit k 4 then 1#64 <<< 15 else 0)) |||
       (if rcBit k 5 then 1#64 <<< 31 else 0)) ||| (if rcBit k 6 then 1#64 <<< 63 else 0) :=
-  rc_fold (rcBit k 0) (rcBit k 1) (rcBit k 2) (rcBit k 3) (rcBit k 4) (rcBit k 5) (rcBit k 6)
+  rc_fold_bits (rcBit k)
 
 theorem rcLo_lt (k : Nat) : rcLo k < 2048 := by
   unfold rcLo; split <;> split <;> split <;> split <;> omega_using []
