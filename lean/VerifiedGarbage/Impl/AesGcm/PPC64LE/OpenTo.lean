@@ -27,13 +27,13 @@ the caller, `vg_aes_gcm_open_to`, wipes it.
 
 ## `vg_aes_gcm_open_to`
 
-It allocates a frame of 2720 bytes: its Parameter Save Area holds the call's
+It allocates a frame of 1312 bytes: its Parameter Save Area holds the call's
 stack arguments `tag`, `tag_len`, the address of the working space (at
 `sp + 160`) and `dst` (at `sp + 96` … `sp + 120`), and our return address
 (at `sp + 152`, as `SealGather.ret` reads it), which the call (`bl`)
-overwrites in the link register; the working space, 2560 bytes, follows.
+overwrites in the link register; the working space, 1152 bytes, follows.
 Our stack arguments `dst`, `dst_len`, `tag` and `tag_len` are at
-`sp + 2816` … `sp + 2840`, and our register arguments are the call's. If
+`sp + 1408` … `sp + 1432`, and our register arguments are the call's. If
 the call returns 0 (the tag is wrong), `dst` is zeroed a byte at a time
 (`wipe`); `r3` is left as the call left it, 0. Every register the function
 writes is caller-saved, and the branches are on `len` alone, but the one
@@ -99,12 +99,12 @@ def openSplit : Prog isa :=
 /-- Our return address into the frame (`r12` its address); `tag`,
 `tag_len`, the working space and `dst` into the call's stack arguments. -/
 def entry : List Instr :=
-  [.addSp .r12 0, .mflr .r0, .store .d .r0 .r12 152, .load .d .r0 .r12 2832, .store .d .r0 .r12 96,
-    .load .d .r0 .r12 2840, .store .d .r0 .r12 104, .addi .r0 .r12 160, .store .d .r0 .r12 112,
-    .load .d .r0 .r12 2816, .store .d .r0 .r12 120]
+  [.addSp .r12 0, .mflr .r0, .store .d .r0 .r12 152, .load .d .r0 .r12 1424, .store .d .r0 .r12 96,
+    .load .d .r0 .r12 1432, .store .d .r0 .r12 104, .addi .r0 .r12 160, .store .d .r0 .r12 112,
+    .load .d .r0 .r12 1408, .store .d .r0 .r12 120]
 
 /-- `dst` in `r9`, `dst_len` (`len`) in `r10`, and zero in `r11`. -/
-def wipeArgs : List Instr := [.addSp .r12 0, .load .d .r9 .r12 2816, .load .d .r10 .r12 2824, .li .r11 0]
+def wipeArgs : List Instr := [.addSp .r12 0, .load .d .r9 .r12 1408, .load .d .r10 .r12 1416, .li .r11 0]
 
 /-- The `r10` bytes at `r9` zeroed, a byte at a time. -/
 def wipeLoop : Prog isa :=
@@ -119,10 +119,10 @@ def after : Prog isa := .ite (.zero .w .r3) wipe (.block [])
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_gcm_open_split`. -/
 def openTo : Prog isa :=
-  .frame (.alloc 2720)
+  .frame (.alloc 1312)
     (.seq (.block entry)
     (.seq (.call "vg_aes_gcm_open_split" openSplit)
     (.seq after (.block SealGather.ret))))
-    (.free 2720)
+    (.free 1312)
 
 end VG.Impl.AesGcm.PPC64LE.OpenTo

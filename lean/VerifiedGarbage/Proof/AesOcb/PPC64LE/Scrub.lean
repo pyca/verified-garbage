@@ -16,8 +16,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 volatile registers they may write and the whole frame that holds their
 working space, which they do not wipe themselves: 320 bytes for `init`
 (`withStackScratch`, AES-GCM's frame: its callees need no working space), and
-2688 for `seal` and `open` (`withStackScratchArgs`), the offsets and
-the working space of the block functions among it. Their postconditions
+640 for `seal` and `open` (`withStackScratchArgs`), the offsets and the
+blocks of the associated data among it (the block functions need no
+working space). Their postconditions
 read the memory on return only within the key context, the data and the
 tag, as on AArch64 (`Proof/AesOcb/AArch64/Frame.lean`): `init`'s for a key
 of a length its precondition allows (`initPostOut_of_local_pre`).
@@ -126,9 +127,9 @@ def initReg : Registration Spec.Ocb.initApi PPC64LE.target :=
 /-- `Spec.Ocb.sealApi`. -/
 def sealReg : Registration Spec.Ocb.sealApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesOcb.PPC64LE.«seal»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 Impl.AesOcb.PPC64LE.«seal»
       verified := Proof.AesOcb.seal_keyed Proof.AesOcb.PPC64LE.seal_framed }
-    2688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v19]⟩
     (sealOut _)
     (by dsimp only; lit_decide)
@@ -136,9 +137,9 @@ def sealReg : Registration Spec.Ocb.sealApi PPC64LE.target :=
 /-- `Spec.Ocb.openApi`. -/
 def openReg : Registration Spec.Ocb.openApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesOcb.PPC64LE.«open»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 Impl.AesOcb.PPC64LE.«open»
       verified := Proof.AesOcb.open_keyed Proof.AesOcb.PPC64LE.open_framed }
-    2688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v19]⟩
     (openOut _)
     (by dsimp only; lit_decide)

@@ -6,13 +6,13 @@
 
 vg_cmac_aes_update:
 	mflr %r0
-	std %r0, 2112(%r8)
-	std %r14, 2064(%r8)
-	std %r15, 2072(%r8)
-	std %r16, 2080(%r8)
-	std %r17, 2088(%r8)
-	std %r18, 2096(%r8)
-	std %r19, 2104(%r8)
+	std %r0, 48(%r8)
+	std %r14, 0(%r8)
+	std %r15, 8(%r8)
+	std %r16, 16(%r8)
+	std %r17, 24(%r8)
+	std %r18, 32(%r8)
+	std %r19, 40(%r8)
 	or %r14, %r3, %r3
 	or %r15, %r4, %r4
 	or %r16, %r5, %r5
@@ -34,7 +34,6 @@ vg_cmac_aes_update:
 	or %r4, %r15, %r15
 	or %r5, %r16, %r16
 	li %r6, 1
-	or %r7, %r19, %r19
 	bl {vg_aes_encrypt_blocks}
 	addi %r17, %r17, 16
 	addi %r18, %r18, -1
@@ -43,12 +42,12 @@ vg_cmac_aes_update:
 	b 21f
 20:
 21:
-	ld %r0, 2112(%r19)
-	ld %r14, 2064(%r19)
-	ld %r15, 2072(%r19)
-	ld %r16, 2080(%r19)
-	ld %r17, 2088(%r19)
-	ld %r18, 2096(%r19)
-	ld %r19, 2104(%r19)
+	ld %r0, 48(%r19)
+	ld %r14, 0(%r19)
+	ld %r15, 8(%r19)
+	ld %r16, 16(%r19)
+	ld %r17, 24(%r19)
+	ld %r18, 32(%r19)
+	ld %r19, 40(%r19)
 	mtlr %r0
 	blr

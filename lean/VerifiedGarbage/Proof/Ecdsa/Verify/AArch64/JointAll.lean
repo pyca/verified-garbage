@@ -41,7 +41,8 @@ bits, a table of the fifteen nonzero digit pairs `[i]G + [j]Q`, then one
 chain of doublings with an addition of the entry the two scalars' next
 digits select. The table is built in one of two ways: through pointers the
 counter selects (`build`: P-192, secp256k1, brainpoolP512r1), or by a choice
-among fifteen copies (`buildTable`: brainpoolP256r1, brainpoolP384r1).
+among fifteen copies (`buildTable`: brainpoolP256r1, brainpoolP320r1,
+brainpoolP384r1).
 
 This module states those programs once, for a configuration `c` and the
 words `m` of a scalar, and proves them for a configuration with a `Kit`
@@ -53,8 +54,8 @@ that is `BuildOk`; `points_ok` and `pointsCompact_ok`, for the two; and
 programs, which are these by definition.
 
 A fact about the layout depends on the configuration only through its word
-count, four, six or eight (`Kit.n_mem`): `jd c` decides it at the three, and
-`jo c` proves at the three, by `omega`, arithmetic in the word count and the
+count, four, five, six or eight (`Kit.n_mem`): `jd c` decides it at the four, and
+`jo c` proves at the four, by `omega`, arithmetic in the word count and the
 number of a table's entry.
 -/
 
@@ -76,8 +77,8 @@ open VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint
 so that the statements are in the configuration itself, as each curve's
 module states them for its own. -/
 class Kit (c : Cfg) : Prop where
-  /-- A field element has four, six or eight words. -/
-  n_mem : c.n ∈ [4, 6, 8]
+  /-- A field element has four, five, six or eight words. -/
+  n_mem : c.n ∈ [4, 5, 6, 8]
   /-- The complete addition keeps the loop's counter. -/
   sum_counter : ∀ i ∈ instrs (sum c), clobbers i .x19 = false
 
@@ -224,7 +225,7 @@ abbrev resultWork (c : Cfg) : List (Nat × Nat) := (coordinates (resultPt c)).ma
 abbrev prepWork (c : Cfg) : List (Nat × Nat) := [(bitsU,128*c.n),(c.sl EXPP,8*c.n)]
 
 /-- `decide` for a fact about the layout, which depends on the configuration
-only through its word count: at the three word counts (and `decide` itself
+only through its word count: at the four word counts (and `decide` itself
 for a closed fact beside one). -/
 local macro "jd " c:term : tactic => `(tactic| first
   | decide
@@ -236,11 +237,11 @@ local macro "jd " c:term : tactic => `(tactic| first
      decide))
 
 /-- `omega` for a goal in the word count and the number of a table's entry: at
-the three word counts. -/
+the four word counts. -/
 local macro "jo " c:term : tactic => `(tactic|
   (have hjo := Kit.n_mem (c := $c)
    simp only [List.mem_cons, List.not_mem_nil, or_false] at hjo
-   rcases hjo with hjo | hjo | hjo <;> simp only [hjo] <;> omega))
+   rcases hjo with hjo | hjo | hjo | hjo <;> simp only [hjo] <;> omega))
 
 variable {c : Cfg} [Kit c]
 

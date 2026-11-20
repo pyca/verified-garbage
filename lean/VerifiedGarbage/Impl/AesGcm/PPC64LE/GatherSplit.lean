@@ -36,7 +36,7 @@ def callArgs : List Instr := firstArgs ++ SealGather.callArgs.take 6 ++ stackArg
 
 
 def sealCode : Prog isa :=
-  VG.Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 3 SealSplit.seal
+  VG.Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 3 SealSplit.seal
 
 
 def fast : Prog isa := .seq (.seq (.block skip) VG.Impl.Gather.PPC64LE.gather)

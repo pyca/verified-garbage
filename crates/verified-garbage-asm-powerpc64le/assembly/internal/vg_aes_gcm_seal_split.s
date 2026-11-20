@@ -5,13 +5,13 @@
 // gives.
 
 vg_aes_gcm_seal_split:
-	stdu %r1, -2688(%r1)
+	stdu %r1, -1280(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2784(%r12)
+	ld %r0, 1376(%r12)
 	std %r0, 96(%r12)
-	ld %r0, 2792(%r12)
+	ld %r0, 1384(%r12)
 	std %r0, 104(%r12)
-	ld %r0, 2800(%r12)
+	ld %r0, 1392(%r12)
 	std %r0, 112(%r12)
 	addi %r0, %r12, 128
 	std %r0, 120(%r12)
@@ -772,5 +772,5 @@ vg_aes_gcm_seal_split:
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
 	addi %r1, %r1, 112
-	addi %r1, %r1, 2688
+	addi %r1, %r1, 1280
 	blr

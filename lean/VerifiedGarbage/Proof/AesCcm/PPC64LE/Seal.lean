@@ -117,14 +117,13 @@ theorem c0_mut (c : Cx) : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Regio
 theorem ctrR_mut (c : Cx) {y : Nat} (hy : y = 0 ∨ y = 96) : ∀ r ∈ ctrR c.W y, ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact sub_lo (by decide)
   · exact sub_lo (by omega_using [hy])
-  · exact sub_hi (by decide) (by decide)
 
 /-- A part of `W` missing the regions `rs` the pieces write in `W`. -/
 theorem w_keep {c : Cx} (L : Lay c) {rs : List (Nat × Nat)} {d k : Nat}
-    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 2560) (hd : d + k ≤ 2560) :
+    (h : ∀ q ∈ rs, (d + k ≤ q.1 ∨ q.1 + q.2 ≤ d) ∧ q.1 + q.2 ≤ 448) (hd : d + k ≤ 448) :
     ∀ r ∈ rs.map (fun q => (⟨c.W + BitVec.ofNat 64 q.1, q.2⟩ : Region)),
       (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
@@ -133,7 +132,7 @@ theorem w_keep {c : Cx} (L : Lay c) {rs : List (Nat × Nat)} {d k : Nat}
 
 /-- A buffer missing `W` is kept by the regions `rs` in `W`. -/
 theorem bufW_keep {c : Cx} {s : State} {P : Addr} {len : Nat} (hP : Buf c s P len) {rs : List (Nat × Nat)}
-    (h : ∀ q ∈ rs, q.1 + q.2 ≤ 2560) :
+    (h : ∀ q ∈ rs, q.1 + q.2 ≤ 448) :
     ∀ r ∈ rs.map (fun q => (⟨c.W + BitVec.ofNat 64 q.1, q.2⟩ : Region)), (⟨P, len⟩ : Region).Disjoint r := by
   intro r hr
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hr
@@ -143,10 +142,10 @@ theorem c0_list (W : Addr) : [(⟨W + BitVec.ofNat 64 48, 16⟩ : Region)] =
     [(48, 16)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 theorem macR_list (W : Addr) (y : Nat) : macR W y =
-    [(y, 16), (32, 16), (384, 2176)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
+    [(y, 16), (32, 16), (384, 64)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 theorem ctrR_list (W : Addr) (y : Nat) : ctrR W y =
-    [(64, 16), (y, 16), (384, 2048)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
+    [(64, 16), (y, 16)].map (fun q => (⟨W + BitVec.ofNat 64 q.1, q.2⟩ : Region)) := rfl
 
 /-- Our caller's registers, kept in their slots by writes to `mutR`. -/
 theorem saved_mut {c : Cx} (L : Lay c) {g : Reg → BitVec 64} {m m' : Mem} (hf : Frame (mutR c) m m')

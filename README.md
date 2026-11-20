@@ -1969,7 +1969,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 
@@ -2255,7 +2255,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅ umaal</td>
 

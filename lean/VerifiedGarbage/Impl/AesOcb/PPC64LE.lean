@@ -40,7 +40,7 @@ verified `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`, as on ARMv7
 The key setup, `vg_aes_ocb_init`, is `vg_aes_gcm_init`'s: a key context of
 AES-OCB is one of AES-GCM.
 
-## The working space `W` (`work`, 2560 bytes)
+## The working space `W` (`work`, 512 bytes)
 
 `[0, 16)`: the tag (out of `seal`; the received one, for `open`); then the
 offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, the current
@@ -49,8 +49,8 @@ our return address at `[128, 248)` (as AES-GCM saves them,
 `Impl.AesGcm.PPC64LE.save`); the tag `open` computes, the offset of `HASH`,
 `bottom`, the number of blocks of a chunk of `HASH`, the blocks of the
 associated data left, `Offset_0` and the tag `open` computes, padded, to
-352; `[384, 512)`: 8 blocks of the associated data; `[512, 2560)`: the
-working space of the functions called.
+352; `[384, 512)`: 8 blocks of the associated data. The functions called
+need no working space.
 
 ## Registers
 
@@ -90,7 +90,6 @@ def hlO : Nat := 304
 def o0O : Nat := 320
 def vO : Nat := 336
 def bufO : Nat := 384
-def scrO : Nat := 512
 
 /-! ## Blocks -/
 
@@ -140,9 +139,9 @@ def encCall : Prog isa := .call "vg_aes_encrypt_blocks" Impl.Aes.PPC64LE.encrypt
 /-- `vg_aes_decrypt_blocks`. -/
 def decCall : Prog isa := .call "vg_aes_decrypt_blocks" Impl.Aes.PPC64LE.decryptBlocks
 
-/-- The arguments of a call but the blocks: the key context's schedule, the
-number of rounds and the working space. -/
-def callArgs : List Instr := [mov .r3 .r29, mov .r4 .r28, .addi .r7 .r31 scrO]
+/-- The arguments of a call but the blocks: the key context's schedule and
+the number of rounds (the block functions need no working space). -/
+def callArgs : List Instr := [mov .r3 .r29, mov .r4 .r28]
 
 /-- `ENCIPHER` of the block at `W + d`, in place. -/
 def encOne (d : Nat) : Prog isa := .seq (.block (callArgs ++ [.addi .r5 .r31 d, .li .r6 1])) encCall

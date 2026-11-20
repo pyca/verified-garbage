@@ -10,11 +10,12 @@ public import VerifiedGarbage.Impl.AesCbc.PPC64LE
 and `vg_cmac_aes_finalize(key = r3, rounds = r4, state = r5, last = r6, last_len = r7, scratch = r8)`, composed of calls of
 the verified `vg_aes_encrypt_blocks` on one block in place.
 
-The scratch buffer (2176 bytes): `[0, 2048)` is the working space of
-`vg_aes_encrypt_blocks`, `[2048, 2064)` the last block `Mₙ` of `finalize`,
-and `[2064, 2120)` our caller's nonvolatile registers and our return address
-(a call replaces the link register). A call (`bl`) stores nothing in memory,
-so no stack is used.
+The scratch buffer (64 bytes) holds our caller's nonvolatile registers and
+our return address (a call replaces the link register): `subkeys`'s at
+`[0, 24)`, `update`'s at `[0, 56)` (AES-CBC's pieces at `updOff`), and
+`finalize`'s at `[16, 32)`, after the last block `Mₙ` at `[0, 16)`.
+`vg_aes_encrypt_blocks` needs no working space. A call (`bl`) stores
+nothing in memory, so no stack is used.
 
 * `subkeys` zeroes the first block of `subkeys` and enciphers it in place
   (`L = CIPH_K(0)`), then doubles it there (`K1`) and into the second block
@@ -41,24 +42,23 @@ the doubling is masked.
 namespace VG.Impl.CmacAes.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.AesCbc.PPC64LE (mov xorInto advance whole encCall)
+open VG.Impl.AesCbc.PPC64LE (mov xorInto advance wholeAt encCall)
 
 /-- The offset of the last block in the scratch buffer. -/
-def cOff : Nat := 2048
+def cOff : Nat := 0
 
 /-! ## `vg_cmac_aes_subkeys` -/
 
 /-- The registers saved in the scratch buffer, and where (`r15`, the base of
 the restore, last). -/
-def skSaved : List (Reg × Nat) := [(.r0, 2080), (.r14, 2064), (.r15, 2072)]
+def skSaved : List (Reg × Nat) := [(.r0, 16), (.r14, 0), (.r15, 8)]
 
 /-- Saves `r14`, `r15` and the return address, keeps `subkeys` in `r14` and
 the scratch buffer in `r15`, zeroes the first block of `subkeys`, and sets up
 the arguments of `vg_aes_encrypt_blocks` on it. -/
 def subkeysPre : List Instr :=
   .mflr .r0 :: skSaved.map (fun (r, d) => .store .d r .r6 d) ++
-    [mov .r14 .r5, mov .r15 .r6, .li .r9 0, .store .d .r9 .r5 0, .store .d .r9 .r5 8, mov .r5 .r14, .li .r6 1,
-     mov .r7 .r15]
+    [mov .r14 .r5, mov .r15 .r6, .li .r9 0, .store .d .r9 .r5 0, .store .d .r9 .r5 8, mov .r5 .r14, .li .r6 1]
 
 /-- The block at `r14 + src`, doubled (`VG.Spec.Cmac.dbl 16`), to `r14 + dst`. -/
 def dbl (src dst : Nat) : List Instr :=
@@ -78,14 +78,17 @@ def subkeys : Prog isa := .seq (.block subkeysPre) (.seq encCall (.block subkeys
 /-! ## `vg_cmac_aes_update` -/
 
 /-- The arguments of `vg_aes_encrypt_blocks` on the state: the schedule, the
-rounds, the state, `n = 1`, and the working space. -/
-def updArgs : List Instr := [mov .r3 .r14, mov .r4 .r15, mov .r5 .r16, .li .r6 1, mov .r7 .r19]
+rounds, the state and `n = 1`. -/
+def updArgs : List Instr := [mov .r3 .r14, mov .r4 .r15, mov .r5 .r16, .li .r6 1]
 
 /-- One block: `C ⊕ Mᵢ` in the state (at `r16`; the block at `r17`),
 enciphered in place. -/
 def body : Prog isa := .seq (.block (xorInto .r16 .r17 ++ updArgs)) (.seq encCall (.block advance))
 
-def update : Prog isa := whole body
+/-- The registers saved at the start of the scratch buffer (`updOff`). -/
+def updOff : Nat := 0
+
+def update : Prog isa := wholeAt updOff body
 
 /-! ## `vg_cmac_aes_finalize` -/
 
@@ -118,7 +121,7 @@ def partialBlock : Prog isa :=
 
 /-- The registers `finalize` saves in the scratch buffer, and where (`r14`,
 the base of the restore, last). -/
-def finSaved : List (Reg × Nat) := [(.r0, 2064), (.r14, 2072)]
+def finSaved : List (Reg × Nat) := [(.r0, 16), (.r14, 24)]
 
 /-- Saves `r14` and the return address in the scratch buffer at `r8`. -/
 def finSave : List Instr := .mflr .r0 :: finSaved.map fun (r, d) => .store .d r .r8 d
@@ -129,7 +132,7 @@ state (`r5`), which are ours. -/
 def finArgs : List Instr :=
   [.load .d .r9 .r5 0, .load .d .r10 .r8 cOff, .logic .xor .r9 .r9 .r10, .store .d .r9 .r5 0,
    .load .d .r9 .r5 8, .load .d .r10 .r8 (cOff + 8), .logic .xor .r9 .r9 .r10, .store .d .r9 .r5 8,
-   mov .r14 .r8, .li .r6 1, mov .r7 .r14]
+   mov .r14 .r8, .li .r6 1]
 
 /-- Everything before the call. -/
 def finPre : Prog isa :=

@@ -769,13 +769,11 @@ vg_aes_gcm_encrypt_blocks_split:
 	or %r5, %r27, %r27
 	or %r6, %r30, %r30
 	or %r7, %r25, %r25
-	addi %r8, %r31, 64
 	bl {vg_aes_ctr32}
 	addi %r3, %r29, 240
 	or %r4, %r26, %r26
 	or %r5, %r30, %r30
 	or %r6, %r25, %r25
-	addi %r7, %r31, 64
 	bl {vg_ghash}
 	b 235f
 234:

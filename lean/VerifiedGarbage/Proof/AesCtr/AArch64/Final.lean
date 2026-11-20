@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.AesCfb.AArch64.Final
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Aes.AArch64.ModesScrub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.AesCtr.Spec
 import VerifiedGarbage.Proof.AesCbc.Spec
@@ -879,5 +882,78 @@ theorem cryptFinal_framed (v : Ctr32Impl) :
     (leak := some (finalLeak AArch64.abi.ptrBits))
     (stack := 0) (bytes := 80) (words := 10) (cryptFinal_verified v) (by decide) (by decide) (by decide)
     (finalPost_localOut _) frameSat_pre
+
+/-! ## The functions, as emitted
+
+`vg_aes_ctr` and `vg_aes_ctr_final` with their cleanup
+(`Impl.AesCtr.AArch64.Fn`), around an implementation `v` of `vg_aes_ctr32`:
+each meets its contract in constant time and returns without secret residue
+(`VerifiedScrubbed`), which is what its registration binds. What the cleanup
+needs of the code (`ScrubAll.scrubSide`) is proved of each function's own
+instructions here, once, with code that does nothing in the place of
+`vg_aes_ctr32`, and of each implementation where it is defined
+(`Ctr32Impl.scrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem crypt_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32)
+    (h0 : sideAll p (crypt ⟨"", .block []⟩) = true) (hc : sideAll p c.code = true) :
+    sideAll p (crypt c) = true := by
+  simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem cryptFinal_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10
+      (cryptFinal ⟨"", .block []⟩ "")) = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+    cryptFinal, final, finalTail, crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem crypt_own :
+    calleeSide (crypt ⟨"", .block []⟩) Impl.AesCtr.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem cryptFinal_own :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal ⟨"", .block []⟩ ""))
+      Impl.AesCtr.AArch64.Fn.cryptFinalOwn = true := by
+  kernel_rfl
+
+theorem crypt_side (v : Ctr32Impl) :
+    scrubSide (crypt v.callee) 0 0 (Impl.AesCtr.AArch64.Fn.cryptOwn.union v.clear) [] = true := by
+  refine scrubSide_union0 ?_ (by decide)
+    (crypt_all v.callee (sideAll_union_left crypt_own) (sideAll_union_right v.scrub)) (by decide)
+  simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth,
+    Proof.Aes.AArch64.depth_of_noFrames v.noFrames]
+  decide
+
+theorem cryptFinal_side (v : Ctr32Impl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)) 80 0
+      (Impl.AesCtr.AArch64.Fn.cryptFinalOwn.union v.clear) [] = true := by
+  refine scrubSide_union (by decide) ?_ (by decide)
+    (cryptFinal_all v.callee v.suffix (sideAll_union_left cryptFinal_own) (sideAll_union_right v.scrub))
+    (by decide)
+  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+    cryptFinal, final, finalTail, crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole,
+    Code.aarch64Depth, Instr.frameUnits, Proof.Aes.AArch64.depth_of_noFrames v.noFrames]
+  decide
+
+/-- `vg_aes_ctr` as emitted, cleanup included. -/
+theorem crypt_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.crypt v.clear v.callee)
+      (Spec.Ctr.aesContract AArch64.abi) 0 :=
+  verifiedScrubbed (api := Spec.Ctr.aesApi)
+    { code := crypt v.callee, verified := Proof.AesCtr.keyed (crypt_verified v) } _
+    Proof.Aes.AArch64.ModesScrub.ctrOk (crypt_side v)
+
+/-- `vg_aes_ctr_final` as emitted, cleanup included. -/
+theorem cryptFinal_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.cryptFinal v.clear v.callee v.suffix)
+      (Spec.Ctr.aesFinalContract AArch64.abi 80) 0 :=
+  verifiedScrubbed (api := Spec.Ctr.aesFinalApi)
+    { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)
+      verified := Proof.AesCtr.final_keyed (cryptFinal_framed v) } _
+    Proof.Aes.AArch64.ModesScrub.ctrFinalOk (cryptFinal_side v)
 
 end VG.Proof.AesCtr.AArch64.Final

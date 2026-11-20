@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 
 /-! # Starting RSA key generation on AArch64
 
@@ -71,5 +72,18 @@ def stores : List Instr := [
 def words : List Instr := compute ++ mask ++ stores
 
 def init : Prog isa := .seq scan (.block (status ++ words))
+
+namespace Fn
+
+/-- `vg_rsa_key_init` as emitted: `init`, then its cleanup, which clears the
+registers it writes that the calling convention does not preserve, but the
+32 bits of its result (`Impl.Residue.AArch64.scrubAll`; it uses no stack), so
+that it returns without secret residue. -/
+def init : Prog isa :=
+  Residue.AArch64.scrubAll 0 32
+    ⟨[.x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩
+    KeyInit.init
+
+end Fn
 
 end VG.Impl.RsaKeyGen.AArch64.KeyInit
