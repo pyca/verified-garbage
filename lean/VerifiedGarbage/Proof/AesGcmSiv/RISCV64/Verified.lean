@@ -92,6 +92,7 @@ public import VerifiedGarbage.Proof.AesOcb.RISCV64.Callee
 public import VerifiedGarbage.Impl.AesGcm.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcmSiv.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
@@ -2390,7 +2391,7 @@ end VG.Proof.AesGcmSiv.RISCV64
 /-! ## AES-GCM-SIV on RISC-V, without secret residue
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbed`), which clears the
 caller-saved registers and all 5904 bytes of stack their frames and callees
 use, the derived keys among them: the residue analysis (`RISCV64.rtaint`)
 finds that all but the deepest 400 may hold secrets. Their postconditions
@@ -2436,18 +2437,40 @@ theorem openOut (stack : Nat) :
     rw [bytesAt_of0 (n := (BitVec.setWidth 64 len).toNat) hb.2.2.2.1 (by simp)]
     exact @h
 
-/-- `Spec.GcmSiv.sealApi`. -/
-def sealReg [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
-      verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
-    (sealOut _)
+/-- What the cleanup needs of `vg_aes_gcm_siv_seal`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem seal_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal») 5904 0 []
+      = true := by
+  lit_decide
 
-/-- `Spec.GcmSiv.openApi`. -/
-def openReg [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.openApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
+/-- `vg_aes_gcm_siv_seal` as emitted (`Impl.AesGcmSiv.RISCV64.Fn.«seal»`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem seal_scrubbed [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
+    VerifiedScrubbed target Impl.AesGcmSiv.RISCV64.Fn.«seal»
+      (Spec.GcmSiv.sealContract RISCV64.abi 5904) 0 :=
+  verifiedScrubbed (api := Spec.GcmSiv.sealApi) (W := 5904)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
+      verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
+    (sealOut _) seal_scrubSide
+
+/-- What the cleanup needs of `vg_aes_gcm_siv_open`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem open_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open») 5904 32 []
+      = true := by
+  lit_decide
+
+/-- `vg_aes_gcm_siv_open` as emitted (`Impl.AesGcmSiv.RISCV64.Fn.«open»`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem open_scrubbed [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
+    VerifiedScrubbed target Impl.AesGcmSiv.RISCV64.Fn.«open»
+      (Spec.GcmSiv.openContract RISCV64.abi 5904) 32 :=
+  verifiedScrubbed (api := Spec.GcmSiv.openApi) (W := 5904)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
       verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
-    (openOut _)
+    (openOut _) open_scrubSide
 
 end VG.Proof.AesGcmSiv.RISCV64.Scrub

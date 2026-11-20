@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.AesGcm.RISCV64.Fn
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 import all Init.Data.Nat.Bitwise.Basic
@@ -878,7 +879,7 @@ theorem streamVerifyBs_framed [VG.Proof.Gcm.RISCV64.GhashLaw] :
 
 Each function, followed by the clearing of the caller-saved registers and of
 the doublewords of its stack that the residue analysis (`RISCV64.rtaint`)
-finds may differ between two runs (`RISCV64.Scrub.scrubSelOf`,
+finds may differ between two runs (`RISCV64.Scrub.verifiedScrubbedSelT`,
 `scrubSel_noResidue`): all of those below the working space, which
 `vg_aes_ctr32_bs` and `vg_ghash` use, and the working space past its first
 16 bytes, which holds the keystream and the tag. -/
@@ -901,49 +902,53 @@ theorem streamVerifyBsOut :
     PostOut (Spec.Gcm.streamVerifyBitslicedContract RISCV64.abi 4624) (Spec.Gcm.streamVerifyBitslicedSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.streamVerifyBitslicedPost_out _)
 
-/-- `Spec.Gcm.streamEncryptBitslicedApi`. -/
-def streamEncryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamEncryptBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamEncryptBs
+/-- `vg_aes_gcm_stream_encrypt_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.streamEncryptBs`)
+meets its contract in constant time and returns without secret residue: the theorem its registration
+binds. -/
+theorem streamEncryptBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamEncryptBs
+      (Spec.Gcm.streamEncryptBitslicedContract RISCV64.abi 4624) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamEncryptBitslicedApi) (W := 4624)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamEncryptBs
       verified := Proof.AesGcm.streamEncryptBitsliced_keyed streamEncryptBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]
-    streamEncryptBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamEncryptBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamEncryptBs) 4624 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])] []
+    streamEncryptBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Gcm.streamDecryptBitslicedApi`. -/
-def streamDecryptBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamDecryptBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamDecryptBs
+/-- `vg_aes_gcm_stream_decrypt_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.streamDecryptBs`)
+meets its contract in constant time and returns without secret residue: the theorem its registration
+binds. -/
+theorem streamDecryptBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamDecryptBs
+      (Spec.Gcm.streamDecryptBitslicedContract RISCV64.abi 4624) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamDecryptBitslicedApi) (W := 4624)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamDecryptBs
       verified := Proof.AesGcm.streamDecryptBitsliced_keyed streamDecryptBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]
-    streamDecryptBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamDecryptBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamDecryptBs) 4624 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])] []
+    streamDecryptBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Gcm.streamFinishBitslicedApi`. -/
-def streamFinishBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamFinishBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamFinishBs
+/-- `vg_aes_gcm_stream_finish_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.streamFinishBs`) meets
+its contract in constant time and returns without secret residue: the theorem its registration
+binds. -/
+theorem streamFinishBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamFinishBs
+      (Spec.Gcm.streamFinishBitslicedContract RISCV64.abi 4608) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamFinishBitslicedApi) (W := 4608)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamFinishBs
       verified := Proof.AesGcm.streamFinishBitsliced_keyed streamFinishBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
-    streamFinishBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamFinishBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a7 Impl.AesGcm.RISCV64.streamFinishBs) 4608 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
+    streamFinishBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Gcm.streamVerifyBitslicedApi`. -/
-def streamVerifyBsReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamVerifyBitslicedApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamVerifyBs
+/-- `vg_aes_gcm_stream_verify_bitsliced` as emitted (`Impl.AesGcm.RISCV64.Fn.streamVerifyBs`) meets
+its contract in constant time and returns without secret residue: the theorem its registration
+binds. -/
+theorem streamVerifyBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamVerifyBs
+      (Spec.Gcm.streamVerifyBitslicedContract RISCV64.abi 4624) 32 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamVerifyBitslicedApi) (W := 4624)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamVerifyBs
       verified := Proof.AesGcm.streamVerifyBitsliced_keyed streamVerifyBs_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])]
-    streamVerifyBsOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamVerifyBsOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.AesGcm.RISCV64.streamVerifyBs) 4624 32
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (128, [(0, 16)])] []
+    streamVerifyBsOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 /-! ## `vg_aes_gcm_init`, `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad`
 
@@ -952,7 +957,7 @@ Rust code calls with the bitsliced functions above (they do not read the
 bitsliced round keys), without secret residue. `vg_aes_gcm_init` expands the
 key schedule into its working space, all of its stack, which the residue
 analysis finds may then all be secret: it is cleared whole
-(`RISCV64.Scrub.scrubOf`). `vg_aes_gcm_stream_init` and
+(`RISCV64.Scrub.verifiedScrubbed`). `vg_aes_gcm_stream_init` and
 `vg_aes_gcm_stream_aad` leave secret what the plain streaming functions
 above do (the working space past its first 400 bytes and the 2048 bytes
 `vg_ghash` uses below it), and clear those runs only. -/
@@ -969,33 +974,44 @@ theorem streamAadOut :
     PostOut (Spec.Gcm.streamAadContract RISCV64.abi 4608) (Spec.Gcm.streamAadSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesGcm.streamAadPostOut_local _)
 
-/-- `Spec.Gcm.initApi`. -/
-def initReg : Registration Spec.Gcm.initApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
+/-- What the cleanup needs of `vg_aes_gcm_init`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem init_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init) 2560 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_aes_gcm_init` as emitted (`Impl.AesGcm.RISCV64.Fn.init`) meets its contract in constant time
+and returns without secret residue: the theorem its registration binds. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.init
+      (Spec.Gcm.initContract RISCV64.abi 2560) 0 :=
+  verifiedScrubbed (api := Spec.Gcm.initApi) (W := 2560)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
       verified := init_framed }
-    initOut
+    initOut init_scrubSide
 
-/-- `Spec.Gcm.streamInitApi`. -/
-def streamInitReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamInitApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
+/-- `vg_aes_gcm_stream_init` as emitted (`Impl.AesGcm.RISCV64.Fn.streamInit`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamInit_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamInit
+      (Spec.Gcm.streamInitContract RISCV64.abi 4608) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamInitApi) (W := 4608)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
       verified := streamInit_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
-    streamInitOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamInitOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit) 4608 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
+    streamInitOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Gcm.streamAadApi`. -/
-def streamAadReg [VG.Proof.Gcm.RISCV64.GhashLaw] : Registration Spec.Gcm.streamAadApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
+/-- `vg_aes_gcm_stream_aad` as emitted (`Impl.AesGcm.RISCV64.Fn.streamAad`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamAad_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.streamAad
+      (Spec.Gcm.streamAadContract RISCV64.abi 4608) 0 :=
+  verifiedScrubbedSelT (api := Spec.Gcm.streamAadApi) (W := 4608)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
       verified := streamAad_framed }
-    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
-    streamAadOut
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb streamAadOut (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad) 4608 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
+    streamAadOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.AesGcm.RISCV64

@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Verified
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Verified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -249,6 +250,25 @@ theorem cachedKeySearchOut :
       wordsAt_of hb.2.2.2.2.2.2.1, wordsAt_of hb.2.2.1]
     exact h
 
+theorem sievedParameterSearchOut :
+    PostOut (Spec.Ffdh.sievedParameterSearchContract abi 232) (Spec.Ffdh.parameterSearchSig.retBits 32) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    iterate 8
+      obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+      replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.Ffdh.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size] at hb
+    change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.parameterSearchSig.retBits 32) → Prop) [_, _, _, _, _, _, _, _, _, _] _ _ _ m₁ r at h
+    change @Curry.apply (Mem → Mem → BitVec (Spec.Ffdh.parameterSearchSig.retBits 32) → Prop) [_, _, _, _, _, _, _, _, _, _] _ _ _ m₂ r
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    rw [bytesAt_of hb.1 (toNat_sw_le (w := abi.ptrBits) outLen), wordsAt_of hb.2.1, wordsAt_of hb.2.2.2.2]
+    exact h
+
 /-! ## Code generic over what it calls
 
 A function generic over an implementation it calls has code that is not a
@@ -369,11 +389,100 @@ theorem cachedSearchOk (b : MontBackend) : CodeOk (KeySearch.calledCode (CachedK
     have : CodeOk (CachedKeyGenerate.backend b).generateKey 176 := cachedAttemptOk b
     fill_holes).codeOk cachedSearchStub
 
+/-! ## `CodeOk` of the parameter search, generic over the Miller–Rabin round -/
+
+open VG.Proof.MillerRabin.Arm in
+/-- What the cleanup needs of a round: its `stack` and `icallFree`, which
+each implementation states of its own code. -/
+theorem roundOk (v : RoundImpl) : CodeOk v.code 56 := ⟨v.stack, v.icallFree⟩
+
+theorem rowU_noIcall : noIcall Impl.Bignum.Arm.rowU = true := by lit_decide
+
+theorem downRowU_noIcall : noIcall Impl.Bignum.Arm.DownRow.codeU = true := by lit_decide
+
+/-- The UMAAL rows the candidate's own Montgomery conversions take
+(`callerRows`) keep what the cleanup needs of its code. -/
+theorem callerRows_codeOk {c : Prog isa} {n : Nat} (h : CodeOk c n) :
+    CodeOk (Impl.Ffdh.Arm.callerRows c) n := by
+  refine ⟨Nat.le_trans (CallerRows.stack c) h.1, ?_⟩
+  have h2 := h.2
+  clear h
+  induction c with
+  | block _ =>
+    simp only [Impl.Ffdh.Arm.callerRows]
+    split
+    · exact rowU_noIcall
+    · split
+      · exact downRowU_noIcall
+      · exact h2
+  | seq x y ihx ihy =>
+    simp only [noIcall, Bool.and_eq_true] at h2
+    simp only [Impl.Ffdh.Arm.callerRows]
+    split
+    · exact rowU_noIcall
+    · split
+      · exact downRowU_noIcall
+      · simp only [noIcall, ihx h2.1, ihy h2.2, Bool.and_self]
+  | ite _ t e iht ihe =>
+    simp only [noIcall, Bool.and_eq_true] at h2
+    simp only [Impl.Ffdh.Arm.callerRows]
+    split
+    · exact rowU_noIcall
+    · split
+      · exact downRowU_noIcall
+      · simp only [noIcall, iht h2.1, ihe h2.2, Bool.and_self]
+  | loop x _ ih =>
+    simp only [noIcall] at h2
+    simp only [Impl.Ffdh.Arm.callerRows]
+    split
+    · exact rowU_noIcall
+    · split
+      · exact downRowU_noIcall
+      · simp only [noIcall, ih h2]
+  | call _ _ _ => exact h2
+  | icall => exact h2
+  | frame _ x _ ih =>
+    simp only [noIcall] at h2
+    simp only [Impl.Ffdh.Arm.callerRows]
+    split
+    · exact rowU_noIcall
+    · split
+      · exact downRowU_noIcall
+      · simp only [noIcall, ih h2]
+
+theorem candidateStub : CodeOk (Impl.Ffdh.Arm.ParameterCandidate.code "" (holeStub 56)) 184 := by
+  lit_decide
+
+open VG.Proof.MillerRabin.Arm in
+/-- The sieved candidate, which `vg_ffdh_generate_parameters` calls, with the round `v`. -/
+theorem candidateOk (v : RoundImpl) : CodeOk (parameterBackend v).candidate 184 := by
+  have hc : CodeOk (Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) 184 :=
+    (show FillB _ (Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) by
+      have := roundOk v; fill_holes).codeOk candidateStub
+  change CodeOk (Impl.Ffdh.Arm.ParameterCandidate.optimizedCode _ v.name v.code) 184
+  unfold Impl.Ffdh.Arm.ParameterCandidate.optimizedCode
+  split
+  · exact callerRows_codeOk hc
+  · exact hc
+
+theorem parameterSearchStub : CodeOk (Impl.Ffdh.Arm.ParameterSearch.code (.call "" (holeStub 184))) 232 := by
+  lit_decide
+
+open VG.Proof.MillerRabin.Arm in
+theorem parameterSearchOk (v : RoundImpl) :
+    CodeOk (Impl.Ffdh.Arm.ParameterSearch.code
+      (.call (parameterBackend v).candidateName (parameterBackend v).candidate)) 232 :=
+  (show FillB _ (Impl.Ffdh.Arm.ParameterSearch.code
+      (.call (parameterBackend v).candidateName (parameterBackend v).candidate)) by
+    have := candidateOk v; fill_holes).codeOk parameterSearchStub
+
 theorem frameOk_128 : FrameOk 128 := by decide
 
 theorem frameOk_176 : FrameOk 176 := by decide
 
 theorem frameOk_240 : FrameOk 240 := by decide
+
+theorem frameOk_232 : FrameOk 232 := by decide
 
 end VG.Proof.Ffdh.Arm.Scrub
 
@@ -453,5 +562,18 @@ theorem cachedKeySearch (b : MontBackend) :
     { code := KeySearch.calledCode (CachedKeyGenerate.backend b)
       verified := KeySearch.verified (CachedKeyGenerate.backend b) }
     Scrub.cachedKeySearchOut (scrubSideF_of (Scrub.cachedSearchOk b) Scrub.frameOk_240 _)
+
+open VG.Proof.MillerRabin.Arm in
+/-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v`. -/
+theorem sievedParameterSearch (v : RoundImpl) :
+    VerifiedScrubbed target
+      (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
+        (.call (parameterBackend v).candidateName (parameterBackend v).candidate)))
+      (Spec.Ffdh.sievedParameterSearchContract abi 232) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.sievedParameterSearchApi)
+    { code := Impl.Ffdh.Arm.ParameterSearch.code
+        (.call (parameterBackend v).candidateName (parameterBackend v).candidate)
+      verified := ParameterSearch.verified (parameterBackend v) }
+    Scrub.sievedParameterSearchOut (scrubSideF_of (Scrub.parameterSearchOk v) Scrub.frameOk_232 _)
 
 end VG.Proof.Ffdh.Arm.Fn

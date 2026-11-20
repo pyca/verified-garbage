@@ -26,10 +26,14 @@ wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
 `vg_ecdsa_p521_sign` and its `_umaal` variant call indirectly only the HMAC
 functions of their table, from frames within the stack their contract
 reserves, and their postcondition reads the memory on return only at
-`out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is registered followed
-by a wipe of that stack (`Arm.Scrub.scrubRegFT`). The code's facts are
-proved of `signCfg`, the configuration `cfgT` builds, written without the
-group law that the curve's `RfcCurve` carries proofs of.
+`out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is emitted followed
+by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
+(`Arm.Scrub.verifiedScrubbedF`). What the cleanup needs of
+signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
+from what the core states of its own code (`signCore_ok`, by `lit_decide`);
+`signCode_eq` is that the code `cfgT` builds is that of
+`Impl.Ecdsa.Arm.Fn.signCfgP521`, written without the group law that the curve's
+`RfcCurve` carries proofs of.
 All are then followed by instructions that set the registers a callee may
 change, but the result, and the flags to constants.
 -/
@@ -64,49 +68,17 @@ theorem verifyU_code : armStack (verifyCode true) ≤ 96 ∧ noIcall (verifyCode
 
 theorem frameOk_96 : FrameOk 96 := by decide
 
-theorem frameOk_stackT : FrameOk stackT := by decide
+theorem signCore_ok : CodeOk Impl.Ecdsa.Arm.signP521Comb 16 := by lit_decide
 
-/-- The configuration of signing's code, with `umaal` if `u`: the code is that
-of `p521CombCurve`'s, whose other fields are proofs. -/
-def signCfg (u : Bool) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
-  f := Proof.HmacTable.Arm.fnsOf vars
-  w := 2 * Impl.Ecdsa.Arm.p521.n - (if Impl.Ecdsa.Arm.p521.C.len = 28 then 1 else 0)
-  len := Impl.Ecdsa.Arm.p521.C.len
-  big := true
-  sh := 7
-  n := Impl.Ecdsa.Arm.p521.C.n
-  tries := Spec.Ecdsa.Rfc6979.Curves.p521.tries
-  coreN := bif u then "vg_ecdsa_p521_sign_k" ++ "_umaal" else "vg_ecdsa_p521_sign_k"
-  coreC := bif u then Impl.Ecdsa.Arm.signP521CombU else Impl.Ecdsa.Arm.signP521Comb
+theorem signCoreU_ok : CodeOk Impl.Ecdsa.Arm.signP521CombU 16 := by lit_decide
 
-theorem signCfg_code (u : Bool) :
-    armStack (signCfg u).sign ≤ stackT ∧ tablesCall (signCfg u).sign [("hmac", tables vars)] = true := by
-  cases u <;> lit_decide
+theorem signCode_eq (hC : Weierstrass.Law Spec.P521.curve) :
+    signCodeT (p521CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars =
+      (Impl.Ecdsa.Arm.Fn.signCfgP521 (Proof.HmacTable.Arm.fnsOf vars) false).sign := rfl
 
-/-- `vg_ecdsa_p521_sign`, given the group law. -/
-def signReg (hC : Weierstrass.Law Spec.P521.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.p521SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      tables := [("hmac", tables vars)]
-      code := signCodeT (p521CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-      verified := p521T_verified hC }
-    (by exact (signCfg_code false).1) (by exact (signCfg_code false).2)
-    frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p521
-      (p521CombCurve hC).coreConsts vars) rfl
-
-/-- `vg_ecdsa_p521_sign_umaal`, given the group law. -/
-def signUReg (hC : Weierstrass.Law Spec.P521.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.p521SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      suffix := "_umaal"
-      tables := [("hmac", tables vars)]
-      code := signCodeT (p521CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
-      verified := p521UT_verified hC }
-    (by exact (signCfg_code true).1) (by exact (signCfg_code true).2)
-    frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p521
-      (p521CombCurveU hC).coreConsts vars) rfl
+theorem signCodeU_eq (hC : Weierstrass.Law Spec.P521.curve) :
+    signCodeT (p521CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars =
+      (Impl.Ecdsa.Arm.Fn.signCfgP521 (Proof.HmacTable.Arm.fnsOf vars) true).sign := rfl
 
 end VG.Proof.Ecdsa.Arm.P521.Scrub
 
@@ -137,5 +109,32 @@ theorem verifyP521U (hC : Weierstrass.Law Spec.P521.curve) :
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P521.inst
       Impl.Weierstrass.Arm.p521CombConsts 96)
     (scrubSideF_of P521.Scrub.verifyU_code P521.Scrub.frameOk_96 _)
+
+
+/-- `vg_ecdsa_p521_sign`, given the group law. -/
+theorem signP521 (hC : Weierstrass.Law Spec.P521.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signP521 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.p521
+        (Ecdsa.Rfc6979.Arm.p521CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p521SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.p521CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.p521T_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p521
+      (Ecdsa.Rfc6979.Arm.p521CombCurve hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (P521.Scrub.signCode_eq hC) rfl P521.Scrub.signCore_ok)
+
+/-- `vg_ecdsa_p521_sign_umaal`, given the group law. -/
+theorem signP521U (hC : Weierstrass.Law Spec.P521.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signP521U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.p521
+        (Ecdsa.Rfc6979.Arm.p521CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p521SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.p521CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.p521.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.p521UT_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.p521
+      (Ecdsa.Rfc6979.Arm.p521CombCurveU hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (P521.Scrub.signCodeU_eq hC) rfl P521.Scrub.signCoreU_ok)
 
 end VG.Proof.Ecdsa.Arm.Fn

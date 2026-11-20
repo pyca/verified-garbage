@@ -27,10 +27,14 @@ wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
 `vg_ecdsa_secp256k1_sign` and its `_umaal` variant call indirectly only the HMAC
 functions of their table, from frames within the stack their contract
 reserves, and their postcondition reads the memory on return only at
-`out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is registered followed
-by a wipe of that stack (`Arm.Scrub.scrubRegFT`). The code's facts are
-proved of `signCfg`, the configuration `cfgT` builds, written without the
-group law that the curve's `RfcCurve` carries proofs of.
+`out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is emitted followed
+by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
+(`Arm.Scrub.verifiedScrubbedF`). What the cleanup needs of
+signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
+from what the core states of its own code (`signCore_ok`, by `lit_decide`);
+`signCode_eq` is that the code `cfgT` builds is that of
+`Impl.Ecdsa.Arm.Fn.signCfgSecp256k1`, written without the group law that the curve's
+`RfcCurve` carries proofs of.
 All are then followed by instructions that set the registers a callee may
 change, but the result, and the flags to constants.
 -/
@@ -65,49 +69,17 @@ theorem verifyU_code : armStack (verifyCode true) ≤ 96 ∧ noIcall (verifyCode
 
 theorem frameOk_96 : FrameOk 96 := by decide
 
-theorem frameOk_stackT : FrameOk stackT := by decide
+theorem signCore_ok : CodeOk Impl.Ecdsa.Arm.signSecp256k1Comb 16 := by lit_decide
 
-/-- The configuration of signing's code, with `umaal` if `u`: the code is that
-of `secp256k1CombCurve`'s, whose other fields are proofs. -/
-def signCfg (u : Bool) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
-  f := Proof.HmacTable.Arm.fnsOf vars
-  w := 2 * Impl.Ecdsa.Arm.secp256k1.n - (if Impl.Ecdsa.Arm.secp256k1.C.len = 28 then 1 else 0)
-  len := Impl.Ecdsa.Arm.secp256k1.C.len
-  big := false
-  sh := 0
-  n := Impl.Ecdsa.Arm.secp256k1.C.n
-  tries := Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries
-  coreN := bif u then "vg_ecdsa_secp256k1_sign_k" ++ "_umaal" else "vg_ecdsa_secp256k1_sign_k"
-  coreC := bif u then Impl.Ecdsa.Arm.signSecp256k1CombU else Impl.Ecdsa.Arm.signSecp256k1Comb
+theorem signCoreU_ok : CodeOk Impl.Ecdsa.Arm.signSecp256k1CombU 16 := by lit_decide
 
-theorem signCfg_code (u : Bool) :
-    armStack (signCfg u).sign ≤ stackT ∧ tablesCall (signCfg u).sign [("hmac", tables vars)] = true := by
-  cases u <;> lit_decide
+theorem signCode_eq (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    signCodeT (secp256k1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars =
+      (Impl.Ecdsa.Arm.Fn.signCfgSecp256k1 (Proof.HmacTable.Arm.fnsOf vars) false).sign := rfl
 
-/-- `vg_ecdsa_secp256k1_sign`, given the group law. -/
-def signReg (hC : Weierstrass.Law Spec.Secp256k1.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      tables := [("hmac", tables vars)]
-      code := signCodeT (secp256k1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-      verified := secp256k1T_verified hC }
-    (by exact (signCfg_code false).1) (by exact (signCfg_code false).2)
-    frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1
-      (secp256k1CombCurve hC).coreConsts vars) rfl
-
-/-- `vg_ecdsa_secp256k1_sign_umaal`, given the group law. -/
-def signUReg (hC : Weierstrass.Law Spec.Secp256k1.curve) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi target :=
-  Arm.Scrub.scrubRegFT {
-      suffix := "_umaal"
-      tables := [("hmac", tables vars)]
-      code := signCodeT (secp256k1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-      verified := secp256k1UT_verified hC }
-    (by exact (signCfg_code true).1) (by exact (signCfg_code true).2)
-    frameOk_stackT
-    (Proof.Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1
-      (secp256k1CombCurveU hC).coreConsts vars) rfl
+theorem signCodeU_eq (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    signCodeT (secp256k1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars =
+      (Impl.Ecdsa.Arm.Fn.signCfgSecp256k1 (Proof.HmacTable.Arm.fnsOf vars) true).sign := rfl
 
 end VG.Proof.Ecdsa.Arm.Secp256k1.Scrub
 
@@ -138,5 +110,32 @@ theorem verifySecp256k1U (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.Secp256k1.inst
       Impl.Weierstrass.Arm.secp256k1CombConsts 96)
     (scrubSideF_of Secp256k1.Scrub.verifyU_code Secp256k1.Scrub.frameOk_96 _)
+
+
+/-- `vg_ecdsa_secp256k1_sign`, given the group law. -/
+theorem signSecp256k1 (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signSecp256k1 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.secp256k1
+        (Ecdsa.Rfc6979.Arm.secp256k1CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.secp256k1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.secp256k1T_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1
+      (Ecdsa.Rfc6979.Arm.secp256k1CombCurve hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (Secp256k1.Scrub.signCode_eq hC) rfl Secp256k1.Scrub.signCore_ok)
+
+/-- `vg_ecdsa_secp256k1_sign_umaal`, given the group law. -/
+theorem signSecp256k1U (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signSecp256k1U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
+      (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.secp256k1
+        (Ecdsa.Rfc6979.Arm.secp256k1CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
+  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+    { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
+      code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.secp256k1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars
+      verified := Ecdsa.Rfc6979.Arm.secp256k1UT_verified hC }
+    (Ecdsa.Rfc6979.Arm.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1
+      (Ecdsa.Rfc6979.Arm.secp256k1CombCurveU hC).coreConsts HmacTable.Arm.vars)
+    (Ecdsa.Rfc6979.Arm.Scrub.sign_side_of (Secp256k1.Scrub.signCodeU_eq hC) rfl Secp256k1.Scrub.signCoreU_ok)
 
 end VG.Proof.Ecdsa.Arm.Fn

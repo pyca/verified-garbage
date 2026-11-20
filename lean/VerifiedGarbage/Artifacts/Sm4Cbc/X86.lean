@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
+public import VerifiedGarbage.Proof.Sm4.X86.Scrub
+public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.CbcLit
@@ -13,10 +14,10 @@ namespace VG.Artifacts.Sm4Cbc.X86
 
 def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcEncryptChained
-    verified := .unscrubbed Proof.Sm4.X86.Cbc.cbcEncryptChained_framed },
+    code := Impl.Sm4.X86.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Sm4.cbcDecryptChainedApi.artifact X86.target {
-    code := Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcDecryptChained
-    verified := .unscrubbed Proof.Sm4.X86.Cbc.cbcDecryptChained_framed }]
+    code := Impl.Sm4.X86.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Sm4.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Sm4Cbc.X86
