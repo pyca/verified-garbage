@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 (`Proof.Gcm.ghashX86`), for CPUs with PCLMULQDQ and SSSE3 (for `pshufb`).
 The reflected field arithmetic is that of the x86-64 implementation
 (`Impl/Gcm/X86_64/Pclmul.lean`): the product of two registers, reduced
-(`zero`, `acc`, `reduce`), is `x · a · b`, and the hash subkey is used as
+(`mul4`, `reduce`), is `x · a · b`, and the hash subkey is used as
 `H' = H · x⁻¹`.
 
 With eight blocks or more, `H'¹`, …, `H'⁸` are computed once per call into
@@ -106,14 +106,19 @@ def mulSlots (d a b : Nat) : List Instr :=
   ([.movdquLoad .xmm2 (slot a), .movdquLoad .xmm3 (slot b)] : List Instr) ++ mul4 ++ reduce ++
   ([.movdquStore (slot d) .xmm2] : List Instr)
 
+/-- The sum of the halves of `xmm2` into the low quadword of `xmm4`, and of
+`xmm3` into its high quadword. -/
+def hsum : List Instr :=
+  [.xop (.pshufd .xmm4 .xmm2 0x4e), .xop (.bin .pxor .xmm4 .xmm2),
+   .xop (.pshufd .xmm5 .xmm3 0x4e), .xop (.bin .pxor .xmm5 .xmm3),
+   .xop (.bin .punpcklqdq .xmm4 .xmm5)]
+
 /-- For the powers in the slots `2 k` and `2 k + 1`: the sum of the halves
 of the first in the low quadword of the slot `10 + k`, and of the second in
 its high quadword. -/
 def halves (k : Nat) : List Instr :=
-  [.movdquLoad .xmm2 (slot (2 * k)), .movdquLoad .xmm3 (slot (2 * k + 1)),
-   .xop (.pshufd .xmm4 .xmm2 0x4e), .xop (.bin .pxor .xmm4 .xmm2),
-   .xop (.pshufd .xmm5 .xmm3 0x4e), .xop (.bin .pxor .xmm5 .xmm3),
-   .xop (.bin .punpcklqdq .xmm4 .xmm5), .movdquStore (slot (10 + k)) .xmm4]
+  ([.movdquLoad .xmm2 (slot (2 * k)), .movdquLoad .xmm3 (slot (2 * k + 1))] : List Instr) ++ hsum ++
+  ([.movdquStore (slot (10 + k)) .xmm4] : List Instr)
 
 /-- `scratch` into `ecx`; `Y` into the slot 8 and the reduction's constant
 into the slot 9; `H'ᵏ⁺¹` into the slot `k`, for `k < 8`, each the product of
@@ -129,18 +134,21 @@ def pows : List Instr :=
 the slot `k`. -/
 def halfSel (k : Nat) : BitVec 8 := if k % 2 = 0 then 0x00 else 0x10
 
-/-- The block in `xmm2` times the power in the slot `k`, added to `xmm4`
-(the product of the low halves, in a copy of the block in `xmm7`), `xmm6`
-(of the high halves, in `xmm2` itself) and `xmm5` (of the sums of the
-halves: the block's in `xmm1`, the power's loaded from the slot
-`10 + k / 2`). -/
-def kblock (k : Nat) : List Instr :=
-  [.movdquLoad .xmm3 (slot k),
-   .xop (.bin .movdqa .xmm7 .xmm2), .xop (.pclmulqdq .xmm7 .xmm3 0x00), .xop (.bin .pxor .xmm4 .xmm7),
+/-- Of `xmm2` and `xmm3`: the product of the low halves added to `xmm4` (in
+a copy of `xmm2` in `xmm7`), the sum of the halves of `xmm2` into `xmm1`,
+and the product of the high halves added to `xmm6` (in `xmm2` itself). -/
+def klohi : List Instr :=
+  [.xop (.bin .movdqa .xmm7 .xmm2), .xop (.pclmulqdq .xmm7 .xmm3 0x00), .xop (.bin .pxor .xmm4 .xmm7),
    .xop (.pshufd .xmm1 .xmm2 0x4e), .xop (.bin .pxor .xmm1 .xmm2),
-   .xop (.pclmulqdq .xmm2 .xmm3 0x11), .xop (.bin .pxor .xmm6 .xmm2),
-   .movdquLoad .xmm3 (slot (10 + k / 2)),
-   .xop (.pclmulqdq .xmm1 .xmm3 (halfSel k)), .xop (.bin .pxor .xmm5 .xmm1)]
+   .xop (.pclmulqdq .xmm2 .xmm3 0x11), .xop (.bin .pxor .xmm6 .xmm2)]
+
+/-- The block in `xmm2` times the power in the slot `k`, added to `xmm4`
+and `xmm6` (`klohi`) and `xmm5` (the product of the sums of the halves: the
+block's in `xmm1`, the power's loaded from the slot `10 + k / 2`). -/
+def kblock (k : Nat) : List Instr :=
+  ([.movdquLoad .xmm3 (slot k)] : List Instr) ++ klohi ++
+  ([.movdquLoad .xmm3 (slot (10 + k / 2)),
+    .xop (.pclmulqdq .xmm1 .xmm3 (halfSel k)), .xop (.bin .pxor .xmm5 .xmm1)] : List Instr)
 
 /-- Block `j` of eight, `0 < j`: the product of `Xⱼ₊₁` and `H'⁸⁻ʲ`, added. -/
 def later (j : Nat) : List Instr :=
@@ -149,23 +157,28 @@ def later (j : Nat) : List Instr :=
 /-- The first block of eight, which is multiplied last: the product of
 `Y ⊕ X₁` and `H'⁸`, added, with `Y` from the slot 8. -/
 def last : List Instr :=
-  ([.movdquLoad .xmm2 (at_ .edx 0), .xop (.bin .pshufb .xmm2 .xmm0), .movdquLoad .xmm3 (slot 8),
-   .xop (.bin .pxor .xmm2 .xmm3)] : List Instr) ++ kblock 7
+  ([.movdquLoad .xmm2 (at_ .edx 0), .xop (.bin .pshufb .xmm2 .xmm0)] : List Instr) ++
+  ([.movdquLoad .xmm3 (slot 8), .xop (.bin .pxor .xmm2 .xmm3)] : List Instr) ++ kblock 7
 
 /-- A step of the reduction, with `xmm5` for its product. -/
 def kfold : List Instr :=
   [.xop (.bin .movdqa .xmm5 .xmm4), .xop (.pclmulqdq .xmm5 .xmm1 0x10),
    .xop (.pshufd .xmm4 .xmm4 0x4e), .xop (.bin .pxor .xmm4 .xmm5)]
 
-/-- After the eight blocks: the middle of the product (the products of the
-sums of the halves, plus the two others), the reduction with its constant
-loaded from the slot 9, and `Y` left in `xmm6` and stored in the slot 8:
-none of the registers the blocks load into holds a result of it. -/
-def kreduce : List Instr :=
-  ([.xop (.bin .pxor .xmm5 .xmm4), .xop (.bin .pxor .xmm5 .xmm6),
+/-- The middle of the product (the products of the sums of the halves, plus
+the two others), and its halves added to `xmm6` and `xmm4`. -/
+def kmiddle : List Instr :=
+  [.xop (.bin .pxor .xmm5 .xmm4), .xop (.bin .pxor .xmm5 .xmm6),
    .xop (.bin .movdqa .xmm7 .xmm5), .xop (.shift .psrldq .xmm7 8),
    .xop (.bin .pxor .xmm6 .xmm7), .xop (.shift .pslldq .xmm5 8),
-   .xop (.bin .pxor .xmm4 .xmm5), .movdquLoad .xmm1 (slot 9)] : List Instr) ++ kfold ++ kfold ++
+   .xop (.bin .pxor .xmm4 .xmm5)]
+
+/-- After the eight blocks: the middle of the product, the reduction with
+its constant loaded from the slot 9, and `Y` left in `xmm6` and stored in
+the slot 8: none of the registers the blocks load into holds a result of
+it. -/
+def kreduce : List Instr :=
+  kmiddle ++ ([.movdquLoad .xmm1 (slot 9)] : List Instr) ++ kfold ++ kfold ++
   ([.xop (.bin .pxor .xmm6 .xmm4), .movdquStore (slot 8) .xmm6] : List Instr)
 
 /-- Eight blocks, with `scratch` in `ecx` and `Y` in the slot 8, where it
