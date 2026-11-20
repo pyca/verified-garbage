@@ -302,13 +302,6 @@ arm vg_sm4_ofb
 arm vg_sm4_ofb_final
 arm vg_x25519_exchange
 arm vg_x25519_exchange_umaal
-riscv64 vg_aes_ccm_open
-riscv64 vg_aes_ccm_seal
-riscv64 vg_aes_gcm_siv_open
-riscv64 vg_aes_gcm_siv_seal
-riscv64 vg_aes_ocb_init
-riscv64 vg_aes_ocb_open
-riscv64 vg_aes_ocb_seal
 riscv64 vg_aes_siv_decrypt
 riscv64 vg_aes_siv_encrypt
 riscv64 vg_aes_siv_init
