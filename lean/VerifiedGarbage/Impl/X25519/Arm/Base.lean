@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # X25519 of the base point on ARMv7
@@ -49,3 +50,14 @@ def x25519Base (umaal : Bool) : Prog isa :=
   .seq (.block scalarBaseSetup) (.seq (engine umaal) (.block scalarBaseFinish))
 
 end VG.Impl.X25519.Arm.Base
+
+namespace VG.Impl.X25519.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_x25519_base`, with either product of the field (`umaal`):
+`x25519Base umaal`, then the registers a callee may change
+and the flags set to constants. -/
+def x25519Base (umaal : Bool) : Prog isa := scrub 0 (Base.x25519Base umaal)
+
+end VG.Impl.X25519.Arm.Fn

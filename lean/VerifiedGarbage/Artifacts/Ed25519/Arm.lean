@@ -13,8 +13,17 @@ namespace VG.Artifacts.Ed25519.Arm
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Ed25519Field.Arm.variants.flatMap fun (v : Proof.Variants.Ed25519Field.Arm.Variant) => [
-    Spec.Ed25519.keyPairApi.artifact Arm.target (Proof.Ed25519.Arm.Scrub.keyPairReg v.umaal v.suffix),
-    Spec.Ed25519.signExpandedApi.artifact Arm.target (Proof.Ed25519.Arm.Scrub.signExpandedReg v.umaal v.suffix),
-    Spec.Ed25519.verifyApi.artifact Arm.target (Proof.Ed25519.Arm.Scrub.verifyReg v.umaal v.suffix)]
+    Spec.Ed25519.keyPairApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed25519.Arm.Fn.keyPair v.umaal
+      verified := .scrubbed (Proof.Ed25519.Arm.Fn.keyPair v.umaal) },
+    Spec.Ed25519.signExpandedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed25519.Arm.Fn.signExpanded v.umaal
+      verified := .scrubbed (Proof.Ed25519.Arm.Fn.signExpanded v.umaal) },
+    Spec.Ed25519.verifyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Ed25519.Arm.Fn.verify v.umaal
+      verified := .scrubbed (Proof.Ed25519.Arm.Fn.verify v.umaal) }]
 
 end VG.Artifacts.Ed25519.Arm

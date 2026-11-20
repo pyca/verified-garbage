@@ -28,6 +28,7 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
@@ -601,3 +602,43 @@ theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
   scalarBase_correct (ScalarBasePre.of hs)
 
 end VG.Proof.Ed25519.Arm
+
+/-! ## The shape of the field's code
+
+What the cleanup of a function that multiplies in the field needs of its code
+(`Code.noFrames`, `armStack`, `noIcall`) depends only on its shape, which is
+the same with either product (`umaal`) but where the product is chosen
+(`mulIn`, `mulFn`): so these lemmas state it once for both, and each caller
+proves its own shape for any `umaal` from them, rather than evaluating each
+variant's code again. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm.Shape
+
+open VG VG.Arm VG.Arm.FrameStack VG.Impl.Ed25519.Arm
+
+theorem mulIn (umaal : Bool) (o a b : Nat) : (mulIn umaal o a b).noFrames = true ∧
+    armStack (mulIn umaal o a b) = 0 ∧ noIcall (mulIn umaal o a b) = true := by
+  cases umaal <;> simp only [Impl.Ed25519.Arm.mulIn, mulBodyU, Impl.X25519.Arm.mulAt, Code.noFrames,
+    armStack, noIcall, Bool.and_self, Bool.false_eq_true, ↓reduceIte, Nat.max_self, and_self]
+
+theorem mulFn (umaal : Bool) : (mulFn umaal).noFrames = true ∧
+    armStack (mulFn umaal) = 0 ∧ noIcall (mulFn umaal) = true := by
+  cases umaal <;> simp only [Impl.Ed25519.Arm.mulFn, mulBodyU, mulBody, Code.noFrames, armStack, noIcall,
+    Bool.and_self, Bool.false_eq_true, ↓reduceIte, Nat.max_self, and_self]
+
+theorem fieldCode (umaal : Bool) (ops : List FieldOp) : (fieldCode umaal ops).noFrames = true ∧
+    armStack (fieldCode umaal ops) = 0 ∧ noIcall (fieldCode umaal ops) = true := by
+  induction ops with
+  | nil => exact ⟨rfl, rfl, rfl⟩
+  | cons op ops ih =>
+    obtain ⟨h1, h2, h3⟩ := ih
+    obtain ⟨m1, m2, m3⟩ := mulFn umaal
+    cases op <;> simp only [Impl.Ed25519.Arm.fieldCode, FieldOp.code, mulCall, Code.noFrames, armStack,
+      noIcall, h1, h2, h3, m1, m2, m3, (mulIn umaal _ _ _).1, (mulIn umaal _ _ _).2.1, (mulIn umaal _ _ _).2.2,
+      Bool.and_self, Nat.max_self, and_self]
+
+end VG.Proof.Ed25519.Arm.Shape
+
+end
