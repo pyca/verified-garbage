@@ -82,6 +82,7 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   noDit := by lit_decide
+  side := by lit_decide
   suffix := ""
   features := []
   updateCT := backend_checks.1.1
@@ -118,6 +119,7 @@ def backend : Compress where
   noFrames := by lit_decide
   keepsV := by lit_decide
   noDit := by lit_decide
+  side := by lit_decide
   suffix := "_sha512"
   features := ["sha3"]
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

@@ -110,4 +110,9 @@ def Clear.of (c : Prog isa) : Clear where
   vecs := allVecs.filter fun w => (codeInstrs c).any fun i => vdstOf i == some w
   his := hiVecs.filter fun w => (codeInstrs c).any fun i => vdstOf i == some w
 
+/-- `c`, which uses `W` bytes of stack and returns `rb` bits in `x0`, then its
+cleanup, which clears the registers `c` may write (`Clear.of`) and zeroes
+that stack: a function as emitted, of code that states no registers. -/
+def scrubOf (W rb : Nat) (c : Prog isa) : Prog isa := scrubAll W rb (Clear.of c) c
+
 end VG.Impl.Residue.AArch64

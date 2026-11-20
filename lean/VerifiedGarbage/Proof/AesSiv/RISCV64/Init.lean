@@ -28,6 +28,9 @@ public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 
@@ -46,6 +49,13 @@ argument (`init_verified`) and in a frame on the stack (`init_framed`). As on
 PPC64LE (`Proof/AesSiv/PPC64LE/Init.lean`), with the
 registers saved as streaming AES-CMAC's `init` saves them
 (`Proof/CmacAes/Stream/RISCV64/Scrub.lean`).
+
+It returns without secret residue followed by `Impl.Scrub.RISCV64.scrubTail`
+(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and all
+of its 2560 bytes of stack, which the residue analysis (`RISCV64.rtaint`)
+finds may all hold the key schedules. Its postcondition reads the memory on
+return only within the key context, as on PPC64LE
+(`Proof/AesSiv/PPC64LE/Scrub.lean`).
 -/
 
 @[expose] public section
@@ -636,5 +646,17 @@ theorem init_framed :
     (wa := true) (stack := 0) (bytes := 2560) init_verified (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl)
     initFrameSat_pre
+
+theorem initOut :
+    VG.RISCV64.Scrub.PostOut (Spec.Siv.initContract RISCV64.abi 2560) (Spec.Siv.initSig.retBits 64) :=
+  VG.RISCV64.Scrub.postOut_of_local (leak := none) VG.RISCV64.Scrub.ScrubAbi.plain
+    (Proof.AesSiv.initPostOut_local _)
+
+/-- `Spec.Siv.initApi`. -/
+def initReg : Registration Spec.Siv.initApi RISCV64.target :=
+  VG.RISCV64.Scrub.scrubOf {
+      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
+      verified := init_framed }
+    initOut
 
 end VG.Proof.AesSiv.RISCV64
