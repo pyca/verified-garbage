@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
@@ -1127,12 +1129,38 @@ structure BackendOk (B : Backend) : Prop where
   expandMask4 : Mask4Ok B.expandMask4
   dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → FnOk (fun S => Proof.MlDsa.dotInverseContract c X86_64.abi S) (B.dotInv c)
 
+/-- What the cleanup of a function that calls the functions of the backend
+`B` needs of each, at the level `k`: at most 24 bytes of stack, vector
+instructions of at most that level, no load of MXCSR and no indirect call
+(`X86_64.Scrub.calleeSide`). -/
+structure ArithSides (B : Impl.MlDsa.X86_64.Arith.Backend) (k : Nat) : Prop where
+  ntt : X86_64.Scrub.calleeSide B.ntt k 24 = true
+  invNtt : X86_64.Scrub.calleeSide B.invNtt k 24 = true
+  mul : X86_64.Scrub.calleeSide B.mul k 24 = true
+  mulAdd : X86_64.Scrub.calleeSide B.mulAdd k 24 = true
+  add : X86_64.Scrub.calleeSide B.add k 24 = true
+  sub : X86_64.Scrub.calleeSide B.sub k 24 = true
+  highBits : X86_64.Scrub.calleeSide B.highBits k 24 = true
+  lowBits : X86_64.Scrub.calleeSide B.lowBits k 24 = true
+  normLt : X86_64.Scrub.calleeSide B.normLt k 24 = true
+  makeHint : X86_64.Scrub.calleeSide B.makeHint k 24 = true
+  useHint : X86_64.Scrub.calleeSide B.useHint k 24 = true
+  rej4 : X86_64.Scrub.calleeSide B.rej4 k 24 = true
+  expandMask4 : X86_64.Scrub.calleeSide B.expandMask4 k 24 = true
+  dotInv4 : X86_64.Scrub.calleeSide B.dotInv4 k 24 = true
+  dotInv5 : X86_64.Scrub.calleeSide B.dotInv5 k 24 = true
+  dotInv7 : X86_64.Scrub.calleeSide B.dotInv7 k 24 = true
+
 /-- An implementation of the polynomial arithmetic on x86-64. -/
 structure ArithImpl where
   code : Backend
   ok : BackendOk code
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The level of the vector instructions of its functions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of their callers needs of them, evaluated here, once. -/
+  sides : ArithSides code level.level
 
 /-- `FnOk` of code verified without stack, from evaluating it. -/
 theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))
@@ -1173,6 +1201,9 @@ theorem sse2_checks :
   decide +kernel
 
 /-- The SSE2 code. -/
+theorem sse2_sides : ArithSides .sse2 Impl.Scrub.X86_64.VecLevel.sse.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by decide +kernel, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+
 def ArithImpl.sse2 : ArithImpl where
   code := .sse2
   ok :=
@@ -1199,5 +1230,7 @@ def ArithImpl.sse2 : ArithImpl where
         · exact FnOk.of_bits Arith.DotS.verified5 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
         · exact FnOk.of_bits Arith.DotS.verified7 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 }
   features := []
+  level := .sse
+  sides := sse2_sides
 
 end VG.Proof.MlDsa.X86_64

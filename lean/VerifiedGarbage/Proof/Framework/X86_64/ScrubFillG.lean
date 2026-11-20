@@ -24,7 +24,8 @@ is defined. A hole's code takes the place of the call, so it needs at most
 `n f` bytes of stack, not `n f + 8` (`depthG`).
 
 `fill_gen` proves `FillG` by walking the function's code, closing each hole
-by a hypothesis (`∀ o a b, calleeSide (mm o a b) k 8 = true` too, and
+by a hypothesis (`∀ o a b, calleeSide (mm o a b) k 8 = true` too, a `FillG` of
+a part of it proven apart, and
 `calleeSide c k m` for a hole of a call of `c`, of `m + 8` bytes).
 -/
 
@@ -260,6 +261,46 @@ theorem calleeSide_of_fillG {ks k : Nat} {n : String → Nat} {m : Nat} {a b : P
   simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
   exact ⟨⟨Nat.le_trans hf.depth_le hd, hf.side (side_mono hks hs)⟩, by rw [hf.inames_eq]; exact hi⟩
 
+/-- `c` with each hole `.call f (.block [])` whose name `σ` maps to a name
+and code replaced by the call of that code by that name: code over a stub
+with the implementation's functions where it calls them, for code too large
+to walk (`fill_gen`), whose equation with the implementation's the kernel
+checks instead (`kernel_rfl`). -/
+def fillCallsG (σ : String → Option (String × Prog isa)) : Prog isa → Prog isa
+  | .call f (.block []) => match σ f with
+    | some (g, d) => .call g d
+    | none => .call f (.block [])
+  | .block is => .block is
+  | .seq a b => .seq (fillCallsG σ a) (fillCallsG σ b)
+  | .ite c t e => .ite c (fillCallsG σ t) (fillCallsG σ e)
+  | .loop b c => .loop (fillCallsG σ b) c
+  | .call f b => .call f (fillCallsG σ b)
+  | .frame i b j => .frame i (fillCallsG σ b) j
+  | .icall i f b x => .icall i f (fillCallsG σ b) (fillCallsG σ x)
+
+/-- `fillCallsG σ c` is `c` with its holes filled, if the call of each code
+`σ` gives meets `calleeSide` for the hole's stack. -/
+theorem fillG_of {k : Nat} {n : String → Nat} {σ : String → Option (String × Prog isa)}
+    (hσ : ∀ f g d, σ f = some (g, d) → calleeSide (.call g d) k (n f) = true) :
+    ∀ c : Prog isa, FillG k n c (fillCallsG σ c)
+  | .block is => .block is
+  | .seq a b => .seq (fillG_of hσ a) (fillG_of hσ b)
+  | .ite c t e => .ite c (fillG_of hσ t) (fillG_of hσ e)
+  | .loop b c => .loop c (fillG_of hσ b)
+  | .frame i b j => .frame i j (fillG_of hσ b)
+  | .icall i f b x => .icall i f (fillG_of hσ b) (fillG_of hσ x)
+  | .call f b => by
+    cases b with
+    | block is =>
+      cases is with
+      | nil =>
+        simp only [fillCallsG]
+        cases h : σ f with
+        | none => exact .call f f (.block [])
+        | some p => obtain ⟨g, d⟩ := p; exact .hole f (hσ f g d h)
+      | cons i is => exact .call f f (.block _)
+    | _ => exact .call f f (fillG_of hσ _)
+
 /-- Each of a list of code generic over code it inlines meets `calleeSide`,
 from `stubCalleeG` of each of the list over a stub. -/
 theorem calleeSide_of_forall₂ {ks k : Nat} {n : String → Nat} {m : Nat} {as bs : List (Prog isa)}
@@ -280,6 +321,7 @@ fills each hole (or `∀ o a b, …` of a family of such code): it walks the
 function's code, unfolding its definitions, and closes each hole by a
 hypothesis. -/
 macro "fill_gen" : tactic => `(tactic| repeat' (first
+  | with_reducible assumption
   | with_reducible exact FillG.refl _
   | exact FillG.block _
   | exact FillG.hole _ (by assumption)
