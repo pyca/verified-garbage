@@ -1203,6 +1203,7 @@ def GhashWithImpl.aes : GhashWithImpl where
   ok := Proof.Gcm.AArch64.Pmull.ghashW_correct
   ct := Proof.Gcm.AArch64.Pmull.ghashW_ct
   keepsV := by decide +kernel
+  side := by lit_decide
 
 namespace GhashImpl
 
@@ -1213,6 +1214,7 @@ def scalar : GhashImpl where
   ok := Proof.Gcm.AArch64.ghash_correct
   ct := Proof.Gcm.AArch64.ghash_ct
   keepsV := by lit_decide
+  side := by lit_decide
   suffix := ""
   features := []
 
@@ -1224,6 +1226,7 @@ def aes : GhashImpl where
   ok := Proof.Gcm.AArch64.Pmull.ghash_correct
   ct := Proof.Gcm.AArch64.Pmull.ghash_ct
   keepsV := by decide +kernel
+  side := by lit_decide
   suffix := "_aes"
   features := ["aes"]
   pmull := true
@@ -1238,6 +1241,7 @@ def neon : GhashImpl where
   ok := Proof.Gcm.AArch64.Neon.ghash_correct Proof.Gcm.AArch64.Neon.arith
   ct := Proof.Gcm.AArch64.Neon.ghash_ct
   keepsV := by decide +kernel
+  side := by lit_decide
   suffix := "_neon"
   features := []
 
