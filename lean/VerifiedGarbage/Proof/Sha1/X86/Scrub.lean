@@ -56,9 +56,9 @@ theorem init_scrubbed :
 /-! ## The one-shot digests, for every backend
 
 A digest calls the backend's streaming `update` and `finalize`
-(`Impl.MdStream.X86.Digest`). What `scrubFOf` needs of its code follows from
-its code with a stub for both, `.block []`, evaluated once here
-(`digest…_side`), and the backend's `updScrub`, `finScrub` and stacks
+(`Impl.MdStream.X86.Digest`). What the cleanup needs of its code
+(`scrubFSide`) follows from its code with a stub for both, `.block []`,
+evaluated once here (`digest…_side`), and the backend's `updScrub`, `finScrub` and stacks
 (`Fill`, `Proof/Framework/X86/ScrubCall.lean`): no backend's code is
 evaluated again. -/
 
@@ -76,7 +76,7 @@ theorem digestReg_fill (v : Backend) (hu : calleeSide v.stream.upd 20 = true)
     Fill 20 (digest (Proof.Sha1.X86.Variants.hmacHash "" (.block []) (.block []))) (digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)) := by
   fill_calls
 
-/-- What `scrubFOf` needs of `vg_sha1_digest`'s code with the backend `v`. -/
+/-- What the cleanup needs of `vg_sha1_digest`'s code with the backend `v`. -/
 theorem digestReg_scrub (v : Backend) :
     scrubFSide (digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)) []
       (48 + dframe (Proof.Pbkdf2.Stream.X86.sha1H v.stream)) = true :=

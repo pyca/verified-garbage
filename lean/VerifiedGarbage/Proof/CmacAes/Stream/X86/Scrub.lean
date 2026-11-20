@@ -26,10 +26,10 @@ meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish` are
 generic over the implementation of AES they call (`Ctr32Impl`,
-`Proof/Variants/AesCtr32/X86.lean`). What `X86.Scrub.scrubFOf` needs of
-their code over the stack of their contracts (`scrubFSide`) holds of every
-implementation (`init_scrub`, `absorb_scrub`, `finish_scrub`): from their
-code with a stub implementation, whose code is `.block []`, which the kernel
+`Proof/Variants/AesCtr32/X86.lean`). What the cleanup needs of their
+code over the stack of their contracts (`X86.Scrub.scrubFSide`, for
+`verifiedScrubbedF`) holds of every implementation (`init_scrub`,
+`absorb_scrub`, `finish_scrub`): from their code with a stub implementation, whose code is `.block []`, which the kernel
 evaluates once here (`init_side`, …), the implementation's own facts
 (`Ctr32Impl.scrub`, `expandScrub`, its stack), and `Fill`, which `fill_calls`
 proves of any implementation by walking only CMAC's code. `vg_cmac_aes_update`

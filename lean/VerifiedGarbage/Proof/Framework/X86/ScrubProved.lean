@@ -13,6 +13,14 @@ the call site writes one proof, by default `lit_decide`, rather than one
 theorem per fact. A fact that does not hold is an error where the
 registration is defined.
 
+`verifiedScrubbed` and `verifiedScrubbedF` (`ScrubFn.lean`) state the same as
+theorems about the code with its cleanup, `scrub rb c` and `scrubF rb W c`,
+which `Impl/` defines as the function: the proof a registration binds
+(`verified := .scrubbed …`), the form every registration takes once its
+family is converted. `scrubOf` and `scrubFOf` build the registration of the
+same in `Proof/`, for the families not yet converted: never use them in new
+code.
+
 Which form to use:
 
 * `scrubOf r`: code that calls nothing and has no frame (`Code.noCalls`).

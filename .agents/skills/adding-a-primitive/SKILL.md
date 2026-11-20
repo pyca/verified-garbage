@@ -136,7 +136,9 @@ instructions in an ISA model) go in their own PR before either.
    proves `Fill` from it to the code with any variant, and
    `X86.Scrub.scrubFSide_of_fill` joins them
    (`Proof/Framework/X86/ScrubCall.lean`,
-   `Proof/CmacAes/Stream/X86/Scrub.lean`).
+   `Proof/CmacAes/Stream/X86/Scrub.lean`). `X86.Scrub.scrubOf` and
+   `scrubFOf` build the registration of the same in `Proof/`, for the
+   families not yet converted: never use them in new code.
    On AArch64 the cleanup is `Impl.Residue.AArch64.scrubAll` and the
    theorem comes from `AArch64.ScrubAll.verifiedScrubbed`
    (`Proof/Framework/AArch64/ScrubProved.lean`).
