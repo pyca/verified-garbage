@@ -25,9 +25,12 @@ open VG.Arm VG.Impl.Modes.Arm
 /-- The code of `vg_idea_ecb`, as its artifact has it. -/
 def ecbCode : Prog isa := Impl.StackScratch.Arm.withRegScratch 32 .r3 ecb
 
-/-- IDEA's ECB function, as the modes call it. -/
+/-- IDEA's ECB function, as the modes call it: its code as it is verified,
+under a name of its own (`vg_idea_ecb_entry`), which the emitter writes as an
+internal function, since the artifact `vg_idea_ecb` is that code scrubbed
+(`Proof/Idea/Arm/Scrub.lean`). -/
 def ecbCore : Core where
-  name := Spec.Idea.ecbApi.name
+  name := Spec.Idea.ecbApi.name ++ "_entry"
   code := ecbCode
   bw := 2
 

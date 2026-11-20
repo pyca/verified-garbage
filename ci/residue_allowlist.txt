@@ -20,14 +20,3 @@ x86_64 vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512
 x86_64 vg_aes_gcm_seal_prepared_aesni
 x86_64 vg_aes_gcm_seal_prepared_aesni_pclmul_avx
 x86_64 vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512
-arm vg_idea_cbc_decrypt_chained
-arm vg_idea_cbc_encrypt_chained
-arm vg_idea_cfb64_decrypt
-arm vg_idea_cfb64_decrypt_final
-arm vg_idea_cfb64_encrypt
-arm vg_idea_cfb64_encrypt_final
-arm vg_idea_ecb
-arm vg_idea_expand_key
-arm vg_idea_invert_key
-arm vg_idea_ofb
-arm vg_idea_ofb_final
