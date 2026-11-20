@@ -36,6 +36,12 @@ pub fn bench(c: &mut Criterion) {
     }
     #[cfg(target_arch = "x86")]
     xprobe::report("start", &key);
+    #[cfg(target_arch = "x86")]
+    let xmodes = xmodes::Setup::new();
+    #[cfg(target_arch = "x86")]
+    if let Some(x) = &xmodes {
+        x.run(0);
+    }
     let mut g = c.benchmark_group("poly1305");
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
@@ -89,6 +95,10 @@ pub fn bench(c: &mut Criterion) {
     #[cfg(target_arch = "x86")]
     for round in 3..5 {
         xcand::candidates(&key, round);
+    }
+    #[cfg(target_arch = "x86")]
+    if let Some(x) = &xmodes {
+        x.run(1);
     }
 
     // MEASURING PROTOTYPE, NOT FOR MERGING: what makes the SSE2 loop of
@@ -2830,3 +2840,297 @@ mod xcand {
     }
 }
 // XCAND END
+
+// XMODES BEGIN
+/// MEASURING PROTOTYPE, NOT FOR MERGING: which x86 functions that use xmm
+/// registers are slower once the AVX state is in use? One library call for
+/// each family of them (`scratchpad/poly/zen4/xsurvey.py` lists them from the
+/// generated assembly), at a size where its loop is most of the time, timed
+/// in three states of the processor:
+///
+/// * `fast`: the AVX state not in use (XGETBV(1) = 0x3: after `vzeroupper`
+///   and a sleep, whose context switch restores the initial state);
+/// * `slow`: in use with the upper halves zero (after `vpcmpeqd ymm0` and
+///   `vzeroupper`, again before every timing);
+/// * `nonzero`: in use with the upper halves of ymm0-ymm7 not zero (set
+///   again before every timing).
+///
+/// One line each: `xmodes <round> <mode> <name> <bytes> xinuse
+/// <before>-><after> min <ns> median <ns> ns x<timings>*<calls>`, the
+/// nanoseconds of one call. The library chooses its implementations as
+/// always, so `VG_CPU_FEATURES` chooses what is measured.
+#[cfg(target_arch = "x86")]
+mod xmodes {
+    use std::arch::asm;
+    use std::hint::black_box;
+    use std::time::{Duration, Instant};
+
+    use openssl::rsa::Rsa;
+    use verified_garbage::aead::aes_gcm::AesGcm;
+    use verified_garbage::aead::aes_gcm_siv::AesGcmSiv;
+    use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
+    use verified_garbage::cipher::aes::{AesCbcDecryptor, AesCtr, AesEcb, AesXts};
+    use verified_garbage::cipher::cast5::Cast5CbcEncryptor;
+    use verified_garbage::cipher::chacha20::ChaCha20;
+    use verified_garbage::cipher::rc2::Rc2CbcEncryptor;
+    use verified_garbage::cmac::aes::AesCmac;
+    use verified_garbage::ec::{P256, PrivateKey as EcPrivateKey, PublicKey as EcPublicKey};
+    use verified_garbage::hashes::blake2s::Blake2s256;
+    use verified_garbage::hashes::sha1::Sha1;
+    use verified_garbage::hashes::sha256::Sha256;
+    use verified_garbage::hashes::sha512::Sha512;
+    use verified_garbage::kdf::scrypt;
+    use verified_garbage::poly1305::Poly1305;
+    use verified_garbage::rsa::pkcs1_sig::Hash;
+    use verified_garbage::rsa::{BigUint, PrivateKey as RsaPrivateKey};
+
+    use super::xprobe::{vzeroupper, xinuse};
+
+    const MODES: [&str; 3] = ["fast", "slow", "nonzero"];
+
+    /// The nanoseconds of timings an item gets in each mode (5 timings at
+    /// least, 31 at most).
+    const BUDGET: u64 = 6_000_000;
+
+    /// Puts the processor in mode `m` of `MODES`, but for the sleep `fast`
+    /// needs; false where it has no AVX2 to do so.
+    fn set(m: usize) -> bool {
+        if m == 0 {
+            vzeroupper();
+            return true;
+        }
+        if !std::is_x86_feature_detected!("avx2") {
+            return false;
+        }
+        // SAFETY: AVX2 is available.
+        unsafe {
+            if m == 1 {
+                asm!("vpcmpeqd ymm0, ymm0, ymm0", "vzeroupper",
+                    out("xmm0") _, out("xmm1") _, out("xmm2") _, out("xmm3") _,
+                    out("xmm4") _, out("xmm5") _, out("xmm6") _, out("xmm7") _,
+                    options(nostack, nomem));
+            } else {
+                asm!("vpcmpeqd ymm0, ymm0, ymm0", "vpcmpeqd ymm1, ymm1, ymm1",
+                    "vpcmpeqd ymm2, ymm2, ymm2", "vpcmpeqd ymm3, ymm3, ymm3",
+                    "vpcmpeqd ymm4, ymm4, ymm4", "vpcmpeqd ymm5, ymm5, ymm5",
+                    "vpcmpeqd ymm6, ymm6, ymm6", "vpcmpeqd ymm7, ymm7, ymm7",
+                    out("xmm0") _, out("xmm1") _, out("xmm2") _, out("xmm3") _,
+                    out("xmm4") _, out("xmm5") _, out("xmm6") _, out("xmm7") _,
+                    options(nostack, nomem));
+            }
+        }
+        true
+    }
+
+    /// Times `f` in each mode: calls short of 20 microseconds in batches of
+    /// up to 64, and as many timings as `BUDGET` allows.
+    fn item(round: u32, name: &str, bytes: usize, f: &mut dyn FnMut()) {
+        f();
+        let start = Instant::now();
+        f();
+        let one = (start.elapsed().as_nanos() as u64).max(1);
+        let calls = (20_000 / one).clamp(1, 64);
+        let n = (BUDGET / (one * calls)).clamp(5, 31) as usize;
+        let mut t = vec![0u64; n];
+        for (m, mode) in MODES.iter().enumerate() {
+            if !set(m) {
+                continue;
+            }
+            if m == 0 {
+                std::thread::sleep(Duration::from_millis(3));
+            }
+            let before = xinuse();
+            for t in &mut t {
+                // A context switch may have ended a mode with the AVX state
+                // in use: set it again. (`fast` runs no AVX instruction.)
+                if m != 0 {
+                    set(m);
+                }
+                let start = Instant::now();
+                for _ in 0..calls {
+                    f();
+                }
+                *t = start.elapsed().as_nanos() as u64;
+            }
+            let after = xinuse();
+            t.sort_unstable();
+            eprintln!(
+                "xmodes {round} {mode:<7} {name:<24} {bytes:>6} xinuse {before:#x}->{after:#x} min {:>12.1} median {:>12.1} ns x{n}*{calls}",
+                t[0] as f64 / calls as f64,
+                t[n / 2] as f64 / calls as f64
+            );
+        }
+    }
+
+    pub struct Setup {
+        rsa: RsaPrivateKey,
+    }
+
+    impl Setup {
+        /// The RSA key, once a launch; nothing where the benchmarks are only
+        /// listed.
+        pub fn new() -> Option<Self> {
+            if std::env::args().any(|a| a == "--list") {
+                return None;
+            }
+            let key = Rsa::generate(2048).unwrap();
+            let rsa = RsaPrivateKey::from_crt(
+                BigUint::from_be_bytes(&key.n().to_vec()),
+                BigUint::from_be_bytes(&key.e().to_vec()),
+                BigUint::from_be_bytes(&key.d().to_vec()),
+                BigUint::from_be_bytes(&key.p().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.q().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmp1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.dmq1().unwrap().to_vec()),
+                BigUint::from_be_bytes(&key.iqmp().unwrap().to_vec()),
+            )
+            .unwrap();
+            Some(Self { rsa })
+        }
+
+        pub fn run(&self, round: u32) {
+            const N: usize = 16384;
+            let started = Instant::now();
+            let key: [u8; 32] = core::array::from_fn(|i| (17 * i + 3) as u8);
+            let k16 = &key[..16];
+            let (iv, iv8, nonce, aad) = ([0x3c; 16], [0x3c; 8], [0x24; 12], [0x11; 16]);
+            let data = vec![0x5au8; N];
+            let mut buf = vec![0u8; N];
+            let mut out = vec![0u8; N];
+            let mut empty = [0u8; 0];
+
+            // Poly1305's pairs of blocks; ChaCha20 (SSE2, or SSSE3), alone and
+            // with them; the gathered seal's copy.
+            item(round, "poly1305", N, &mut || {
+                black_box(Poly1305::mac(black_box(&key), black_box(&data)));
+            });
+            item(round, "chacha20", N, &mut || {
+                ChaCha20::new(black_box(&key), &iv).apply_keystream(black_box(&mut buf));
+            });
+            for size in [N, 1024] {
+                item(round, "chacha20poly1305-seal", size, &mut || {
+                    black_box(
+                        ChaCha20Poly1305::new(black_box(&key))
+                            .encrypt_in_place(&nonce, &aad, black_box(&mut buf[..size]))
+                            .unwrap(),
+                    );
+                });
+            }
+            item(round, "chacha20poly1305-gather", N, &mut || {
+                black_box(
+                    ChaCha20Poly1305::new(black_box(&key))
+                        .encrypt(&nonce, &aad, &[black_box(&data[..])], black_box(&mut out))
+                        .unwrap(),
+                );
+            });
+
+            // AES (AES-NI, or the code without it): the blocks of CTR, ECB,
+            // CBC decryption and XTS; CMAC and CBC encryption wait for each
+            // block anyway.
+            item(round, "aes128-ctr", N, &mut || {
+                AesCtr::new(black_box(k16), &iv).unwrap().apply_keystream_final(black_box(&mut buf));
+            });
+            item(round, "aes128-ecb-encrypt", N, &mut || {
+                AesEcb::new(black_box(k16)).unwrap().encrypt(black_box(&mut buf)).unwrap();
+            });
+            item(round, "aes128-cbc-decrypt", N, &mut || {
+                AesCbcDecryptor::new(black_box(k16), &iv).unwrap().decrypt(black_box(&mut buf)).unwrap();
+            });
+            item(round, "aes128-xts-encrypt", N, &mut || {
+                AesXts::new(black_box(&key)).unwrap().encrypt_in_place(&iv, black_box(&mut buf)).unwrap();
+            });
+            item(round, "aes128-cmac", N, &mut || {
+                black_box(AesCmac::mac(black_box(k16), black_box(&data)).unwrap());
+            });
+
+            // AES-GCM: CTR with GHASH (PCLMULQDQ, or the code without it);
+            // GHASH alone (16 KiB of additional data, no plaintext); the
+            // gathered seal's copy; AES-GCM-SIV's POLYVAL and CTR.
+            for size in [N, 1024] {
+                item(round, "aes128-gcm-seal", size, &mut || {
+                    black_box(
+                        AesGcm::new(black_box(k16))
+                            .unwrap()
+                            .encrypt_in_place(&nonce, &aad, black_box(&mut buf[..size]))
+                            .unwrap(),
+                    );
+                });
+            }
+            item(round, "aes128-gcm-aad-only", N, &mut || {
+                black_box(
+                    AesGcm::new(black_box(k16))
+                        .unwrap()
+                        .encrypt_in_place(&nonce, black_box(&data), &mut empty)
+                        .unwrap(),
+                );
+            });
+            item(round, "aes128-gcm-gather", N, &mut || {
+                black_box(
+                    AesGcm::new(black_box(k16))
+                        .unwrap()
+                        .encrypt(&nonce, &aad, &[black_box(&data[..])], black_box(&mut out))
+                        .unwrap(),
+                );
+            });
+            item(round, "aes128-gcm-siv-seal", N, &mut || {
+                black_box(
+                    AesGcmSiv::new(black_box(k16))
+                        .unwrap()
+                        .encrypt_in_place(&nonce, &aad, black_box(&mut buf))
+                        .unwrap(),
+                );
+            });
+
+            // Hashes: SHA-512's compression is SSE2 on this target; SHA-1 and
+            // SHA-256 use xmm registers only with SHA-NI; BLAKE2s.
+            item(round, "sha512", N, &mut || {
+                black_box(Sha512::digest(black_box(&data)));
+            });
+            item(round, "sha256", N, &mut || {
+                black_box(Sha256::digest(black_box(&data)));
+            });
+            item(round, "sha1", N, &mut || {
+                black_box(Sha1::digest(black_box(&data)));
+            });
+            item(round, "blake2s256", N, &mut || {
+                black_box(Blake2s256::digest(black_box(&data)));
+            });
+
+            // CAST5 and RC2 read their tables by masked scans in xmm
+            // registers; scrypt's Salsa20/8 and its xors.
+            item(round, "cast5-cbc-encrypt", 1024, &mut || {
+                Cast5CbcEncryptor::new(black_box(k16), &iv8).unwrap().encrypt(black_box(&mut buf[..1024])).unwrap();
+            });
+            item(round, "rc2-cbc-encrypt", 1024, &mut || {
+                Rc2CbcEncryptor::new(black_box(k16), &iv8).unwrap().encrypt(black_box(&mut buf[..1024])).unwrap();
+            });
+            let mut derived = [0u8; 64];
+            item(round, "scrypt-1024-8-1", 64, &mut || {
+                scrypt::derive(black_box(b"password"), b"NaCl", 1024, 8, 1, usize::MAX, &mut derived).unwrap();
+            });
+
+            // The Montgomery multiplication (SSE2) and the copies under a
+            // mask behind RSA, FFDH and DSA; the curves' masked reads of
+            // their tables of points (the field arithmetic uses no xmm).
+            let digest = [0x42; 32];
+            item(round, "rsa2048-pkcs1-sign", 256, &mut || {
+                black_box(black_box(&self.rsa).sign_pkcs1v15(black_box(&digest), Hash::Sha256).unwrap());
+            });
+            let d = [0x42; 32];
+            let ec = EcPrivateKey::<P256>::from_bytes(&d);
+            let peer = *EcPrivateKey::<P256>::from_bytes(&[0x24; 32]).public_key().unwrap().as_bytes();
+            item(round, "ecdsa-p256-sha256-sign", 64, &mut || {
+                black_box(ec.sign::<Sha256>(black_box(&data[..64])).unwrap());
+            });
+            item(round, "ecdh-p256", 32, &mut || {
+                black_box(black_box(&ec).exchange(&EcPublicKey::from_bytes(black_box(&peer))).unwrap());
+            });
+            item(round, "p256-public-key", 65, &mut || {
+                black_box(EcPrivateKey::<P256>::from_bytes(black_box(&d)).public_key().unwrap());
+            });
+            vzeroupper();
+            eprintln!("xmodes {round} done in {} ms", started.elapsed().as_millis());
+        }
+    }
+}
+// XMODES END
