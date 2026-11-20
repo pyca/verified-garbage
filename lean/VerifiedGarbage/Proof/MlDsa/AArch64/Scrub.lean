@@ -6,13 +6,14 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Impl.MlDsa.AArch64.PkTr
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
-public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PkTr
 import VerifiedGarbage.Proof.Sha3.AArch64.Scrub
 import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
-public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
 public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Prepare
@@ -31,11 +32,11 @@ The postconditions of key generation, of `pk_tr` and of signing a message
 outputs, and those of verifying a message not at all (`ScrubAll.ScrubAllOk`,
 as x86-64's `Proof/MlDsa/X86_64/Scrub.lean` proves them): each
 implementation, generic over the Keccak-f[1600] implementation it calls,
-returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.scrubAllOf`, with the registers `clear` and the `…Side`
-theorems below). `pk_tr` as emitted is `Impl.MlDsa.AArch64.Fn.pkTr`, whose
-registers are its own with those its permutation states it writes; `Fn`
-below has its theorem, which its registration binds.
+returns with every register the calling convention does not preserve cleared
+and its whole stack zeroed (`Impl.MlDsa.AArch64.Fn`). `pk_tr` as emitted is
+`Impl.MlDsa.AArch64.Fn.pkTr`, whose registers are its own with those its
+permutation states it writes. `Fn` below has the theorems, which the
+registrations bind.
 -/
 
 @[expose] public section
@@ -266,26 +267,14 @@ theorem dle_scrubAll {c : Prog VG.AArch64.isa} (cl : VG.Impl.Residue.AArch64.Cle
 
 open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_sign_fn message_verify_fn)
 
-/-- The registers the tails of key generation, signing and verification
-clear: every register the calling convention does not preserve, which their
-code, with each permutation, may write (`keyGenSide` and the theorems after
-it). -/
-def clear : VG.Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-    .v26, .v27, .v28, .v29, .v30, .v31],
-   [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
-
-theorem clear_wf : clear.WF := wf_of_wfB (by decide)
-
 /-- What a message signing function calls: the signing entry, scrubbed whole. -/
 theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageSignFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 clear
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all
         (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
   obtain h := message_sign_fn v hp name prepared
-  refine ⟨Verified.scrubAll clear_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
+  refine ⟨Verified.scrubAll clearAll_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact signPairedOk p
   · exact preparedSignPairedOk p
@@ -294,10 +283,10 @@ theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.M
 theorem message_verify_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageVerifyFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 clear
+      (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all
         (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
   obtain h := message_verify_fn v hp name prepared
-  refine ⟨Verified.scrubAll clear_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
+  refine ⟨Verified.scrubAll clearAll_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
   cases prepared
   · exact verifySelectedOk p
   · exact preparedVerifySelectedOk p
@@ -377,116 +366,10 @@ theorem prepareSecretOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = m
             have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.ℓ + 2 * p.k by omega_using [hi])
             rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
 
-/-! ## What `scrubAllOf` needs of the code
+/-! ## What the cleanup needs of the code that prepares keys
 
-`ScrubAll.scrubSide` of each function, with each permutation and each
-parameter set it is registered with: evaluated here, by the kernel, so that
-the emitter works out nothing. -/
-
-open VG.Proof.MlDsa (signWithCacheName verifyWithCacheName preparedSignName preparedVerifyName)
-
-/-- The parameter sets, each with the name of its module and its label, as
-the registration file names them. -/
-def sets : List (Params × String × String) :=
-  [(mlDsa44, "mldsa44", "ML-DSA-44"), (mlDsa65, "mldsa65", "ML-DSA-65"), (mlDsa87, "mldsa87", "ML-DSA-87")]
-
-/-- Of key generation. -/
-theorem keyGenSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params}
-    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
-    scrubSide (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee p)
-      16 ((keyGenSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => [mlDsa44, mlDsa65, mlDsa87].all fun p =>
-      scrubSide (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee p)
-      16 ((keyGenSig p).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) p (mem_of hp)
-
-/-- Of signing `μ` with a key. -/
-theorem signSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) false)
-      64 ((signSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) false)
-      64 ((signSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of signing `μ` with a prepared key. -/
-theorem preparedSignSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) true)
-      64 ((preparedSignSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) true)
-      64 ((preparedSignSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of signing a message with a key, which calls the scrubbed entry. -/
-theorem signMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee ((signApi p module label).name ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) false)) p)
-      64 ((signMessageSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee ((signApi s.1 s.2.1 s.2.2).name ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) false)) s.1)
-      64 ((signMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of signing a message with a prepared key. -/
-theorem preparedSignMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee (preparedSignName module ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v p (signWithCacheName module ++ v.callee.suffix) true)) p)
-      64 ((preparedSignMessageSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Impl.MlDsa.AArch64.Message.signMessage v.callee (preparedSignName s.2.1 ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.signCode v s.1 (signWithCacheName s.2.1 ++ v.callee.suffix) true)) s.1)
-      64 ((preparedSignMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of verifying `μ` with a key. -/
-theorem verifySide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)
-      64 ((verifySig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) false)
-      64 ((verifySig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of verifying `μ` with a prepared key. -/
-theorem preparedVerifySide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)
-      64 ((preparedVerifySig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) true)
-      64 ((preparedVerifySig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of verifying a message with a key, which calls the scrubbed entry. -/
-theorem verifyMessageCachedSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee ((verifyApi p module label).name ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false)) p)
-      64 ((verifyMessageCachedSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee ((verifyApi s.1 s.2.1 s.2.2).name ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) false)) s.1)
-      64 ((verifyMessageCachedSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
-
-/-- Of verifying a message with a prepared key. -/
-theorem preparedVerifyMessageSide (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) {p : Params} {module label : String}
-    (hs : (p, module, label) ∈ sets) :
-    scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (preparedVerifyName module ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true)) p)
-      64 ((preparedVerifyMessageSig p).retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.Keccak.AArch64.variants.all fun v => sets.all fun s =>
-      scrubSide (Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (preparedVerifyName s.2.1 ++ v.callee.suffix)
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 clear (Proof.MlDsa.AArch64.PreparedKey.verifyCode v s.1 (verifyWithCacheName s.2.1 ++ v.callee.suffix) true)) s.1)
-      64 ((preparedVerifyMessageSig s.1).retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e v hv) (p, module, label) hs
+`ScrubAll.scrubSide` of the two functions, with each parameter set:
+evaluated here, by the kernel. -/
 
 /-- Of preparing a verifying key. -/
 theorem preparePublicSide {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
@@ -614,5 +497,577 @@ theorem pkTr87 (v : Proof.Sha3.AArch64.Permutation) :
     { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa87,
       verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }
     _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
+
+/-! ### Key generation, signing and verification, with any implementation of the permutation
+
+Each function's code is the code built with the permutation's body empty and
+a hole in the place of its backend's absorb loop, with those holes filled
+(`Code.fill2`): an equation the kernel checks with the implementation a
+variable. What the cleanup needs of the code, that no instruction writes
+PSTATE.DIT and nothing is called indirectly, and the depth of its frames,
+are evaluated of that closed code, once for each parameter set and each kind
+of paired sampler (`Callee.pairedSha3`), and hold for every implementation
+(`side_depth_of_fill2`). -/
+
+private theorem keyGen_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith c p) = true ∧
+      (Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith c p).aarch64Depth ≤ 1 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  rcases hp with rfl | rfl | rfl
+  · cases ps
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa44)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa44)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa65)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa65)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa87)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+        (e := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ mlDsa87)
+        (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+private theorem sign_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name : String) (prepared : Bool) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+          (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+          (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared).aarch64Depth ≤ 4 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  rcases hp with rfl | rfl | rfl
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+private theorem verify_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name : String) (prepared : Bool) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+          (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared) = true ∧
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+          (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared).aarch64Depth ≤ 4 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  rcases hp with rfl | rfl | rfl
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+            (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+              (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+private theorem signMessage_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name name' : String) (prepared : Bool) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Message.signMessage c name'
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+          (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+            (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared)) p) = true ∧
+      (Impl.MlDsa.AArch64.Message.signMessage c name'
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+          (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
+            (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared)) p).aarch64Depth ≤ 4 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  rcases hp with rfl | rfl | rfl
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Message.signMessage ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.Fn.signPrims ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+private theorem verifyMessage_sd (c : Impl.Sha3.AArch64.Callee)
+    (hb : sideAll (fun i => !i.writesDit) c.code = true) (hbd : c.code.aarch64Depth = 0)
+    (ho : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith c) = true)
+    (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
+    (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name name' : String) (prepared : Bool) :
+    sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c name'
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+          (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+            (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared)) p) = true ∧
+      (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c name'
+        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+          (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
+            (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared)) p).aarch64Depth ≤ 4 := by
+  rcases c with ⟨n, code, sfx, cl, ps, ao⟩
+  rcases hp with rfl | rfl | rfl
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 false)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa44) mlDsa44 true)) mlDsa44)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 false)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa65) mlDsa65 true)) mlDsa65)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  · cases ps
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, false, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    · cases prepared
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 false)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+      · exact side_depth_of_fill2 (a := .call n code) (da := 0)
+          (e := Impl.MlDsa.AArch64.Optimized.verifyMessageCached ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩ name'
+            (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+              (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩
+                (Impl.MlDsa.AArch64.KeyGen.primsWith ⟨"", .block [], sfx, cl, true, some (.call "" (.seq (.block []) (.block [])))⟩) mlDsa87) mlDsa87 true)) mlDsa87)
+          (by kernel_rfl) hb (Nat.le_of_eq hbd) ho hod (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+
+section
+variable (v : Proof.Sha3.AArch64.Permutation)
+
+private theorem perm_side : sideAll (fun i => !i.writesDit) v.callee.code = true :=
+  sideAll_noDit_of_calleeSide v.scrub
+
+private theorem absorb_side : sideAll (fun i => !i.writesDit) (Impl.Sha3.AArch64.Stream.absorbWith v.callee) = true :=
+  sideAll_noDit_of_calleeSide
+    (Proof.Sha3.AArch64.Scrub.absorbWith_side v (own := Impl.Sha3.AArch64.Fn.updateOwn) (by decide))
+
+/-- `vg_mldsa<n>_keygen` over `v`, as emitted. -/
+theorem keyGen {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.keyGen v.callee p)
+      (keyGenContract p (abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16) 32 := by
+  obtain ⟨hs, hd⟩ := keyGen_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
+    (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+  exact verifiedScrubbedAll (Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v hp)
+    (Scrub.keyGenOk_consts _ 16 _ _) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+theorem keyGen44 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.keyGen v.callee mlDsa44)
+      (keyGenContract mlDsa44 (abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16) 32 :=
+  keyGen v (.inl rfl)
+
+theorem keyGen65 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.keyGen v.callee mlDsa65)
+      (keyGenContract mlDsa65 (abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16) 32 :=
+  keyGen v (.inr (.inl rfl))
+
+theorem keyGen87 :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.keyGen v.callee mlDsa87)
+      (keyGenContract mlDsa87 (abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16) 32 :=
+  keyGen v (.inr (.inr rfl))
+
+open VG.Proof.MlDsa.AArch64.PreparedKey (rawSignK rawVerifyK messageSignK messageVerifyK)
+
+/-- `vg_<module>_sign` (or `_sign_prepared`) over `v`, as emitted. -/
+theorem sign {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee p module prepared)
+      (rawSignK p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
+  obtain ⟨hs, hd⟩ := sign_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
+    (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+    (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) prepared
+  cases prepared
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ false)
+      (Scrub.signPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ true)
+      (Scrub.preparedSignPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+/-- `vg_<module>_verify` (or `_verify_prepared`) over `v`, as emitted. -/
+theorem verify {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee p module prepared)
+      (rawVerifyK p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
+  obtain ⟨hs, hd⟩ := verify_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
+    (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+    (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) prepared
+  cases prepared
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ false)
+      (Scrub.verifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ true)
+      (Scrub.preparedVerifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+/-- `vg_<module>_sign_message` (or `_sign_message_prepared`) over `v`, as
+emitted: it calls `sign` as emitted. -/
+theorem signMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee p module prepared)
+      (messageSignK p prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 := by
+  cases prepared
+  · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign" ++ v.callee.suffix) false
+    exact verifiedScrubbedAll
+      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ false))
+      (Scrub.signMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign_prepared" ++ v.callee.suffix)
+      true
+    exact verifiedScrubbedAll
+      (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ true))
+      (Scrub.preparedSignMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+/-- `vg_<module>_verify_message_cached` (or `_verify_message_prepared`) over
+`v`, as emitted: it calls `verify` as emitted. -/
+theorem verifyMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (module : String)
+    (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee p module prepared)
+      (messageVerifyK p prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 := by
+  cases prepared
+  · obtain ⟨hs, hd⟩ := verifyMessage_sd v.callee (perm_side v)
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) (s!"vg_{module}_verify" ++ v.callee.suffix) false
+    exact verifiedScrubbedAll
+      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
+        (Scrub.message_verify_fn_scrub p v hp _ false))
+      (Scrub.verifyMessageCachedSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+  · obtain ⟨hs, hd⟩ := verifyMessage_sd v.callee (perm_side v)
+      (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
+      (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix)
+      (s!"vg_{module}_verify_prepared" ++ v.callee.suffix) true
+    exact verifiedScrubbedAll
+      (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
+        (Scrub.message_verify_fn_scrub p v hp _ true))
+      (Scrub.preparedVerifyMessageSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
+
+theorem sign44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa44 "mldsa44" prepared)
+      (rawSignK mlDsa44 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inl rfl) "mldsa44" prepared
+
+theorem sign65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa65 "mldsa65" prepared)
+      (rawSignK mlDsa65 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem sign87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.sign v.callee mlDsa87 "mldsa87" prepared)
+      (rawSignK mlDsa87 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  sign v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem verify44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa44 "mldsa44" prepared)
+      (rawVerifyK mlDsa44 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inl rfl) "mldsa44" prepared
+
+theorem verify65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa65 "mldsa65" prepared)
+      (rawVerifyK mlDsa65 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem verify87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verify v.callee mlDsa87 "mldsa87" prepared)
+      (rawVerifyK mlDsa87 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verify v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem signMessage44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa44 "mldsa44" prepared)
+      (messageSignK mlDsa44 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inl rfl) "mldsa44" prepared
+
+theorem signMessage65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa65 "mldsa65" prepared)
+      (messageSignK mlDsa65 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem signMessage87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.signMessage v.callee mlDsa87 "mldsa87" prepared)
+      (messageSignK mlDsa87 prepared (abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts)) 32 :=
+  signMessage v (.inr (.inr rfl)) "mldsa87" prepared
+
+theorem verifyMessage44 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa44 "mldsa44" prepared)
+      (messageVerifyK mlDsa44 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inl rfl) "mldsa44" prepared
+
+theorem verifyMessage65 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa65 "mldsa65" prepared)
+      (messageVerifyK mlDsa65 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inr (.inl rfl)) "mldsa65" prepared
+
+theorem verifyMessage87 (prepared : Bool) :
+    VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.verifyMessage v.callee mlDsa87 "mldsa87" prepared)
+      (messageVerifyK mlDsa87 prepared Proof.MlDsa.AArch64.Verify.OptimizedSelected.selectedAbi) 32 :=
+  verifyMessage v (.inr (.inr rfl)) "mldsa87" prepared
+
+end
 
 end VG.Proof.MlDsa.AArch64.Fn

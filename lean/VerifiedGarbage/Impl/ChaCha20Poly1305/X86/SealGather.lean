@@ -70,20 +70,20 @@ open VG.Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_chacha20_poly1305_seal`, calling the implementation `c` of `vg_chacha20_xor`, as emitted. -/
 def «seal» (c : Callee) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 772 (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» c))
+  Impl.Scrub.X86.scrubF 0 1280 (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» c))
 
 /-- `vg_chacha20_poly1305_open`, as emitted. -/
 def «open» (c : Callee) : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 772 (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» c))
+  Impl.Scrub.X86.scrubF 32 1280 (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» c))
 
 /-- `vg_chacha20_poly1305_open_to`, as emitted. -/
 def openTo (c : Callee) : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 780 (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo c))
+  Impl.Scrub.X86.scrubF 32 1288 (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo c))
 
 /-- `vg_chacha20_poly1305_seal_gather`, calling `seal`'s code in its frame as
 `vg_chacha20_poly1305_seal_core` with the suffix `sfx` of `c`, as emitted. -/
 def sealGather (c : Callee) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 824 (SealGather.sealGather ("vg_chacha20_poly1305_seal_core" ++ sfx)
+  Impl.Scrub.X86.scrubF 0 1332 (SealGather.sealGather ("vg_chacha20_poly1305_seal_core" ++ sfx)
     (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» c)))
 
 end VG.Impl.ChaCha20Poly1305.X86.Fn

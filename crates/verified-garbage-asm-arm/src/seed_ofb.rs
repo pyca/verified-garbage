@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Seed.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -52,7 +54,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt}
+bl {vg_seed_ecb_encrypt_entry}
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -113,14 +115,39 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #80
+sub sp, sp, #832
+add r12, sp, #0
+mov r2, #0
+mov r3, #26
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+add sp, sp, #832
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
+        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
     )
 }
 
 /// SEED-OFB encryption or decryption (NIST SP 800-38A §6.4, RFC 4269 §2) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*iv` with the last output block used, `Oₙ` (leaving it unchanged if `len = 0`): so that a further call continues the message if `len` is a multiple of 16, and otherwise keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.
 ///
 /// Contract: `VG.Spec.Seed.ofbFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -167,7 +194,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt}
+bl {vg_seed_ecb_encrypt_entry}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -244,7 +271,30 @@ str r2, [r12, #60]
 str r2, [r12, #64]
 str r2, [r12, #68]
 add sp, sp, #80
+sub sp, sp, #832
+add r12, sp, #0
+mov r2, #0
+mov r3, #26
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+add sp, sp, #832
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
+        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
     )
 }

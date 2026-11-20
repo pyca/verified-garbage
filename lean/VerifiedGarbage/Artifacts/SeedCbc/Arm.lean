@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.CbcVerified
+public import VerifiedGarbage.Proof.Seed.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -12,10 +12,10 @@ namespace VG.Artifacts.SeedCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Seed.cbcEncryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cbcEncryptChained
-    verified := .unscrubbed Proof.Seed.Arm.cbcEncryptChained_framed },
+    code := Impl.Seed.Arm.Fn.cbcEncrypt
+    verified := .scrubbed Proof.Seed.Arm.Fn.cbcEncrypt },
   Spec.Seed.cbcDecryptChainedApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cbcDecryptChained
-    verified := .unscrubbed Proof.Seed.Arm.cbcDecryptChained_framed }]
+    code := Impl.Seed.Arm.Fn.cbcDecrypt
+    verified := .scrubbed Proof.Seed.Arm.Fn.cbcDecrypt }]
 
 end VG.Artifacts.SeedCbc.Arm

@@ -49,14 +49,3 @@ arm vg_idea_expand_key
 arm vg_idea_invert_key
 arm vg_idea_ofb
 arm vg_idea_ofb_final
-arm vg_seed_cbc_decrypt_chained
-arm vg_seed_cbc_encrypt_chained
-arm vg_seed_cfb128_decrypt
-arm vg_seed_cfb128_decrypt_final
-arm vg_seed_cfb128_encrypt
-arm vg_seed_cfb128_encrypt_final
-arm vg_seed_ecb_decrypt
-arm vg_seed_ecb_encrypt
-arm vg_seed_expand_key
-arm vg_seed_ofb
-arm vg_seed_ofb_final

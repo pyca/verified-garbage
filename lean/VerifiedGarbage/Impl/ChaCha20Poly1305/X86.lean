@@ -45,9 +45,11 @@ when it is needed (the body never writes the stack arguments): `seal` passes `ta
 with it. Each call pushes its
 arguments in a frame of its own (`callWith`), popped into `eax` when it
 returns: with its return address, a call uses at most 24 bytes below `esp`
-(`vg_poly1305_finalize_scratch`, with five words of arguments), and
-`vg_chacha20_xor` 20, and 12 more below its own return address, so the
-functions use 32 bytes of stack below their return address.
+(`vg_poly1305_finalize_scratch`, with five words of arguments),
+`vg_chacha20_xor` 20, and 12 more below its own return address, and
+`vg_poly1305_blocks` 16, and 524 more below its own return address (the
+frames of its pairs of blocks, `Impl/Poly1305/X86.lean`), so the functions
+use 540 bytes of stack below their return address.
 
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and the tags are compared without a branch; but `open` then branches
