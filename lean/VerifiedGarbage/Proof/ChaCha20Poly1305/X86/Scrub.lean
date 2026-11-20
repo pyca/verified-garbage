@@ -65,8 +65,9 @@ open Proof.ChaCha20.X86 (XorImpl)
 /-- `postOut_of_local`, for a postcondition that reads the memory on return
 only within the buffers where the precondition holds (`open_to`'s, which
 reads the destination by a length the precondition equates with its
-buffer's). -/
-theorem postOut_of_local_pre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+buffer's): x86-64's `postOut_of_local_pre`, which x86's framework does not
+have yet. -/
+private theorem postOutPre {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
@@ -113,7 +114,7 @@ theorem openOut (stack : Nat) :
 
 theorem openToOut (stack : Nat) :
     PostOut (Spec.ChaCha20Poly1305.openToContract X86.abi stack) (Spec.ChaCha20Poly1305.openToSig.retBits 32) :=
-  postOut_of_local_pre ScrubAbi.plain (Proof.ChaCha20Poly1305.openToPost_out _)
+  postOutPre ScrubAbi.plain (Proof.ChaCha20Poly1305.openToPost_out _)
 
 theorem gatherOut (stack : Nat) :
     PostOut (Spec.ChaCha20Poly1305.sealGatherContract X86.abi stack)
@@ -231,7 +232,7 @@ theorem sealGather_scrubbed (v : XorImpl) :
 
 /-! ## Their stack pointer -/
 
-private theorem scrubF_spSafe {rb n : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
+private theorem scrubF_all {rb n : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
     (Impl.Scrub.X86.scrubF rb n c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.Scrub.X86.scrubF, Impl.Scrub.X86.wipeBelow, Code.all, h, zeroRegs_all, tail_all,
     Bool.true_and, Bool.and_true]
@@ -239,21 +240,21 @@ private theorem scrubF_spSafe {rb n : Nat} {c : Prog isa} (h : c.all (fun i => !
 
 theorem seal_spSafe (v : XorImpl) :
     (Impl.ChaCha20Poly1305.X86.Fn.«seal» v.callee).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+  scrubF_all (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
     (Proof.ChaCha20Poly1305.X86.seal_spSafe v))
 
 theorem open_spSafe (v : XorImpl) :
     (Impl.ChaCha20Poly1305.X86.Fn.«open» v.callee).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+  scrubF_all (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
     (Proof.ChaCha20Poly1305.X86.open_spSafe v))
 
 theorem openTo_spSafe (v : XorImpl) :
     (Impl.ChaCha20Poly1305.X86.Fn.openTo v.callee).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+  scrubF_all (Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
     (Proof.ChaCha20Poly1305.X86.openTo_spSafe v))
 
 theorem sealGather_spSafe (v : XorImpl) :
     (Impl.ChaCha20Poly1305.X86.Fn.sealGather v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Gather.sealGather_spSafe v)
+  scrubF_all (Gather.sealGather_spSafe v)
 
 end VG.Proof.ChaCha20Poly1305.X86.Scrub
