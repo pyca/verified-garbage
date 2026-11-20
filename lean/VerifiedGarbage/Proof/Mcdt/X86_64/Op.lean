@@ -94,9 +94,6 @@ theorem body_trace {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak} (hsp 
 
 /-! ## The clearing after it -/
 
-/-- The code of `vg_mcdt_enter`'s artifact is `enterCall`, which its calls run. -/
-theorem enterReg_code : enterReg.code = enterCall := by kernel_rfl
-
 theorem tail₁_ok (u : State) :
     WP isa (.block [.xop (.bin .pxor .xmm0 .xmm0), .alu32 .xor .r11 (.reg .r11)]) u
       fun v => (v.gpr .r11 = 0 ∧ v.mem = u.mem ∧ v.mxcsr = u.mxcsr ∧ v.unknowns = u.unknowns) ∧
