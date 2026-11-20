@@ -123,7 +123,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_blowfish_ecb_encrypt_entry = sym super::blowfish_cfb::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
+        vg_blowfish_ecb_encrypt_entry = sym super::blowfish::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
     )
 }
 
@@ -251,7 +251,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_blowfish_ecb_encrypt_entry = sym super::blowfish_cfb::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
+        vg_blowfish_ecb_encrypt_entry = sym super::blowfish::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
     )
 }
 
@@ -391,7 +391,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_blowfish_ecb_encrypt_entry = sym super::blowfish_cfb::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
+        vg_blowfish_ecb_encrypt_entry = sym super::blowfish::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
     )
 }
 
@@ -535,10 +535,6 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_blowfish_ecb_encrypt_entry = sym super::blowfish_cfb::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
+        vg_blowfish_ecb_encrypt_entry = sym super::blowfish::vg_blowfish_ecb_encrypt_entry::vg_blowfish_ecb_encrypt_entry,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_blowfish_ecb_encrypt_entry.rs"]
-pub(crate) mod vg_blowfish_ecb_encrypt_entry;

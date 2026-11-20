@@ -1646,3 +1646,11 @@ cmp r2, r2
 bx lr",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_ecb_decrypt_entry.rs"]
+pub(crate) mod vg_blowfish_ecb_decrypt_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blowfish_ecb_encrypt_entry.rs"]
+pub(crate) mod vg_blowfish_ecb_encrypt_entry;
